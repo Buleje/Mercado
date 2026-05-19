@@ -54,6 +54,20 @@ const TENANT_SCOPED_PREFIXES: readonly string[] = [
   "morning-summary-",
 ];
 
+/**
+ * Keys que matchean los prefijos anteriores pero son PLATFORM-GLOBAL, no
+ * tenant-scoped. NO se deben borrar al cambiar de tenant porque las configura
+ * el superadmin para toda la plataforma (no por negocio).
+ *
+ * Borrarlas causa que el sidebar del admin muestre solo módulos default en
+ * el primer paint tras cambiar de tenant — Brandon tenía que refrescar la
+ * página para que aparecieran los módulos configurados en superadmin.
+ */
+const PLATFORM_GLOBAL_KEYS: ReadonlySet<string> = new Set([
+  "buleje-admin-template",   // plantilla de módulos visibles del superadmin (PlatformSetting)
+  "buleje-admin-theme-set",  // flag UI: el dueño ya eligió tema una vez (preferencia personal)
+]);
+
 const OWNER_KEY = "__tenant-cache-owner";
 
 /** Lee el tenant slug actual de la cookie httpOnly:false `active-tenant-slug`. */
@@ -76,6 +90,7 @@ export function clearAllTenantCache(): number {
         if (k) sessionKeys.push(k);
       }
       for (const k of sessionKeys) {
+        if (PLATFORM_GLOBAL_KEYS.has(k)) continue;
         if (TENANT_SCOPED_PREFIXES.some((p) => k.startsWith(p))) {
           sessionStorage.removeItem(k);
           removed++;
@@ -100,6 +115,7 @@ export function clearAllTenantCache(): number {
         // No borrar el propio OWNER_KEY ni keys que YA tienen un slug por-tenant
         // diferente al actual (no las cuento, podrían ser parte de otro perfil).
         if (k === OWNER_KEY) continue;
+        if (PLATFORM_GLOBAL_KEYS.has(k)) continue; // config global del superadmin
         if (TENANT_SCOPED_KEYS.includes(k)) continue; // ya borradas arriba
         localStorage.removeItem(k);
         removed++;

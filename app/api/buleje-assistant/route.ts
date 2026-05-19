@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateText } from "ai";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/buleje-assistant — Asistente Buleje 24/7.
@@ -47,7 +48,7 @@ TU ROL:
 - NUNCA inventas productos ni precios especificos. Si preguntan por uno concreto, sugiere /marketplace/buscar.
 - Para pedidos activos, redirige a /marketplace/mi-cuenta/pedidos.
 - Para tracking, redirige a /tracking/ORDER_ID.
-- Para soporte humano, sugiere WhatsApp +51 916 409 675.
+- Para soporte humano, sugiere WhatsApp +51 929 340 532.
 - Si piden recomendar recetas, menciona nuestra Chef-IA en /marketplace/chef-ia.
 
 REGLAS:
@@ -57,20 +58,27 @@ REGLAS:
 - NUNCA pidas datos sensibles (CVV, passwords, DNI completo).`;
 
 export async function POST(req: NextRequest) {
-  // SECURITY/CRITICAL 2026-05-06 (audit AI #3): rate limit + cost guard.
-  // Antes anónimo + sin cap → atacante con script quemaba ~$70/día Anthropic.
+  // SECURITY 2026-05-12 (H3 audit AI): bucket cost por IP en lugar de global.
+  // Antes "__public_assistant__" era global → 1 atacante quemaba el budget de
+  // TODOS los usuarios anónimos. Ahora cada IP tiene su propio cap mensual.
   const { applyRateLimit } = await import("@/lib/rate-limit");
   const rl = applyRateLimit(req, "STRICT", "buleje-assistant");
   if (rl) return rl;
   const { aiCostGuard } = await import("@/lib/ai/cost-control");
   const ESTIMATED_COST_USD = 0.0008;
-  if (!await aiCostGuard.canSpend("__public_assistant__", ESTIMATED_COST_USD, "free")) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const bucketKey = `__public_assistant__:${ip}`;
+  if (!await aiCostGuard.canSpend(bucketKey, ESTIMATED_COST_USD, "free")) {
     return NextResponse.json(
       { error: "AI quota exceeded. Try again later." },
       { status: 429 },
     );
   }
-  aiCostGuard.recordSpend("__public_assistant__", ESTIMATED_COST_USD);
+  // SECURITY 2026-05-12 (audit code-reviewer P1): await + catch para que
+  // si la función falla, no se quede el gasto sin registrar.
+  aiCostGuard.recordSpend(bucketKey, ESTIMATED_COST_USD).catch((err) =>
+    logger.warn("[buleje-assistant] recordSpend failed", { err: String(err) }),
+  );
 
   let body: unknown;
   try {
@@ -94,7 +102,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "El asistente esta en configuracion. Por ahora escribinos a WhatsApp +51 916 409 675.",
+          "El asistente esta en configuracion. Por ahora escribinos a WhatsApp +51 929 340 532.",
       },
       { status: 503 },
     );

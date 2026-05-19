@@ -155,9 +155,9 @@ export default function DemandPredictionTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Brain className="h-6 w-6 text-primary" />Predicción de Demanda (IA)</SectionTitle>
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Brain className="h-6 w-6 text-primary" />Predicción de Demanda (IA)</SectionTitle>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm">
+          <select value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm">
             <option value="7">Próximos 7 días</option>
             <option value="14">Próximos 14 días</option>
             <option value="30">Próximos 30 días</option>
@@ -171,9 +171,9 @@ export default function DemandPredictionTab() {
       {error && <div className="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 text-sm text-[var(--data-error-500)]">{error}</div>}
 
       {/* Stock Alerts Section */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <CardTitle className="font-extrabold text-lg text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <CardTitle className="font-extrabold text-lg text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
             Alertas de Stock
           </CardTitle>
@@ -228,7 +228,7 @@ export default function DemandPredictionTab() {
                   )}
                   
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">
+                    <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                       {alert.product.name}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-[var(--text-secondary)] dark:text-muted">
@@ -265,7 +265,7 @@ export default function DemandPredictionTab() {
 
       {/* AI Prediction Section */}
       <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
-        <CardTitle className="font-extrabold text-lg text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-4">
+        <CardTitle className="font-extrabold text-lg text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4">
           <Brain className="h-5 w-5 text-primary" />
           Predicción con Inteligencia Artificial
         </CardTitle>
@@ -284,13 +284,13 @@ export default function DemandPredictionTab() {
 
       {prediction && (
         <div className="space-y-3 sm:space-y-6">
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
-            <p className="text-sm text-[var(--text-primary)] dark:text-foreground leading-relaxed">{prediction.summary}</p>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+            <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-relaxed">{prediction.summary}</p>
           </div>
 
           {prediction.prediction?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
-              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><TrendingUp className="h-4 w-4 text-primary" />Demanda Estimada</CardTitle>
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><TrendingUp className="h-4 w-4 text-primary" />Demanda Estimada</CardTitle>
               <div className="space-y-2">
                 {prediction.prediction.map((p, i) => (
                   <div key={i} className="flex flex-wrap items-center gap-3 text-sm">
@@ -304,8 +304,8 @@ export default function DemandPredictionTab() {
           )}
 
           {prediction.peakDays?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
-              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><Calendar className="h-4 w-4 text-primary" />Días Pico</CardTitle>
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-3"><Calendar className="h-4 w-4 text-primary" />Días Pico</CardTitle>
               <div className="flex flex-wrap gap-2">
                 {prediction.peakDays.map((d, i) => (
                   <span key={i} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-bold">{d}</span>
@@ -315,8 +315,8 @@ export default function DemandPredictionTab() {
           )}
 
           {prediction.purchaseSuggestions?.length > 0 && (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
-              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><ShoppingCart className="h-4 w-4 text-primary" />Sugerencias de Compra</CardTitle>
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-3"><ShoppingCart className="h-4 w-4 text-primary" />Sugerencias de Compra</CardTitle>
               <ul className="space-y-1">
                 {prediction.purchaseSuggestions.map((s, i) => (
                   <li key={i} className="text-sm text-[var(--text-secondary)] dark:text-muted flex flex-wrap items-start gap-2">

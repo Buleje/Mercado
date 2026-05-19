@@ -88,27 +88,27 @@ function TrialExpiredScreen() {
         <div className="mt-10 grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
           <PlanCard
             name="Pro"
-            price="S/ 99"
+            price="S/ 179"
             period="/mes"
-            tagline="Para bodegas en crecimiento"
+            tagline="Sweet spot: bodega establecida que ya vende online"
             features={[
-              "Hasta 500 productos",
-              "Pedidos ilimitados",
-              "Marketplace Buleje",
-              "Soporte por WhatsApp",
+              "Productos ilimitados · 2 sucursales · 5 admins",
+              "SUNAT facturacion + cotizaciones",
+              "Promociones, fidelizacion y chat",
+              "Marketplace destacado",
             ]}
             highlighted
           />
           <PlanCard
             name="Business"
-            price="S/ 249"
+            price="S/ 349"
             period="/mes"
-            tagline="Para negocios establecidos"
+            tagline="Cadenas, productores y mayoristas · sin limites"
             features={[
-              "Productos ilimitados",
-              "POS + Multi-almacén",
-              "Reportes avanzados + IA",
-              "Soporte prioritario",
+              "Sucursales y admins ilimitados",
+              "Forecasting IA + sugerencias",
+              "Lives streaming + ventas en vivo",
+              "Soporte 24/7 con account manager",
             ]}
           />
         </div>
@@ -123,7 +123,7 @@ function TrialExpiredScreen() {
             <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
           </Link>
           <a
-            href="https://wa.me/51916409675?text=Hola+Buleje%2C+mi+trial+termin%C3%B3+y+quiero+activar+un+plan"
+            href="https://wa.me/51929340532?text=Hola+Buleje%2C+mi+trial+termin%C3%B3+y+quiero+activar+un+plan"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-strong)] bg-[var(--surface-raised)] px-6 py-3 text-sm font-bold text-[var(--text-primary)] transition-all hover:bg-[var(--surface-sunken)]"
@@ -163,7 +163,7 @@ function PlanCard({
       <CardTitle>{name}</CardTitle>
       <p className="mt-1 text-xs font-semibold text-[var(--text-tertiary)]">{tagline}</p>
       <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-3xl font-black text-[var(--text-primary)]">{price}</span>
+        <span className="text-3xl font-extrabold text-[var(--text-primary)]">{price}</span>
         <span className="text-sm font-semibold text-[var(--text-tertiary)]">{period}</span>
       </div>
       <ul className="mt-4 space-y-2">

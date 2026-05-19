@@ -1,21 +1,28 @@
 "use client";
 
 /**
- * ExplorarHeroSearch — hero superior de /explorar con search XL + chips.
+ * ExplorarHeroSearch — Hero unificado del marketplace.
  *
- * Patron Amazon/MercadoLibre adaptado a identidad Buleje:
- *   - Kicker editorial uppercase + accent dot
- *   - H1 black + tracking-tight con highlight (underline accent)
- *   - Search box gigante con icon + voz (mock)
- *   - Chips de busquedas populares horizontales
- *   - Trust strip: 3 mini stats (envios, bodegas, satisfaccion)
- *
- * Sin colores hardcoded — solo tokens. Sin emojis.
+ * Combina en una sola sección: identidad (kicker + title + sub),
+ * búsqueda XL funcional, chips populares, 4 stats minimal y
+ * atajos a destinos. Sin saturación — accent solo donde cuenta.
  */
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Mic, Sparkles, Truck, Store, Star } from "@buleje/design-system/icons";
+import {
+  Search,
+  Mic,
+  Compass,
+  Store,
+  Percent,
+  Lightbulb,
+  Bot,
+  ChevronRight,
+  Sparkles,
+  ArrowDown,
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const POPULAR_CHIPS: Array<{ label: string; q: string }> = [
@@ -25,17 +32,22 @@ const POPULAR_CHIPS: Array<{ label: string; q: string }> = [
   { label: "Leche Gloria", q: "leche gloria" },
   { label: "Detergente", q: "detergente" },
   { label: "Coca Cola", q: "coca cola" },
-  { label: "Pan del dia", q: "pan" },
+  { label: "Pan del día", q: "pan" },
   { label: "Cerveza", q: "cerveza" },
 ];
 
-// Mayo 2026: claims cuantitativos falsos ("120+ Bodegas verificadas",
-// "25 min entrega promedio", "4.8/5 calificación") reemplazados por
-// proof points cualitativos honestos mientras crecemos.
-const TRUST_STATS: Array<{ Icon: typeof Truck; value: string; label: string }> = [
-  { Icon: Truck, value: "Yape · Plin", label: "o efectivo al recibir" },
-  { Icon: Store, value: "Pucallpa", label: "Bodegas de tu zona" },
-  { Icon: Star, value: "Soporte 1-a-1", label: "Por WhatsApp" },
+const STATS = [
+  { value: "200+", label: "Bodegas" },
+  { value: "5.4k", label: "Vecinos" },
+  { value: "25min", label: "Entrega" },
+  { value: "24/7", label: "Soporte" },
+];
+
+const QUICK_DESTINATIONS = [
+  { href: "/marketplace", icon: Store, label: "Bodegas" },
+  { href: "/marketplace/ofertas", icon: Percent, label: "Ofertas" },
+  { href: "/recetas", icon: Lightbulb, label: "Recetas" },
+  { href: "/asistente", icon: Bot, label: "IA" },
 ];
 
 export default function ExplorarHeroSearch() {
@@ -64,94 +76,102 @@ export default function ExplorarHeroSearch() {
 
   return (
     <section
-      aria-label="Hero de busqueda"
+      aria-label="Hero de búsqueda"
       className="relative w-full overflow-hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]"
     >
-      {/* Decorative blobs accent (subtle) */}
+      {/* Decorative dots pattern — textura sutil */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+        className="pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.08]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, currentColor 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+
+      {/* Soft accent glow — un solo color diluido */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -right-32 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-40 -left-32 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
+        className="pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
       />
 
-      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
-        <div className="max-w-3xl">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
-            <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Hub de descubrimiento
-          </p>
+      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+        {/* ── Eyebrow ───────────────────────────────────────── */}
+        <p className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] mb-6 shadow-sm">
+          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+          <Compass className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2} />
+          Hub de descubrimiento
+        </p>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[0.95]">
-            Encuentra lo que necesitas,{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10">en un toque.</span>
-              <span
-                aria-hidden
-                className="absolute left-0 right-0 bottom-1 sm:bottom-2 h-3 sm:h-4 bg-[var(--accent)]/20 -z-0"
-              />
-            </span>
-          </h1>
+        {/* ── Title + sub ───────────────────────────────────── */}
+        <h1 className="font-display font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.9] text-[clamp(3rem,9vw,6.5rem)] max-w-4xl">
+          Todo Pucallpa,{" "}
+          <span className="text-[var(--accent)]">en un toque.</span>
+        </h1>
 
-          <p className="mt-4 sm:mt-6 text-base sm:text-lg lg:text-xl text-[var(--text-secondary)] leading-relaxed max-w-2xl">
-            Miles de productos de las bodegas mas cercanas a tu casa. Pucallpa entera, en tu celular.
-          </p>
+        <p className="mt-5 sm:mt-7 text-lg sm:text-xl lg:text-2xl text-[var(--text-secondary)] leading-snug max-w-2xl font-semibold">
+          El menú visual de tu marketplace. Acá no comprás —{" "}
+          <strong className="text-[var(--text-primary)] font-extrabold">descubrís</strong> qué
+          tiene Buleje y elegís dónde entrar a comprar.
+        </p>
 
-          {/* Search XL */}
-          <form
-            onSubmit={submit}
-            className={cn(
-              "mt-8 flex items-stretch gap-2 rounded-2xl border-2 transition-all duration-200",
-              "bg-[var(--surface-raised)]",
-              focused
-                ? "border-[var(--accent)] shadow-[0_0_0_4px_rgba(var(--accent-rgb,16_185_129)/0.12)]"
-                : "border-[var(--rule-base)] hover:border-[var(--rule-mid)]",
-            )}
+        {/* ── Search XL ─────────────────────────────────────── */}
+        <form
+          onSubmit={submit}
+          className={cn(
+            "mt-8 sm:mt-10 flex items-stretch gap-2 rounded-2xl border-2 transition-all duration-[var(--dur-fast)] max-w-3xl",
+            "bg-[var(--surface-raised)]",
+            focused
+              ? "border-[var(--accent)] shadow-[0_0_0_4px_rgba(0,180,166,0.10)]"
+              : "border-[var(--rule-base)] hover:border-[var(--rule-mid,var(--rule-base))]",
+          )}
+        >
+          <span className="pl-5 flex items-center text-[var(--text-tertiary)]">
+            <Search className="h-5 w-5" strokeWidth={2} aria-hidden />
+          </span>
+          <input
+            ref={inputRef}
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            placeholder="Buscá productos, marcas, bodegas…"
+            aria-label="Buscar en el marketplace"
+            className="flex-1 bg-transparent border-0 outline-none px-3 py-4 sm:py-5 text-base sm:text-lg text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] min-w-0"
+          />
+          <button
+            type="button"
+            aria-label="Buscar por voz"
+            className="hidden sm:inline-flex items-center justify-center w-12 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
           >
-            <span className="pl-5 flex items-center text-[var(--text-tertiary)]">
-              <Search className="h-5 w-5" strokeWidth={2} aria-hidden />
-            </span>
-            <input
-              ref={inputRef}
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              placeholder="Busca productos, marcas, bodegas..."
-              aria-label="Buscar en el marketplace"
-              className="flex-1 bg-transparent border-0 outline-none px-3 py-4 sm:py-5 text-base sm:text-lg text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] min-w-0"
-            />
-            <button
-              type="button"
-              aria-label="Buscar por voz"
-              className="hidden sm:inline-flex items-center justify-center w-12 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-            >
-              <Mic className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-            </button>
-            <button
-              type="submit"
-              className="rounded-xl m-1.5 px-5 sm:px-7 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm sm:text-base font-bold hover:bg-[var(--accent)] hover:text-[var(--surface-canvas)] transition-colors"
-            >
-              Buscar
-            </button>
-          </form>
+            <Mic className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+          </button>
+          <button
+            type="submit"
+            className="rounded-xl m-1.5 px-6 sm:px-8 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base sm:text-lg font-extrabold uppercase tracking-wider hover:bg-[var(--accent)] transition-colors"
+          >
+            Buscar
+          </button>
+        </form>
 
-          {/* Keyboard hint */}
-          <p className="mt-3 text-sm text-[var(--text-tertiary)] hidden sm:flex items-center gap-1.5">
+        {/* ── Keyboard hint + Popular chips ─────────────────── */}
+        <div className="mt-4 max-w-3xl">
+          <p className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
             Tip: presioná{" "}
-            <kbd className="inline-flex items-center justify-center h-6 px-2 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] font-mono text-xs font-bold text-[var(--text-secondary)]">
+            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
               /
             </kbd>{" "}
             para buscar desde cualquier parte
           </p>
-
-          {/* Popular chips — tamaño legible */}
-          <div className="mt-7 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-1">
-              Populares
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
+            <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mr-1">
+              Popular:
             </span>
             {POPULAR_CHIPS.map((chip) => (
               <button
@@ -160,7 +180,7 @@ export default function ExplorarHeroSearch() {
                 onClick={() =>
                   router.push(`/marketplace?vista=catalogo&q=${encodeURIComponent(chip.q)}`)
                 }
-                className="inline-flex items-center px-3.5 py-1.5 rounded-full text-sm font-semibold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors shadow-sm"
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--surface-raised)] transition-colors"
               >
                 {chip.label}
               </button>
@@ -168,28 +188,71 @@ export default function ExplorarHeroSearch() {
           </div>
         </div>
 
-        {/* Trust strip — más prominente */}
-        <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl">
-          {TRUST_STATS.map(({ Icon, value, label }) => (
-            <div
-              key={label}
-              className="flex items-center gap-3.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]/80 backdrop-blur-sm px-4 py-3.5 transition-all duration-300 hover:border-[var(--accent)]/40 hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
-            >
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
-                <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <p className="text-lg font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-                  {value}
+        {/* ── Stats + Quick destinations — split row ────────── */}
+        <div className="mt-10 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 lg:gap-10 items-center">
+          {/* 4 stats inline minimal */}
+          <div className="grid grid-cols-4 gap-3 sm:gap-6">
+            {STATS.map((s) => (
+              <div key={s.label} className="text-center sm:text-left group cursor-default">
+                <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none transition-colors group-hover:text-[var(--accent)]">
+                  {s.value}
                 </p>
-                <p className="text-xs font-semibold text-[var(--text-tertiary)] leading-tight">
-                  {label}
+                <p className="mt-1.5 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  {s.label}
                 </p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Quick destinations */}
+          <div className="flex flex-wrap gap-1.5 lg:justify-end">
+            <span className="inline-flex items-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mr-1">
+              Ir directo:
+            </span>
+            {QUICK_DESTINATIONS.map((q) => {
+              const Icon = q.icon;
+              return (
+                <Link
+                  key={q.href}
+                  href={q.href}
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  <Icon
+                    className="h-3.5 w-3.5 text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]"
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                  {q.label}
+                  <ChevronRight
+                    className="h-3 w-3 transition-transform group-hover:translate-x-0.5"
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Scroll cue ────────────────────────────────────── */}
+        <div className="mt-12 sm:mt-16 flex flex-col items-center gap-2">
+          <div className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            <Sparkles className="h-3 w-3 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+            8 destinos · una pantalla
+          </div>
+          <ArrowDown
+            className="h-4 w-4 text-[var(--text-tertiary)] animate-bounce"
+            strokeWidth={2}
+            aria-hidden
+          />
         </div>
       </div>
+
+      {/* Bottom fade */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-b from-transparent to-[var(--surface-canvas)]"
+      />
     </section>
   );
 }

@@ -64,20 +64,20 @@ export default function AboutBlock(props: Partial<AboutBlockProps>) {
             <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-6">
               {badge}
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] leading-tight mb-6">
               {title}
               <br />
               <span className="text-primary">{titleAccent}</span>
             </h2>
             
             {description1 && (
-              <p className="text-lg text-foreground/70 leading-relaxed mb-6">
+              <p className="text-lg text-[var(--text-primary)]/70 leading-relaxed mb-6">
                 {description1}
               </p>
             )}
             
             {description2 && (
-              <p className="text-lg text-foreground/70 leading-relaxed mb-8">
+              <p className="text-lg text-[var(--text-primary)]/70 leading-relaxed mb-8">
                 {description2}
               </p>
             )}
@@ -86,7 +86,7 @@ export default function AboutBlock(props: Partial<AboutBlockProps>) {
               {badges.map((badgeText, i) => (
                 <div key={i} className="flex items-center gap-2 bg-muted rounded-full px-5 py-2.5">
                   <div className="h-2 w-2 rounded-full bg-primary" />
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-sm font-medium text-[var(--text-primary)]">
                     {badgeText}
                   </span>
                 </div>
@@ -99,7 +99,7 @@ export default function AboutBlock(props: Partial<AboutBlockProps>) {
             {/* Store Photo */}
             {image && (
               <div className="relative mb-10">
-                <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-2xl">
+                <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-[var(--shadow-xl)]">
                   <Image
                     src={image}
                     alt={imageAlt}
@@ -126,10 +126,10 @@ export default function AboutBlock(props: Partial<AboutBlockProps>) {
                       className="rounded-2xl bg-muted p-5 text-center hover:shadow-md transition-shadow"
                     >
                       <Icon className="h-6 w-6 text-primary mx-auto mb-2" />
-                      <p className="text-2xl font-bold text-foreground">
+                      <p className="text-2xl font-bold text-[var(--text-primary)]">
                         {stat.value}
                       </p>
-                      <p className="text-xs text-foreground/60 mt-1">
+                      <p className="text-xs text-[var(--text-primary)]/60 mt-1">
                         {stat.label}
                       </p>
                     </div>

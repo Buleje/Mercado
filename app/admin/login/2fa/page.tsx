@@ -144,8 +144,8 @@ export default function TwoFactorPage() {
               }
               className={[
                 "w-full h-14 pl-10 pr-4 rounded-xl border-2 text-center text-2xl font-bold",
-                "tracking-[0.4em] bg-[var(--surface-canvas)] text-[var(--text-primary)]",
-                "placeholder:text-[var(--text-tertiary)] placeholder:tracking-[0.4em]",
+                "tracking-wider bg-[var(--surface-canvas)] text-[var(--text-primary)]",
+                "placeholder:text-[var(--text-tertiary)] placeholder:tracking-wider",
                 "outline-none transition-all",
                 error
                   ? "border-[var(--data-error-500)] focus:ring-4 focus:ring-[var(--data-error-500)]/15"
@@ -209,7 +209,7 @@ export default function TwoFactorPage() {
         <p className="text-xs text-[var(--text-tertiary)] text-center">
           ¿Perdiste acceso a tu app?{" "}
           <a
-            href="https://wa.me/51916409675?text=Perd%C3%AD%20acceso%20a%20mi%20app%202FA%20de%20Buleje"
+            href="https://wa.me/51929340532?text=Perd%C3%AD%20acceso%20a%20mi%20app%202FA%20de%20Buleje"
             target="_blank"
             rel="noopener noreferrer"
             className="font-bold text-[var(--accent)] hover:underline"

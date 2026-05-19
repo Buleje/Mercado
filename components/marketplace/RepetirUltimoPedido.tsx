@@ -2,24 +2,57 @@
 
 /**
  * RepetirUltimoPedido — Hero card que aparece arriba en /tiendas si el
- * cliente tiene un pedido reciente. Reduce fricción: en 1 click vuelve a
- * la tienda con `?repeat=orderId` para repetir la compra.
+ * cliente tiene un pedido reciente.
+ *
+ * Brandon, mayo 14 2026: el card ya no navega directamente. Al tocarlo abre
+ * un modal con los items del pedido anterior — el cliente marca/desmarca lo
+ * que quiere y los agrega al carrito de un saque. Si los items del pedido
+ * no estan guardados (pedidos viejos), fallback: navegamos al storefront
+ * con ?repeat=orderId para que el flujo cliente-server resuelva.
  *
  * Storage: lee `buleje:last-order` de localStorage (escrito post-checkout
  * por el flujo de carrito). Sin schema. Helper `setLastOrder(...)` exportado
- * para que checkout lo grabe.
+ * para que checkout lo grabe — recomendado guardar items completos para
+ * que el modal funcione sin un round trip.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { Repeat, ArrowRight, Clock } from "lucide-react";
+import Image from "next/image";
+import { AnimatePresence, m as motion } from "framer-motion";
+import {
+  Repeat,
+  ArrowRight,
+  Clock,
+  X,
+  Check,
+  ShoppingCart,
+  Store as StoreIcon,
+} from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 
-interface LastOrder {
+export interface LastOrderItem {
+  /** ID numérico del producto en DB (requerido para addItem). */
+  productId?: number;
+  /** ID del StoreProduct (la unidad del catálogo de la tienda). */
+  storeProductId?: string;
+  name: string;
+  imageUrl?: string | null;
+  unit?: string | null;
+  price?: number;
+  quantity?: number;
+  category?: string | null;
+}
+
+export interface LastOrder {
   orderId: string;
+  storeId?: string;
   storeSlug: string;
   storeName: string;
   total: number;
   itemsCount: number;
+  items?: LastOrderItem[];
   ts: number;
 }
 
@@ -46,6 +79,8 @@ function timeAgo(ts: number): string {
 export default function RepetirUltimoPedido() {
   const [order, setOrder] = useState<LastOrder | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const { addItem } = useMarketplaceCart();
 
   useEffect(() => {
     setHydrated(true);
@@ -67,41 +102,302 @@ export default function RepetirUltimoPedido() {
 
   if (!hydrated || !order) return null;
 
+  // Items utiles: los que tienen los campos minimos para addItem.
+  const validItems = (order.items ?? []).filter(
+    (i) => typeof i.productId === "number" && typeof i.price === "number",
+  );
+  const hasUsableItems = validItems.length > 0;
+
   return (
-    <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-      <Link
-        href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
-        className="group flex items-center gap-4 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4 sm:p-5 hover:border-[var(--accent)] hover:shadow-md transition-all"
-      >
-        <div className="shrink-0 inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-sm">
-          <Repeat className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-            Tu último pedido
-          </p>
-          <p className="text-base sm:text-lg font-black text-[var(--text-primary)] truncate">
-            Repetí tu compra de {order.storeName}
-          </p>
-          <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)] flex-wrap">
-            <span className="font-bold tabular-nums">{fmtCurrency(order.total)}</span>
-            <span aria-hidden>·</span>
-            <span>{order.itemsCount} {order.itemsCount === 1 ? "item" : "items"}</span>
-            <span aria-hidden>·</span>
-            <span className="inline-flex items-center gap-1">
-              <Clock className="h-3 w-3" strokeWidth={2} />
-              {timeAgo(order.ts)}
+    <>
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {hasUsableItems ? (
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="group w-full flex items-center gap-4 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4 sm:p-5 hover:border-[var(--accent)] hover:shadow-md transition-all text-left"
+          >
+            <RepetirCardBody order={order} />
+            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-sm font-bold group-hover:gap-2 transition-all">
+              Repetir
+              <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
             </span>
-          </div>
-        </div>
-        <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-sm font-bold group-hover:gap-2 transition-all">
-          Repetir
-          <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
-        </span>
-      </Link>
-    </section>
+          </button>
+        ) : (
+          <Link
+            href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
+            className="group flex items-center gap-4 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4 sm:p-5 hover:border-[var(--accent)] hover:shadow-md transition-all"
+          >
+            <RepetirCardBody order={order} />
+            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-sm font-bold group-hover:gap-2 transition-all">
+              Repetir
+              <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+          </Link>
+        )}
+      </section>
+
+      <RepetirPedidoModal
+        open={modalOpen}
+        order={order}
+        items={validItems}
+        onClose={() => setModalOpen(false)}
+        onConfirm={(selected) => {
+          for (const it of selected) {
+            if (typeof it.productId !== "number" || typeof it.price !== "number") continue;
+            addItem({
+              productId: it.productId,
+              storeProductId: it.storeProductId ?? `${order.storeId ?? order.storeSlug}-${it.productId}`,
+              name: it.name,
+              price: it.price,
+              image: it.imageUrl ?? null,
+              unit: it.unit ?? null,
+              storeId: order.storeId ?? order.storeSlug,
+              storeName: order.storeName,
+              storeSlug: order.storeSlug,
+              quantity: it.quantity ?? 1,
+              category: it.category ?? null,
+            });
+          }
+          setModalOpen(false);
+        }}
+      />
+    </>
   );
 }
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function RepetirCardBody({ order }: { order: LastOrder }) {
+  return (
+    <>
+      <div className="shrink-0 inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-sm">
+        <Repeat className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+          Tu último pedido
+        </p>
+        <p className="text-base sm:text-lg font-black text-[var(--text-primary)] truncate">
+          Repetí tu compra de {order.storeName}
+        </p>
+        <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)] flex-wrap">
+          <span className="font-bold tabular-nums">{fmtCurrency(order.total)}</span>
+          <span aria-hidden>·</span>
+          <span>{order.itemsCount} {order.itemsCount === 1 ? "item" : "items"}</span>
+          <span aria-hidden>·</span>
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3" strokeWidth={2} />
+            {timeAgo(order.ts)}
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function RepetirPedidoModal({
+  open,
+  order,
+  items,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  order: LastOrder;
+  items: LastOrderItem[];
+  onClose: () => void;
+  onConfirm: (selected: LastOrderItem[]) => void;
+}) {
+  // Por default todos seleccionados. Brandon mayo 14: el cliente entra a
+  // "Repetir" y quita los items que ya no quiere.
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (open) {
+      const next = new Set<string>();
+      items.forEach((it, i) => next.add(itemKey(it, i)));
+      setSelectedKeys(next);
+    }
+  }, [open, items]);
+
+  const toggle = useCallback((key: string) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const selectedItems = useMemo(
+    () => items.filter((it, i) => selectedKeys.has(itemKey(it, i))),
+    [items, selectedKeys],
+  );
+
+  const totalSelected = selectedItems.reduce(
+    (acc, it) => acc + (it.price ?? 0) * (it.quantity ?? 1),
+    0,
+  );
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="repetir-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 flex items-end sm:items-center justify-center sm:p-6 backdrop-blur-md bg-slate-950/65"
+          style={{ zIndex: 2147483647 }}
+          onClick={onClose}
+        >
+          <motion.div
+            key="repetir-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Repetir último pedido"
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 340, damping: 30 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full sm:max-w-lg max-h-[92svh] flex flex-col rounded-t-3xl sm:rounded-[28px] bg-[var(--surface-raised)] overflow-hidden"
+            style={{ boxShadow: "0 30px 70px -15px rgba(0,0,0,0.45)" }}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 px-5 sm:px-6 py-4 sm:py-5 border-b border-[var(--rule-soft)] bg-linear-to-b from-[var(--accent-soft)]/40 to-transparent">
+              <div className="flex items-start gap-3 min-w-0">
+                <span className="h-11 w-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)]">
+                  <Repeat className="h-5 w-5" strokeWidth={2.25} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] leading-tight">
+                    Repetir pedido
+                  </p>
+                  <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight truncate">
+                    {order.storeName}
+                  </h3>
+                  <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-snug">
+                    {items.length} items · {timeAgo(order.ts)}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Cerrar"
+                className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] text-[var(--text-primary)] transition-colors"
+              >
+                <X className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            </div>
+
+            {/* Body: lista items con check */}
+            <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-3">
+              <ul className="space-y-2">
+                {items.map((it, i) => {
+                  const key = itemKey(it, i);
+                  const selected = selectedKeys.has(key);
+                  const lineTotal = (it.price ?? 0) * (it.quantity ?? 1);
+                  return (
+                    <li key={key}>
+                      <button
+                        type="button"
+                        onClick={() => toggle(key)}
+                        aria-pressed={selected}
+                        className={cn(
+                          "w-full flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-all",
+                          selected
+                            ? "border-[var(--accent)] bg-[var(--accent-soft)]/60 shadow-[0_4px_16px_-8px_var(--accent)]"
+                            : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40 opacity-70",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
+                            selected
+                              ? "border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white"
+                              : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
+                          )}
+                          aria-hidden
+                        >
+                          {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                        </span>
+                        <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] grid place-items-center">
+                          {it.imageUrl ? (
+                            <Image
+                              src={it.imageUrl}
+                              alt={it.name}
+                              width={56}
+                              height={56}
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <StoreIcon className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] line-clamp-2">
+                            {it.name}
+                          </p>
+                          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
+                            {it.quantity ?? 1} × {fmtCurrency(it.price ?? 0)}
+                            {it.unit ? ` · ${it.unit}` : ""}
+                          </p>
+                        </div>
+                        <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)] shrink-0">
+                          {fmtCurrency(lineTotal)}
+                        </p>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {selectedKeys.size === 0 && (
+                <p className="mt-3 text-center text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                  Marcá al menos un producto para agregar al carrito.
+                </p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 sm:px-6 py-3.5 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+                  {selectedItems.length} de {items.length} seleccionados
+                </p>
+                <p className="text-base font-black tabular-nums text-[var(--text-primary)] leading-tight">
+                  {fmtCurrency(totalSelected)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onConfirm(selectedItems)}
+                disabled={selectedItems.length === 0}
+                className={cn(
+                  "inline-flex items-center justify-center gap-2 rounded-full h-12 px-5 text-sm font-extrabold text-white transition-all shrink-0",
+                  "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] hover:brightness-110 shadow-[0_8px_20px_-8px_var(--accent)]",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                )}
+              >
+                <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />
+                Agregar al carrito
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function itemKey(it: LastOrderItem, i: number): string {
+  return `${it.productId ?? "no"}-${it.storeProductId ?? i}-${i}`;
+}
+
+// ─── Public helpers ──────────────────────────────────────────────────────────
 
 /**
  * Helper para que el flujo de checkout grabe el último pedido.

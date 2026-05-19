@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, tryAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { invalidateByPrefix } from "@/lib/cache";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 
@@ -32,7 +33,7 @@ export async function GET(
   // que un admin lea SEO de OTRO tenant inyectando header. Anónimos siguen
   // dependiendo del header (proxy lo setea desde subdominio).
   const session = await tryAdmin(req);
-  const tenantId = session?.tenantId ?? req.headers.get("x-tenant-id") ?? "main";
+  const tenantId = session?.tenantId ?? resolveMarketplaceTenant(req, { context: "marketplace/products/seo" });
 
   const product = await prisma.product.findFirst({
     where: { id: productId, tenantId, deletedAt: null },

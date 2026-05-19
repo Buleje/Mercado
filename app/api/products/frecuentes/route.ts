@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit")) || 8, 20);
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId;
 
   try {
     const startOfToday = new Date();

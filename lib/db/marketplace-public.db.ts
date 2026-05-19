@@ -13,6 +13,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
+import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -84,9 +85,62 @@ export type DbOrderAggregate = {
   _sum: { total: number };
 };
 
+export type DbStoreLocation = {
+  slug: string;
+  name: string;
+  lat: number | null;
+  lng: number | null;
+  zone: string | null;
+  logo: string | null;
+};
+
 // ── MarketplacePublicDB ───────────────────────────────────────────────────────
 
 export const MarketplacePublicDB = {
+
+  /**
+   * Devuelve la ubicación pública (lat/lng/zone/logo) de un conjunto de
+   * tiendas por slug. Se usa para pintar los markers de "origen" en el
+   * mapa del modal de pedido confirmado.
+   *
+   * @cross-tenant intentional (ADR-082) — el marketplace agrega tiendas de
+   * todos los tenants. Sólo expone tiendas con `isPublished: true`.
+   * Cache: 300s por slug (la ubicación de una tienda casi nunca cambia).
+   */
+  async getStoreLocationsBySlugs(slugs: string[]): Promise<DbStoreLocation[]> {
+    const safe = slugs
+      .filter((s): s is string => typeof s === "string" && /^[a-z0-9-]{2,64}$/.test(s))
+      .slice(0, 10);
+    if (safe.length === 0) return [];
+    const results = await Promise.all(
+      safe.map((slug) =>
+        getOrSet<DbStoreLocation | null>(`marketplace:store-location:${slug}:v1`, 300, async () => {
+          const store = await prisma.store.findUnique({
+            where: { slug },
+            select: {
+              slug: true,
+              name: true,
+              lat: true,
+              lng: true,
+              zone: true,
+              logo: true,
+              isPublished: true,
+            },
+          });
+          if (!store || !store.isPublished) return null;
+          return {
+            slug: store.slug,
+            name: store.name,
+            lat: store.lat ?? null,
+            lng: store.lng ?? null,
+            zone: store.zone ?? null,
+            logo: store.logo ?? null,
+          };
+        }),
+      ),
+    );
+    return results.filter((s): s is DbStoreLocation => s !== null);
+  },
 
   /**
    * Devuelve un producto público del marketplace por ID.
@@ -548,10 +602,8 @@ export const MarketplacePublicDB = {
    */
   async resolveTenantIdBySlug(slugOrId: string): Promise<string | null> {
     return getOrSet(`marketplace:resolve-tenant:${slugOrId}`, 300, async () => {
-      const tenant = await prisma.tenant.findFirst({
-        where: { OR: [{ id: slugOrId }, { slug: slugOrId }] },
-        select: { id: true },
-      });
+      // Brandon 2026-05-16 (Fase 3): helper memoizado con React.cache.
+      const tenant = await findTenantByIdOrSlug(slugOrId);
       return tenant?.id ?? null;
     });
   },
@@ -584,6 +636,10 @@ export const MarketplacePublicDB = {
     // Round 7 fix: cache key estable. El bucket `Math.floor(now/120_000)` mezclado
     // con TTL 120s generaba una key nueva por bucket sin desalojar la anterior →
     // memory leak en getOrSet. El TTL solo ya garantiza refresh cada 120s.
+    //
+    // @cross-tenant intentional — agrega ventas de TODOS los tenants para el
+    // feed "Top del día" del marketplace global. NO incluye tenantId en la key
+    // a propósito (audit P1-2 fix 2026-05-11). Ver ADR-082.
     const cacheKey = `marketplace:top-today:v1:${limit}`;
 
     return getOrSet(cacheKey, 120, async () => {
@@ -838,6 +894,9 @@ export const MarketplacePublicDB = {
     activeStores: number;
     avgDeliveryMin: number;
   }> {
+    // @cross-tenant intentional — KPIs públicos del marketplace global
+    // (órdenes today, shoppers, stores activos). Sin tenantId en la key
+    // a propósito (audit P1-2 fix 2026-05-11). Ver ADR-082.
     return getOrSet("marketplace:live-stats:v2", 60, async () => {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
       // Round 21 P0-1 fix (Bug Hunter): KPIs públicos contaban órdenes POS
@@ -873,6 +932,12 @@ export const MarketplacePublicDB = {
   /**
    * Catálogo unificado paginado con cursor.
    * @cross-tenant intentional (ADR-082) — agrega storeProducts de todos los stores publicados.
+   *
+   * audit P0 #5 (Brandon 2026-05-18): cache `getOrSet` con TTL 60s.
+   * Antes cada hit golpeaba la DB. Hot-path del marketplace. Key se
+   * deriva de opts (sin user-data) — seguro para cross-tenant porque
+   * el query ya filtra publicado/activo. Coincide con `Cache-Control`
+   * del route (`max-age=60`).
    */
   async getCatalogPage(opts: {
     q?: string;
@@ -885,58 +950,75 @@ export const MarketplacePublicDB = {
     cursor?: string;
     limit: number;
   }) {
-    const orderBy =
-      opts.sort === "price_desc"
-        ? { retailPrice: "desc" as const }
-        : opts.sort === "price_asc"
-          ? { retailPrice: "asc" as const }
-          : opts.sort === "newest"
-            ? { id: "desc" as const }
-            : { store: { rating: "desc" as const } };
+    // Cache key estable y compacta: solo campos que afectan la query.
+    const cacheKey =
+      "marketplace:catalog:" +
+      [
+        opts.q ?? "",
+        opts.category ?? "",
+        opts.storeSlug ?? "",
+        opts.zone ?? "",
+        opts.minPrice ?? "",
+        opts.maxPrice ?? "",
+        opts.sort,
+        opts.cursor ?? "",
+        opts.limit,
+      ].join("|");
 
-    const where = {
-      isActive: true,
-      store: {
-        isPublished: true,
-        vacationMode: { not: true },
-        tenant: { active: true },
-        ...(opts.zone && { zone: opts.zone }),
-        ...(opts.storeSlug && { slug: opts.storeSlug }),
-      },
-      ...(opts.q && {
-        product: { name: { contains: opts.q, mode: "insensitive" as const } },
-      }),
-      ...(opts.category &&
-        opts.category !== "todos" && {
-          product: {
-            ...((opts.q && { name: { contains: opts.q, mode: "insensitive" as const } }) || {}),
-            category: opts.category,
+    return getOrSet(cacheKey, 60, async () => {
+      const orderBy =
+        opts.sort === "price_desc"
+          ? { retailPrice: "desc" as const }
+          : opts.sort === "price_asc"
+            ? { retailPrice: "asc" as const }
+            : opts.sort === "newest"
+              ? { id: "desc" as const }
+              : { store: { rating: "desc" as const } };
+
+      const where = {
+        isActive: true,
+        store: {
+          isPublished: true,
+          vacationMode: { not: true },
+          tenant: { active: true },
+          ...(opts.zone && { zone: opts.zone }),
+          ...(opts.storeSlug && { slug: opts.storeSlug }),
+        },
+        ...(opts.q && {
+          product: { name: { contains: opts.q, mode: "insensitive" as const } },
+        }),
+        ...(opts.category &&
+          opts.category !== "todos" && {
+            product: {
+              ...((opts.q && { name: { contains: opts.q, mode: "insensitive" as const } }) || {}),
+              category: opts.category,
+            },
+          }),
+        ...((opts.minPrice !== undefined || opts.maxPrice !== undefined) && {
+          retailPrice: {
+            ...(opts.minPrice !== undefined && { gte: opts.minPrice }),
+            ...(opts.maxPrice !== undefined && { lte: opts.maxPrice }),
           },
         }),
-      ...((opts.minPrice !== undefined || opts.maxPrice !== undefined) && {
-        retailPrice: {
-          ...(opts.minPrice !== undefined && { gte: opts.minPrice }),
-          ...(opts.maxPrice !== undefined && { lte: opts.maxPrice }),
-        },
-      }),
-    };
+      };
 
-    return prisma.storeProduct.findMany({
-      where,
-      select: {
-        id: true,
-        retailPrice: true,
-        minOrderQty: true,
-        product: {
-          select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
+      return prisma.storeProduct.findMany({
+        where,
+        select: {
+          id: true,
+          retailPrice: true,
+          minOrderQty: true,
+          product: {
+            select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
+          },
+          store: {
+            select: { id: true, name: true, slug: true, logo: true, zone: true, rating: true, category: true },
+          },
         },
-        store: {
-          select: { id: true, name: true, slug: true, logo: true, zone: true, rating: true, category: true },
-        },
-      },
-      orderBy,
-      take: opts.limit + 1,
-      ...(opts.cursor && { cursor: { id: opts.cursor }, skip: 1 }),
+        orderBy,
+        take: opts.limit + 1,
+        ...(opts.cursor && { cursor: { id: opts.cursor }, skip: 1 }),
+      });
     });
   },
 };

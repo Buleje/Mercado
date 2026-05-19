@@ -14,7 +14,10 @@ export {
   type CheckoutCustomer,
   type CheckoutAddress,
   type CheckoutPayment,
+  type CheckoutPaymentMethod,
   type CheckoutCouponEntry,
   type CheckoutCoupons,
   type CheckoutLoyalty,
+  type CheckoutStoreProof,
+  type CheckoutPaymentProofs,
 } from "@/contexts/checkout-data-context";

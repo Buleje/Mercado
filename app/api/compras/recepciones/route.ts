@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId;
 
   try {
     const raw = await req.json();

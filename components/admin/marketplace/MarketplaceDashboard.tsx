@@ -23,10 +23,11 @@ import {
   Smartphone,
   CreditCard,
   AlertTriangle,
+  BarChart3,
 } from "@buleje/design-system/icons";
 import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
+  BarChart, Bar, LabelList,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import {
   ChartCard,
@@ -156,7 +157,21 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
       });
   }, []);
 
-  const data = useMemo<MarketplaceDashboardData>(() => apiData ?? buildMockData(kpis), [apiData, kpis]);
+  // Solo usar apiData si tiene los arrays criticos. Si la API devolvio shape
+  // parcial (ej: 503 + body partial), caer al mock para no crashear con
+  // `undefined.length`. Defensivo tras incidente 503 dashboard 2026-05-09.
+  const data = useMemo<MarketplaceDashboardData>(() => {
+    const isComplete =
+      apiData &&
+      Array.isArray(apiData.sparkOrders) &&
+      Array.isArray(apiData.sparkGmv) &&
+      Array.isArray(apiData.gmvDaily) &&
+      Array.isArray(apiData.storeGrowth) &&
+      Array.isArray(apiData.channelData) &&
+      Array.isArray(apiData.categoryData) &&
+      Array.isArray(apiData.topStores);
+    return isComplete ? (apiData as MarketplaceDashboardData) : buildMockData(kpis);
+  }, [apiData, kpis]);
 
   if (loading) return <DashboardSkeleton />;
   if (error) {
@@ -167,6 +182,40 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
       </div>
     );
   }
+
+  // Brandon mayo 2026 v7: si NO hay actividad real (ningún producto publicado,
+  // ningún pedido del mes, ninguna comisión pendiente) NO pintamos los 7 charts
+  // con datos mock — era engañoso. En su lugar, un empty-state claro que
+  // explica qué va a aparecer cuando empiece a vender.
+  const noActivity =
+    kpis.publishedProducts === 0 &&
+    kpis.monthOrders === 0 &&
+    kpis.pendingCommissions === 0;
+  if (noActivity) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+        <div className="h-16 w-16 rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
+          <Store className="h-8 w-8 text-[color:var(--accent,var(--text-primary))]" />
+        </div>
+        <div className="text-center max-w-lg px-6">
+          <h3 className="text-xl font-extrabold text-[var(--text-primary)] mb-2">
+            Tu marketplace todavía no registra movimientos
+          </h3>
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+            Cuando empiecen a entrar pedidos vas a ver acá los gráficos: GMV diario, crecimiento de tiendas, pedidos por canal, categorías top, top 5 tiendas y tasa de conversión. Por ahora no mostramos números inventados.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Chart-level empties (cuando sí hay actividad pero algún chart específico
+  // no tiene datos reales). Brandon mayo 2026 v7: no maquillar con mock.
+  const isChannelEmpty = data.channelData.every((c) => c.value === 0);
+  const isCategoryEmpty = data.categoryData.every((c) => c.value === 0);
+  const isTopStoresEmpty = data.topStores.every((s) => s.value === 0);
+  const isGmvEmpty = data.gmvDaily.every((d) => d.gmv === 0);
+  const isStoreGrowthEmpty = data.storeGrowth.every((d) => d.tiendas === 0);
 
   return (
     <div className="space-y-5">
@@ -199,49 +248,100 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
         />
       </div>
 
-      {/* ── Row 2: FULL-WIDTH — GMV ── */}
+      {/* ── Row 2: FULL-WIDTH — GMV
+          Brandon mayo 2026 v7: rediseñado. Antes tenía grid 3-3 + ticks
+          densos + descripción larga. Ahora: sin grid, 4 ticks en X (no más
+          fechas pegadas), eje Y limpio, gradient más profundo, total grande
+          arriba como anchor visual. */}
       <ChartCard
-        title="GMV — ultimos 30 dias"
+        title="Ventas diarias del marketplace"
         Icon={TrendingUp}
-        height={340}
-        subtitle="Volumen bruto de mercancia diario"
-        isEmpty={data.gmvDaily.length === 0}
-        emptyText="Sin GMV en el periodo"
+        height={300}
+        description="Cuánto se vendió cada día (últimos 30 días)."
+        isEmpty={isGmvEmpty}
+        emptyText="Sin ventas registradas en los últimos 30 días"
+        badge={
+          <div className="text-right">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Total 30 días
+            </p>
+            <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
+              S/ {data.gmv >= 1000 ? `${(data.gmv / 1000).toFixed(1)}k` : data.gmv.toFixed(0)}
+            </p>
+          </div>
+        }
       >
+        {/* Brandon mayo 2026 v7: cambio AreaChart → BarChart por petición.
+            Cada día es una barra con el monto encima — más fácil de leer que
+            una curva con valores periódicos similares (típico del seed). El
+            top del mes resalta en color brand; los demás en gris suave. */}
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data.gmvDaily} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="gradGmv" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={T.brand} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={T.brand} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-            <XAxis dataKey="dia" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} interval={2} />
-            <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} tickFormatter={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-            <Tooltip content={<ChartTooltip prefix="S/" />} />
-            <Area type="monotone" dataKey="gmv" name="GMV" stroke={T.brand} fill="url(#gradGmv)" strokeWidth={2.5} />
-          </AreaChart>
+          <BarChart
+            data={data.gmvDaily}
+            margin={{ top: 28, right: 16, left: 0, bottom: 4 }}
+            barCategoryGap="18%"
+          >
+            <XAxis
+              dataKey="dia"
+              tick={{ fontSize: 11, fill: T.tickFill, fontWeight: 600 }}
+              axisLine={false}
+              tickLine={false}
+              interval={Math.max(1, Math.floor(data.gmvDaily.length / 6))}
+              tickMargin={8}
+            />
+            <YAxis
+              tick={{ fontSize: 12, fill: T.tickFill, fontWeight: 600 }}
+              axisLine={false}
+              tickLine={false}
+              tickCount={4}
+              tickFormatter={(v) => (v >= 1000 ? `S/${(v / 1000).toFixed(0)}k` : `S/${v}`)}
+              width={50}
+            />
+            <Tooltip content={<ChartTooltip prefix="S/" />} cursor={{ fill: T.brand, fillOpacity: 0.08 }} />
+            <Bar dataKey="gmv" name="GMV" radius={[6, 6, 0, 0]} maxBarSize={28}>
+              {data.gmvDaily.map((entry, i) => {
+                const max = Math.max(...data.gmvDaily.map((d) => d.gmv));
+                return (
+                  <Cell
+                    key={i}
+                    fill={entry.gmv === max ? T.brand : T.brand}
+                    fillOpacity={entry.gmv === max ? 1 : 0.45}
+                  />
+                );
+              })}
+              <LabelList
+                dataKey="gmv"
+                position="top"
+                formatter={(v) => {
+                  const n = Number(v);
+                  if (!n) return "";
+                  // Brandon mayo 2026 v7: las cantidades son SOLES, llevan
+                  // "S/" prefijo. Si supera S/1000 → "S/1.2k" (k = miles).
+                  return n >= 1000 ? `S/${(n / 1000).toFixed(1)}k` : `S/${Math.round(n)}`;
+                }}
+                style={{ fill: T.primary, fontSize: 10, fontWeight: 700 }}
+              />
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </ChartCard>
 
       {/* ── Row 3: 2 secondary charts ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard
-          title="Crecimiento de tiendas"
+          title="Tiendas activas por mes"
           Icon={Store}
-          height={280}
-          subtitle="Ultimos 6 meses (acumulado)"
-          isEmpty={data.storeGrowth.length === 0}
-          emptyText="Sin datos historicos"
+          height={260}
+          description="Cuántas tiendas vendieron cada mes."
+          isEmpty={isStoreGrowthEmpty}
+          emptyText="Sin tiendas activas"
         >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.storeGrowth} barCategoryGap="22%" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="mes" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="tiendas" name="Tiendas" radius={[6, 6, 0, 0]}>
+            <BarChart data={data.storeGrowth} barCategoryGap="22%" margin={{ top: 24, right: 10, left: 0, bottom: 0 }}>
+              <XAxis dataKey="mes" tick={{ fontSize: 12, fill: T.tickFill, fontWeight: 600 }} axisLine={false} tickLine={false} tickMargin={6} />
+              <YAxis tick={{ fontSize: 12, fill: T.tickFill, fontWeight: 600 }} axisLine={false} tickLine={false} tickCount={4} width={36} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: T.brand, fillOpacity: 0.06 }} />
+              <Bar dataKey="tiendas" name="Tiendas" radius={[6, 6, 0, 0]} maxBarSize={42}>
                 {data.storeGrowth.map((entry, i) => {
                   const max = Math.max(...data.storeGrowth.map((d) => d.tiendas));
                   return (
@@ -252,6 +352,11 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
                     />
                   );
                 })}
+                <LabelList
+                  dataKey="tiendas"
+                  position="top"
+                  style={{ fill: T.primary, fontSize: 13, fontWeight: 800 }}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -260,19 +365,23 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
         <ChartCard
           title="Pedidos por canal"
           Icon={Smartphone}
-          height={280}
-          subtitle="Web, Mobile, WhatsApp, Instagram"
-          isEmpty={data.channelData.length === 0}
-          emptyText="Sin pedidos"
+          height={260}
+          description="Por dónde te compran (web, celular, WhatsApp, Instagram)."
+          isEmpty={isChannelEmpty}
+          emptyText="Sin pedidos por ningún canal"
         >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.channelData} barCategoryGap="22%" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="value" name="Pedidos" radius={[6, 6, 0, 0]}>
+            <BarChart data={data.channelData} barCategoryGap="22%" margin={{ top: 24, right: 10, left: 0, bottom: 0 }}>
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: T.tickFill, fontWeight: 600 }} axisLine={false} tickLine={false} tickMargin={6} />
+              <YAxis tick={{ fontSize: 12, fill: T.tickFill, fontWeight: 600 }} axisLine={false} tickLine={false} tickCount={4} width={36} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: T.brand, fillOpacity: 0.06 }} />
+              <Bar dataKey="value" name="Pedidos" radius={[6, 6, 0, 0]} maxBarSize={56}>
                 {data.channelData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                <LabelList
+                  dataKey="value"
+                  position="top"
+                  style={{ fill: T.primary, fontSize: 13, fontWeight: 800 }}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -282,11 +391,12 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
       {/* ── Row 4: 3 micro-insights ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <ChartCard
-          title="Categorias top"
+          title="Top categorías"
           Icon={CreditCard}
           height={220}
-          isEmpty={data.categoryData.length === 0}
-          emptyText="Sin ventas"
+          description="Qué rubros generan más plata."
+          isEmpty={isCategoryEmpty}
+          emptyText="Sin ventas por categoría"
         >
           <MicroDonut
             data={data.categoryData}
@@ -297,20 +407,23 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
         </ChartCard>
 
         <ChartCard
-          title="Top 5 tiendas por revenue"
+          title="Top 5 tiendas"
           Icon={Layers}
           height={220}
-          isEmpty={data.topStores.length === 0}
-          emptyText="Sin tiendas"
+          description="Las que más venden. Cuidalas."
+          isEmpty={isTopStoresEmpty}
+          emptyText="Sin tiendas con ventas"
         >
           <MicroList items={data.topStores} barColor={T.brand} showRank />
         </ChartCard>
 
         <ChartCard
-          title="Tasa de conversion"
+          title="Tasa de conversión"
           Icon={Target}
           height={220}
-          subtitle={`${data.totalOrders} pedidos / mes`}
+          description="De cada 100 visitas, cuántas compran. Meta: >4%."
+          isEmpty={data.conversionRate === 0}
+          emptyText="Aún no hay datos para calcular conversión"
         >
           <MicroGauge
             value={Math.min(data.conversionRate * 20, 100)}

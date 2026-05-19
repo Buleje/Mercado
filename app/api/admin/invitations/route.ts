@@ -8,6 +8,7 @@ import { EmployeeInvitationsDb } from "@/lib/db/employee-invitations.db";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * Invitaciones a empleados (cajero/almacenero/manager).
@@ -46,6 +47,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-invitations"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
   const blocked = await requireActiveSubscription(auth.tenantId);

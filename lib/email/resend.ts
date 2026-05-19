@@ -109,7 +109,7 @@ export async function sendWelcomeTenant(to: string, tenant: { name: string; slug
 
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
         <p style="font-size: 13px; color: #999; text-align: center; margin: 0;">
-          ¿Necesitás ayuda? Escribinos por WhatsApp al +51 916 409 675.<br />
+          ¿Necesitás ayuda? Escribinos por WhatsApp al +51 929 340 532.<br />
           Buleje · Pucallpa, Perú
         </p>
       </div>

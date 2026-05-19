@@ -86,143 +86,124 @@ interface Props {
  * Aporta info real: ve cuanto vendiste cada dia y comparas facil.
  */
 function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] }) {
-  const { max, avg, maxIdx, todayIdx, displayData, halfDelta } = useMemo(() => {
-    const max = Math.max(...data, 1);
-    const avg = data.reduce((s, v) => s + v, 0) / Math.max(1, data.length);
+  const { maxValue, maxLabel, avg, avgDelta, tendencyPct } = useMemo(() => {
+    const max = Math.max(...data, 0);
     const maxIdx = data.indexOf(max);
-    const todayIdx = data.length - 1;
+    const avg = data.reduce((s, v) => s + v, 0) / Math.max(1, data.length);
     const defaultDays = ["L", "M", "X", "J", "V", "S", "D"];
-    const displayData = data.map((value, i) => {
-      const label = labels?.[i] ?? defaultDays[i % 7];
-      return { value, label, isToday: i === todayIdx, isMax: i === maxIdx };
-    });
+    const maxLabel = labels?.[maxIdx] ?? defaultDays[maxIdx % 7] ?? "—";
 
-    // Delta primera mitad vs segunda mitad del rango — muestra si estas
-    // acelerando o desacelerando.
+    // Delta hoy vs ayer (último vs penúltimo)
+    const today = data[data.length - 1] ?? 0;
+    const yesterday = data[data.length - 2] ?? 0;
+    const avgDelta = today - yesterday;
+
+    // Tendencia: 2da mitad vs 1ra mitad del rango
     const mid = Math.ceil(data.length / 2);
     const firstHalf = data.slice(0, mid);
     const secondHalf = data.slice(mid);
     const firstAvg = firstHalf.reduce((s, v) => s + v, 0) / Math.max(1, firstHalf.length);
     const secondAvg = secondHalf.reduce((s, v) => s + v, 0) / Math.max(1, secondHalf.length);
-    let halfDelta: number | null = null;
+    let tendencyPct: number | null = null;
     if (firstAvg > 0 && secondHalf.length > 0) {
-      halfDelta = ((secondAvg - firstAvg) / firstAvg) * 100;
+      tendencyPct = ((secondAvg - firstAvg) / firstAvg) * 100;
     } else if (firstAvg === 0 && secondAvg > 0) {
-      halfDelta = 100; // Arrancó desde cero — mostrar como crecimiento fuerte
+      tendencyPct = 100;
     }
 
-    return { max, avg, maxIdx, todayIdx, displayData, halfDelta };
+    return { maxValue: max, maxLabel, avg, avgDelta, tendencyPct };
   }, [data, labels]);
 
-  const avgPct = (avg / max) * 100;
+  // Formateador soles: 4520 -> "S/ 4,520", 342 -> "S/ 342"
+  const fmtS = (n: number) => `S/ ${Math.round(n).toLocaleString("es-PE")}`;
 
-  // Formateador compacto: 4520 -> "4.5k", 342 -> "342"
-  const fmt = (n: number) => {
-    if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
-    return n.toFixed(0);
-  };
-
+  // Brandon mayo 2026 v4: reemplazado el strip de barras críptico (con
+  // "PROM · 18", "PICO", "HOY") por 3 insights numéricos directos —
+  // formato tipo "tarjeta resumen" que el dueño entiende sin mirar
+  // ejes ni descifrar pills micro.
   return (
-    <div className="w-full">
-      {/* Header del strip — delta de mitad contra mitad */}
-      {halfDelta != null && Math.abs(halfDelta) >= 5 && (
-        <div className="flex justify-end mb-2">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-2 py-1 rounded-full",
-              halfDelta > 0
-                ? "bg-[color:var(--section-accent,var(--data-success))]/10 text-[color:var(--section-accent,var(--data-success))]"
-                : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
-            )}
-            title={
-              halfDelta > 0
-                ? "Estás acelerando: la segunda mitad del rango vendió más que la primera"
-                : "Estás desacelerando: la segunda mitad vendió menos que la primera"
-            }
-          >
-            {halfDelta > 0 ? "↗" : "↘"} 2da mitad {halfDelta > 0 ? "+" : ""}
-            {halfDelta.toFixed(0)}% vs 1ra
-          </span>
-        </div>
-      )}
-      {/* Chart area — 7 barras con label encima */}
-      <div className="relative flex items-end justify-between gap-1 h-20">
-        {/* Linea del promedio */}
-        <div
-          className="absolute left-0 right-0 border-t border-dashed border-[var(--text-tertiary)] opacity-40 pointer-events-none"
-          style={{ bottom: `${avgPct}%` }}
-          aria-hidden
-        >
-          <span className="absolute right-0 -top-3 text-[length:var(--ts-3xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] bg-[var(--surface-raised)] px-1">
-            prom · {fmt(avg)}
-          </span>
-        </div>
-
-        {displayData.map((d, i) => {
-          const heightPct = Math.max(6, (d.value / max) * 100);
-          return (
-            <div
-              key={i}
-              className="flex-1 flex flex-col items-center justify-end gap-1 relative group"
-              title={`${d.label}: ${d.value.toLocaleString("es-PE")}`}
-            >
-              <span
-                className={cn(
-                  "text-[length:var(--ts-3xs)] font-bold tabular-nums leading-none",
-                  d.isToday
-                    ? "text-[color:var(--section-primary,var(--text-primary))]"
-                    : d.isMax
-                      ? "text-[var(--data-warning-500)]"
-                      : "text-[var(--text-tertiary)]",
-                )}
-              >
-                {fmt(d.value)}
-              </span>
-              <div
-                className={cn(
-                  "w-full rounded-t-sm transition-all",
-                  d.isToday
-                    ? "bg-[color:var(--section-primary,var(--text-primary))]"
-                    : d.isMax
-                      ? "bg-[var(--data-warning-500)] opacity-80"
-                      : "bg-[var(--text-tertiary)] opacity-30 group-hover:opacity-60",
-                )}
-                style={{ height: `${heightPct}%` }}
-              />
-            </div>
-          );
-        })}
+    <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {/* Insight 1: Tu mejor día */}
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+          Tu mejor día
+        </p>
+        <p className="text-base sm:text-lg font-extrabold text-[color:var(--data-success-500)] tabular-nums leading-tight">
+          {fmtS(maxValue)}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+          {maxLabel}
+        </p>
       </div>
 
-      {/* Labels inferiores con etiquetas HOY / MEJOR */}
-      <div className="flex items-start justify-between gap-1 mt-1.5">
-        {displayData.map((d, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-            <span
-              className={cn(
-                "text-[length:var(--ts-3xs)] font-bold uppercase tracking-wider tabular-nums",
-                d.isToday
-                  ? "text-[color:var(--section-primary,var(--text-primary))]"
-                  : "text-[var(--text-tertiary)]",
-              )}
-            >
-              {d.label}
-            </span>
-            {d.isToday && (
-              <span className="text-[length:var(--ts-3xs)] font-extrabold uppercase tracking-wider text-[color:var(--section-primary,var(--text-primary))]">
-                hoy
-              </span>
+      {/* Insight 2: Promedio por día */}
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+          Promedio por día
+        </p>
+        <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums leading-tight">
+          {fmtS(avg)}
+        </p>
+        {avgDelta !== 0 && (
+          <p
+            className={cn(
+              "mt-1 text-sm font-bold tabular-nums",
+              avgDelta > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
             )}
-            {d.isMax && i !== todayIdx && (
-              <span className="text-[length:var(--ts-3xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-500)]">
-                pico
-              </span>
-            )}
-          </div>
-        ))}
+          >
+            {avgDelta > 0 ? "↑" : "↓"} {fmtS(Math.abs(avgDelta))} vs ayer
+          </p>
+        )}
+      </div>
+
+      {/* Insight 3: Ritmo dentro del rango.
+          Brandon mayo 2026 v5: renombrado de "¿Estás creciendo?" a "Ritmo
+          de los últimos días" — el título anterior contradecía visualmente
+          al heroDelta del hero (ej. "↑277% vs mes pasado" arriba y
+          "↘ Bajaste 90%" acá, generaba confusión). Ahora la card es
+          explícita: NO compara contra el período anterior (eso es el hero),
+          sino que muestra si las ventas dentro del rango actual van
+          acelerando o desacelerando. */}
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+          Ritmo últimos días
+        </p>
+        {tendencyPct == null ? (
+          <p className="text-base sm:text-lg font-extrabold text-[var(--text-tertiary)] leading-tight">
+            Sin datos
+          </p>
+        ) : tendencyPct >= 5 ? (
+          <>
+            <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)] tabular-nums leading-tight">
+              ↗ Acelerando {Math.abs(tendencyPct).toFixed(0)}%
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+              los últimos días vendiste más que al inicio
+            </p>
+          </>
+        ) : tendencyPct <= -5 ? (
+          <>
+            <p className="text-base sm:text-lg font-extrabold text-[var(--data-error-500)] tabular-nums leading-tight">
+              ↘ Desacelerando {Math.abs(tendencyPct).toFixed(0)}%
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+              los últimos días vendiste menos que al inicio
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] leading-tight">
+              Estable
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+              vendiste parecido en todo el período
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
+
 }
 
 export const AdminInsightCard = memo(function AdminInsightCard({
@@ -262,16 +243,19 @@ export const AdminInsightCard = memo(function AdminInsightCard({
       )}
       aria-labelledby="admin-insight-hero"
     >
-      {/* Top zone: greeting + hero KPI + sparkline */}
+      {/* Top zone: greeting + hero KPI + sparkline.
+          Brandon mayo 2026 v2: tipografía agrandada — antes greeting era
+          text-2xs uppercase chiquito, ahora text-lg semibold (saludo
+          legible). heroLabel sube a text-sm, heroDelta a text-base. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 sm:p-8 border-b border-[var(--rule-soft)]">
         {/* Hero metric — top-left más grande (F-pattern) */}
         <div className="lg:col-span-5">
           {greeting && (
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+            <p className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] mb-3">
               {greeting}
             </p>
           )}
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+          <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
             {heroLabel}
           </p>
           {loading ? (
@@ -296,11 +280,11 @@ export const AdminInsightCard = memo(function AdminInsightCard({
             </div>
           )}
           {heroDelta != null && !loading && (
-            <p className="mt-3 flex items-center gap-2 text-xs">
-              <span className={cn("inline-flex items-center gap-0.5 font-bold tabular-nums", deltaColor)}>
+            <p className="mt-4 flex items-center gap-2 text-base">
+              <span className={cn("inline-flex items-center gap-1 font-extrabold tabular-nums", deltaColor)}>
                 {deltaUp && "↑"} {deltaDown && "↓"} {Math.abs(heroDelta).toFixed(1)}%
               </span>
-              <span className="text-[var(--text-tertiary)]">{heroDeltaLabel}</span>
+              <span className="text-[var(--text-tertiary)] font-semibold">{heroDeltaLabel}</span>
             </p>
           )}
         </div>
@@ -331,21 +315,21 @@ export const AdminInsightCard = memo(function AdminInsightCard({
                     ? "text-[var(--data-error-500)]"
                     : "text-[var(--text-primary)]";
             return (
-              <div key={m.label} className="px-4 py-4 sm:px-6 sm:py-5">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+              <div key={m.label} className="px-5 py-5 sm:px-7 sm:py-6">
+                <p className="text-xs sm:text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2.5">
                   {m.label}
                 </p>
-                <div className="flex items-baseline gap-1">
-                  {m.prefix && <span className="text-sm font-bold text-[var(--text-tertiary)]">{m.prefix}</span>}
+                <div className="flex items-baseline gap-1.5">
+                  {m.prefix && <span className="text-base sm:text-lg font-bold text-[var(--text-tertiary)]">{m.prefix}</span>}
                   <NumberFlow
                     value={m.value}
                     format={{ maximumFractionDigits: m.decimals ?? 0 }}
-                    className={cn("text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)]", statusColor)}
+                    className={cn("text-2xl sm:text-3xl font-extrabold tabular-nums tracking-[var(--ls-tight)]", statusColor)}
                   />
-                  {m.suffix && <span className="text-sm font-semibold text-[var(--text-tertiary)]">{m.suffix}</span>}
+                  {m.suffix && <span className="text-base font-semibold text-[var(--text-tertiary)]">{m.suffix}</span>}
                 </div>
                 {m.delta != null && (
-                  <p className="mt-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] tabular-nums">
+                  <p className="mt-1.5 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] tabular-nums">
                     <span className={dUp ? "text-[var(--data-success-500)]" : dDown ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"}>
                       {dUp && "↑"} {dDown && "↓"} {Math.abs(m.delta).toFixed(1)}%
                     </span>
@@ -367,18 +351,18 @@ export const AdminInsightCard = memo(function AdminInsightCard({
             insight.type === "info" && "bg-[var(--surface-sunken)]",
           )}
         >
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]">
-            {insight.type === "opportunity" && <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
-            {insight.type === "warning" && <Lightbulb className="h-4 w-4 text-[var(--data-warning-500)]" strokeWidth={1.75} aria-hidden />}
-            {insight.type === "info" && <Lightbulb className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)]">
+            {insight.type === "opportunity" && <Sparkles className="h-5 w-5" strokeWidth={2} aria-hidden />}
+            {insight.type === "warning" && <Lightbulb className="h-5 w-5 text-[var(--data-warning-500)]" strokeWidth={2} aria-hidden />}
+            {insight.type === "info" && <Lightbulb className="h-5 w-5" strokeWidth={2} aria-hidden />}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+            <p className="text-xs sm:text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
               {insight.type === "opportunity" && "Oportunidad detectada"}
               {insight.type === "warning" && "Necesita atención"}
               {insight.type === "info" && "Insight"}
             </p>
-            <p className="text-sm text-[var(--text-primary)] leading-relaxed">{insight.text}</p>
+            <p className="text-base text-[var(--text-primary)] leading-relaxed font-medium">{insight.text}</p>
           </div>
           {insight.cta && (
             <PrimaryButton

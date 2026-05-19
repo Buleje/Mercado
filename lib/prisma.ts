@@ -24,6 +24,14 @@ function createPrismaClient(): PrismaClient {
   //   - max=5 gives ~67% more concurrency without blowing Supabase Hobby's 60-conn cap
   //     (estimated worst case: ~10 warm instances × 5 = 50 conns).
   //   - URL param `connection_limit=1` is IGNORED by PrismaPg adapter — only this max applies.
+  //
+  // Audit 2026-05-17 06-P2-4: el cap "60 conns" es de Supabase Hobby plan.
+  // Si la app escala a >10 instancias warm (Vercel Pro/Enterprise),
+  // 10 × 5 = 50 deja apenas 10 conns para crons y otros. Monitorear en
+  // dashboard Supabase → alertar al 70% (42 conns). Si supera el threshold,
+  // 3 opciones: (1) bajar max a 3, (2) upgrade Supabase plan a 200 conns,
+  // (3) implementar circuit breaker en createPrismaClient. Sin breaker
+  // hoy: un spike de tráfico puede agotar el pool.
   const adapter = new PrismaPg({
     connectionString: resolvedUrl,
     ssl: isLocal ? false : { rejectUnauthorized: false },

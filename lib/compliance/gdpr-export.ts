@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { findTenantByIdOrSlug } from "@/lib/tenant";
 
 /**
  * ROADMAP ITEM #84 — GDPR / Ley 29733 export para tenant.
@@ -27,7 +28,8 @@ export async function buildTenantExport(
 
   try {
     const [tenant, settings, products, customers, orders, loyalty] = await Promise.all([
-      prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] } }),
+      // Brandon 2026-05-16 (Fase 3): helper memoizado React.cache.
+      findTenantByIdOrSlug(tenantId),
       prisma.settings.findFirst({ where: { tenantId } }),
       prisma.product.findMany({ where: { tenantId } }),
       scope === "full"

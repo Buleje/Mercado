@@ -57,9 +57,13 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   "delivery-live": false,
   "delivery-live-whatsapp": false,
   "delivery-live-public-link": false,
-  // Bloque D2 — Chat buyer ↔ seller. Todos arrancan OFF.
-  "marketplace-chat": false,
-  "marketplace-chat-public": false,
+  // Bloque D2 — Chat buyer ↔ seller.
+  // Brandon 2026-05-16: activado el chat público + UI admin para que el
+  // dueño pueda conversar en tiempo real con clientes desde la tienda.
+  // Endpoints `/api/chat/public` ya estaban implementados pero devolvían
+  // 503 con el flag apagado. WhatsApp + Realtime quedan OFF (opt-in via env).
+  "marketplace-chat": true,
+  "marketplace-chat-public": true,
   "marketplace-chat-whatsapp": false,
   "marketplace-chat-realtime": false,
   // Bloque D3 — Reviews verificadas. Todos arrancan OFF.

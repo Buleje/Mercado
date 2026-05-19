@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { sendPushToPhone } from "@/lib/push-sender";
@@ -14,21 +15,27 @@ import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { PrismaOrderRepository } from "@/lib/db/adapters/prisma-order-repository";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { MarketplaceOrdersDB } from "@/lib/db/marketplace.db";
 
 const orderRepo = new PrismaOrderRepository();
 
 // ── Valid marketplace order status transitions ────────────────────────────────
 
+// Brandon mayo 2026 v7 (Nivel B): `preparando` agregado como paso intermedio
+// real entre confirmar y salir a entregar (la bodega arma el pedido). Brandon
+// pidió que cocina/almacén pueda marcar este estado sin tener que saltar a
+// "en_camino" antes de que esté listo.
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  pendiente: ["confirmado", "cancelado"],
-  confirmado: ["en_camino", "cancelado"],
-  en_camino: ["entregado", "cancelado"],
-  entregado: [],
-  cancelado: [],
+  pendiente:  ["confirmado", "cancelado"],
+  confirmado: ["preparando", "en_camino", "cancelado"],
+  preparando: ["en_camino", "cancelado"],
+  en_camino:  ["entregado", "cancelado"],
+  entregado:  [],
+  cancelado:  [],
 };
 
 const PatchSchema = z.object({
-  status: z.enum(["pendiente", "confirmado", "en_camino", "entregado", "cancelado"]),
+  status: z.enum(["pendiente", "confirmado", "preparando", "en_camino", "entregado", "cancelado"]),
   cancelReason: z.string().max(500).optional(),
 });
 
@@ -38,6 +45,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // PENTEST 2026-05-18 Sprint B: rate limit MODERATE (20 req/5min por IP).
+  // Sin esto un admin comprometido o un atacante con sesión válida puede
+  // enumerar IDs de pedidos del tenant (intra-tenant info disclosure).
+  const rl = applyRateLimit(req, "MODERATE", "marketplace-order-read");
+  if (rl) return rl as NextResponse;
+
   // SECURITY 2026-05-07 (B5): GET sin allowedRoles permitía que cualquier rol
   // admin (ej. almacenero, repartidor) leyera PII de pedidos marketplace.
   // Igualado a los roles del PATCH: solo admin y manager.
@@ -60,6 +73,13 @@ export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
 ) {
+  // PENTEST 2026-05-18 Sprint B: rate limit MODERATE. PATCH dispara
+  // notifications WhatsApp + push por cada hit — sin rate limit, atacante
+  // con sesión admin puede saturar Twilio (costo $$$) brute-forcing
+  // transiciones sobre todos los pedidos del tenant.
+  const rl = applyRateLimit(req, "MODERATE", "marketplace-order-mutate");
+  if (rl) return rl as NextResponse;
+
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
   // Round 10 M004: audit log de status transitions con admin actor + IP.
@@ -85,7 +105,19 @@ async function patchHandler(
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
-  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing read scoped por tenantId; refactor a OrdersDB pendiente.
+  // PENTEST 2026-05-18 Sprint C #10: sanitizar cancelReason antes de inyectar
+  // en WhatsApp/Push. Antes un admin (o admin comprometido por phishing)
+  // podía meter URLs phishing en el mensaje WhatsApp legítimo que recibe el
+  // cliente. WhatsApp no renderiza HTML pero sí auto-linkifica URLs.
+  // Strip http(s)/wa.me/whatsapp/tel: links — mantiene el resto del texto.
+  if (parsed.data.cancelReason) {
+    parsed.data.cancelReason = parsed.data.cancelReason
+      .replace(/\b(?:https?:\/\/|wa\.me\/|whatsapp:\/\/|tel:)\S*/gi, "[link removido]")
+      .slice(0, 500);
+  }
+
+  // Leer orden para validar la transición antes de llamar a changeStatus.
+  // eslint-disable-next-line no-restricted-properties -- read-only pre-check scoped por tenantId; changeStatus hace el write atómico.
   const order = await prisma.order.findFirst({
     where: { id, source: "marketplace", tenantId: auth.tenantId, deletedAt: null },
   });
@@ -103,53 +135,19 @@ async function patchHandler(
     );
   }
 
-  // Atomic update SCOPED a tenantId — cierra TOCTOU window entre el findFirst
-  // anterior y este update. Sin tenantId aquí, un atacante con dos órdenes
-  // (una propia + una target) podría explotar la ventana entre check y write.
-  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing atomic update scoped por tenantId; refactor a OrdersDB pendiente.
-  const updateResult = await prisma.order.updateMany({
-    where: { id, tenantId: auth.tenantId, deletedAt: null },
-    data: {
-      status: parsed.data.status,
-      ...(parsed.data.status === "cancelado" && {
-        cancelReason: parsed.data.cancelReason ?? null,
-        cancelledAt: new Date(),
-      }),
-    },
-  });
-  if (updateResult.count === 0) {
+  // CR-1.1: write atómico + historial + comisiones vía MarketplaceOrdersDB.changeStatus.
+  // Reemplaza 7 prisma.* directos (findFirst, updateMany, findFirst, historial.create,
+  // 2× commissionLedger.updateMany). El método es idempotente y scoped por tenantId.
+  const updated = await MarketplaceOrdersDB.changeStatus(
+    auth.tenantId,
+    id,
+    parsed.data.status,
+    auth.username,
+    parsed.data.cancelReason,
+  );
+  if (!updated) {
     return NextResponse.json({ error: "Pedido no encontrado o ya modificado" }, { status: 404 });
   }
-  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing read post-update scoped por tenantId.
-  const updated = await prisma.order.findFirst({
-    where: { id, tenantId: auth.tenantId },
-  });
-  if (!updated) {
-    return NextResponse.json({ error: "Error inesperado al leer pedido actualizado" }, { status: 500 });
-  }
-
-  // F3: revertir comisiones pendientes al cancelar (fire-and-forget)
-  if (parsed.data.status === "cancelado") {
-    // eslint-disable-next-line no-restricted-properties -- legacy: updateMany scoped a orderId+tenantId+status para revertir comisiones; refactor a CommissionsDB pendiente.
-    prisma.commissionLedger.updateMany({
-      where:  { orderId: id, tenantId: auth.tenantId, status: "pending" },
-      data:   { status: "reversed" },
-    }).catch((err) => logger.warn("[marketplace/orders/[id]] commission reverse failed", { err: String(err), orderId: id, tenantId: auth.tenantId }));
-  }
-
-  // Log status change history (fire-and-forget)
-  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing audit insert con tenantId en payload; refactor pendiente.
-  prisma.orderStatusHistory.create({
-    data: {
-      id: crypto.randomUUID(),
-      orderId: id,
-      fromStatus: order.status,
-      toStatus: parsed.data.status,
-      changedBy: auth.username,
-      note: parsed.data.cancelReason ?? null,
-      tenantId: auth.tenantId,
-    },
-  }).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
   // ── Push notification to customer ──────────────────────────────────────
 
@@ -158,6 +156,11 @@ async function patchHandler(
       title: "✅ Pedido confirmado",
       body: `Tu pedido ha sido confirmado.`,
       emoji: "✅",
+    },
+    preparando: {
+      title: "👨‍🍳 Estamos preparando tu pedido",
+      body: `Tu pedido se está preparando, pronto saldrá a entregarse.`,
+      emoji: "👨‍🍳",
     },
     en_camino: {
       title: "🚚 Tu pedido va en camino",
@@ -205,25 +208,11 @@ async function patchHandler(
     auth.username,
   ).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err) }));
 
-  // SECURITY 2026-05-07 (audit M2): liquidar commissionLedger de pending → cleared
-  // al entregar. Antes las comisiones quedaban eternamente pending y la conciliación
-  // contable nunca cuadraba (vendors no recibían payout).
-  if (parsed.data.status === "entregado") {
-    // eslint-disable-next-line no-restricted-properties -- updateMany scoped por tenantId+orderId+status. CommissionLedger no tiene DB class wrapper aun (TODO: lib/db/commissions.db.ts).
-    prisma.commissionLedger
-      .updateMany({
-        where: { orderId: id, tenantId: auth.tenantId, status: "pending" },
-        data: { status: "cleared", settledAt: new Date() },
-      })
-      .catch((err) =>
-        logger.warn("[marketplace/orders/[id]] commission clear failed (best-effort)", {
-          error: String(err),
-          orderId: id,
-        }),
-      );
-  }
+  // Comisiones: ya manejadas dentro de MarketplaceOrdersDB.changeStatus (CR-1.1).
 
   // Auto-coupon "Vuelve pronto" 5% on delivery (fire-and-forget)
+  // @prisma-direct ok — coupon.create best-effort scoped por tenantId;
+  // migracion a CouponsDB pendiente.
   if (parsed.data.status === "entregado" && phone) {
     const suffix = id.slice(-5).toUpperCase();
     const couponCode = `VUELVE${suffix}`;

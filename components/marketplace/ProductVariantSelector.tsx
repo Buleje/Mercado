@@ -90,7 +90,7 @@ export default function ProductVariantSelector({
                 aria-label={variant.name}
                 className={cn(
                   "relative h-16 w-16 rounded-xl overflow-hidden border-2 transition-all shrink-0",
-                  isSelected ? "border-primary ring-2 ring-primary/30" : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40",
+                  isSelected ? "border-primary ring-2 ring-primary/30" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40",
                   isOutOfStock && "opacity-40 cursor-not-allowed"
                 )}
               >
@@ -155,7 +155,7 @@ export default function ProductVariantSelector({
                 aria-label={`${variant.name}${isOutOfStock ? " — Agotado" : ""}`}
                 className={cn(
                   "relative flex h-11 min-w-12 items-center justify-center rounded-lg border-2 px-3 text-sm font-bold transition-all",
-                  isSelected ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-primary/40",
+                  isSelected ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-primary/40",
                   isOutOfStock && "opacity-50 cursor-not-allowed line-through"
                 )}
               >
@@ -180,7 +180,7 @@ export default function ProductVariantSelector({
               className={cn(
                 "relative inline-flex items-center gap-2 rounded-full border-2 pl-1 pr-3.5 py-1 text-sm font-semibold transition-all min-h-[44px]",
                 !pillImage && "px-4 py-2",
-                isSelected ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-primary/40",
+                isSelected ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-primary/40",
                 isOutOfStock && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -202,7 +202,7 @@ export default function ProductVariantSelector({
 
       {/* Imagen grande de la variante seleccionada (si tiene foto propia) */}
       {selectedImage && (
-        <div className="relative w-full max-w-xs aspect-square rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] dark:bg-surface">
+        <div className="relative w-full max-w-xs aspect-square rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface">
           <Image src={selectedImage} alt={selected?.name ?? ""} fill unoptimized={selectedImage.startsWith("data:")} className="object-cover" sizes="320px" />
         </div>
       )}
@@ -211,7 +211,7 @@ export default function ProductVariantSelector({
       {selected && finalPrice !== null && (
         <p className="text-sm font-semibold text-primary">
           Precio:{" "}
-          <span className="text-lg font-black">{fmt(finalPrice)}</span>
+          <span className="text-lg font-extrabold">{fmt(finalPrice)}</span>
           {selected.priceModifier !== 0 && (
             <span className="ml-1.5 text-xs text-[var(--text-tertiary)] dark:text-muted font-normal">
               ({selected.priceModifier > 0 ? "+" : ""}

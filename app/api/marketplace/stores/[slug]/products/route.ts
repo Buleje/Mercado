@@ -61,6 +61,7 @@ export async function GET(
         ...(search   && { name: { contains: search, mode: "insensitive" as const } }),
       };
 
+      // eslint-disable-next-line no-restricted-properties -- query pública del marketplace, scoped por store.id que ya fue resuelto del slug. MarketplaceStoreProductsDB.list usa la misma forma, refactor pendiente.
       const raw = await prisma.storeProduct.findMany({
         where: {
           storeId:  store.id,
@@ -101,7 +102,10 @@ export async function GET(
         image:          sp.product.image,
         category:       sp.product.category,
         unit:           sp.product.unit,
-        stock:          sp.product.stock ?? 0,
+        // null = no controla stock (restaurante/servicios) → cliente puede
+        // agregar al carrito sin límite. 0 = agotado. NUNCA hacer ?? 0 acá:
+        // colapsa la semántica y bloquea checkout de tiendas sin inventario.
+        stock:          sp.product.stock,
       }));
 
       return { products, nextCursor };

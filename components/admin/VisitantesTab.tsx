@@ -66,12 +66,12 @@ export default function VisitantesTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <SectionTitle className="text-lg font-bold text-foreground">Visitantes Nuevos</SectionTitle>
+          <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Visitantes Nuevos</SectionTitle>
           <p className="text-sm text-muted">Formulario de bienvenida completado por primera vez</p>
         </div>
         <button
           onClick={() => load(page)}
-          className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors px-3 py-1.5 rounded-lg border border-border hover:bg-card"
+          className="flex items-center gap-1.5 text-sm text-muted hover:text-[var(--text-primary)] transition-colors px-3 py-1.5 rounded-lg border border-border hover:bg-[var(--surface-raised)]"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           Actualizar
@@ -80,14 +80,14 @@ export default function VisitantesTab() {
 
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-[var(--surface-raised)] border border-border rounded-xl p-4">
           <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
             <Users className="h-3.5 w-3.5" /> Total visitantes
           </div>
           <PageTitle as="p">{total}</PageTitle>
         </div>
         {(["celular", "tablet", "computadora"] as const).map((d) => (
-          <div key={d} className="bg-card border border-border rounded-xl p-4">
+          <div key={d} className="bg-[var(--surface-raised)] border border-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1 capitalize">
               {DEVICE_ICONS[d]} {d}
             </div>
@@ -97,7 +97,7 @@ export default function VisitantesTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -124,7 +124,7 @@ export default function VisitantesTab() {
                     key={row.id}
                     className={`border-b border-border last:border-0 hover:bg-gray-50/50 dark:hover:bg-surface/50 transition-colors ${i % 2 === 0 ? "" : "bg-gray-50/30 dark:bg-surface/20"}`}
                   >
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-foreground">{row.name}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-[var(--text-primary)]">{row.name}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">
                         {row.devices.map((d) => (
@@ -169,14 +169,14 @@ export default function VisitantesTab() {
               <button
                 onClick={() => load(page - 1)}
                 disabled={page <= 1 || loading}
-                className="p-1.5 rounded-lg border border-border hover:bg-card disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg border border-border hover:bg-[var(--surface-raised)] disabled:opacity-40 transition"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => load(page + 1)}
                 disabled={page >= totalPages || loading}
-                className="p-1.5 rounded-lg border border-border hover:bg-card disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg border border-border hover:bg-[var(--surface-raised)] disabled:opacity-40 transition"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

@@ -186,23 +186,23 @@ export default function CashFlowTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Droplets className="h-6 w-6 text-primary" />
             Flujo de Caja
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Proyección de ingresos y egresos del período</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -228,31 +228,31 @@ export default function CashFlowTab() {
 
       {/* Quick form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
-          <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Registrar movimiento manual</CardTitle>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
+          <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Registrar movimiento manual</CardTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Fecha</label>
-              <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Tipo</label>
-              <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+              <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 <option value="ingreso">Ingreso</option>
                 <option value="egreso">Egreso</option>
               </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Descripción</label>
-              <input type="text" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Concepto..." className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="text" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Concepto..." className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Monto (S/)</label>
-              <input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">Cancelar</button>
             <button onClick={handleAddEntry} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors">
               {saving ? "Guardando..." : "Registrar"}
             </button>
@@ -297,16 +297,16 @@ export default function CashFlowTab() {
           {/* View toggle */}
           <div className="flex flex-wrap items-center gap-2">
             {(["summary", "detail"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-primary text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
                 {v === "summary" ? "Vista diaria" : "Movimientos"}
               </button>
             ))}
           </div>
 
           {view === "summary" ? (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
+                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <tr>
                     <th className="text-left px-3 sm:px-6 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs">Fecha</th>
                     <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs">Ingresos</th>
@@ -318,13 +318,13 @@ export default function CashFlowTab() {
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {dailySummaries.map(day => (
                     <tr key={day.date} className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors", day.hasWarning && "bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10")}>
-                      <td className="px-3 sm:px-6 py-3 font-medium text-[var(--text-primary)] dark:text-foreground">{day.label}</td>
+                      <td className="px-3 sm:px-6 py-3 font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{day.label}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)] font-semibold">{day.inflow > 0 ? fmt(day.inflow) : "—"}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-error-500)] font-semibold">{day.outflow > 0 ? fmt(day.outflow) : "—"}</td>
                       <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold", day.net >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                         {day.net >= 0 ? "+" : ""}{fmt(day.net)}
                       </td>
-                      <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", day.hasWarning ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                      <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", day.hasWarning ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                         {fmt(day.balance)}
                         {day.hasWarning && <AlertTriangle className="h-3.5 w-3.5 inline ml-1 text-[var(--data-warning-500)]" />}
                       </td>
@@ -337,9 +337,9 @@ export default function CashFlowTab() {
               )}
             </div>
           ) : (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
+                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <tr>
                     <th className="text-left px-3 sm:px-6 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs">Fecha</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs">Descripción</th>
@@ -351,7 +351,7 @@ export default function CashFlowTab() {
                   {entries.map(e => (
                     <tr key={e.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors">
                       <td className="px-3 sm:px-6 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{e.date}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-foreground">{e.description}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{e.description}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <span className="text-xs px-2 py-1 rounded-full bg-[var(--surface-sunken)] dark:bg-surface capitalize text-[var(--text-secondary)] dark:text-muted">{e.category}</span>
                         {e.projected && <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Proyectado</span>}

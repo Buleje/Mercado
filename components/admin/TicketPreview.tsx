@@ -161,10 +161,10 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
 
       {/* Modal overlay */}
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 no-print">
-        <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-[var(--surface-raised)] rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
           {/* Close button + width toggle */}
-          <div className="flex justify-between items-center p-4 border-b border-[var(--rule-soft)] dark:border-card-border no-print">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">
+          <div className="flex justify-between items-center p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] no-print">
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Vista previa del ticket
             </CardTitle>
             <div className="flex items-center gap-2">
@@ -174,7 +174,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                   onClick={() => setTicketWidth("58mm")}
                   className={`px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors ${
                     ticketWidth === "58mm"
-                      ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                      ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] "
                       : "text-[var(--text-secondary)] dark:text-muted"
                   }`}
                 >
@@ -184,7 +184,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                   onClick={() => setTicketWidth("80mm")}
                   className={`px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors ${
                     ticketWidth === "80mm"
-                      ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                      ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] "
                       : "text-[var(--text-secondary)] dark:text-muted"
                   }`}
                 >
@@ -213,7 +213,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                   className="mx-auto mb-2 object-contain"
                 />
               )}
-              <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
+              <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {business.name}
               </SectionTitle>
               {business.ruc && (
@@ -239,16 +239,16 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             </div>
 
             {/* Boleta number + Ticket number + date */}
-            <div className="ticket-separator border-t border-b border-dashed border-[var(--rule-base)] dark:border-card-border py-2 space-y-1">
+            <div className="ticket-separator border-t border-b border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] py-2 space-y-1">
               {ticket.boletaNumber && (
                 <div className="text-center">
-                  <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">
+                  <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {ticket.boletaNumber}
                   </span>
                 </div>
               )}
               <div className="flex justify-between text-xs">
-                <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
+                <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   Ticket: {ticket.ticketNumber}
                 </span>
                 <span className="text-[var(--text-secondary)] dark:text-muted">
@@ -271,7 +271,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             {/* Items table — Producto | Qty | P.Unit | Subtotal */}
             <table className="ticket-items w-full text-xs">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <th className="text-left py-1 font-bold text-[var(--text-secondary)] dark:text-muted">
                     Producto
                   </th>
@@ -290,9 +290,9 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                 {ticket.items.map((item, i) => (
                   <tr
                     key={i}
-                    className="border-b border-gray-50 dark:border-card-border"
+                    className="border-b border-[var(--rule-base)]"
                   >
-                    <td className="py-1.5 text-[var(--text-primary)] dark:text-foreground">
+                    <td className="py-1.5 text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                       {item.name}
                     </td>
                     <td className="py-1.5 text-center text-[var(--text-secondary)] dark:text-muted">
@@ -301,7 +301,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                     <td className="py-1.5 text-right text-[var(--text-secondary)] dark:text-muted">
                       {fmt(item.price)}
                     </td>
-                    <td className="py-1.5 text-right font-semibold text-[var(--text-primary)] dark:text-foreground">
+                    <td className="py-1.5 text-right font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                       {fmt(item.price * item.qty)}
                     </td>
                   </tr>
@@ -310,7 +310,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             </table>
 
             {/* Totals — Subtotal, IGV 18% separated, Total bold */}
-            <div className="ticket-separator space-y-1 border-t border-dashed border-[var(--rule-base)] dark:border-card-border pt-3">
+            <div className="ticket-separator space-y-1 border-t border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] pt-3">
               <div className="flex justify-between text-xs text-[var(--text-secondary)] dark:text-muted">
                 <span>Subtotal</span>
                 <span>{fmt(ticket.subtotal)}</span>
@@ -319,7 +319,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                 <span>IGV (18%)</span>
                 <span>{fmt(ticket.igv)}</span>
               </div>
-              <div className="flex justify-between text-base font-extrabold text-[var(--text-primary)] dark:text-foreground pt-1 ticket-total">
+              <div className="flex justify-between text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] pt-1 ticket-total">
                 <span>TOTAL</span>
                 <span>{fmt(ticket.total)}</span>
               </div>
@@ -373,7 +373,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
             )}
 
             {/* Footer */}
-            <div className="ticket-separator text-center border-t border-dashed border-[var(--rule-base)] dark:border-card-border pt-3">
+            <div className="ticket-separator text-center border-t border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] pt-3">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">
                 {business.footerMessage ??
                   "Gracias por su preferencia! Vuelva pronto"}
@@ -385,7 +385,7 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-2 p-4 border-t border-[var(--rule-soft)] dark:border-card-border no-print">
+          <div className="flex gap-2 p-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] no-print">
             <button
               onClick={handlePrint}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"

@@ -219,21 +219,21 @@ export default function PaymentCalendarView() {
     <div className="space-y-6">
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-emerald-500">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 border-b-4 border-b-emerald-500">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por cobrar (7d)</p>
           </div>
           <p className="text-lg font-extrabold font-mono text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(kpis.porCobrarSemana)}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-orange-500">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 border-b-4 border-b-orange-500">
           <div className="flex items-center gap-2 mb-1">
             <TrendingDown className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por pagar (7d)</p>
           </div>
           <p className="text-lg font-extrabold font-mono text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{fmt(kpis.porPagarSemana)}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-red-500">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 border-b-4 border-b-red-500">
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Vencidos</p>
@@ -244,9 +244,9 @@ export default function PaymentCalendarView() {
 
       <div className="flex gap-4">
         {/* Calendar */}
-        <div className="flex-1 min-w-0 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="flex-1 min-w-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
           {/* Month header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <button
               onClick={prevMonth}
               className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -279,7 +279,7 @@ export default function PaymentCalendarView() {
           </div>
 
           {/* Day headers */}
-          <div className="grid grid-cols-7 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <div className="grid grid-cols-7 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             {DAYS_ES.map(d => (
               <div key={d} className="py-2 text-center text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] dark:text-muted">
                 {d}
@@ -306,7 +306,7 @@ export default function PaymentCalendarView() {
                   onClick={() => setSelectedDay(isSelected ? null : key)}
                   disabled={!inMonth}
                   className={cn(
-                    "relative min-h-[56px] p-1.5 border-b border-r border-[var(--rule-soft)] dark:border-card-border/50 text-left transition-colors",
+                    "relative min-h-[56px] p-1.5 border-b border-r border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 text-left transition-colors",
                     inMonth ? "hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer" : "opacity-30 cursor-default",
                     isToday && "bg-primary/5 dark:bg-primary/10",
                     isSelected && "bg-primary/10 dark:bg-primary/20 ring-1 ring-inset ring-primary",
@@ -340,7 +340,7 @@ export default function PaymentCalendarView() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-4 px-4 py-2.5 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-white/5">
+          <div className="flex items-center gap-4 px-4 py-2.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-white/5">
             <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">
               <span className="h-2 w-2 rounded-full bg-[var(--data-error-500)] inline-block" /> Fiados
             </span>
@@ -355,8 +355,8 @@ export default function PaymentCalendarView() {
 
         {/* Side panel */}
         {selectedDay && selectedEvents && (
-          <div className="w-72 shrink-0 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <div className="w-72 shrink-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <p className="font-bold text-sm text-[var(--text-primary)]">
                 {new Date(selectedDay + "T12:00:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}
               </p>

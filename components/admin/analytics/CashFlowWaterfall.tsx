@@ -281,7 +281,7 @@ export default function CashFlowWaterfall({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bar.color }} />
               <div>
-                <p className="font-medium text-[var(--text-primary)] dark:text-foreground">{bar.label}</p>
+                <p className="font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{bar.label}</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{bar.sublabel}</p>
               </div>
             </div>

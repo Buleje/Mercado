@@ -14,6 +14,11 @@ import {
   Bike,
   Heart,
   Check,
+  Search,
+  MapPin,
+  Truck,
+  Star,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
 
 type CategoryId = "vender" | "cobrar" | "entregar" | "fidelizar";
@@ -27,6 +32,9 @@ interface Category {
   features: string[];
   metric: { value: string; label: string };
   bg: string;
+  // Visual único por categoría: tipo de mockup en el card derecho.
+  mockup: "search" | "payments" | "tracking" | "loyalty";
+  mockupIcons: LucideIcon[];
 }
 
 const CATEGORIES: Category[] = [
@@ -46,6 +54,8 @@ const CATEGORIES: Category[] = [
     // (no naranja/rosa). Ahora un beneficio real verificable.
     metric: { value: "24/7", label: "disponible para tus clientes" },
     bg: "from-[var(--accent)] via-[var(--accent)] to-[var(--data-success-700)]",
+    mockup: "search",
+    mockupIcons: [Search, MapPin],
   },
   {
     id: "cobrar",
@@ -61,6 +71,8 @@ const CATEGORIES: Category[] = [
     ],
     metric: { value: "Yape · Plin · Tarjeta", label: "todos los métodos del país" },
     bg: "from-[var(--accent)] via-[var(--accent-dark)] to-[var(--data-success-700)]",
+    mockup: "payments",
+    mockupIcons: [Banknote],
   },
   {
     id: "entregar",
@@ -76,6 +88,8 @@ const CATEGORIES: Category[] = [
     ],
     metric: { value: "GPS en vivo", label: "tú y tu cliente lo ven en el mapa" },
     bg: "from-[var(--accent)] via-cyan-700 to-slate-800",
+    mockup: "tracking",
+    mockupIcons: [Truck, MapPin],
   },
   {
     id: "fidelizar",
@@ -91,8 +105,214 @@ const CATEGORIES: Category[] = [
     ],
     metric: { value: "CRM completo", label: "cada cliente, cada compra, en un lugar" },
     bg: "from-[var(--accent)] via-[var(--data-success-600)] to-emerald-800",
+    mockup: "loyalty",
+    mockupIcons: [Heart, Star],
   },
 ];
+
+// Mockup visual único por categoría — reemplaza la lista de bullets duplicada
+// que existía antes en el card derecho. Cada uno es una ilustración de UI que
+// refuerza la promesa específica de la categoría.
+function CategoryMockup({ category }: { category: Category }) {
+  if (category.mockup === "search") {
+    return (
+      <div className="relative space-y-3">
+        {/* Search bar mockup */}
+        <div className="rounded-2xl bg-white/15 backdrop-blur border border-white/20 p-3.5 flex items-center gap-3">
+          <Search className="h-4 w-4 text-white/80 shrink-0" strokeWidth={2.25} />
+          <span className="text-sm font-medium text-white/90 truncate">
+            &ldquo;bodega cerca de mí&rdquo;
+          </span>
+          <span className="ml-auto inline-flex items-center justify-center h-6 px-2.5 rounded-full bg-white text-[var(--accent)] text-[length:var(--ts-2xs)] font-extrabold shrink-0">
+            Buscar
+          </span>
+        </div>
+        {/* Search results mockup — tu tienda highlighted */}
+        {[
+          { name: "Tu Bodega · Don Lucho", tag: "0.4 km", featured: true },
+          { name: "Minimarket El Sol", tag: "0.8 km", featured: false },
+          { name: "Bodega La Esquina", tag: "1.2 km", featured: false },
+        ].map((s) => (
+          <div
+            key={s.name}
+            className={`rounded-xl px-3.5 py-2.5 flex items-center gap-3 ${
+              s.featured
+                ? "bg-white text-[var(--text-primary)] shadow-lg ring-2 ring-white/40"
+                : "bg-white/8 text-white/70 border border-white/12"
+            }`}
+          >
+            <span
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${
+                s.featured ? "bg-[var(--accent)]/15 text-[var(--accent)]" : "bg-white/10 text-white/60"
+              }`}
+            >
+              <MapPin className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-extrabold truncate ${s.featured ? "" : "text-white/90"}`}>
+                {s.name}
+              </p>
+              {s.featured && (
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+                  ◉ Tu negocio · Top resultado
+                </p>
+              )}
+            </div>
+            <span className={`text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${s.featured ? "text-[var(--accent)]" : "text-white/50"}`}>
+              {s.tag}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (category.mockup === "payments") {
+    return (
+      <div className="relative space-y-4">
+        {/* Pago entrante */}
+        <div className="rounded-2xl bg-white/12 backdrop-blur border border-white/20 px-4 py-3 flex items-center gap-3">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#722EAB] font-extrabold text-base shadow-sm">
+            Y
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white truncate">Yape · Lucía P.</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-white/60 uppercase tracking-wider">
+              Confirmado · hace 2 seg
+            </p>
+          </div>
+          <p className="text-xl font-extrabold tabular-nums text-white shrink-0">S/ 28.50</p>
+        </div>
+        {/* Grid de métodos */}
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { mark: "Y", name: "Yape", color: "#722EAB" },
+            { mark: "P", name: "Plin", color: "#00BFB3" },
+            { mark: "$", name: "Efectivo", color: "var(--accent)" },
+            { mark: "▭", name: "Tarjeta", color: "var(--accent-600)" },
+          ].map((p) => (
+            <div key={p.name} className="rounded-xl bg-white/8 border border-white/15 px-3 py-2.5 flex items-center gap-2.5">
+              <span
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white font-extrabold text-sm"
+                style={{ background: p.color }}
+              >
+                {p.mark}
+              </span>
+              <span className="text-sm font-extrabold text-white">{p.name}</span>
+              <Check className="h-3.5 w-3.5 ml-auto text-white/70" strokeWidth={3} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (category.mockup === "tracking") {
+    return (
+      <div className="relative space-y-3">
+        {/* Mapa abstracto con ruta */}
+        <div className="relative h-44 rounded-2xl bg-white/10 backdrop-blur border border-white/20 overflow-hidden p-4">
+          {/* Grid de calles */}
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-30"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+            }}
+          />
+          {/* Ruta */}
+          <svg viewBox="0 0 200 100" preserveAspectRatio="none" className="absolute inset-4 w-[calc(100%-2rem)] h-[calc(100%-2rem)]">
+            <path
+              d="M 10 85 Q 50 85 70 50 T 130 30 T 190 15"
+              fill="none"
+              stroke="white"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="6 4"
+              opacity="0.85"
+            />
+          </svg>
+          {/* Pin de origen */}
+          <span className="absolute bottom-4 left-4 inline-flex items-center gap-1.5">
+            <span aria-hidden className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg">
+              <span aria-hidden className="h-3 w-3 rounded-full bg-[var(--accent)]" />
+            </span>
+          </span>
+          {/* Pin de destino con tu Bodega */}
+          <span className="absolute top-3 right-3 inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-[var(--text-primary)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
+              <MapPin className="h-3 w-3 text-[var(--accent)]" strokeWidth={2.5} />
+              Cliente
+            </span>
+          </span>
+          {/* Moto en ruta */}
+          <span className="absolute top-[42%] left-[44%] inline-flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-xl ring-4 ring-white/40">
+            <Bike className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.5} />
+          </span>
+        </div>
+        {/* Card status */}
+        <div className="rounded-xl bg-white/12 backdrop-blur border border-white/20 px-4 py-3 flex items-center gap-3">
+          <span aria-hidden className="relative inline-flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-70 animate-ping" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+          </span>
+          <p className="text-sm font-bold text-white flex-1">Repartidor en camino</p>
+          <p className="text-sm font-extrabold tabular-nums text-white">8 min</p>
+        </div>
+      </div>
+    );
+  }
+
+  // loyalty
+  return (
+    <div className="relative space-y-3">
+      {/* Customer card */}
+      <div className="rounded-2xl bg-white text-[var(--text-primary)] p-4 shadow-xl">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-white font-extrabold text-base">
+            M
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">
+              Marta Q. · Cliente fiel
+            </p>
+            <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+              23 compras · S/ 487 total
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
+            <Star className="h-3 w-3 fill-current" strokeWidth={0} />
+            VIP
+          </span>
+        </div>
+        <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] flex items-baseline justify-between gap-3">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+            Cashback acumulado
+          </p>
+          <p className="text-2xl font-extrabold tabular-nums tracking-tight text-[var(--accent)]">
+            S/ 24.30
+          </p>
+        </div>
+      </div>
+      {/* Reseña */}
+      <div className="rounded-xl bg-white/10 backdrop-blur border border-white/15 px-4 py-3">
+        <div className="flex items-center gap-1 mb-1.5">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <Star key={s} className="h-3.5 w-3.5 text-white fill-white" strokeWidth={0} />
+          ))}
+          <span className="ml-auto text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/60">
+            Hace 2 días
+          </span>
+        </div>
+        <p className="text-sm font-medium text-white/90 leading-snug">
+          &ldquo;Pedido perfecto, llegó en 12 minutos. Siempre les pido a ellos.&rdquo;
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function BenefitsTabs() {
   const [active, setActive] = useState<CategoryId>("vender");
@@ -110,7 +330,7 @@ export default function BenefitsTabs() {
               <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
               Qué obtienes
             </p>
-            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               Cuatro músculos
               <br />
               <span className="text-[var(--accent)]">
@@ -164,7 +384,7 @@ export default function BenefitsTabs() {
               <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br ${cat.bg} text-white shadow-md mb-6`}>
                 <Icon className="h-6 w-6" strokeWidth={2.25} />
               </span>
-              <h3 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
+              <h3 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
                 {headlineParts[0]}
                 <span className="text-[var(--accent)]">
                   {cat.highlight}
@@ -189,43 +409,36 @@ export default function BenefitsTabs() {
               </ul>
             </div>
 
-            {/* Lado derecho: mockup ilustrativo grande con métrica */}
-            <div className={`relative rounded-3xl bg-linear-to-br ${cat.bg} p-8 sm:p-10 text-white overflow-hidden flex flex-col justify-between min-h-[360px]`}>
-              <div aria-hidden className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/15 blur-3xl" />
-              <div aria-hidden className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+            {/* Lado derecho: mockup ÚNICO por categoría — ya no duplica los
+                bullets del lado izquierdo. Cada tab muestra una mini-UI distinta:
+                búsqueda, métodos de pago, mapa con tracking, o customer/reviews. */}
+            <div className={`relative rounded-3xl bg-linear-to-br ${cat.bg} p-7 sm:p-9 text-white overflow-hidden flex flex-col gap-6 min-h-[420px]`}>
+              <div aria-hidden className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/15 blur-3xl pointer-events-none" />
+              <div aria-hidden className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
 
-              <div className="relative">
-                <p className="text-xs font-black uppercase tracking-widest opacity-90">
-                  Resultado promedio
-                </p>
-                <p className="mt-2 text-[clamp(3.5rem,9vw,6rem)] font-black tabular-nums tracking-[-0.04em] leading-none">
-                  {cat.metric.value}
-                </p>
-                <p className="mt-2 text-base font-bold opacity-90 max-w-xs">
-                  {cat.metric.label}
-                </p>
+              {/* Header: métrica grande + tag pequeño */}
+              <div className="relative flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] opacity-80">
+                    {cat.metric.label}
+                  </p>
+                  <p className="mt-1 text-[clamp(2rem,5vw,3rem)] font-extrabold tabular-nums tracking-[-0.035em] leading-[0.95]">
+                    {cat.metric.value}
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
+                  <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-70 animate-ping" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                  </span>
+                  Live
+                </span>
               </div>
 
-              {/* Lista vertical de features con texto completo (antes:
-                  3-col grid con texto truncado .split.slice(0,3) que dejaba
-                  "Tu negocio en…", "Catálogo ilimitado con…" — daba la
-                  sensación de panel placeholder inacabado). */}
-              <ul className="relative mt-8 space-y-2">
-                {cat.features.map((f, i) => (
-                  <m.li
-                    key={f}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.08 * i + 0.2 }}
-                    className="flex items-start gap-3 rounded-xl bg-white/12 backdrop-blur px-4 py-2.5"
-                  >
-                    <span className="inline-flex h-5 w-5 mt-0.5 shrink-0 items-center justify-center rounded-full bg-white/25">
-                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
-                    </span>
-                    <span className="text-sm font-bold leading-snug">{f}</span>
-                  </m.li>
-                ))}
-              </ul>
+              {/* Mockup específico por categoría */}
+              <div className="relative">
+                <CategoryMockup category={cat} />
+              </div>
             </div>
           </m.div>
         </AnimatePresence>

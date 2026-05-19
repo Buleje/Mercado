@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId;
   const productId = req.nextUrl.searchParams.get("productId");
 
   if (!productId || isNaN(Number(productId))) {

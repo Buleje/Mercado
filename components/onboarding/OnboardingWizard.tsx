@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
 // /onboarding NO está dentro de MarketplaceLayout / LazyMotion provider,
 // entonces `m.div` quedaba con opacity:0 stuck (initial="enter") y el
 // modal aparecía en blanco. Switch a motion full evita el provider missing.
-import { m as motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useOnboarding } from './useOnboarding';
 import OnboardingProgressBar from './OnboardingProgressBar';
 import OnboardingStep1Brand from './OnboardingStep1Brand';

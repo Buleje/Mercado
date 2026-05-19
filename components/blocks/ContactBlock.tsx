@@ -26,8 +26,8 @@ export const ContactBlockSchema = z.object({
     {
       icon: "Phone",
       label: "Teléfono",
-      value: "916 409 675",
-      href: "tel:+51916409675",
+      value: "929 340 532",
+      href: "tel:+51929340532",
     },
     {
       icon: "Clock",
@@ -38,7 +38,7 @@ export const ContactBlockSchema = z.object({
       icon: "MessageCircle",
       label: "WhatsApp",
       value: "Escríbenos al WhatsApp",
-      href: "https://wa.me/51916409675",
+      href: "https://wa.me/51929340532",
     },
   ]),
   ctaTitle: z.string().default("¿Listo para pedir?"),
@@ -78,7 +78,7 @@ subtitle,
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             {badge}
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             {title}
           </h2>
           {subtitle && (
@@ -103,7 +103,7 @@ subtitle,
                       {item.label}
                     </span>
                   </div>
-                  <p className={`font-semibold text-foreground ${item.href ? 'group-hover:text-primary' : ''} transition-colors`}>
+                  <p className={`font-semibold text-[var(--text-primary)] ${item.href ? 'group-hover:text-primary' : ''} transition-colors`}>
                     {item.value}
                   </p>
                 </>
@@ -115,12 +115,12 @@ subtitle,
                   href={item.href}
                   target={item.href.startsWith("http") ? "_blank" : undefined}
                   rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="block bg-white dark:bg-card rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-300 group"
+                  className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-[var(--dur-base)] group"
                 >
                   {content}
                 </a>
               ) : (
-                <div key={i} className="bg-white dark:bg-card rounded-xl p-6 shadow-sm">
+                <div key={i} className="bg-[var(--surface-raised)] rounded-xl p-6 shadow-sm">
                   {content}
                 </div>
               );

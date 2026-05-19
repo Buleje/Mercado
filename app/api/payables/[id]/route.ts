@@ -62,6 +62,11 @@ export async function PATCH(
     if (!updated) {
       return NextResponse.json({ error: "Payable no encontrado" }, { status: 404 });
     }
+    // Fase 4 perf (2026-05-16): refresh KPIs admin (status pagado / vencido).
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterPayable(auth.tenantId);
+    } catch { /* fire-and-forget */ }
     return NextResponse.json(updated);
   } catch (e) {
     logger.error("[payables/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
@@ -86,6 +91,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Payable no encontrado" }, { status: 404 });
     }
     await PayablesDB.delete(auth.tenantId, id);
+    // Fase 4 perf (2026-05-16): refresh KPIs admin.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterPayable(auth.tenantId);
+    } catch { /* fire-and-forget */ }
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[payables/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });

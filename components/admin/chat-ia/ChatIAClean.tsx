@@ -377,7 +377,7 @@ export default function ChatIAClean({
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-card">
+    <div className="flex flex-col h-full bg-[var(--surface-raised)]">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
         {isEmpty ? (
@@ -399,7 +399,7 @@ export default function ChatIAClean({
       </div>
 
       {/* Input area */}
-      <div className="border-t border-[var(--rule-soft)] bg-white dark:bg-card">
+      <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)]">
         <div className="max-w-3xl mx-auto px-4 sm:px-8 py-4">
           <form onSubmit={handleSubmit} className="relative">
             <textarea
@@ -508,12 +508,12 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
               onClick={() => onPick(q.prompt)}
               className={cn(
                 "group flex items-start gap-3 p-4 rounded-xl text-left",
-                "border border-[var(--rule-soft)] bg-white dark:bg-card",
+                "border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
                 "hover:border-[var(--text-primary)]/30 hover:bg-[var(--surface-sunken)]",
                 "transition-all",
               )}
             >
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] group-hover:bg-white dark:group-hover:bg-card transition-colors">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] group-hover:bg-white dark:group-hover:bg-[var(--surface-raised)] transition-colors">
                 <q.icon className="h-4 w-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
               </span>
               <span className="min-w-0 flex-1">

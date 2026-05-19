@@ -208,11 +208,15 @@ export function buildCSP(pathname: string, nonce?: string): string {
     scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
   }
 
+  // SECURITY 2026-05-12 (audit defensivo P1-1): `img-src *` permitía cargar
+  // imágenes desde cualquier dominio, abriendo canal de exfil si se combinaba
+  // con un XSS pequeño. Restringido a https: (bloquea cleartext http MITM) +
+  // self + data + blob. Supabase storage y CDNs externos siguen funcionando.
   const directives: Record<string, string> = {
     "default-src":               "'self'",
     "script-src":                scriptSrc,
     "style-src":                 "'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "img-src":                   "* data: blob:",
+    "img-src":                   "'self' data: blob: https:",
     "font-src":                  "'self' data: https://fonts.gstatic.com",
     "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com",
     "media-src":                 "'self'",
@@ -221,6 +225,13 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "form-action":               "'self'",
     "frame-ancestors":           isAdminRoute || isStorefrontRoute ? "'none'" : "'self'",
     "upgrade-insecure-requests": "",
+    // SECURITY 2026-05-12 (P3-11 audit defensivo): report-uri envia violaciones
+    // CSP al endpoint /api/csp-report. Útil para detectar:
+    //  - XSS attempts en prod (alguien inyectó <script> bloqueado por CSP)
+    //  - Tracking pixels no autorizados (img-src violations)
+    //  - Configuración rota (legitimate resources bloqueados)
+    // El endpoint debe rate-limitar y solo persistir reportes únicos.
+    "report-uri":                "/api/csp-report",
   };
 
   return Object.entries(directives)

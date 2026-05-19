@@ -123,10 +123,13 @@ async function buildNaturalRecommendation(
 
   if (picks.length === 0) return fallback;
 
+  // SECURITY 2026-05-12 (H1 audit AI re-fix): sanitizar p.name y p.storeName
+  // antes de interpolar al LLM. El vendor controla esos campos → indirect
+  // prompt injection. processSafeInput escapa quotes/newlines/control chars.
   const productsTxt = picks
     .map(
       (p, i) =>
-        `${i + 1}. ${p.name} — S/${p.price.toFixed(2)} (${p.storeName}, rating ${p.rating.toFixed(1)})`,
+        `${i + 1}. ${processSafeInput(p.name)} — S/${p.price.toFixed(2)} (${processSafeInput(p.storeName)}, rating ${p.rating.toFixed(1)})`,
     )
     .join("\n");
 

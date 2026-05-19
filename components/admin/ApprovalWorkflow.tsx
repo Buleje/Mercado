@@ -133,7 +133,7 @@ function ResolveModal({
   const [note, setNote] = useState("");
   return (
     <div className="modal-backdrop flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-full max-w-md p-6 space-y-4">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl w-full max-w-md p-6 space-y-4">
         <CardTitle className="text-base font-semibold text-[var(--text-primary)]">
           {decision === "aprobado" ? "Aprobar solicitud" : "Rechazar solicitud"}
         </CardTitle>
@@ -147,7 +147,7 @@ function ResolveModal({
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder={decision === "aprobado" ? "Todo correcto, proceder..." : "Motivo del rechazo..."}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <div className="flex justify-end gap-2">
@@ -185,7 +185,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4">
       <p className="text-sm font-semibold text-[var(--text-secondary)]">Que requiere aprobacion</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -198,7 +198,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             value={local.purchaseThreshold}
             min={0}
             onChange={e => setLocal(c => ({ ...c, purchaseThreshold: Number(e.target.value) }))}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
@@ -212,7 +212,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             min={0}
             max={100}
             onChange={e => setLocal(c => ({ ...c, priceChangeThreshold: Number(e.target.value) }))}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
@@ -226,7 +226,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
               "w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
               local.requireDeleteApproval
                 ? "border-primary bg-primary/10 text-primary dark:text-[#4a9e78]"
-                : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
             )}
           >
             {local.requireDeleteApproval ? "Requiere aprobacion" : "Sin restriccion"}
@@ -299,7 +299,7 @@ export default function ApprovalWorkflow() {
         </div>
         <button
           onClick={() => setShowConfig(v => !v)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-sunken)] transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <Settings className="w-4 h-4" />
           Configuracion
@@ -323,7 +323,7 @@ export default function ApprovalWorkflow() {
           return (
             <div
               key={item.id}
-              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  space-y-3"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4  space-y-3"
             >
               <div className="flex flex-wrap items-start gap-3">
                 <span className={cn("px-2.5 py-1 rounded-lg text-xs font-medium shrink-0", TYPE_COLOR[item.type])}>
@@ -390,7 +390,7 @@ export default function ApprovalWorkflow() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border/50 rounded-xl p-3 opacity-75"
+                    className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 rounded-xl p-3 opacity-75"
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={cn("px-2 py-0.5 rounded-lg text-xs font-medium", TYPE_COLOR[item.type])}>

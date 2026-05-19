@@ -79,7 +79,9 @@ export default function AdminModuleHeader({
       <div className="flex gap-3 min-w-0">
         {Icon && (
           <Icon
-            className="hidden sm:block w-5 h-5 text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0 mt-1.5"
+            // Antes hidden sm:block — en mobile el header perdia ancla
+            // visual. Ahora se muestra desde mobile, un poco mas chico.
+            className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0 mt-1 sm:mt-1.5"
             strokeWidth={1.5}
             aria-hidden
           />

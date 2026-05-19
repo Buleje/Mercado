@@ -68,7 +68,8 @@ export default function RolePermissionsTab() {
       .then((d) => {
         if (d.rolePermissions) setPerms({ ...DEFAULT_ROLE_TABS, ...d.rolePermissions });
       })
-      .catch(() => {})
+      // Brandon 2026-05-16 (audit P1 regla 7): logger en lugar de silencio.
+      .catch((err) => console.warn("[RolePermissionsTab] settings fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

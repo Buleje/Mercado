@@ -349,12 +349,42 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
-/** Rate limit presets for different endpoint types */
+/**
+ * DEV-ONLY: limpia el rate-limit in-memory + el fallbackStore. Usado por
+ * /api/dev/reset-rate-limit cuando el desarrollador queda lockeado por
+ * intentar varios logins. Inofensivo en prod (Upstash maneja el state).
+ */
+export function __resetInMemoryStores(prefix?: string): {
+  rateLimitCleared: number;
+  fallbackCleared: number;
+} {
+  let rateLimitCleared = 0;
+  let fallbackCleared = 0;
+  for (const key of store.keys()) {
+    if (!prefix || key.includes(prefix)) {
+      store.delete(key);
+      rateLimitCleared++;
+    }
+  }
+  for (const key of fallbackStore.keys()) {
+    if (!prefix || key.includes(prefix)) {
+      fallbackStore.delete(key);
+      fallbackCleared++;
+    }
+  }
+  return { rateLimitCleared, fallbackCleared };
+}
+
+/** Rate limit presets for different endpoint types.
+ *  En DEV el preset AUTH se afloja a 50 req/h (vs 3 req/h en prod) para
+ *  que el dev pueda iterar el flow de login sin quedarse lockeado tras
+ *  3 intentos. Brute-force real lo sigue parando el lockout per-username. */
+const IS_DEV = process.env.NODE_ENV !== "production";
 export const RateLimitPresets = {
   STRICT: { maxReqs: 10, windowSec: 15 * 60 },
   MODERATE: { maxReqs: 20, windowSec: 5 * 60 },
   GENEROUS: { maxReqs: 100, windowSec: 60 },
-  AUTH: { maxReqs: 3, windowSec: 60 * 60 },
+  AUTH: { maxReqs: IS_DEV ? 50 : 3, windowSec: 60 * 60 },
 } as const;
 
 /**

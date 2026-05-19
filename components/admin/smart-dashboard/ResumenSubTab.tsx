@@ -378,7 +378,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
       {/* Combo del día */}
       {!loading && comboData.products.some(p => p.found) && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center">
               <Lightbulb className="h-5 w-5 text-[var(--data-warning-500)]" />
@@ -738,7 +738,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
 
         {/* Logros y Streaks */}
         <div key="logros" className="col-span-1 md:col-span-2">
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center"><Target className="h-5 w-5 text-[var(--data-warning-500)]" /></div>
               <div>

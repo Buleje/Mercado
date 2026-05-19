@@ -39,7 +39,10 @@ export default function CheckoutShell({
   current: CheckoutStep;
   children: React.ReactNode;
 }) {
-  const { byStore } = useMarketplaceCart();
+  // byStore se usaba para decidir el destino del logo. Brandon mayo 14 2026:
+  // el logo ahora siempre va a /tiendas. Mantenemos el hook por si futuros
+  // accesos al cart son necesarios desde el shell.
+  useMarketplaceCart();
   const [activeTenantSlug, setActiveTenantSlug] = useState<string | null>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
 
@@ -49,21 +52,14 @@ export default function CheckoutShell({
   }, []);
 
   const logoHref = useMemo(() => {
-    // 1. Modo superadmin impersonando un tenant → su panel admin
+    // Brandon, mayo 14 2026: el logo siempre lleva al directorio /tiendas,
+    // sin importar el contenido del carrito. Excepcion: superadmin
+    // impersonando un tenant vuelve a su panel admin.
     if (isImpersonating && activeTenantSlug) {
       return `/t/${activeTenantSlug}/admin`;
     }
-    // 2. Single-store cart → storefront de esa tienda
-    const storeSlugs = Object.values(byStore)
-      .map((s) => s.storeSlug)
-      .filter((s): s is string => Boolean(s));
-    const uniqueSlugs = Array.from(new Set(storeSlugs));
-    if (uniqueSlugs.length === 1 && uniqueSlugs[0] && uniqueSlugs[0] !== "main") {
-      return `/marketplace/${uniqueSlugs[0]}`;
-    }
-    // 3. Default — lista de tiendas
-    return "/marketplace/tiendas";
-  }, [byStore, activeTenantSlug, isImpersonating]);
+    return "/tiendas";
+  }, [activeTenantSlug, isImpersonating]);
 
   const logoLabel = isImpersonating
     ? "Volver a mi tienda"

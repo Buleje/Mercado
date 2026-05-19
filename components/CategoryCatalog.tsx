@@ -102,7 +102,7 @@ function ListProductRow({
     <div
       onClick={() => onQuickView(product)}
       data-testid="product-card"
-      className="flex items-center gap-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 hover:shadow-[var(--shadow-md)] hover:border-primary/20 transition-all cursor-pointer"
+      className="flex items-center gap-3 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 hover:shadow-[var(--shadow-md)] hover:border-primary/20 transition-all cursor-pointer"
     >
       <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-surface shrink-0">
         {product.image ? (
@@ -119,13 +119,13 @@ function ListProductRow({
           </div>
         )}
         {product.badge && (
-          <span className="absolute top-0.5 left-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase text-white bg-primary shadow-[var(--shadow-sm)] leading-none">
+          <span className="absolute top-0.5 left-0.5 rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-white bg-primary shadow-[var(--shadow-sm)] leading-none">
             {product.badge}
           </span>
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-bold text-foreground truncate">
+        <h4 className="text-sm font-bold text-[var(--text-primary)] truncate">
           {product.name}
         </h4>
         <div className="flex items-center gap-2">
@@ -223,12 +223,12 @@ function QuickViewModal({
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
-        className="relative bg-white dark:bg-card rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)] max-w-lg w-full max-h-[85vh] overflow-y-auto animate-[scaleIn_0.2s_ease-out] border border-gray-100 dark:border-card-border"
+        className="relative bg-[var(--surface-raised)] rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)] max-w-lg w-full max-h-[85vh] overflow-y-auto animate-[scaleIn_0.2s_ease-out] border border-[var(--rule-base)]"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card transition-colors shadow-[var(--shadow-md)]"
+          className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 dark:bg-[var(--surface-raised)]/80 hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-colors shadow-[var(--shadow-md)]"
           aria-label="Cerrar"
         >
           <X className="h-5 w-5 text-gray-600 dark:text-muted" />
@@ -265,7 +265,7 @@ function QuickViewModal({
               "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-[var(--shadow-md)]",
               fav
                 ? "bg-[var(--data-error-500)] text-white"
-                : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)]"
+                : "bg-white/80 dark:bg-[var(--surface-raised)]/80 text-gray-400 hover:text-[var(--data-error-500)]"
             )}
             aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
           >
@@ -275,7 +275,7 @@ function QuickViewModal({
         <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex-1">
-              <h3 className="text-xl font-extrabold text-foreground mb-1">
+              <h3 className="text-xl font-extrabold text-[var(--text-primary)] mb-1">
                 {product.name}
               </h3>
               <p className="text-sm text-muted">
@@ -495,7 +495,7 @@ export default function CategoryCatalog({
         {/* Stats bar */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
               {categoryLabel}
             </h2>
             <p className="text-sm text-muted mt-1">
@@ -518,7 +518,7 @@ export default function CategoryCatalog({
               <Link
                 key={cat.id}
                 href={`/tienda/categoria/${cat.id}`}
-                className="shrink-0 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-200 whitespace-nowrap shadow-[var(--shadow-sm)]"
+                className="shrink-0 flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-primary)] text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-[var(--dur-fast)] whitespace-nowrap shadow-[var(--shadow-sm)]"
               >
                 <Icon size={18} className="text-[var(--text-secondary)] hover:text-[var(--accent)]" />
                 {cat.label}
@@ -536,7 +536,7 @@ export default function CategoryCatalog({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={`Buscar en ${categoryLabel}...`}
-              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)]"
+              className="w-full pl-10 pr-10 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)]"
             />
             {search && (
               <button
@@ -554,7 +554,7 @@ export default function CategoryCatalog({
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
-                className="appearance-none pl-9 pr-8 py-3 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)] cursor-pointer"
+                className="appearance-none pl-9 pr-8 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)] cursor-pointer"
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.id} value={o.id}>
@@ -569,7 +569,7 @@ export default function CategoryCatalog({
                 "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-[var(--shadow-sm)]",
                 showPriceFilter
                   ? "border-primary bg-primary/10 text-primary"
-                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-primary"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-primary"
               )}
             >
               <SlidersHorizontal className="h-4 w-4" />
@@ -584,7 +584,7 @@ export default function CategoryCatalog({
                 className={cn(
                   "p-2.5 rounded-lg transition-all",
                   viewMode === "grid"
-                    ? "bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)]"
+                    ? "bg-[var(--surface-raised)] text-primary shadow-[var(--shadow-sm)]"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Vista cuadrícula"
@@ -599,7 +599,7 @@ export default function CategoryCatalog({
                 className={cn(
                   "p-2.5 rounded-lg transition-all",
                   viewMode === "list"
-                    ? "bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)]"
+                    ? "bg-[var(--surface-raised)] text-primary shadow-[var(--shadow-sm)]"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Vista lista"
@@ -612,9 +612,9 @@ export default function CategoryCatalog({
 
         {/* Price filter */}
         {showPriceFilter && (
-          <div className="max-w-3xl mx-auto mb-6 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-[var(--shadow-sm)] animate-[fadeUp_0.2s_ease-out]">
+          <div className="max-w-3xl mx-auto mb-6 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 shadow-[var(--shadow-sm)] animate-[fadeUp_0.2s_ease-out]">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">
                 Filtrar por precio
               </span>
               <span className="text-sm font-bold text-primary">
@@ -668,7 +668,7 @@ export default function CategoryCatalog({
             {Array.from({ length: 12 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl bg-white dark:bg-card border border-gray-100 dark:border-card-border overflow-hidden flex flex-col animate-pulse"
+                className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden flex flex-col animate-pulse"
               >
                 <div className="aspect-square bg-gray-200 dark:bg-surface" />
                 <div className="p-3 sm:p-4 flex flex-col gap-3 flex-1">
@@ -765,7 +765,7 @@ export default function CategoryCatalog({
             </div>
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-gray-100 dark:border-card-border">
+              <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-[var(--rule-base)]">
                 <button
                   disabled={page <= 1}
                   onClick={() => {
@@ -774,7 +774,7 @@ export default function CategoryCatalog({
                       .getElementById("productos")
                       ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-[var(--rule-base)] text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   ← Anterior
                 </button>
@@ -812,7 +812,7 @@ export default function CategoryCatalog({
                       .getElementById("productos")
                       ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-[var(--rule-base)] text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                   Siguiente →
                 </button>

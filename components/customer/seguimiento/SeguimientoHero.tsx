@@ -54,7 +54,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
     <section
       aria-labelledby="tracking-hero-heading"
       className={cn(
-        "rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-6 sm:p-8",
+        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8",
         className,
       )}
     >
@@ -69,7 +69,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
         <>
           <h1
             id="tracking-hero-heading"
-            className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground"
+            className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)]"
           >
             Pedido cancelado
           </h1>
@@ -81,7 +81,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
         <>
           <h1
             id="tracking-hero-heading"
-            className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground"
+            className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)]"
           >
             Entregado
           </h1>
@@ -96,7 +96,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
           </span>
           <h1
             id="tracking-hero-heading"
-            className="text-4xl sm:text-5xl font-extrabold leading-[0.95] tracking-tight text-foreground"
+            className="text-4xl sm:text-5xl font-extrabold leading-[0.95] tracking-tight text-[var(--text-primary)]"
           >
             Llega en{" "}
             <span className="tabular-nums text-primary">
@@ -128,7 +128,7 @@ function ProgressBar({ status }: { status: TrackingStatus }) {
     <div className="mt-6" aria-hidden>
       <div className="h-2 w-full rounded-full bg-[var(--surface-sunken)] dark:bg-surface overflow-hidden">
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
+          className="h-full rounded-full bg-primary transition-[width] duration-[var(--dur-slower)] ease-out"
           style={{ width: `${Math.round(fraction * 100)}%` }}
         />
       </div>
@@ -138,7 +138,7 @@ function ProgressBar({ status }: { status: TrackingStatus }) {
             key={s}
             className={cn(
               "truncate",
-              i <= idx && status !== "canceled" && "text-foreground",
+              i <= idx && status !== "canceled" && "text-[var(--text-primary)]",
             )}
           >
             {s === "confirmed" && "Confirmado"}

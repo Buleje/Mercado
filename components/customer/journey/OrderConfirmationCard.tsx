@@ -149,7 +149,7 @@ export const OrderConfirmationCard = memo(function OrderConfirmationCard({
           <Link href={`/mis-pedidos`}>Seguir mi pedido</Link>
         </PrimaryButton>
         <a
-          href={`https://wa.me/51916409675?text=${encodeURIComponent(`Hola, soy del pedido #${orderId.slice(-6).toUpperCase()}`)}`}
+          href={`https://wa.me/51929340532?text=${encodeURIComponent(`Hola, soy del pedido #${orderId.slice(-6).toUpperCase()}`)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-transparent text-[var(--text-primary)] py-3 text-sm font-bold border border-[var(--rule-base)] hover:border-[var(--rule-strong)] transition-colors"

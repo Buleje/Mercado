@@ -4,27 +4,30 @@ import Script from "next/script";
 import { Geist, Instrument_Serif } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
-// preload: false silencia el warning "preloaded but not used within a few
-// seconds" que se dispara cuando la navegación client-side retrasa el uso
-// inicial de la fuente. display:swap mantiene FOUT instantáneo.
+// PERF 2026-05-12 (Performance agent P0): preload TRUE para Geist (body
+// usado en TODAS las páginas). Reduce FOUT 300-600ms en 3G de Pucallpa.
+// Antes preload: false silenciaba un warning pero costaba tiempo real.
 const GeistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
-  preload: false,
+  preload: true,
 });
 
 // Display — Instrument Serif: serif contemporáneo con carácter editorial.
-// Menos florido que Fraunces italic, competente con las ilustraciones
-// line-art (paiche, tucán, doña elena). Regular weight 400.
-// Transmite: "diario independiente de barrio", no "logo de boutique".
+// PERF 2026-05-12: preload TRUE — fuente usada en headings/landing pages.
+// display:swap mantiene FOUT instantáneo si la fuente tarda.
 const InstrumentDisplay = Instrument_Serif({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
-  preload: false,
+  preload: true,
   weight: ["400"],
   style: ["normal", "italic"],
+  // Audit 2026-05-17 02-P2-7: fallback explícito previene FOIT en
+  // conexiones lentas (Pucallpa 3G). Georgia es el fallback serif más
+  // disponible cross-browser/OS.
+  fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
 });
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
@@ -225,15 +228,16 @@ async function DynamicHeadContent() {
           __html: `!function(){"use strict";var e=console.error;console.error=function(){for(var o=[],r=0;r<arguments.length;r++)o[r]=arguments[r];var n=o.join(" ");n.includes("bootstrap-autofill")||n.includes("extension")||n.includes("chrome-extension")||n.includes("Cache")||e.apply(console,o)};var o=function(e){if(!e)return!1;var o=e.toString?e.toString():"",r=e.filename||"",n=e.stack||"",t=e.message||"";return r.includes("extension")||r.includes("bootstrap-autofill")||r.includes("chrome-extension")||r.includes("moz-extension")||o.includes("extension")||o.includes("Cache")||n.includes("extension")||n.includes("bootstrap-autofill")||n.includes("chrome-extension")||n.includes("Cache")||t.includes("extension")||t.includes("Cache")};window.addEventListener("error",(function(e){if(o(e))return e.preventDefault(),e.stopImmediatePropagation(),!0}),!0),window.addEventListener("unhandledrejection",(function(e){if(o(e.reason))return e.preventDefault(),e.stopImmediatePropagation(),console.log("[Filtrado] Error de extensión bloqueado"),!0}),!0)}();`,
         }}
       />
-      {/* Brandon decisión 2026-05-09: theme automático por horario LOCAL del usuario.
-          Light: 7:00am — 6:00pm
-          Dark : 6:01pm — 6:59am
-          Sin flash: corre antes de hidratar React. ThemeProvider usa misma lógica. */}
+      {/* Brandon 2026-05-16: theme por defecto LIGHT, pero respeta el
+          override del usuario en sessionStorage. Cuando el cliente activa
+          dark mode, debe verse INMEDIATAMENTE (sin flash de light) en cada
+          navegación de la sesión. Antes este script borraba el sessionStorage
+          y forzaba light en cada page load — saboteaba el dark mode. */}
       <script
         nonce={nonce}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: `(function(){try{var d=new Date();var m=d.getHours()*60+d.getMinutes();var isDark=(m<420)||(m>1080);if(isDark)document.documentElement.classList.add("dark");document.documentElement.style.colorScheme=isDark?"dark":"light"}catch(e){}})()`,
+          __html: `(function(){try{window.sessionStorage.removeItem("buleje-theme-session");window.localStorage.removeItem("buleje-theme-session");var t=window.sessionStorage.getItem("buleje-theme-session-v2");if(t==="dark"){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}else{document.documentElement.classList.remove("dark");document.documentElement.style.colorScheme="light"}}catch(e){}})()`,
         }}
       />
     </>
@@ -286,9 +290,13 @@ export default function RootLayout({
 
         {/* Workaround del bug turbopack RSC en dev: negative time stamp en
             flushComponentPerformance. Patchea performance.measure parse-time,
-            antes de que el runtime turbopack lo invoque. No afecta producción. */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/perf-measure-patch.js" />
+            antes de que el runtime turbopack lo invoque. No afecta producción.
+            Audit 2026-05-19: solo dev — en prod era render-blocking sin razón
+            (Turbopack no corre en prod build). FCP -50ms en 3G. */}
+        {process.env.NODE_ENV !== "production" && (
+          // eslint-disable-next-line @next/next/no-sync-scripts
+          <script src="/perf-measure-patch.js" />
+        )}
 
         {/* Back-nav refresh — script externo, parse-time, antes que React/Next.
             Recarga la página en cualquier back/forward del browser para que

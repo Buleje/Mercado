@@ -143,7 +143,7 @@ export default function PriceTagGenerator() {
           );
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[PriceTagGenerator] products fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

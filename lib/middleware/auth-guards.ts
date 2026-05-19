@@ -96,6 +96,31 @@ export async function guardSuperadminApi(
  * Verifies the HMAC signature AND expiration of the platform cookie.
  * Expired or invalid → redirect to `/superadmin/login` and clear the cookie.
  */
+/**
+ * Brandon 2026-05-16 (audit Info preventivo): allowlist para `?next=` en
+ * redirects del superadmin guard. Hoy NO usamos `?next=` (el flow va a
+ * /superadmin/dashboard hardcoded), pero si en el futuro se implementa,
+ * esta función previene open-redirect via WhatsApp phishing.
+ *
+ * Mismo patrón que safeRedirectPath() en app/admin/login/page.tsx.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- preventivo, exportable cuando se implemente ?next=
+export function safeSuperadminNext(raw: string | null | undefined, fallback: string): string {
+  if (!raw) return fallback;
+  let dest: string;
+  try {
+    dest = decodeURIComponent(raw);
+  } catch {
+    return fallback;
+  }
+  if (!dest.startsWith("/superadmin")) return fallback;  // solo rutas superadmin
+  if (dest.startsWith("//")) return fallback;
+  if (dest.includes("://")) return fallback;
+  if (/^[a-z]+:/i.test(dest)) return fallback;
+  if (dest.includes("\\")) return fallback;
+  return dest;
+}
+
 export async function guardSuperadminPages(
   req: NextRequest,
   pathname: string,

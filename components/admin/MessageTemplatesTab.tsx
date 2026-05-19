@@ -134,7 +134,7 @@ export default function MessageTemplatesTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Plantillas de Mensajes</SectionTitle>
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Plantillas de Mensajes</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Plantillas listas para WhatsApp, Email y SMS</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -151,14 +151,14 @@ export default function MessageTemplatesTab() {
           const cfg = CHANNEL_CONFIG[ch];
           const count = templates.filter(t => t.channel === ch).length;
           return (
-            <div key={ch} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+            <div key={ch} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 ">
               <p className={cn("text-xs font-semibold", cfg.color)}>{cfg.label}</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">{count}</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">{count}</p>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">plantillas</p>
             </div>
           );
         })}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Usos totales</p>
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] mt-1">{templates.reduce((s, t) => s + t.usageCount, 0)}</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">copias realizadas</p>
@@ -169,14 +169,14 @@ export default function MessageTemplatesTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar plantilla..." className="pl-9 pr-4 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary w-56" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar plantilla..." className="pl-9 pr-4 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary w-56" />
         </div>
-        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
           {[{ val: "all", lbl: "Todos" }, ...Object.entries(CHANNEL_CONFIG).map(([k, v]) => ({ val: k, lbl: v.label }))].map(({ val, lbl }) => (
             <button key={val} onClick={() => setChannelFilter(val as typeof channelFilter)} className={cn("px-3 py-2 text-sm font-semibold transition-colors", channelFilter === val ? "bg-primary text-white" : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>{lbl}</button>
           ))}
         </div>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value as typeof categoryFilter)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value as typeof categoryFilter)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="all">Todas las categorías</option>
           {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
@@ -186,7 +186,7 @@ export default function MessageTemplatesTab() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse">
+            <div key={i} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 animate-pulse">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-surface shrink-0" />
                 <div className="flex-1 space-y-2">
@@ -205,13 +205,13 @@ export default function MessageTemplatesTab() {
           {filtered.map(t => {
             const chCfg = CHANNEL_CONFIG[t.channel];
             return (
-              <div key={t.id} onClick={() => setSelectedId(t.id)} className={cn("bg-white dark:bg-card rounded-xl border p-4 cursor-pointer transition-all hover:shadow-[var(--shadow-sm)]", selectedId === t.id ? "border-primary" : "border-[var(--rule-base)] dark:border-card-border")}>
+              <div key={t.id} onClick={() => setSelectedId(t.id)} className={cn("bg-[var(--surface-raised)] rounded-xl border p-4 cursor-pointer transition-all hover:shadow-[var(--shadow-sm)]", selectedId === t.id ? "border-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <button onClick={e => { e.stopPropagation(); handleStar(t.id); }} className="shrink-0">
                       {t.starred ? <Star className="h-4 w-4 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" /> : <StarOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
                     </button>
-                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{t.name}</CardTitle>
+                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{t.name}</CardTitle>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", chCfg.bg, chCfg.color)}>{chCfg.label}</span>
@@ -243,16 +243,16 @@ export default function MessageTemplatesTab() {
         {/* Preview */}
         <div className="lg:col-span-1">
           {selected ? (
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5  sticky top-6">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm mb-1">{selected.name}</CardTitle>
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5  sticky top-6">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-1">{selected.name}</CardTitle>
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", CHANNEL_CONFIG[selected.channel].bg, CHANNEL_CONFIG[selected.channel].color)}>{CHANNEL_CONFIG[selected.channel].label}</span>
                 <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{selected.createdAt}</span>
               </div>
               {selected.subject && (
-                <div className="mb-3"><p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Asunto:</p><p className="text-sm text-[var(--text-primary)] dark:text-foreground">{selected.subject}</p></div>
+                <div className="mb-3"><p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Asunto:</p><p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{selected.subject}</p></div>
               )}
-              <div className={cn("rounded-xl p-4 text-sm whitespace-pre-line leading-relaxed", selected.channel === "whatsapp" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--text-primary)] dark:text-foreground" : "bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground")}>
+              <div className={cn("rounded-xl p-4 text-sm whitespace-pre-line leading-relaxed", selected.channel === "whatsapp" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                 {selected.body}
               </div>
               {selected.variables.length > 0 && (
@@ -270,7 +270,7 @@ export default function MessageTemplatesTab() {
               </button>
             </div>
           ) : (
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-8 text-center">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
               <MessageSquare className="h-10 w-10 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
               <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Selecciona una plantilla para ver la vista previa</p>
             </div>
@@ -282,39 +282,39 @@ export default function MessageTemplatesTab() {
       {/* New modal */}
       {showNew && (
         <div className="modal-backdrop p-4" onClick={() => setShowNew(false)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Nueva plantilla</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva plantilla</CardTitle>
               <button onClick={() => setShowNew(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Nombre</label>
-                <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ej: Confirmación de pedido" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary" autoFocus />
+                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Nombre</label>
+                <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ej: Confirmación de pedido" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary" autoFocus />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Canal</label>
-                  <select value={newChannel} onChange={e => setNewChannel(e.target.value as TemplateChannel)} className="w-full px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Canal</label>
+                  <select value={newChannel} onChange={e => setNewChannel(e.target.value as TemplateChannel)} className="w-full px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
                     {Object.entries(CHANNEL_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Categoría</label>
-                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as TemplateCategory)} className="w-full px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Categoría</label>
+                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as TemplateCategory)} className="w-full px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
                     {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </div>
               </div>
               {newChannel === "email" && (
                 <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Asunto</label>
-                  <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Asunto del email..." className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary" />
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Asunto</label>
+                  <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Asunto del email..." className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary" />
                 </div>
               )}
               <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Mensaje</label>
-                <textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder={"Usa {{variable}} para campos dinámicos...\nEj: Hola {{cliente}}, tu pedido..."} rows={6} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary resize-none font-mono" />
+                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Mensaje</label>
+                <textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder={"Usa {{variable}} para campos dinámicos...\nEj: Hola {{cliente}}, tu pedido..."} rows={6} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary resize-none font-mono" />
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables detectadas: {[...newBody.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]).join(", ") || "ninguna"}</p>
               </div>
               <div className="flex flex-wrap justify-end gap-3 pt-2">

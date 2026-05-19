@@ -26,6 +26,9 @@ const PlansToggle = dynamic(
 const LiveSignupTicker = dynamic(
   () => import("@/components/landing/abrir-tienda/LiveSignupTicker"),
 );
+const BodegaScene = dynamic(
+  () => import("@/components/landing/abrir-tienda/BodegaScene"),
+);
 
 export const metadata: Metadata = {
   title: "Activa tu tienda online — Plataforma todo-en-uno",
@@ -106,7 +109,7 @@ export default function AbrirTiendaPage() {
                 </p>
                 {/* H1 reducido: antes clamp(2.75,7.5vw,5.5rem) aplastaba la
                     jerarquía y dejaba el subtítulo sin aire. Bajo a 4rem max. */}
-                <h1 className="text-[clamp(2.25rem,5vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+                <h1 className="text-[clamp(2.25rem,5vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
                   Activa tu tienda
                   <br />
                   <span className="text-[var(--accent)]">
@@ -142,36 +145,14 @@ export default function AbrirTiendaPage() {
                 </div>
               </div>
 
-              {/* Trust card */}
+              {/* Trust illustration — bodega con tecnología vendiendo en vivo.
+                  v2 (2026-05-10): antes era un card con 4 stats de texto. Brandon
+                  pidió algo "ilustrativo y referencial a la página", al estilo
+                  del PhoneMockup del home. BodegaScene muestra una bodega
+                  estilizada (toldo, estantes, contador con tablet Buleje
+                  ticker en vivo) + las 4 garantías como pills flotando. */}
               <div className="relative">
-                <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 sm:p-10 shadow-sm">
-                  <p className="text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-8">
-                    Garantías Buleje
-                  </p>
-                  <div className="space-y-7">
-                    {[
-                      { value: "S/ 0", label: "Comisión los primeros 90 días" },
-                      { value: "5 min", label: "Estás vendiendo desde el registro" },
-                      // Mayo 2026: "+42% ventas promedio" eliminado tras
-                      // designer audit. No tenemos datos reales para sustentarlo;
-                      // reemplazado por feature concreta y verificable.
-                      { value: "Yape · Plin", label: "Cobrás como ya cobras" },
-                      { value: "24/7", label: "Soporte humano por WhatsApp" },
-                    ].map(({ value, label }, idx) => (
-                      <div
-                        key={label}
-                        className={`flex items-baseline gap-5 ${idx > 0 ? "pt-5 border-t border-[var(--rule-soft)]" : ""}`}
-                      >
-                        <span className="text-[clamp(2rem,4.5vw,3rem)] font-black tabular-nums tracking-[-0.035em] text-[var(--accent)] leading-none w-[5ch] shrink-0">
-                          {value}
-                        </span>
-                        <span className="text-sm sm:text-base text-[var(--text-secondary)] leading-snug font-medium">
-                          {label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <BodegaScene />
               </div>
             </div>
           </div>
@@ -197,7 +178,7 @@ export default function AbrirTiendaPage() {
                 />
                 Preguntas
               </p>
-              <h2 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+              <h2 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
                 Resuelve tus dudas
                 <br />
                 <span className="text-[var(--accent)]">
@@ -223,7 +204,7 @@ export default function AbrirTiendaPage() {
                           </span>
                         </span>
                         <ChevronDown
-                          className="h-5 w-5 shrink-0 text-[var(--text-tertiary)] group-open:rotate-180 group-open:text-[var(--accent)] transition-all duration-200"
+                          className="h-5 w-5 shrink-0 text-[var(--text-tertiary)] group-open:rotate-180 group-open:text-[var(--accent)] transition-all duration-[var(--dur-fast)]"
                           strokeWidth={2}
                         />
                       </summary>
@@ -256,7 +237,7 @@ export default function AbrirTiendaPage() {
             </p>
             {/* Heading reducido: antes 5rem en 3 líneas competía con el CTA.
                 Ahora clamp 4rem max + 2 líneas exactas. */}
-            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95] max-w-3xl mx-auto">
+            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95] max-w-3xl mx-auto">
               Tu negocio merece <span className="text-[var(--accent)]">vender más</span>.
             </h2>
             <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">

@@ -7,7 +7,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 import type { ComplianceItem } from "@/app/api/compliance/route";
 
 const STATUS_CONFIG = {
-  "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", border: "border-[var(--rule-base)] dark:border-card-border" },
+  "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
   "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
   "vencido":     { label: "Vencido",            icon: AlertTriangle,  color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 border: "border-[var(--data-error)] dark:border-[var(--data-error)]/30" },
   "pendiente":   { label: "Pendiente",          icon: Clock,          color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",          border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/30" },
@@ -75,7 +75,7 @@ export default function ComplianceTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Scale className="h-6 w-6 text-primary" /> Cumplimiento Regulatorio
             {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
@@ -119,7 +119,7 @@ export default function ComplianceTab() {
           { label: "Pendientes / próx.", value: porVencer,     color: "text-[var(--data-warning)]" },
           { label: "Vencidos",           value: vencidos,      color: vencidos > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             {loading
               ? <div className="h-7 w-12 bg-[var(--surface-sunken)] dark:bg-surface rounded animate-pulse mt-1" />
@@ -133,7 +133,7 @@ export default function ComplianceTab() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"
             placeholder="Buscar obligación o entidad…" />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -160,7 +160,7 @@ export default function ComplianceTab() {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border animate-pulse" />
+            <div key={i} className="h-24 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -175,11 +175,11 @@ export default function ComplianceTab() {
             const SIcon = S.icon;
             const days = daysUntil(o.nextDue);
             return (
-              <div key={o.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 sm:p-5", S.border)}>
+              <div key={o.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-4 sm:p-5", S.border)}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{o.title}</CardTitle>
+                      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{o.title}</CardTitle>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5", S.color)}>
                         <SIcon className="h-2.5 w-2.5" /> {S.label}
                       </span>

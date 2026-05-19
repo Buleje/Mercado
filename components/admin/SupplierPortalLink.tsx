@@ -104,7 +104,8 @@ export default function SupplierPortalLink() {
   }, [supplierName, configs]);
 
   const copyLink = useCallback((token: string) => {
-    navigator.clipboard.writeText(buildPortalURL(token)).catch(() => {});
+    // Clipboard best-effort: falla en Safari sin focus / iframe blocked.
+    navigator.clipboard.writeText(buildPortalURL(token)).catch(() => { /* clipboard best-effort */ });
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
   }, []);

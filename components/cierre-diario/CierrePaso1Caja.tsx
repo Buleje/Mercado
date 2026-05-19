@@ -60,7 +60,7 @@ export default function CierrePaso1Caja({
       className="space-y-6"
     >
       <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-foreground">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-[var(--text-primary)]">
           Conteo de efectivo
         </h2>
         <p className="text-sm text-gray-500 dark:text-muted mt-1">
@@ -83,7 +83,7 @@ export default function CierrePaso1Caja({
               className={`relative flex flex-col items-center justify-center rounded-2xl border-2 p-4 min-h-[80px] transition-all select-none ${
                 cantidad > 0
                   ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-sm"
-                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-gray-300 dark:hover:border-gray-600"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-gray-300 dark:hover:border-gray-600"
               }`}
             >
               <span className={`text-lg font-bold ${
@@ -115,9 +115,9 @@ export default function CierrePaso1Caja({
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border p-6 w-80"
+            className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] p-6 w-80"
           >
-            <p className="text-sm font-semibold text-gray-700 dark:text-foreground mb-3">
+            <p className="text-sm font-semibold text-gray-700 dark:text-[var(--text-primary)] mb-3">
               Cantidad de {formatDenom(editingDenom)}
             </p>
             <input
@@ -127,7 +127,7 @@ export default function CierrePaso1Caja({
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleEditConfirm()}
-              className="w-full border border-gray-300 dark:border-card-border rounded-xl px-4 py-3 text-2xl text-center font-bold bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full border border-[var(--rule-base)] rounded-xl px-4 py-3 text-2xl text-center font-bold bg-gray-50 dark:bg-surface text-gray-900 dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <div className="flex gap-2 mt-4">
               <button
@@ -148,10 +148,10 @@ export default function CierrePaso1Caja({
       )}
 
       {/* Summary footer */}
-      <div className="bg-gray-50 dark:bg-surface rounded-2xl p-4 space-y-3 border border-gray-200 dark:border-card-border">
+      <div className="bg-gray-50 dark:bg-surface rounded-2xl p-4 space-y-3 border border-[var(--rule-base)]">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-600 dark:text-muted">Total contado:</span>
-          <span className="text-2xl font-extrabold text-gray-900 dark:text-foreground">
+          <span className="text-2xl font-extrabold text-gray-900 dark:text-[var(--text-primary)]">
             S/ {totalContado.toFixed(2)}
           </span>
         </div>
@@ -159,14 +159,14 @@ export default function CierrePaso1Caja({
           <>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-muted">Efectivo esperado (sistema):</span>
-              <span className="font-semibold text-gray-700 dark:text-foreground">
+              <span className="font-semibold text-gray-700 dark:text-[var(--text-primary)]">
                 S/ {efectivoEsperado.toFixed(2)}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-muted">Diferencia:</span>
               <span className={`font-bold text-lg ${
-                diferencia > 0 ? "text-[var(--data-success-600)]" : diferencia < 0 ? "text-[var(--data-error-500)]" : "text-gray-600 dark:text-foreground"
+                diferencia > 0 ? "text-[var(--data-success-600)]" : diferencia < 0 ? "text-[var(--data-error-500)]" : "text-gray-600 dark:text-[var(--text-primary)]"
               }`}>
                 {diferencia >= 0 ? "+" : ""}S/ {diferencia.toFixed(2)}
               </span>
@@ -179,7 +179,7 @@ export default function CierrePaso1Caja({
       <div className="flex gap-3">
         <button
           onClick={onSkip}
-          className="flex-1 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex-1 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted border border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           Sin efectivo
         </button>

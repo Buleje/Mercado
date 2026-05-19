@@ -247,7 +247,7 @@ export default function QuickAddModal() {
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 340, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-2xl mx-0 sm:mx-4 max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-[28px] bg-white shadow-[0_25px_60px_-12px_rgba(0,0,0,0.35)] dark:bg-card border border-[var(--rule-base)]"
+            className="relative w-full max-w-2xl mx-0 sm:mx-4 max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-[28px] bg-white shadow-[var(--shadow-xl)] dark:bg-[var(--surface-raised)] border border-[var(--rule-base)]"
           >
             {/* Botón cerrar flotante (sobre la imagen) */}
             <button
@@ -262,7 +262,7 @@ export default function QuickAddModal() {
             {/* Body con scroll — layout 2-col en desktop (imagen + info) */}
             <div className="flex flex-1 flex-col overflow-y-auto sm:flex-row">
               {/* Columna IMAGEN (40% en desktop, 100% mobile) */}
-              <div className="relative shrink-0 w-full sm:w-[44%] aspect-[4/3] sm:aspect-auto sm:min-h-[420px] bg-gradient-to-br from-[var(--surface-sunken)] to-[var(--surface-canvas)]">
+              <div className="relative shrink-0 w-full sm:w-[44%] aspect-[4/3] sm:aspect-auto sm:min-h-[420px] bg-linear-to-br from-[var(--surface-sunken)] to-[var(--surface-canvas)]">
                 {product.image ? (
                   <Image
                     src={product.image}
@@ -297,7 +297,7 @@ export default function QuickAddModal() {
 
                 {/* Badge de categoría flotante */}
                 {product.category && (
-                  <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)] shadow-md backdrop-blur">
+                  <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-primary)] shadow-md backdrop-blur">
                     {product.category}
                   </div>
                 )}
@@ -313,7 +313,7 @@ export default function QuickAddModal() {
 
                 {/* Stock low indicator */}
                 {!outOfStock && product.stock != null && product.stock > 0 && product.stock <= 5 && (
-                  <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
+                  <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white shadow-md">
                     Solo quedan {product.stock}
                   </div>
                 )}
@@ -344,7 +344,7 @@ export default function QuickAddModal() {
                 </div>
 
                 {/* Línea con detalle delivery + pago */}
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                   <span className="inline-flex items-center gap-1">
                     <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     25 min
@@ -362,7 +362,7 @@ export default function QuickAddModal() {
                 {/* Descripción con borde sutil */}
                 {product.description && (
                   <div className="mt-5 rounded-2xl bg-[var(--surface-sunken)] px-4 py-3.5 border border-[var(--rule-soft)]">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       Descripción
                     </p>
                     <p className="text-sm leading-relaxed text-[var(--text-primary)]">
@@ -468,7 +468,7 @@ export default function QuickAddModal() {
             </div>{/* /body row */}
 
             {/* Footer sticky con stepper + total + CTA */}
-            <div className="shrink-0 border-t border-[var(--rule-soft)] bg-white px-5 py-4 dark:bg-card">
+            <div className="shrink-0 border-t border-[var(--rule-soft)] bg-white px-5 py-4 dark:bg-[var(--surface-raised)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex items-center rounded-xl border border-[var(--rule-base)]">
                   <button

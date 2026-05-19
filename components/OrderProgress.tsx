@@ -135,19 +135,19 @@ export default function OrderProgress() {
     if (npsSent) {
       // Brief thank-you then auto-hide
       return (
-        <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-[var(--shadow-xl)] p-4 text-center animate-[fadeDown_0.3s_ease-out]">
-          <p className="text-sm font-bold text-foreground">¡Gracias por tu calificación! ⭐</p>
+        <div className="fixed top-20 right-4 z-40 w-72 bg-[var(--surface-raised)] border border-border rounded-2xl shadow-[var(--shadow-xl)] p-4 text-center animate-[fadeDown_0.3s_ease-out]">
+          <p className="text-sm font-bold text-[var(--text-primary)]">¡Gracias por tu calificación! ⭐</p>
           <p className="text-xs text-muted mt-1">{npsRating >= 4 ? "¡Nos alegra que te gustó!" : "Trabajaremos en mejorar."}</p>
           <button onClick={() => setDismissed(true)} className="mt-2 text-xs text-primary font-semibold hover:underline">Cerrar</button>
         </div>
       );
     }
     return (
-      <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-[var(--shadow-xl)] overflow-hidden animate-[fadeDown_0.3s_ease-out]">
+      <div className="fixed top-20 right-4 z-40 w-72 bg-[var(--surface-raised)] border border-border rounded-2xl shadow-[var(--shadow-xl)] overflow-hidden animate-[fadeDown_0.3s_ease-out]">
         <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/10 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-[var(--data-success-500)]" />
-            <span className="text-xs font-bold text-foreground">¡Pedido entregado!</span>
+            <span className="text-xs font-bold text-[var(--text-primary)]">¡Pedido entregado!</span>
           </div>
           <button onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
             <X className="w-3.5 h-3.5 text-muted" />
@@ -156,7 +156,7 @@ export default function OrderProgress() {
         <div className="px-4 py-4 text-center space-y-3">
           {npsStep === "rate" ? (
             <>
-              <p className="text-sm font-semibold text-foreground">¿Cómo fue tu experiencia?</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">¿Cómo fue tu experiencia?</p>
               <div className="flex justify-center gap-1">
                 {[1, 2, 3, 4, 5].map(s => (
                   <button key={s} onMouseEnter={() => setNpsHover(s)} onMouseLeave={() => setNpsHover(0)} onClick={() => { setNpsRating(s); setNpsStep("comment"); }} className="p-1 transition-transform hover:scale-125">
@@ -184,7 +184,7 @@ export default function OrderProgress() {
                 <button onClick={() => submitNps(npsRating, npsComment)} className="px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:opacity-90 transition-opacity">
                   Enviar
                 </button>
-                <button onClick={() => submitNps(npsRating)} className="px-3 py-1.5 text-xs text-muted hover:text-foreground transition-colors">
+                <button onClick={() => submitNps(npsRating)} className="px-3 py-1.5 text-xs text-muted hover:text-[var(--text-primary)] transition-colors">
                   Omitir
                 </button>
               </div>
@@ -220,7 +220,7 @@ export default function OrderProgress() {
               )}
             </div>
             <div className="pt-1">
-              <p className={`text-sm font-semibold ${done ? "text-foreground" : "text-muted"}`}>{step.label}</p>
+              <p className={`text-sm font-semibold ${done ? "text-[var(--text-primary)]" : "text-muted"}`}>{step.label}</p>
               {active && (
                 <p className="text-xs text-primary flex items-center gap-1 mt-0.5">
                   <Clock className="w-3 h-3" /> En progreso...
@@ -238,16 +238,16 @@ export default function OrderProgress() {
     return (
       <div className="fixed inset-0 z-6002 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAsModal(false)} />
-        <div className="relative bg-white dark:bg-card rounded-3xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border w-full max-w-sm overflow-hidden animate-[scaleIn_0.25s_ease-out]">
+        <div className="relative bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] w-full max-w-sm overflow-hidden animate-[scaleIn_0.25s_ease-out]">
           {/* Modal header */}
-          <div className="px-6 pt-6 pb-4 text-center border-b border-gray-100 dark:border-card-border bg-linear-to-b from-primary/5 to-transparent">
+          <div className="px-6 pt-6 pb-4 text-center border-b border-[var(--rule-base)] bg-linear-to-b from-primary/5 to-transparent">
             <div className="flex items-center justify-center gap-2 mb-3">
               <div className="relative">
                 <AlertCircle className="w-8 h-8 text-[var(--data-warning-500)] animate-pulse" />
                 <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)] animate-ping" />
               </div>
             </div>
-            <h3 className="text-xl font-extrabold text-foreground">
+            <h3 className="text-xl font-extrabold text-[var(--text-primary)]">
               {order.customerName ? `¡Gracias, ${order.customerName}!` : "¡Pedido recibido!"}
             </h3>
             {order.customerName && <p className="text-xs text-primary font-semibold mt-0.5 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Tu pedido está en camino</p>}
@@ -278,7 +278,7 @@ export default function OrderProgress() {
           <div className="px-6 pb-6 flex gap-3">
             <button
               onClick={() => { setShowAsModal(false); setDismissed(true); }}
-              className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+              className="flex-1 py-3 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-muted hover:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
             >
               Cerrar
             </button>
@@ -296,7 +296,7 @@ export default function OrderProgress() {
 
   // Floating widget (after modal dismissed)
   return (
-    <div className="fixed top-20 right-4 z-40 w-72 sm:w-80 bg-card border border-border rounded-2xl shadow-[var(--shadow-xl)] shadow-black/8 overflow-hidden animate-[fadeDown_0.3s_ease-out]">
+    <div className="fixed top-20 right-4 z-40 w-72 sm:w-80 bg-[var(--surface-raised)] border border-border rounded-2xl shadow-[var(--shadow-xl)] shadow-black/8 overflow-hidden animate-[fadeDown_0.3s_ease-out]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center gap-2">
@@ -304,7 +304,7 @@ export default function OrderProgress() {
             <AlertCircle className="w-5 h-5 text-[var(--data-warning-500)] animate-pulse" />
             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--data-warning-500)] animate-ping" />
           </div>
-          <span className="text-xs font-bold text-foreground">Pedido #{order.id.slice(-6)}</span>
+          <span className="text-xs font-bold text-[var(--text-primary)]">Pedido #{order.id.slice(-6)}</span>
           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
         </div>
         <div className="flex items-center gap-1">
@@ -340,7 +340,7 @@ export default function OrderProgress() {
                     )}
                   </div>
                   <div className="pt-0.5">
-                    <p className={`text-xs font-semibold ${done ? "text-foreground" : "text-muted"}`}>{step.label}</p>
+                    <p className={`text-xs font-semibold ${done ? "text-[var(--text-primary)]" : "text-muted"}`}>{step.label}</p>
                     {active && (
                       <p className="text-[length:var(--ts-2xs)] text-primary flex items-center gap-1 mt-0.5">
                         <Clock className="w-2.5 h-2.5" /> En progreso...

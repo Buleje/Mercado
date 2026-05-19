@@ -8,6 +8,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { emitirBoleta } from "@/lib/integrations/sunat-nubefact";
 import { calculateIGV } from "@/lib/sunat";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 // ── POST /api/admin/sunat/generate-invoice — Emitir boleta/factura ─────────
 
@@ -22,6 +23,8 @@ const InvoiceSchema = z.object({
 export async function POST(req: NextRequest) {
   const rateLimitResponse = applyRateLimit(req, "STRICT", "sunat-generate");
   if (rateLimitResponse) return rateLimitResponse;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
 
   const traceId = newTraceId();
   try {

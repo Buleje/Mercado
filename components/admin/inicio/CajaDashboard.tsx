@@ -94,7 +94,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     const costMap = new Map(products.map(p => [p.id, p.costPrice ?? p.price * 0.7]));
 
     // Filter by date
-    const pOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= from && new Date(o.createdAt) <= to);
+    const pOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= from && new Date(o.createdAt) <= to);
     const pSales = sales.filter(s => new Date(s.createdAt) >= from && new Date(s.createdAt) <= to);
     const pPurchases = purchases.filter(p => p.createdAt && new Date(p.createdAt) >= from && new Date(p.createdAt) <= to);
 
@@ -102,7 +102,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     const rangeDays = Math.max(1, Math.round((to.getTime() - from.getTime()) / 86400000));
     const prevFrom = new Date(from.getTime() - rangeDays * 86400000);
     const prevTo = new Date(from.getTime() - 1);
-    const prevOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= prevFrom && new Date(o.createdAt) <= prevTo);
+    const prevOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= prevFrom && new Date(o.createdAt) <= prevTo);
     const prevSales = sales.filter(s => new Date(s.createdAt) >= prevFrom && new Date(s.createdAt) <= prevTo);
     const prevPurchases = purchases.filter(p => p.createdAt && new Date(p.createdAt) >= prevFrom && new Date(p.createdAt) <= prevTo);
 
@@ -156,7 +156,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
       const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
       const label = mStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
-      const mInc = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= mStart && new Date(o.createdAt) <= mEnd).reduce((a, o) => a + o.total, 0)
+      const mInc = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= mStart && new Date(o.createdAt) <= mEnd).reduce((a, o) => a + o.total, 0)
         + sales.filter(s => new Date(s.createdAt) >= mStart && new Date(s.createdAt) <= mEnd).reduce((a, s) => a + s.total, 0);
       const mExp = purchases.filter(p => p.createdAt && new Date(p.createdAt) >= mStart && new Date(p.createdAt) <= mEnd).reduce((a, p) => a + p.total, 0);
       flujoMensual.push({ mes: label, ingresos: mInc, egresos: mExp });
@@ -184,7 +184,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     // Income by hour (today)
     const todayStr = now.toDateString();
     const hourMap = new Map<number, number>();
-    orders.filter(o => new Date(o.createdAt).toDateString() === todayStr && o.status !== "cancelado").forEach(o => {
+    orders.filter(o => new Date(o.createdAt).toDateString() === todayStr && o.status === "entregado").forEach(o => {
       const h = new Date(o.createdAt).getHours();
       hourMap.set(h, (hourMap.get(h) ?? 0) + o.total);
     });
@@ -241,7 +241,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
       </div>
 
       {/* ── Balance summary bar ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl px-5 py-3">
         <Wallet className="h-4 w-4 text-[var(--text-tertiary)]" />
         <div className="flex-1 flex items-center gap-4 text-sm flex-wrap">
           <span className="text-[var(--text-secondary)] dark:text-muted">Ingresos:</span>

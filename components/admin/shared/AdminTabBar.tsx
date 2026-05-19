@@ -149,8 +149,8 @@ export default function AdminTabBar({
           "w-full shrink-0",
           // Desktop: fixed strip matching sidebar visual style
           "lg:w-40 lg:self-stretch lg:-ml-3 sm:lg:-ml-6 lg:pl-3 sm:lg:pl-6 lg:pr-0",
-          "lg:border-r lg:border-gray-200 lg:dark:border-card-border",
-          "lg:bg-white lg:dark:bg-card",
+          "lg:border-r lg:border-gray-200 lg:dark:border-[var(--rule-base)]",
+          "lg:bg-white lg:dark:bg-[var(--surface-raised)]",
           "lg:pt-1 lg:pb-4",
         )}>
           <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1 lg:pt-0">
@@ -242,7 +242,9 @@ export default function AdminTabBar({
               disabled={tab.disabled}
               title={tab.label}
               className={cn(
-                "flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-[3px] px-2.5 py-2 text-xs transition-all duration-[var(--dur-base)] sm:px-4 sm:py-2.5 sm:text-sm",
+                // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
+                // Desktop: layout original más compacto.
+                "flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-3 py-2.5 text-sm transition-all duration-[var(--dur-base)] sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-sm",
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === tab.id
                   ? "border-primary bg-primary/5 font-semibold text-primary"
@@ -253,7 +255,7 @@ export default function AdminTabBar({
               )}
             >
               {draggable && <GripVertical className="h-3 w-3 shrink-0 opacity-30" />}
-              {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
+              {Icon && <Icon className="h-4 w-4 shrink-0 sm:h-3.5 sm:w-3.5" />}
               <span>{tab.shortLabel || tab.label}</span>
               {tab.badge != null && (
                 <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-bold text-white">

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB } from "@/lib/db/products.db";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { getOrSet } from "@/lib/cache";
 
 /**
  * GET /api/admin/inventory/eoq-suggest
@@ -24,6 +25,11 @@ import { logger } from "@/lib/logger";
  * Ordena por urgencia = daysRemaining ASC (los que se agotan primero primero).
  *
  * Autorización: Bearer admin session.
+ *
+ * Brandon 2026-05-16 (Fase 2 perf): cache TTL 300s (5min) porque el cálculo
+ * es pesado (2 findMany sobre orderItems+saleItems del último año + sort) y
+ * el resultado solo cambia cuando hay nuevas ventas. Para refresh instantáneo
+ * tras compra grande, invalidar con `invalidateByPrefix("admin:eoq:")`.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -37,7 +43,9 @@ export async function GET(req: NextRequest) {
     const holdingRate = Number(url.searchParams.get("holdingRate") ?? 0.2);
     const topN = Math.min(100, Number(url.searchParams.get("topN") ?? 30));
 
-    const allProducts = await ProductsDB.getAll(tenantId);
+    const cacheKey = `admin:eoq:${tenantId}:${orderCost}:${holdingRate}:${topN}`;
+    const payload = await getOrSet(cacheKey, 300, async () => {
+      const allProducts = await ProductsDB.getAll(tenantId);
     const active = allProducts.filter((p) => p.active);
 
     // Demanda últimos 365 días
@@ -114,27 +122,30 @@ export async function GET(req: NextRequest) {
       })
       .slice(0, topN);
 
-    const totalSuggestedAmount = suggestions.reduce((s, r) => s + r.montoSugerido, 0);
-    const urgent = suggestions.filter((s) => s.needsReorder).length;
+      const totalSuggestedAmount = suggestions.reduce((s, r) => s + r.montoSugerido, 0);
+      const urgent = suggestions.filter((s) => s.needsReorder).length;
 
-    logger.info("[inventory/eoq-suggest] calculated", {
-      total: suggestions.length,
-      urgent,
-      totalAmount: totalSuggestedAmount,
-      tenantId,
-    });
-
-    return NextResponse.json({
-      ok: true,
-      params: { orderCost, holdingRate, topN },
-      summary: {
+      logger.info("[inventory/eoq-suggest] calculated (uncached)", {
         total: suggestions.length,
         urgent,
-        totalSuggestedAmount,
-        generatedAt: new Date().toISOString(),
-      },
-      suggestions,
+        totalAmount: totalSuggestedAmount,
+        tenantId,
+      });
+
+      return {
+        ok: true as const,
+        params: { orderCost, holdingRate, topN },
+        summary: {
+          total: suggestions.length,
+          urgent,
+          totalSuggestedAmount,
+          generatedAt: new Date().toISOString(),
+        },
+        suggestions,
+      };
     });
+
+    return NextResponse.json(payload);
   } catch (err) {
     logger.error("[inventory/eoq-suggest] failed", { error: String(err) });
     return NextResponse.json(

@@ -100,7 +100,7 @@ export default function CustomKPITab() {
   };
 
   const remove = async (id: string) => {
-    await fetch(`/api/custom-kpis?id=${id}`, { method: "DELETE" }).catch(() => {});
+    await fetch(`/api/custom-kpis?id=${id}`, { method: "DELETE" }).catch((err) => console.warn("[CustomKPITab] delete failed:", err));
     setKpis(prev => prev.filter(k => k.id !== id));
   };
 
@@ -112,7 +112,7 @@ export default function CustomKPITab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Target className="h-6 w-6 text-primary" /> KPIs Personalizados
             {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
@@ -136,11 +136,11 @@ export default function CustomKPITab() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 h-40 animate-pulse bg-[var(--surface-sunken)] dark:bg-surface" />
+            <div key={i} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 h-40 animate-pulse bg-[var(--surface-sunken)] dark:bg-surface" />
           ))}
         </div>
       ) : kpis.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)] bg-white dark:bg-card rounded-xl border border-dashed border-[var(--rule-base)] dark:border-card-border">
+        <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)] bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <Target className="h-12 w-12 mb-3 text-[var(--text-tertiary)]" />
           <p className="font-bold text-[var(--text-secondary)] dark:text-muted">Sin KPIs definidos</p>
           <p className="text-sm mt-1">Crea tu primer KPI personalizado</p>
@@ -157,7 +157,7 @@ export default function CustomKPITab() {
             const trendColor = k.trend === "up" ? (inverse ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]") : k.trend === "down" ? (inverse ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]") : "text-[var(--text-tertiary)]";
 
             return (
-              <div key={k.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 relative group">
+              <div key={k.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 relative group">
                 <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => openEdit(k)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-[var(--text-tertiary)]"><Pencil className="h-3 w-3" /></button>
                   <button onClick={() => remove(k.id)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3 w-3" /></button>
@@ -167,10 +167,10 @@ export default function CustomKPITab() {
                   <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", k.color)} />
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">{k.category}</p>
                 </div>
-                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-1 pr-12">{k.name}</p>
+                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1 pr-12">{k.name}</p>
 
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(k.currentValue, k.unit)}</span>
+                  <span className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(k.currentValue, k.unit)}</span>
                   <span className={cn("text-xs font-bold flex items-center gap-0.5", trendColor)}>
                     {TrendIcon(k.trend)} {Math.abs(k.changePercent)}%
                   </span>
@@ -203,35 +203,35 @@ export default function CustomKPITab() {
       {/* Modal */}
       {showModal && (
         <div className="modal-backdrop p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">{editKpi ? "Editar KPI" : "Nuevo KPI"}</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl p-4 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)]" onClick={e => e.stopPropagation()}>
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editKpi ? "Editar KPI" : "Nuevo KPI"}</CardTitle>
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre *</label>
-                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Ej: Ticket Promedio" />
+                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="Ej: Ticket Promedio" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
-                <input value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="¿Qué mide este KPI?" />
+                <input value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="¿Qué mide este KPI?" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fórmula</label>
-                <input value={form.formula} onChange={e => setForm(f => ({ ...f, formula: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-mono" placeholder="ventas / transacciones" />
+                <input value={form.formula} onChange={e => setForm(f => ({ ...f, formula: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono" placeholder="ventas / transacciones" />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Meta</label>
-                  <input value={form.target} onChange={e => setForm(f => ({ ...f, target: e.target.value }))} type="number" className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                  <input value={form.target} onChange={e => setForm(f => ({ ...f, target: e.target.value }))} type="number" className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Unidad</label>
-                  <select value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">
+                  <select value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm">
                     {["S/", "%", "pts", "pedidos", "veces", "min", "días"].map(u => <option key={u}>{u}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</label>
-                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">
+                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm">
                     {["Ventas", "Clientes", "Inventario", "Finanzas", "Operaciones"].map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>

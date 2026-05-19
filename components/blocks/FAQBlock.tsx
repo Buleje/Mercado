@@ -65,7 +65,7 @@ export default function FAQBlock(props: Partial<FAQBlockProps>) {
             <HelpCircle className="w-3.5 h-3.5" />
             {badge}
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             {titleParts[0]}
             {titleAccent && (
               <span className="relative inline-block text-primary">
@@ -100,7 +100,7 @@ export default function FAQBlock(props: Partial<FAQBlockProps>) {
             return (
               <div
                 key={i}
-                className={`rounded-2xl bg-white dark:bg-card overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
+                className={`rounded-2xl bg-[var(--surface-raised)] overflow-hidden shadow-sm hover:shadow-md transition-all duration-[var(--dur-fast)] ${
                   isOpen ? "shadow-md ring-1 ring-primary/15" : ""
                 }`}
               >
@@ -112,7 +112,7 @@ export default function FAQBlock(props: Partial<FAQBlockProps>) {
                   <div className="flex items-center gap-3">
                     {showNumbering && (
                       <span
-                        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0 transition-colors duration-200`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0 transition-colors duration-[var(--dur-fast)]`}
                         style={{
                           backgroundColor: isOpen ? accentColor : `${accentColor}14`,
                           color: isOpen ? "#ffffff" : accentColor,
@@ -122,21 +122,21 @@ export default function FAQBlock(props: Partial<FAQBlockProps>) {
                       </span>
                     )}
                     <span
-                      className={`text-sm sm:text-base font-semibold transition-colors duration-200 ${
-                        isOpen ? "text-primary" : "text-foreground group-hover:text-primary"
+                      className={`text-sm sm:text-base font-semibold transition-colors duration-[var(--dur-fast)] ${
+                        isOpen ? "text-primary" : "text-[var(--text-primary)] group-hover:text-primary"
                       }`}
                     >
                       {faq.question}
                     </span>
                   </div>
                   <ChevronDown
-                    className={`h-5 w-5 shrink-0 transition-all duration-200 ${
+                    className={`h-5 w-5 shrink-0 transition-all duration-[var(--dur-fast)] ${
                       isOpen ? "rotate-180 text-primary" : "text-muted"
                     }`}
                   />
                 </button>
                 <div
-                  className={`grid transition-[grid-template-rows] duration-300 ${
+                  className={`grid transition-[grid-template-rows] duration-[var(--dur-base)] ${
                     isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                   }`}
                 >

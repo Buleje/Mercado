@@ -84,7 +84,7 @@ function useTopStores(): Suggestion[] {
   const [stores, setStores] = useState<StoreLite[]>([]);
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/marketplace/stores?limit=5", { cache: "force-cache" })
+    fetch("/api/marketplace/stores?limit=5", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((j) => {
         if (cancelled) return;
@@ -288,7 +288,7 @@ export default function NavbarSearchAutocomplete({
     >
       <div className="group relative">
         <Search
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors pointer-events-none"
+          className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors pointer-events-none"
           aria-hidden
           strokeWidth={2}
         />
@@ -308,18 +308,28 @@ export default function NavbarSearchAutocomplete({
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder={effectivePlaceholder}
-          className="w-full rounded-full bg-[var(--surface-raised)] border border-[var(--rule-soft)] pl-10 pr-24 py-2 text-sm font-medium text-[var(--text-primary)] outline-none transition-all hover:border-[var(--accent)]/40 focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:shadow-md focus:shadow-[var(--accent)]/10 buleje-search-input"
+          className={cn(
+            "w-full h-12 rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]",
+            "pl-11 pr-14 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)]",
+            "placeholder:text-[var(--text-tertiary)] outline-none transition-all",
+            "hover:border-[var(--accent)]/40 hover:shadow-sm",
+            "focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:shadow-md focus:shadow-[var(--accent)]/15 focus:ring-4 focus:ring-[var(--accent)]/10",
+            "buleje-search-input",
+          )}
         />
         <button
           type="submit"
-          // Round 11: bg --accent-600 (más oscuro) en vez de --accent.
-          // text-white sobre #16a34a = 3.42:1 → FAIL AA. Sobre #12863d = 5.5:1 → PASS.
-          className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-white shadow hover:opacity-90 active:scale-95 transition-all"
+          className={cn(
+            "absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full",
+            "text-white shadow-sm transition-all",
+            "hover:scale-105 hover:shadow-md hover:shadow-[var(--accent)]/30",
+            "active:scale-[0.97]",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+          )}
           style={{ backgroundColor: "var(--accent-600, var(--accent))" }}
           aria-label="Buscar"
         >
-          <Search className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-          Buscar
+          <Search className="h-4 w-4" strokeWidth={2.75} aria-hidden />
         </button>
       </div>
       {/* Animación del placeholder — slide-in suave cada vez que rota */}
@@ -351,7 +361,7 @@ export default function NavbarSearchAutocomplete({
           id="navbar-search-listbox"
           role="listbox"
           aria-label="Sugerencias"
-          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-2xl shadow-black/10"
+          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] shadow-black/10"
         >
           {loading && (
             <div className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-tertiary)]">

@@ -95,8 +95,8 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Movimientos del Producto</p>
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Movimientos del Producto</p>
           <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Te muestra todo lo que entró y salió de cada producto, para que sepas exactamente cuánto tienes.</p>
           <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: si entra una compra de 24 unidades y luego se venden 5, aquí puedes ver ambas operaciones y el saldo exacto.</p>
         </div>
@@ -177,7 +177,7 @@ export default function KardexTab() {
         const items = Array.isArray(d) ? d : (d as { items?: unknown[] })?.items;
         setWarehouses(Array.isArray(items) ? items.map((w: { id: string; name: string }) => ({ id: w.id, name: w.name })) : []);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[KardexTab] warehouses fetch failed:", err));
   }, []);
 
   useEffect(() => {
@@ -281,20 +281,20 @@ export default function KardexTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <PageTitle className="flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <PageTitle className="flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             <BookOpen className="h-6 w-6 text-primary" /> Movimientos del Producto <ModuleTooltip />
           </PageTitle>
           <p className="mt-0.5 text-sm text-[var(--text-secondary)] dark:text-muted">Historial por producto: qué entró, qué salió y cuánto queda</p>
         </div>
         <button
           onClick={() => exportToCSV(lines.map((line) => ({ fecha: line.date, tipo: TYPE_META[line.type]?.label || line.type, referencia: line.reference, descripcion: line.description, entrada: line.qtyIn || "", salida: line.qtyOut || "", saldo: line.balance, costo_unit: line.costUnit, costo_total: line.totalCost, almacen: line.warehouse })), `kardex-${product.name}`)}
-          className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)] dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+          className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)] dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)] dark:hover:bg-accent"
         >
           <Download className="h-4 w-4" /> Descargar movimientos
         </button>
       </div>
 
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-card-border dark:bg-card">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
         <label className="mb-2 block text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar producto</label>
 
         {/* Selected product display */}
@@ -302,7 +302,7 @@ export default function KardexTab() {
           <div className="mb-3 flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 dark:border-primary/30 dark:bg-primary/10">
             <Package className="h-5 w-5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{product.name}</p>
+              <p className="truncate text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{product.name}</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock: {product.stock} {product.unit} {product.costPrice != null ? `· Costo: S/ ${Number(product.costPrice).toFixed(2)}` : ""}</p>
             </div>
             <button
@@ -311,7 +311,7 @@ export default function KardexTab() {
                 setDropdownOpen(true);
                 setTimeout(() => productInputRef.current?.focus(), 0);
               }}
-              className="shrink-0 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+              className="shrink-0 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)] dark:hover:bg-accent"
             >
               Cambiar
             </button>
@@ -332,13 +332,13 @@ export default function KardexTab() {
               }}
               onFocus={() => setDropdownOpen(true)}
               placeholder="Buscar producto..."
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2.5 pl-9 pr-10 text-sm text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-card-border dark:bg-surface dark:text-foreground dark:focus:border-primary"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2.5 pl-9 pr-10 text-sm text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)] dark:focus:border-primary"
             />
             <ChevronDown className={cn("absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)] transition-transform", dropdownOpen && "rotate-180")} />
           </div>
 
           {dropdownOpen && (
-            <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
+            <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
               {filteredProducts.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">
                   No se encontraron productos
@@ -360,7 +360,7 @@ export default function KardexTab() {
                       <div className="h-4 w-4 shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className={cn("truncate font-semibold", selectedProduct === item.id ? "text-primary" : "text-[var(--text-primary)] dark:text-foreground")}>
+                      <p className={cn("truncate font-semibold", selectedProduct === item.id ? "text-primary" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                         {item.name}
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Stock: {item.stock} {item.unit}</p>
@@ -384,33 +384,33 @@ export default function KardexTab() {
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar ref. o descripcion..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar ref. o descripcion..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterType} onChange={(event) => setFilterType(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground">
+        <select value={filterType} onChange={(event) => setFilterType(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)]">
           <option value="todos">Todos los tipos</option>
           {Object.keys(TYPE_META).map((type) => (
             <option key={type} value={type}>{TYPE_META[type].label}</option>
           ))}
         </select>
         {warehouses.length > 0 && (
-          <select value={filterWarehouse} onChange={(event) => setFilterWarehouse(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground">
+          <select value={filterWarehouse} onChange={(event) => setFilterWarehouse(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)]">
             <option value="todos">Todos los almacenes</option>
             {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             <option value="sin-almacen">Sin almacén asignado</option>
           </select>
         )}
-        <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
-        <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
+        <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)]" />
+        <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)]" />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
-        <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-5 py-3 dark:border-card-border">
-          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{product.name} - {product.unit}</span>
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+        <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-5 py-3 dark:border-[var(--rule-base)]">
+          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{product.name} - {product.unit}</span>
           <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{lines.length} movimientos</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-alt)] dark:border-card-border dark:bg-surface/50">
+            <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-alt)] dark:border-[var(--rule-base)] dark:bg-surface/50">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</th>
@@ -448,13 +448,13 @@ export default function KardexTab() {
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{line.reference}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{line.reference}</td>
                     <td className="max-w-60 truncate px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{line.description}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-success-500)]">{line.qtyIn > 0 ? `+${line.qtyIn}` : "-"}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-error-500)]">{line.qtyOut > 0 ? `-${line.qtyOut}` : "-"}</td>
-                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", line.balance <= 0 ? "text-[var(--data-error-500)]" : line.balance <= 10 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{line.balance}</td>
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", line.balance <= 0 ? "text-[var(--data-error-500)]" : line.balance <= 10 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{line.balance}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(line.costUnit)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(line.totalCost)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.totalCost)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-tertiary)] dark:text-muted">{line.warehouse}</td>
                   </tr>
                 );

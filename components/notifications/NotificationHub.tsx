@@ -152,7 +152,7 @@ function AlertItem({ alert, onNavigate }: { alert: ConsolidatedAlert; onNavigate
         <SourceIcon className={cn("h-4 w-4", severity.icon)} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-foreground leading-tight">
+        <p className="text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)] leading-tight">
           {alert.title}
         </p>
         <p className="text-xs text-gray-500 dark:text-muted mt-0.5 line-clamp-2">
@@ -432,17 +432,17 @@ export default function NotificationHub({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full sm:w-[420px] bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 bottom-0 w-full sm:w-[420px] bg-[var(--surface-raised)] border-l border-[var(--rule-base)] shadow-[var(--shadow-xl)] flex flex-col"
             style={{ zIndex: 61 }}
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-card-border flex items-center justify-between shrink-0">
+            <div className="px-4 py-3 border-b border-[var(--rule-base)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Bell className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-gray-900 dark:text-foreground text-sm">
+                  <h2 className="font-bold text-gray-900 dark:text-[var(--text-primary)] text-sm">
                     Centro de Notificaciones
                   </h2>
                   <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
@@ -465,7 +465,7 @@ export default function NotificationHub({
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors"
                   title="Cerrar (Esc)"
                 >
                   <X className="h-4 w-4" />
@@ -474,7 +474,7 @@ export default function NotificationHub({
             </div>
 
             {/* Hub Tabs */}
-            <div className="px-3 py-2 border-b border-gray-100 dark:border-card-border flex gap-1 shrink-0 overflow-x-auto">
+            <div className="px-3 py-2 border-b border-[var(--rule-base)] flex gap-1 shrink-0 overflow-x-auto">
               {HUB_TABS.map((tab) => {
                 const TabIcon = tab.icon;
                 const count = tab.key === "todas"
@@ -544,7 +544,7 @@ export default function NotificationHub({
 
                   {/* Divider */}
                   {alerts.length > 0 && notifications.length > 0 && (
-                    <div className="px-4 py-2 bg-gray-50 dark:bg-surface/50 border-y border-gray-100 dark:border-card-border flex items-center justify-between">
+                    <div className="px-4 py-2 bg-gray-50 dark:bg-surface/50 border-y border-[var(--rule-base)] flex items-center justify-between">
                       <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">
                         Notificaciones recientes
                       </span>
@@ -572,7 +572,7 @@ export default function NotificationHub({
                       <div className="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center mb-4">
                         <CheckCheck className="h-7 w-7 text-green-500" />
                       </div>
-                      <p className="font-semibold text-gray-900 dark:text-foreground text-sm">
+                      <p className="font-semibold text-gray-900 dark:text-[var(--text-primary)] text-sm">
                         Todo al día
                       </p>
                       <p className="text-xs text-gray-500 dark:text-muted mt-1">
@@ -582,7 +582,7 @@ export default function NotificationHub({
                   ) : (
                     groups.map((group) => (
                       <div key={group.label}>
-                        <div className="px-4 py-2 bg-gray-50 dark:bg-surface/50 border-b border-gray-100 dark:border-card-border">
+                        <div className="px-4 py-2 bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)]">
                           <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider">
                             {group.label}
                           </span>
@@ -611,7 +611,7 @@ export default function NotificationHub({
                       <div className="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center mb-4">
                         <CheckCheck className="h-7 w-7 text-green-500" />
                       </div>
-                      <p className="font-semibold text-gray-900 dark:text-foreground text-sm">
+                      <p className="font-semibold text-gray-900 dark:text-[var(--text-primary)] text-sm">
                         Sin {hubTab === "alertas" ? "alertas" : hubTab === "vencimientos" ? "vencimientos" : "recordatorios"}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-muted mt-1">
@@ -633,7 +633,7 @@ export default function NotificationHub({
 
             {/* Footer summary */}
             {alerts.length > 0 && (
-              <div className="px-4 py-2.5 border-t border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface/50 shrink-0">
+              <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50 dark:bg-surface/50 shrink-0">
                 <div className="flex items-center justify-between text-[length:var(--ts-2xs)]">
                   <div className="flex items-center gap-3">
                     {alerts.filter(a => a.severity === "critical").length > 0 && (

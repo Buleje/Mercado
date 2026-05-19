@@ -45,8 +45,8 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Inventario Fisico</p>
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario Fisico</p>
           <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Compara el stock real contado en bodega contra el stock del sistema y registra ajustes reales.</p>
           <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: si el sistema dice 20 unidades y cuentas 18, al registrar el conteo se crea un ajuste y el stock queda corregido.</p>
         </div>
@@ -196,7 +196,7 @@ export default function PhysicalInventoryTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             <ClipboardList className="h-6 w-6 text-[var(--text-secondary)]" /> Inventario Fisico <ModuleTooltip />
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Conteo fisico y conciliacion de stock</p>
@@ -221,16 +221,16 @@ export default function PhysicalInventoryTab() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Progreso del Conteo</span>
+          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Progreso del Conteo</span>
           <span className="text-sm font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{stats.pct}%</span>
         </div>
         <div className="h-4 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-surface">
           <div className="h-full rounded-full bg-[var(--text-primary)] transition-all" style={{ width: `${stats.pct}%` }} />
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Total Productos</p><p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.total}</p></div>
+          <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Total Productos</p><p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.total}</p></div>
           <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Contados</p><p className="text-xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{stats.counted}</p></div>
           <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Con Diferencias</p><p className="text-xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{stats.withDiff}</p></div>
           <div><p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Unidades con ajuste</p><p className="text-xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{stats.totalDiff}</p></div>
@@ -240,16 +240,16 @@ export default function PhysicalInventoryTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]" />
         </div>
         {(["todas", "pendiente", "contando", "finalizado", "diferencias"] as const).map((status) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-[var(--text-primary)] text-white" : "border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
+          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-[var(--text-primary)] text-white" : "border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-gray-50 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)] dark:text-muted dark:hover:bg-accent")}>
             {status === "todas" ? "Todos" : status === "diferencias" ? "Diferencias" : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -279,7 +279,7 @@ export default function PhysicalInventoryTab() {
                   <td className="px-5 py-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Package className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-                      <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{item.product}</span>
+                      <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.product}</span>
                     </div>
                   </td>
                   <td className="px-5 py-3 font-mono text-xs text-[var(--text-secondary)] dark:text-muted">{item.sku}</td>
@@ -289,7 +289,7 @@ export default function PhysicalInventoryTab() {
                     {item.status === "finalizado" ? (
                       <span className="font-bold">{item.countedQty}</span>
                     ) : (
-                      <input type="number" min={0} value={countInput[item.id] ?? ""} onChange={(event) => setCountInput((prev) => ({ ...prev, [item.id]: event.target.value }))} placeholder="-" className="w-20 rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-right text-sm font-bold outline-none focus:border-[var(--text-primary)] dark:border-card-border dark:bg-card" />
+                      <input type="number" min={0} value={countInput[item.id] ?? ""} onChange={(event) => setCountInput((prev) => ({ ...prev, [item.id]: event.target.value }))} placeholder="-" className="w-20 rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-right text-sm font-bold outline-none focus:border-[var(--text-primary)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]" />
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">

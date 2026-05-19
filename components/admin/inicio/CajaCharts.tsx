@@ -102,11 +102,14 @@ export default function CajaCharts({ data }: { data: CajaData }) {
   const sections: DraggableItem[] = [
     {
       id: "flujo-14d",
+      span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.flujo-diario"
+          hasData={(data.flujoDiario ?? []).some((d) => (d.ingresos ?? 0) > 0 || (d.egresos ?? 0) > 0)}
           kicker="Flujo diario · rango activo"
           title="Ingresos, egresos y balance"
+          description="Ingresos, egresos y balance por día."
           kpis={[
             { label: "Mejor día", value: mejorDia.best?.dia ?? "—", tone: "success" },
             { label: "Balance mejor día", value: fmtS(mejorDia.best?.balance ?? 0), tone: "success" },
@@ -133,11 +136,14 @@ export default function CajaCharts({ data }: { data: CajaData }) {
     },
     {
       id: "tendencia-mensual",
+      span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.tendencia-mensual"
+          hasData={(data.flujoMensual ?? []).length > 0}
           kicker="Tendencia · rango activo"
           title="Ingresos y egresos por mes"
+          description="Ingresos y egresos por mes."
           kpis={[
             { label: "Mejor mes", value: mesTop.top?.mes ?? "—", tone: "success" },
             { label: "Neto mejor mes", value: fmtS(mesTop.top?.neto ?? 0), tone: "success" },
@@ -164,9 +170,11 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "ingresos-por-hora",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.ingresos-por-hora"
+          hasData={true}
           kicker="Ingresos hoy · por hora"
           title="Distribución horaria de cobros"
+          description="Cobros por hora del día."
           kpis={[
             { label: "Hora pico", value: horaPico.hora, tone: "success" },
             { label: "Pico S/", value: fmtS(horaPico.monto), tone: "primary" },
@@ -202,9 +210,12 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "metodo-pago",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.metodo-pago"
+          hasData={true}
+          defaultVisible={false}
           kicker="Cobros por método"
           title="Composición de ingresos"
+          description="Mix de cobros por método."
           kpis={[
             {
               label: "Líder",
@@ -260,9 +271,12 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "ratio-liquido",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.ratio-liquido"
+          hasData={true}
+          defaultVisible={false}
           kicker="Salud financiera · periodo"
           title="Ratio líquido (balance / ingresos)"
+          description="Balance sobre ingresos. Arriba de 30% es salud buena."
           kpis={[
             { label: "Balance", value: fmtS(data.balance), tone: data.balance >= 0 ? "success" : "warning" },
             { label: "Ingresos", value: fmtS(data.ingresos), tone: "primary" },
@@ -297,9 +311,12 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "waterfall-flujo",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.waterfall-flujo"
+          hasData={true}
+          defaultVisible={false}
           kicker="Descomposición · periodo"
           title="De ventas a balance neto"
+          description="De ventas a utilidad neta paso a paso."
           kpis={[
             { label: "Utilidad neta", value: fmtS(data.utilidadNeta), tone: data.utilidadNeta >= 0 ? "success" : "warning" },
             {
@@ -321,5 +338,13 @@ export default function CajaCharts({ data }: { data: CajaData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="caja-base-order" layout="grid" />;
+  return (
+    <DraggableSections
+      items={sections}
+      storageKey="caja-base-order"
+      layout="grid"
+      gap={4}
+      minColumnWidth="22rem"
+    />
+  );
 }

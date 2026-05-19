@@ -247,10 +247,20 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]">
-      {/* JSON-LD */}
+      {/* JSON-LD
+          PENTEST 2026-05-18 Fase 2 P0 #30: escape de `<`, U+2028, U+2029.
+          ANTES: JSON.stringify directo. Si product.name = "</script><script>alert(1)"
+          (admin malicioso) pasaba directo al DOM como XSS persistente.
+          AHORA: replace de los 3 caracteres peligrosos para JSON-LD inline.
+          Mismo patrón que page.tsx server-side. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd)
+            .replace(/</g, "\\u003c")
+            .replace(new RegExp("\\u2028", "g"), "\\u2028")
+            .replace(new RegExp("\\u2029", "g"), "\\u2029"),
+        }}
       />
 
       {/* Breadcrumb */}

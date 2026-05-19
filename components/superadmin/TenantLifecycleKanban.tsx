@@ -59,9 +59,9 @@ const COLUMNS: KanbanColumn[] = [
 
 function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (action: string, tenant: TenantCard) => void }) {
   return (
-    <div className="bg-white dark:bg-card rounded-lg border border-[var(--rule-soft)] dark:border-card-border p-3 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-[var(--surface-raised)] rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2">
-        <h4 className="text-sm font-bold text-foreground truncate">{tenant.name}</h4>
+        <h4 className="text-sm font-bold text-[var(--text-primary)] truncate">{tenant.name}</h4>
         <span className="text-[length:var(--ts-2xs)] font-medium px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-muted">{tenant.plan}</span>
       </div>
 
@@ -221,7 +221,7 @@ export default function TenantLifecycleKanban() {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">Lifecycle de Tenants</h2>
+        <h2 className="text-lg font-bold text-[var(--text-primary)]">Lifecycle de Tenants</h2>
         <button onClick={loadData} className="text-xs text-primary hover:underline">Actualizar</button>
       </div>
 
@@ -235,7 +235,7 @@ export default function TenantLifecycleKanban() {
               <div className="flex items-center gap-2 mb-3">
                 <Icon className={cn("h-4 w-4", col.color)} />
                 <h3 className={cn("text-sm font-bold", col.color)}>{col.label}</h3>
-                <span className="ml-auto text-xs font-bold text-muted bg-white dark:bg-card rounded-full px-2 py-0.5">
+                <span className="ml-auto text-xs font-bold text-muted bg-[var(--surface-raised)] rounded-full px-2 py-0.5">
                   {colTenants.length}
                 </span>
               </div>

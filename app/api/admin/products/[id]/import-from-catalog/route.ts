@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { VariantCatalogDb } from "@/lib/db/variant-catalog.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const BodySchema = z.object({
   templateId: z.string().min(1),
@@ -23,6 +24,8 @@ const BodySchema = z.object({
  */
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-products-X-import-from-catalog"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

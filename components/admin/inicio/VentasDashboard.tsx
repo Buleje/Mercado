@@ -65,7 +65,10 @@ export interface VentasData {
   ventasDiarias: { dia: string; ventas: number; utilidad: number; promedio7d: number }[];
   ventasPorHora: { hora: string; ventas: number; monto: number }[];
   metodosPago: { metodo: string; total: number; color: string; porcentaje: number }[];
-  ventasPorDia: { dia: string; total: number }[];
+  ventasPorDia: { dia: string; total: number; prev: number; promedio: number; isWeekend: boolean }[];
+  dateRangeLabel: string;
+  weekendBand: { x1: string; x2: string } | null;
+  nextDayPrediction: { dia: string; diaCompleto: string; estimado: number } | null;
   forecast7: { dia: string; estimado: number }[];
   wowGrowth: number | null;
   topHoras: { hora: number; total: number }[];
@@ -103,7 +106,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const costMap = new Map(products.map(p => [p.id, p.costPrice ?? p.price * 0.7]));
 
     // Current month
-    const mOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= monthStart && new Date(o.createdAt) <= monthEnd);
+    const mOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= monthStart && new Date(o.createdAt) <= monthEnd);
     const mSales = sales.filter(s => new Date(s.createdAt) >= monthStart && new Date(s.createdAt) <= monthEnd);
     const cancelled = orders.filter(o => o.status === "cancelado" && new Date(o.createdAt) >= monthStart && new Date(o.createdAt) <= monthEnd);
 
@@ -117,7 +120,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const ticketPromedio = tickets > 0 ? ventasNetas / tickets : 0;
 
     // Previous month
-    const pOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= prevMonthStart && new Date(o.createdAt) <= prevMonthEnd);
+    const pOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= prevMonthStart && new Date(o.createdAt) <= prevMonthEnd);
     const pSales = sales.filter(s => new Date(s.createdAt) >= prevMonthStart && new Date(s.createdAt) <= prevMonthEnd);
     const pCancelled = orders.filter(o => o.status === "cancelado" && new Date(o.createdAt) >= prevMonthStart && new Date(o.createdAt) <= prevMonthEnd);
     const prevVentas = pOrders.reduce((a, o) => a + o.total, 0) + pSales.reduce((a, s) => a + s.total, 0);
@@ -134,9 +137,9 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     // Today / Yesterday
     const todayStr = now.toDateString();
     const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-    const ventasHoy = orders.filter(o => new Date(o.createdAt).toDateString() === todayStr && o.status !== "cancelado").reduce((a, o) => a + o.total, 0)
+    const ventasHoy = orders.filter(o => new Date(o.createdAt).toDateString() === todayStr && o.status === "entregado").reduce((a, o) => a + o.total, 0)
       + sales.filter(s => new Date(s.createdAt).toDateString() === todayStr).reduce((a, s) => a + s.total, 0);
-    const ventasAyer = orders.filter(o => new Date(o.createdAt).toDateString() === yesterday.toDateString() && o.status !== "cancelado").reduce((a, o) => a + o.total, 0)
+    const ventasAyer = orders.filter(o => new Date(o.createdAt).toDateString() === yesterday.toDateString() && o.status === "entregado").reduce((a, o) => a + o.total, 0)
       + sales.filter(s => new Date(s.createdAt).toDateString() === yesterday.toDateString()).reduce((a, s) => a + s.total, 0);
 
     // Sparklines last 7 days
@@ -144,9 +147,17 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const dailyVentasMap = new Map<string, number>();
     const dailyProfitMap = new Map<string, number>();
     const dailyTicketsMap = new Map<string, number>();
-    [...mOrders.map(o => ({ date: o.createdAt, total: o.total, items: o.items })),
-    ...orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= new Date(now.getTime() - 14 * 86400000)).map(o => ({ date: o.createdAt, total: o.total, items: o.items }))
-    ].forEach(t => {
+    // SECURITY 2026-05-16 (P0 double-count fix): antes hacía
+    // [...mOrders, ...orders.filter(>=14d)] — las órdenes en el solapamiento
+    // (mes actual ∩ últimos 14 días) se contaban DOS veces en sparkline,
+    // ventasDiarias y dailyProfitMap. Bug crítico: distorsionaba el KPI
+    // que el bodeguero usa para decidir.
+    // Fix: una sola fuente — orders filtradas por (entregado + últimos 14d).
+    // mOrders ya no se usa aquí para los daily maps.
+    orders
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt) >= new Date(now.getTime() - 14 * 86400000))
+      .map((o) => ({ date: o.createdAt, total: o.total, items: o.items }))
+      .forEach(t => {
       const k = dateKey(t.date);
       dailyVentasMap.set(k, (dailyVentasMap.get(k) ?? 0) + t.total);
       dailyTicketsMap.set(k, (dailyTicketsMap.get(k) ?? 0) + 1);
@@ -182,7 +193,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
 
     // Sales by hour (today)
     const hourCounts = new Map<number, { ventas: number; monto: number }>();
-    [...orders.filter(o => new Date(o.createdAt).toDateString() === todayStr && o.status !== "cancelado"),
+    [...orders.filter(o => new Date(o.createdAt).toDateString() === todayStr && o.status === "entregado"),
     ...sales.filter(s => new Date(s.createdAt).toDateString() === todayStr)
     ].forEach(t => {
       const h = new Date(t.createdAt).getHours();
@@ -209,11 +220,55 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       porcentaje: payTotal > 0 ? (t / payTotal) * 100 : 0,
     })).sort((a, b) => b.total - a.total);
 
-    // Sales by day-of-week
+    // Sales by day-of-week — Brandon mayo 2026: empezamos siempre en Lunes
+    // (índice 0 = Lun, 6 = Dom). getDay() retorna 0=Dom..6=Sáb, así que
+    // remapeamos: Dom(0)→6, Lun(1)→0, ..., Sáb(6)→5.
+    const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+    const DAYS_FULL = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const dowToIdx = (d: number) => (d === 0 ? 6 : d - 1);
     const dowMap = new Map<number, number>();
-    const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    [...mOrders, ...mSales].forEach(t => { const d = new Date(t.createdAt).getDay(); dowMap.set(d, (dowMap.get(d) ?? 0) + t.total); });
-    const ventasPorDia = Array.from({ length: 7 }, (_, i) => ({ dia: DAYS[i], total: dowMap.get(i) ?? 0 }));
+    [...mOrders, ...mSales].forEach(t => {
+      const idx = dowToIdx(new Date(t.createdAt).getDay());
+      dowMap.set(idx, (dowMap.get(idx) ?? 0) + t.total);
+    });
+    // Brandon mayo 2026: comparativa con periodo previo equivalente para
+    // gráfico de día de semana — barras dobles "esta sem vs sem previa".
+    const dowMapPrev = new Map<number, number>();
+    [...pOrders, ...pSales].forEach(t => {
+      const idx = dowToIdx(new Date(t.createdAt).getDay());
+      dowMapPrev.set(idx, (dowMapPrev.get(idx) ?? 0) + t.total);
+    });
+    const totalActivos = Array.from({ length: 7 }, (_, i) => dowMap.get(i) ?? 0);
+    const sumActivos = totalActivos.reduce((s, v) => s + v, 0);
+    const countActivos = totalActivos.filter((v) => v > 0).length;
+    const promedioDow = countActivos > 0 ? sumActivos / countActivos : 0;
+    const ventasPorDia = Array.from({ length: 7 }, (_, i) => ({
+      dia: DAYS[i],
+      total: dowMap.get(i) ?? 0,
+      prev: dowMapPrev.get(i) ?? 0,
+      promedio: Math.round(promedioDow * 100) / 100,
+      isWeekend: i >= 5, // Sáb (5) y Dom (6)
+    }));
+    // Banda visual para fin de semana — si hay datos en Sáb o Dom.
+    const weekendBand =
+      ventasPorDia[5].total > 0 || ventasPorDia[6].total > 0
+        ? { x1: "Sáb", x2: "Dom" }
+        : null;
+    // Predicción próximo día — usamos el promedio histórico de ese día
+    // de la semana en el rango (simple, explicable, sin sorpresas).
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tIdx = dowToIdx(tomorrow.getDay());
+    const tEstimado = dowMap.get(tIdx) ?? 0;
+    const nextDayPrediction = tEstimado > 0
+      ? { dia: DAYS[tIdx], diaCompleto: DAYS_FULL[tIdx], estimado: Math.round(tEstimado / Math.max(1, Math.ceil(rangeDays / 7))) }
+      : null;
+    // Brandon mayo 2026: label legible del rango activo, ej: "11 may – 17 may"
+    // o "1 may – 31 may". Se inyecta en VentasData para que los charts lo
+    // muestren en su header.
+    const fmtDay = (d: Date) =>
+      d.toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(/\./g, "");
+    const dateRangeLabel = `${fmtDay(monthStart)} – ${fmtDay(monthEnd)}`;
 
     // 7-day forecast (linear regression)
     const vals = ventasDiarias.map(d => d.ventas);
@@ -248,7 +303,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       dTickets: pctD(tickets, prevTickets), dMargen: pctD(margen, prevMargen),
       dTicketProm: pctD(ticketPromedio, prevTicketProm), dCancelados: pctD(cancelled.length, pCancelled.length),
       sparkVentas, sparkUtilidad, sparkTickets,
-      ventasDiarias, ventasPorHora, metodosPago, ventasPorDia, forecast7, wowGrowth, topHoras,
+      ventasDiarias, ventasPorHora, metodosPago, ventasPorDia, dateRangeLabel, weekendBand, nextDayPrediction, forecast7, wowGrowth, topHoras,
       funnelPedidos,
     };
   }, [raw, dateRange]);
@@ -292,11 +347,11 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       </div>
 
       {/* ── Today vs Yesterday mini bar ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl px-5 py-3">
         <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
         <div className="flex-1 flex items-center gap-4 text-sm">
           <span className="text-[var(--text-secondary)] dark:text-muted">Hoy:</span>
-          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(data.ventasHoy)}</span>
+          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(data.ventasHoy)}</span>
           <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">|</span>
           <span className="text-[var(--text-secondary)] dark:text-muted">Ayer:</span>
           <span className="font-semibold text-[var(--text-secondary)]">{fmt(data.ventasAyer)}</span>

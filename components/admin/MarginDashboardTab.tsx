@@ -78,7 +78,7 @@ export default function MarginDashboardTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div>
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
           <BarChart3 className="h-6 w-6 text-primary" /> Dashboard de Márgenes
         </SectionTitle>
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Rentabilidad bruta por producto y categoría</p>
@@ -86,25 +86,25 @@ export default function MarginDashboardTab() {
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
           <div className="w-9 h-9 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center mb-3">
             <DollarSign className="h-4 w-4 text-white" />
           </div>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {fmt(data.summary.totalRevenue)}
           </p>
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">Ingresos totales</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
           <div className="w-9 h-9 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center mb-3">
             <TrendingUp className="h-4 w-4 text-white" />
           </div>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {fmt(data.summary.totalGrossProfit)}
           </p>
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">Ganancia bruta</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
           <div className="w-9 h-9 rounded-xl bg-[var(--text-primary)] flex items-center justify-center mb-3">
             <BarChart3 className="h-4 w-4 text-white" />
           </div>
@@ -113,11 +113,11 @@ export default function MarginDashboardTab() {
           </p>
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">Margen global</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
           <div className="w-9 h-9 rounded-xl bg-[var(--data-warning-500)] flex items-center justify-center mb-3">
             <AlertCircle className="h-4 w-4 text-white" />
           </div>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {data.summary.productsWithoutCost}
           </p>
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">Sin costo registrado</p>
@@ -125,9 +125,9 @@ export default function MarginDashboardTab() {
       </div>
 
       {/* Alerta de umbral */}
-      <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+      <div className="flex flex-wrap items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
         <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" />
-        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">
+        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           Umbral de alerta de margen:
         </p>
         <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function MarginDashboardTab() {
               "px-4 py-2 rounded-xl text-sm font-semibold transition-colors",
               view === v
                 ? "bg-primary text-white"
-                : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-card"
+                : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-[var(--surface-raised)]"
             )}
           >
             {v === "products" ? "Por producto" : v === "categories" ? "Por categoría" : "Top 10"}
@@ -171,7 +171,7 @@ export default function MarginDashboardTab() {
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              className="flex items-center gap-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
             >
               {sortDir === "desc" ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               Margen {sortDir === "desc" ? "mayor" : "menor"} primero
@@ -180,7 +180,7 @@ export default function MarginDashboardTab() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar..."
-              className="px-4 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm w-48"
+              className="px-4 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-sm w-48"
             />
           </div>
         )}
@@ -188,11 +188,11 @@ export default function MarginDashboardTab() {
 
       {/* Vista: productos */}
       {view === "products" && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
                   <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Producto</th>
                   <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase hidden sm:table-cell">Categoría</th>
                   <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase text-right">Ingresos</th>
@@ -211,15 +211,15 @@ export default function MarginDashboardTab() {
                     )}
                   >
                     <td className="px-4 py-2.5">
-                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{p.name}</p>
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</p>
                       <div className="mt-1 w-24"><MarginBar value={p.marginPct} /></div>
                     </td>
                     <td className="px-4 py-2.5 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{p.category}</td>
-                    <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(p.revenue)}</td>
+                    <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(p.revenue)}</td>
                     <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">
                       {p.cost > 0 ? fmt(p.cost) : <span className="text-[var(--data-warning-500)]">—</span>}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground hidden md:table-cell">{fmt(p.grossProfit)}</td>
+                    <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)] hidden md:table-cell">{fmt(p.grossProfit)}</td>
                     <td className="px-4 py-2.5 text-right">
                       <span className={cn("font-bold", pctColor(p.marginPct))}>{Number(p.marginPct).toFixed(1)}%</span>
                     </td>
@@ -240,9 +240,9 @@ export default function MarginDashboardTab() {
       {view === "categories" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {data.byCategory.map((cat) => (
-            <div key={cat.category} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+            <div key={cat.category} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <CardTitle className="font-semibold text-[var(--text-primary)] dark:text-foreground">{cat.category}</CardTitle>
+                <CardTitle className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{cat.category}</CardTitle>
                 <span className={cn("font-bold text-sm", pctColor(cat.marginPct))}>
                   {Number(cat.marginPct).toFixed(1)}%
                 </span>
@@ -250,11 +250,11 @@ export default function MarginDashboardTab() {
               <MarginBar value={cat.marginPct} />
               <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(cat.revenue)}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(cat.revenue)}</p>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Ingresos</p>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(cat.cost)}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(cat.cost)}</p>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Costo</p>
                 </div>
                 <div>
@@ -271,8 +271,8 @@ export default function MarginDashboardTab() {
       {view === "top" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Top 10 mejores */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
-            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
+            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
               <CardTitle className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-2">
                 <ChevronUp className="h-4 w-4" /> Top 10 mayor margen
               </CardTitle>
@@ -282,7 +282,7 @@ export default function MarginDashboardTab() {
                 <div key={p.productId} className="px-4 py-3 flex items-center gap-3">
                   <span className="text-xs font-extrabold text-[var(--text-tertiary)] dark:text-muted w-5">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</p>
                     <MarginBar value={p.marginPct} />
                   </div>
                   <span className={cn("text-sm font-bold shrink-0", pctColor(p.marginPct))}>
@@ -297,8 +297,8 @@ export default function MarginDashboardTab() {
           </div>
 
           {/* Top 10 peores */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
-            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--data-error-50)] dark:bg-red-950/20">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
+            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--data-error-50)] dark:bg-red-950/20">
               <CardTitle className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex items-center gap-2">
                 <ChevronDown className="h-4 w-4" /> Top 10 menor margen
               </CardTitle>
@@ -308,7 +308,7 @@ export default function MarginDashboardTab() {
                 <div key={p.productId} className="px-4 py-3 flex items-center gap-3">
                   <span className="text-xs font-extrabold text-[var(--text-tertiary)] dark:text-muted w-5">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</p>
                     <MarginBar value={p.marginPct} />
                   </div>
                   <span className={cn("text-sm font-bold shrink-0", pctColor(p.marginPct))}>
@@ -340,7 +340,7 @@ export default function MarginDashboardTab() {
             {belowThreshold.slice(0, 8).map((p) => (
               <span
                 key={p.productId}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-card border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold"
               >
                 {p.name}
                 <span className="font-extrabold">{Number(p.marginPct).toFixed(0)}%</span>

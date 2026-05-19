@@ -30,16 +30,9 @@ export interface HotZonesPanelProps {
   currentLng?: number | null;
 }
 
-// ── Datos mock ───────────────────────────────────────────────────────────────
-
-const MOCK_ZONES: Zone[] = [
-  { id: "yarinacocha",   name: "Yarinacocha",    heat: "high",   pendingOrders: 12, avgFee: 8.5, distanceKm: 2.4, bonus: "Lluvia +25%" },
-  { id: "centro",        name: "Centro Pucallpa", heat: "high",   pendingOrders: 9,  avgFee: 7.2, distanceKm: 1.1, bonus: null },
-  { id: "manantay",      name: "Manantay",        heat: "medium", pendingOrders: 5,  avgFee: 9.0, distanceKm: 4.8, bonus: null },
-  { id: "calleria",      name: "Callería",        heat: "medium", pendingOrders: 4,  avgFee: 6.5, distanceKm: 3.2, bonus: "Hora pico +S/2" },
-  { id: "san-fernando",  name: "San Fernando",    heat: "low",    pendingOrders: 2,  avgFee: 7.8, distanceKm: 5.5, bonus: null },
-  { id: "pukallpa-norte",name: "Pucallpa Norte",  heat: "low",    pendingOrders: 1,  avgFee: 8.0, distanceKm: 6.1, bonus: null },
-];
+// Brandon mayo 2026 v7: removido MOCK_ZONES (Yarinacocha 12 pedidos S/8.5,
+// "Lluvia +25%", etc). Si el endpoint aún no respondió, mostramos un empty
+// honesto en vez de zonas inventadas. El backend ya cuenta pedidos reales.
 
 // ── Helpers de heat ──────────────────────────────────────────────────────────
 
@@ -53,7 +46,6 @@ const HEAT_META: Record<
     textClass: string;
     bgAlpha: string;
     borderHover: string;
-    glowClass: string;
   }
 > = {
   high: {
@@ -62,7 +54,6 @@ const HEAT_META: Record<
     textClass: "text-[var(--data-error-500)]",
     bgAlpha: "bg-[var(--data-error-500)]/10",
     borderHover: "hover:border-[var(--data-error-500)]",
-    glowClass: "shadow-[0_0_0_1px_theme(colors.red.500/0.18),0_4px_24px_theme(colors.red.500/0.15)]",
   },
   medium: {
     label: "Media",
@@ -70,15 +61,13 @@ const HEAT_META: Record<
     textClass: "text-[var(--data-warning-500)]",
     bgAlpha: "bg-[var(--data-warning-500)]/10",
     borderHover: "hover:border-[var(--data-warning-500)]",
-    glowClass: "",
   },
   low: {
     label: "Baja",
     flames: 1,
-    textClass: "text-sky-500",
-    bgAlpha: "bg-sky-500/10",
-    borderHover: "hover:border-sky-500",
-    glowClass: "",
+    textClass: "text-[var(--text-tertiary)]",
+    bgAlpha: "bg-[var(--surface-sunken)]",
+    borderHover: "hover:border-[var(--rule-strong)]",
   },
 };
 
@@ -135,35 +124,10 @@ function ZoneCard({ zone, onNavigate }: { zone: Zone; onNavigate: (id: string) =
     <article
       className={[
         "group relative flex flex-col rounded-2xl border-2 border-[var(--rule-base)]",
-        "bg-[var(--surface-raised)] p-5 transition-all duration-200",
-        "hover:translate-y-[-2px] hover:shadow-lg",
+        "bg-[var(--surface-raised)] p-5 transition-colors duration-150",
         meta.borderHover,
-        zone.heat === "high" ? meta.glowClass : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      ].join(" ")}
     >
-      {/* Decoracion heat=high — llama en la esquina */}
-      {zone.heat === "high" && (
-        <span
-          className="absolute top-3 right-3 text-red-400/40 text-2xl pointer-events-none select-none"
-          aria-hidden="true"
-          data-no-translate
-        >
-          <Flame className="h-6 w-6 text-red-400/50" />
-        </span>
-      )}
-
-      {/* Decoracion bonus — estrella top-right si tiene bonus */}
-      {zone.bonus && zone.heat !== "high" && (
-        <span
-          className="absolute top-3 right-3 pointer-events-none select-none"
-          aria-hidden="true"
-        >
-          <Star className="h-5 w-5 text-[var(--brand-secondary)]/40" />
-        </span>
-      )}
-
       {/* Header de la card */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
@@ -235,19 +199,28 @@ function ZoneCard({ zone, onNavigate }: { zone: Zone; onNavigate: (id: string) =
 
 function OfflineEmptyState() {
   return (
-    <div className="rounded-3xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
-      <p
-        className="text-5xl mb-4 select-none"
-        aria-hidden="true"
-        data-no-translate
-      >
-        🛵
-      </p>
-      <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+      <div className="mx-auto mb-3 h-12 w-12 rounded-2xl bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-tertiary)]">
+        <Flame className="h-6 w-6" strokeWidth={2} aria-hidden />
+      </div>
+      <h3 className="text-base font-extrabold text-[var(--text-primary)]">
         Conéctate para ver zonas activas
       </h3>
-      <p className="mt-2 text-base text-[var(--text-secondary)] max-w-xs mx-auto">
+      <p className="mt-1.5 text-sm text-[var(--text-secondary)] max-w-xs mx-auto">
         Activa el modo en línea desde la barra lateral para ver dónde hay más pedidos ahora.
+      </p>
+    </div>
+  );
+}
+
+function NoZonesState() {
+  return (
+    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+      <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+        No hay zonas con pedidos pendientes
+      </h3>
+      <p className="mt-1.5 text-sm text-[var(--text-secondary)] max-w-sm mx-auto">
+        Cuando entren pedidos vas a ver acá las zonas con más demanda en tiempo real.
       </p>
     </div>
   );
@@ -261,8 +234,11 @@ export default function HotZonesPanel({
   currentLng,
 }: HotZonesPanelProps) {
   const router = useRouter();
-  // Live data desde el endpoint con polling cada 5 min — fallback al MOCK.
-  const [zones, setZones] = useState<Zone[]>(MOCK_ZONES);
+  // Brandon mayo 2026 v7: arrancamos con [] (nada inventado). El endpoint
+  // devuelve la lista real basada en pedidos pendientes; si no hay, no
+  // pintamos cards fake — un empty-state honesto es mejor que decorado.
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -276,11 +252,16 @@ export default function HotZonesPanel({
       });
       if (!res.ok) return;
       const json = (await res.json()) as { zones: Zone[] };
-      if (Array.isArray(json.zones) && json.zones.length > 0) {
-        setZones(json.zones);
+      if (Array.isArray(json.zones)) {
+        // Filtramos zonas sin pedidos pendientes — no tiene sentido
+        // mostrar "Yarinacocha 0 pedidos S/0" como si fuera oportunidad.
+        const withDemand = json.zones.filter((z) => z.pendingOrders > 0);
+        setZones(withDemand);
       }
     } catch {
       /* silent */
+    } finally {
+      setHasLoaded(true);
     }
   }, [currentLat, currentLng]);
 
@@ -320,6 +301,8 @@ export default function HotZonesPanel({
       {/* ── Contenido ── */}
       {!isOnline ? (
         <OfflineEmptyState />
+      ) : hasLoaded && sorted.length === 0 ? (
+        <NoZonesState />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
           {sorted.map((zone) => (
@@ -329,7 +312,7 @@ export default function HotZonesPanel({
       )}
 
       {/* ── Footer disclaimer ── */}
-      {isOnline && (
+      {isOnline && sorted.length > 0 && (
         <p className="mt-4 text-center text-xs font-semibold text-[var(--text-tertiary)]">
           Las zonas se actualizan cada 5 min · No garantiza viajes
         </p>

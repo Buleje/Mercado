@@ -73,7 +73,7 @@ export default function BulkPriceUpdater() {
         const cats = [...new Set(list.map((p) => p.category).filter(Boolean))].sort();
         setCategories(cats);
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[BulkPriceUpdater] products fetch failed:", err))
       .finally(() => setLoadingProducts(false));
   }, []);
 

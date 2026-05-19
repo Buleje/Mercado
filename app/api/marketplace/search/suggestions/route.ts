@@ -5,6 +5,7 @@ import { getOrSet } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 
 const QuerySchema = z.object({
   q:     z.string().min(1).max(100),
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
   const requestId = req.headers.get("x-request-id") ?? traceId;
 
   try {
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    const tenantId = resolveMarketplaceTenant(req, { context: "marketplace/search/suggestions" });
     const { searchParams } = new URL(req.url);
     const parsed = QuerySchema.safeParse(Object.fromEntries(searchParams));
 

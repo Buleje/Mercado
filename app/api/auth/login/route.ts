@@ -15,7 +15,19 @@ import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
-// F2/F5 — dummy hash para igualación de timing side-channel
+// F2/F5 — dummy hash para igualación de timing side-channel.
+//
+// IMPORTANTE: este string NO es un hash bcrypt válido — es un dummy con
+// formato bcrypt-compatible (prefijo $2a$10$) que se usa SOLO como input
+// para bcrypt.compare() cuando el usuario no existe en DB. El propósito
+// es igualar el tiempo de cómputo entre "usuario inexistente" (rápido)
+// y "usuario válido + password incorrecto" (lento, bcrypt). Así un
+// atacante NO puede enumerar usuarios midiendo response time.
+//
+// NO es secreto y NO debe usarse para almacenar nada — comparar contra
+// él SIEMPRE devuelve false (ningún input genera ese hash). Si en el
+// futuro alguien lo usa por error en otro contexto pensando que es un
+// hash real, este comentario advierte.
 const DUMMY_HASH = "$2a$10$dummyhashforsidechannelresistance0000000000000000";
 // F1 — lockout per-username
 const LOGIN_LOCKOUT_MAX = 5;
@@ -89,13 +101,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "username and password required" }, { status: 400 });
   }
 
-  // Step 1: Resolve slug → tenant ID (CUID) — usado solo si el username no
-  // existe en NINGÚN tenant (fallback Settings.adminPassword).
+  // Step 1: Resolve slug → tenant ID (CUID).
+  // Audit 2026-05-17 05-P1-4: si el slug NO resuelve a tenant DB → 400.
+  // Antes, sin resolver, el findMany seguía buscando sin scope y dos tenants
+  // con `qaadmin` + misma password permitían entrar al primer match.
+  // Fail-closed: si el slug no existe, rechazar sin tocar el directorio de usuarios.
   let tenantId = resolvedSlug;
+  let tenantResolvedToDb = false;
   try {
-    const tenant = await prisma.tenant.findUnique({ where: { slug: resolvedSlug }, select: { id: true, slug: true } });
-    if (tenant) tenantId = tenant.id;
-  } catch { /* use slug as-is */ }
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug: resolvedSlug },
+      select: { id: true, slug: true },
+    });
+    if (tenant) {
+      tenantId = tenant.id;
+      tenantResolvedToDb = true;
+    }
+  } catch { /* DB unavailable — keep slug as-is, validate below */ }
+
+  if (!tenantResolvedToDb) {
+    logger.warn("[auth/login] Refusing login — slug does not resolve to tenant DB", {
+      resolvedSlug,
+      ip: req.headers.get("x-forwarded-for") ?? "unknown",
+    });
+    return NextResponse.json(
+      { error: "tenant_invalid", message: "El tenant indicado no existe o no está disponible." },
+      { status: 400 },
+    );
+  }
 
   // F1 — SECURITY 2026-05-07: lockout per-username (brute-force con IP rotation).
   // El counter se almacena en cacheStore con TTL 900s (15 min).
@@ -232,7 +265,14 @@ export async function POST(req: Request) {
     // Fire-and-forget — no bloquear la respuesta.
     try {
       const { logActivity } = await import("@/lib/activity-logger");
-      const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? null;
+      // Brandon 2026-05-16 (audit P2 log poisoning): trim al 1er IP de la
+      // lista xff (Vercel agrega varios proxies en chain) + slice(0,45)
+      // para evitar que un atacante inyecte comas o strings largos que
+      // contaminen los logs de auditoría Ley 29733.
+      const ipRaw = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        ?? req.headers.get("x-real-ip")
+        ?? null;
+      const ip = ipRaw ? ipRaw.slice(0, 45) : null;
       logActivity(
         "login_success",
         "admin",

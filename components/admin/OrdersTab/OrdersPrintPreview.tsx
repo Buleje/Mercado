@@ -28,20 +28,20 @@ export function OrdersPrintPreview({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Vista previa de impresión</CardTitle>
+            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Vista previa de impresión</CardTitle>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
               {selectedOrderIds.size} pedido{selectedOrderIds.size > 1 ? "s" : ""} seleccionado{selectedOrderIds.size > 1 ? "s" : ""}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -170,10 +170,10 @@ export function OrdersPrintPreview({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0 flex gap-3">
+        <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           >
             Cancelar
           </button>

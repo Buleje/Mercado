@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/admin/lives/[id]/start — transición scheduled → live.
@@ -12,6 +13,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-lives-X-start"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, [
     "admin",
     "tienda_owner",

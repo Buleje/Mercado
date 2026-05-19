@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MessageCircle, X, Send, User, Store as StoreIcon } from "@buleje/design-system/icons";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useCustomer } from "@/contexts/customer-context";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { usePublicChat } from "./hooks";
 
 interface ChatBubbleProps {
@@ -41,6 +44,14 @@ export default function ChatBubble({
   const [open, setOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
+  // Cliente logueado: aprovechamos nombre y telefono del contexto para
+  // evitar pedirlos de nuevo en el form de inicio de chat. Si no hay sesion
+  // (o no completo perfil), el form pide ambos campos como antes.
+  const { customer } = useCustomer();
+  const knownName = customer?.name?.trim() ?? "";
+  const knownPhone = customer?.phone?.trim() ?? "";
+  const hasIdentity = knownName.length > 0 && knownPhone.length > 0;
+
   const {
     session,
     messages,
@@ -50,6 +61,12 @@ export default function ChatBubble({
     sendMessage,
     clearSession,
   } = usePublicChat(storeSlug);
+
+  // Posicion flexible: si el carrito tiene items, sabemos que el StickyCartBar
+  // se esta mostrando por encima del BottomNav — desplazamos la burbuja para
+  // que no se monte sobre el bar. Brandon, mayo 14 2026.
+  const { itemCount } = useMarketplaceCart();
+  const cartBarVisible = itemCount > 0;
 
   // Auto-scroll al último mensaje
   useEffect(() => {
@@ -63,19 +80,24 @@ export default function ChatBubble({
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button — posicion flexible segun visibilidad del cart bar.
+          Mobile: si hay cart bar visible subimos el boton para no chocar.
+          Desktop: la esquina inferior clasica (cart bar es lg:hidden, no
+          interfiere). La transicion CSS suaviza el cambio. */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Cerrar chat" : "Abrir chat con la tienda"}
         className={cn(
-          "fixed z-[60] flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-lg transition ring-2 ring-white/40",
+          "fixed z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-xl ring-2 ring-white/40",
           "hover:scale-105 hover:bg-[var(--accent)]/90 focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/30",
-          // Posición mobile sube por encima de BottomNav (60px) + sticky
-          // cart (~76px) + buffer. Desktop esquina inferior clásica.
-          position === "bottom-right"
-            ? "bottom-[156px] right-3 sm:bottom-5 sm:right-5"
-            : "bottom-[156px] left-3 sm:bottom-5 sm:left-5",
+          "transition-[bottom,transform,background-color] duration-300 ease-out",
+          // Bottom dinamico SOLO en mobile (lg-): si hay items en el carrito
+          // se levanta sobre el StickyCartBar; sino se apoya en BottomNav.
+          // En sm+ usamos bottom-5 fijo (sm:bottom-5).
+          cartBarVisible ? "bottom-[168px]" : "bottom-[88px]",
+          "sm:!bottom-5",
+          position === "bottom-right" ? "right-3 sm:right-5" : "left-3 sm:left-5",
           open && "rotate-90",
         )}
       >
@@ -96,93 +118,148 @@ export default function ChatBubble({
         )}
       </button>
 
-      {/* Chat panel */}
-      {open && (
-        <div
-          className={cn(
-            "fixed z-[60] flex h-[520px] max-h-[78vh] w-[calc(100vw-1.5rem)] max-w-[360px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900",
-            position === "bottom-right"
-              ? "bottom-[220px] right-3 sm:bottom-24 sm:right-5"
-              : "bottom-[220px] left-3 sm:bottom-24 sm:left-5",
-          )}
-          role="dialog"
-          aria-label={`Chat con ${storeName}`}
-        >
-          {/* Header */}
-          <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-[var(--accent)] p-3 text-white dark:border-slate-700">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
-                <StoreIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold">{storeName}</div>
-                <div className="text-[length:var(--ts-2xs)] opacity-80">
-                  {session ? "Conversación activa" : "Hablanos"}
-                </div>
-              </div>
-            </div>
-            {session && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm("¿Cerrar esta sesión de chat? Puedes volver a abrir otra cuando quieras.")) {
-                    clearSession();
-                  }
-                }}
-                className="rounded-full p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
-                aria-label="Cerrar sesión"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </header>
-
-          {/* Body */}
-          {!session ? (
-            <StartForm
-              onStart={(data) =>
-                startChat({
-                  customerName: data.name,
-                  customerPhone: data.phone,
-                  firstMessage: data.message,
-                  orderId,
-                  subject: orderId ? `Consulta sobre pedido ${orderId}` : undefined,
-                })
-              }
-              loading={loading}
-              error={error}
+      {/* Chat panel — bottom sheet mobile / panel lateral desktop */}
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* Backdrop mobile only — facilita cerrar tocando fuera y da
+                jerarquia visual cuando el sheet ocupa media pantalla. */}
+            <motion.div
+              key="chat-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-[59] bg-black/40 backdrop-blur-[2px] sm:hidden"
+              aria-hidden
             />
-          ) : (
-            <>
-              {/* Messages */}
-              <div
-                ref={scrollRef}
-                className="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-3 dark:bg-slate-950"
-                role="log"
-                aria-label="Mensajes"
-                aria-live="polite"
-              >
-                {messages.length === 0 && !loading && (
-                  <p className="py-8 text-center text-xs text-slate-500">
-                    Enviá el primer mensaje para empezar la conversación
-                  </p>
-                )}
-                {messages.map((m) => (
-                  <MessageRow key={m.id} msg={m} />
-                ))}
+            <motion.div
+              key="chat-panel"
+              // Bottom sheet en mobile: slide-up desde abajo. En sm+ usamos
+              // un fade/slide suave porque ya no es full-width.
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 30 }}
+              className={cn(
+                "fixed z-[60] flex flex-col overflow-hidden bg-[var(--surface-canvas)] shadow-2xl",
+                // Mobile (default): bottom sheet full-width pegado abajo
+                "inset-x-0 bottom-0 h-[88vh] max-h-[680px] rounded-t-3xl border-t-2 border-[var(--accent)]/20",
+                // Desktop (sm+): panel lateral compacto como antes
+                "sm:inset-auto sm:h-[560px] sm:max-h-[78vh] sm:w-[380px] sm:max-w-[380px] sm:rounded-2xl sm:border-0",
+                position === "bottom-right"
+                  ? "sm:bottom-24 sm:right-5"
+                  : "sm:bottom-24 sm:left-5",
+              )}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Chat con ${storeName}`}
+            >
+              {/* Drag handle visible solo en mobile (afordancia del bottom sheet) */}
+              <div className="sm:hidden flex justify-center pt-2 pb-1 shrink-0">
+                <span className="h-1.5 w-12 rounded-full bg-[var(--rule-base)]" aria-hidden />
               </div>
 
-              {error && (
-                <div className="border-t border-red-200 bg-red-50 p-2 text-center text-[length:var(--ts-2xs)] text-[var(--data-error-700)] dark:border-red-900 dark:bg-red-950">
-                  {error}
+              {/* Header redisenado: avatar grande, info clara, boton cerrar visible */}
+              <header className="flex items-center justify-between gap-3 px-4 py-3 sm:py-4 border-b border-[var(--rule-soft)] bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 ring-2 ring-white/30">
+                    <StoreIcon className="h-5 w-5" strokeWidth={2.25} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-extrabold leading-tight truncate">{storeName}</p>
+                    <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-medium text-white/85 leading-tight">
+                      <span aria-hidden className="relative inline-flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-white/80 opacity-70 animate-ping" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                      </span>
+                      {session ? "Conversación activa" : "Te respondemos en minutos"}
+                    </p>
+                  </div>
                 </div>
-              )}
+                <div className="flex items-center gap-1 shrink-0">
+                  {session && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("¿Cerrar esta sesión de chat? Puedes volver a abrir otra cuando quieras.")) {
+                          clearSession();
+                        }
+                      }}
+                      className="rounded-full p-2 text-white/80 transition hover:bg-white/15 hover:text-white"
+                      aria-label="Cerrar sesión"
+                      title="Reiniciar conversación"
+                    >
+                      <Send className="h-4 w-4 rotate-180" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    aria-label="Cerrar chat"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                  >
+                    <X className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
+                </div>
+              </header>
 
-              <Composer onSend={sendMessage} disabled={loading} />
-            </>
-          )}
-        </div>
-      )}
+              {/* Body */}
+              {!session ? (
+                <StartForm
+                  defaultName={knownName}
+                  defaultPhone={knownPhone}
+                  hideIdentityFields={hasIdentity}
+                  onStart={(data) =>
+                    startChat({
+                      customerName: data.name,
+                      customerPhone: data.phone,
+                      firstMessage: data.message,
+                      orderId,
+                      subject: orderId ? `Consulta sobre pedido ${orderId}` : undefined,
+                    })
+                  }
+                  loading={loading}
+                  error={error}
+                />
+              ) : (
+                <>
+                  <div
+                    ref={scrollRef}
+                    className="flex-1 space-y-2 overflow-y-auto bg-[var(--surface-sunken)] p-3"
+                    role="log"
+                    aria-label="Mensajes"
+                    aria-live="polite"
+                  >
+                    {messages.length === 0 && !loading && (
+                      <div className="flex flex-col items-center justify-center py-12 gap-3 text-center px-4">
+                        <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                          <Send className="h-5 w-5" strokeWidth={2.25} />
+                        </span>
+                        <p className="text-sm font-medium text-[var(--text-secondary)] max-w-[16rem]">
+                          Envia tu primer mensaje para que la tienda te responda.
+                        </p>
+                      </div>
+                    )}
+                    {messages.map((m) => (
+                      <MessageRow key={m.id} msg={m} />
+                    ))}
+                  </div>
+
+                  {error && (
+                    <div className="border-t border-[var(--data-error-200,#fecaca)] bg-[var(--data-error-50,#fef2f2)] p-2 text-center text-[length:var(--ts-xs)] font-medium text-[var(--data-error-700,#b91c1c)]">
+                      {error}
+                    </div>
+                  )}
+
+                  <Composer onSend={sendMessage} disabled={loading} />
+                </>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -193,14 +270,29 @@ function StartForm({
   onStart,
   loading,
   error,
+  defaultName = "",
+  defaultPhone = "",
+  hideIdentityFields = false,
 }: {
   onStart: (data: { name: string; phone: string; message: string }) => Promise<void>;
   loading: boolean;
   error: string | null;
+  defaultName?: string;
+  defaultPhone?: string;
+  /** Cliente ya logueado: no mostramos campos de nombre/telefono. */
+  hideIdentityFields?: boolean;
 }) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(defaultName);
+  const [phone, setPhone] = useState(defaultPhone);
   const [message, setMessage] = useState("");
+
+  // Si llegan defaults nuevos despues del mount (customer se hidrata tarde),
+  // sincronizamos para que el submit lleve los datos correctos.
+  useEffect(() => {
+    if (defaultName && !name) setName(defaultName);
+    if (defaultPhone && !phone) setPhone(defaultPhone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultName, defaultPhone]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -209,53 +301,73 @@ function StartForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-3 p-4">
-      <p className="text-xs text-slate-600 dark:text-slate-400">
-        Dejanos tu nombre y teléfono para que podamos responderte también por WhatsApp si no estamos en línea.
-      </p>
+    <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-3 p-4 bg-[var(--surface-canvas)]">
+      {hideIdentityFields ? (
+        // Cliente logueado: arranque rapido. Mensaje grande + bienvenida con su nombre.
+        <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+            <User className="h-4 w-4" strokeWidth={2.25} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-[var(--text-primary)]">Hola, {defaultName.split(" ")[0] || "vecino"}</p>
+            <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
+              Escribi tu consulta y la tienda te responde por aca o por WhatsApp.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
+            Dejanos tu nombre y telefono para que la tienda pueda responderte tambien por WhatsApp si no esta en linea.
+          </p>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase text-slate-500">Tu nombre</span>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          maxLength={150}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-          placeholder="María"
-        />
-      </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tu nombre</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              maxLength={150}
+              className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+              placeholder="Maria"
+            />
+          </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase text-slate-500">Teléfono (WhatsApp)</span>
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-          minLength={6}
-          maxLength={20}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-          placeholder="+51 987 654 321"
-        />
-      </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Telefono (WhatsApp)</span>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              minLength={6}
+              maxLength={20}
+              className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+              placeholder="+51 987 654 321"
+            />
+          </label>
+        </>
+      )}
 
       <label className="flex flex-1 flex-col gap-1">
-        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase text-slate-500">Tu mensaje</span>
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          Tu mensaje
+        </span>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           required
           maxLength={4000}
-          rows={3}
-          className="flex-1 resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-          placeholder="Hola, ¿tienen arroz costeño?"
+          rows={hideIdentityFields ? 5 : 3}
+          autoFocus={hideIdentityFields}
+          className="flex-1 resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+          placeholder="Hola, tienen arroz costeno?"
         />
       </label>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-2 text-[length:var(--ts-2xs)] text-[var(--data-error-700)] dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-lg bg-[var(--data-error-50,#fef2f2)] border border-[var(--data-error-200,#fecaca)] p-2.5 text-[length:var(--ts-xs)] font-medium text-[var(--data-error-700,#b91c1c)]">
           {error}
         </div>
       )}
@@ -263,9 +375,14 @@ function StartForm({
       <button
         type="submit"
         disabled={loading || !name.trim() || !phone.trim() || !message.trim()}
-        className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent)]/90 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
+        className="inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-extrabold text-white transition hover:bg-[var(--accent)]/90 disabled:cursor-not-allowed disabled:bg-[var(--rule-soft)] disabled:text-[var(--text-tertiary)]"
       >
-        {loading ? "Abriendo chat…" : "Iniciar chat"}
+        {loading ? "Abriendo chat..." : (
+          <>
+            <Send className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Enviar mensaje
+          </>
+        )}
       </button>
     </form>
   );

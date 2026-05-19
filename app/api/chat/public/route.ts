@@ -123,6 +123,26 @@ async function handleOpen(body: unknown) {
       });
     }
 
+    // Brandon 2026-05-16 (realtime): emitir SSE al admin del tenant para
+    // que el ChatTab vea aparecer el thread sin esperar al polling de 8s.
+    try {
+      const { emitAdminSSE } = await import("@/lib/sse-emitter");
+      emitAdminSSE(store.tenantId, "chat_thread_opened", {
+        threadId: thread.id,
+        customerName: parsed.data.customerName,
+        customerPhone: parsed.data.customerPhone,
+        firstMessage: parsed.data.firstMessage ?? null,
+      });
+      if (parsed.data.firstMessage) {
+        emitAdminSSE(store.tenantId, "chat_message_new", {
+          threadId: thread.id,
+          senderType: "buyer",
+          senderName: parsed.data.customerName,
+          body: parsed.data.firstMessage,
+        });
+      }
+    } catch { /* fire-and-forget */ }
+
     // Solo exponer campos seguros al buyer (NO tenantId, NO unreadForSeller)
     return NextResponse.json({
       data: {
@@ -192,6 +212,19 @@ async function handleSend(body: unknown) {
       senderName: parsed.data.customerName,
       body:       parsed.data.body,
     });
+
+    // Brandon 2026-05-16 (realtime): emitir SSE al admin del tenant.
+    try {
+      const { emitAdminSSE } = await import("@/lib/sse-emitter");
+      emitAdminSSE(store.tenantId, "chat_message_new", {
+        threadId: parsed.data.threadId,
+        senderType: "buyer",
+        senderName: parsed.data.customerName,
+        body: parsed.data.body,
+        messageId: message.id,
+        createdAt: message.createdAt,
+      });
+    } catch { /* fire-and-forget */ }
 
     return NextResponse.json(
       {

@@ -5,6 +5,31 @@ import { constructWebhookEvent, planFromSubscription } from "@/lib/stripe";
 import type Stripe from "stripe";
 import { logger } from "@/lib/logger";
 import { enqueueWebhookEvent } from "@/lib/stripe-webhook-queue";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+/**
+ * @prisma-direct excepción documentada — este handler usa `prisma.*` directo
+ * en lugar de TenantsDB / OrdersDB por estas razones (auditado 2026-05-19):
+ *
+ *  1. `prisma.stripeWebhookQueue.create/update/deleteMany` — la tabla
+ *     `StripeWebhookQueue` es infra de webhook (no per-tenant); no hay
+ *     clase DB equivalente porque su scope es global por `stripeId`.
+ *  2. `prisma.tenant.findUnique/findFirst/update` — tenant lookup por
+ *     `slug` o `stripeSubscriptionId` para resolver a qué tenant aplicar
+ *     el evento Stripe. Hay tres cross-checks de seguridad sobre el
+ *     resultado: (a) `existingTenant.stripeCustomerId !== customerId`
+ *     bloquea privilege-escalation cross-tenant; (b) `otherClaim` bloquea
+ *     reutilización de customerId; (c) `tenantForUpd.stripeCustomerId !==
+ *     subCustomerId` en updated/deleted bloquea cancelación ajena.
+ *  3. `prisma.activityLog.create` y `prisma.notification.create` — operaciones
+ *     fire-and-forget con `tenantId` derivado del tenant ya validado en (2).
+ *
+ * El input (`event.id`, `tenantSlug` en metadata) se valida via
+ * `stripe.webhooks.constructEvent` con HMAC antes de cualquier acceso a DB,
+ * y el rate-limit STRICT cubre DoS pre-firma.
+ *
+ * Paridad con `app/api/marketplace/payment/mercadopago/webhook/route.ts`.
+ */
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/webhook
@@ -13,8 +38,16 @@ import { enqueueWebhookEvent } from "@/lib/stripe-webhook-queue";
 // the event and return 200 so Stripe does NOT add its own retries on top of
 // ours. A cron job at /api/billing/webhook-replay drains the queue with
 // exponential back-off.
+//
+// Audit 2026-05-17 04-P0-1: rate-limit agregado para prevenir DoS.
+// Antes: 1000 req/s sin firma válida consumían HMAC + Prisma create.
+// Stripe paga retries, vos pagás compute. STRICT cap (10 req/min por IP)
+// es seguro porque Stripe nunca envía más de 1 evento por segundo a una IP.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const _rl = applyRateLimit(req, "STRICT", "stripe-webhook");
+  if (_rl) return _rl;
+
   const sig = req.headers.get("stripe-signature");
   if (!sig) {
     return NextResponse.json({ error: "Missing Stripe signature" }, { status: 400 });
@@ -32,9 +65,17 @@ export async function POST(req: NextRequest) {
   // Round 28 Sprint 1 (Quick Win 1.9): freshness check (paridad MP webhook).
   // Stripe.constructEvent ya valida ts del Stripe-Signature (tolerance 5min),
   // pero el dashboard permite re-enviar events hasta 30 días. Si el event.created
-  // tiene más de 1 hora, asumimos replay desde dashboard/leak y rechazamos.
-  // Esto bloquea replay attacks con firma válida pero events viejos.
-  const MAX_EVENT_AGE_SEC = 60 * 60; // 1h
+  // tiene más de N segundos, asumimos replay desde dashboard/leak y rechazamos.
+  //
+  // PENTEST 2026-05-18 Sprint B #6: bajado de 1h a 5min para paridad con
+  // MP webhook y SUNAT. La ventana de 1h era 12× más permisiva que los
+  // otros webhooks — un atacante que capture raw body + signature válido
+  // (log leak, breach breve de Sentry breadcrumbs) tenía 60min para replay.
+  // La idempotencia por event.id ya lo mitiga (UNIQUE constraint), pero
+  // un evento aún no procesado seguía siendo aplicable. 5min cierra eso.
+  // Si Stripe dashboard re-send es un caso real, agregar opt-out por
+  // header interno firmado por Vercel.
+  const MAX_EVENT_AGE_SEC = 5 * 60; // 5min (paridad MP/SUNAT)
   const eventAgeSec = Math.floor(Date.now() / 1000) - event.created;
   if (eventAgeSec > MAX_EVENT_AGE_SEC) {
     logger.warn("[Stripe Webhook] Event demasiado viejo — posible replay", {

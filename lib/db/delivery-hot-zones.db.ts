@@ -124,6 +124,24 @@ export const DeliveryHotZonesDb = {
     cacheLife({ revalidate: 300, stale: 60, expire: 600 });
     cacheTag("hot-zones");
 
+    // Brandon mayo 2026 v7: si el tenant deshabilitó la red de repartidores
+    // Buleje, devolvemos zonas vacías — sus pedidos no entran a la red.
+    // Raw SQL: defensa contra cache del Prisma Client en dev tras migración.
+    const tenantRows = await prisma.$queryRaw<Array<{ useThirdPartyDelivery: boolean }>>`
+      SELECT "useThirdPartyDelivery" FROM "Tenant" WHERE id = ${tenantId} LIMIT 1
+    `;
+    if (!tenantRows[0]?.useThirdPartyDelivery) {
+      return ZONES.map((z) => ({
+        id: z.id,
+        name: z.name,
+        heat: "low" as const,
+        pendingOrders: 0,
+        avgFee: 0,
+        distanceKm: z.mockKm,
+        bonus: null,
+      }));
+    }
+
     // Traer todas las órdenes pendientes/confirmadas del tenant de una sola vez
     // para evitar N+1 (una query por zona).
     const pendingOrders = await prisma.order.findMany({
@@ -169,9 +187,10 @@ export const DeliveryHotZonesDb = {
           ) / 10
         : zone.mockKm;
 
-      // bonus — solo Yarinacocha con alta demanda (regla mock lluvia)
-      const bonus =
-        zone.id === "yarinacocha" && heat === "high" ? "Lluvia +25%" : null;
+      // Brandon mayo 2026 v7: removido el bonus fake "Lluvia +25%" — no
+      // existía detector real de clima. Ahora `bonus` queda null hasta que
+      // se conecte un servicio real de clima/eventos.
+      const bonus = null;
 
       return {
         id: zone.id,

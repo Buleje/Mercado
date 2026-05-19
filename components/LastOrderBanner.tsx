@@ -92,7 +92,7 @@ export default function LastOrderBanner() {
   return (
     <section className="py-4 sm:py-6">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4 sm:p-5 shadow-[var(--shadow-sm)]">
+        <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4 sm:p-5 shadow-[var(--shadow-sm)]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             {/* Icon */}
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -101,7 +101,7 @@ export default function LastOrderBanner() {
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-foreground">
+              <p className="text-sm font-bold text-[var(--text-primary)]">
                 Tu último pedido
                 <span className="text-muted font-normal ml-1">
                   · hace {daysSince === 0 ? "hoy" : daysSince === 1 ? "1 día" : `${daysSince} días`}

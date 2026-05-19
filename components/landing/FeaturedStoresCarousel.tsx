@@ -121,7 +121,7 @@ export default function FeaturedStoresCarousel({ stores }: Props) {
               {/* Illustration / logo area grande */}
               <div className="relative aspect-[4/3] w-full bg-[var(--surface-sunken)] flex items-center justify-center">
                 {store.logo ? (
-                  <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white dark:bg-card border border-[var(--rule-base)]">
+                  <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-[var(--surface-raised)] border border-[var(--rule-base)]">
                     <Image
                       src={store.logo}
                       alt={store.name}

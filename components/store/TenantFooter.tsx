@@ -79,7 +79,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-const WHATSAPP_FALLBACK = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51916409675";
+const WHATSAPP_FALLBACK = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51929340532";
 
 function getPageContextMessage(pathname: string, storeName: string): string {
   if (pathname.includes("/producto/")) return `Hola ${storeName}, quiero consultar sobre un producto.`;
@@ -121,22 +121,22 @@ function WhatsAppContactStrip({ storeName }: { storeName: string }) {
   const hoursLabel = todayEntry?.enabled ? `Hoy ${todayEntry.open}–${todayEntry.close}` : "Hoy cerrado";
 
   return (
-    <div className="border-b border-white/10">
+    <div className="border-b border-[var(--rule-base)]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div className="text-left">
-            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-white/50 mb-2">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-2">
               <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               Atención directa
             </span>
-            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
               Hablá con {storeName}
             </h3>
-            <p className="text-white/55 text-sm mt-1 max-w-md leading-relaxed">
+            <p className="text-[var(--text-secondary)] text-sm mt-1 max-w-md leading-relaxed">
               Te respondemos por WhatsApp al instante.
             </p>
             <div className="flex items-center gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-white/45 tabular-nums">
+              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] tabular-nums">
                 <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 {hoursLabel}
               </span>
@@ -146,8 +146,8 @@ function WhatsAppContactStrip({ storeName }: { storeName: string }) {
                   Abierto
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-white/40">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
+                <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--surface-sunken)]" />
                   Cerrado
                 </span>
               )}
@@ -161,7 +161,7 @@ function WhatsAppContactStrip({ storeName }: { storeName: string }) {
             className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-gray-900 transition-all hover:bg-gray-100 active:scale-[0.98]"
           >
             {showPulse && (
-              <span className="absolute inset-0 rounded-full animate-ping bg-white/30 pointer-events-none" style={{ animationDuration: "2s" }} />
+              <span className="absolute inset-0 rounded-full animate-ping bg-[var(--surface-sunken)] pointer-events-none" style={{ animationDuration: "2s" }} />
             )}
             <WhatsAppIcon className="h-4 w-4" />
             Iniciar chat
@@ -198,21 +198,21 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
   const tenantHome = `/t/${slug}`;
 
   return (
-    <footer className="bg-[#060a0d] text-white border-t border-white/10" aria-label={`Pie de página de ${storeName}`}>
+    <footer className="bg-[var(--surface-sunken)] text-[var(--text-primary)] border-t border-[var(--rule-base)]" aria-label={`Pie de página de ${storeName}`}>
       <WhatsAppContactStrip storeName={storeName} />
 
       {/* Perks */}
-      <div className="border-b border-white/10">
+      <div className="border-b border-[var(--rule-base)]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {perks.map((perk) => {
               const PIcon = perk.Icon;
               return (
                 <div key={perk.label} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/5">
-                    <PIcon className="h-3.5 w-3.5 text-white/70" strokeWidth={1.75} aria-hidden />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+                    <PIcon className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
                   </div>
-                  <span className="text-xs font-medium text-white/70 tabular-nums">{perk.label}</span>
+                  <span className="text-xs font-medium text-[var(--text-secondary)] tabular-nums">{perk.label}</span>
                 </div>
               );
             })}
@@ -225,12 +225,12 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
           {/* Col 1: Mi cuenta */}
           <nav aria-label="Mi cuenta">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-white/40 mb-5">
+            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-5">
               Mi cuenta
             </h3>
             <ul className="space-y-2.5">
               <li>
-                <a href={tenantHome} className="text-white/65 hover:text-white transition-colors text-sm">
+                <a href={tenantHome} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm">
                   Ir al inicio
                 </a>
               </li>
@@ -238,7 +238,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
                 <li key={link.label}>
                   <a
                     href={buildTenantPath(slug, link.href)}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
+                    className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm"
                   >
                     {link.label}
                   </a>
@@ -249,7 +249,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
 
           {/* Col 2: Ayuda */}
           <nav aria-label="Ayuda">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-white/40 mb-5">
+            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-5">
               Ayuda
             </h3>
             <ul className="space-y-2.5">
@@ -257,7 +257,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
                 <li key={link.label}>
                   <a
                     href={buildTenantPath(slug, link.href)}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
+                    className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm"
                   >
                     {link.label}
                   </a>
@@ -268,7 +268,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
               href={`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Hola ${storeName}, necesito ayuda`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               WhatsApp
@@ -277,13 +277,13 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
 
           {/* Col 3: Identidad de la tienda */}
           <div>
-            <h3 className="text-base font-extrabold tracking-tight text-white mb-3">{storeName}</h3>
+            <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mb-3">{storeName}</h3>
             {storeTheme?.description && (
-              <p className="text-white/55 text-sm leading-relaxed mb-3">{storeTheme.description}</p>
+              <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-3">{storeTheme.description}</p>
             )}
             {address && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-white/70 mb-4">
-                <MapPin className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+                <MapPin className="h-3 w-3 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
                 {address}
               </div>
             )}
@@ -293,7 +293,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
                 href={`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Hola ${storeName}, quiero hacer un pedido`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)] transition-colors"
                 aria-label="WhatsApp"
               >
                 <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
@@ -304,7 +304,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
                   href={facebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)] transition-colors"
                   aria-label="Facebook"
                 >
                   <Facebook className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
@@ -316,7 +316,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
                   href={instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)] transition-colors"
                   aria-label="Instagram"
                 >
                   <Instagram className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
@@ -327,15 +327,15 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
 
             <div className="mt-5 space-y-2">
               {phone && (
-                <div className="flex items-center gap-2.5 text-xs text-white/55">
-                  <Phone className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
-                  <a href={`tel:${phone}`} className="tabular-nums hover:text-white/80">
+                <div className="flex items-center gap-2.5 text-xs text-[var(--text-secondary)]">
+                  <Phone className="h-3.5 w-3.5 text-[var(--text-secondary)] shrink-0" strokeWidth={1.75} aria-hidden />
+                  <a href={`tel:${phone}`} className="tabular-nums hover:text-[var(--text-secondary)]">
                     {phone}
                   </a>
                 </div>
               )}
-              <div className="flex items-center gap-2.5 text-xs text-white/55">
-                <Clock className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
+              <div className="flex items-center gap-2.5 text-xs text-[var(--text-secondary)]">
+                <Clock className="h-3.5 w-3.5 text-[var(--text-secondary)] shrink-0" strokeWidth={1.75} aria-hidden />
                 <span className="tabular-nums">Hoy {hoursLabel}</span>
               </div>
             </div>
@@ -344,15 +344,15 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
       </div>
 
       {/* Newsletter */}
-      <div className="border-t border-white/10">
+      <div className="border-t border-[var(--rule-base)]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-white/55" strokeWidth={1.75} aria-hidden />
+              <h3 className="text-sm font-extrabold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
                 Recibe ofertas de {storeName}
               </h3>
-              <p className="text-xs text-white/45 mt-1 leading-relaxed">Promociones y nuevos productos directo a tu correo.</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">Promociones y nuevos productos directo a tu correo.</p>
             </div>
             <form
               onSubmit={async (e) => {
@@ -386,7 +386,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
                     value={nlEmail}
                     onChange={(e) => setNlEmail(e.target.value)}
                     placeholder="tu@email.com"
-                    className="h-10 px-4 rounded-full bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/40 focus:border-white/40 flex-1 sm:w-60"
+                    className="h-10 px-4 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]/40 focus:border-[var(--rule-base)] flex-1 sm:w-60"
                   />
                   <button
                     type="submit"
@@ -407,37 +407,37 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
       </div>
 
       {/* Trust + copyright */}
-      <div className="border-t border-white/10">
+      <div className="border-t border-[var(--rule-base)]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-white/55 bg-white/5 border border-white/10">
-                <ShieldCheck className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
+              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
+                <ShieldCheck className="h-3 w-3 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
                 Sitio Seguro
               </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-white/55 bg-white/5 border border-white/10">
-                <CreditCard className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
+              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
+                <CreditCard className="h-3 w-3 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
                 Yape · Plin
               </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-white/55 bg-white/5 border border-white/10">
-                <Wallet className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
+              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
+                <Wallet className="h-3 w-3 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
                 Efectivo OK
               </div>
             </div>
 
-            <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-white/35 tabular-nums">
+            <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] tabular-nums">
               © {year} {storeName} · Hecho en Perú
               <span className="mx-1">·</span>
               <a
                 href={buildTenantPath(slug, "/privacidad")}
-                className="hover:text-white/60 transition-colors"
+                className="hover:text-[var(--text-secondary)] transition-colors"
               >
                 Privacidad
               </a>
               <span className="mx-0.5">·</span>
               <a
                 href={buildTenantPath(slug, "/terminos")}
-                className="hover:text-white/60 transition-colors"
+                className="hover:text-[var(--text-secondary)] transition-colors"
               >
                 Términos
               </a>

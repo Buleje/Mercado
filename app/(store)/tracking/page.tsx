@@ -14,10 +14,10 @@ export default function TrackingPage() {
     <main className="min-h-screen bg-background dark:bg-background">
       <div className="mx-auto max-w-2xl px-4 py-12">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground dark:text-foreground">
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Seguir mi pedido
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground dark:text-muted">
+          <p className="mt-2 text-sm text-[var(--text-secondary)] dark:text-muted">
             Ingresa tu número de pedido para ver el estado de tu delivery
           </p>
         </div>

@@ -7,6 +7,7 @@ import { AdminInsightCard, type ContextualMetric, type InsightAction } from "@/c
 import { BulejeHeatmap, type HeatmapCell } from "@/components/ui-system/charts";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { usePersonalizedGreeting } from "@/hooks/use-personalized-greeting";
+import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "@/components/admin/inicio/DashboardDateRange";
 
@@ -33,6 +34,7 @@ interface OverviewData {
     deltaVsPrevious?: number;
     sparkline: number[];
     sparklineLabels?: string[];
+    sparklineIso?: string[];
   };
   contextual: {
     ordersToday: number;  // legacy
@@ -57,6 +59,12 @@ interface Props {
   greeting?: string;
   /** Rango activo del dashboard. Si se omite, se asume "hoy". */
   dateRange?: DateRange;
+  /**
+   * Si true, NO renderiza el bloque "Alertas accionables" interno. Útil
+   * cuando otro componente externo (ej. InicioDashboardV2) las renderiza
+   * en un layout side-by-side con la Meta del mes.
+   */
+  hideAlerts?: boolean;
   className?: string;
 }
 
@@ -84,8 +92,13 @@ const PRESET_ORDERS_LABEL: Record<string, string> = {
   personalizado: "Pedidos del período",
 };
 
-export function TodayHub({ userName, greeting: greetingOverride, dateRange, className }: Props) {
-  const dynamicGreeting = usePersonalizedGreeting(userName ?? "bodeguero");
+export function TodayHub({ userName, greeting: greetingOverride, dateRange, hideAlerts = false, className }: Props) {
+  // Brandon mayo 2026 v4: si no se pasa userName, usamos el nombre del
+  // negocio en lugar de "bodeguero" — "Buenas tardes, Mi Pollo" se siente
+  // más personal y refuerza la marca propia del dueño.
+  const { brand } = usePlatformBrand();
+  const businessName = brand?.identity.name?.trim() || "bodeguero";
+  const dynamicGreeting = usePersonalizedGreeting(userName ?? businessName);
   const greeting = greetingOverride ?? dynamicGreeting;
 
   const [data, setData] = useState<OverviewData | null>(null);
@@ -220,7 +233,7 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, clas
       />
 
       {/* ── Alertas accionables ── */}
-      {data.alerts.length > 0 && (
+      {!hideAlerts && data.alerts.length > 0 && (
         <section
           className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
           aria-labelledby="alerts-title"
@@ -288,5 +301,132 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, clas
         Actualizado: {new Date(data.generatedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
       </p>
     </div>
+  );
+}
+
+/**
+ * DashboardAlertsList — sub-componente standalone que muestra el bloque
+ * "Alertas accionables" del mismo endpoint /api/admin/overview. Se usa en
+ * InicioDashboardV2 al lado de "Meta del mes" para tenerlas en 1 fila.
+ *
+ * Hace su propio fetch (60s polling) — el costo es leve y evita acoplar
+ * componentes vía props o context complicado.
+ */
+export function DashboardAlertsList({ dateRange, className }: { dateRange?: DateRange; className?: string }) {
+  const [data, setData] = useState<OverviewData | null>(null);
+  // Disable react-hooks/preserve-manual-memoization: same pattern que el
+  // TodayHub principal — el optional chaining en deps hace que React
+  // Compiler no pueda preservar la memoización, pero es intencional para
+  // evitar re-fetch cuando dateRange cambia de referencia pero no de valor.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+  const rangeQuery = useMemo(() => {
+    if (!dateRange) return "";
+    const params = new URLSearchParams();
+    params.set("from", dateRange.from.toISOString());
+    params.set("to", dateRange.to.toISOString());
+    params.set("preset", dateRange.preset);
+    return `?${params.toString()}`;
+  }, [dateRange?.from, dateRange?.to, dateRange?.preset]);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/admin/overview${rangeQuery}`);
+        if (!res.ok) return;
+        const json = (await res.json()) as OverviewData;
+        if (active) setData(json);
+      } catch { /* silent */ }
+    };
+    void load();
+    const interval = setInterval(() => void load(), 60 * 1000);
+    return () => { active = false; clearInterval(interval); };
+  }, [rangeQuery]);
+
+  if (!data || data.alerts.length === 0) {
+    return (
+      <section
+        className={cn(
+          "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 h-full flex flex-col",
+          className,
+        )}
+        aria-labelledby="alerts-empty-title"
+      >
+        <p
+          id="alerts-empty-title"
+          className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2 inline-flex items-center gap-2"
+        >
+          <Info className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+          Alertas accionables
+        </p>
+        <div className="flex-1 flex items-center justify-center text-center py-4">
+          <p className="text-base font-semibold text-[var(--text-secondary)]">
+            Sin alertas. Todo en orden.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden h-full flex flex-col"
+      aria-labelledby="alerts-side-title"
+    >
+      <header className="px-5 sm:px-6 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between gap-3 shrink-0">
+        <p
+          id="alerts-side-title"
+          className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] inline-flex items-center gap-2"
+        >
+          <AlertCircle className="h-4 w-4 text-[var(--data-warning-500)]" strokeWidth={2.5} aria-hidden />
+          Alertas accionables
+        </p>
+        <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] text-xs font-extrabold tabular-nums">
+          {data.alerts.length}
+        </span>
+      </header>
+      <ul className="flex-1 divide-y divide-[var(--rule-soft)] overflow-y-auto max-h-64">
+        {data.alerts.map((alert) => {
+          const Icon =
+            alert.severity === "danger"
+              ? AlertCircle
+              : alert.severity === "warning"
+                ? AlertTriangle
+                : Info;
+          const iconColor =
+            alert.severity === "danger"
+              ? "text-[var(--data-error-500)]"
+              : alert.severity === "warning"
+                ? "text-[var(--data-warning-500)]"
+                : "text-[var(--text-tertiary)]";
+          return (
+            <li key={alert.id}>
+              {alert.href ? (
+                <Link
+                  href={alert.href}
+                  className="flex items-center gap-3 px-5 sm:px-6 py-3.5 hover:bg-[var(--surface-sunken)] transition-colors group"
+                >
+                  <Icon className={cn("h-5 w-5 shrink-0", iconColor)} strokeWidth={2} aria-hidden />
+                  <span className="flex-1 text-sm sm:text-base text-[var(--text-primary)] font-semibold leading-snug">
+                    {alert.text}
+                  </span>
+                  <ArrowRight
+                    className="h-4 w-4 text-[var(--text-tertiary)] group-hover:translate-x-0.5 transition-transform"
+                    strokeWidth={2}
+                  />
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 px-5 sm:px-6 py-3.5">
+                  <Icon className={cn("h-5 w-5 shrink-0", iconColor)} strokeWidth={2} aria-hidden />
+                  <span className="flex-1 text-sm sm:text-base text-[var(--text-primary)] font-semibold leading-snug">
+                    {alert.text}
+                  </span>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

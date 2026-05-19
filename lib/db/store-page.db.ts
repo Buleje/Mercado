@@ -603,33 +603,41 @@ export const StorePageDB = {
         return { updated: 0, created: 0, skipped };
       }
 
-      // Upsert por cada producto válido (prisma no soporta upsertMany nativo)
-      let updated = 0;
-      let created = 0;
-      for (const productId of validIds) {
-        const existing = await prisma.tenantPageProductOverride.findUnique({
-          where: { tenantId_productId: { tenantId, productId } },
-          select: { id: true },
-        });
-        if (existing) {
-          await prisma.tenantPageProductOverride.update({
-            where: { tenantId_productId: { tenantId, productId } },
-            data: { visible },
-          });
-          updated += 1;
-        } else {
-          await prisma.tenantPageProductOverride.create({
-            data: {
-              tenantId,
-              productId,
-              visible,
-              featured: false,
-              sortOrder: 0,
-            },
-          });
-          created += 1;
-        }
-      }
+      // Brandon perf P1 #4: batch lookup + createMany/updateMany en vez de 2xN upserts.
+      // Antes: (findUnique + create|update) × N productos = 2xN queries.
+      // Ahora: 1 findMany + máximo 2 queries (createMany + updateMany) = 3 queries total.
+      const existingOverrides = await prisma.tenantPageProductOverride.findMany({
+        where: { tenantId, productId: { in: [...validIds] } },
+        select: { productId: true },
+      });
+      const existingSet = new Set(existingOverrides.map((e) => e.productId));
+
+      const toCreate = [...validIds].filter((id) => !existingSet.has(id));
+      const toUpdate = [...validIds].filter((id) => existingSet.has(id));
+
+      const [createResult, updateResult] = await Promise.all([
+        toCreate.length > 0
+          ? prisma.tenantPageProductOverride.createMany({
+              data: toCreate.map((productId) => ({
+                tenantId,
+                productId,
+                visible,
+                featured: false,
+                sortOrder: 0,
+              })),
+              skipDuplicates: true,
+            })
+          : Promise.resolve({ count: 0 }),
+        toUpdate.length > 0
+          ? prisma.tenantPageProductOverride.updateMany({
+              where: { tenantId, productId: { in: toUpdate } },
+              data: { visible },
+            })
+          : Promise.resolve({ count: 0 }),
+      ]);
+
+      const created = createResult.count;
+      const updated = updateResult.count;
 
       invalidateTenant(tenantId);
       return { updated, created, skipped };

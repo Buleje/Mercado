@@ -23,11 +23,13 @@ import { prisma } from "@/lib/prisma";
  * de write podria crear tenants implícitamente).
  */
 async function resolveTenantId(tenantId: string): Promise<{ id: string; slug: string; possibleIds: string[] } | null> {
-  const byId = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { id: true, slug: true } });
-  if (byId) return { id: byId.id, slug: byId.slug, possibleIds: [byId.id, byId.slug] };
-  const bySlug = await prisma.tenant.findUnique({ where: { slug: tenantId }, select: { id: true, slug: true } });
-  if (bySlug) return { id: bySlug.id, slug: bySlug.slug, possibleIds: [bySlug.id, bySlug.slug] };
-  return null;
+  // Perf DB-H5 audit 2026-05-19: 2 findUnique secuenciales colapsados en 1 findFirst con OR.
+  const tenant = await prisma.tenant.findFirst({
+    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+    select: { id: true, slug: true },
+  });
+  if (!tenant) return null;
+  return { id: tenant.id, slug: tenant.slug, possibleIds: [tenant.id, tenant.slug] };
 }
 
 // POST /api/marketplace/stores/my/sync — syncs ALL active inventory to marketplace

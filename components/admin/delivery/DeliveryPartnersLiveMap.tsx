@@ -25,6 +25,10 @@ import {
   Star,
   CheckCircle,
   Clock,
+  Bike,
+  Car,
+  Footprints,
+  Users,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -127,13 +131,51 @@ function timeAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-function vehicleEmoji(t: string): string {
+/**
+ * Brandon mayo 2026 v7: reemplazado vehicleEmoji() por VehicleIcon
+ * componente Lucide (CLAUDE.md prohíbe emojis genéricos en UI).
+ * Para los popups de Leaflet (que se construyen vía innerHTML) seguimos
+ * usando SVG inline minimal — Leaflet no acepta componentes React.
+ */
+function vehicleKind(t: string): "moto" | "bici" | "auto" | "pie" | "otro" {
   const v = (t ?? "").toLowerCase();
-  if (v.includes("moto")) return "🛵";
-  if (v.includes("bici")) return "🚲";
-  if (v.includes("auto") || v.includes("car")) return "🚗";
-  if (v.includes("pie")) return "🚶";
-  return "👤";
+  if (v.includes("moto")) return "moto";
+  if (v.includes("bici")) return "bici";
+  if (v.includes("auto") || v.includes("car")) return "auto";
+  if (v.includes("pie")) return "pie";
+  return "otro";
+}
+
+function VehicleIcon({ type, className = "h-5 w-5" }: { type: string; className?: string }) {
+  const k = vehicleKind(type);
+  if (k === "moto") return <Truck className={className} aria-label="Moto" />;
+  if (k === "bici") return <Bike className={className} aria-label="Bicicleta" />;
+  if (k === "auto") return <Car className={className} aria-label="Auto" />;
+  if (k === "pie")  return <Footprints className={className} aria-label="A pie" />;
+  return <Users className={className} aria-label="Vehículo" />;
+}
+
+/**
+ * SVG-string inline para los markers de Leaflet (innerHTML).
+ * Trazos de lucide-react exportados como string para evitar @vercel/icons.
+ */
+function vehicleSvg(t: string): string {
+  const k = vehicleKind(t);
+  // 16x16 trazo blanco — color heredado del contenedor (currentColor).
+  const stroke = `stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+  if (k === "moto") {
+    return `<svg viewBox="0 0 24 24" width="16" height="16" ${stroke}><path d="M5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M14 17h-4l-2-4 4-4 5 3 1 5"/><path d="M14 6h3"/></svg>`;
+  }
+  if (k === "bici") {
+    return `<svg viewBox="0 0 24 24" width="16" height="16" ${stroke}><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>`;
+  }
+  if (k === "auto") {
+    return `<svg viewBox="0 0 24 24" width="16" height="16" ${stroke}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>`;
+  }
+  if (k === "pie") {
+    return `<svg viewBox="0 0 24 24" width="16" height="16" ${stroke}><path d="M4 16v-2.4a3 3 0 0 1 1.7-2.7l4.1-2.4a3 3 0 0 1 4.5 2.7V16"/><path d="M8 22v-4"/><path d="M16 22v-4"/></svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" width="16" height="16" ${stroke}><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/></svg>`;
 }
 
 export default function DeliveryPartnersLiveMap() {
@@ -229,8 +271,8 @@ export default function DeliveryPartnersLiveMap() {
         const color = STATE_META[state].mapColor;
         const isSelected = selectedId === p.id;
         const html = `
-          <div style="background:${color};width:${isSelected ? 32 : 26}px;height:${isSelected ? 32 : 26}px;border-radius:50%;border:${isSelected ? 4 : 3}px solid white;box-shadow:0 4px 10px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-size:${isSelected ? 16 : 13}px;transition:all 200ms;">
-            ${vehicleEmoji(p.vehicleType)}
+          <div style="background:${color};width:${isSelected ? 32 : 26}px;height:${isSelected ? 32 : 26}px;border-radius:50%;border:${isSelected ? 4 : 3}px solid white;box-shadow:0 4px 10px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;color:white;transition:all 200ms;">
+            ${vehicleSvg(p.vehicleType)}
           </div>
         `;
         const icon = L.divIcon({
@@ -513,11 +555,12 @@ export default function DeliveryPartnersLiveMap() {
                       >
                         <div
                           className={cn(
-                            "h-11 w-11 rounded-xl flex items-center justify-center text-xl shrink-0",
+                            "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
                             meta.bg,
+                            meta.color,
                           )}
                         >
-                          {vehicleEmoji(p.vehicleType)}
+                          <VehicleIcon type={p.vehicleType} className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">

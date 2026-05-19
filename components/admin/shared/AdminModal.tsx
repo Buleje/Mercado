@@ -27,10 +27,11 @@
  */
 
 import * as Dialog from "@radix-ui/react-dialog";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
-type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm";
+type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm" | "pos";
 
 interface AdminModalProps {
   open: boolean;
@@ -48,6 +49,11 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   default: "max-w-lg w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
   "centered-sm": "max-w-sm w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
   wide: "max-w-2xl w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
+  // Brandon 2026-05-16: variant `pos` para checkouts con 2-columnas
+  // desktop. max-w-6xl + 92vh para que en PC quepa TODO el flujo de
+  // cobro (descuento + métodos + cliente + comprobante + vuelto) sin
+  // scroll vertical.
+  pos: "max-w-6xl w-[calc(100vw-2rem)] rounded-2xl max-h-[92vh]",
   fullscreen: "w-screen h-screen rounded-none",
   side: "ml-auto h-screen w-full max-w-md rounded-l-2xl",
 };
@@ -56,6 +62,7 @@ const VARIANT_POSITION: Record<Variant, string> = {
   default: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
   "centered-sm": "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
   wide: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+  pos: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
   fullscreen: "top-0 left-0",
   side: "top-0 right-0",
 };
@@ -82,13 +89,22 @@ export default function AdminModal({
         <Dialog.Content
           aria-describedby={description ? undefined : undefined}
           className={cn(
-            "fixed z-50 bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-2xl outline-none",
+            "fixed z-50 bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
             VARIANT_POSITION[variant],
             VARIANT_CLASSES[variant],
             "data-[state=open]:animate-modal-in",
             className,
           )}
         >
+          {/* a11y fix 2026-05-09: Radix exige Dialog.Title presente. Cuando no
+              hay title visible, lo renderizamos dentro de VisuallyHidden para
+              que screen readers lo lean sin pintarlo. */}
+          {!title && (
+            <VisuallyHidden.Root asChild>
+              <Dialog.Title>Modal</Dialog.Title>
+            </VisuallyHidden.Root>
+          )}
+
           {/* Header */}
           {(title || !hideCloseButton) && (
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0 gap-3">

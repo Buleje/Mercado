@@ -129,7 +129,7 @@ function getTransactionLabel(tx: LoyaltyTransaction): string {
 function WidgetSkeleton() {
   return (
     <div
-      className="rounded-2xl border border-border bg-card p-5 space-y-4 animate-pulse"
+      className="rounded-2xl border border-border bg-[var(--surface-raised)] p-5 space-y-4 animate-pulse"
       aria-label="Cargando programa de puntos"
       role="status"
     >
@@ -195,10 +195,10 @@ function TeaserCard({ className }: { className?: string }) {
 
         {/* Mensaje principal */}
         <div>
-          <p className="text-base font-bold text-foreground leading-snug">
+          <p className="text-base font-bold text-[var(--text-primary)] leading-snug">
             Gana puntos con cada compra
           </p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
             Inicia sesion para ver tus puntos y desbloquear beneficios exclusivos
           </p>
         </div>
@@ -212,7 +212,7 @@ function TeaserCard({ className }: { className?: string }) {
           ].map(({ icon: Icon, text }) => (
             <span
               key={text}
-              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]"
             >
               <Icon className="h-3 w-3 text-[var(--accent)]" aria-hidden="true" />
               {text}
@@ -428,7 +428,7 @@ export function LoyaltyWidget({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-card shadow-sm",
+        "relative overflow-hidden rounded-2xl border bg-[var(--surface-raised)] shadow-sm",
         "border-border dark:border-border",
         "transition-shadow duration-[var(--dur-base)] hover:shadow-md",
         className,
@@ -452,15 +452,15 @@ export function LoyaltyWidget({
 
           {/* Puntos y nivel */}
           <div className="flex-1 pt-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
               Tus puntos acumulados
             </p>
             <p
-              className="mt-0.5 text-3xl font-extrabold tabular-nums leading-none text-foreground"
+              className="mt-0.5 text-3xl font-extrabold tabular-nums leading-none text-[var(--text-primary)]"
               aria-label={`${formatPoints(data.points)} puntos`}
             >
               {formatPoints(data.points)}
-              <span className="ml-1.5 text-base font-semibold text-muted-foreground">
+              <span className="ml-1.5 text-base font-semibold text-[var(--text-secondary)]">
                 pts
               </span>
             </p>
@@ -474,13 +474,13 @@ export function LoyaltyWidget({
                 </span>
               </div>
             ) : (
-              <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="mt-1.5 flex items-center gap-1 text-xs text-[var(--text-secondary)]">
                 <ArrowUp
                   className="h-3 w-3 text-[var(--accent)]"
                   aria-hidden="true"
                 />
                 <span>
-                  <span className="font-semibold text-foreground">
+                  <span className="font-semibold text-[var(--text-primary)]">
                     {formatPoints(remaining)}
                   </span>{" "}
                   puntos para nivel{" "}
@@ -497,7 +497,7 @@ export function LoyaltyWidget({
 
         {/* ── Barra de progreso ────────────────────────────────────────── */}
         <div className="space-y-1.5 pt-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
             <span className="font-medium">{config.label}</span>
             {!isGold && (
               <span className="font-medium">{config.nextTierLabel}</span>
@@ -518,7 +518,7 @@ export function LoyaltyWidget({
           ) : (
             <ProgressBar pct={progressPct} tierClass={config.fillClass} />
           )}
-          <div className="flex justify-between text-[length:var(--ts-2xs)] text-muted-foreground tabular-nums">
+          <div className="flex justify-between text-[length:var(--ts-2xs)] text-[var(--text-secondary)] tabular-nums">
             <span>{formatPoints(config.minPoints)}</span>
             {!isGold && config.maxPoints != null && (
               <span>{formatPoints(config.maxPoints)}</span>
@@ -531,14 +531,14 @@ export function LoyaltyWidget({
           className={cn("rounded-xl p-3.5 space-y-2", config.bgClass)}
           aria-label={`Beneficios del nivel ${config.label}`}
         >
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
             Tus beneficios actuales
           </p>
           <ul className="space-y-1.5" role="list">
             {config.benefits.map((benefit) => (
               <li
                 key={benefit}
-                className="flex items-start gap-2 text-sm text-foreground"
+                className="flex items-start gap-2 text-sm text-[var(--text-primary)]"
               >
                 <Star
                   className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", config.textClass)}
@@ -553,7 +553,7 @@ export function LoyaltyWidget({
         {/* ── Actividad reciente ───────────────────────────────────────── */}
         {recentTx.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
               Actividad reciente
             </p>
             <ul className="space-y-1.5" role="list">
@@ -580,7 +580,7 @@ export function LoyaltyWidget({
                           <Gift className="h-3.5 w-3.5" />
                         )}
                       </div>
-                      <span className="truncate text-xs text-foreground">
+                      <span className="truncate text-xs text-[var(--text-primary)]">
                         {getTransactionLabel(tx)}
                       </span>
                     </div>
@@ -605,7 +605,7 @@ export function LoyaltyWidget({
 
         {/* ── Footer motivacional ─────────────────────────────────────── */}
         {!isGold && (
-          <p className="text-center text-xs text-muted-foreground border-t border-border pt-3">
+          <p className="text-center text-xs text-[var(--text-secondary)] border-t border-border pt-3">
             Sigue comprando y llega al nivel{" "}
             <span className={cn("font-bold", config.textClass)}>
               {config.nextTierLabel}

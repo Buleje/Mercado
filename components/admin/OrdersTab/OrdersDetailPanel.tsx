@@ -34,6 +34,7 @@ import { googleMapsUrl } from "@/lib/order-utils";
 import { STATUS_COLORS, STATUS_LABELS } from "./types";
 import { DespachoSection } from "./DespachoSection";
 import ManualDeliveryModal from "./ManualDeliveryModal";
+import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
@@ -429,20 +430,34 @@ export function OrdersDetailPanel({
             onPatchOrder={onPatchOrder}
           />
 
-          {/* ─── 6. PAGO (extra detail si Yape o deuda) ──────────────────── */}
-          {order.paymentMethod && (order.yapeOperationNumber || order.deuda !== undefined) && (
+          {/* ─── 6. PAGO (extra detail si Yape/Plin/Transfer o deuda) ──── */}
+          {order.paymentMethod && order.paymentMethod !== "efectivo" && (
             <section className="space-y-2">
               <SectionTitle>Pago</SectionTitle>
+              <PaymentProofViewer orderId={order.id} />
+            </section>
+          )}
+          {order.paymentMethod && (order.yapeOperationNumber || order.deuda !== undefined) && (
+            <section className="space-y-2">
+              {order.paymentMethod === "efectivo" && (
+                <SectionTitle>Pago</SectionTitle>
+              )}
               <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 flex items-center gap-2 flex-wrap">
                 <span
                   className={cn(
                     "inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider",
-                    order.paymentMethod === "yape"
-                      ? "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/30",
+                    order.paymentMethod === "efectivo"
+                      ? "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/30"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]",
                   )}
                 >
-                  {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
+                  {order.paymentMethod === "yape"
+                    ? "Yape"
+                    : order.paymentMethod === "plin"
+                      ? "Plin"
+                      : order.paymentMethod === "transfer"
+                        ? "Transferencia"
+                        : "Efectivo"}
                 </span>
                 {order.yapeOperationNumber && (
                   <span className="font-mono text-xs font-semibold text-[var(--text-secondary)] tabular-nums">

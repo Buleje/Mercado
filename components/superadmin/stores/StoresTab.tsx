@@ -25,7 +25,7 @@ function buildColumns(
     render: (row) => (
       <div>
         <div className="font-medium text-[var(--text-primary)] text-sm">{row.tenant.name}</div>
-        <div className="text-xs text-gray-400 font-mono mt-0.5">{row.tenant.slug}</div>
+        <div className="text-xs text-[var(--text-tertiary)] font-mono mt-0.5">{row.tenant.slug}</div>
       </div>
     ),
   },
@@ -35,7 +35,7 @@ function buildColumns(
     render: (row) => (
       <div>
         <div className="text-sm text-[var(--text-primary)]">{row.name}</div>
-        <div className="text-xs text-gray-400 font-mono mt-0.5">{row.slug}</div>
+        <div className="text-xs text-[var(--text-tertiary)] font-mono mt-0.5">{row.slug}</div>
       </div>
     ),
   },
@@ -52,14 +52,17 @@ function buildColumns(
     render: (row) => (
       <span
         className={[
-          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold",
+          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
           row.isPublished
-            ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
-            : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+            ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
+            : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
         ].join(" ")}
       >
         <span
-          className={["w-1.5 h-1.5 rounded-full", row.isPublished ? "bg-green-500" : "bg-gray-400"].join(" ")}
+          className={[
+            "h-1 w-1 rounded-full",
+            row.isPublished ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]",
+          ].join(" ")}
         />
         {row.isPublished ? "Publicado" : "Borrador"}
       </span>
@@ -80,7 +83,7 @@ function buildColumns(
       <span className="inline-flex items-center gap-1 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
         <Star className="w-3.5 h-3.5 fill-current" />
         {Number(row.rating).toFixed(1)}
-        <span className="text-gray-400 font-normal text-xs">({row.reviewCount})</span>
+        <span className="text-[var(--text-tertiary)] font-normal text-xs">({row.reviewCount})</span>
       </span>
     ),
   },
@@ -89,7 +92,7 @@ function buildColumns(
     label: "Comisión",
     sortable: true,
     render: (row) => (
-      <span className="text-sm font-bold text-primary tabular-nums">{row.commission}%</span>
+      <span className="text-sm font-bold text-[var(--accent)] tabular-nums">{row.commission}%</span>
     ),
   },
   {
@@ -106,7 +109,7 @@ function buildColumns(
     key: "createdAt",
     label: "Creado",
     render: (row) => (
-      <span className="text-xs text-gray-400 tabular-nums">{fmtDate(row.createdAt)}</span>
+      <span className="text-xs text-[var(--text-tertiary)] tabular-nums">{fmtDate(row.createdAt)}</span>
     ),
   },
   {
@@ -242,53 +245,75 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
         />
       </div>
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Filter toolbar */}
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
+            aria-hidden
+          />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar tienda..."
-            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30"
+            placeholder="Buscar por nombre, tienda o slug…"
+            className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
-        <div className="flex gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
-          {(["all", "published", "draft"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                filter === f
-                  ? "bg-primary text-white"
-                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              }`}
-            >
-              {f === "all" ? "Todas" : f === "published" ? "Publicadas" : "Borradores"}
-            </button>
-          ))}
+        <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+          {(["all", "published", "draft"] as const).map((f) => {
+            const isActive = filter === f;
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                className={`inline-flex items-center rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                  isActive
+                    ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {f === "all" ? "Todas" : f === "published" ? "Publicadas" : "Borradores"}
+              </button>
+            );
+          })}
         </div>
         <button
+          type="button"
           onClick={onRefresh}
           disabled={refreshing || loading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40"
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-40"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+            strokeWidth={2.25}
+          />
           Actualizar
         </button>
       </div>
 
       {error && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-xl px-4 py-3 text-sm">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
           {error}
         </div>
       )}
       {loading && <TableSkeleton count={6} />}
       {!loading && filtered.length === 0 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl py-16 text-center">
-          <ShoppingBag className="w-10 h-10 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-          <p className="text-gray-400 text-sm">No hay tiendas</p>
+        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-16 text-center">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
+            <ShoppingBag
+              className="h-6 w-6 text-[var(--text-tertiary)]"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+          </div>
+          <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+            No hay tiendas que mostrar
+          </p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">
+            Probá cambiar el filtro o el término de búsqueda.
+          </p>
         </div>
       )}
       {!loading && filtered.length > 0 && (

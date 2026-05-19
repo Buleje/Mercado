@@ -7,8 +7,8 @@ import { z } from "zod";
 import { withApiHandler } from "@/lib/api-handler";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { ProductModifiersDB } from "@/lib/db/product-modifiers.db";
-import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
 const UpdateOptionSchema = z.object({
@@ -25,6 +25,8 @@ const UpdateOptionSchema = z.object({
 export const PATCH = withApiHandler(
   "admin-modifier-option-patch",
   async (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => {
+    const csrfFail = assertCsrf(req);
+    if (csrfFail) return csrfFail;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
     const rl = applyRateLimit(req, "GENEROUS", "modifier-option-patch");
@@ -49,9 +51,10 @@ export const PATCH = withApiHandler(
     }
 
     // Cargamos opcion actual con groupId para hacer upsert merged
-    const current = await prisma.productModifierOption.findFirst({
-      where: { id: optionId, tenantId: auth.tenantId },
-    });
+    const current = await ProductModifiersDB.getOptionById(
+      auth.tenantId,
+      optionId,
+    );
     if (!current) {
       return NextResponse.json({ error: "Opcion no encontrada" }, { status: 404 });
     }
@@ -62,7 +65,7 @@ export const PATCH = withApiHandler(
         groupId: current.groupId,
         name: parsed.data.name ?? current.name,
         priceDelta:
-          parsed.data.priceDelta ?? Number(current.priceDelta.toString()),
+          parsed.data.priceDelta ?? current.priceDelta,
         position: parsed.data.position ?? current.position,
         isDefault: parsed.data.isDefault ?? current.isDefault,
         isActive: parsed.data.isActive ?? current.isActive,
@@ -87,6 +90,8 @@ export const PATCH = withApiHandler(
 export const DELETE = withApiHandler(
   "admin-modifier-option-delete",
   async (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => {
+    const csrfFail = assertCsrf(req);
+    if (csrfFail) return csrfFail;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
     const rl = applyRateLimit(req, "GENEROUS", "modifier-option-delete");

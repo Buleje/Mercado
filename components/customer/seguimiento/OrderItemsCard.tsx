@@ -27,7 +27,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
     <section
       aria-labelledby="tracking-items-heading"
       className={cn(
-        "rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-5 sm:p-6",
+        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -38,7 +38,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
           </span>
           <h2
             id="tracking-items-heading"
-            className="text-base sm:text-lg font-extrabold tracking-tight text-foreground mt-0.5"
+            className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
           >
             {items.length} {items.length === 1 ? "producto" : "productos"}
           </h2>
@@ -56,7 +56,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
             key={item.productId}
             className="py-3 first:pt-0 last:pb-0 flex items-center gap-3"
           >
-            <div className="h-12 w-12 shrink-0 rounded-xl bg-[var(--surface-alt)] dark:bg-surface border border-gray-100 dark:border-card-border overflow-hidden flex items-center justify-center">
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] overflow-hidden flex items-center justify-center">
               {item.image ? (
                 <Image
                   src={item.image}
@@ -71,21 +71,21 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">
+              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
                 {item.name}
               </p>
               <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5 tabular-nums">
                 {item.quantity} {item.unit} · {fmtSoles(item.price)} c/u
               </p>
             </div>
-            <span className="text-sm font-extrabold text-foreground tabular-nums shrink-0">
+            <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums shrink-0">
               {fmtSoles(item.price * item.quantity)}
             </span>
           </li>
         ))}
       </ul>
 
-      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-card-border space-y-1.5">
+      <div className="mt-4 pt-4 border-t border-[var(--rule-base)] space-y-1.5">
         {hasDiscount && (
           <div className="flex items-center justify-between text-xs text-muted">
             <span>Subtotal</span>
@@ -99,8 +99,8 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
           </div>
         )}
         <div className="flex items-center justify-between pt-1.5">
-          <span className="text-sm font-bold text-foreground">Total</span>
-          <span className="text-xl font-extrabold text-foreground tabular-nums">
+          <span className="text-sm font-bold text-[var(--text-primary)]">Total</span>
+          <span className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">
             {fmtSoles(total)}
           </span>
         </div>

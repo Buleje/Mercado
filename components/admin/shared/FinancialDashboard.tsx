@@ -174,7 +174,7 @@ function buildMetrics(sales: Sale[]): FinancialMetrics {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 animate-pulse">
       <div className="flex items-start justify-between mb-3">
         <div className="h-8 w-8 rounded-xl bg-[var(--rule-soft)] dark:bg-gray-700" />
         <div className="h-4 w-12 rounded bg-[var(--rule-soft)] dark:bg-gray-700" />
@@ -187,7 +187,7 @@ function SkeletonCard() {
 
 function SkeletonChart() {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 animate-pulse">
       <div className="h-5 w-40 rounded bg-[var(--rule-soft)] dark:bg-gray-700 mb-4" />
       <div className="flex items-end gap-[3px] h-28">
         {Array.from({ length: 30 }).map((_, i) => (
@@ -217,7 +217,7 @@ interface PLCardProps {
 function PLCard({ label, value, icon: Icon, accent, iconColor, borderColor, badge }: PLCardProps) {
   return (
     <div
-      className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 border-l-[3px] flex flex-col gap-3 "
+      className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 border-l-[3px] flex flex-col gap-3 "
       style={{ borderLeftColor: borderColor }}
     >
       <div className="flex items-center justify-between">
@@ -433,7 +433,7 @@ export default function FinancialDashboard() {
           ))}
         </div>
         <SkeletonChart />
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 animate-pulse">
           <div className="h-5 w-32 rounded bg-[var(--rule-soft)] dark:bg-gray-700 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -539,7 +539,7 @@ export default function FinancialDashboard() {
       </div>
 
       {/* Trend Chart */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 ">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <CardTitle className="text-sm font-bold">
@@ -571,7 +571,7 @@ export default function FinancialDashboard() {
       </div>
 
       {/* Top 5 Products */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 ">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <CardTitle className="text-sm font-bold">

@@ -88,11 +88,11 @@ export function LocationConfirmModal({
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 340, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full sm:max-w-2xl max-h-[92svh] flex flex-col rounded-t-3xl sm:rounded-[28px] bg-white dark:bg-card overflow-hidden"
+            className="relative w-full sm:max-w-2xl max-h-[92svh] flex flex-col rounded-t-3xl sm:rounded-[28px] bg-[var(--surface-raised)] overflow-hidden"
             style={{ boxShadow: "0 30px 70px -15px rgba(0,0,0,0.45)" }}
           >
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-[var(--rule-soft)] bg-gradient-to-b from-[color-mix(in_oklch,var(--color-primary,#00B4A6)_4%,transparent)] to-transparent">
+            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-[var(--rule-soft)] bg-linear-to-b from-[color-mix(in_oklch,var(--color-primary,#00B4A6)_4%,transparent)] to-transparent">
               <div className="flex items-start gap-3 min-w-0">
                 <div
                   className="h-11 w-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md"
@@ -103,7 +103,7 @@ export function LocationConfirmModal({
                   <Navigation className="h-5 w-5" strokeWidth={2.25} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-extrabold text-foreground tracking-tight leading-tight">
+                  <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
                     Confirma tu ubicación
                   </h3>
                   <p className="text-xs text-muted leading-snug mt-0.5">
@@ -115,7 +115,7 @@ export function LocationConfirmModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] text-foreground transition-colors"
+                className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] text-[var(--text-primary)] transition-colors"
               >
                 <X className="h-4 w-4" strokeWidth={2.5} />
               </button>
@@ -132,7 +132,7 @@ export function LocationConfirmModal({
                     <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary,#00B4A6)]" />
                   </div>
                   <div className="text-center">
-                    <p className="text-base font-extrabold text-foreground tracking-tight">
+                    <p className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">
                       Obteniendo tu ubicación
                     </p>
                     <p className="text-sm text-muted mt-1 leading-relaxed max-w-sm">
@@ -152,7 +152,7 @@ export function LocationConfirmModal({
                       onPick={handlePick}
                     />
                     {/* Hint flotante */}
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-card shadow-lg px-3.5 py-1.5 text-xs font-bold text-foreground border border-[var(--rule-soft)]">
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-raised)] shadow-lg px-3.5 py-1.5 text-xs font-bold text-[var(--text-primary)] border border-[var(--rule-soft)]">
                       <MapPin className="h-3.5 w-3.5 text-[var(--color-primary,#00B4A6)]" strokeWidth={2.5} />
                       Mové el pin para ajustar
                     </div>
@@ -161,22 +161,22 @@ export function LocationConfirmModal({
                   {/* Info de coordenadas */}
                   <div className="px-6 py-4 space-y-3 border-t border-[var(--rule-soft)]">
                     <div>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary,#00B4A6)] mb-1.5">
+                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary,#00B4A6)] mb-1.5">
                         Dirección detectada
                       </p>
-                      <p className="text-sm font-bold text-foreground leading-snug">
+                      <p className="text-sm font-bold text-[var(--text-primary)] leading-snug">
                         {address || `GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Latitud</p>
-                        <p className="text-sm font-extrabold tabular-nums text-foreground">{lat.toFixed(6)}</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Latitud</p>
+                        <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{lat.toFixed(6)}</p>
                       </div>
                       <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Longitud</p>
-                        <p className="text-sm font-extrabold tabular-nums text-foreground">{lon.toFixed(6)}</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Longitud</p>
+                        <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{lon.toFixed(6)}</p>
                       </div>
                     </div>
                   </div>
@@ -185,12 +185,12 @@ export function LocationConfirmModal({
             </div>
 
             {/* Footer con CTAs */}
-            <div className="border-t border-[var(--rule-soft)] bg-white/95 dark:bg-card/95 backdrop-blur-md px-6 py-4 flex items-center gap-3">
+            <div className="border-t border-[var(--rule-soft)] bg-white/95 dark:bg-[var(--surface-raised)]/95 backdrop-blur-md px-6 py-4 flex items-center gap-3">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-bold text-foreground hover:border-[var(--color-primary,#00B4A6)]/40 hover:bg-[var(--surface-sunken)] transition-all disabled:opacity-50"
+                className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--color-primary,#00B4A6)]/40 hover:bg-[var(--surface-sunken)] transition-all disabled:opacity-50"
               >
                 Cancelar
               </button>

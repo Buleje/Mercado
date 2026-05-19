@@ -117,11 +117,11 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div>
-            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
+            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Recepcion de Pedido
             </SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
@@ -134,7 +134,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
         </div>
 
         {/* Step indicator */}
-        <div className="flex px-5 py-2 gap-1 border-b border-[var(--rule-soft)] dark:border-card-border/50">
+        <div className="flex px-5 py-2 gap-1 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
           {[1, 2, 3].map((s) => (
             <div
               key={s}
@@ -151,14 +151,14 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {/* Step 1: Verify Items */}
           {step === 1 && (
             <>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Package className="h-4 w-4 text-primary" />
                 Verificar cantidades recibidas
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-secondary)] dark:text-muted">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
                       <th className="text-center py-2 px-1">Pedido</th>
                       <th className="text-center py-2 px-1">Recibido</th>
@@ -170,8 +170,8 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                     {receivedItems.map((item, idx) => {
                       const diff = item.receivedQty - item.orderedQty;
                       return (
-                        <tr key={item.productId} className="border-b border-[var(--rule-soft)] dark:border-card-border/50">
-                          <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
+                        <tr key={item.productId} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
+                          <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                             {item.name}
                           </td>
                           <td className="py-2 px-1 text-center text-[var(--text-secondary)] dark:text-muted">
@@ -192,7 +192,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                                 setError(null);
                                 updateItem(idx, { receivedQty: val, noLlego: false });
                               }}
-                              className="w-16 text-center border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 text-sm font-bold bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                              className="w-16 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               disabled={item.noLlego}
                             />
                           </td>
@@ -223,14 +223,14 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {/* Step 2: Adjust Prices */}
           {step === 2 && (
             <>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Ajustar precios segun factura
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-secondary)] dark:text-muted">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
                       <th className="text-right py-2 px-1">Precio anterior</th>
                       <th className="text-center py-2 px-1">Precio factura</th>
@@ -249,8 +249,8 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                         const isSignificant = Math.abs(priceDiff) > 5;
 
                         return (
-                          <tr key={item.productId} className="border-b border-[var(--rule-soft)] dark:border-card-border/50">
-                            <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
+                          <tr key={item.productId} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
+                            <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                               {item.name}
                             </td>
                             <td className="py-2 px-1 text-right text-[var(--text-secondary)] dark:text-muted">
@@ -263,7 +263,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                                 step={0.01}
                                 value={item.unitPrice}
                                 onChange={(e) => updateItem(idx, { unitPrice: Math.max(0, parseFloat(e.target.value) || 0) })}
-                                className="w-24 text-center border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 text-sm font-bold bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                                className="w-24 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               />
                             </td>
                             <td className="py-2 px-1 text-right">
@@ -287,7 +287,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               </div>
               <div className="text-right">
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Total factura:</p>
-                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   S/ {totalFactura.toFixed(2)}
                 </p>
               </div>
@@ -297,7 +297,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
           {/* Step 3: Confirm */}
           {step === 3 && (
             <>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Check className="h-4 w-4 text-[var(--data-success-500)]" />
                 Confirmar recepcion
               </p>
@@ -305,15 +305,15 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Recibidos</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{itemsRecibidos.length}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsRecibidos.length}</p>
                 </div>
                 <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-center border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Con diferencia</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{itemsConDiferencia.length}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsConDiferencia.length}</p>
                 </div>
                 <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Total factura</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/ {totalFactura.toFixed(2)}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {totalFactura.toFixed(2)}</p>
                 </div>
               </div>
 
@@ -321,7 +321,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               <div className="bg-gray-50 dark:bg-accent/50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
                 {receivedItems.map((item) => (
                   <div key={item.productId} className="flex justify-between text-xs">
-                    <span className={cn("text-[var(--text-primary)] dark:text-foreground", item.receivedQty === 0 && "line-through text-[var(--text-tertiary)]")}>
+                    <span className={cn("text-[var(--text-primary)] dark:text-[var(--text-primary)]", item.receivedQty === 0 && "line-through text-[var(--text-tertiary)]")}>
                       {item.name}
                     </span>
                     <span className="text-[var(--text-secondary)] dark:text-muted font-semibold">
@@ -335,7 +335,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
                 placeholder="Notas sobre la recepcion (opcional)..."
-                className="w-full border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary resize-none"
+                className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary resize-none"
                 rows={3}
               />
 
@@ -349,11 +349,11 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-4 border-t border-[var(--rule-base)] dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-4 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           {step > 1 ? (
             <button
               onClick={() => setStep((s) => s - 1)}
-              className="flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground transition-colors"
+              className="flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] transition-colors"
             >
               <ChevronLeft className="h-4 w-4" /> Anterior
             </button>

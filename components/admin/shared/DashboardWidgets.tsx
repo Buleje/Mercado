@@ -106,7 +106,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
             onClick={() => onNavigate?.(w.tab)}
             className={cn(
               "relative flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
-              "bg-white dark:bg-card border-[var(--rule-soft)] dark:border-card-border",
+              "bg-[var(--surface-raised)] border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
               "hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600",
               loading && "animate-pulse"
             )}
@@ -115,7 +115,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
               <Icon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xl font-extrabold text-foreground leading-tight">
+              <p className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">
                 {loading ? "—" : w.value}
               </p>
               <p className="text-[length:var(--ts-xs)] text-muted truncate">{w.label}</p>

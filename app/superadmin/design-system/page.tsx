@@ -10,7 +10,7 @@
  *   - Mis presets   → library de presets guardados.
  *
  * IMPORTANTE: Este page vive dentro del SUPERADMIN, así que usa la paleta
- * de plataforma (--brand-purple, --ls-wider, font-black) y NO los tokens
+ * de plataforma (--accent, --ls-wider, font-extrabold) y NO los tokens
  * de negocio que se editan acá. Los tokens del negocio aparecen solo en
  * el `<PreviewPane>` (sandbox visual) y se aplican al admin del negocio
  * vía `<DesignTokensProvider>` envolviendo `app/admin/layout.tsx`.
@@ -233,68 +233,97 @@ export default function DesignSystemPage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-purple)]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-6">
-        {/* Header — match patrón ConfiguracionClient */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--brand-purple)] mb-1">
-              Buleje · Centro de diseño
-            </p>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
-              Diseño heredable del marketplace
-            </h1>
-            <p className="mt-1 text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
-              Personalizá colores, tipografía, bordes, sombras, botones y animaciones.
-              Todo lo que cambies se hereda en vivo al{" "}
-              <strong className="text-[var(--text-primary)]">panel admin de los negocios</strong>.
-            </p>
-            {activePreset && (
-              <p className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ background: activePreset.colors.accent }}
-                />
-                <span className="uppercase tracking-wider text-[var(--text-tertiary)]">Activo:</span>
-                <strong className="text-[var(--text-primary)] uppercase tracking-wider">
-                  {activePreset.meta.name}
-                </strong>
-                {updatedAt && (
-                  <span className="text-[var(--text-tertiary)] font-normal normal-case tracking-normal">
-                    · {new Date(updatedAt).toLocaleString("es-PE", {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })}
-                    {updatedBy ? ` · por ${updatedBy}` : ""}
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {savedFlash && (
-              <span className="inline-flex items-center gap-2 px-4 h-11 rounded-2xl bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-emerald-300 text-xs font-extrabold uppercase tracking-wider border-2 border-[var(--data-success-500)]/30">
-                <Check className="h-4 w-4" /> {savedFlash}
+      {/* ── Hero canónico ───────────────────────────────────────── */}
+      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-3.5 min-w-0 flex-1">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
+                <Palette className="h-6 w-6" strokeWidth={1.75} aria-hidden />
               </span>
-            )}
-            <button
-              type="button"
-              onClick={startNew}
-              className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-[var(--brand-purple)] text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-[var(--brand-purple)]/30 hover:shadow-xl active:scale-[0.99] transition-all"
-            >
-              <Plus className="h-4 w-4" strokeWidth={2.5} />
-              Crear preset
-            </button>
-          </div>
-        </header>
+              <div className="min-w-0">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+                  Plataforma · Centro de diseño
+                </p>
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Diseño heredable
+                </h1>
+                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
+                  Personalizá colores, tipografía, bordes, sombras, botones y animaciones. Todo lo
+                  que cambies se hereda en vivo al{" "}
+                  <strong className="text-[var(--text-primary)]">panel admin de los negocios</strong>.
+                </p>
+                {activePreset && (
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1">
+                    <span
+                      className="inline-block h-2 w-2 rounded-full shrink-0"
+                      style={{ background: activePreset.colors.accent }}
+                    />
+                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Activo
+                    </span>
+                    <span className="text-xs font-extrabold text-[var(--text-primary)]">
+                      {activePreset.meta.name}
+                    </span>
+                    {updatedAt && (
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                        ·{" "}
+                        {new Date(updatedAt).toLocaleString("es-PE", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                        {updatedBy ? ` · ${updatedBy}` : ""}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
 
+            <div className="flex items-stretch gap-2 flex-wrap shrink-0">
+              {/* StatPills canónicos */}
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                  Oficiales
+                </p>
+                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
+                  {oficialPresets.length}
+                </p>
+              </div>
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                  Mis presets
+                </p>
+                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--accent)]">
+                  {savedPresets.length}
+                </p>
+              </div>
+              {savedFlash && (
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3.5 py-2 text-xs font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} /> {savedFlash}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={startNew}
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110 active:scale-[0.99]"
+              >
+                <Plus className="h-4 w-4" strokeWidth={2.5} />
+                Crear preset
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* Tabs */}
         <nav className="flex flex-wrap items-center gap-1 border-b-2 border-[var(--rule-base)]">
           {(
@@ -310,7 +339,7 @@ export default function DesignSystemPage() {
               onClick={() => setView(key)}
               className={`inline-flex items-center gap-2 px-5 h-12 -mb-[2px] border-b-4 text-sm font-extrabold uppercase tracking-wider transition-colors ${
                 view === key
-                  ? "border-[var(--brand-purple)] text-[var(--brand-purple)]"
+                  ? "border-[var(--accent)] text-[var(--accent)]"
                   : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -318,9 +347,9 @@ export default function DesignSystemPage() {
               {label}
               {typeof count === "number" && (
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold normal-case tracking-normal ${
+                  className={`px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold normal-case tracking-normal ${
                     view === key
-                      ? "bg-[var(--brand-purple)]/10 text-[var(--brand-purple)]"
+                      ? "bg-[var(--accent)]/10 text-[var(--accent)]"
                       : "bg-[var(--rule-base)] text-[var(--text-tertiary)]"
                   }`}
                 >
@@ -427,12 +456,12 @@ function PresetCard({
     <article
       className={`relative rounded-2xl overflow-hidden bg-white dark:bg-[var(--surface-raised)] transition-all ${
         isActive
-          ? "border-2 border-[var(--brand-purple)] shadow-lg shadow-[var(--brand-purple)]/15"
+          ? "border-2 border-[var(--accent)] shadow-lg shadow-[var(--accent)]/15"
           : "border-2 border-[var(--rule-base)] hover:border-[var(--rule-strong)] hover:shadow-md"
       }`}
     >
       {isActive && (
-        <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--brand-purple)] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+        <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
           <Check className="h-3 w-3" strokeWidth={3} /> En uso
         </span>
       )}
@@ -446,14 +475,14 @@ function PresetCard({
         }}
       >
         <span
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider w-fit"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider w-fit"
           style={{ background: preset.colors.accent, color: "white" }}
         >
           <Palette className="h-3 w-3" strokeWidth={2.5} />
           {preset.meta.author === "buleje" ? "Oficial" : "Custom"}
         </span>
         <h3
-          className="mt-1.5 text-xl font-black leading-tight tracking-[-0.01em]"
+          className="mt-1.5 text-xl font-extrabold leading-tight tracking-tight"
           style={{ color: preset.colors.textPrimary }}
         >
           {preset.meta.name}
@@ -477,7 +506,7 @@ function PresetCard({
           ))}
         </div>
 
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">Headings</dt>
           <dd
             className="text-[var(--text-primary)] truncate font-bold"
@@ -513,7 +542,7 @@ function PresetCard({
               type="button"
               onClick={onActivate}
               disabled={isSaving}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-11 px-4 rounded-2xl bg-[var(--brand-purple)] text-white text-sm font-extrabold uppercase tracking-wider shadow-md shadow-[var(--brand-purple)]/25 hover:shadow-lg hover:shadow-[var(--brand-purple)]/35 active:scale-[0.99] disabled:opacity-50 transition-all"
+              className="flex-1 inline-flex items-center justify-center gap-2 h-11 px-4 rounded-2xl bg-[var(--accent)] text-white text-sm font-extrabold uppercase tracking-wider shadow-md shadow-[var(--accent)]/25 hover:shadow-lg hover:shadow-[var(--accent)]/35 active:scale-[0.99] disabled:opacity-50 transition-all"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Activar</>}
             </button>
@@ -521,7 +550,7 @@ function PresetCard({
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:border-[var(--brand-purple)] hover:text-[var(--brand-purple)] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             title="Abrir en editor"
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} /> Editar
@@ -554,10 +583,13 @@ function GalleryView({
 }) {
   return (
     <div className="space-y-8">
-      <section>
-        <h2 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-          Presets oficiales · {oficialPresets.length}
-        </h2>
+      <section className="space-y-4">
+        <GallerySectionHeading
+          icon={Palette}
+          title="Presets oficiales"
+          subtitle="Diseños curados por el equipo Buleje. Click para activar, lápiz para editar."
+          count={oficialPresets.length}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {oficialPresets.map((preset) => (
             <PresetCard
@@ -573,10 +605,14 @@ function GalleryView({
       </section>
 
       {savedPresets.length > 0 && (
-        <section>
-          <h2 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-            Mis presets · {savedPresets.length}
-          </h2>
+        <section className="space-y-4">
+          <GallerySectionHeading
+            icon={Sparkles}
+            title="Mis presets"
+            subtitle="Tus diseños guardados. Reactivables en cualquier momento."
+            count={savedPresets.length}
+            muted
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {savedPresets.map((preset) => (
               <PresetCard
@@ -620,9 +656,11 @@ function LibraryView({
 }) {
   if (savedPresets.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-12 text-center">
-        <Sparkles className="h-12 w-12 mx-auto text-[var(--brand-purple)]/60" />
-        <h3 className="mt-4 text-2xl font-black tracking-[-0.01em] text-[var(--text-primary)]">
+      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-12 text-center">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)] mb-4">
+          <Sparkles className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+        </div>
+        <h3 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
           Sin presets propios todavía
         </h3>
         <p className="mt-2 text-sm text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
@@ -632,7 +670,7 @@ function LibraryView({
         <button
           type="button"
           onClick={onCreate}
-          className="mt-6 inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-[var(--brand-purple)] text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-[var(--brand-purple)]/30 hover:shadow-xl active:scale-[0.99] transition-all"
+          className="mt-6 inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-[var(--accent)] text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl active:scale-[0.99] transition-all"
         >
           <Plus className="h-4 w-4" strokeWidth={2.5} />
           Crear desde cero
@@ -656,7 +694,7 @@ function LibraryView({
               <button
                 type="button"
                 onClick={() => onDuplicate(preset)}
-                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--brand-purple)] hover:text-[var(--brand-purple)] transition-colors"
+                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                 title="Duplicar"
                 aria-label="Duplicar"
               >
@@ -736,7 +774,7 @@ function EditorView({
                 onClick={() => setTab(key)}
                 className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-colors ${
                   tab === key
-                    ? "bg-[var(--brand-purple)] text-white shadow-sm"
+                    ? "bg-[var(--accent)] text-white shadow-sm"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 }`}
               >
@@ -763,7 +801,7 @@ function EditorView({
             type="button"
             onClick={onApply}
             disabled={saving}
-            className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-[var(--brand-purple)] text-white text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-[var(--brand-purple)]/30 hover:shadow-xl active:scale-[0.99] disabled:opacity-50 transition-all"
+            className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-[var(--accent)] text-white text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl active:scale-[0.99] disabled:opacity-50 transition-all"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" strokeWidth={2.5} />}
             Aplicar al admin
@@ -773,7 +811,7 @@ function EditorView({
               type="button"
               onClick={onSave}
               disabled={saving}
-              className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border-2 border-[var(--brand-purple)]/40 text-[var(--brand-purple)] text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--brand-purple)]/5 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border-2 border-[var(--accent)]/40 text-[var(--accent)] text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--accent)]/5 transition-colors"
             >
               <Save className="h-3.5 w-3.5" strokeWidth={2.5} /> Guardar
             </button>
@@ -843,7 +881,7 @@ function MetaPanel({
           value={tokens.meta.description}
           onChange={(e) => setField("meta", "description", e.target.value)}
           rows={3}
-          className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--brand-purple)] focus:outline-none transition-colors"
+          className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
           placeholder="Para qué tipo de negocio funciona mejor…"
         />
       </div>
@@ -1187,11 +1225,11 @@ function FieldText({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--brand-purple)] focus:outline-none transition-colors disabled:opacity-50 ${
+        className={`w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors disabled:opacity-50 ${
           mono ? "font-mono text-xs" : ""
         }`}
       />
-      {hint && <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
     </div>
   );
 }
@@ -1220,7 +1258,7 @@ function FieldColor({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-8 rounded-md border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-2 text-xs font-mono text-[var(--text-primary)] focus:border-[var(--brand-purple)] focus:outline-none"
+          className="w-full h-8 rounded-md border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-2 text-xs font-mono text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
           placeholder="oklch(...) / #hex / rgb(...)"
         />
       </div>
@@ -1268,9 +1306,9 @@ function FieldRange({
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full accent-[var(--brand-purple)]"
+        className="w-full accent-[var(--accent)]"
       />
-      {hint && <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
     </div>
   );
 }
@@ -1302,7 +1340,7 @@ function FieldNumber({
         step={step}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--brand-purple)] focus:outline-none"
+        className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
       />
     </div>
   );
@@ -1331,7 +1369,7 @@ function FieldSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--brand-purple)] focus:outline-none transition-colors"
+        className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
       >
         {allOptions.map((o) => (
           <option key={o.value} value={o.value}>
@@ -1365,14 +1403,14 @@ function FieldToggle({
         <span
           className={`inline-flex items-center h-6 w-11 rounded-full px-0.5 transition-colors ${
             value
-              ? "bg-[var(--brand-purple)] justify-end"
+              ? "bg-[var(--accent)] justify-end"
               : "bg-[var(--rule-strong)] justify-start"
           }`}
         >
           <span className="h-5 w-5 rounded-full bg-white shadow-sm" />
         </span>
       </button>
-      {hint && <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
     </div>
   );
 }
@@ -1405,9 +1443,9 @@ function PreviewPane({ tokens }: { tokens: DesignTokens }) {
               key={d}
               type="button"
               onClick={() => setDevice(d)}
-              className={`h-8 px-3 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-colors ${
+              className={`h-8 px-3 rounded-lg text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition-colors ${
                 device === d
-                  ? "bg-[var(--brand-purple)] text-white"
+                  ? "bg-[var(--accent)] text-white"
                   : "text-[var(--text-secondary)]"
               }`}
             >
@@ -1717,6 +1755,52 @@ function PreviewShell({ tokens, mobile }: { tokens: DesignTokens; mobile: boolea
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+
+function GallerySectionHeading({
+  icon: Icon,
+  title,
+  subtitle,
+  count,
+  muted,
+}: {
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  title: string;
+  subtitle: string;
+  count: number;
+  muted?: boolean;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-4 border-b border-[var(--rule-soft)] pb-3">
+      <div className="flex items-start gap-3">
+        <span
+          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+            muted
+              ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+              : "bg-[var(--accent)]/10 text-[var(--accent)]"
+          }`}
+        >
+          <Icon className="h-4 w-4" strokeWidth={1.75} />
+        </span>
+        <div>
+          <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+            {title}
+          </h2>
+          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+        </div>
+      </div>
+      <span
+        className={`shrink-0 rounded-full px-3 py-1 text-xs font-extrabold tabular-nums ${
+          muted
+            ? "border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
+            : "bg-[var(--accent)]/10 text-[var(--accent)]"
+        }`}
+      >
+        {count}
+      </span>
     </div>
   );
 }

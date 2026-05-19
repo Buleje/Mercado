@@ -1,9 +1,10 @@
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import ChatBubble from "@/components/marketplace/ChatBubble";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
+import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
 
 // Deduplicate getBySlug across generateMetadata + page render in the same
@@ -13,6 +14,17 @@ import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/market
 // deduplicate within a single render because it is keyed by string and
 // fetched concurrently. React.cache solves the per-request dedupe problem.
 const getStoreBySlug = cache((slug: string) => MarketplaceStoresDB.getBySlug(slug));
+
+// Brandon mayo 15 v3: N+1 fix — review.findMany + review.groupBy se llamaban
+// 3x en 22ms (mismo storeId). Suspense boundaries y streaming re-evaluan el
+// subarbol multiples veces; React.cache deduplica dentro del mismo request.
+const getReviewsByStoreId = cache((tenantId: string, storeId: string) =>
+  StoreReviewsDB.listByStoreId(tenantId, storeId),
+);
+
+// Hours JSON lookup — movido a lib/db/marketplace/stores.db.ts en Fase 2
+// del audit profundo (2026-05-18 P0 #29). Importamos el helper memoizado.
+import { getStoreHoursJson } from "@/lib/db/marketplace/stores.db";
 
 // Designer audit: el title antes mostraba la categoría raw "polleria" sin
 // tilde. Map mínimo a labels visibles correctos en español.
@@ -143,19 +155,39 @@ function StoreJsonLd({
     areaServed: { "@type": "City", name: "Pucallpa" },
   };
 
+    // Brandon mayo 15 v4 (audit Security #2): escape de "<" + separadores
+  // Unicode U+2028 / U+2029 que JSON.stringify no escapa pero algunos
+  // parsers JS interpretan como newlines, lo que podria romper el
+  // <script> JSON-LD y permitir XSS si el admin guarda payload malicioso.
+  const safeJson = JSON.stringify(jsonLd)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJson }}
     />
   );
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
+// Cache Components (Next 16): la página delega TODO el fetch a un loader
+// async wrappeado en <Suspense>. Si no, Next reporta "Uncached data accessed
+// outside of <Suspense>" porque las DB calls bloquean el render completo.
+// El Suspense local permite que el shell se prerender, y los datos streaman.
 export default async function StoreDetailPage({ params }: Props) {
   const { slug } = await params;
+  return (
+    <Suspense fallback={<PaicheLoading variant="page" label="Abriendo la tienda…" />}>
+      <StoreDetailContent slug={slug} />
+    </Suspense>
+  );
+}
 
+async function StoreDetailContent({ slug }: { slug: string }) {
   // 1. Fetch store
   const store = await getStoreBySlug(slug);
   if (!store) notFound();
@@ -233,8 +265,21 @@ export default async function StoreDetailPage({ params }: Props) {
     .sort((a, b) => b[1] - a[1])
     .map(([name, count]) => ({ name, count }));
 
-  // Resuelve imágenes: per-store > global default > undefined (texto-only).
-  const categoryImages = await resolveCategoryImages(ownImages);
+  // 4-5. Paralelizar 3 fetches independientes que antes corrian seriales:
+  //  a) categoryImages (Object.keys de Settings global)
+  //  b) reviews + summary (Review table)
+  //  c) hoursJson (Store.hoursJson raw)
+  // Ganancia: ~3× latencia → 1× la mas lenta. Tambien evita el N+1 detector
+  // que disparaba 3x en 22ms por re-rendering de Suspense boundaries.
+  const [categoryImages, reviewsAndSummary, hoursJson, storeHoursLib] = await Promise.all([
+    resolveCategoryImages(ownImages),
+    getReviewsByStoreId(store.tenantId, store.id),
+    getStoreHoursJson(store.id),
+    import("@/lib/marketplace-store-hours"),
+  ]);
+  const { reviews, summary: reviewSummary } = reviewsAndSummary;
+  const { isOpenNow: storeIsOpenNow, nextOpening } = storeHoursLib;
+
   const categories: StoreCategoryChip[] = persistedOrder.length === 0
     ? baseCategories
     : (() => {
@@ -248,25 +293,17 @@ export default async function StoreDetailPage({ params }: Props) {
         });
       })();
 
-  // 4. Fetch reseñas REALES (de la tabla Review). Defensive: si falla,
-  //    devuelve listas vacías y la UI muestra empty state honesto.
-  const { reviews, summary: reviewSummary } = await StoreReviewsDB.listByStoreId(store.tenantId, store.id);
-
-  // 5. Horario real de la tienda — leído de Store.hoursJson (columna jsonb
-  //    fuera del schema Prisma — fase expand). Si no hay hours configuradas,
-  //    cae al cómputo legacy (Settings.autoCloseTime).
-  const { prisma: prismaClient } = await import("@/lib/prisma");
-  const { isOpenNow: storeIsOpenNow, nextOpening } = await import("@/lib/marketplace-store-hours");
-  const NOW = new Date();
-  let hoursJson: unknown = null;
-  try {
-    const rows = await prismaClient.$queryRaw<Array<{ hoursJson: unknown }>>`
-      SELECT "hoursJson" FROM "Store" WHERE id = ${store.id} LIMIT 1
-    `;
-    hoursJson = rows[0]?.hoursJson ?? null;
-  } catch {
-    hoursJson = null;
-  }
+  // PENTEST 2026-05-18 Fase 2 P0 #31: timezone fix.
+  // ANTES: `new Date()` en Vercel devuelve UTC. computeIsOpenNow comparaba
+  // horas UTC contra horario local Peru. A las 23:30 UTC = 18:30 Lima,
+  // pero el sistema marcaba "cerrado" si la tienda cierra a 18:00.
+  // AHORA: construir un Date ajustado a America/Lima usando toLocaleString.
+  // El truco: `new Date(now.toLocaleString("en-US", {timeZone}))` crea un
+  // Date donde getHours() y getMinutes() reflejan la hora local de Lima.
+  const NOW_RAW = new Date();
+  const NOW = new Date(
+    NOW_RAW.toLocaleString("en-US", { timeZone: "America/Lima" }),
+  );
   const isOpenReal = hoursJson
     ? storeIsOpenNow(hoursJson as never, NOW)
     : computeIsOpenNow();
@@ -310,8 +347,14 @@ export default async function StoreDetailPage({ params }: Props) {
         Se activa con el feature flag marketplace-chat-public en Vercel env.
         Si el flag está off, el endpoint devuelve 503 y el widget muestra
         "Chat temporalmente no disponible". Sin fricción si no está listo.
+
+        Brandon mayo 14 2026: oculto en mobile (sm-only). En cel satura
+        el viewport — el cliente tiene el sticky cart bar abajo y el
+        widget tapa el catálogo. En desktop sigue visible.
       */}
-      <ChatBubble storeSlug={slug} storeName={store.name} />
+      <div className="hidden sm:contents">
+        <ChatBubble storeSlug={slug} storeName={store.name} />
+      </div>
     </>
   );
 }

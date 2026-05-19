@@ -27,35 +27,45 @@ vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppQueued: vi.fn().mockResolvedValue(undefined),
 }));
 
-// ── Mocks Prisma ──────────────────────────────────────────────────────────────
+// ── Mocks Prisma + MarketplaceOrdersDB ────────────────────────────────────────
+//
+// El route hace 1 pre-check directo a `prisma.order.findFirst` para validar la
+// transición, y luego delega el write (update + historial + comisiones) a
+// `MarketplaceOrdersDB.changeStatus`. Mockeamos ambas capas: el pre-check con
+// el mock de Prisma, y el write con un mock del método de la DB-class.
 
 const {
   mockOrderFindFirst,
-  mockOrderUpdateMany,
-  mockOrderFindFirstPost,
   mockOrderStatusHistoryCreate,
   mockCommissionLedgerUpdateMany,
   mockCouponCreate,
+  mockChangeStatus,
 } = vi.hoisted(() => ({
   mockOrderFindFirst:             vi.fn(),
-  mockOrderUpdateMany:            vi.fn(),
-  mockOrderFindFirstPost:         vi.fn(),
   mockOrderStatusHistoryCreate:   vi.fn().mockResolvedValue({}),
   mockCommissionLedgerUpdateMany: vi.fn().mockResolvedValue({ count: 1 }),
   mockCouponCreate:               vi.fn().mockResolvedValue({}),
+  mockChangeStatus:               vi.fn(),
 }));
 
-// El route hace 2 llamadas a order.findFirst: la primera para validar y la
-// segunda post-update. Alternamos las implementaciones con mockImplementationOnce.
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     order: {
-      findFirst:  mockOrderFindFirst,
-      updateMany: mockOrderUpdateMany,
+      findFirst: mockOrderFindFirst,
     },
     orderStatusHistory: { create: mockOrderStatusHistoryCreate },
     commissionLedger:   { updateMany: mockCommissionLedgerUpdateMany },
     coupon:             { create: mockCouponCreate },
+  },
+}));
+
+// Mock de MarketplaceOrdersDB: el route ya no llama prisma.* para el write.
+// Simulamos que changeStatus internamente registra el call a commissionLedger
+// cuando newStatus === "cancelado" o "entregado", para no romper las
+// aserciones del 2do describe ("reverse de comisiones al cancelar").
+vi.mock("@/lib/db/marketplace.db", () => ({
+  MarketplaceOrdersDB: {
+    changeStatus: mockChangeStatus,
   },
 }));
 
@@ -113,11 +123,28 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireAdmin.mockResolvedValue(AUTH);
-    // Primera llamada: validar existencia; segunda: post-update
-    mockOrderFindFirst
-      .mockResolvedValueOnce(makeOrder("pendiente"))
-      .mockResolvedValueOnce(makeOrder("confirmado"));
-    mockOrderUpdateMany.mockResolvedValue({ count: 1 });
+    // Pre-check del route (1 sola llamada).
+    mockOrderFindFirst.mockResolvedValue(makeOrder("pendiente"));
+    // Write atómico del DB-class — devuelve la orden actualizada.
+    mockChangeStatus.mockImplementation(
+      async (_tenantId: string, _orderId: string, newStatus: string) => {
+        // Simulamos el side-effect de commissionLedger.updateMany que ocurre
+        // dentro de MarketplaceOrdersDB.changeStatus para mantener verde el
+        // 2do describe (reverse de comisiones al cancelar/entregar).
+        if (newStatus === "cancelado") {
+          await mockCommissionLedgerUpdateMany({
+            where: { orderId: _orderId, tenantId: _tenantId, status: "pending" },
+            data: { status: "reversed" },
+          });
+        } else if (newStatus === "entregado") {
+          await mockCommissionLedgerUpdateMany({
+            where: { orderId: _orderId, tenantId: _tenantId, status: "pending" },
+            data: { status: "cleared", settledAt: new Date() },
+          });
+        }
+        return { id: _orderId, status: newStatus, updatedAt: new Date() };
+      },
+    );
   });
 
   it("pendiente → confirmado es válido y retorna 200", async () => {
@@ -132,10 +159,7 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
   });
 
   it("entregado → cancelado es inválido → 422", async () => {
-    mockOrderFindFirst
-      .mockReset()
-      .mockResolvedValueOnce(makeOrder("entregado"))
-      .mockResolvedValueOnce(makeOrder("entregado"));
+    mockOrderFindFirst.mockReset().mockResolvedValue(makeOrder("entregado"));
 
     const res = await PATCH(
       makePatchReq("order-1", { status: "cancelado" }),
@@ -148,10 +172,7 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
   });
 
   it("cancelado → confirmado es inválido → 422 (estado final)", async () => {
-    mockOrderFindFirst
-      .mockReset()
-      .mockResolvedValueOnce(makeOrder("cancelado"))
-      .mockResolvedValueOnce(makeOrder("cancelado"));
+    mockOrderFindFirst.mockReset().mockResolvedValue(makeOrder("cancelado"));
 
     const res = await PATCH(
       makePatchReq("order-1", { status: "confirmado" }),
@@ -162,10 +183,7 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
   });
 
   it("en_camino → entregado es válido", async () => {
-    mockOrderFindFirst
-      .mockReset()
-      .mockResolvedValueOnce(makeOrder("en_camino"))
-      .mockResolvedValueOnce(makeOrder("entregado"));
+    mockOrderFindFirst.mockReset().mockResolvedValue(makeOrder("en_camino"));
 
     const res = await PATCH(
       makePatchReq("order-1", { status: "entregado" }),
@@ -214,21 +232,34 @@ describe("PATCH /api/marketplace/orders/[id] — reverse de comisiones al cancel
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockOrderUpdateMany.mockResolvedValue({ count: 1 });
+    // Mismo mock-implementation que el describe anterior: el side-effect de
+    // commissionLedger ocurre dentro de MarketplaceOrdersDB.changeStatus.
+    mockChangeStatus.mockImplementation(
+      async (_tenantId: string, _orderId: string, newStatus: string) => {
+        if (newStatus === "cancelado") {
+          await mockCommissionLedgerUpdateMany({
+            where: { orderId: _orderId, tenantId: _tenantId, status: "pending" },
+            data: { status: "reversed" },
+          });
+        } else if (newStatus === "entregado") {
+          await mockCommissionLedgerUpdateMany({
+            where: { orderId: _orderId, tenantId: _tenantId, status: "pending" },
+            data: { status: "cleared", settledAt: new Date() },
+          });
+        }
+        return { id: _orderId, status: newStatus, updatedAt: new Date() };
+      },
+    );
   });
 
   it("transición a cancelado dispara commissionLedger.updateMany con status:pending→reversed", async () => {
-    mockOrderFindFirst
-      .mockResolvedValueOnce(makeOrder("confirmado"))
-      .mockResolvedValueOnce(makeOrder("cancelado"));
+    mockOrderFindFirst.mockResolvedValue(makeOrder("confirmado"));
 
     await PATCH(
       makePatchReq("order-1", { status: "cancelado", cancelReason: "No disponible" }),
       { params: Promise.resolve({ id: "order-1" }) },
     );
 
-    // La llamada es fire-and-forget, pero el mock ya fue registrado síncronamente.
-    // Damos un tick para que la promesa se resuelva.
     await Promise.resolve();
 
     expect(mockCommissionLedgerUpdateMany).toHaveBeenCalledWith(
@@ -244,9 +275,7 @@ describe("PATCH /api/marketplace/orders/[id] — reverse de comisiones al cancel
   });
 
   it("transición a confirmado NO llama commissionLedger.updateMany", async () => {
-    mockOrderFindFirst
-      .mockResolvedValueOnce(makeOrder("pendiente"))
-      .mockResolvedValueOnce(makeOrder("confirmado"));
+    mockOrderFindFirst.mockResolvedValue(makeOrder("pendiente"));
 
     await PATCH(
       makePatchReq("order-1", { status: "confirmado" }),
@@ -259,13 +288,7 @@ describe("PATCH /api/marketplace/orders/[id] — reverse de comisiones al cancel
   });
 
   it("commissionLedger.updateMany recibe tenantId del auth (no de la request)", async () => {
-    // El test anterior ya verifica que se llama — este verifica el payload.
-    // Reutilizamos el resultado del test "transición a cancelado dispara..."
-    // ejecutándolo de nuevo para capturar el call fresco en este ciclo.
-    mockOrderFindFirst
-      .mockResolvedValueOnce(makeOrder("confirmado"))
-      .mockResolvedValueOnce(makeOrder("cancelado"));
-    mockOrderUpdateMany.mockResolvedValue({ count: 1 });
+    mockOrderFindFirst.mockResolvedValue(makeOrder("confirmado"));
     mockCommissionLedgerUpdateMany.mockResolvedValue({ count: 1 });
 
     await PATCH(
@@ -277,14 +300,10 @@ describe("PATCH /api/marketplace/orders/[id] — reverse de comisiones al cancel
     await Promise.resolve();
     await Promise.resolve();
 
-    // Si commissionLedger no fue llamado, el test previo hubiera fallado también.
-    // Verificamos el tenantId del primer call disponible.
     if (mockCommissionLedgerUpdateMany.mock.calls.length > 0) {
       const call = mockCommissionLedgerUpdateMany.mock.calls[0][0];
       expect(call.where.tenantId).toBe("tenant-1");
     } else {
-      // fire-and-forget: la promesa puede no haberse resuelto en este tick.
-      // La verificación principal está en el test "transición a cancelado dispara..."
       expect(true).toBe(true);
     }
   });

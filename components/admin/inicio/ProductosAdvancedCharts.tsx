@@ -75,6 +75,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 1. MATRIZ MARGEN × VOLUMEN (BCG-like) ───────────────────────────────
   const quadrant = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<
       string | number,
@@ -85,7 +86,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       return p?.costPrice ?? (p?.price ?? price ?? 0) * 0.7;
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
       .forEach((o) =>
         o.items.forEach((it) => {
           const p = products.find((x) => x.id === it.id);
@@ -147,6 +148,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 2. ROTACIÓN VS MARGEN POR CATEGORÍA ──────────────────────────────────
   const rotMargen = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const catMap = new Map<
       string,
@@ -167,7 +169,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       return p?.costPrice ?? (p?.price ?? price ?? 0) * 0.7;
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
       .forEach((o) =>
         o.items.forEach((it) => {
           const cat = productToCat.get(it.id);
@@ -207,6 +209,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 3. EVOLUCIÓN TOP-5 PRODUCTOS (stacked 14d) ──────────────────────────
   const topEvolution = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     // First find top-5 products by revenue in last 14d
     const totals = new Map<string | number, { name: string; rev: number }>();
@@ -221,7 +224,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       totals.set(id, cur);
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last14)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last14)
       .forEach((o) =>
         o.items.forEach((it) => {
           addToTotal(it.id, it.name, (it.price ?? 0) * it.quantity);
@@ -250,7 +253,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       inner.set(idStr, (inner.get(idStr) ?? 0) + rev);
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) =>
         o.items.forEach((it) =>
           addCell(o.createdAt, it.id, (it.price ?? 0) * it.quantity),
@@ -283,6 +286,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 4. COMPARATIVA UNIDADES SEM ACTUAL VS PREVIA ─────────────────────────
   const comp = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map(() => ({
@@ -312,7 +316,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       buckets[b.idx][b.isCurrent ? "current" : "previous"] += qty;
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) =>
         add(o.createdAt, o.items.reduce((a, i) => a + i.quantity, 0)),
       );
@@ -332,6 +336,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 5. HEATMAP categoría × día (30d) ─────────────────────────────────────
   const heatmap = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const productToCat = new Map<string | number, string>(
       active.map((p) => [p.id, p.category ?? "otros"]),
@@ -358,7 +363,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       matrix[catIdx][dow] += qty;
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => o.items.forEach((it) => add(o.createdAt, it.id, it.quantity)));
     sales.forEach((s) =>
       s.items.forEach((it) => add(s.createdAt, it.productId, it.quantity)),
@@ -390,8 +395,10 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "margen-volumen-quadrant",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Matriz BCG · margen × volumen · 30d"
+          chartId="productos.advanced.margen-volumen-quadrant"
+          hasData={true}
+          defaultVisible={false}
+kicker="Matriz BCG · margen × volumen · 30d"
           title="Clasificación estratégica de productos"
           kpis={[
             {
@@ -495,8 +502,10 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "rotacion-margen",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Rotación vs margen · por categoría · 30d"
+          chartId="productos.advanced.rotacion-margen"
+          hasData={true}
+          defaultVisible={false}
+kicker="Rotación vs margen · por categoría · 30d"
           title="Qué categoría rota rápido y con qué margen"
           kpis={[
             {
@@ -545,8 +554,10 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "top5-evolution",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Top-5 productos · evolución 14d"
+          chartId="productos.advanced.top5-evolution"
+          hasData={true}
+          defaultVisible={false}
+kicker="Top-5 productos · evolución 14d"
           title="Cómo rinde la élite día a día"
           kpis={[
             { label: "Top 5 activos", value: String(topEvolution.top5.length), tone: "primary" },
@@ -584,8 +595,10 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "comparativa-unidades",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Unidades vendidas · semana a semana"
+          chartId="productos.advanced.comparativa-unidades"
+          hasData={true}
+          defaultVisible={false}
+kicker="Unidades vendidas · semana a semana"
           title="Esta semana vs semana pasada"
         >
           <BulejeComparisonOverlay
@@ -683,8 +696,10 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       id: "margen-cat",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Margen ranking · por categoría · 30d"
+          chartId="productos.advanced.margen-cat"
+          hasData={true}
+          defaultVisible={false}
+kicker="Margen ranking · por categoría · 30d"
           title="Qué categorías dan más utilidad por sol vendido"
           kpis={[
             { label: "Categorías", value: String(margenCat.length), tone: "neutral" },

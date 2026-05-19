@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
+import { requireCustomer } from "@/lib/auth/require-customer";
 import { toErrorPayload, newTraceId, ApiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
@@ -39,7 +40,34 @@ export async function GET(
 
   try {
     const { phone } = await params;
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+
+    // CRITICAL FIX 2026-05-11 (audit P0-9): antes no había auth — cualquier
+    // IP enumeraba el historial de cualquier teléfono (PII Ley 29733). Ahora
+    // requiere customer session + match estricto entre phone de la URL y phone
+    // del payload. tenantId viene del JWT, no del header.
+    const customer = await requireCustomer(req);
+    if (customer instanceof NextResponse) return customer;
+    const normalizedRequested = phone.replace(/\D/g, "");
+    const normalizedSession = (customer.customerId ?? "").replace(/\D/g, "");
+    if (
+      normalizedRequested.length < 6 ||
+      normalizedSession.length < 6 ||
+      // Match por sufijo de 9 digitos (PE phones) o full string
+      (normalizedSession !== normalizedRequested &&
+        !normalizedSession.endsWith(normalizedRequested) &&
+        !normalizedRequested.endsWith(normalizedSession))
+    ) {
+      logger.warn("[loyalty/history] phone mismatch — forbidden", {
+        sessionPhone: normalizedSession,
+        requestedPhone: normalizedRequested,
+        traceId,
+      });
+      return NextResponse.json(
+        { error: "forbidden", traceId },
+        { status: 403 },
+      );
+    }
+    const tenantId = customer.tenantId;
 
     // Validar query params con safeParse (CLAUDE.md regla #2)
     const parsed = QuerySchema.safeParse({

@@ -131,7 +131,7 @@ function ComboCard({ combo }: { combo: Combo; categories: Category[] }) {
   };
 
   return (
-    <div className="group relative bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col">
+    <div className="group relative bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] shadow-sm hover:shadow-xl transition-all duration-[var(--dur-base)] overflow-hidden flex flex-col">
       {/* Discount badge — accent-soft sin rojo decorativo (DS rule) */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/20 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm">
         <Tag className="h-3 w-3" />
@@ -145,13 +145,13 @@ function ComboCard({ combo }: { combo: Combo; categories: Category[] }) {
           combo.products.length === 2 ? "grid-cols-2" : "grid-cols-3"
         )}>
           {combo.products.map((product) => (
-            <div key={product.id} className="relative aspect-square rounded-xl overflow-hidden bg-white dark:bg-card border border-gray-100 dark:border-card-border">
+            <div key={product.id} className="relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-raised)] border border-[var(--rule-base)]">
               {product.image ? (
                 <Image
                   src={product.image}
                   alt={product.name}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
                   sizes="120px"
                   placeholder="blur"
                   blurDataURL={BLUR_DATA_URL}
@@ -171,7 +171,7 @@ function ComboCard({ combo }: { combo: Combo; categories: Category[] }) {
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-1.5">
           <combo.Icon aria-hidden="true" className="h-5 w-5 text-primary shrink-0" />
-          <h3 className="font-extrabold text-foreground text-sm sm:text-base leading-tight line-clamp-1">{combo.name}</h3>
+          <h3 className="font-extrabold text-[var(--text-primary)] text-sm sm:text-base leading-tight line-clamp-1">{combo.name}</h3>
         </div>
         <p className="text-xs text-muted mb-3 line-clamp-2">{combo.description}</p>
 
@@ -179,7 +179,7 @@ function ComboCard({ combo }: { combo: Combo; categories: Category[] }) {
         <div className="space-y-1 mb-4 flex-1">
           {combo.products.map((p) => (
             <div key={p.id} className="flex items-center justify-between text-xs">
-              <span className="text-foreground/70 truncate flex-1 mr-2">
+              <span className="text-[var(--text-primary)]/70 truncate flex-1 mr-2">
                 {p.name}
               </span>
               <span className="text-muted line-through shrink-0">S/{Number(p.price).toFixed(2)}</span>
@@ -271,7 +271,7 @@ export default function CombosSection({ serverProducts, showEmpty = false, empty
             <Sparkles className="h-3.5 w-3.5" />
             Combos Ahorro
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)]">
             Combos <span className="text-primary">Inteligentes</span>
           </h2>
           <p className="mt-3 text-muted max-w-xl mx-auto">

@@ -140,7 +140,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
   return (
     <section id="resenas" className="scroll-mt-20">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-foreground flex items-center gap-2">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] flex items-center gap-2">
           <MessageSquare className="h-6 w-6 text-primary" />
           Reseñas de {productName}
         </h2>
@@ -162,8 +162,8 @@ export default function ProductReviewsSection({ productId, productName }: Produc
 
       {/* Review form */}
       {showForm && (
-        <div className="mb-6 bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-5 sm:p-6 shadow-sm">
-          <h3 className="font-bold text-foreground mb-4">Tu opinión sobre {productName}</h3>
+        <div className="mb-6 bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-5 sm:p-6 shadow-sm">
+          <h3 className="font-bold text-[var(--text-primary)] mb-4">Tu opinión sobre {productName}</h3>
           <form onSubmit={handleSubmitReview} className="space-y-4">
             {/* Star selector */}
             <div>
@@ -197,7 +197,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
                 onChange={e => setFormName(e.target.value)}
                 placeholder="¿Cómo te llamas?"
                 maxLength={60}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
             {/* Comment */}
@@ -210,7 +210,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
                 placeholder={`¿Qué te pareció ${productName}?`}
                 maxLength={500}
                 rows={3}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
               />
               <p className="text-xs text-muted mt-1 text-right">{formText.length}/500</p>
             </div>
@@ -229,7 +229,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
       )}
 
       {total === 0 ? (
-        <div className="text-center py-12 bg-surface dark:bg-surface rounded-2xl border border-gray-100 dark:border-card-border">
+        <div className="text-center py-12 bg-surface dark:bg-surface rounded-2xl border border-[var(--rule-base)]">
           <Star className="h-10 w-10 text-gray-300 mx-auto mb-3" />
           <p className="text-muted font-medium">Aún no hay reseñas para este producto</p>
           <p className="text-sm text-muted mt-1">¡Sé el primero en opinar!</p>
@@ -237,10 +237,10 @@ export default function ProductReviewsSection({ productId, productName }: Produc
       ) : (
         <div className="space-y-6">
           {/* Summary */}
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-5 sm:p-6">
+          <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row gap-6">
               <div className="flex flex-col items-center justify-center shrink-0">
-                <span className="text-5xl font-extrabold text-foreground">{avgRating.toFixed(1)}</span>
+                <span className="text-5xl font-extrabold text-[var(--text-primary)]">{avgRating.toFixed(1)}</span>
                 <StarRating rating={Math.round(avgRating)} size="md" />
                 <p className="text-sm text-muted mt-1">{total} reseña{total !== 1 ? "s" : ""}</p>
               </div>
@@ -258,7 +258,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="text-sm border border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="text-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="recent">Más recientes</option>
               <option value="highest">Mejor puntaje</option>
@@ -271,7 +271,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
             {visible.map((review, i) => (
               <div
                 key={review.id ?? i}
-                className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 sm:p-5"
+                className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-5"
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex items-center gap-3">
@@ -279,7 +279,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
                       <User className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="font-bold text-sm text-foreground">{review.name}</p>
+                      <p className="font-bold text-sm text-[var(--text-primary)]">{review.name}</p>
                       <p className="text-xs text-muted">
                         {new Date(review.date).toLocaleDateString("es-PE", {
                           day: "2-digit",

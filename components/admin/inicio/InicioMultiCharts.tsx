@@ -58,30 +58,44 @@ const CAT_LABEL: Record<string, string> = {
   otros: "Otros",
 };
 
-const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+// Brandon mayo 2026: labels del eje X con día + fecha corta para que el
+// dueño de la bodega entienda inmediatamente "Lunes 10/05" sin tener que
+// adivinar qué semana es. Variantes según el ancho del rango.
+const DAY_FULL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const DAY_SHORT = ["Do", "L", "Ma", "Mi", "Ju", "Vi", "Sa"];
 const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 const MS_DAY = 24 * 60 * 60 * 1000;
 
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
 /**
- * Construye hasta 14 buckets cubriendo el rango [from, to].
- * - Rango <= 1 día: 6 buckets de 4h
- * - Rango <= 14 días: buckets diarios
- * - Rango más largo: buckets de (span/14) días
+ * Construye buckets cubriendo el rango [from, to].
+ * Brandon mayo 2026 v3: label corto + iso para tooltip.
+ *  - Rango <= 1 día: 6 buckets de 4h ("08h")
+ *  - Rango <= 8 días (semanal): "10 May" + iso para tooltip "Viernes 10 de Mayo"
+ *  - Rango <= 35 días (mensual): "10 May" + iso (mismo formato — sin
+ *    abreviatura de día, sin slash, más limpio)
+ *  - Rango > 35 días: "Ene 1" + iso
  */
-function buildBuckets(from: Date, to: Date): Array<{ label: string; start: number; end: number }> {
+type Bucket = { label: string; iso: string; start: number; end: number };
+
+function buildBuckets(from: Date, to: Date): Bucket[] {
   const span = to.getTime() - from.getTime();
   const days = span / MS_DAY;
 
   if (days <= 1) {
-    const out: Array<{ label: string; start: number; end: number }> = [];
+    const out: Bucket[] = [];
     const fromStart = new Date(from);
     fromStart.setHours(Math.floor(fromStart.getHours() / 4) * 4, 0, 0, 0);
     for (let i = 0; i < 6; i++) {
       const start = new Date(fromStart.getTime() + i * 4 * 60 * 60 * 1000);
       const end = new Date(start.getTime() + 4 * 60 * 60 * 1000 - 1);
       out.push({
-        label: `${String(start.getHours()).padStart(2, "0")}h`,
+        label: `${pad2(start.getHours())}h`,
+        iso: start.toISOString(),
         start: start.getTime(),
         end: end.getTime(),
       });
@@ -89,8 +103,10 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
     return out;
   }
 
-  if (days <= 14) {
-    const out: Array<{ label: string; start: number; end: number }> = [];
+  // Semanal y mensual (≤ 35 días): formato "10 May" — día + mes abreviado.
+  // El día completo ("Viernes 10 de Mayo") aparece en el tooltip via iso.
+  if (days <= 35) {
+    const out: Bucket[] = [];
     const cursor = new Date(from);
     cursor.setHours(0, 0, 0, 0);
     const last = new Date(to);
@@ -99,7 +115,8 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
       const dayEnd = new Date(cursor);
       dayEnd.setHours(23, 59, 59, 999);
       out.push({
-        label: DAY_LABELS[cursor.getDay()] ?? `${cursor.getDate()}`,
+        label: `${pad2(cursor.getDate())} ${MONTH_LABELS[cursor.getMonth()]}`,
+        iso: cursor.toISOString(),
         start: cursor.getTime(),
         end: dayEnd.getTime(),
       });
@@ -108,18 +125,17 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
     return out;
   }
 
-  // Rango largo: máx 14 buckets uniformes
+  // Rango largo (> 35 días): máx 14 buckets uniformes
   const bucketSize = Math.ceil(days / 14);
-  const out: Array<{ label: string; start: number; end: number }> = [];
+  const out: Bucket[] = [];
   const cursor = new Date(from);
   cursor.setHours(0, 0, 0, 0);
   while (cursor.getTime() <= to.getTime()) {
     const bucketEnd = new Date(cursor.getTime() + bucketSize * MS_DAY - 1);
     const actualEnd = bucketEnd.getTime() > to.getTime() ? to : bucketEnd;
     out.push({
-      label: days > 60
-        ? `${MONTH_LABELS[cursor.getMonth()]} ${cursor.getDate()}`
-        : `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      label: `${pad2(cursor.getDate())} ${MONTH_LABELS[cursor.getMonth()]}`,
+      iso: cursor.toISOString(),
       start: cursor.getTime(),
       end: actualEnd.getTime(),
     });
@@ -161,7 +177,13 @@ const KPI_SUFFIX: Record<string, string> = {
 export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: { dateRange?: DateRange }) {
   const { data } = useDashboardData();
 
-  // Rango efectivo (default: rango activo si no se pasa)
+  // Rango efectivo (default: rango activo si no se pasa).
+  // Disable react-hooks/preserve-manual-memoization: React Compiler no puede
+  // optimizar este useMemo porque las deps incluyen dateRange?.from y
+  // dateRange?.to (acceso opcional) — la memoización manual es intencional
+  // para evitar re-renders en cascada cuando dateRange cambia de referencia
+  // pero no de valor real.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const { from: rangeFrom, to: rangeTo } = useMemo(() => {
     if (dateRange) return { from: dateRange.from, to: dateRange.to };
     return defaultLast7Range();
@@ -185,6 +207,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   const cajaChart = useMemo(() => {
     const rows = buckets.map((b) => ({
       day: b.label,
+      iso: b.iso,
       ingresos: 0,
       egresos: 0,
       neto: 0,
@@ -224,6 +247,9 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
 
   // ── 2. INVENTARIO — stock, valor, SKUs por categoría ─────────────────────
   const invChart = useMemo(() => {
+    // Brandon 2026-05-16 (audit P1): valor de inventario calculado SOLO
+    // con costPrice real. Antes `p.costPrice ?? p.price * 0.7` inflaba el
+    // valor de inventario para productos sin costo cargado.
     const m = new Map<string, { stock: number; valor: number; skus: number }>();
     products.forEach((p) => {
       if (!p.active) return;
@@ -231,7 +257,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       const cur = m.get(cat) ?? { stock: 0, valor: 0, skus: 0 };
       const stk = p.stock ?? 0;
       cur.stock += stk;
-      cur.valor += stk * (p.costPrice ?? p.price * 0.7);
+      if (p.costPrice != null) cur.valor += stk * p.costPrice;
       cur.skus += 1;
       m.set(cat, cur);
     });
@@ -248,8 +274,10 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
 
   const invKpis = useMemo(() => {
     const activos = products.filter((p) => p.active);
+    // Brandon 2026-05-16 (audit P1): mismo principio — solo productos con
+    // costPrice real cuentan al valor de inventario.
     const valor = activos.reduce(
-      (s, p) => s + (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7),
+      (s, p) => s + (p.costPrice != null ? (p.stock ?? 0) * p.costPrice : 0),
       0,
     );
     const criticos = activos.filter(
@@ -301,6 +329,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   const cliChart = useMemo(() => {
     const rows = buckets.map((b) => ({
       day: b.label,
+      iso: b.iso,
       nuevos: 0,
       recurrentes: 0,
       ticketProm: 0,
@@ -350,7 +379,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
     ).length;
     const ordersInRange = orders.filter((o) => {
       const t = new Date(o.createdAt).getTime();
-      return t >= rangeFromMs && t <= rangeToMs && o.status !== "cancelado";
+      return t >= rangeFromMs && t <= rangeToMs && o.status === "entregado";
     });
     const salesInRange = sales.filter((s) => {
       const t = new Date(s.createdAt).getTime();
@@ -365,14 +394,24 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   }, [customers, orders, sales, rangeFromMs, rangeToMs]);
 
   // ── 5. PRODUCTOS — unidades + ingresos + margen top-7 en el rango ──────
+  // Brandon 2026-05-16 (audit P1): margen calculado solo cuando hay
+  // costPrice REAL del producto. Antes usaba `price * 0.7` como fallback,
+  // un margen 30% ficticio que distorsionaba decisiones comerciales.
+  // Ahora: si un producto no tiene costPrice cargado, el item suma a
+  // unidades + ingresos pero NO a margen (margenIncompleto=true).
+  // El bodeguero ve un número REAL y debe cargar costos para precisión.
   const prodChart = useMemo(() => {
     const m = new Map<
       string | number,
-      { name: string; unidades: number; ingresos: number; margen: number }
+      { name: string; unidades: number; ingresos: number; margen: number; margenIncompleto: boolean }
     >();
     const priceCost = (id: string | number) => {
       const p = products.find((x) => x.id === id);
-      return { price: p?.price ?? 0, cost: p?.costPrice ?? (p?.price ?? 0) * 0.7, name: p?.name ?? "—" };
+      return {
+        price: p?.price ?? 0,
+        cost: p?.costPrice ?? null,
+        name: p?.name ?? "—",
+      };
     };
     orders
       .filter((o) => {
@@ -388,10 +427,16 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             unidades: 0,
             ingresos: 0,
             margen: 0,
+            margenIncompleto: false,
           };
+          const unitPrice = it.price ?? pc.price;
           cur.unidades += it.quantity;
-          cur.ingresos += it.quantity * (it.price ?? pc.price);
-          cur.margen += it.quantity * ((it.price ?? pc.price) - pc.cost);
+          cur.ingresos += it.quantity * unitPrice;
+          if (pc.cost != null) {
+            cur.margen += it.quantity * (unitPrice - pc.cost);
+          } else {
+            cur.margenIncompleto = true;
+          }
           m.set(it.id, cur);
         }),
       );
@@ -408,10 +453,16 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             unidades: 0,
             ingresos: 0,
             margen: 0,
+            margenIncompleto: false,
           };
+          const unitPrice = it.price ?? pc.price;
           cur.unidades += it.quantity;
-          cur.ingresos += it.quantity * (it.price ?? pc.price);
-          cur.margen += it.quantity * ((it.price ?? pc.price) - pc.cost);
+          cur.ingresos += it.quantity * unitPrice;
+          if (pc.cost != null) {
+            cur.margen += it.quantity * (unitPrice - pc.cost);
+          } else {
+            cur.margenIncompleto = true;
+          }
           m.set(it.productId, cur);
         }),
       );
@@ -422,7 +473,14 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
         producto: v.name.length > 16 ? v.name.slice(0, 15) + "…" : v.name,
         unidades: v.unidades,
         ingresos: Math.round(v.ingresos),
-        margen: Math.round(v.margen),
+        // Brandon 2026-05-17 (audit tsc): BulejeComposedChart espera
+        // Record<string, string|number|boolean> y no acepta null. Antes
+        // devolvíamos null para "datos faltantes" pero rompía el tipo del
+        // chart. Ahora el área "margen" es 0 cuando está incompleto y el
+        // flag margenIncompleto + asterisco "*" en el label superior +
+        // hint del KPI ya comunican al usuario que es estimado.
+        margen: v.margenIncompleto && v.margen === 0 ? 0 : Math.round(v.margen),
+        margenIncompleto: v.margenIncompleto,
       }));
   }, [products, orders, sales, rangeFromMs, rangeToMs]);
 
@@ -430,22 +488,39 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
     const activos = products.filter((p) => p.active).length;
     const best = prodChart[0]?.producto ?? "—";
     const ingresos = prodChart.reduce((s, r) => s + r.ingresos, 0);
-    const margen = prodChart.reduce((s, r) => s + r.margen, 0);
-    const margenPct = ingresos > 0 ? Math.round((margen / ingresos) * 100) : 0;
-    return { activos, best, ingresos, margenPct };
+    // Brandon 2026-05-16 (audit P1 UI): solo sumamos margen de items que
+    // tienen costPrice real (margen != null). Si algún row está incompleto,
+    // marcamos margenIncompleto para que la UI muestre "—" o un asterisco
+    // que indique "faltan datos de costo en algunos productos".
+    const margen = prodChart.reduce((s, r) => s + (r.margen ?? 0), 0);
+    const hasIncomplete = prodChart.some((r) => r.margenIncompleto);
+    const margenPct = ingresos > 0 && !hasIncomplete ? Math.round((margen / ingresos) * 100) : null;
+    return { activos, best, ingresos, margenPct, margenIncompleto: hasIncomplete };
   }, [products, prodChart]);
 
   const fmtPEN = (v: number) =>
     `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+
+  // Formateador adaptable del eje Y para soles. Brandon mayo 2026: si el
+  // valor < 1000, muestra "S/146" (no "S/0k"). Si >= 1000, "S/1.5k".
+  // Antes el eje siempre dividía por 1000 y mostraba "0k" cuando los
+  // valores eran chicos — sin marcas reales en el grid.
+  const fmtPENAxis = (v: number): string => {
+    if (v === 0) return "S/0";
+    if (Math.abs(v) >= 1000) return `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+    return `S/${Math.round(v)}`;
+  };
 
   const sections: DraggableItem[] = [
     {
       id: "caja",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker={`Flujo de caja · ${rangeLabel}`}
-          title="Ingresos, egresos y saldo neto"
+          chartId="resumen.caja"
+          hasData={cajaChart.length >= 2 && cajaChart.some((r) => r.ingresos > 0 || r.egresos > 0)}
+          kicker={`Caja · ${rangeLabel}`}
+          title="Cuánta plata entró y salió cada día"
+          description="La barra verde es lo que entró (ventas), la naranja lo que saliste a pagar (compras + gastos), y la línea es tu saldo neto acumulado. Si la línea sube, estás ganando; si baja, gastás más de lo que vendés."
           kpis={[
             { label: `Ingresos ${kpiSuffix}`, value: fmtPEN(cajaKpis.ingresos), tone: "success" },
             { label: `Egresos ${kpiSuffix}`, value: fmtPEN(cajaKpis.egresos), tone: "warning" },
@@ -465,11 +540,13 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
               { key: "egresos", label: "Egresos", color: "amber", yAxis: "left" },
             ]}
             lines={[{ key: "neto", label: "Saldo neto", color: "accent", yAxis: "right" }]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            leftAxisFormat={fmtPENAxis}
+            rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
             height={300}
             minDataPoints={2}
+            showValues
+            valueFormat={(v) => (v >= 1000 ? `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `S/${v}`)}
           />
         </DashboardSection>
       ),
@@ -478,9 +555,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "inventario",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="resumen.inventario"
+          hasData={invChart.length > 0 && invChart.some((r) => r.stock > 0)}
           kicker="Inventario · top 7 categorías"
-          title="Stock, valor y SKUs por categoría"
+          title="Cuántas unidades tenés en cada categoría"
+          description="Las barras son cuántas unidades hay en stock por rubro y la línea es cuánta plata representa cada categoría. Si una categoría chica tiene mucha plata trabada, capaz convenga liquidar para no tenerla parada."
           kpis={[
             { label: "Valor total", value: fmtPEN(invKpis.valor), tone: "primary" },
             { label: "SKUs activos", value: String(invKpis.skus), tone: "neutral" },
@@ -497,7 +576,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
               { key: "skus", label: "SKUs", color: "tertiary", yAxis: "left", opacity: 0.18 },
             ]}
             leftAxisFormat={(v) => v.toString()}
-            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("valor")
                 ? `S/ ${Number(v).toLocaleString("es-PE")}`
@@ -505,6 +584,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             }
             height={300}
             minDataPoints={1}
+            showValues
+            valueFormat={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${v}`)}
           />
         </DashboardSection>
       ),
@@ -513,9 +594,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "compras",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="resumen.compras"
+          hasData={compChart.length > 0 && compChart.some((r) => r.monto > 0)}
           kicker={`Compras · top 7 proveedores · ${rangeLabel}`}
-          title="Monto, órdenes y deuda por proveedor"
+          title="Cuánto le compraste a cada proveedor"
+          description="Tus proveedores ordenados por cuánto les compraste. Los de barra grande tienen poder de negociación contigo — pedíles descuento por volumen. La sección naranja es lo que aún les debés."
           kpis={[
             { label: `Compras ${kpiSuffix}`, value: fmtPEN(compKpis.total), tone: "primary" },
             { label: "Órdenes", value: String(compKpis.ordenes), tone: "neutral" },
@@ -531,7 +614,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             areas={[
               { key: "pendiente", label: "Por pagar S/", color: "amber", yAxis: "left", opacity: 0.22 },
             ]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            leftAxisFormat={fmtPENAxis}
             rightAxisFormat={(v) => v.toString()}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("órdenes")
@@ -540,6 +623,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             }
             height={300}
             minDataPoints={1}
+            showValues
+            valueFormat={(v) => (v >= 1000 ? `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `S/${v}`)}
           />
         </DashboardSection>
       ),
@@ -548,9 +633,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "clientes",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="resumen.clientes"
+          hasData={cliChart.length >= 2 && cliChart.some((r) => (r.nuevos ?? 0) > 0 || (r.recurrentes ?? 0) > 0)}
           kicker={`Clientes · ${rangeLabel}`}
-          title="Nuevos, recurrentes y ticket promedio"
+          title="Clientes nuevos vs clientes que volvieron"
+          description="Barras = clientes nuevos (primera vez) vs los que ya volvieron. La línea es lo que gastan en promedio. Si tu negocio engancha bien, las barras de Recurrentes deberían crecer con el tiempo."
           kpis={[
             { label: "Total clientes", value: cliKpis.total.toLocaleString("es-PE"), tone: "primary" },
             { label: `Nuevos ${kpiSuffix}`, value: String(cliKpis.nuevosMes), tone: "success" },
@@ -567,7 +654,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             ]}
             lines={[{ key: "ticketProm", label: "Ticket prom. S/", color: "accent", yAxis: "right" }]}
             leftAxisFormat={(v) => v.toString()}
-            rightAxisFormat={(v) => `S/${v}`}
+            rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("ticket")
                 ? `S/ ${Number(v).toLocaleString("es-PE")}`
@@ -575,6 +662,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             }
             height={300}
             minDataPoints={2}
+            showValues
           />
         </DashboardSection>
       ),
@@ -583,9 +671,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "productos",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="resumen.productos"
+          hasData={prodChart.length > 0 && prodChart.some((r) => r.unidades > 0)}
           kicker={`Productos · top 7 · ${rangeLabel}`}
-          title="Unidades, ingresos y margen por producto"
+          title="Tus 7 productos más vendidos"
+          description="Tus best sellers del período. Barra alta = unidades vendidas, línea rosada = plata que generaron. Pedí más stock de los primeros 3 antes de quedarte sin nada — son tu motor de ventas."
           kpis={[
             { label: "SKUs activos", value: String(prodKpis.activos), tone: "neutral" },
             {
@@ -595,9 +685,19 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             },
             { label: "Ingresos top-7", value: fmtPEN(prodKpis.ingresos), tone: "primary" },
             {
-              label: "Margen prom.",
-              value: `${prodKpis.margenPct}%`,
-              tone: prodKpis.margenPct >= 25 ? "success" : "warning",
+              // Brandon 2026-05-16 (audit P1 UI): si hay productos sin
+              // costPrice, mostramos "—" en lugar de un porcentaje falso.
+              // El bodeguero entiende que falta cargar costos.
+              label: prodKpis.margenIncompleto ? "Margen prom. *" : "Margen prom.",
+              value: prodKpis.margenPct == null ? "—" : `${prodKpis.margenPct}%`,
+              tone: prodKpis.margenPct == null
+                ? "neutral"
+                : prodKpis.margenPct >= 25
+                  ? "success"
+                  : "warning",
+              hint: prodKpis.margenIncompleto
+                ? "Falta costo en algunos productos. Cargá costPrice para ver el margen real."
+                : undefined,
             },
           ]}
         >
@@ -610,7 +710,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
               { key: "margen", label: "Margen S/", color: "tertiary", yAxis: "right", opacity: 0.2 },
             ]}
             leftAxisFormat={(v) => v.toString()}
-            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("unidades")
                 ? `${Number(v).toLocaleString("es-PE")} u`
@@ -618,20 +718,25 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             }
             height={300}
             minDataPoints={1}
+            showValues
+            valueFormat={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${v}`)}
           />
         </DashboardSection>
       ),
     },
   ];
 
-  // layout="grid" (2026-04-24): los 5 charts (caja, inventario, compras,
-  // clientes, productos) se renderizan 2 por fila en lg+ en vez de 1 por
-  // fila. Reduce el scroll y permite leer comparaciones en paralelo.
+  // Brandon mayo 2026 v2: layout="column" — cada chart abarca toda la fila
+  // para que tenga aire y se lea cómodo. Antes (layout="grid", 2026-04-24)
+  // mostraba 2 por fila pero los gráficos quedaban apretados y el eje X con
+  // los nuevos labels "Lunes 10/05" ya no entraba. Una fila por gráfico
+  // resuelve ambos problemas y deja respiro visual.
   return (
     <DraggableSections
       items={sections}
       storageKey="inicio-multi-order"
-      layout="grid"
+      layout="column"
+      gap={4}
     />
   );
 });

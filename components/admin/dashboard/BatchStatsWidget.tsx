@@ -37,7 +37,7 @@ function StatCard({
 }) {
   if (loading) {
     return (
-      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-3 sm:p-4 animate-pulse">
+      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 animate-pulse">
         <div className="h-3 w-20 bg-gray-200 dark:bg-surface rounded mb-3" />
         <div className="h-8 w-12 bg-gray-200 dark:bg-surface rounded" />
       </div>
@@ -49,7 +49,7 @@ function StatCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-3 sm:p-4"
+      className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center", bgClass)}>
@@ -140,13 +140,13 @@ export default function BatchStatsWidget() {
           <div className="w-6 h-6 rounded-lg bg-primary/10 dark:bg-[var(--accent-muted)] flex items-center justify-center">
             <Package className="h-3.5 w-3.5 text-primary dark:text-[var(--data-success-500)]" />
           </div>
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Lotes de inventario</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Lotes de inventario</CardTitle>
         </div>
         <button
           onClick={fetchStats}
           disabled={loading}
           title="Actualizar"
-          className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+          className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
         </button>

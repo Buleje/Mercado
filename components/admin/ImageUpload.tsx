@@ -169,7 +169,7 @@ export default function ImageUpload({
   return (
     <div className={cn("space-y-1.5", className)}>
       {label && (
-        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
       )}
 
       {displayUrl ? (
@@ -184,7 +184,7 @@ export default function ImageUpload({
           }}
           onDrop={handleDrop}
         >
-          <div className={cn("relative rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface transition-all", ASPECT_MAP[aspectRatio], dragOver && "ring-2 ring-primary ring-offset-2")}>
+          <div className={cn("relative rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface transition-all", ASPECT_MAP[aspectRatio], dragOver && "ring-2 ring-primary ring-offset-2")}>
             <Image
               src={displayUrl}
               alt={label ?? ""}
@@ -232,7 +232,7 @@ export default function ImageUpload({
             ASPECT_MAP[aspectRatio],
             dragOver
               ? "border-primary bg-primary/5 dark:bg-primary/10"
-              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-[var(--surface-alt)] dark:hover:bg-surface",
+              : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-[var(--surface-alt)] dark:hover:bg-surface",
             uploading && "pointer-events-none opacity-60",
           )}
         >
@@ -248,7 +248,7 @@ export default function ImageUpload({
                 )}
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-sm font-medium text-[var(--text-primary)]">
                   {dragOver ? "Suelta aquí" : "Click o arrastra imagen"}
                 </p>
                 <p className="text-xs text-muted mt-0.5">JPG, PNG, WebP o SVG. Max 5 MB.</p>

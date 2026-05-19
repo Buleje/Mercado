@@ -229,7 +229,7 @@ export default function CompetitorPriceTracker() {
 
         if (suggestions.length === 0) return null;
         return (
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
             <p className="text-xs font-bold text-[var(--text-primary)] mb-3 flex items-center gap-1.5">
               <TrendingUp className="h-3.5 w-3.5 text-primary" />
               Sugerencia de Precio Inteligente
@@ -273,7 +273,7 @@ export default function CompetitorPriceTracker() {
               })}
             </div>
             {(caros.length > 0 || baratos.length > 0) && (
-              <div className="mt-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border flex gap-3 text-[length:var(--ts-2xs)]">
+              <div className="mt-3 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex gap-3 text-[length:var(--ts-2xs)]">
                 {caros.length > 0 && <span className="text-[var(--data-warning-500)] font-bold">{caros.length} productos mas caros que la competencia</span>}
                 {baratos.length > 0 && <span className="text-[var(--data-success-500)] font-bold">{baratos.length} con margen para subir</span>}
               </div>
@@ -283,7 +283,7 @@ export default function CompetitorPriceTracker() {
       })()}
 
       {/* Add competitor */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
         <p className="text-xs font-bold text-[var(--text-tertiary)] mb-2">Agregar competidor</p>
         <div className="flex gap-2">
           <input
@@ -292,7 +292,7 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewCompetitor(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addCompetitor()}
             placeholder='Ej: "Bodega Pérez", "Market Plaza"'
-            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <button
             onClick={addCompetitor}
@@ -317,7 +317,7 @@ export default function CompetitorPriceTracker() {
       </div>
 
       {/* Add product */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
         <p className="text-xs font-bold text-[var(--text-tertiary)] mb-2">Agregar producto a comparar</p>
         <div className="flex gap-2">
           <input
@@ -325,7 +325,7 @@ export default function CompetitorPriceTracker() {
             value={newProduct}
             onChange={e => setNewProduct(e.target.value)}
             placeholder="Nombre del producto"
-            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <input
             type="number"
@@ -333,7 +333,7 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewMyPrice(e.target.value)}
             placeholder="Mi precio"
             step="0.10"
-            className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <button
             onClick={addProduct}
@@ -354,14 +354,14 @@ export default function CompetitorPriceTracker() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
       )}
 
       {/* Price comparison table */}
       {filtered.length > 0 && data.competitors.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
+        <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[var(--surface-alt)] dark:bg-surface">
@@ -387,7 +387,7 @@ export default function CompetitorPriceTracker() {
                         onBlur={() => { updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         onKeyDown={e => { if (e.key === "Enter") updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         step="0.10"
-                        className="w-20 px-2 py-1 rounded-lg border border-primary text-xs text-right bg-white dark:bg-card focus:outline-none text-[var(--text-primary)]"
+                        className="w-20 px-2 py-1 rounded-lg border border-primary text-xs text-right bg-[var(--surface-raised)] focus:outline-none text-[var(--text-primary)]"
                       />
                     ) : (
                       <button
@@ -414,7 +414,7 @@ export default function CompetitorPriceTracker() {
                             onBlur={() => updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null)}
                             onKeyDown={e => { if (e.key === "Enter") updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null); }}
                             step="0.10"
-                            className="w-20 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-right bg-white dark:bg-card focus:outline-none text-[var(--text-primary)]"
+                            className="w-20 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-right bg-[var(--surface-raised)] focus:outline-none text-[var(--text-primary)]"
                           />
                         ) : (
                           <button

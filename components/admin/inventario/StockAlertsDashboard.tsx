@@ -103,7 +103,7 @@ export default function StockAlertsDashboard() {
           <div className="text-2xl font-bold text-[var(--data-warning-500)]">{resumen.criticoCount}</div>
           <div className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">Stock critico</div>
         </div>
-        <div className="bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+        <div className="bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 text-center">
           <div className="text-lg font-bold text-[var(--text-secondary)]">
             S/{resumen.sinMovimientoValor.toLocaleString('es-PE', { minimumFractionDigits: 0 })}
           </div>
@@ -118,14 +118,14 @@ export default function StockAlertsDashboard() {
       </div>
 
       {/* Section 1: SIN STOCK */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
         <button
           onClick={() => toggle('sinStock')}
           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
         >
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-[var(--data-error-500)]" />
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">SIN STOCK</span>
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">SIN STOCK</span>
             <span className="text-xs bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-2 py-0.5 rounded-full">
               {resumen.sinStockCount}
             </span>
@@ -142,7 +142,7 @@ export default function StockAlertsDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Producto</th>
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Categoria</th>
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Última venta</th>
@@ -151,7 +151,7 @@ export default function StockAlertsDashboard() {
                   <tbody>
                     {data.sinStock.map(p => (
                       <tr key={p.id} className="border-b border-[var(--rule-base)]">
-                        <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground font-medium">{p.name}</td>
+                        <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{p.name}</td>
                         <td className="py-2 px-2 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                         <td className="py-2 px-2 text-[var(--text-secondary)] dark:text-muted">{formatDate(p.lastSaleDate)}</td>
                       </tr>
@@ -165,14 +165,14 @@ export default function StockAlertsDashboard() {
       </div>
 
       {/* Section 2: STOCK CRÍTICO */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
         <button
           onClick={() => toggle('critico')}
           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
         >
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-[var(--data-warning-500)]" />
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">STOCK CRITICO</span>
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">STOCK CRITICO</span>
             <span className="text-xs bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-2 py-0.5 rounded-full">
               {resumen.criticoCount}
             </span>
@@ -189,7 +189,7 @@ export default function StockAlertsDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Producto</th>
                       <th className="text-center py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Stock</th>
                       <th className="text-center py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Mínimo</th>
@@ -198,7 +198,7 @@ export default function StockAlertsDashboard() {
                   <tbody>
                     {data.stockCritico.map(p => (
                       <tr key={p.id} className="border-b border-[var(--rule-base)]">
-                        <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground font-medium">{p.name}</td>
+                        <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{p.name}</td>
                         <td className="py-2 px-2 text-center">
                           <span className="text-[var(--data-error-500)] font-bold">{p.stock}</span>
                         </td>
@@ -214,14 +214,14 @@ export default function StockAlertsDashboard() {
       </div>
 
       {/* Section 3: SIN MOVIMIENTO */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
         <button
           onClick={() => toggle('sinMovimiento')}
           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
         >
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-gray-500" />
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">SIN MOVIMIENTO (30+ dias)</span>
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">SIN MOVIMIENTO (30+ dias)</span>
             <span className="text-xs bg-[var(--surface-sunken)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full">
               {resumen.sinMovimientoCount}
             </span>
@@ -245,7 +245,7 @@ export default function StockAlertsDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                      <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                         <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Producto</th>
                         <th className="text-center py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Stock</th>
                         <th className="text-right py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Valor (S/)</th>
@@ -255,7 +255,7 @@ export default function StockAlertsDashboard() {
                     <tbody>
                       {data.sinMovimiento.map(p => (
                         <tr key={p.id} className="border-b border-[var(--rule-base)]">
-                          <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground font-medium">{p.name}</td>
+                          <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{p.name}</td>
                           <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">{p.stock}</td>
                           <td className="py-2 px-2 text-right text-[var(--data-error-500)] font-medium">
                             S/{Number(p.valorAtado).toFixed(2)}
@@ -273,14 +273,14 @@ export default function StockAlertsDashboard() {
       </div>
 
       {/* Section 4: POR VENCER */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
         <button
           onClick={() => toggle('porVencer')}
           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-card-hover transition-colors"
         >
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-[var(--data-warning-500)]" />
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">POR VENCER (7 dias)</span>
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">POR VENCER (7 dias)</span>
             <span className="text-xs bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-2 py-0.5 rounded-full">
               {resumen.porVencerCount}
             </span>
@@ -297,7 +297,7 @@ export default function StockAlertsDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Producto</th>
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Lote</th>
                       <th className="text-center py-2 px-2 text-[var(--text-secondary)] dark:text-muted font-medium">Vence</th>
@@ -308,7 +308,7 @@ export default function StockAlertsDashboard() {
                   <tbody>
                     {data.porVencer.map(b => (
                       <tr key={b.batchId} className="border-b border-[var(--rule-base)]">
-                        <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground font-medium">{b.productName}</td>
+                        <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{b.productName}</td>
                         <td className="py-2 px-2 text-[var(--text-secondary)] dark:text-muted">{b.lote}</td>
                         <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">
                           {new Date(b.expiryDate).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' })}

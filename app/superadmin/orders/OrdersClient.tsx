@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AdminTabShell } from "../_components/_shared";
+import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 
 type OrderStatus = "pendiente" | "confirmado" | "preparando" | "en_camino" | "entregado" | "cancelado";
 
@@ -166,15 +167,39 @@ export function OrdersClient() {
     let totalRev = 0;
     for (const o of orders) {
       grouped[o.status] = (grouped[o.status] ?? 0) + 1;
-      if (o.status !== "cancelado") totalRev += o.total;
+      // Brandon mayo 2026 v7: solo `entregado` cuenta como revenue. Pedidos
+      // en pendiente/confirmado/preparando/en_camino aún pueden cancelarse.
+      if (o.status === "entregado") totalRev += o.total;
     }
     return { grouped, totalRev };
   }, [orders]);
 
   return (
     <AdminTabShell
-      title="Pedidos · Plataforma"
-      description="Vista cross-tenant de todos los pedidos del marketplace"
+      title="Pedidos del marketplace"
+      kicker="Plataforma · Operaciones"
+      description="Vista cross-tenant de todos los pedidos. Aplicá filtros por tienda, estado o término de búsqueda para diagnosticar problemas."
+      icon={ShoppingBag}
+      stats={
+        <>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+              Pendientes
+            </p>
+            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-amber-600 dark:text-amber-400">
+              {kpis.grouped.pendiente}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+              GMV
+            </p>
+            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--accent)]">
+              S/{Number(kpis.totalRev).toFixed(0)}
+            </p>
+          </div>
+        </>
+      }
     >
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
@@ -308,17 +333,24 @@ function KpiCard({
   icon: typeof Clock;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 flex items-center gap-3">
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: `color-mix(in oklch, ${tone} 14%, transparent)`, color: tone }}
-      >
-        <Icon className="w-5 h-5" strokeWidth={2.25} />
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-center gap-2.5">
+        <span
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
+          style={{
+            background: `color-mix(in oklch, ${tone} 12%, transparent)`,
+            color: tone,
+          }}
+        >
+          <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        </span>
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+          {label}
+        </p>
       </div>
-      <div className="min-w-0">
-        <p className="text-xs text-[var(--text-tertiary)] truncate">{label}</p>
-        <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">{value}</p>
-      </div>
+      <p className="mt-2.5 font-display text-2xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
+        {value}
+      </p>
     </div>
   );
 }
@@ -353,7 +385,7 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
             <Store className="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
             {order.tenant.name}
           </p>
-          <p className="text-[11px] text-[var(--text-tertiary)] tabular-nums">
+          <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
             #{order.id.slice(-8)} · {timeAgo(order.createdAt)}
           </p>
         </div>
@@ -408,7 +440,7 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
               </div>
             ))}
             {order.items.length > 3 && (
-              <div className="w-9 h-9 rounded-lg border-2 border-[var(--surface-canvas)] bg-[var(--surface-sunken)] flex items-center justify-center text-[10px] font-bold text-[var(--text-secondary)]">
+              <div className="w-9 h-9 rounded-lg border-2 border-[var(--surface-canvas)] bg-[var(--surface-sunken)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
                 +{order.items.length - 3}
               </div>
             )}
@@ -423,7 +455,7 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
       {/* Footer: total */}
       <div className="px-4 py-3 border-t border-[var(--rule-base)] flex items-center justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
+          <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
           <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">
             S/{Number(order.total).toFixed(2)}
           </p>
@@ -439,10 +471,14 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
 function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () => void }) {
   const meta = STATUS_META[order.status];
   const Icon = meta.icon;
+  // PERF (audit React Compiler 2026-05-12): cache-buster fijo al mount del drawer
+  // via useState lazy init (pure capture de Date.now()). Sigue forzando refresh
+  // del panel admin del tenant porque el modal se monta cada vez que se abre.
+  const [cacheBust] = useState(() => Date.now());
   return (
     <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <aside className="absolute right-0 top-0 h-full w-full sm:w-[480px] bg-[var(--surface-canvas)] border-l border-[var(--rule-base)] shadow-[var(--shadow-2xl)] flex flex-col animate-in slide-in-from-right duration-200">
+      <aside className="absolute right-0 top-0 h-full w-full sm:w-[480px] bg-[var(--surface-canvas)] border-l border-[var(--rule-base)] shadow-[var(--shadow-2xl)] flex flex-col animate-in slide-in-from-right duration-[var(--dur-fast)]">
         {/* Header */}
         <header className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center gap-3 shrink-0 bg-[var(--surface-sunken)]">
           {order.tenant.logoUrl ? (
@@ -583,9 +619,16 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
             </dl>
           </section>
 
+          {/* Comprobante de pago (Yape/Plin/Transfer). Retorna null si la
+              Order es efectivo o no tiene PaymentApproval. */}
+          <PaymentProofViewer
+            orderId={order.id}
+            isCash={order.paymentMethod === "efectivo"}
+          />
+
           {/* CTA → entrar al admin del tenant */}
           <a
-            href={`/t/${order.tenant.slug}/admin?tab=pedidos&_fresh=${Date.now()}`}
+            href={`/t/${order.tenant.slug}/admin?tab=pedidos&_fresh=${cacheBust}`}
             target="_blank"
             rel="noopener noreferrer"
             className="block w-full text-center px-5 py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent-600)] transition-colors"

@@ -136,8 +136,8 @@ function BannerForm({
         onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
         placeholder={placeholder}
         className={cn(
-          "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-          errors[field] ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
+          "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
+          errors[field] ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
         )}
       />
       {errors[field] && <p className="text-xs text-[var(--data-error-500)]">{errors[field]}</p>}
@@ -145,7 +145,7 @@ function BannerForm({
   );
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  space-y-4">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5  space-y-4">
       <p className="text-sm font-semibold text-[var(--text-secondary)]">
         {initial.title ? "Editar banner" : "Nuevo banner"}
       </p>
@@ -339,9 +339,9 @@ export default function BannerEditor() {
                 onDragOver={e => { e.preventDefault(); setDragOver(banner.id); }}
                 onDrop={() => handleDrop(banner.id)}
                 className={cn(
-                  "bg-white dark:bg-card border rounded-xl overflow-hidden  transition-all cursor-grab active:cursor-grabbing",
+                  "bg-[var(--surface-raised)] border rounded-xl overflow-hidden  transition-all cursor-grab active:cursor-grabbing",
                   dragging === banner.id ? "opacity-50 scale-[0.98]" : "",
-                  dragOver === banner.id && dragging !== banner.id ? "border-primary ring-2 ring-primary/30" : "border-[var(--rule-base)] dark:border-card-border"
+                  dragOver === banner.id && dragging !== banner.id ? "border-primary ring-2 ring-primary/30" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                 )}
               >
                 {/* Banner mini preview */}

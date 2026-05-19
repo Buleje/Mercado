@@ -33,10 +33,10 @@ import {
 } from "@/lib/api-error";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
-import {
-  MOCK_EXCLUSIVE_OFFERS,
-  type MockExclusiveOffer,
-} from "@/lib/mocks/socio-buleje.mock";
+// MOCK_EXCLUSIVE_OFFERS importado lazy dentro de getExclusiveOffers para
+// que el mock guard (NODE_ENV=production throw) no rompa el build estático.
+// Sólo se carga en dev/preview cuando se llama efectivamente la función.
+import type { MockExclusiveOffer } from "@/lib/mocks/socio-buleje.mock";
 import type {
   BillingCycleStatus,
   ISocioBulejeDB,
@@ -735,7 +735,10 @@ export const SocioBulejeDB: ISocioBulejeDB = {
     limit: number = 12,
   ): Promise<SocioExclusiveOffer[]> {
     // V1: mock de ofertas. Sprint B conectará con Product.socioPrice.
+    // En prod no hay ofertas mock — array vacío hasta migración Sprint B.
     return getOrSet(offersCacheKey(tenantId, limit), CACHE_TTL_SEC * 5, async () => {
+      if (process.env.NODE_ENV === "production") return [];
+      const { MOCK_EXCLUSIVE_OFFERS } = await import("@/lib/mocks/socio-buleje.mock");
       return MOCK_EXCLUSIVE_OFFERS.slice(0, limit).map(
         (m: MockExclusiveOffer): SocioExclusiveOffer => ({
           productId: m.productId,

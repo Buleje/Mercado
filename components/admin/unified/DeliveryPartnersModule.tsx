@@ -9,6 +9,10 @@ const DeliveryPartnersLiveMap = dynamic(
   () => import("@/components/admin/delivery/DeliveryPartnersLiveMap"),
   { ssr: false, loading: () => <div className="h-[600px] flex items-center justify-center text-[var(--text-tertiary)]">Cargando mapa…</div> },
 );
+const NetworkToggleCard = dynamic(
+  () => import("@/components/admin/delivery/NetworkToggleCard"),
+  { ssr: false, loading: () => <div className="h-[180px] rounded-2xl bg-[var(--surface-sunken)] animate-pulse" /> },
+);
 import {
   Truck,
   Users,
@@ -32,6 +36,12 @@ import {
   ThumbsDown,
   Trophy,
   DollarSign,
+  Bike,
+  Car,
+  Footprints,
+  Search,
+  MessageCircle,
+  Download,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -79,13 +89,36 @@ function toNum(v: number | string | null | undefined): number {
   return 0;
 }
 
-function vehicleEmoji(t: string): string {
+// Brandon mayo 2026 v7: reemplazado emoji 🛵🚲🚗🚶 por Lucide icons
+// (CLAUDE.md / skill bsm-typography-rules prohíbe emojis genéricos en UI).
+type VehicleKind = "moto" | "bici" | "auto" | "pie" | "otro";
+
+function vehicleKind(t: string): VehicleKind {
   const v = (t ?? "").toLowerCase();
-  if (v.includes("moto")) return "🛵";
-  if (v.includes("bici")) return "🚲";
-  if (v.includes("auto") || v.includes("car")) return "🚗";
-  if (v.includes("pie")) return "🚶";
-  return "👤";
+  if (v.includes("moto")) return "moto";
+  if (v.includes("bici")) return "bici";
+  if (v.includes("auto") || v.includes("car")) return "auto";
+  if (v.includes("pie")) return "pie";
+  return "otro";
+}
+
+function VehicleIcon({ type, className }: { type: string; className?: string }) {
+  const k = vehicleKind(type);
+  const cls = className ?? "h-4 w-4";
+  if (k === "moto") return <Truck className={cls} aria-label="Moto" />;
+  if (k === "bici") return <Bike className={cls} aria-label="Bicicleta" />;
+  if (k === "auto") return <Car className={cls} aria-label="Auto" />;
+  if (k === "pie")  return <Footprints className={cls} aria-label="A pie" />;
+  return <Users className={cls} aria-label="Vehículo" />;
+}
+
+function vehicleLabel(t: string): string {
+  const k = vehicleKind(t);
+  if (k === "moto") return "Moto";
+  if (k === "bici") return "Bicicleta";
+  if (k === "auto") return "Auto";
+  if (k === "pie")  return "A pie";
+  return t || "Vehículo";
 }
 
 // ── Types ──
@@ -388,6 +421,65 @@ function PartnerModal({
 // ─────────────────────────────────────────────
 // Sub-tab: Repartidores
 // ─────────────────────────────────────────────
+/**
+ * Brandon mayo 2026 v7: helpers para mejoras de RepartidoresTab.
+ *  - zoneColor: hash determinístico zona → color de avatar (5 paletas).
+ *  - downloadCSV: export plano para SUNAT/contabilidad/pagos.
+ *  - waLink: link wa.me con template auto en español-PE.
+ */
+const ZONE_PALETTE = [
+  { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300" },
+  { bg: "bg-sky-100 dark:bg-sky-900/40",         text: "text-sky-700 dark:text-sky-300" },
+  { bg: "bg-amber-100 dark:bg-amber-900/40",     text: "text-amber-700 dark:text-amber-300" },
+  { bg: "bg-violet-100 dark:bg-violet-900/40",   text: "text-violet-700 dark:text-violet-300" },
+  { bg: "bg-rose-100 dark:bg-rose-900/40",       text: "text-rose-700 dark:text-rose-300" },
+  { bg: "bg-cyan-100 dark:bg-cyan-900/40",       text: "text-cyan-700 dark:text-cyan-300" },
+] as const;
+
+function zoneColor(zone: string): (typeof ZONE_PALETTE)[number] {
+  const z = (zone ?? "").toLowerCase().trim() || "default";
+  let hash = 0;
+  for (let i = 0; i < z.length; i++) hash = ((hash << 5) - hash) + z.charCodeAt(i);
+  return ZONE_PALETTE[Math.abs(hash) % ZONE_PALETTE.length];
+}
+
+function downloadCSV(rows: DeliveryPartner[]) {
+  const header = ["Nombre", "Telefono", "Zona", "Vehiculo", "Tarifa (S/)", "Rating", "Estado"];
+  const lines = rows.map((p) => [
+    p.name,
+    p.phone ?? "",
+    p.zone,
+    vehicleLabel(p.vehicleType),
+    toNum(p.fee).toFixed(2),
+    toNum(p.rating).toFixed(1),
+    p.isActive ? "Activo" : "Inactivo",
+  ]);
+  const all = [header, ...lines].map((r) =>
+    r.map((c) => {
+      const s = String(c ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(","),
+  );
+  const csv = "﻿" + all.join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `repartidores-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function waLink(phone: string, name: string): string {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  if (digits.length < 8) return "";
+  const intl = digits.length === 9 ? `51${digits}` : digits;
+  const text = `Hola ${name}, te escribo del negocio. ¿Estás disponible para una entrega ahora?`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+}
+
 function RepartidoresTab() {
   const [partners, setPartners] = useState<DeliveryPartner[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -395,6 +487,17 @@ function RepartidoresTab() {
   const [modal, setModal]       = useState<{ open: boolean; partner: Partial<DeliveryPartner> | null }>({ open: false, partner: null });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  // Brandon mayo 2026 v7 — mejoras RepartidoresTab:
+  // - búsqueda libre (nombre / teléfono)
+  // - filtros zona + vehículo + estado
+  // - selección múltiple para bulk activar/desactivar
+  const [query, setQuery] = useState("");
+  const [zoneFilter, setZoneFilter] = useState<string>("todas");
+  const [vehicleFilter, setVehicleFilter] = useState<string>("todos");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "activos" | "inactivos">("todos");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -438,6 +541,54 @@ function RepartidoresTab() {
     }
   };
 
+  // Brandon mayo 2026 v7: bulk activar/desactivar repartidores.
+  const handleBulkSetActive = async (active: boolean) => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    setBulkBusy(true);
+    setError(null);
+    // No hay endpoint bulk — actualizamos secuencialmente con PUT por cada id.
+    // Es aceptable: <30 partners típicos por tenant. Si crece, agregar /api/delivery/partners/bulk.
+    try {
+      await Promise.allSettled(
+        ids.map((id) => {
+          const p = partners.find((x) => x.id === id);
+          if (!p) return Promise.resolve(null);
+          return tenantFetch(`/api/delivery/partners/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: p.name,
+              phone: p.phone,
+              zone: p.zone,
+              vehicleType: p.vehicleType,
+              fee: toNum(p.fee),
+              rating: toNum(p.rating),
+              isActive: active,
+            }),
+          });
+        }),
+      );
+      setPartners((prev) =>
+        prev.map((p) => (selectedIds.has(p.id) ? { ...p, isActive: active } : p)),
+      );
+      setSelectedIds(new Set());
+    } catch {
+      setError("Error al actualizar repartidores en bloque.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   if (loading) return <TableSkeleton />;
 
   // Derived KPIs
@@ -449,8 +600,43 @@ function RepartidoresTab() {
       ? partners.reduce((s, p) => s + toNum(p.rating), 0) / totalCount
       : 0;
 
+  // Brandon mayo 2026 v7: filtros aplicados + zonas/vehículos únicos para dropdowns.
+  const uniqueZones = Array.from(new Set(partners.map((p) => p.zone).filter(Boolean))).sort();
+  const uniqueVehicles = Array.from(new Set(partners.map((p) => vehicleKind(p.vehicleType)))).sort();
+
+  const filtered = partners.filter((p) => {
+    if (zoneFilter !== "todas" && p.zone !== zoneFilter) return false;
+    if (vehicleFilter !== "todos" && vehicleKind(p.vehicleType) !== vehicleFilter) return false;
+    if (statusFilter === "activos" && !p.isActive) return false;
+    if (statusFilter === "inactivos" && p.isActive) return false;
+    if (query.trim()) {
+      const q = query.toLowerCase().trim();
+      const hit =
+        p.name.toLowerCase().includes(q) ||
+        (p.phone ?? "").toLowerCase().includes(q) ||
+        p.zone.toLowerCase().includes(q);
+      if (!hit) return false;
+    }
+    return true;
+  });
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((p) => p.id)));
+  }
+
+  function clearFilters() {
+    setQuery("");
+    setZoneFilter("todas");
+    setVehicleFilter("todos");
+    setStatusFilter("todos");
+  }
+
   return (
     <div className="space-y-6">
+      {/* ── 0. Toggle Red Buleje (Brandon mayo 2026 v7) ─────────────── */}
+      <NetworkToggleCard />
+
       {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
@@ -541,6 +727,120 @@ function RepartidoresTab() {
         )}
       </div>
 
+      {/* ── 1.5 Toolbar (search + filters + CSV) ───────────────────── */}
+      {totalCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" aria-hidden />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nombre, teléfono o zona…"
+              className="w-full h-11 pl-10 pr-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Limpiar búsqueda"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          <select
+            value={zoneFilter}
+            onChange={(e) => setZoneFilter(e.target.value)}
+            className="h-11 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          >
+            <option value="todas">Todas las zonas</option>
+            {uniqueZones.map((z) => (
+              <option key={z} value={z}>{z}</option>
+            ))}
+          </select>
+
+          <select
+            value={vehicleFilter}
+            onChange={(e) => setVehicleFilter(e.target.value)}
+            className="h-11 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          >
+            <option value="todos">Todo vehículo</option>
+            {uniqueVehicles.map((v) => (
+              <option key={v} value={v} className="capitalize">{vehicleLabel(v)}</option>
+            ))}
+          </select>
+
+          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 gap-0.5">
+            {(["todos", "activos", "inactivos"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStatusFilter(s)}
+                aria-pressed={statusFilter === s}
+                className={cn(
+                  "h-10 px-3 rounded-lg text-xs font-extrabold transition-colors capitalize",
+                  statusFilter === s
+                    ? "bg-[var(--accent)] text-white"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
+                )}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => downloadCSV(filtered)}
+            disabled={filtered.length === 0}
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-extrabold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Descargar CSV de los repartidores filtrados"
+          >
+            <Download className="h-4 w-4" />
+            CSV
+          </button>
+        </div>
+      )}
+
+      {/* ── 1.6 Bulk action bar ────────────────────────────────────── */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/40">
+          <p className="text-sm font-extrabold text-[var(--accent)]">
+            {selectedIds.size} {selectedIds.size === 1 ? "repartidor seleccionado" : "repartidores seleccionados"}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() => handleBulkSetActive(true)}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-extrabold hover:opacity-90 transition-opacity disabled:opacity-40"
+            >
+              <CheckCircle className="h-3.5 w-3.5" />
+              Activar todos
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() => handleBulkSetActive(false)}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-xs font-extrabold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40"
+            >
+              <X className="h-3.5 w-3.5" />
+              Pausar todos
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-[var(--text-secondary)] text-xs font-extrabold hover:bg-[var(--surface-raised)] transition-colors"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── 2. Banner error ─────────────────────────────────────────── */}
       {error && (
         <div className="flex items-center gap-3 px-5 py-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-xl">
@@ -585,6 +885,18 @@ function RepartidoresTab() {
             <table className="w-full">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
+                  <th className="text-left px-3 py-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
+                      ref={(el) => {
+                        if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filtered.length;
+                      }}
+                      onChange={toggleSelectAll}
+                      aria-label="Seleccionar todos"
+                      className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                    />
+                  </th>
                   <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidor</th>
                   <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Zona / Vehículo</th>
                   <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tarifa</th>
@@ -594,12 +906,38 @@ function RepartidoresTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
-                {partners.map((p) => (
-                  <tr key={p.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
+                {filtered.map((p) => {
+                  const isSelected = selectedIds.has(p.id);
+                  const zc = zoneColor(p.zone);
+                  const wa = p.phone ? waLink(p.phone, p.name) : "";
+                  return (
+                  <tr
+                    key={p.id}
+                    className={cn(
+                      "transition-colors",
+                      isSelected ? "bg-[var(--accent-soft)]/40" : "hover:bg-[var(--surface-sunken)]",
+                    )}
+                  >
+                    <td className="px-3 py-4">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(p.id)}
+                        aria-label={`Seleccionar ${p.name}`}
+                        className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                      />
+                    </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-xl font-extrabold shrink-0">
-                          {(p.name || "?").trim().charAt(0).toUpperCase()}
+                        <div
+                          className={cn(
+                            "h-12 w-12 rounded-2xl flex items-center justify-center text-xl font-extrabold shrink-0 border-2 border-transparent",
+                            zc.bg,
+                            zc.text,
+                          )}
+                          title={`Zona: ${p.zone}`}
+                        >
+                          {(p.name || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("")}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{p.name}</p>
@@ -617,8 +955,9 @@ function RepartidoresTab() {
                         <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
                         {p.zone}
                       </p>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                        {vehicleEmoji(p.vehicleType)} {p.vehicleType}
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1.5">
+                        <VehicleIcon type={p.vehicleType} className="h-3.5 w-3.5" />
+                        <span className="font-semibold capitalize">{vehicleLabel(p.vehicleType)}</span>
                       </p>
                     </td>
                     <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)]">
@@ -642,7 +981,19 @@ function RepartidoresTab() {
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {wa && (
+                          <a
+                            href={wa}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15 transition-colors"
+                            title={`WhatsApp a ${p.name}`}
+                            aria-label="WhatsApp"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
+                        )}
                         <button
                           type="button"
                           onClick={() => setModal({ open: true, partner: p })}
@@ -663,10 +1014,38 @@ function RepartidoresTab() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
+          {filtered.length === 0 && (
+            <div className="px-6 py-10 text-center">
+              <p className="text-sm font-bold text-[var(--text-secondary)]">Sin resultados con esos filtros.</p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-2 text-xs font-extrabold text-[var(--accent)] hover:underline"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
+          {filtered.length > 0 && filtered.length < partners.length && (
+            <div className="border-t border-[var(--rule-base)] px-4 py-2 bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-secondary)] flex items-center justify-between">
+              <span>
+                Mostrando <strong className="tabular-nums">{filtered.length}</strong> de{" "}
+                <strong className="tabular-nums">{partners.length}</strong> repartidores
+              </span>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-[var(--accent)] hover:underline"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -1887,7 +2266,7 @@ function RankingTab() {
                               {entry.name}
                             </p>
                             <p className="text-sm text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1.5">
-                              <span>{vehicleEmoji(entry.vehicleType)}</span>
+                              <VehicleIcon type={entry.vehicleType} className="h-3.5 w-3.5" />
                               <span className="font-mono">{entry.phone}</span>
                             </p>
                           </div>
@@ -2284,7 +2663,7 @@ function SolicitudesTab() {
                           </span>
                         )}
                         <span className="flex items-center gap-1.5">
-                          <span className="text-base">{vehicleEmoji(vehicleType)}</span>
+                          <VehicleIcon type={vehicleType} className="h-4 w-4 text-[var(--text-tertiary)]" />
                           {VEHICLE_LABELS[vehicleType] ?? vehicleType}
                         </span>
                         <span className="flex items-center gap-1.5">
@@ -2433,7 +2812,7 @@ export default function DeliveryPartnersModule() {
     tenantFetch("/api/delivery/kpis")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d) setKpis(d as DeliveryKPIs); })
-      .catch(() => {})
+      .catch((err) => console.warn("[DeliveryPartnersModule] /api/delivery/kpis failed:", err))
       .finally(() => setKpisLoading(false));
   }, []);
 

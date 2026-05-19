@@ -13,10 +13,23 @@
  */
 
 import Link from "next/link";
-import { ArrowUpRight, ArrowRight, X, Check } from "@buleje/design-system/icons";
+import {
+  ArrowUpRight,
+  ArrowRight,
+  X,
+  Check,
+  Sunrise,
+  ShoppingCart,
+  MessageCircle,
+  Moon,
+  type LucideIcon,
+} from "@buleje/design-system/icons";
 
 interface Comparison {
   moment: string;
+  icon: LucideIcon;
+  beforeTime: string;
+  afterTime: string;
   before: string;
   after: string;
 }
@@ -24,21 +37,33 @@ interface Comparison {
 const COMPARISONS: Comparison[] = [
   {
     moment: "A las 7:00 AM",
+    icon: Sunrise,
+    beforeTime: "20 min",
+    afterTime: "30 seg",
     before: "Anotás el inventario en un cuaderno y cruzás dedos para que cuadre.",
     after: "Abrís Buleje y ya sabés qué se vendió ayer, qué falta y qué pedir.",
   },
   {
     moment: "Cuando entra un cliente",
+    icon: ShoppingCart,
+    beforeTime: "2-3 min",
+    afterTime: "5 seg",
     before: "Le decís el precio de memoria y a veces te equivocás. La balanza es manual.",
     after: "Escaneás el código, se calcula solo y se descuenta del stock al instante.",
   },
   {
     moment: "Cuando un vecino te escribe por WhatsApp",
+    icon: MessageCircle,
+    beforeTime: "10 min",
+    afterTime: "0 min",
     before: "Le copiás precios uno a uno, calculás a mano y le mandás cuenta de banco.",
     after: "Te pasa un link, arma su pedido solo y tú sólo aceptás y despachás.",
   },
   {
     moment: "Al cierre del día",
+    icon: Moon,
+    beforeTime: "45 min",
+    afterTime: "1 click",
     before: "Sumás recibos a mano, te falta plata, no sabés bien qué pasó.",
     after: "Ves el reporte real: ventas, fiados, productos top, flujo de caja.",
   },
@@ -53,7 +78,7 @@ export default function HowItChanges() {
             <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
             Tu día a día
           </p>
-          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
+          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
             Lo mismo que ya hacés,
             <br />
             <span className="text-[var(--accent)]">
@@ -66,48 +91,87 @@ export default function HowItChanges() {
           </p>
         </div>
 
-        {/* Tabla comparativa — Antes / Después */}
-        <div className="grid gap-4 max-w-4xl mx-auto">
-          {COMPARISONS.map((c) => (
-            <div
-              key={c.moment}
-              className="rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] overflow-hidden"
-            >
-              <div className="px-5 sm:px-6 py-3 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-                <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
-                  {c.moment}
-                </p>
-              </div>
-              <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--rule-base)]">
-                <div className="px-5 sm:px-6 py-4 sm:py-5 flex items-start gap-3">
-                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--rule-base)] text-[var(--text-tertiary)]">
-                    <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+        {/* Tabla comparativa — Antes / Después con icono de momento + badges de tiempo */}
+        <div className="grid gap-5 max-w-4xl mx-auto">
+          {COMPARISONS.map((c) => {
+            const Icon = c.icon;
+            return (
+              <div
+                key={c.moment}
+                className="group rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] overflow-hidden transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]"
+              >
+                {/* Header del momento — icono + label + chip de ahorro */}
+                <div className="px-5 sm:px-6 py-3.5 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-raised)] text-[var(--accent)] border border-[var(--rule-soft)] shrink-0"
+                  >
+                    <Icon className="h-4 w-4" strokeWidth={2.25} />
                   </span>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-                      Hoy sin Buleje
-                    </p>
-                    <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-                      {c.before}
-                    </p>
+                  <p className="flex-1 text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] truncate">
+                    {c.moment}
+                  </p>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider whitespace-nowrap">
+                    Ahorra <span className="line-through opacity-50">{c.beforeTime}</span> → {c.afterTime}
+                  </span>
+                </div>
+
+                <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--rule-base)]">
+                  {/* Antes — con tipografía tachada visualmente */}
+                  <div className="relative px-5 sm:px-6 py-5 sm:py-6 flex items-start gap-3.5 bg-[var(--surface-sunken)]/40">
+                    <span
+                      aria-hidden
+                      className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--rule-base)] text-[var(--text-tertiary)]"
+                    >
+                      <X className="h-4 w-4" strokeWidth={2.75} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-baseline gap-2 mb-1.5">
+                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                          Hoy sin Buleje
+                        </p>
+                        <span className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--data-error-600,var(--text-tertiary))] sm:hidden">
+                          {c.beforeTime}
+                        </span>
+                      </div>
+                      <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+                        {c.before}
+                      </p>
+                      <p className="mt-2.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                        Te toma <span className="text-[var(--data-error-600,var(--text-secondary))] tabular-nums">{c.beforeTime}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Después — accent soft con typography más fuerte */}
+                  <div className="relative px-5 sm:px-6 py-5 sm:py-6 flex items-start gap-3.5 bg-[var(--accent-soft)]">
+                    <span
+                      aria-hidden
+                      className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/25"
+                    >
+                      <Check className="h-4 w-4" strokeWidth={2.75} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-baseline gap-2 mb-1.5">
+                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                          Con Buleje
+                        </p>
+                        <span className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--accent)] sm:hidden">
+                          {c.afterTime}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold leading-relaxed text-[var(--text-primary)]">
+                        {c.after}
+                      </p>
+                      <p className="mt-2.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                        Te toma <span className="tabular-nums">{c.afterTime}</span>
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="px-5 sm:px-6 py-4 sm:py-5 flex items-start gap-3 bg-[var(--accent-soft)]">
-                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-sm">
-                    <Check className="h-4 w-4" strokeWidth={2.75} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1">
-                      Con Buleje
-                    </p>
-                    <p className="text-sm font-medium leading-relaxed text-[var(--text-primary)]">
-                      {c.after}
-                    </p>
-                  </div>
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* CTA + microcopy honesto */}

@@ -33,7 +33,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
     return (
       <section
         className={cn(
-          "rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-5 text-sm text-muted",
+          "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-sm text-muted",
           className,
         )}
       >
@@ -49,7 +49,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
     <section
       aria-labelledby="tracking-driver-heading"
       className={cn(
-        "rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-5 sm:p-6",
+        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -59,7 +59,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
         </span>
         <h2
           id="tracking-driver-heading"
-          className="text-base sm:text-lg font-extrabold tracking-tight text-foreground mt-0.5"
+          className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
         >
           {driver.name}
         </h2>
@@ -73,19 +73,19 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
           <span className="text-lg sm:text-xl font-extrabold text-primary tracking-tight">
             {driver.avatarInitials}
           </span>
-          <span className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-card border border-gray-200 dark:border-card-border">
-            <Bike className="h-3 w-3 text-foreground" strokeWidth={2} />
+          <span className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)]">
+            <Bike className="h-3 w-3 text-[var(--text-primary)]" strokeWidth={2} />
           </span>
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">
+          <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
             {driver.vehicle}
           </p>
           <div className="flex items-center gap-3 mt-1 text-[length:var(--ts-2xs)] text-muted">
             <span className="inline-flex items-center gap-1 tabular-nums">
               <Star className="h-3 w-3 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" />
-              <strong className="text-foreground">{Number(driver.rating).toFixed(1)}</strong>
+              <strong className="text-[var(--text-primary)]">{Number(driver.rating).toFixed(1)}</strong>
               <span>de {driver.totalDeliveries} entregas</span>
             </span>
           </div>
@@ -96,7 +96,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
         <div className="mt-5 grid grid-cols-2 gap-2">
           <a
             href={`tel:${driver.phone.replace(/\s+/g, "")}`}
-            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-card-border/80 text-sm font-bold text-foreground transition-colors"
+            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 text-sm font-bold text-[var(--text-primary)] transition-colors"
           >
             <Phone className="h-4 w-4" strokeWidth={1.75} />
             Llamar
@@ -116,7 +116,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
       {!hidePhone && (
         <p className="mt-3 text-[length:var(--ts-2xs)] text-muted">
           Puedes contactarlo al{" "}
-          <span className="tabular-nums font-semibold text-foreground">
+          <span className="tabular-nums font-semibold text-[var(--text-primary)]">
             {phoneLabel}
           </span>
         </p>

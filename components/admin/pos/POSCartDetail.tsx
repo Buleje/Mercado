@@ -49,7 +49,7 @@ export default function POSCartDetail({ items, count }: POSCartDetailProps) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="mt-2 space-y-1 text-xs border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
+            <div className="mt-2 space-y-1 text-xs border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-2">
               {items.map((item, i) => {
                 const discountMult = 1 - (item.discount || 0) / 100;
                 const lineTotal = item.price * item.quantity * discountMult;
@@ -69,7 +69,7 @@ export default function POSCartDetail({ items, count }: POSCartDetailProps) {
                         </span>
                       ) : null}
                     </span>
-                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground ml-2 shrink-0">
+                    <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] ml-2 shrink-0">
                       {fmt(item.price)} c/u &rarr; {fmt(lineTotal)}
                     </span>
                   </div>

@@ -9,6 +9,25 @@ process.env.DIRECT_URL ??= process.env.DATABASE_URL;
 process.env.AUTH_SECRET ??= "test-auth-secret-at-least-32-chars-long!!";
 process.env.NEXT_PUBLIC_BASE_URL ??= "http://localhost:3000";
 
+// SECURITY 2026-05-12 (QA audit P0): mock global de CSRF para que los 65+
+// tests de route handlers no fallen con 403 cuando el endpoint llama a
+// `assertCsrf(req)`. Los tests verifican lógica de negocio, NO el contrato
+// CSRF (que se testea independientemente en `__tests__/security/csrf.test.ts`).
+// Para testear comportamiento NEGATIVO (rechazo de CSRF inválido), usar
+// vi.doMock("@/lib/auth/csrf", () => ({ assertCsrf: () => Response(...) }))
+// dentro del describe específico.
+vi.mock("@/lib/auth/csrf", () => ({
+  assertCsrf: vi.fn(() => null), // null = CSRF válido (pasa el guard)
+}));
+// También mockear lib/csrf (legacy path usado en proxy.ts global validation)
+vi.mock("@/lib/csrf", () => ({
+  validateCsrfToken: vi.fn(() => true),
+  csrfForbiddenResponse: vi.fn(),
+  ensureCsrfCookie: vi.fn((res: unknown) => res),
+  CSRF_COOKIE_NAME: "csrf-token",
+  CSRF_HEADER_NAME: "x-csrf-token",
+}));
+
 // Mock @sentry/nextjs globally so route imports don't try to load the Pages
 // Router instrumentation (which fails in App Router projects on Next 16).
 vi.mock("@sentry/nextjs", () => ({

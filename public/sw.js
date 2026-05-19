@@ -136,7 +136,18 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(event.request).then(r => r || new Response("[]", { headers: { "Content-Type": "application/json" } })))
+        // Audit 2026-05-17 07-P1-5: antes devolvíamos Response("[]") con 200
+        // cuando fetch fallaba sin cache previa — el cliente recibía lista
+        // vacía y creía "no hay productos" en vez de "estoy offline". Ahora
+        // devolvemos 503 con header x-offline=1 para que el UI muestre
+        // empty-state correcto (mensaje "sin conexión, intenta luego").
+        .catch(() => caches.match(event.request).then(r => r || new Response(
+          JSON.stringify({ error: "offline", message: "Sin conexión" }),
+          {
+            status: 503,
+            headers: { "Content-Type": "application/json", "x-offline": "1" },
+          }
+        )))
     );
     return;
   }

@@ -79,8 +79,8 @@ export default function Contact() {
     {
       icon: Phone,
       label: "Teléfono",
-      value: "916 409 675",
-      href: "tel:+51916409675",
+      value: "929 340 532",
+      href: "tel:+51929340532",
     },
     {
       icon: Clock,
@@ -92,7 +92,7 @@ export default function Contact() {
       icon: MessageCircle,
       label: "WhatsApp",
       value: "Escríbenos al WhatsApp",
-      href: "https://wa.me/51916409675?text=Hola%2C%20necesito%20información",
+      href: "https://wa.me/51929340532?text=Hola%2C%20necesito%20información",
     },
   ];
 
@@ -103,7 +103,7 @@ export default function Contact() {
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Contacto
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             Delivery de Abarrotes en{" "}
             <span className="text-primary relative">
               tu zona
@@ -131,7 +131,7 @@ export default function Contact() {
                     href={item.href}
                     target={item.href.startsWith("http") ? "_blank" : undefined}
                     rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="block bg-white dark:bg-card rounded-xl p-6 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] hover:border-primary/20 transition-all duration-300 group"
+                    className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] hover:border-primary/20 transition-all duration-[var(--dur-base)] group"
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
@@ -141,12 +141,12 @@ export default function Contact() {
                         {item.label}
                       </span>
                     </div>
-                    <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                    <p className="font-semibold text-[var(--text-primary)] group-hover:text-primary transition-colors">
                       {item.value}
                     </p>
                   </a>
                 ) : (
-                  <div className="bg-white dark:bg-card rounded-xl p-6 shadow-[var(--shadow-sm)]">
+                  <div className="bg-[var(--surface-raised)] rounded-xl p-6 shadow-[var(--shadow-sm)]">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <item.icon className="h-5 w-5" />
@@ -155,7 +155,7 @@ export default function Contact() {
                         {item.label}
                       </span>
                     </div>
-                    <p className="font-semibold text-foreground">{item.value}</p>
+                    <p className="font-semibold text-[var(--text-primary)]">{item.value}</p>
                     {"badge" in item && item.badge && (
                       <span className={`inline-flex items-center gap-1 mt-2 text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full ${
                         item.badge.status === "open"
@@ -214,7 +214,7 @@ export default function Contact() {
 
             <a
               href="#productos"
-              className="inline-flex items-center justify-center gap-2 mt-8 rounded-xl bg-white px-8 py-4 text-base font-bold text-primary shadow-[var(--shadow-lg)] hover:bg-gray-50 active:scale-[0.98] transition-all duration-200"
+              className="inline-flex items-center justify-center gap-2 mt-8 rounded-xl bg-white px-8 py-4 text-base font-bold text-primary shadow-[var(--shadow-lg)] hover:bg-gray-50 active:scale-[0.98] transition-all duration-[var(--dur-fast)]"
             >
               <ShoppingCart className="h-5 w-5" aria-hidden /> Empezar a Comprar
             </a>

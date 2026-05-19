@@ -370,7 +370,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+          className="text-4xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-5xl lg:text-6xl"
         >
           Tu bodega en Pucallpa{" "}
           <span className="text-primary">merece un sistema inteligente</span>
@@ -384,7 +384,7 @@ function HeroSection() {
           className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl"
         >
           Ventas, inventario, fiado digital, delivery — todo en 1 app.{" "}
-          <strong className="font-semibold text-foreground">
+          <strong className="font-semibold text-[var(--text-primary)]">
             Prueba gratis 14 dias.
           </strong>
         </motion.p>
@@ -409,7 +409,7 @@ function HeroSection() {
             href={WA_LINK}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-8 text-base font-semibold text-foreground transition-all hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:hover:bg-card/80 sm:w-auto"
+            className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-[var(--surface-raised)] px-8 text-base font-semibold text-[var(--text-primary)] transition-all hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:hover:bg-[var(--surface-raised)]/80 sm:w-auto"
           >
             {/* Icono WhatsApp */}
             <svg
@@ -439,11 +439,11 @@ function HeroSection() {
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.55 }}
-          className="mt-14 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-2xl shadow-primary/10 dark:shadow-primary/5"
+          className="mt-14 overflow-hidden rounded-2xl border border-border/60 bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] shadow-primary/10 dark:shadow-primary/5"
           aria-label="Vista previa del sistema POS"
         >
           {/* Barra de navegacion falsa */}
-          <div className="flex items-center gap-1.5 border-b border-border/60 bg-surface px-4 py-3 dark:bg-card/50">
+          <div className="flex items-center gap-1.5 border-b border-border/60 bg-surface px-4 py-3 dark:bg-[var(--surface-raised)]/50">
             <span className="size-3 rounded-full bg-danger/60" />
             <span className="size-3 rounded-full bg-warning/60" />
             <span className="size-3 rounded-full bg-success/60" />
@@ -470,7 +470,7 @@ function HeroSection() {
                 ].map((item) => (
                   <div
                     key={item.name}
-                    className="flex flex-col items-center justify-center rounded-xl border border-border/40 bg-surface px-2 py-3 text-center dark:bg-card/40"
+                    className="flex flex-col items-center justify-center rounded-xl border border-border/40 bg-surface px-2 py-3 text-center dark:bg-[var(--surface-raised)]/40"
                   >
                     <span className={`mb-1.5 rounded-lg px-2 py-0.5 text-xs font-bold ${item.color}`}>
                       {item.price}
@@ -494,10 +494,10 @@ function HeroSection() {
                 ].map((line) => (
                   <li
                     key={line.name}
-                    className="flex items-center justify-between rounded-lg bg-surface px-2 py-1.5 dark:bg-card/40"
+                    className="flex items-center justify-between rounded-lg bg-surface px-2 py-1.5 dark:bg-[var(--surface-raised)]/40"
                   >
-                    <span className="text-foreground/80">{line.name}</span>
-                    <span className="font-semibold text-foreground">
+                    <span className="text-[var(--text-primary)]/80">{line.name}</span>
+                    <span className="font-semibold text-[var(--text-primary)]">
                       {line.total}
                     </span>
                   </li>
@@ -537,7 +537,7 @@ function FeaturesSection() {
           transition={{ duration: 0.5 }}
           className="mb-14 text-center"
         >
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
             Todo lo que necesita tu bodega
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted">
@@ -554,13 +554,13 @@ function FeaturesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={VP_SM}
               transition={{ duration: 0.4, delay: i * 0.07 }}
-              className="group rounded-2xl border border-border/60 bg-card p-6 transition-shadow hover:shadow-md dark:hover:shadow-black/20"
+              className="group rounded-2xl border border-border/60 bg-[var(--surface-raised)] p-6 transition-shadow hover:shadow-md dark:hover:shadow-black/20"
             >
               <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/15">
                 {feature.icon}
               </div>
               <div className="mb-2 flex items-center gap-2">
-                <h3 className="text-base font-bold text-foreground">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">
                   {feature.title}
                 </h3>
                 <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">
@@ -582,7 +582,7 @@ function FeaturesSection() {
 function SocialProofSection() {
   return (
     <section
-      className="border-y border-border/60 bg-surface py-16 dark:bg-card/30"
+      className="border-y border-border/60 bg-surface py-16 dark:bg-[var(--surface-raised)]/30"
       aria-label="Prueba social y estadisticas"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -634,7 +634,7 @@ function SocialProofSection() {
           ].map((name) => (
             <div
               key={name}
-              className="flex h-12 items-center justify-center rounded-xl border border-border/60 bg-card px-4 text-sm font-medium text-muted transition-colors hover:border-primary/40 hover:text-primary dark:bg-card/50"
+              className="flex h-12 items-center justify-center rounded-xl border border-border/60 bg-[var(--surface-raised)] px-4 text-sm font-medium text-muted transition-colors hover:border-primary/40 hover:text-primary dark:bg-[var(--surface-raised)]/50"
             >
               {name}
             </div>
@@ -650,9 +650,9 @@ function SocialProofSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={VP_SM}
               transition={{ duration: 0.4, delay: i * 0.1 }}
-              className="rounded-2xl border border-border/60 bg-card p-6"
+              className="rounded-2xl border border-border/60 bg-[var(--surface-raised)] p-6"
             >
-              <p className="text-sm leading-relaxed text-foreground/80">
+              <p className="text-sm leading-relaxed text-[var(--text-primary)]/80">
                 &ldquo;{t.quote}&rdquo;
               </p>
               <footer className="mt-4 flex items-center gap-3">
@@ -660,7 +660,7 @@ function SocialProofSection() {
                   {t.initials}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">
                     {t.name}
                   </p>
                   <p className="text-xs text-muted">{t.role}</p>
@@ -690,7 +690,7 @@ function SimplePricingSection() {
           transition={{ duration: 0.5 }}
           className="mb-12 text-center"
         >
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
             Planes para cada etapa de tu negocio
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted">
@@ -710,7 +710,7 @@ function SimplePricingSection() {
               className={`relative flex flex-col rounded-2xl border p-6 ${
                 plan.highlight
                   ? "border-primary bg-primary/5 shadow-xl shadow-primary/10 ring-2 ring-primary dark:bg-primary/10"
-                  : "border-border/60 bg-card"
+                  : "border-border/60 bg-[var(--surface-raised)]"
               }`}
             >
               {plan.popular && (
@@ -722,14 +722,14 @@ function SimplePricingSection() {
               )}
 
               <div className="mb-4">
-                <h3 className="text-base font-bold text-foreground">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">
                   {plan.name}
                 </h3>
                 <p className="mt-0.5 text-sm text-muted">{plan.description}</p>
               </div>
 
               <div className="mb-6 flex items-end gap-1">
-                <span className="text-4xl font-extrabold tabular-nums text-foreground">
+                <span className="text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">
                   {plan.price}
                 </span>
                 <span className="mb-1 text-sm text-muted">{plan.period}</span>
@@ -740,7 +740,7 @@ function SimplePricingSection() {
                 className={`mb-6 flex min-h-[44px] w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   plan.highlight
                     ? "bg-primary text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
-                    : "border border-border text-foreground hover:bg-surface dark:hover:bg-card/80"
+                    : "border border-border text-[var(--text-primary)] hover:bg-surface dark:hover:bg-[var(--surface-raised)]/80"
                 }`}
               >
                 {plan.cta}
@@ -752,7 +752,7 @@ function SimplePricingSection() {
                 {plan.features.map((f) => (
                   <li
                     key={f}
-                    className="flex items-start gap-2 text-sm text-foreground/80"
+                    className="flex items-start gap-2 text-sm text-[var(--text-primary)]/80"
                   >
                     <svg
                       className="mt-0.5 size-4 shrink-0 text-primary"
@@ -821,7 +821,7 @@ function FaqAccordion() {
           transition={{ duration: 0.5 }}
           className="mb-12 text-center"
         >
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
             Preguntas frecuentes
           </h2>
           <p className="mt-4 text-base text-muted">
@@ -842,19 +842,19 @@ function FaqAccordion() {
                 className={`overflow-hidden rounded-xl border transition-colors ${
                   isOpen
                     ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
-                    : "border-border/60 bg-card"
+                    : "border-border/60 bg-[var(--surface-raised)]"
                 }`}
               >
                 <dt>
                   <button
                     type="button"
-                    className="flex min-h-[52px] w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                    className="flex min-h-[52px] w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                     aria-expanded={isOpen}
                     onClick={() => setOpen(isOpen ? null : i)}
                   >
                     <span>{item.q}</span>
                     <svg
-                      className={`size-4 shrink-0 text-muted transition-transform duration-200 ${
+                      className={`size-4 shrink-0 text-muted transition-transform duration-[var(--dur-fast)] ${
                         isOpen ? "rotate-180" : ""
                       }`}
                       fill="none"

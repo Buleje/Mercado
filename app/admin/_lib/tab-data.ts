@@ -45,6 +45,8 @@ import {
   BadgePercent,
   PackagePlus,
   MessageCircle,
+  Archive as FolderArchive,
+  UserPlus,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -61,6 +63,7 @@ export const ALL_TABS = [
   { id: "compras" as Tab,             label: "Compras",             icon: PackagePlus },
   { id: "plata" as Tab,               label: "Mi Plata",            icon: Wallet },
   { id: "clientes" as Tab,            label: "Mis Clientes",        icon: Heart },
+  { id: "leads-funnel" as Tab,        label: "Funnel de Leads",     icon: UserPlus },
   // — OPERACIONES —
   { id: "config" as Tab,              label: "Configuración",       icon: SlidersHorizontal },
   { id: "pedidos" as Tab,             label: "Pedidos",             icon: ClipboardCheck },
@@ -76,6 +79,7 @@ export const ALL_TABS = [
   // — FACTURACIÓN SUNAT —
   { id: "facturacion" as Tab,          label: "Facturación SUNAT",   icon: FileCheck },
   // — DOCUMENTOS COMERCIALES —
+  { id: "documentos" as Tab,          label: "Documentación",       icon: FolderArchive },
   { id: "cotizaciones" as Tab,        label: "Cotizaciones",        icon: ClipboardList },
   { id: "guias-remision" as Tab,      label: "Guías de Remisión",   icon: Truck },
   { id: "notas-credito" as Tab,       label: "Notas de Crédito",    icon: FileMinus },
@@ -87,7 +91,7 @@ export const ALL_TABS = [
   { id: "marketplace-chat" as Tab,    label: "Chat Clientes",       icon: MessageCircle },
   // — MI TIENDA —
   { id: "store-customizer" as Tab,    label: "Identidad y tema",    icon: Palette },
-  { id: "pagina-inicio" as Tab,       label: "Página de inicio",    icon: Globe },
+  { id: "pagina-inicio" as Tab,       label: "Mi tienda pública",   icon: Globe },
   // — SISTEMA —
   { id: "rendimiento" as Tab,         label: "Rendimiento",         icon: Gauge },
   { id: "auditoria" as Tab,           label: "Auditoría",           icon: Shield },

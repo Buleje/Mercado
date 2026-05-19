@@ -14,7 +14,7 @@
  *  - Delegación de módulos al `TabRouter`
  */
 
-import type { ComponentProps, TouchEventHandler } from "react";
+import { memo, type ComponentProps, type TouchEventHandler } from "react";
 // Use `m` (tree-shakeable) + AnimatePresence from the admin LazyMotion boundary.
 // This avoids pulling the full framer-motion bundle into the initial admin chunk.
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -38,7 +38,7 @@ export interface AdminMainContentProps {
   tabRouter: Omit<TabRouterProps, "tab" | "onNavigateTab">;
 }
 
-export function AdminMainContent({
+function AdminMainContentInner({
   tab,
   navigateTab,
   compactMode,
@@ -59,26 +59,33 @@ export function AdminMainContent({
             ? "max-w-[1920px]" /* en compact modo, usar casi todo el viewport */
             : "max-w-[1600px]",
         compactMode && !presentationMode
-          ? "px-2 sm:px-4 py-2 sm:py-4"
+          ? "px-3 sm:px-4 py-3 sm:py-4"
           : !presentationMode
-            ? "px-3 sm:px-6 py-4 sm:py-8"
+            ? "px-4 sm:px-6 py-5 sm:py-8"
             : "",
       )}
       {...swipeHandlers}
     >
-      {/* NOTE: no usar `filter` en el animate — crea un containing block que
-          rompe `position: fixed` para todos los modales hijos. Opacidad + y
-          dan el efecto suave sin penalizar los modales. */}
-      <AnimatePresence mode="wait">
+      {/* QW1 perf (2026-05-16): mode="popLayout" en lugar de "wait" —
+          monta el tab nuevo INMEDIATAMENTE sin esperar el exit del previo.
+          Transición simplificada a sólo opacity (sin y/spring) para que no
+          bloquee el primer paint del módulo nuevo. Ganancia ~160ms por click.
+          NOTE: no usar `filter` — crea containing block que rompe modales fixed.
+
+          Fase 4 (ADR-113 TabMultiplexer keep-alive) DEFERIDA: la primera
+          implementación causaba "Rendered more hooks" errors porque varios
+          módulos del admin tienen hooks condicionales (early returns) que
+          no toleran que React reconcilie hermanos con types distintos.
+          Requiere primero auditar y normalizar el patrón de hooks en los
+          ~45 módulos del TabRouter. Ver components/admin/_components/TabMultiplexer.tsx
+          para el componente listo (sin usar) con la lógica LRU. */}
+      <AnimatePresence mode="popLayout" initial={false}>
         <m.div
           key={tab}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{
-            opacity: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
-            y: { type: "spring", stiffness: 260, damping: 28 },
-          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.12, ease: "linear" }}
         >
           <TabRouter tab={tab} onNavigateTab={navigateTab} {...tabRouter} />
         </m.div>
@@ -86,3 +93,11 @@ export function AdminMainContent({
     </main>
   );
 }
+
+/**
+ * QW2 perf (2026-05-16): memo evita re-render del shell cuando el parent
+ * AdminPage actualiza estado no relacionado al tab (theme, sidebar toggle).
+ * El re-render del shell antes propagaba a AnimatePresence + TabRouter
+ * disparando trabajo innecesario. Sólo re-renderiza si las props cambian.
+ */
+export const AdminMainContent = memo(AdminMainContentInner);

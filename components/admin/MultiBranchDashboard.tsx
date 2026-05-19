@@ -97,7 +97,7 @@ export default function MultiBranchDashboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-primary" />
-          <SectionTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <SectionTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {branches.length > 1 ? "Multi-Sucursal" : "Resumen del Negocio"}
           </SectionTitle>
         </div>
@@ -114,12 +114,12 @@ export default function MultiBranchDashboard() {
           { label: "Productos", value: String(totals.products), icon: Package, color: "text-[var(--text-secondary)]" },
           { label: "Clientes", value: String(totals.customers), icon: Users, color: "text-[var(--data-warning-500)]" },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3">
+          <div key={kpi.label} className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <kpi.icon className={cn("h-4 w-4", kpi.color)} />
               <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">{kpi.label}</span>
             </div>
-            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{kpi.value}</p>
+            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{kpi.value}</p>
           </div>
         ))}
       </div>
@@ -133,13 +133,13 @@ export default function MultiBranchDashboard() {
             const isBest = bestBranch?.id === branch.id;
             return (
               <div key={branch.id} className={cn(
-                "bg-white dark:bg-card border rounded-xl p-3.5",
-                isBest ? "border-primary/30 " : "border-[var(--rule-soft)] dark:border-card-border"
+                "bg-[var(--surface-raised)] border rounded-xl p-3.5",
+                isBest ? "border-primary/30 " : "border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
               )}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Building2 className={cn("h-4 w-4", isBest ? "text-primary" : "text-[var(--text-tertiary)]")} />
-                    <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{branch.name}</span>
+                    <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{branch.name}</span>
                     {isBest && (
                       <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold">Mejor</span>
                     )}

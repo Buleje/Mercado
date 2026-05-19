@@ -552,10 +552,10 @@ function ContactSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p:
           <TextInput type="email" value={brand.contact.email} onChange={(e) => onPatch({ email: e.target.value })} placeholder="hola@buleje.com" />
         </Field>
         <Field label="Teléfono">
-          <TextInput type="tel" value={brand.contact.phone} onChange={(e) => onPatch({ phone: e.target.value })} placeholder="+51 916 409 675" />
+          <TextInput type="tel" value={brand.contact.phone} onChange={(e) => onPatch({ phone: e.target.value })} placeholder="+51 929 340 532" />
         </Field>
         <Field label="WhatsApp" hint="Soporte chat por WhatsApp">
-          <TextInput type="tel" value={brand.contact.whatsapp} onChange={(e) => onPatch({ whatsapp: e.target.value })} placeholder="+51 916 409 675" />
+          <TextInput type="tel" value={brand.contact.whatsapp} onChange={(e) => onPatch({ whatsapp: e.target.value })} placeholder="+51 929 340 532" />
         </Field>
         <Field label="Horarios de soporte">
           <TextInput value={brand.contact.supportHours} onChange={(e) => onPatch({ supportHours: e.target.value })} placeholder="Lun a Sáb · 8:00 a 22:00" />

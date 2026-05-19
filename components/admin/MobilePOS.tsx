@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { Search, X, Plus, Minus, Trash2, Package, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -222,6 +223,9 @@ export default function MobilePOS() {
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [loading, setLoading] = useState(true);
   const [paySuccess, setPaySuccess] = useState(false);
+  // Audit 2026-05-17 07-P0-1: estados para el flujo real de cobro (antes mock)
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -268,15 +272,76 @@ export default function MobilePOS() {
   const decItem  = useCallback((id: number) => setCart(p => p.map(i => i.product.id === id ? { ...i, quantity: Math.max(1, i.quantity - 1) } : i)), []);
   const removeItem = useCallback((id: number) => setCart(p => p.filter(i => i.product.id !== id)), []);
 
-  const handlePay = useCallback((_method: PayMethod) => {
-    if (!cart.length) return;
+  // Audit 2026-05-17 07-P0-1: antes este handler era un MOCK que solo hacía
+  // setPaySuccess(true) sin llamar /api/sales. /admin/pos-mobile en prod
+  // mostraba "Cobrado!" sin cobrar de verdad → pérdida de dinero real si un
+  // cajero la usaba. Ahora hace POST real a /api/sales con CSRF + idempotency
+  // key + fallback offline (mismo patrón que POSView.tsx desktop).
+  const handlePay = useCallback(async (method: PayMethod) => {
+    if (!cart.length || paying) return;
+    setPaying(true);
+    setPayError(null);
     vibrate();
-    setPaySuccess(true);
-    setTimeout(() => {
-      setCart([]);
-      setPaySuccess(false);
-    }, 1800);
-  }, [cart]);
+
+    const total = cart.reduce((s, i) => s + i.product.price * i.quantity, 0);
+    const idempotencyKey = `mobile-pos-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      items: cart.map((i) => ({
+        productId: i.product.id,
+        name: i.product.name,
+        price: i.product.price,
+        quantity: i.quantity,
+        unit: "und",
+      })),
+      total,
+      payment: method,
+      // Para fiado el server NO exige amountPaid >= total (ver app/api/sales:222);
+      // para los demás, marcamos pago exacto.
+      amountPaid: method === "fiado" ? 0 : total,
+      idempotencyKey,
+    };
+
+    try {
+      const res = await fetch("/api/sales", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setPaySuccess(true);
+        setTimeout(() => {
+          setCart([]);
+          setPaySuccess(false);
+        }, 1800);
+      } else {
+        const body = await res.json().catch(() => ({} as Record<string, unknown>));
+        const errMsg = typeof body.error === "string" ? body.error : `Error ${res.status}`;
+        setPayError(errMsg);
+        // Si el server rechaza por fiado sin customerPhone, mostrar pista
+        if (res.status === 400 && method === "fiado") {
+          setPayError("Fiado necesita seleccionar cliente. Usá la app desktop.");
+        }
+      }
+    } catch (err) {
+      // Offline / red caída — guardar en cola para reintentar después
+      try {
+        const queue = await import("@/lib/pos-offline-queue");
+        await queue.enqueue(payload);
+        setPaySuccess(true);
+        setPayError("Sin conexión. Venta guardada y se enviará después.");
+        setTimeout(() => {
+          setCart([]);
+          setPaySuccess(false);
+          setPayError(null);
+        }, 2500);
+      } catch (queueErr) {
+        console.warn("[MobilePOS] offline queue failed", queueErr);
+        setPayError(err instanceof Error ? err.message : "Error de red");
+      }
+    } finally {
+      setPaying(false);
+    }
+  }, [cart, paying]);
 
   const PAY_BUTTONS: { method: PayMethod; label: string; color: string }[] = [
     { method: "efectivo", label: "Efectivo", color: "bg-gray-700 hover:bg-gray-600" },
@@ -404,12 +469,17 @@ export default function MobilePOS() {
           {/* Botón cobrar principal */}
           <button
             onClick={() => handlePay("efectivo")}
-            disabled={!cart.length}
+            disabled={!cart.length || paying}
             className="w-full rounded-xl bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] active:scale-95 text-white font-extrabold text-lg transition-all disabled:opacity-30"
             style={{ height: 80, touchAction: "manipulation" }}
           >
-            {paySuccess ? "Cobrado!" : `Cobrar S/${total.toFixed(2)}`}
+            {paying ? "Procesando..." : paySuccess ? "Cobrado!" : `Cobrar S/${total.toFixed(2)}`}
           </button>
+          {payError && (
+            <div role="alert" className="mt-2 px-3 py-2 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)]/40">
+              <p className="text-xs font-semibold text-[var(--data-error-500)]">{payError}</p>
+            </div>
+          )}
         </div>
       </div>
 

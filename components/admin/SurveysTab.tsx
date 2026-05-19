@@ -55,25 +55,25 @@ export default function SurveysTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div>
-        <SectionTitle className="text-lg font-bold text-foreground">Encuestas y NPS</SectionTitle>
+        <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Encuestas y NPS</SectionTitle>
         <p className="text-sm text-muted">Calificaciones post-entrega de clientes</p>
       </div>
 
       {/* Summary cards */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-[var(--surface-raised)] border border-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
               <TrendingUp className="h-3.5 w-3.5" /> Total respuestas
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.total}</p>
+            <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{stats.total}</p>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-[var(--surface-raised)] border border-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
               <Star className="h-3.5 w-3.5" /> Promedio
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.average}</p>
+              <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{stats.average}</p>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map(s => (
                   <Star key={s} className={`w-4 h-4 ${s <= Math.round(stats.average) ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`} />
@@ -81,11 +81,11 @@ export default function SurveysTab() {
               </div>
             </div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-[var(--surface-raised)] border border-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
               <MessageSquare className="h-3.5 w-3.5" /> Con comentario
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-foreground">
+            <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
               {recent.filter(r => r.comment.trim()).length}
             </p>
           </div>
@@ -94,8 +94,8 @@ export default function SurveysTab() {
 
       {/* Distribution chart */}
       {stats && (
-        <div className="bg-card border border-border rounded-xl p-4">
-          <CardTitle className="text-sm font-semibold text-foreground mb-3">Distribución de calificaciones</CardTitle>
+        <div className="bg-[var(--surface-raised)] border border-border rounded-xl p-4">
+          <CardTitle className="text-sm font-semibold text-[var(--text-primary)] mb-3">Distribución de calificaciones</CardTitle>
           <div className="space-y-2">
             {[5, 4, 3, 2, 1].map(star => {
               const count = stats.distribution[star] || 0;
@@ -103,7 +103,7 @@ export default function SurveysTab() {
               return (
                 <div key={star} className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1 w-12 justify-end">
-                    <span className="text-xs font-medium text-foreground">{star}</span>
+                    <span className="text-xs font-medium text-[var(--text-primary)]">{star}</span>
                     <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
                   </div>
                   <div className="flex-1 h-5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
@@ -121,8 +121,8 @@ export default function SurveysTab() {
       )}
 
       {/* Recent responses */}
-      <div className="bg-card border border-border rounded-xl p-4">
-        <CardTitle className="text-sm font-semibold text-foreground mb-3">Respuestas recientes</CardTitle>
+      <div className="bg-[var(--surface-raised)] border border-border rounded-xl p-4">
+        <CardTitle className="text-sm font-semibold text-[var(--text-primary)] mb-3">Respuestas recientes</CardTitle>
         {recent.length === 0 ? (
           <p className="text-sm text-muted text-center py-6">Sin respuestas aún</p>
         ) : (
@@ -143,7 +143,7 @@ export default function SurveysTab() {
                   </span>
                 </div>
                 {r.comment.trim() && (
-                  <p className="text-xs text-foreground/80 mt-1 pl-0.5">&ldquo;{r.comment}&rdquo;</p>
+                  <p className="text-xs text-[var(--text-primary)]/80 mt-1 pl-0.5">&ldquo;{r.comment}&rdquo;</p>
                 )}
               </div>
             ))}

@@ -158,25 +158,26 @@ export const GET = withApiHandler("orders-list", async (req) => {
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── Legacy: offset pagination (kept for backward compatibility) ───────────
-  // Filters are pushed to the DB query (not in-memory) via getAllFiltered()
-  let orders = await withDbRetry(() =>
-    OrdersDB.getAllFiltered({
-      status:  statusFilter  ?? undefined,
-      since:   sinceParam    ?? undefined,
-      phone:   phoneParam    ?? undefined,
-      tenantId,
-    })
-  );
-
-  const total = orders.length;
+  // Audit 2026-05-17 B-P0-4: ahora skip/take Prisma-side cuando hay limit.
+  // Antes load all + slice → OOM con >50k órdenes.
 
   if (limitParam) {
     const limit = Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 1000);
     const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
-    const start = (page - 1) * limit;
-    orders = orders.slice(start, start + limit);
 
-    return NextResponse.json(orders, {
+    const { OrdersPaginatedDB } = await import("@/lib/db/orders-paginated.db");
+    const { items, total } = await withDbRetry(() =>
+      OrdersPaginatedDB.listFiltered({
+        status: statusFilter ?? undefined,
+        since: sinceParam ?? undefined,
+        phone: phoneParam ?? undefined,
+        tenantId,
+        page,
+        limit,
+      })
+    );
+
+    return NextResponse.json(items, {
       headers: {
         "X-Total-Count": String(total),
         "X-Page": String(page),
@@ -185,6 +186,18 @@ export const GET = withApiHandler("orders-list", async (req) => {
       },
     });
   }
+
+  // Sin paginado: comportamiento legacy (devolver todo) — solo usado por
+  // exportaciones admin y endpoints internos. Mantener compat.
+  const orders = await withDbRetry(() =>
+    OrdersDB.getAllFiltered({
+      status:  statusFilter  ?? undefined,
+      since:   sinceParam    ?? undefined,
+      phone:   phoneParam    ?? undefined,
+      tenantId,
+    })
+  );
+  const total = orders.length;
 
   return NextResponse.json(orders, {
     headers: { "X-Total-Count": String(orders.length) },
@@ -556,10 +569,14 @@ export const POST = withApiHandler("orders-create", async (req) => {
 
     const computedTotal = Math.max(0, itemsTotal - serverCouponDiscount - promoDiscount - engineDiscount);
 
-    // Telemetria de fraud attempts: si el cliente envia un total que no cuadra
-    // con el recomputo del servidor (> 1 centavo de diferencia), registrar warn
-    // con request_id para Sentry. NO rechazamos — HOTFIX-001 ya persiste el
-    // total del servidor. Esto solo agrega observabilidad.
+    // Anti-fraude del total. Brandon 2026-05-18 (audit P0 #1): antes solo
+    // telemetría sin acción. Ahora rechazamos cuando el delta supera 1
+    // centavo. El total persistido SIEMPRE viene del server (HOTFIX-001) —
+    // este check cierra dos vectores adicionales:
+    //  1. exporte/contabilidad/notifs que en el futuro lean body.total.
+    //  2. clientes con cart desincronizado (cambio de precio mientras
+    //     escribían el checkout) deben reintentar viendo el total real.
+    // Tolerancia: 1 centavo absorbe redondeos de floating point.
     const clientTotal = typeof body.total === "number" ? body.total : null;
     if (clientTotal !== null && Math.abs(clientTotal - computedTotal) > 0.01) {
       const fraudContext = {
@@ -569,12 +586,20 @@ export const POST = withApiHandler("orders-create", async (req) => {
         tenantId,
         requestId: req.headers.get("x-request-id") ?? undefined,
       };
-      logger.warn("[orders/create] client/server total mismatch", fraudContext);
-      Sentry.captureMessage("Fraud attempt: order total mismatch", {
+      logger.warn("[orders/create] client/server total mismatch — rejecting", fraudContext);
+      Sentry.captureMessage("Order total mismatch — rejected", {
         level: "warning",
         tags: { fraud_attempt: "true", tenant: tenantId },
         extra: fraudContext,
       });
+      return NextResponse.json(
+        {
+          error: "El total no coincide. Refrescá el carrito y volvé a intentar.",
+          code: "TOTAL_MISMATCH",
+          serverTotal: computedTotal,
+        },
+        { status: 422 },
+      );
     }
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -751,7 +776,30 @@ export const POST = withApiHandler("orders-create", async (req) => {
               `;
             }
           });
-        } catch { /* swallow — log path is best-effort */ }
+        } catch (compErr) {
+          // audit P0 Cal #4 (Brandon 2026-05-18): antes catch silencioso
+          // dejaba INVENTORY DRIFT invisible — el stock quedaba decrementado
+          // y el coupon agotado sin orden persistida, sin observabilidad
+          // para reconciliación manual. Ahora log + Sentry capturan el
+          // event con tenantId y contexto del item para auditoría.
+          const errMsg = compErr instanceof Error ? compErr.message : String(compErr);
+          logger.error("[orders] compensating tx failed — INVENTORY DRIFT possible", {
+            error: errMsg,
+            tenantId,
+            itemCount: body.items.length,
+            verifiedCouponCode: verifiedCouponCode ?? null,
+            originalErr: addErr instanceof Error ? addErr.message : String(addErr),
+          });
+          Sentry.captureException(compErr, {
+            level: "error",
+            tags: { area: "orders", phase: "compensating-tx", tenant: tenantId },
+            extra: {
+              originalErr: addErr instanceof Error ? addErr.message : String(addErr),
+              itemCount: body.items.length,
+              hadCoupon: !!verifiedCouponCode,
+            },
+          });
+        }
       })().catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       throw addErr;
     }
@@ -967,6 +1015,19 @@ export const POST = withApiHandler("orders-create", async (req) => {
           });
         }
       })();
+    }
+
+    // Fase 4 perf (2026-05-16): invalidar cache admin para que dashboard/KPIs
+    // reflejen el nuevo pedido SIN esperar al TTL del getOrSet (15-30s).
+    // Antes: bodeguero hacía pedido y veía contador stale.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterOrder(tenantId);
+    } catch (err) {
+      logger.warn("[orders] admin cache invalidation failed", {
+        error: err instanceof Error ? err.message : String(err),
+        tenantId,
+      });
     }
 
     // ── Auto-firmar customer-session ──────────────────────────────────────

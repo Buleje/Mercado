@@ -19,11 +19,22 @@ vi.mock("@/lib/require-admin", () => ({
 const { mockCobrarPorCliente } = vi.hoisted(() => ({
   mockCobrarPorCliente: vi.fn(),
 }));
-vi.mock("@/lib/db/fiados.db", () => ({
-  FiadosDB: {
-    cobrarPorCliente: mockCobrarPorCliente,
-  },
-}));
+vi.mock("@/lib/db/fiados.db", () => {
+  class FiadoConflictError extends Error {
+    readonly code = "FIADO_CONFLICT";
+    constructor(message: string) {
+      super(message);
+      this.name = "FiadoConflictError";
+    }
+  }
+  return {
+    FiadosDB: {
+      cobrarPorCliente: mockCobrarPorCliente,
+    },
+    FiadoConflictError,
+    isPrismaConflict: () => false,
+  };
+});
 
 // ── Mock: logger ─────────────────────────────────────────────────────────────
 vi.mock("@/lib/logger", () => ({
@@ -230,6 +241,24 @@ describe("POST /api/fiados/cobrar", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("Internal server error");
+  });
+
+  it("race-condition de Prisma → 409 Conflict con retryable:true (P1-3)", async () => {
+    mockRequireAdmin.mockResolvedValue(ADMIN_SESSION);
+    const { FiadoConflictError } = await import("@/lib/db/fiados.db");
+    mockCobrarPorCliente.mockRejectedValue(new FiadoConflictError("Race condition detectada"));
+
+    const { POST } = await import("@/app/api/fiados/cobrar/route");
+    const req = makeRequest({
+      customerPhone: "987654321",
+      monto: 50,
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.code).toBe("FIADO_CONFLICT");
+    expect(body.retryable).toBe(true);
   });
 
   it("usa tenantId del cajero en multi-tenant", async () => {

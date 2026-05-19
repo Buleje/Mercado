@@ -9,7 +9,7 @@ import { logger } from "@/lib/logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { OrderStatus } from "@/lib/generated/prisma/client";
 import { withAuditContext } from "@/lib/audit/audit-context";
-import { getClientIp } from "@/lib/rate-limit";
+import { applyRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * @prisma-direct excepción documentada — el `prisma.order.updateMany` y el
@@ -23,6 +23,11 @@ import { getClientIp } from "@/lib/rate-limit";
 // POST /api/marketplace/payment/mercadopago/webhook
 // Handles MercadoPago IPN notifications for marketplace orders
 export async function POST(req: NextRequest) {
+  // PENTEST 2026-05-18 Sprint B: rate limit STRICT (10 req/15min). Defensa
+  // contra DoS via firmas inválidas (HMAC compute + DB insert antes de fallar).
+  const rl = applyRateLimit(req, "STRICT", "mp-marketplace-webhook");
+  if (rl) return rl as NextResponse;
+
   // Round 15 M004: webhook externo MercadoPago. userId="mp:webhook" para
   // distinguir transiciones de Order originadas por IPN de las de admin.
   return withAuditContext(
@@ -79,11 +84,22 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
     // en stripeWebhookQueue.stripeId nos sirve también para MP marketplace.
     const idemKey = `mpmkt_${dataId}`;
     try {
+      // PENTEST 2026-05-18 Sprint C #12: redactar PII antes de persistir el
+      // payload en stripeWebhookQueue. Ley 29733 PE (minimización de datos):
+      // el body de MP IPN puede incluir customerEmail/phone/nombre. Guardamos
+      // solo metadatos no-PII (status, dataId, external_reference, type).
+      const redactedBody = {
+        type: body.type,
+        action: body.action,
+        data_id: body.data?.id ?? body.id ?? null,
+        external_reference: body.data?.external_reference ?? null,
+        live_mode: body.live_mode,
+      };
       await prisma.stripeWebhookQueue.create({
         data: {
           stripeId: idemKey,
           eventType: body.type ?? "payment",
-          payload: JSON.stringify(body).slice(0, 50_000),
+          payload: JSON.stringify(redactedBody),
           processedAt: new Date(),
         },
       });
@@ -94,9 +110,19 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
         logger.info("MP webhook: duplicate event ignored", { traceId, dataId });
         return NextResponse.json({ received: true, duplicate: true });
       }
-      // Si la tabla no existe (schema drift) seguimos sin lock — degradación
-      // graceful en dev. En prod la tabla existe.
-      logger.warn("MP webhook: idempotency lock failed (continuando)", { traceId, err: String(err) });
+      // PENTEST 2026-05-18 Sprint B #7: fail-closed en producción. Si la
+      // tabla no existe o la DB está caída brevemente (pgBouncer pool
+      // exhaustion, ~5s), antes seguíamos sin lock → 2 webhooks idénticos
+      // disparaban 2 notificaciones WhatsApp + push al vendor. Ahora en
+      // prod devolvemos 503 para que MP reintente. En dev mantenemos
+      // graceful degrade (tabla puede no existir tras db:reset).
+      logger.warn("MP webhook: idempotency lock failed", { traceId, err: String(err) });
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { error: "idempotency_lock_failed", retry: true },
+          { status: 503 },
+        );
+      }
     }
 
     // Fetch payment details from MP
@@ -135,6 +161,50 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
         logger.warn("[MP webhook] storeSlug desconocido — no update", { traceId, storeSlug, orderId });
         return NextResponse.json({ received: true, ignored: true });
       }
+
+      // PENTEST 2026-05-18 Sprint A #1: validar monto pagado vs total de orden
+      // ANTES de mutar status. Sin este check, un atacante podía crear su propia
+      // preferencia MP de S/0.10 con `external_reference="storeSlug::orderId"` de
+      // víctima → MP envía IPN legítimo (firma OK porque usa el secret de Buleje)
+      // → orden marcada `confirmado` con monto fake. Robo directo.
+      //
+      // Solo aplica al transition `approved → confirmado` (los rechazos no roban).
+      if (orderStatus === OrderStatus.confirmado) {
+        const orderForAmountCheck = await prisma.order.findFirst({
+          where: { id: orderId, tenantId: storeForUpdate.tenantId, deletedAt: null },
+          select: { total: true, status: true },
+        });
+        if (!orderForAmountCheck) {
+          logger.warn("[MP webhook] orden no encontrada en tenant del storeSlug — posible cross-tenant attack", {
+            traceId, orderId, storeSlug, tenantId: storeForUpdate.tenantId,
+          });
+          return NextResponse.json({ received: true, ignored: true });
+        }
+        const expectedTotal = Number(orderForAmountCheck.total ?? 0);
+        const paidAmount = Number(payment.transaction_amount ?? 0);
+        // Tolerancia 0.01 para diferencias de redondeo en Decimal.
+        if (!Number.isFinite(paidAmount) || Math.abs(paidAmount - expectedTotal) > 0.01) {
+          logger.error("[MP webhook] PAYMENT AMOUNT MISMATCH — posible fraude external_reference", {
+            traceId, orderId, storeSlug,
+            tenantId: storeForUpdate.tenantId,
+            expectedTotal, paidAmount, dataId,
+            collectorId: payment.collector_id,
+          });
+          // Notificación al admin para review manual — NO confirmar.
+          createNotification({
+            tenantId: storeForUpdate.tenantId,
+            type: "marketplace_payment",
+            severity: "HIGH",
+            title: `⚠️ Pago MP con monto incorrecto — review urgente`,
+            body: `Orden ${orderId.slice(0, 8)}… esperaba S/${expectedTotal.toFixed(2)} pero MP reportó S/${paidAmount.toFixed(2)}. Posible intento de fraude. NO confirmada automáticamente.`,
+            actionUrl: `/admin?module=marketplace&tab=ordenes`,
+            actionLabel: "Revisar pedido",
+            entityId: orderId,
+          }).catch((err) => logger.error("[MP webhook] critical notify failed", { error: String(err) }));
+          return NextResponse.json({ received: true, mismatched_amount: true });
+        }
+      }
+
       const updated = await prisma.order.updateMany({
         where: { id: orderId, tenantId: storeForUpdate.tenantId },
         data: {

@@ -1,7 +1,17 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { useSettings } from "@/contexts/settings-context";
+
+// Rutas Buleje-brand (cross-vendor marketplace, landing, vender, etc.) que NO
+// deben heredar el theme custom de un tenant. El override de colores/tipografía
+// solo aplica al storefront white-label `/t/[slug]/...`. Antes el injector
+// pintaba la home, /tiendas y /marketplace con el primaryColor del tenant
+// `main` (verde), perdiendo la identidad de Buleje (teal #00B4A6).
+function isWhiteLabelStorefront(pathname: string | null): boolean {
+  return !!pathname && pathname.startsWith("/t/");
+}
 
 /**
  * ThemeInjector — aplica el theme custom del tenant a TODA la tienda.
@@ -74,16 +84,17 @@ function readableText(hex: string): string {
 
 export default function ThemeInjector() {
   const { storeTheme } = useSettings();
+  const pathname = usePathname();
+  const allowThemeOverride = isWhiteLabelStorefront(pathname);
 
-  useEffect(() => {
-    if (!storeTheme) return;
-    const wantsDark = (storeTheme as { darkModeDefault?: boolean; darkMode?: boolean }).darkModeDefault
-      ?? (storeTheme as { darkMode?: boolean }).darkMode;
-    if (wantsDark) document.documentElement.classList.add("dark");
-  }, [storeTheme]);
+  // audit P0 UX #3 (Brandon 2026-05-18): el effect anterior forzaba
+  // classList.remove("dark") cada vez que cargaba storeTheme, anulando
+  // el toggle de dark mode del usuario en /marketplace/[slug] y /t/[slug].
+  // Reverte a NO interferir — el ThemeProvider del root layout es la
+  // única fuente de verdad de la clase `dark` en <html>.
 
   const allCSS = useMemo(() => {
-    if (!storeTheme) return "";
+    if (!storeTheme || !allowThemeOverride) return "";
 
     const t = storeTheme as {
       primaryColor?: string;
@@ -347,9 +358,9 @@ export default function ThemeInjector() {
       dialogCSS,
       t.customCSS ?? "",
     ].filter(Boolean).join("\n");
-  }, [storeTheme]);
+  }, [storeTheme, allowThemeOverride]);
 
-  if (!storeTheme) return null;
+  if (!storeTheme || !allowThemeOverride) return null;
 
   const fontFamily = (storeTheme as { fontFamily?: string }).fontFamily;
   const fontConfig = fontFamily ? GOOGLE_FONTS[fontFamily] : null;

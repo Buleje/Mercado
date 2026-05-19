@@ -2,9 +2,16 @@
 /**
  * scripts/setup-stripe-plans.mjs
  *
- * Crea (o reusa si ya existen por nombre) los 3 productos de pago de Buleje
- * en Stripe + sus precios mensuales recurrentes en PEN. Devuelve los Price IDs
- * para pegarlos en `lib/billing/plan-tiers.ts`.
+ * Crea (o reusa por nombre) los 3 productos pagados de Buleje en Stripe +
+ * sus precios mensuales recurrentes en PEN. Devuelve los Price IDs para
+ * pegarlos en `lib/billing/plan-tiers.ts`.
+ *
+ * v2 mayo 2026 — precios alineados con plan-tiers.ts:
+ *   - Starter:  S/ 89/mes  (tier "pro" interno)
+ *   - Pro:      S/ 179/mes (tier "enterprise" interno)
+ *   - Business: S/ 349/mes (tier "max" interno)
+ *
+ * Nota: Free (tier "basico") NO necesita Stripe product — es gratis.
  *
  * Uso:
  *   node -r dotenv/config scripts/setup-stripe-plans.mjs dotenv_config_path=.env.local
@@ -23,21 +30,21 @@ const stripe = new Stripe(sk, { apiVersion: "2024-12-18.acacia" });
 const PLANS = [
   {
     tier: "pro",
-    name: "Buleje Pro",
-    description: "Crece sin frenos. SUNAT, compras, analytics, marketplace y delivery integrado.",
-    amount: 4900, // S/ 49.00 — Stripe usa céntimos
+    name: "Buleje Starter",
+    description: "Para bodegas con flujo diario. Productos ilimitados, inventario, fiados y Yape automatico.",
+    amount: 8900, // S/ 89.00 — Stripe usa centimos
   },
   {
     tier: "enterprise",
-    name: "Buleje Enterprise",
-    description: "Para cadenas. IA Command, forecasting, multi-sucursal, subscriptions y socio.",
-    amount: 14900, // S/ 149.00
+    name: "Buleje Pro",
+    description: "Sweet spot: bodega establecida que ya vende online. SUNAT, marketplace destacado, 2 sucursales.",
+    amount: 17900, // S/ 179.00
   },
   {
     tier: "max",
-    name: "Buleje Max",
-    description: "Todo desbloqueado. Lives streaming, white-label, soporte 24/7 e IA premium.",
-    amount: 29900, // S/ 299.00
+    name: "Buleje Business",
+    description: "Cadenas, productores y mayoristas. Sucursales ilimitadas, IA forecasting, lives streaming y soporte 24/7.",
+    amount: 34900, // S/ 349.00
   },
 ];
 

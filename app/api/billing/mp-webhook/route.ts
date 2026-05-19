@@ -6,6 +6,7 @@ import {
   verifyMPWebhookSignature,
 } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { PLAN_ORDER, type PlanId } from "@/lib/plans";
 
@@ -32,7 +33,24 @@ import { PLAN_ORDER, type PlanId } from "@/lib/plans";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
+// Audit 2026-05-17 04-P1-W3: redact MP payment IDs in logs.
+// Ley 29733 PE — dataId+tenantSlug correlaciona con monto y email en panel MP.
+// Mostramos solo últimos 4 chars del ID para trazabilidad sin permitir lookup
+// inverso desde logs (atacante con read-only logs no puede consultar el pago).
+function redactId(id: string): string {
+  if (!id) return "";
+  if (id.length <= 4) return "****";
+  return `***${id.slice(-4)}`;
+}
+
 export async function POST(req: NextRequest) {
+  // PENTEST 2026-05-18 Sprint B: rate limit STRICT (10 req/15min). Sin esto
+  // un atacante puede flood el endpoint con firmas inválidas y agotar CPU
+  // (cada request hace verifyMPWebhookSignature HMAC + insert idempotency
+  // lock antes de fallar). MP nunca envía más de 1 IPN por segundo, OK.
+  const rl = applyRateLimit(req, "STRICT", "billing-mp-webhook");
+  if (rl) return rl as NextResponse;
+
   // ── Leer query params (MP soporta dos formatos) ──────────
   // En Next.js 16 Route Handlers, req.nextUrl.searchParams es la API correcta.
   const searchParams = req.nextUrl.searchParams;
@@ -161,7 +179,7 @@ export async function POST(req: NextRequest) {
   const paymentMethodType = payment.payment_type_id ?? "mercadopago";
 
   logger.info("[MP Webhook] Pago recibido", {
-    dataId,
+    dataId: redactId(dataId),
     status,
     tenantSlug,
     paymentMethodType,
@@ -300,6 +318,7 @@ async function processMPPaymentApproved(opts: {
     tenantSlug,
     oldPlan: tenant.plan,
     newPlan,
+    paymentRef: redactId(dataId),
     periodEnd: periodEnd.toISOString(),
   });
 }
@@ -354,13 +373,28 @@ async function handleSubscriptionNotification(opts: {
   if (type === "subscription_preapproval") {
     preapprovalId = dataId;
   } else if (type === "subscription_authorized_payment") {
+    // Audit 2026-05-17 04-P2-W6: MERCADOPAGO_ACCESS_TOKEN fallback ""
+    // mandaba "Bearer " vacío al API → response 401 silencioso interpretable
+    // como network failure. Mejor fail-fast: si la var falta, retornar 503
+    // explícito para que MP reintente cuando esté configurada.
+    const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!mpToken) {
+      logger.error("[MP Webhook] MERCADOPAGO_ACCESS_TOKEN missing — cannot resolve preapprovalId", {
+        dataId: redactId(dataId),
+        type,
+      });
+      return NextResponse.json(
+        { error: "mp_token_missing", received: false },
+        { status: 503 },
+      );
+    }
     // GET /preapproval_payment/{id} para resolver el preapprovalId
     try {
       const res = await fetch(
         `https://api.mercadopago.com/preapproval_payment/${dataId}`,
         {
           headers: {
-            Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN ?? ""}`,
+            Authorization: `Bearer ${mpToken}`,
           },
         },
       );

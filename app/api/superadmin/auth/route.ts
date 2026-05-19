@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { is2FAEnabled, create2FAChallenge, verify2FACode } from "@/lib/superadmin-2fa";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
+import { cacheStore } from "@/lib/cache";
 
 function cookieOpts(maxAge: number) {
   return {
@@ -18,16 +19,37 @@ function cookieOpts(maxAge: number) {
 }
 
 // ── Login lockout (5 failed attempts → 15 min lockout) ──────────────────────
+// Brandon 2026-05-16 (audit P2/P1): migrado de `Map<>` in-memory a cacheStore.
+// Antes el lockout vivía en memoria del worker — Vercel serverless tiene N
+// workers sin estado compartido, un atacante con 5+ instancias bypasseaba
+// el lockout. Ahora cacheStore (Redis si REDIS_URL, fallback MemoryStore)
+// compartido entre workers. El edge rate-limit Upstash sigue siendo la 1ra
+// línea de defensa; este es defensa-en-profundidad.
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
-const failedAttempts = new Map<string, { count: number; lastAttempt: number; lockedUntil: number | null }>();
+const LOCKOUT_KEY_TTL_SEC = Math.ceil((LOCKOUT_DURATION_MS + 60_000) / 1000); // +1min margin
+
+interface LockoutEntry {
+  count: number;
+  lastAttempt: number;
+  lockedUntil: number | null;
+}
+
+function lockoutCacheKey(ip: string): string {
+  return `superadmin:lockout:${ip}`;
+}
 
 function getLockoutKey(req: NextRequest): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "unknown";
+  // SECURITY 2026-05-16 (audit P2): trim + slice para evitar log poisoning
+  // por inyección de comas en x-forwarded-for.
+  const raw = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("x-real-ip")
+    ?? "unknown";
+  return raw.slice(0, 45);
 }
 
 function checkLockout(ip: string): { locked: boolean; remainingMinutes: number } {
-  const entry = failedAttempts.get(ip);
+  const entry = cacheStore.get<LockoutEntry>(lockoutCacheKey(ip));
   if (!entry) return { locked: false, remainingMinutes: 0 };
   if (entry.lockedUntil && Date.now() < entry.lockedUntil) {
     const remaining = Math.ceil((entry.lockedUntil - Date.now()) / 60000);
@@ -35,28 +57,29 @@ function checkLockout(ip: string): { locked: boolean; remainingMinutes: number }
   }
   // Reset if lockout expired
   if (entry.lockedUntil && Date.now() >= entry.lockedUntil) {
-    failedAttempts.delete(ip);
+    cacheStore.del(lockoutCacheKey(ip));
   }
   return { locked: false, remainingMinutes: 0 };
 }
 
 function recordFailedAttempt(ip: string): { locked: boolean; attemptsLeft: number } {
-  const entry = failedAttempts.get(ip) ?? { count: 0, lastAttempt: 0, lockedUntil: null };
+  const key = lockoutCacheKey(ip);
+  const entry = cacheStore.get<LockoutEntry>(key) ?? { count: 0, lastAttempt: 0, lockedUntil: null };
   entry.count += 1;
   entry.lastAttempt = Date.now();
 
   if (entry.count >= MAX_ATTEMPTS) {
     entry.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
-    failedAttempts.set(ip, entry);
+    cacheStore.set(key, entry, LOCKOUT_KEY_TTL_SEC);
     return { locked: true, attemptsLeft: 0 };
   }
 
-  failedAttempts.set(ip, entry);
+  cacheStore.set(key, entry, LOCKOUT_KEY_TTL_SEC);
   return { locked: false, attemptsLeft: MAX_ATTEMPTS - entry.count };
 }
 
 function clearFailedAttempts(ip: string): void {
-  failedAttempts.delete(ip);
+  cacheStore.del(lockoutCacheKey(ip));
 }
 
 // ── WhatsApp login alert (fire-and-forget) ──────────────────────────────────

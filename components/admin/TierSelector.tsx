@@ -110,7 +110,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
                 "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all",
                 isActive
                   ? colors.active
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-white dark:hover:bg-card"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-white dark:hover:bg-[var(--surface-raised)]"
               )}
             >
               <Icon className="h-3 w-3" />
@@ -141,7 +141,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
           <div className="flex items-start gap-2">
             <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div>
-              <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-foreground">
+              <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 ¡Nuevo! Elige tu nivel
               </p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted mt-0.5 leading-relaxed">
@@ -178,7 +178,7 @@ export default function TierSelector({ tier, onTierChange, collapsed, stats, ove
 
       {/* Customize panel */}
       {showCustomize && onModuleTierChange && (
-        <div className="mt-1 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-base)] dark:border-card-border max-h-52 overflow-y-auto">
+        <div className="mt-1 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] max-h-52 overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
               Mover módulos entre niveles

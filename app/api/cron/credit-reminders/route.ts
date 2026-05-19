@@ -186,9 +186,7 @@ export async function GET(req: NextRequest) {
           phone,
           message,
         })
-        .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        .catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
       // Also create notification for the admin dashboard
       const cleanPhone = phone.replace(/\D/g, "");
@@ -214,9 +212,7 @@ export async function GET(req: NextRequest) {
       `Credit-reminders: ${sent} sent, ${skippedDuplicates} deduped, ${skippedNoStage} no-stage`,
       undefined,
       "cron",
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
     logger.info("[cron/credit-reminders]", {
       total: fiados.length,

@@ -136,7 +136,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
           <div className="max-w-2xl w-full">
-            <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-200 dark:border-card-border p-8">
+            <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] p-8">
               {/* Error Icon */}
               <div className="flex justify-center mb-6">
                 <div className="p-4 bg-red-100 dark:bg-red-900/20 rounded-full">
@@ -145,7 +145,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               </div>
 
               {/* Error Message */}
-              <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-foreground mb-3">
+              <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-[var(--text-primary)] mb-3">
                 {this.props.errorMessage || "¡Ups! Algo salió mal"}
               </h1>
               <p className="text-center text-gray-600 dark:text-muted mb-8">
@@ -157,7 +157,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <div className="mb-6">
                   <button
                     onClick={this.toggleDetails}
-                    className="flex items-center gap-2 text-sm text-gray-700 dark:text-foreground font-semibold mb-3 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                    className="flex items-center gap-2 text-sm text-gray-700 dark:text-[var(--text-primary)] font-semibold mb-3 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                   >
                     {this.state.showDetails ? (
                       <ChevronUp className="h-4 w-4" />
@@ -179,7 +179,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                       )}
                       {this.state.errorInfo?.componentStack && (
                         <>
-                          <p className="text-xs font-semibold text-gray-700 dark:text-foreground mt-4 mb-2">
+                          <p className="text-xs font-semibold text-gray-700 dark:text-[var(--text-primary)] mt-4 mb-2">
                             Component Stack:
                           </p>
                           <pre className="text-xs font-mono text-gray-600 dark:text-muted whitespace-pre-wrap wrap-break-word max-h-60 overflow-y-auto">
@@ -214,7 +214,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                   className={cn(
                     "flex-1 flex items-center justify-center gap-2",
                     "px-6 py-3 rounded-xl",
-                    "bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground",
+                    "bg-gray-100 dark:bg-surface text-gray-700 dark:text-[var(--text-primary)]",
                     "hover:bg-gray-200 dark:hover:bg-gray-700",
                     "transition-colors font-semibold"
                   )}

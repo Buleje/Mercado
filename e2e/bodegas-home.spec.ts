@@ -63,7 +63,7 @@ test.describe("Bodegas home — logged in", () => {
       try {
         const customer = {
           name: "Brandon Buleje",
-          phone: "916409675",
+          phone: "929340532",
           location: "Yarinacocha",
           reference: "Frente al parque",
         };

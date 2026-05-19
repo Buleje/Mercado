@@ -134,8 +134,8 @@ const CAT_THEME: Record<string, { emojiBg: string; dot: string; pillHover: strin
   "bebidas": {
     emojiBg:       "bg-violet-50 dark:bg-violet-950/30",
     dot:           "bg-violet-500",
-    pillHover:     "hover:border-violet-400 hover:text-violet-700 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-950/30",
-    linkBtn:       "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 hover:bg-violet-500 hover:text-white",
+    pillHover:     "hover:border-violet-400 hover:text-[var(--accent)] hover:bg-violet-50 dark:hover:text-[var(--accent)] dark:hover:bg-violet-950/30",
+    linkBtn:       "bg-violet-50 dark:bg-violet-950/30 text-[var(--accent)] dark:text-[var(--accent)] hover:bg-violet-500 hover:text-white",
     sectionBorder: "border-l-4 border-l-violet-400",
   },
   "limpieza": {
@@ -203,7 +203,7 @@ function LazyCategorySection({
 // ── Skeleton Card ─────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl bg-white dark:bg-card border border-gray-100 dark:border-card-border overflow-hidden flex flex-col animate-pulse">
+    <div className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden flex flex-col animate-pulse">
       <div className="aspect-square bg-gray-200 dark:bg-surface" />
       <div className="p-3 sm:p-4 flex flex-col gap-3 flex-1">
         <div className="h-4 bg-gray-200 dark:bg-surface rounded-full w-3/4" />
@@ -219,7 +219,7 @@ function SkeletonCard() {
 
 function SkeletonSection() {
   return (
-    <div className="rounded-2xl p-5 sm:p-6 bg-white dark:bg-card animate-pulse">
+    <div className="rounded-2xl p-5 sm:p-6 bg-[var(--surface-raised)] animate-pulse">
       <div className="flex items-center gap-3 mb-5">
         <div className="h-9 w-9 bg-gray-200 dark:bg-surface rounded-full" />
         <div className="flex flex-col gap-2">
@@ -248,7 +248,7 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
   return (
     <div
       onClick={() => onQuickView(product)}
-      className="flex items-center gap-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 hover:shadow-[var(--shadow-md)] hover:border-primary/20 transition-all cursor-pointer"
+      className="flex items-center gap-3 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 hover:shadow-[var(--shadow-md)] hover:border-primary/20 transition-all cursor-pointer"
     >
       <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-surface shrink-0">
         {product.image ? (
@@ -263,7 +263,7 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
+        <h4 className="text-sm font-bold text-[var(--text-primary)] truncate">{product.name}</h4>
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted">{product.unit}</p>
           {isLowStock && (
@@ -622,7 +622,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         {/* Section Header — copy enfocada al cliente, no al dueño. */}
         <div className="text-center mb-10">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground tracking-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)] tracking-tight">
             Productos para ti
           </h2>
           <p className="mt-4 text-base sm:text-lg text-muted max-w-2xl mx-auto">
@@ -634,10 +634,10 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
 
         {/* ── SIDEBAR de categorías (desktop only) ──────────── */}
         <aside className="hidden lg:block">
-          <div className="sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 pr-2">
-            <div className="bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 shadow-[var(--shadow-sm)]">
+          <div className="sticky top-32 max-h-[calc(100dvh-9rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 pr-2">
+            <div className="bg-[var(--surface-raised)] rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 shadow-[var(--shadow-sm)]">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-extrabold uppercase tracking-wider text-foreground">Categorías</h3>
+                <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">Categorías</h3>
                 <span className="text-sm font-mono text-muted bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-md">{categoriesWithCount.length}</span>
               </div>
 
@@ -653,7 +653,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all mb-1.5",
                   !highlighted
                     ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/20"
-                    : "text-foreground hover:bg-primary/8 hover:text-primary"
+                    : "text-[var(--text-primary)] hover:bg-primary/8 hover:text-primary"
                 )}
               >
                 <span className="flex items-center gap-2">
@@ -684,7 +684,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                         "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all",
                         active
                           ? "bg-primary/10 text-primary"
-                          : "text-foreground hover:bg-gray-50 dark:hover:bg-surface"
+                          : "text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
                       <span className="flex items-center gap-2 min-w-0">
@@ -713,7 +713,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                     setFilterOnSale(false);
                     setPriceRange([0, maxPrice]);
                   }}
-                  className="w-full mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border text-sm font-bold text-muted hover:text-foreground"
+                  className="w-full mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-sm font-bold text-muted hover:text-[var(--text-primary)]"
                 >
                   Limpiar filtros
                 </button>
@@ -746,7 +746,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 else if (e.key === "Escape") { setSuggestions([]); setShowHistory(false); }
               }}
               placeholder="Buscar producto…"
-              className="w-full pl-12 pr-11 h-14 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-base sm:text-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)]"
+              className="w-full pl-12 pr-11 h-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base sm:text-lg text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)]"
               autoComplete="off"
             />
             {search && (
@@ -756,10 +756,10 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             )}
             {/* Smart suggestions dropdown */}
             {suggestions.length > 0 && search.trim().length >= 2 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-[var(--shadow-lg)] z-20 overflow-hidden">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-lg)] z-20 overflow-hidden">
                 {suggestions.map((p, i) => (
                   <button key={p.id} onMouseDown={() => { setSearch(p.name); setSuggestions([]); setSuggestionIdx(-1); }}
-                    className={cn("flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-foreground transition-colors text-left", i === suggestionIdx ? "bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-surface")}>
+                    className={cn("flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--text-primary)] transition-colors text-left", i === suggestionIdx ? "bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-surface")}>
                     {p.image && <Image src={p.image} alt="" width={28} height={28} className="w-7 h-7 rounded-md object-cover shrink-0" unoptimized />}
                     <span className="flex-1 truncate">{p.name}</span>
                     <span className="text-xs text-muted shrink-0">S/{Number(p.price).toFixed(2)}</span>
@@ -773,21 +773,21 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               if (!dropdown) return null;
               const { recientes, trending } = dropdown;
               return (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-[var(--shadow-lg)] z-20 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-lg)] z-20 overflow-hidden">
                   {recientes.length > 0 && (
                     <>
                       <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-muted">Recientes</p>
                       {recientes.map((term) => (
-                        <button key={term} onMouseDown={() => { setSearch(term); setShowHistory(false); saveSearchTerm(term); }} className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-sm text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left">
+                        <button key={term} onMouseDown={() => { setSearch(term); setShowHistory(false); saveSearchTerm(term); }} className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-sm text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left">
                           <Clock className="h-3.5 w-3.5 text-muted shrink-0" />
                           {term}
                         </button>
                       ))}
                     </>
                   )}
-                  <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-muted border-t border-gray-100 dark:border-card-border mt-1">Tendencias</p>
+                  <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-muted border-t border-[var(--rule-base)] mt-1">Tendencias</p>
                   {trending.map((term) => (
-                    <button key={term} onMouseDown={() => { setSearch(term); setShowHistory(false); saveSearchTerm(term); }} className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-sm text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left">
+                    <button key={term} onMouseDown={() => { setSearch(term); setShowHistory(false); saveSearchTerm(term); }} className="flex items-center gap-2 w-full px-3 py-2.5 min-h-[44px] text-sm text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left">
                       <svg className="h-3.5 w-3.5 text-muted shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true"><path d="M2 12L6 6l3 4 2-3 3 3"/></svg>
                       {term}
                     </button>
@@ -802,7 +802,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
-                className="appearance-none pl-11 pr-10 h-14 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-base font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)] cursor-pointer"
+                className="appearance-none pl-11 pr-10 h-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)] cursor-pointer"
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.id} value={o.id}>{o.label}</option>
@@ -815,7 +815,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-[var(--shadow-sm)]",
                 showPriceFilter
                   ? "border-primary bg-primary/10 text-primary"
-                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-primary"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-primary"
               )}
             >
               <SlidersHorizontal className="h-5 w-5" />
@@ -827,7 +827,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-[var(--shadow-sm)] whitespace-nowrap",
                 filterOnSale
                   ? "border-red-400 bg-red-50 dark:bg-red-950/30 text-[var(--data-error-600)] dark:text-red-400"
-                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-red-400"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-red-400"
               )}
             >
               {/* Filtros del cliente: solo texto, sin emojis. Stock no es filtro
@@ -841,7 +841,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 className={cn(
                   "h-10 w-10 flex items-center justify-center rounded-xl transition-all relative z-10",
                   viewMode === "grid"
-                    ? "bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)] font-bold"
+                    ? "bg-[var(--surface-raised)] text-primary shadow-[var(--shadow-sm)] font-bold"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Vista cuadrícula"
@@ -854,7 +854,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 className={cn(
                   "h-10 w-10 flex items-center justify-center rounded-xl transition-all relative z-10",
                   viewMode === "list"
-                    ? "bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)] font-bold"
+                    ? "bg-[var(--surface-raised)] text-primary shadow-[var(--shadow-sm)] font-bold"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Vista lista"
@@ -868,7 +868,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
 
         {/* Price Range Filter — Dual range slider */}
         {showPriceFilter && (
-          <div className="max-w-3xl mx-auto mb-6 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-[var(--shadow-sm)] animate-[fadeUp_0.2s_ease-out]">
+          <div className="max-w-3xl mx-auto mb-6 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 shadow-[var(--shadow-sm)] animate-[fadeUp_0.2s_ease-out]">
             <style>{`
               .price-range-slider { position: relative; height: 28px; }
               .price-range-slider input[type="range"] {
@@ -900,7 +900,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               }
             `}</style>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-foreground">Filtrar por precio</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Filtrar por precio</span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-primary bg-primary/8 px-2.5 py-0.5 rounded-lg">S/{priceRange[0].toFixed(0)}</span>
                 <span className="text-xs text-muted">—</span>
@@ -967,7 +967,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             )}
             <button
               onClick={() => { setSearch(""); setFilterOnSale(false); setFilterAvailable(false); setFilterOutOfStock(false); setPriceRange([0, maxPrice]); }}
-              className="text-xs font-bold text-muted hover:text-foreground ml-auto underline underline-offset-2"
+              className="text-xs font-bold text-muted hover:text-[var(--text-primary)] ml-auto underline underline-offset-2"
             >
               Limpiar todo
             </button>
@@ -1042,7 +1042,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 );
               })()
             ) : (
-              <div className="bg-white dark:bg-card rounded-2xl p-5 sm:p-6">
+              <div className="bg-[var(--surface-raised)] rounded-2xl p-5 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-gray-500">
                     {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para &ldquo;{search.trim()}&rdquo;
@@ -1089,11 +1089,11 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                       ))}
                     </div>
                     {totalSearchPages > 1 && (
-                      <div className="flex items-center justify-center gap-2 mt-6 pt-5 border-t border-gray-100 dark:border-card-border">
+                      <div className="flex items-center justify-center gap-2 mt-6 pt-5 border-t border-[var(--rule-base)]">
                         <button
                           disabled={searchPage <= 1}
                           onClick={() => { setSearchPage(p => p - 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-[var(--rule-base)] text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         >
                           ← Anterior
                         </button>
@@ -1116,7 +1116,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                         <button
                           disabled={searchPage >= totalSearchPages}
                           onClick={() => { setSearchPage(p => p + 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-[var(--rule-base)] text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         >
                           Siguiente →
                         </button>
@@ -1136,11 +1136,11 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                       ))}
                     </div>
                     {totalSearchPages > 1 && (
-                      <div className="flex items-center justify-center gap-2 mt-6 pt-5 border-t border-gray-100 dark:border-card-border">
+                      <div className="flex items-center justify-center gap-2 mt-6 pt-5 border-t border-[var(--rule-base)]">
                         <button
                           disabled={searchPage <= 1}
                           onClick={() => { setSearchPage(p => p - 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-[var(--rule-base)] text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         >
                           ← Anterior
                         </button>
@@ -1163,7 +1163,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                         <button
                           disabled={searchPage >= totalSearchPages}
                           onClick={() => { setSearchPage(p => p + 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-[var(--rule-base)] text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         >
                           Siguiente →
                         </button>
@@ -1179,7 +1179,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
                 <Package className="h-8 w-8 text-primary" strokeWidth={1.75} aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Catálogo en preparación</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Catálogo en preparación</h3>
               <p className="text-sm text-muted max-w-xs mx-auto">
                 Esta tienda todavía no tiene productos publicados. Vuelve pronto o contacta al administrador.
               </p>
@@ -1201,7 +1201,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                     <div className={cn("flex items-center gap-3 mb-4 pl-3", theme.sectionBorder)}>
                       <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", theme.dot)} aria-hidden="true" />
                       <div>
-                        <h3 className="text-base font-extrabold text-foreground leading-tight">{cat.label}</h3>
+                        <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">{cat.label}</h3>
                         <p className="text-xs text-muted">{catProducts.length} producto{catProducts.length !== 1 ? "s" : ""}</p>
                       </div>
                     </div>

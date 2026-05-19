@@ -3,9 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
-import { invalidateByPrefix } from "@/lib/cache";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+
+// Brandon 2026-05-18 perf P1 #8: server-side cache para el listado público
+// de tiendas. Antes solo había `Cache-Control` (cliente/CDN); ahora la query
+// + el enriquecimiento (manualStoreZones, $queryRawUnsafe de cover/hoursJson,
+// settings, promo groupby, store-extras, construction map) se cachea 60s en
+// memoria con `getOrSet`. Patrón canónico del repo (lib/cache.ts) — invalida
+// vía `invalidateByPrefix("marketplace:stores")` ya presente en POST/PUT.
+const PUBLIC_STORES_TTL_SEC = 60;
 
 const QuerySchema = z.object({
   zone:     z.string().optional(),
@@ -24,13 +32,13 @@ type TrustLevel = "alta" | "media" | "nueva";
  * may use either value (legacy data used the slug "main").
  */
 async function ensureTenant(tenantId: string): Promise<{ id: string; slug: string; possibleIds: string[] }> {
-  // 1. Try finding by ID (tenantId is already a CUID)
-  const byId = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { id: true, slug: true } });
-  if (byId) return { id: byId.id, slug: byId.slug, possibleIds: [byId.id, byId.slug] };
-
-  // 2. Maybe tenantId is actually a slug
-  const bySlug = await prisma.tenant.findUnique({ where: { slug: tenantId }, select: { id: true, slug: true } });
-  if (bySlug) return { id: bySlug.id, slug: bySlug.slug, possibleIds: [bySlug.id, bySlug.slug] };
+  // 1+2. Try by id OR slug en 1 sola query (perf DB-H5 audit 2026-05-19).
+  // tenantId puede ser CUID (id) o el slug legacy "main".
+  const existing = await prisma.tenant.findFirst({
+    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+    select: { id: true, slug: true },
+  });
+  if (existing) return { id: existing.id, slug: existing.slug, possibleIds: [existing.id, existing.slug] };
 
   // 3. Tenant doesn't exist — auto-create from Settings if available
   const settings = await prisma.settings.findUnique({ where: { tenantId } }).catch((err) => { logger.error("[marketplace/stores] DB query failed", { error: String(err), tenantId }); return null; });
@@ -98,6 +106,22 @@ export async function GET(req: NextRequest) {
         hoursJson = null;
       }
 
+      // Cargar extras (subcategory, coverageZones, customCategories) — JSON
+      // storage paralelo a Store. Forma parte del payload "mi tienda" para
+      // que el admin pueda editar todo en un solo viaje.
+      let extras = { subcategory: null as string | null, coverageZones: [] as string[], customCategories: [] as unknown[] };
+      try {
+        const { getStoreExtras } = await import("@/lib/store-extras");
+        const e = await getStoreExtras(store.slug);
+        extras = {
+          subcategory: e.subcategory,
+          coverageZones: e.coverageZones,
+          customCategories: e.customCategories,
+        };
+      } catch {
+        /* ignore */
+      }
+
       return NextResponse.json({
         id:              store.id,
         slug:            store.slug,
@@ -111,15 +135,47 @@ export async function GET(req: NextRequest) {
         vacationMode:    store.vacationMode,
         vacationMessage: store.vacationMessage ?? "",
         hours:           hoursJson,
+        subcategory:     extras.subcategory,
+        coverageZones:   extras.coverageZones,
+        customCategories: extras.customCategories,
       });
     }
 
     // ── Public mode: listado de tiendas ──
+    // Brandon 2026-05-18 perf P1 #8: TODO el listado público se cachea en
+    // memoria con key derivado de los params. Hits subsecuentes a la misma
+    // URL no tocan ni Prisma ni FS. Invalida con `invalidateByPrefix
+    // ("marketplace:stores")` desde POST/PUT.
+    const cacheKey = `marketplace:stores:public:${zone ?? ""}:${category ?? ""}:${search ?? ""}:${limit}`;
+    const cached = await getOrSet<{ data: unknown[]; total: number }>(
+      cacheKey,
+      PUBLIC_STORES_TTL_SEC,
+      async () => {
     // Cargar el archivo de categorías del marketplace para:
     //   1. Sumar tiendas vinculadas manualmente desde superadmin (linkedStoreSlugs).
     //   2. Aplicar override de zona manual si la tienda no la fija.
     let manualCategoryStoreSlugs: string[] = [];
     let manualStoreZones: Record<string, string> = {};
+    // Slugs cuya `coverageZones` (multi-zona en store-extras.json) incluye
+    // el filtro pedido — los unimos al OR del where para que /tiendas pueda
+    // filtrar por cualquier zona declarada como cobertura, no solo `Store.zone`.
+    let coverageZoneSlugs: string[] = [];
+    if (zone) {
+      try {
+        const { readFile: rf } = await import("node:fs/promises");
+        const { join: jn } = await import("node:path");
+        const rawExtras = await rf(
+          jn(process.cwd(), "lib", "data", "store-extras.json"),
+          "utf8",
+        ).catch(() => "{}");
+        const all = JSON.parse(rawExtras) as Record<string, { coverageZones?: string[] }>;
+        coverageZoneSlugs = Object.entries(all)
+          .filter(([, v]) => Array.isArray(v.coverageZones) && v.coverageZones.includes(zone))
+          .map(([s]) => s);
+      } catch {
+        coverageZoneSlugs = [];
+      }
+    }
     try {
       const { readFile } = await import("node:fs/promises");
       const { join } = await import("node:path");
@@ -146,10 +202,36 @@ export async function GET(req: NextRequest) {
           ? { OR: [{ category }, { slug: { in: manualCategoryStoreSlugs } }] }
           : { category }
         : {};
+      // Brandon mayo 2026: el filtro por zona antes solo matcheaba la columna
+      // DB store.zone, pero el response usa finalZone que tambien acepta el
+      // override del superadmin (manualStoreZones). Resultado: en /tiendas
+      // se mostraba "Calleria" pero al filtrar → 0 stores porque ninguna
+      // tienda lo tenia escrito en DB. Ahora el filtro hace OR(DB, override).
+      //
+      // Brandon mayo 14 2026: el id que envia el cliente viene normalizado
+      // (lowercase, sin acentos) — ej. "centro", "calleria" — pero en DB la
+      // columna `zone` guarda el label original ("Centro", "Calleria"). El
+      // match exacto no encontraba ninguna tienda y aparecian zonas "huerfanas"
+      // en el filtro. Ahora usamos `equals + mode insensitive` para empatar.
+      const zoneOverrideSlugs = zone
+        ? Object.entries(manualStoreZones)
+            .filter(([, z]) => z.toLowerCase() === zone.toLowerCase())
+            .map(([slug]) => slug)
+        : [];
+      // Combina: override del superadmin + coverageZones[] del propio tenant.
+      const extraZoneSlugs = Array.from(new Set([...zoneOverrideSlugs, ...coverageZoneSlugs]));
+      const zoneFilter = zone
+        ? { zone: { equals: zone, mode: "insensitive" as const } }
+        : null;
+      const zoneClause = zoneFilter
+        ? extraZoneSlugs.length > 0
+          ? { OR: [zoneFilter, { slug: { in: extraZoneSlugs } }] }
+          : zoneFilter
+        : {};
       stores = await prisma.store.findMany({
         where: {
           isPublished: true,
-          ...(zone   && { zone }),
+          ...zoneClause,
           ...categoryClause,
           ...(search && { name: { contains: search, mode: "insensitive" as const } }),
         },
@@ -419,6 +501,17 @@ export async function GET(req: NextRequest) {
         return {};
       });
 
+    // Bulk lookup de store-extras (coverageZones, subcategory, customCategories)
+    // — JSON storage paralelo a Store. Solo necesitamos coverageZones aquí
+    // para el filtro de /tiendas (zona multi-cobertura).
+    const { getStoreExtrasMap } = await import("@/lib/store-extras");
+    const extrasMap = await getStoreExtrasMap(stores.map((s) => s.slug as string)).catch(
+      (err) => {
+        logger.warn("[marketplace/stores] extras lookup failed", { error: String(err) });
+        return new Map();
+      },
+    );
+
     // Helpers de horario — derivan isOpenNow + nextOpening desde hoursJson
     // del Store (más preciso que el autoCloseTime legacy de Settings).
     const { isOpenNow: storeIsOpenNow, nextOpening, sortStoresByStatus } =
@@ -492,6 +585,8 @@ export async function GET(req: NextRequest) {
         vacationMessage: s.vacationMessage,
         underConstruction: Boolean(construction?.enabled),
         underConstructionMessage: construction?.message ?? null,
+        coverageZones: extrasMap.get(slug)?.coverageZones ?? [],
+        subcategory: extrasMap.get(slug)?.subcategory ?? null,
         lat: s.lat,
         lng: s.lng,
         productCount: trust.productCount,
@@ -537,16 +632,17 @@ export async function GET(req: NextRequest) {
     });
     const ordered = sortStoresByStatus(sortable, NOW).map((x) => x.__ref);
 
-    return NextResponse.json(
-      { data: ordered, total: ordered.length },
-      {
-        headers: {
-          // Cache CDN/proxy 60s + SWR 5min: alivia carga DB para listados
-          // populares. Las queries con `search` también se cachean (URL única).
-          "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
-        },
+    return { data: ordered, total: ordered.length };
       },
     );
+
+    return NextResponse.json(cached, {
+      headers: {
+        // Cache CDN/proxy 60s + SWR 5min: alivia carga DB para listados
+        // populares. Las queries con `search` también se cachean (URL única).
+        "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+      },
+    });
   } catch (err) {
     logger.error("[marketplace/stores GET]", { error: err instanceof Error ? err.message : String(err) });
     const { payload, status } = toErrorPayload(err, traceId);

@@ -147,28 +147,29 @@ export class DeliveryStreaksDb {
       }
     }
 
-    const bonuses: Bonus[] = [
-      {
-        id: "rain",
-        icon: "🌧️",
-        label: "Lluvia +30%",
-        tone: "rose",
-      },
-      {
-        id: "trip5",
+    // Bonuses reales. Brandon mayo 2026 v7: removidos "Lluvia +30%" y
+    // "Hora pico +S/3" — no existe sistema real que detecte clima ni franja
+    // pico para premiar al rider, eran decorativos. Sólo dejamos `trip5`
+    // (cuenta entregas reales de hoy) y `weekend` (multiplicador real sáb/dom).
+    const bonuses: Bonus[] = [];
+    bonuses.push({
+      id: "trip5",
+      icon: "📅",
+      label: "Meta diaria",
+      tone: "amber",
+      current: todayDeliveries,
+      target: 5,
+    });
+    // Bonus de fin de semana: real porque depende del día de la semana
+    const todayDow = today.getUTCDay(); // 0=dom, 6=sáb
+    if (todayDow === 0 || todayDow === 6) {
+      bonuses.push({
+        id: "weekend",
         icon: "📅",
-        label: "5 viajes",
+        label: "Bonus fin de semana",
         tone: "amber",
-        current: todayDeliveries,
-        target: 5,
-      },
-      {
-        id: "peak",
-        icon: "🌃",
-        label: "Hora pico +S/3",
-        tone: "purple",
-      },
-    ];
+      });
+    }
 
     return {
       streak: { days: streakDays, recentDays },

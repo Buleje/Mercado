@@ -35,7 +35,7 @@ interface Props {
   illustration?: ReactNode;
   primaryAction?: ActionConfig;
   secondaryAction?: ActionConfig;
-  /** Numero WhatsApp soporte. Default +51 916 409 675 */
+  /** Numero WhatsApp soporte. Default +51 929 340 532 */
   supportPhone?: string;
 }
 
@@ -75,7 +75,7 @@ export default function ErrorPageLayout({
     icon: <Home className="h-4 w-4" strokeWidth={1.75} aria-hidden />,
   },
   secondaryAction,
-  supportPhone = "916409675",
+  supportPhone = "929340532",
 }: Props) {
   const defaultIllustration = <BrujulaPerdida size={200} />;
 

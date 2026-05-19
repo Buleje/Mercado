@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/admin/delivery/manual-assign
@@ -21,6 +22,8 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -112,9 +115,13 @@ export async function POST(req: NextRequest) {
         ``,
         `Detalles: ${url}`,
       ].join("\n");
+      // Audit 2026-05-17 03-P1-4: context estandarizado a `delivery-assign-${id}`
+      // para que sendWhatsAppQueued deduplique correctamente si el admin asigna
+      // el mismo orderId desde POS y desde módulo delivery (rider recibía 2
+      // mensajes con contexts distintos antes).
       sendWhatsAppQueued(result.partnerPhone, wa, {
         tenantId: auth.tenantId,
-        context: `manual-assign-${result.assignmentId}`,
+        context: `delivery-assign-${result.assignmentId}`,
       }).catch((err) => logger.warn("[manual-assign] WhatsApp failed", { error: String(err) }));
     }
 

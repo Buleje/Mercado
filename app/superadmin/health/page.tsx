@@ -3,16 +3,29 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import {
-  HeartPulse, Database, Globe, Server, RefreshCw,
-  CheckCircle2, AlertTriangle, XCircle, Clock, Wifi, HardDrive,
-  Activity, Timer,
+  HeartPulse,
+  Database,
+  Globe,
+  Server,
+  RefreshCw,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Clock,
+  Wifi,
+  HardDrive,
+  Activity,
+  Timer,
 } from "@buleje/design-system/icons";
 import SAHealthScore from "@/components/superadmin/_shared/SAHealthScore";
 import { AdminTabShell } from "../_components/_shared";
 
-const TenantMonitorPanel = dynamic(() => import("@/components/superadmin/TenantMonitorPanel"), { ssr: false });
+const TenantMonitorPanel = dynamic(
+  () => import("@/components/superadmin/TenantMonitorPanel"),
+  { ssr: false },
+);
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────
 
 interface HealthCheck {
   name: string;
@@ -49,35 +62,42 @@ interface AdminHealthData {
   incidents: Array<{ id: string; severity: string; message: string; since: string }>;
 }
 
-// ── Status helpers ────────────────────────────────────────────────────────────
+// ── Status helpers ────────────────────────────────────────────────────────
 
-function StatusDot({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    ok: "bg-[var(--data-success-500)]",
-    degraded: "bg-[var(--data-warning-500)]",
-    error: "bg-[var(--data-error-500)]",
-    checking: "bg-gray-300 animate-pulse",
-  };
-  return <span className={`w-2.5 h-2.5 rounded-full ${colors[status] ?? colors.checking}`} />;
-}
+const STATUS_META: Record<
+  HealthCheck["status"],
+  { label: string; cls: string; dot: string }
+> = {
+  ok: {
+    label: "Operativo",
+    cls: "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]",
+    dot: "bg-[var(--data-success-500)]",
+  },
+  degraded: {
+    label: "Degradado",
+    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
+    dot: "bg-amber-500",
+  },
+  error: {
+    label: "Error",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    dot: "bg-rose-500",
+  },
+  checking: {
+    label: "Verificando…",
+    cls: "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
+    dot: "bg-[var(--text-tertiary)] animate-pulse",
+  },
+};
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    ok: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
-    degraded: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
-    error: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
-    checking: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
-  };
-  const labels: Record<string, string> = {
-    ok: "Operativo",
-    degraded: "Degradado",
-    error: "Error",
-    checking: "Verificando...",
-  };
+function StatusBadge({ status }: { status: HealthCheck["status"] }) {
+  const meta = STATUS_META[status];
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${styles[status] ?? styles.checking}`}>
-      <StatusDot status={status} />
-      {labels[status] ?? "Desconocido"}
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}
+    >
+      <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
+      {meta.label}
     </span>
   );
 }
@@ -93,11 +113,11 @@ function formatUptime(seconds: number): string {
 
 const AUTO_REFRESH_SECONDS = 30;
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Main page ─────────────────────────────────────────────────────────────
 
 export default function SystemHealthPage() {
   const [checks, setChecks] = useState<HealthCheck[]>([]);
-  const [overallStatus, setOverallStatus] = useState<"ok" | "degraded" | "error" | "checking">("checking");
+  const [overallStatus, setOverallStatus] = useState<HealthCheck["status"]>("checking");
   const [uptime, setUptime] = useState(0);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
@@ -119,17 +139,17 @@ export default function SystemHealthPage() {
       const start = Date.now();
       const res = await fetch("/api/health");
       const latency = Date.now() - start;
-      const data: HealthData = res.ok ? await res.json() : {} as HealthData;
+      const data: HealthData = res.ok ? await res.json() : ({} as HealthData);
 
       results.push({
         name: "API Server",
         status: res.ok ? "ok" : "degraded",
         latency,
         detail: `Tiempo de respuesta: ${data.responseTimeMs ?? latency}ms`,
-        icon: <Server className="w-5 h-5" />,
+        icon: <Server className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
       });
 
-      const dbStatus = data.checks?.database?.status === "ok" ? "ok" as const : "error" as const;
+      const dbStatus: HealthCheck["status"] = data.checks?.database?.status === "ok" ? "ok" : "error";
       results.push({
         name: "Base de datos",
         status: dbStatus,
@@ -137,15 +157,27 @@ export default function SystemHealthPage() {
         detail: data.checks?.database?.circuitBreaker
           ? `Circuit breaker: ${data.checks.database.circuitBreaker}`
           : `Latencia: ${data.checks?.database?.latencyMs ?? "?"}ms`,
-        icon: <Database className="w-5 h-5" />,
+        icon: <Database className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
       });
 
       if (!res.ok) score -= 30;
       if (dbStatus === "error") score -= 40;
       setUptime(data.uptime ?? 0);
     } catch {
-      results.push({ name: "API Server", status: "error", latency: 0, detail: "No se pudo conectar", icon: <Server className="w-5 h-5" /> });
-      results.push({ name: "Base de datos", status: "error", latency: 0, detail: "No verificable", icon: <Database className="w-5 h-5" /> });
+      results.push({
+        name: "API Server",
+        status: "error",
+        latency: 0,
+        detail: "No se pudo conectar",
+        icon: <Server className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
+      });
+      results.push({
+        name: "Base de datos",
+        status: "error",
+        latency: 0,
+        detail: "No verificable",
+        icon: <Database className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
+      });
       score -= 70;
     }
 
@@ -159,11 +191,17 @@ export default function SystemHealthPage() {
         status: res.status === 401 || res.ok ? "ok" : "error",
         latency,
         detail: res.ok ? "Sesión activa" : "Sin sesión (respuesta correcta)",
-        icon: <Wifi className="w-5 h-5" />,
+        icon: <Wifi className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
       });
       if (!res.ok && res.status !== 401) score -= 10;
     } catch {
-      results.push({ name: "Autenticación", status: "error", latency: 0, detail: "No se pudo verificar", icon: <Wifi className="w-5 h-5" /> });
+      results.push({
+        name: "Autenticación",
+        status: "error",
+        latency: 0,
+        detail: "No se pudo verificar",
+        icon: <Wifi className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
+      });
       score -= 10;
     }
 
@@ -172,10 +210,22 @@ export default function SystemHealthPage() {
       const start = Date.now();
       const res = await fetch("/icon?health-check", { method: "HEAD" });
       const latency = Date.now() - start;
-      results.push({ name: "Archivos estáticos", status: res.ok ? "ok" : "degraded", latency, icon: <HardDrive className="w-5 h-5" /> });
+      results.push({
+        name: "Archivos estáticos",
+        status: res.ok ? "ok" : "degraded",
+        latency,
+        detail: res.ok ? "Edge assets accesibles" : "Bucket inaccesible",
+        icon: <HardDrive className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
+      });
       if (!res.ok) score -= 5;
     } catch {
-      results.push({ name: "Archivos estáticos", status: "error", latency: 0, icon: <HardDrive className="w-5 h-5" /> });
+      results.push({
+        name: "Archivos estáticos",
+        status: "error",
+        latency: 0,
+        detail: "No se pudo verificar",
+        icon: <HardDrive className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
+      });
       score -= 5;
     }
 
@@ -189,11 +239,17 @@ export default function SystemHealthPage() {
         status: res.ok ? "ok" : "degraded",
         latency,
         detail: res.ok ? "Catálogo accesible" : `Status: ${res.status}`,
-        icon: <Globe className="w-5 h-5" />,
+        icon: <Globe className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
       });
       if (!res.ok) score -= 15;
     } catch {
-      results.push({ name: "API Productos", status: "error", latency: 0, detail: "No se pudo conectar", icon: <Globe className="w-5 h-5" /> });
+      results.push({
+        name: "API Productos",
+        status: "error",
+        latency: 0,
+        detail: "No se pudo conectar",
+        icon: <Globe className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
+      });
       score -= 15;
     }
 
@@ -207,7 +263,7 @@ export default function SystemHealthPage() {
         if (adminData.incidents?.length > 0) score -= 10 * adminData.incidents.length;
       }
     } catch {
-      // Non-critical — metrics just won't show
+      // Non-critical
     }
 
     setChecks(results);
@@ -220,10 +276,10 @@ export default function SystemHealthPage() {
     else setOverallStatus("ok");
   }, []);
 
-  // Initial check
-  useEffect(() => { runChecks(); }, [runChecks]);
+  useEffect(() => {
+    runChecks();
+  }, [runChecks]);
 
-  // Auto-refresh timer
   useEffect(() => {
     if (!autoRefresh) {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -231,7 +287,7 @@ export default function SystemHealthPage() {
     }
     setCountdown(AUTO_REFRESH_SECONDS);
     intervalRef.current = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1) {
           runChecks();
           return AUTO_REFRESH_SECONDS;
@@ -239,166 +295,321 @@ export default function SystemHealthPage() {
         return prev - 1;
       });
     }, 1000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [autoRefresh, runChecks]);
 
-  const overallIcons = {
-    ok: <CheckCircle2 className="w-8 h-8 text-[var(--data-success-500)]" />,
-    degraded: <AlertTriangle className="w-8 h-8 text-[var(--data-warning-500)]" />,
-    error: <XCircle className="w-8 h-8 text-[var(--data-error-500)]" />,
-    checking: <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />,
-  };
-  const overallLabels = {
-    ok: "Todos los sistemas operativos",
-    degraded: "Algunos servicios degradados",
-    error: "Problemas detectados",
-    checking: "Verificando sistemas...",
-  };
-  // Ola 2: tokenized surface — color-mix con var(--data-*) 8% para un soft
-  // background consistente en ambos temas, en lugar de bg-green-950/20 hardcoded.
-  const overallColors = {
-    ok: "border-[var(--data-success-500)] bg-[color-mix(in_oklch,var(--data-success)_8%,transparent)]",
-    degraded: "border-[var(--data-warning-500)] bg-[color-mix(in_oklch,var(--data-warning)_8%,transparent)]",
-    error: "border-[var(--data-error-500)] bg-[color-mix(in_oklch,var(--data-error)_8%,transparent)]",
-    checking: "border-[var(--rule-base)] bg-[var(--surface-sunken)]",
-  };
+  const overallMeta = {
+    ok: {
+      icon: CheckCircle2,
+      label: "Todos los sistemas operativos",
+      bg: "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5",
+      iconCls: "text-[var(--data-success-500)]",
+    },
+    degraded: {
+      icon: AlertTriangle,
+      label: "Algunos servicios degradados",
+      bg: "border-amber-300/60 bg-amber-50/40 dark:border-amber-700/40 dark:bg-amber-950/20",
+      iconCls: "text-amber-600 dark:text-amber-400",
+    },
+    error: {
+      icon: XCircle,
+      label: "Problemas detectados",
+      bg: "border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/20",
+      iconCls: "text-[var(--accent)] dark:text-[var(--accent)]",
+    },
+    checking: {
+      icon: RefreshCw,
+      label: "Verificando sistemas…",
+      bg: "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
+      iconCls: "text-[var(--text-tertiary)] animate-spin",
+    },
+  }[overallStatus];
+
+  const OverallIcon = overallMeta.icon;
 
   return (
     <AdminTabShell
       title="Salud del sistema"
-      description="Estado en tiempo real de servicios, latencia y métricas operativas. Auto-refresh cada 30 s."
+      description="Estado en tiempo real de servicios, latencia y métricas operativas. Auto-refresh cada 30 segundos."
       icon={HeartPulse}
-      kicker="Operaciones"
+      kicker="Plataforma · Observabilidad"
+      stats={
+        <>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+              Score
+            </p>
+            <p
+              className={`font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none ${
+                healthScore >= 80
+                  ? "text-[var(--data-success-500)]"
+                  : healthScore >= 50
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-[var(--accent)] dark:text-[var(--accent)]"
+              }`}
+            >
+              {healthScore}
+            </p>
+          </div>
+          {uptime > 0 && (
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                Uptime
+              </p>
+              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
+                {formatUptime(uptime)}
+              </p>
+            </div>
+          )}
+        </>
+      }
     >
-      {/* Overall Status Banner + Health Score */}
-      <div className={`rounded-xl border-2 p-6 flex items-center gap-6 ${overallColors[overallStatus]}`}>
+      {/* ─── Overall status banner ──────────────────────────────── */}
+      <section
+        className={`flex flex-col sm:flex-row items-start sm:items-center gap-5 rounded-2xl border-2 p-5 ${overallMeta.bg}`}
+      >
         <SAHealthScore score={healthScore} />
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            {overallIcons[overallStatus]}
-            <h2 className="text-lg font-bold text-[var(--text-primary)]">
-              {overallLabels[overallStatus]}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2.5">
+            <OverallIcon
+              className={`h-6 w-6 ${overallMeta.iconCls}`}
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+              {overallMeta.label}
             </h2>
           </div>
-          <div className="flex items-center gap-4 mt-1 text-sm text-[var(--text-tertiary)]">
+          <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-tertiary)] flex-wrap">
             {uptime > 0 && (
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                Uptime: {formatUptime(uptime)}
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+                Uptime: <strong className="text-[var(--text-secondary)]">{formatUptime(uptime)}</strong>
               </span>
             )}
             {lastChecked && (
-              <span>Último chequeo: {lastChecked.toLocaleTimeString("es-PE")}</span>
+              <span className="inline-flex items-center gap-1">
+                <RefreshCw className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+                Último chequeo:{" "}
+                <strong className="text-[var(--text-secondary)]">
+                  {lastChecked.toLocaleTimeString("es-PE")}
+                </strong>
+              </span>
             )}
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => { runChecks(); setCountdown(AUTO_REFRESH_SECONDS); }}
+            onClick={() => {
+              runChecks();
+              setCountdown(AUTO_REFRESH_SECONDS);
+            }}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+              strokeWidth={2.25}
+            />
             Verificar
           </button>
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${autoRefresh ? "text-[var(--accent)] bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] bg-[var(--surface-sunken)]"}`}
+            className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold uppercase tracking-wider transition ${
+              autoRefresh
+                ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40"
+            }`}
           >
-            <Timer className="w-3 h-3" />
-            {autoRefresh ? `Auto (${countdown}s)` : "Auto-refresh off"}
+            <Timer className="h-3 w-3" strokeWidth={2.5} />
+            {autoRefresh ? `Auto ${countdown}s` : "Auto off"}
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Tabs: System / Tenants */}
-      <div className="flex gap-1 bg-[var(--surface-sunken)] rounded-xl p-1 max-w-xs">
-        <button
-          onClick={() => setActiveTab("system")}
-          className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "system" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
-        >
-          <HeartPulse className="w-4 h-4 inline mr-1.5" />
-          Sistema
-        </button>
-        <button
-          onClick={() => setActiveTab("tenants")}
-          className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "tenants" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
-        >
-          <Activity className="w-4 h-4 inline mr-1.5" />
-          Tiendas
-        </button>
+      {/* ─── Tabs ───────────────────────────────────────────────── */}
+      <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1 w-fit">
+        {([
+          { key: "system" as const, label: "Sistema", icon: HeartPulse },
+          { key: "tenants" as const, label: "Tiendas", icon: Activity },
+        ]).map(({ key, label, icon: Icon }) => {
+          const isActive = activeTab === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-bold transition ${
+                isActive
+                  ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <Icon className="h-4 w-4" strokeWidth={1.75} />
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === "system" && (
         <>
-          {/* Active Incidents */}
+          {/* ─── Active incidents ──────────────────────────────── */}
           {incidents.length > 0 && (
-            <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
-                Incidentes activos
-              </h3>
-              {incidents.map(inc => (
-                <div key={inc.id} className="flex items-center gap-3 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                  <XCircle className="w-4 h-4 shrink-0" />
-                  <span>{inc.message}</span>
-                  <span className="text-sm font-semibold text-[var(--data-error-500)] ml-auto">desde {new Date(inc.since).toLocaleTimeString("es-PE")}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Admin Metrics (latency, orders/hour, cache) */}
-          {adminMetrics.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {adminMetrics.map(m => (
-                <div key={m.label} className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-4">
-                  <p className="text-sm font-semibold text-[var(--text-tertiary)]">{m.label}</p>
-                  <p className={`text-3xl font-extrabold mt-1.5 tabular-nums ${m.status === "ok" ? "text-[var(--text-primary)]" : m.status === "warning" ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"}`}>
-                    {m.value}{m.unit ? <span className="text-base font-semibold ml-1">{m.unit}</span> : null}
+            <section className="rounded-2xl border-2 border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/30 overflow-hidden">
+              <header className="flex items-center gap-3 border-b border-rose-300/40 dark:border-rose-700/30 px-5 py-3.5">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]">
+                  <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--accent)] dark:text-[var(--accent)]">
+                    Incidentes activos
+                  </h3>
+                  <p className="text-xs text-[var(--accent)]/80 dark:text-[var(--accent)]/80">
+                    {incidents.length} incidente{incidents.length === 1 ? "" : "s"} requieren atención
                   </p>
                 </div>
-              ))}
+              </header>
+              <ul className="divide-y divide-rose-200/60 dark:divide-rose-800/40">
+                {incidents.map((inc) => (
+                  <li
+                    key={inc.id}
+                    className="flex items-center gap-3 px-5 py-3 text-sm text-[var(--accent)] dark:text-[var(--accent)]"
+                  >
+                    <XCircle className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                    <span className="font-semibold flex-1">{inc.message}</span>
+                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]/80 dark:text-[var(--accent)]/80 shrink-0">
+                      desde {new Date(inc.since).toLocaleTimeString("es-PE")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* ─── Admin metrics (KPIs) ───────────────────────────── */}
+          {adminMetrics.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {adminMetrics.map((m) => {
+                const tone =
+                  m.status === "ok" ? "accent" : m.status === "warning" ? "warning" : "danger";
+                const iconBg = {
+                  accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
+                  warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+                  danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+                }[tone];
+                const valueTone =
+                  m.status === "ok"
+                    ? "text-[var(--text-primary)]"
+                    : m.status === "warning"
+                      ? "text-amber-700 dark:text-amber-300"
+                      : "text-[var(--accent)] dark:text-[var(--accent)]";
+                return (
+                  <div
+                    key={m.label}
+                    className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}
+                      >
+                        <Activity className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                      </span>
+                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+                        {m.label}
+                      </p>
+                    </div>
+                    <p
+                      className={`mt-3 font-display text-3xl font-extrabold tabular-nums tracking-tight ${valueTone}`}
+                    >
+                      {m.value}
+                      {m.unit && (
+                        <span className="text-base font-bold ml-1 opacity-70">{m.unit}</span>
+                      )}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          {/* Individual checks */}
-          <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl divide-y divide-gray-100 dark:divide-gray-800">
-            {checks.map((check) => (
-              <div key={check.name} className="flex items-center gap-4 px-6 py-4">
-                <div className="w-10 h-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-tertiary)] shrink-0">
-                  {check.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-[var(--text-primary)]">{check.name}</span>
-                    <StatusBadge status={check.status} />
-                  </div>
-                  {check.detail && (
-                    <p className="text-sm text-[var(--text-tertiary)] mt-1 truncate">{check.detail}</p>
-                  )}
-                </div>
-                <div className="text-right shrink-0">
-                  <span className={`text-base font-mono font-bold tabular-nums ${check.latency > 1000 ? "text-[var(--data-error-500)]" : check.latency > 500 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`}>
-                    {check.latency > 0 ? `${check.latency}ms` : "—"}
-                  </span>
+          {/* ─── Individual service checks ──────────────────────── */}
+          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+            <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                  <Server className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                    Servicios monitoreados
+                  </h3>
+                  <p className="text-xs text-[var(--text-tertiary)]">
+                    {checks.length} check{checks.length === 1 ? "" : "s"} ejecutados ·{" "}
+                    {checks.filter((c) => c.status === "ok").length} OK
+                  </p>
                 </div>
               </div>
-            ))}
-
-            {checks.length === 0 && (
-              <div className="px-6 py-12 text-center text-sm text-gray-400">
-                <HeartPulse className="w-8 h-8 mx-auto mb-3 text-gray-300 dark:text-gray-700" />
-                Iniciando verificación de sistemas...
+            </header>
+            {checks.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
+                  <HeartPulse
+                    className="h-5 w-5 text-[var(--text-tertiary)]"
+                    aria-hidden
+                  />
+                </div>
+                <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
+                  Iniciando verificación de sistemas…
+                </p>
               </div>
+            ) : (
+              <ul className="divide-y divide-[var(--rule-soft)]">
+                {checks.map((check) => (
+                  <li
+                    key={check.name}
+                    className="flex items-center gap-4 px-5 py-3.5 transition hover:bg-[var(--surface-sunken)]/50"
+                  >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] shrink-0">
+                      {check.icon}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-[var(--text-primary)]">
+                          {check.name}
+                        </span>
+                        <StatusBadge status={check.status} />
+                      </div>
+                      {check.detail && (
+                        <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
+                          {check.detail}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`font-mono text-sm font-extrabold tabular-nums ${
+                          check.latency > 1000
+                            ? "text-[var(--accent)] dark:text-[var(--accent)]"
+                            : check.latency > 500
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-[var(--text-secondary)]"
+                        }`}
+                      >
+                        {check.latency > 0 ? `${check.latency}ms` : "—"}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
+          </section>
         </>
       )}
 
-      {activeTab === "tenants" && (
-        <TenantMonitorPanel />
-      )}
+      {activeTab === "tenants" && <TenantMonitorPanel />}
     </AdminTabShell>
   );
 }

@@ -2,7 +2,11 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useState } from "react";
-import { Loader2, Save, Eye, EyeOff, Palette } from "@buleje/design-system/icons";
+import {
+  Loader2, Save, Eye, EyeOff, Palette, Sparkles,
+  Smartphone, Monitor, ArrowUpRight, Image as ImageIcon,
+  Lightbulb, Type,
+} from "@buleje/design-system/icons";
 import AdminTabShell from "../../_components/_shared/AdminTabShell";
 import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -180,59 +184,9 @@ export default function AppearanceTab() {
         </button>
       </section>
 
-      {/* Hero */}
-      <Card title="Hero (banner principal)">
-        <Field label="Título">
-          <input
-            type="text"
-            maxLength={200}
-            value={data.heroTitle ?? ""}
-            onChange={(e) => update("heroTitle", e.target.value)}
-            placeholder="Ej: Bienvenido a Buleje"
-            className="input"
-          />
-        </Field>
-        <Field label="Subtítulo">
-          <input
-            type="text"
-            maxLength={400}
-            value={data.heroSubtitle ?? ""}
-            onChange={(e) => update("heroSubtitle", e.target.value)}
-            placeholder="Delivery gratis en Pucallpa"
-            className="input"
-          />
-        </Field>
-        <Field label="Imagen de fondo (URL)">
-          <input
-            type="url"
-            value={data.heroImageUrl ?? ""}
-            onChange={(e) => update("heroImageUrl", e.target.value)}
-            placeholder="https://..."
-            className="input"
-          />
-        </Field>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Texto del botón">
-            <input
-              type="text"
-              maxLength={80}
-              value={data.heroCtaLabel ?? ""}
-              onChange={(e) => update("heroCtaLabel", e.target.value)}
-              placeholder="Ver catálogo"
-              className="input"
-            />
-          </Field>
-          <Field label="URL del botón">
-            <input
-              type="url"
-              value={data.heroCtaUrl ?? ""}
-              onChange={(e) => update("heroCtaUrl", e.target.value)}
-              placeholder="/tienda"
-              className="input"
-            />
-          </Field>
-        </div>
-      </Card>
+      {/* ═══════════════ HERO v2 — con preview en vivo + plantillas ═══════════════ */}
+      <HeroEditor data={data} update={update} />
+
 
       {/* Colors */}
       <Card title="Colores del tema">
@@ -417,13 +371,420 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, hint, count, max }: {
+  label: string;
+  children: React.ReactNode;
+  hint?: string;
+  count?: number;
+  max?: number;
+}) {
+  const over = max != null && count != null && count > max * 0.9;
   return (
     <label className="block">
-      <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-        {label}
-      </span>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="block text-xs font-bold text-[var(--text-primary)]">
+          {label}
+        </span>
+        {max != null && count != null && (
+          <span className={`text-[length:var(--ts-2xs)] font-bold tabular-nums ${over ? "text-[var(--data-warning-600,#d97706)]" : "text-[var(--text-tertiary)]"}`}>
+            {count}/{max}
+          </span>
+        )}
+      </div>
       {children}
+      {hint && (
+        <p className="mt-1.5 text-xs text-[var(--text-tertiary)] leading-snug">
+          {hint}
+        </p>
+      )}
     </label>
+  );
+}
+
+// ═══════════════ HeroEditor — preview en vivo + plantillas ═══════════════
+
+const HERO_TEMPLATES: Array<{
+  id: string;
+  label: string;
+  emoji: string;
+  description: string;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  ctaUrl: string;
+}> = [
+  {
+    id: "bodega",
+    label: "Bodega del barrio",
+    emoji: "🛒",
+    description: "Tono cercano, foco en delivery rápido",
+    title: "Tu bodega del barrio · ahora a domicilio",
+    subtitle: "Pedí lo que necesitas y te lo llevamos en menos de 30 minutos. Pagás con Yape o efectivo al recibir.",
+    ctaLabel: "Ver catálogo",
+    ctaUrl: "/tienda",
+  },
+  {
+    id: "restaurante",
+    label: "Restaurante",
+    emoji: "🍽️",
+    description: "Foco en menú del día y combos",
+    title: "Comida casera, directo a tu mesa",
+    subtitle: "Menú del día, combos familiares y entregas calientes. Pedí por WhatsApp o por la app.",
+    ctaLabel: "Ver menú",
+    ctaUrl: "/tienda",
+  },
+  {
+    id: "premium",
+    label: "Tienda premium",
+    emoji: "✨",
+    description: "Tono editorial, productos seleccionados",
+    title: "Productos seleccionados para tu casa",
+    subtitle: "Selección curada de marcas locales y nacionales. Calidad garantizada, delivery cuidado.",
+    ctaLabel: "Explorar tienda",
+    ctaUrl: "/tienda",
+  },
+];
+
+function HeroEditor({
+  data,
+  update,
+}: {
+  data: Customization;
+  update: <K extends keyof Customization>(key: K, value: Customization[K]) => void;
+}) {
+  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const applyTemplate = (tpl: typeof HERO_TEMPLATES[number]) => {
+    update("heroTitle", tpl.title);
+    update("heroSubtitle", tpl.subtitle);
+    update("heroCtaLabel", tpl.ctaLabel);
+    update("heroCtaUrl", tpl.ctaUrl);
+    setShowTemplates(false);
+  };
+
+  const title = (data.heroTitle ?? "").trim();
+  const subtitle = (data.heroSubtitle ?? "").trim();
+  const ctaLabel = (data.heroCtaLabel ?? "").trim();
+  const imageUrl = (data.heroImageUrl ?? "").trim();
+  const titleCount = title.length;
+  const subtitleCount = subtitle.length;
+
+  // Completeness gauge — 0..100
+  const completeness = (() => {
+    let score = 0;
+    if (title) score += 35;
+    if (subtitle) score += 25;
+    if (ctaLabel) score += 20;
+    if (imageUrl) score += 20;
+    return score;
+  })();
+
+  return (
+    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+      {/* Header de la card */}
+      <header className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <Type className="h-5 w-5" strokeWidth={2} />
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
+              Hero · lo primero que ve el cliente
+            </h3>
+            <p className="text-xs text-[var(--text-secondary)] leading-snug">
+              Título grande, subtítulo claro, botón directo. Editás → ves el cambio al toque a la derecha.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowTemplates((s) => !s)}
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-3.5 h-9 text-xs font-extrabold hover:bg-[var(--accent)]/90 transition-colors"
+        >
+          <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+          {showTemplates ? "Ocultar plantillas" : "Usar plantilla"}
+        </button>
+      </header>
+
+      {/* Plantillas — desplegable */}
+      {showTemplates && (
+        <div className="px-5 py-4 bg-[var(--surface-sunken)]/40 border-b border-[var(--rule-soft)]">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+            Elegí una plantilla · sobrescribe título, subtítulo y botón
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {HERO_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => applyTemplate(tpl)}
+                className="group text-left rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5 hover:border-[var(--accent)] hover:-translate-y-0.5 hover:shadow-md transition-all"
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span aria-hidden className="text-lg">{tpl.emoji}</span>
+                  <span className="text-sm font-extrabold text-[var(--text-primary)]">{tpl.label}</span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] leading-snug">
+                  {tpl.description}
+                </p>
+                <p className="mt-2 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
+                  Aplicar →
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Body: form izquierda + preview derecha */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[var(--rule-soft)]">
+        {/* ── Form ── */}
+        <div className="p-5 space-y-4">
+          {/* Completeness bar */}
+          <div className="rounded-lg bg-[var(--surface-sunken)]/60 border border-[var(--rule-soft)] px-3.5 py-2.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Completitud del hero
+              </span>
+              <span className="text-xs font-extrabold tabular-nums text-[var(--text-primary)]">
+                {completeness}%
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-[var(--rule-soft)] overflow-hidden">
+              <div
+                className="h-full bg-[var(--accent)] transition-all duration-[var(--dur-base)]"
+                style={{ width: `${completeness}%` }}
+              />
+            </div>
+            {completeness < 100 && (
+              <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-1">
+                <Lightbulb className="h-3 w-3 text-[var(--data-warning-500)]" strokeWidth={2} aria-hidden />
+                {!title ? "Empezá con un título" :
+                  !subtitle ? "Agregá un subtítulo claro" :
+                    !ctaLabel ? "Configurá el botón principal" :
+                      !imageUrl ? "Subí una imagen de fondo" : "Casi listo"}
+              </p>
+            )}
+          </div>
+
+          <Field
+            label="Título principal"
+            count={titleCount}
+            max={60}
+            hint="Sé directo. Máx 8 palabras. Ej: 'Tu bodega del barrio, ahora a domicilio'"
+          >
+            <input
+              type="text"
+              maxLength={60}
+              value={data.heroTitle ?? ""}
+              onChange={(e) => update("heroTitle", e.target.value)}
+              placeholder="Tu bodega del barrio · ahora a domicilio"
+              className="input"
+            />
+          </Field>
+
+          <Field
+            label="Subtítulo"
+            count={subtitleCount}
+            max={140}
+            hint="Una frase que explique qué hacés y por qué importa. Tip: incluí delivery o pago."
+          >
+            <textarea
+              rows={2}
+              maxLength={140}
+              value={data.heroSubtitle ?? ""}
+              onChange={(e) => update("heroSubtitle", e.target.value)}
+              placeholder="Pedís y te lo llevamos en menos de 30 min. Yape o efectivo al recibir."
+              className="input resize-none"
+            />
+          </Field>
+
+          <Field
+            label="Imagen de fondo (URL)"
+            hint="Recomendado: 1600x900px, .jpg comprimido. Subí a Imgur, Vercel Blob o S3 y pegá el link."
+          >
+            <div className="flex gap-2">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] shrink-0">
+                <ImageIcon className="h-4 w-4" strokeWidth={1.75} />
+              </span>
+              <input
+                type="url"
+                value={data.heroImageUrl ?? ""}
+                onChange={(e) => update("heroImageUrl", e.target.value)}
+                placeholder="https://imgur.com/abc123.jpg"
+                className="input flex-1"
+              />
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field
+              label="Texto del botón"
+              count={(ctaLabel || "").length}
+              max={24}
+              hint="Verbo + acción. Ej: 'Ver catálogo', 'Pedir ahora'"
+            >
+              <input
+                type="text"
+                maxLength={24}
+                value={data.heroCtaLabel ?? ""}
+                onChange={(e) => update("heroCtaLabel", e.target.value)}
+                placeholder="Ver catálogo"
+                className="input"
+              />
+            </Field>
+            <Field
+              label="Destino del botón"
+              hint="Una ruta interna o un link completo"
+            >
+              <input
+                type="text"
+                value={data.heroCtaUrl ?? ""}
+                onChange={(e) => update("heroCtaUrl", e.target.value)}
+                placeholder="/tienda"
+                className="input"
+              />
+            </Field>
+          </div>
+        </div>
+
+        {/* ── Preview en vivo ── */}
+        <div className="p-5 bg-[var(--surface-sunken)]/30 flex flex-col">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Vista previa en vivo
+            </p>
+            <div role="group" aria-label="Modo de vista previa" className="inline-flex items-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] p-0.5">
+              <button
+                type="button"
+                onClick={() => setPreviewMode("desktop")}
+                aria-pressed={previewMode === "desktop"}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 h-7 text-xs font-bold transition-colors ${previewMode === "desktop" ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]" : "text-[var(--text-secondary)]"}`}
+              >
+                <Monitor className="h-3 w-3" strokeWidth={2} />
+                Desktop
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewMode("mobile")}
+                aria-pressed={previewMode === "mobile"}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 h-7 text-xs font-bold transition-colors ${previewMode === "mobile" ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]" : "text-[var(--text-secondary)]"}`}
+              >
+                <Smartphone className="h-3 w-3" strokeWidth={2} />
+                Mobile
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center">
+            {previewMode === "desktop" ? (
+              <HeroPreviewDesktop
+                title={title}
+                subtitle={subtitle}
+                imageUrl={imageUrl}
+                ctaLabel={ctaLabel}
+                primaryColor={data.primaryColor}
+                accentColor={data.accentColor}
+              />
+            ) : (
+              <HeroPreviewMobile
+                title={title}
+                subtitle={subtitle}
+                imageUrl={imageUrl}
+                ctaLabel={ctaLabel}
+                primaryColor={data.primaryColor}
+                accentColor={data.accentColor}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Preview desktop — proporciones ~16:9
+function HeroPreviewDesktop({ title, subtitle, imageUrl, ctaLabel, primaryColor, accentColor }: {
+  title: string; subtitle: string; imageUrl: string; ctaLabel: string;
+  primaryColor: string; accentColor: string;
+}) {
+  return (
+    <div className="w-full max-w-md aspect-[16/9] rounded-xl overflow-hidden border-2 border-[var(--rule-base)] shadow-lg relative">
+      {/* Background: imagen o gradient con primaryColor */}
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      ) : null}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: imageUrl
+            ? `linear-gradient(135deg, ${primaryColor}99 0%, ${accentColor}66 100%)`
+            : `linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%)`,
+        }}
+      />
+      <div className="absolute inset-0 flex flex-col justify-center px-5 py-4">
+        <p className="text-white text-base font-extrabold leading-tight tracking-tight drop-shadow-md line-clamp-2">
+          {title || "Tu título aparece aquí"}
+        </p>
+        <p className="mt-1.5 text-white/85 text-[length:var(--ts-2xs)] leading-snug drop-shadow-md line-clamp-2">
+          {subtitle || "Y debajo, una frase corta que explique qué hacés."}
+        </p>
+        {ctaLabel && (
+          <span
+            className="mt-2.5 inline-flex items-center gap-1 self-start rounded-full bg-white px-3 h-6 text-[length:var(--ts-2xs)] font-extrabold"
+            style={{ color: primaryColor }}
+          >
+            {ctaLabel}
+            <ArrowUpRight className="h-2.5 w-2.5" strokeWidth={2.5} />
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Preview mobile — proporciones de celular
+function HeroPreviewMobile({ title, subtitle, imageUrl, ctaLabel, primaryColor, accentColor }: {
+  title: string; subtitle: string; imageUrl: string; ctaLabel: string;
+  primaryColor: string; accentColor: string;
+}) {
+  return (
+    <div className="w-[200px] aspect-[9/16] rounded-2xl overflow-hidden border-[8px] border-[var(--text-primary)] shadow-lg relative bg-black">
+      {/* Status bar mock */}
+      <div className="absolute top-0 inset-x-0 h-4 bg-black flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white z-10">
+        9:41
+      </div>
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      ) : null}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: imageUrl
+            ? `linear-gradient(180deg, ${primaryColor}99 0%, ${accentColor}aa 100%)`
+            : `linear-gradient(180deg, ${primaryColor} 0%, ${accentColor} 100%)`,
+        }}
+      />
+      <div className="absolute inset-x-0 bottom-0 top-4 flex flex-col justify-end px-4 pb-5">
+        <p className="text-white text-sm font-extrabold leading-tight tracking-tight drop-shadow-md line-clamp-3">
+          {title || "Tu título"}
+        </p>
+        <p className="mt-1.5 text-white/85 text-[length:var(--ts-2xs)] leading-snug drop-shadow-md line-clamp-3">
+          {subtitle || "Subtítulo de muestra para ver cómo queda."}
+        </p>
+        {ctaLabel && (
+          <span
+            className="mt-2.5 inline-flex items-center justify-center gap-1 rounded-full bg-white py-1.5 text-[length:var(--ts-2xs)] font-extrabold self-stretch"
+            style={{ color: primaryColor }}
+          >
+            {ctaLabel}
+            <ArrowUpRight className="h-2.5 w-2.5" strokeWidth={2.5} />
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

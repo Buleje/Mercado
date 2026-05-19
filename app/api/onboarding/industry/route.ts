@@ -7,8 +7,6 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { Industry } from "@/lib/generated/prisma/client";
 
-export const dynamic = "force-dynamic";
-
 const IndustrySchema = z.object({
   industry: z.nativeEnum(Industry),
 });

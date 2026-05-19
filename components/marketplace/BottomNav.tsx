@@ -1,10 +1,15 @@
 "use client";
 
 /**
- * BottomNav — Barra de navegación inferior estilo PedidosYa.
+ * BottomNav — Barra de navegación inferior estilo Rappi/Glovo/PedidosYa.
  *
- * Visible solo en mobile (sm:hidden). Oculta al hacer scroll hacia abajo,
- * reaparece al hacer scroll hacia arriba. Safe area padding para notch.
+ * Visible solo en mobile (sm:hidden). Brandon 2026-05-18: SIEMPRE FIJA — el
+ * cliente típico (panadero de 50 años en Pucallpa) espera el patrón Rappi,
+ * no auto-hide. Antes ocultaba al bajar scroll; se eliminó por fricción
+ * cognitiva al acceder al carrito mientras se hojea catálogo.
+ *
+ * Diseño: backdrop-blur + bg semi-transparente para fundirse con cualquier
+ * contenido sin robar contraste. Safe area padding para notch iOS.
  *
  * Tabs:
  *   - Tiendas (home del marketplace)
@@ -15,7 +20,7 @@
  * Adapta al modo `tiendas-only`: el tab principal lleva a /tiendas.
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Search,
@@ -44,47 +49,23 @@ const TABS: Tab[] = [
   { id: "cuenta", label: "Cuenta", Icon: User },
 ];
 
-// ── Hook: ocultar al bajar scroll / mostrar al subir ──────────────────────────
-
-function useScrollHide() {
-  const [visible, setVisible] = useState(true);
-  const lastY = useRef(0);
-  const ticking = useRef(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      if (ticking.current) return;
-      ticking.current = true;
-      requestAnimationFrame(() => {
-        const currentY = window.scrollY;
-        if (currentY < 50) {
-          setVisible(true);
-        } else if (currentY > lastY.current + 4) {
-          setVisible(false);
-        } else if (currentY < lastY.current - 4) {
-          setVisible(true);
-        }
-        lastY.current = currentY;
-        ticking.current = false;
-      });
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  return visible;
-}
-
 // ── Componente principal ───────────────────────────────────────────────────────
 
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const visible = useScrollHide();
   const { itemCount } = useMarketplaceCart();
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
+
+  // Brandon, mayo 14 2026: durante el flujo de checkout (carrito + datos +
+  // entrega + confirmar) el BottomNav distrae del CTA principal y ofrece
+  // salidas no intencionales (volver a buscar). En mobile lo ocultamos.
+  // En desktop ya esta oculto por default (sm:hidden del nav).
+  const inCheckoutFlow =
+    pathname === "/marketplace/carrito" ||
+    pathname?.startsWith("/checkout/") ||
+    pathname === "/checkout";
 
   // Tab principal: en tiendas-only va a /tiendas, sino a /marketplace
   const homeHref = isTiendasOnly ? "/tiendas" : "/marketplace";
@@ -134,17 +115,24 @@ export default function BottomNav() {
 
   const currentActive = activeTab();
 
+  if (inCheckoutFlow) return null;
+
   return (
     <nav
       aria-label="Navegación principal"
       className={cn(
         "sm:hidden",
         "fixed bottom-0 left-0 right-0 z-40",
-        "bg-[var(--surface-canvas)] border-t border-[var(--rule-base)]",
+        // Blur + bg semi-transparente: se funde con el contenido pero
+        // mantiene legibilidad. Fallback bg sólido si el browser no soporta
+        // backdrop-filter (supports detection via @supports en globals).
+        "border-t border-[var(--rule-base)]",
+        "bg-[color-mix(in_oklab,var(--surface-canvas)_85%,transparent)]",
+        "supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--surface-canvas)_70%,transparent)]",
+        "supports-[backdrop-filter]:backdrop-blur-xl",
+        "supports-[backdrop-filter]:backdrop-saturate-150",
         "pb-[env(safe-area-inset-bottom)]",
         "shadow-[0_-2px_10px_rgba(0,0,0,0.05)]",
-        "transition-transform duration-300 ease-in-out",
-        visible ? "translate-y-0" : "translate-y-full",
       )}
     >
       <div className="flex items-stretch">

@@ -53,8 +53,11 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
+        // Brandon mayo 2026 v7: el resumen diario por tienda solo cuenta
+        // pedidos entregados. Antes incluía pedidos pendientes/en_camino que
+        // pueden cancelarse — el dueño veía ventas falsas en su email diario.
         const activeOrders = todayOrders.filter(
-          (o) => o.status !== "cancelado"
+          (o) => o.status === "entregado"
         );
 
         const totalRevenue = activeOrders.reduce((sum, o) => sum + toNumOrZero(o.total), 0);
@@ -111,9 +114,7 @@ export async function GET(req: NextRequest) {
               recipient: settings.businessPhone,
               message: text,
               tenantId: store.tenantId,
-            }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+            }).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
             sent = true;
           } catch (err) {
             logger.warn("[cron/marketplace-daily-summary] WhatsApp enqueue failed", {
@@ -142,9 +143,7 @@ export async function GET(req: NextRequest) {
         `Resumen marketplace enviado: ${summaries.filter((s) => s.sent).length} tiendas notificadas`,
         undefined,
         "cron"
-      ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
       return { ok: true, summaries };
     });

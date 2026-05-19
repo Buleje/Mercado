@@ -86,19 +86,37 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // ─── 2. STOCK MUERTO (sin ventas en 15 días) ────────────
+    // Audit 2026-05-17 P-P0-1: paralelizar las 2 findMany de productos.
+    // Antes había 2 round-trips serializados:
+    //   1) productsWithStock (sección 2, stock_muerto)
+    //   2) productsLowMargin (sección 4, margen crítico)
+    // Ahora `Promise.all` ejecuta ambas en paralelo (~50% menos TTFB para
+    // tenants con >500 productos). Una sola query unificada NO es viable
+    // porque cada sección quiere campos distintos (stock vs costPrice).
     const fifteenDaysAgo = new Date(now);
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
-    const productsWithStock = await prisma.product.findMany({
-      where: {
-        ...tenantFilter,
-        active: true,
-        deletedAt: null,
-        stock: { gt: 0 },
-      },
-      select: { id: true, name: true, stock: true, category: true },
-    });
+    const [productsWithStock, productsLowMargin] = await Promise.all([
+      prisma.product.findMany({
+        where: {
+          ...tenantFilter,
+          active: true,
+          deletedAt: null,
+          stock: { gt: 0 },
+        },
+        select: { id: true, name: true, stock: true, category: true },
+      }),
+      prisma.product.findMany({
+        where: {
+          ...tenantFilter,
+          active: true,
+          deletedAt: null,
+          costPrice: { not: null, gt: 0 },
+          price: { gt: 0 },
+        },
+        select: { id: true, name: true, price: true, costPrice: true, category: true },
+      }),
+    ]);
 
     if (productsWithStock.length > 0) {
       const productIds = productsWithStock.map((p) => p.id);
@@ -171,17 +189,7 @@ export async function GET(req: NextRequest) {
     }
 
     // ─── 4. MARGEN CRÍTICO < 10% ────────────────────────────
-    const productsLowMargin = await prisma.product.findMany({
-      where: {
-        ...tenantFilter,
-        active: true,
-        deletedAt: null,
-        costPrice: { not: null, gt: 0 },
-        price: { gt: 0 },
-      },
-      select: { id: true, name: true, price: true, costPrice: true, category: true },
-    });
-
+    // productsLowMargin ya fue traído en el Promise.all de arriba (P-P0-1)
     const criticalMarginProducts = productsLowMargin
       .map((p) => ({
         ...p,

@@ -165,7 +165,7 @@ function ShipmentOrderCardImpl({ order, onUpdateStatus, updating }: ShipmentOrde
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.25 }}
-      className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden"
+      className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden"
     >
       {/* Header */}
       <div className="p-3 sm:p-5">
@@ -173,7 +173,7 @@ function ShipmentOrderCardImpl({ order, onUpdateStatus, updating }: ShipmentOrde
           {/* Info izquierda */}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">
+              <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 #{order.id.slice(-6).toUpperCase()}
               </h4>
               <m.span
@@ -189,7 +189,7 @@ function ShipmentOrderCardImpl({ order, onUpdateStatus, updating }: ShipmentOrde
               </span>
             </div>
 
-            <p className="text-xs text-[var(--text-primary)] dark:text-foreground font-medium flex items-center gap-1 truncate">
+            <p className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium flex items-center gap-1 truncate">
               <User className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" />
               {order.customerName}
             </p>
@@ -282,7 +282,7 @@ function ShipmentOrderCardImpl({ order, onUpdateStatus, updating }: ShipmentOrde
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="overflow-hidden border-t border-[var(--rule-soft)] dark:border-card-border"
+            className="overflow-hidden border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
           >
             <div className="p-3 sm:p-5">
               <OrderTrackingTimeline orderId={order.id} currentStatus={order.status} />

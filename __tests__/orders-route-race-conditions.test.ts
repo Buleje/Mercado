@@ -441,11 +441,14 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
     );
     mockExecuteRaw.mockResolvedValue(1);
 
+    // audit P0 #1 (2026-05-18): enviamos el total real (20, full price) en
+    // vez de 18 con descuento — el foco del test queda en el coupon
+    // scoping. El gate de total mismatch (P0 #1) habría rechazado 18.
     const req = makePostReq(
       {
         customer: { name: "Mallory" },
         items: [{ id: 1, name: "Whisky", price: 20, quantity: 1 }],
-        total: 18,
+        total: 20,
         appliedCouponCode: "TENANT-A-COUPON",
       },
       { "x-tenant-id": TENANT_B }, // tenant B trying to steal tenant A's coupon

@@ -107,13 +107,28 @@ describe("tenant-cache.ts — clearAllTenantCache", () => {
   it("borra cualquier key con prefijo tenant-scoped", () => {
     localStorage.setItem("admin-recepciones-cache-extra", "x");
     localStorage.setItem("dashboard-data-context", "x");
-    localStorage.setItem("buleje-admin-template", "x");
 
     clearAllTenantCache();
 
     expect(localStorage.getItem("admin-recepciones-cache-extra")).toBeNull();
     expect(localStorage.getItem("dashboard-data-context")).toBeNull();
-    expect(localStorage.getItem("buleje-admin-template")).toBeNull();
+  });
+
+  it("preserva config platform-global del superadmin", () => {
+    // buleje-admin-template es la plantilla de módulos visibles del panel
+    // admin que configura el superadmin. Es global (no por tenant). Si se
+    // borraba al cambiar de tenant, el primer paint del admin del nuevo
+    // tenant mostraba solo módulos default y había que refrescar la página
+    // para que apareciera la config real.
+    localStorage.setItem("buleje-admin-template", JSON.stringify({ overrides: {} }));
+    localStorage.setItem("buleje-admin-theme-set", "1");
+    localStorage.setItem("admin-sales-cache", "datos-tenant");
+
+    clearAllTenantCache();
+
+    expect(localStorage.getItem("buleje-admin-template")).not.toBeNull();
+    expect(localStorage.getItem("buleje-admin-theme-set")).toBe("1");
+    expect(localStorage.getItem("admin-sales-cache")).toBeNull();
   });
 
   it("preserva el OWNER_KEY interno", () => {

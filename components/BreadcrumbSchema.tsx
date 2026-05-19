@@ -60,7 +60,7 @@ export default function BreadcrumbSchema({ items, visible = true }: BreadcrumbSc
                 <li key={item.url} className="flex items-center gap-1">
                   {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted/50 shrink-0" />}
                   {isLast ? (
-                    <span className="font-medium text-foreground truncate max-w-48">{item.name}</span>
+                    <span className="font-medium text-[var(--text-primary)] truncate max-w-48">{item.name}</span>
                   ) : (
                     <Link href={toPath(item.url)} className="hover:text-primary transition-colors truncate max-w-36">
                       {item.name}

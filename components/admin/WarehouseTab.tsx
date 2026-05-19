@@ -73,8 +73,8 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Multi-Almacén</p>
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Multi-Almacén</p>
           <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Centraliza almacenes, stock por sede y transferencias internas para saber donde esta cada producto y cuanto vale.</p>
           <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: comparas el stock del Almacen Principal contra el Punto de Venta y detectas rápido donde falta reponer.</p>
         </div>
@@ -201,7 +201,7 @@ export default function WarehouseTab() {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "adjust", productId: Number(s.productId), newStock: newQty }),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[WarehouseTab] inventory-movements adjust failed:", err));
   };
 
   const handleCreateWarehouse = () => {
@@ -243,7 +243,7 @@ export default function WarehouseTab() {
           });
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[WarehouseTab] DELETE warehouse failed:", err))
       .finally(() => setDeletingId(null));
   };
 
@@ -357,13 +357,13 @@ export default function WarehouseTab() {
         unit: transferForm.unit,
         notes: transferForm.notes.trim(),
       }),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[WarehouseTab] transfer POST failed:", err));
     // Also record as inventory movement
     fetch("/api/inventory-movements", {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ productId: Number(srcLine.productId), type: "transferencia", quantity: qty, notes: noteText }),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[WarehouseTab] inventory-movements transfer failed:", err));
   }
 
   const totalValue = warehouseStock.reduce((s, w) => s + w.totalValue, 0);
@@ -374,19 +374,19 @@ export default function WarehouseTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Warehouse className="h-6 w-6 text-primary" /> Multi-Almacén <ModuleTooltip />
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Gestión de ubicaciones, stock por almacén y transferencias internas</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => { setLoadingData(true); loadWarehouseData(); }} disabled={loadingData} title="Actualizar datos de inventario" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
+          <button onClick={() => { setLoadingData(true); loadWarehouseData(); }} disabled={loadingData} title="Actualizar datos de inventario" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
             <RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} />
           </button>
-          <button onClick={() => exportToCSV(filteredStock.map(s => ({ almacen: warehouses.find(w => w.id === s.warehouseId)?.name ?? s.warehouseId, producto: s.productName, categoria: s.category, cantidad: s.quantity, unidad: s.unit, stock_min: s.minStock, costo_avg: s.costAvg, valor_total: s.quantity * s.costAvg })), "stock-almacenes")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filteredStock.map(s => ({ almacen: warehouses.find(w => w.id === s.warehouseId)?.name ?? s.warehouseId, producto: s.productName, categoria: s.category, cantidad: s.quantity, unidad: s.unit, stock_min: s.minStock, costo_avg: s.costAvg, valor_total: s.quantity * s.costAvg })), "stock-almacenes")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={() => setShowNewWhForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => setShowNewWhForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Plus className="h-4 w-4" /> Nuevo
           </button>
           <button onClick={() => {
@@ -425,21 +425,21 @@ export default function WarehouseTab() {
 
       {/* Transfer form */}
       {showTransferForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><ArrowRightLeft className="h-4 w-4 text-primary" /> Nueva transferencia</CardTitle>
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm flex flex-wrap items-center gap-2"><ArrowRightLeft className="h-4 w-4 text-primary" /> Nueva transferencia</CardTitle>
             <button onClick={() => setShowTransferForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Origen</label>
-              <select value={transferForm.fromId} onChange={e => setTransferForm(p => ({ ...p, fromId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+              <select value={transferForm.fromId} onChange={e => setTransferForm(p => ({ ...p, fromId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {warehouses.filter(w => w.active).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Destino</label>
-              <select value={transferForm.toId} onChange={e => setTransferForm(p => ({ ...p, toId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+              <select value={transferForm.toId} onChange={e => setTransferForm(p => ({ ...p, toId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {warehouses.filter(w => w.active && w.id !== transferForm.fromId).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>
@@ -450,12 +450,12 @@ export default function WarehouseTab() {
                 value={productSearch}
                 onChange={e => { setProductSearch(e.target.value); setTransferForm(p => ({ ...p, productId: "" })); }}
                 placeholder="Buscar producto…"
-                className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground mb-1"
+                className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1"
               />
               <select
                 value={transferForm.productId}
                 onChange={e => { setTransferForm(p => ({ ...p, productId: e.target.value })); setProductSearch(""); }}
-                className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+                className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 size={Math.min(filteredOriginProducts.length + 1, 5)}
               >
                 <option value="">-- Seleccionar --</option>
@@ -487,7 +487,7 @@ export default function WarehouseTab() {
                       onChange={e => setTransferForm(p => ({ ...p, quantity: e.target.value }))}
                       min="1"
                       max={maxQty}
-                      className={`w-full text-sm border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground ${overLimit ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"}`}
+                      className={`w-full text-sm border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] ${overLimit ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"}`}
                     />
                     {overLimit && (
                       <p className="text-xs text-[var(--data-error-500)] mt-1">La cantidad supera el stock disponible ({maxQty} {sel!.unit})</p>
@@ -498,17 +498,17 @@ export default function WarehouseTab() {
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Unidad</label>
-              <select value={transferForm.unit} onChange={e => setTransferForm(p => ({ ...p, unit: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+              <select value={transferForm.unit} onChange={e => setTransferForm(p => ({ ...p, unit: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {["unidad", "kg", "litro", "caja", "bolsa", "saco", "lata", "botella"].map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Notas</label>
-              <input type="text" value={transferForm.notes} onChange={e => setTransferForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones..." className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="text" value={transferForm.notes} onChange={e => setTransferForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones..." className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowTransferForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
+            <button onClick={() => setShowTransferForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
             <button onClick={handleTransfer} disabled={(() => {
               const sel = originProducts.find(s => String(s.productId) === String(transferForm.productId));
               return sel !== undefined && Number(transferForm.quantity) > sel.quantity;
@@ -519,41 +519,41 @@ export default function WarehouseTab() {
 
       {/* New warehouse form */}
       {showNewWhForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo almacén</CardTitle>
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo almacén</CardTitle>
             <button onClick={() => setShowNewWhForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="sm:col-span-2">
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Nombre</label>
-              <input type="text" value={newWhForm.name} onChange={e => setNewWhForm(p => ({ ...p, name: e.target.value }))} placeholder="Depósito Norte" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="text" value={newWhForm.name} onChange={e => setNewWhForm(p => ({ ...p, name: e.target.value }))} placeholder="Depósito Norte" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Código</label>
-              <input type="text" value={newWhForm.code} onChange={e => setNewWhForm(p => ({ ...p, code: e.target.value.toUpperCase() }))} placeholder="ALM-002" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="text" value={newWhForm.code} onChange={e => setNewWhForm(p => ({ ...p, code: e.target.value.toUpperCase() }))} placeholder="ALM-002" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Tipo</label>
-              <select value={newWhForm.type} onChange={e => setNewWhForm(p => ({ ...p, type: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+              <select value={newWhForm.type} onChange={e => setNewWhForm(p => ({ ...p, type: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Dirección / Ubicación</label>
-              <input type="text" value={newWhForm.location} onChange={e => setNewWhForm(p => ({ ...p, location: e.target.value }))} placeholder="Av. Principal 123" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="text" value={newWhForm.location} onChange={e => setNewWhForm(p => ({ ...p, location: e.target.value }))} placeholder="Av. Principal 123" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Responsable</label>
-              <input type="text" value={newWhForm.manager} onChange={e => setNewWhForm(p => ({ ...p, manager: e.target.value }))} placeholder="Nombre del encargado" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="text" value={newWhForm.manager} onChange={e => setNewWhForm(p => ({ ...p, manager: e.target.value }))} placeholder="Nombre del encargado" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Capacidad (u.)</label>
-              <input type="number" value={newWhForm.capacity} onChange={e => setNewWhForm(p => ({ ...p, capacity: e.target.value }))} placeholder="10000" min="1" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="number" value={newWhForm.capacity} onChange={e => setNewWhForm(p => ({ ...p, capacity: e.target.value }))} placeholder="10000" min="1" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowNewWhForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
+            <button onClick={() => setShowNewWhForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
             <button onClick={handleCreateWarehouse} disabled={creatingWh || !newWhForm.name.trim() || !newWhForm.code.trim()} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-50">
               {creatingWh ? "Creando..." : "Crear almacén"}
             </button>
@@ -565,7 +565,7 @@ export default function WarehouseTab() {
       {loadingData && (
         <div className="space-y-3">
           {[1,2,3,4].map(i => (
-            <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 animate-pulse">
+            <div key={i} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 animate-pulse">
               <div className="h-4 bg-gray-200 dark:bg-surface rounded w-40 mb-3" />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[1,2,3].map(j => <div key={j} className="h-12 rounded-xl bg-gray-100 dark:bg-surface/50" />)}
@@ -579,7 +579,7 @@ export default function WarehouseTab() {
       {!loadingData && (
       <div className="flex flex-wrap items-center gap-2">
         {(["almacenes", "stock", "transferencias"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {v.charAt(0).toUpperCase() + v.slice(1)}
           </button>
         ))}
@@ -593,13 +593,13 @@ export default function WarehouseTab() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input value={searchWh} onChange={e => { setSearchWh(e.target.value); setWhPage(0); }} placeholder="Buscar almacén..." className="pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground w-44" />
+              <input value={searchWh} onChange={e => { setSearchWh(e.target.value); setWhPage(0); }} placeholder="Buscar almacén..." className="pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] w-44" />
             </div>
-            <select value={filterType} onChange={e => { setFilterType(e.target.value); setWhPage(0); }} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+            <select value={filterType} onChange={e => { setFilterType(e.target.value); setWhPage(0); }} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               <option value="todos">Todos los tipos</option>
               {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-            <select value={filterActive} onChange={e => { setFilterActive(e.target.value as typeof filterActive); setWhPage(0); }} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+            <select value={filterActive} onChange={e => { setFilterActive(e.target.value as typeof filterActive); setWhPage(0); }} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               <option value="todos">Activo e inactivo</option>
               <option value="activo">Solo activos</option>
               <option value="inactivo">Solo inactivos</option>
@@ -613,14 +613,14 @@ export default function WarehouseTab() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             {pagedWarehouses.map(w => (
-              <div key={w.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5 space-y-4", w.lowStock > 0 ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border")}>
+              <div key={w.id} className={cn("bg-[var(--surface-raised)] border rounded-xl p-3 sm:p-5 space-y-4", w.lowStock > 0 ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-xs font-bold text-[var(--text-tertiary)] font-mono">{w.code}</span>
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">{TYPE_LABELS[w.type]}</span>
                     </div>
-                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{w.name}</CardTitle>
+                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{w.name}</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{w.location}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -644,7 +644,7 @@ export default function WarehouseTab() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                   <div className="bg-gray-50 dark:bg-surface/50 rounded-xl p-3">
                     <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">Productos</p>
-                    <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{w.lines.length}</p>
+                    <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{w.lines.length}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-surface/50 rounded-xl p-3">
                     <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">Valor</p>
@@ -661,16 +661,16 @@ export default function WarehouseTab() {
           </div>
           {/* Pagination */}
           {filteredWarehouses.length > WH_PAGE_SIZE && (
-            <div className="flex items-center justify-between border-t border-[var(--rule-soft)] dark:border-card-border pt-3">
+            <div className="flex items-center justify-between border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-3">
               <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
                 {whPage * WH_PAGE_SIZE + 1}–{Math.min((whPage + 1) * WH_PAGE_SIZE, filteredWarehouses.length)} de {filteredWarehouses.length} almacenes
               </span>
               <div className="flex items-center gap-1">
-                <button onClick={() => setWhPage(p => Math.max(0, p - 1))} disabled={whPage === 0} className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                <button onClick={() => setWhPage(p => Math.max(0, p - 1))} disabled={whPage === 0} className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                   <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted px-2">{whPage + 1} / {Math.ceil(filteredWarehouses.length / WH_PAGE_SIZE)}</span>
-                <button onClick={() => setWhPage(p => Math.min(Math.ceil(filteredWarehouses.length / WH_PAGE_SIZE) - 1, p + 1))} disabled={(whPage + 1) * WH_PAGE_SIZE >= filteredWarehouses.length} className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                <button onClick={() => setWhPage(p => Math.min(Math.ceil(filteredWarehouses.length / WH_PAGE_SIZE) - 1, p + 1))} disabled={(whPage + 1) * WH_PAGE_SIZE >= filteredWarehouses.length} className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                   <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>
@@ -685,17 +685,17 @@ export default function WarehouseTab() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
-            <select value={selectedWarehouse} onChange={e => setSelectedWarehouse(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+            <select value={selectedWarehouse} onChange={e => setSelectedWarehouse(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               <option value="todos">Todos los almacenes</option>
               {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+                <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <tr>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Almacén</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
@@ -714,9 +714,9 @@ export default function WarehouseTab() {
                     return (
                       <tr key={`${s.warehouseId}-${s.productId}`} className="hover:bg-gray-50/50 dark:hover:bg-surface/30">
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{wh?.name ?? s.warehouseId}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{s.productName}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.productName}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{s.category}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{s.quantity} <span className="text-xs font-normal text-[var(--text-tertiary)]">{s.unit}</span></td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.quantity} <span className="text-xs font-normal text-[var(--text-tertiary)]">{s.unit}</span></td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-tertiary)]">{s.minStock}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                           {isLow
@@ -724,11 +724,11 @@ export default function WarehouseTab() {
                             : <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"><CheckCircle className="h-3 w-3" /> OK</span>
                           }
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(s.quantity * s.costAvg)}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(s.quantity * s.costAvg)}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                           {adjustingId === s.productId ? (
                             <div className="flex items-center justify-end gap-1">
-                              <input type="number" value={adjustValue} onChange={e => setAdjustValue(e.target.value)} min="0" className="w-16 text-xs border border-[var(--rule-base)] dark:border-card-border rounded px-2 py-1 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" autoFocus />
+                              <input type="number" value={adjustValue} onChange={e => setAdjustValue(e.target.value)} min="0" className="w-16 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded px-2 py-1 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" autoFocus />
                               <button onClick={() => handleAdjustStock(s)} className="text-xs px-2 py-1 rounded bg-primary text-white font-bold">OK</button>
                               <button onClick={() => setAdjustingId(null)} className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-surface text-[var(--text-secondary)]"><X className="h-3 w-3" /></button>
                             </div>
@@ -756,13 +756,13 @@ export default function WarehouseTab() {
               ? { color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", label: "Pendiente" }
               : { color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", label: "Cancelado" };
             return (
-              <div key={t.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <div key={t.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <div className="flex flex-wrap items-center gap-3 flex-1">
                   <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <ArrowRightLeft className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{t.productName} — {t.quantity} {t.unit}</p>
+                    <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{t.productName} — {t.quantity} {t.unit}</p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{t.fromName} → {t.toName}</p>
                   </div>
                 </div>

@@ -59,20 +59,20 @@ export function CustomerVerifiedCard({
       <div className="divide-y divide-primary/10">
         <div className="flex items-center gap-2.5 px-3 py-1.5">
           <User className="h-3.5 w-3.5 text-primary/60 shrink-0" />
-          <span className="text-xs font-bold text-gray-900 dark:text-foreground">
+          <span className="text-xs font-bold text-gray-900 dark:text-[var(--text-primary)]">
             {name}
           </span>
         </div>
         {phone && (
           <div className="flex items-center gap-2.5 px-3 py-1.5">
             <Phone className="h-3.5 w-3.5 text-primary/60 shrink-0" />
-            <span className="text-xs text-gray-700 dark:text-foreground">{phone}</span>
+            <span className="text-xs text-gray-700 dark:text-[var(--text-primary)]">{phone}</span>
           </div>
         )}
         {location && (
           <div className="flex items-start gap-2.5 px-3 py-1.5">
             <MapPin className="h-3.5 w-3.5 text-primary/60 shrink-0 mt-0.5" />
-            <span className="text-xs text-gray-700 dark:text-foreground leading-tight">
+            <span className="text-xs text-gray-700 dark:text-[var(--text-primary)] leading-tight">
               {location}
             </span>
           </div>
@@ -129,7 +129,7 @@ export function CustomerVerifiedCard({
                       "text-sm font-semibold truncate",
                       selectedLocId === loc.id
                         ? "text-primary"
-                        : "text-gray-900 dark:text-foreground"
+                        : "text-gray-900 dark:text-[var(--text-primary)]"
                     )}
                   >
                     {loc.location}

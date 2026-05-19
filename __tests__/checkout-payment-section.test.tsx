@@ -278,16 +278,18 @@ describe("CheckoutPaymentSection — tip", () => {
     renderSection({ tip: 3 });
     // The totals row renders "+S/3.00" when tip>0.
     expect(screen.getByText(/\+S\/3\.00/)).toBeInTheDocument();
-    // And the "Propina" label in the totals row.
+    // Hay 2 elementos con texto "Propina": el SectionHeader (siempre visible)
+    // y la fila de totals (solo cuando tip > 0).
     const propinaLabels = screen.getAllByText(/^propina$/i);
-    expect(propinaLabels.length).toBe(1);
+    expect(propinaLabels.length).toBe(2);
   });
 
   it("does not render a tip row when tip = 0", () => {
     renderSection({ tip: 0 });
-    // When tip=0, no "Propina" totals row (only the section header exists).
+    // Cuando tip=0, solo el SectionHeader con "Propina" aparece; la fila de
+    // totals está oculta. Exactamente 1 coincidencia.
     const matches = screen.queryAllByText(/^propina$/i);
-    expect(matches.length).toBe(0);
+    expect(matches.length).toBe(1);
   });
 });
 

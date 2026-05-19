@@ -1,58 +1,58 @@
 "use client";
 
 /**
- * /admin?tab=pagina-inicio — Personalización de la página individual del tenant.
+ * /admin?tab=pagina-inicio — Contenido publico del storefront del tenant.
  *
- * Reescrita para alinearse al patrón estándar del admin (AdminModuleHeader +
- * AdminTabBar) usado en EInvoice, POSCaja, Compras, etc.
+ * v2 mayo 2026 (Brandon · Opcion A — renombrar + reducir alcance):
+ *   - Pasa de 9 tabs a 4 tabs unicos (sin duplicar otros modulos del admin)
+ *   - Label visible: "Mi tienda publica" (era "Pagina de inicio" confuso)
  *
- * Tabs:
- *   - Apariencia
- *   - Branding marketplace
- *   - Productos / Variaciones / Combos / Descuentos
- *   - Promociones / Engagement
- *   - Métricas
+ * Tabs activos:
+ *   - Hero & secciones (era "Apariencia")
+ *   - Branding marketplace (logo + banner para /marketplace/[slug])
+ *   - Promociones del home (banners rotantes)
+ *   - Metricas del storefront (vistas, clicks)
+ *
+ * Tabs ELIMINADOS (ahora viven en su modulo dedicado):
+ *   - Productos        → /admin?tab=productos
+ *   - Variaciones      → /admin?tab=productos (sub-tab variantes)
+ *   - Combos           → /admin?tab=productos (sub-tab combos)
+ *   - Descuentos       → /admin?tab=promociones
+ *   - Engagement       → /admin?tab=clientes (CRM/loyalty)
+ *
+ * Patrón estándar: AdminModuleHeader + AdminTabBar.
  */
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Palette,
-  Package,
   Megaphone,
   BarChart3,
   ExternalLink,
-  Percent,
-  Boxes,
-  Gamepad2,
   Sparkles,
-  Layers,
   Globe,
+  Layers,
+  Paintbrush,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AppearanceTab from "./_components/AppearanceTab";
 import MarketplaceBrandingTab from "./_components/MarketplaceBrandingTab";
-import VariationsTab from "./_components/VariationsTab";
-import ProductsTab from "./_components/ProductsTab";
 import PromotionsTab from "./_components/PromotionsTab";
 import AnalyticsTab from "./_components/AnalyticsTab";
-import CombosTab from "./_components/CombosTab";
-import DiscountsTab from "./_components/DiscountsTab";
-import EngagementTab from "./_components/EngagementTab";
+import SectionsTab from "./_components/SectionsTab";
+import DesignTab from "./_components/DesignTab";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 
 const MODULE_ID = "pagina-inicio";
 
 type TabId =
   | "appearance"
+  | "design"
+  | "sections"
   | "branding"
-  | "products"
-  | "variations"
   | "promotions"
-  | "combos"
-  | "discounts"
-  | "engagement"
   | "analytics";
 
 type TabConfig = {
@@ -63,15 +63,12 @@ type TabConfig = {
 };
 
 const TABS: TabConfig[] = [
-  { id: "appearance", label: "Apariencia", shortLabel: "Look", icon: Palette },
-  { id: "branding", label: "Branding marketplace", shortLabel: "Branding", icon: Sparkles },
-  { id: "products", label: "Productos", shortLabel: "Prod.", icon: Package },
-  { id: "variations", label: "Variaciones", shortLabel: "Var.", icon: Layers },
-  { id: "combos", label: "Combos", icon: Boxes },
-  { id: "discounts", label: "Descuentos", shortLabel: "Desc.", icon: Percent },
-  { id: "promotions", label: "Promociones", shortLabel: "Promos", icon: Megaphone },
-  { id: "engagement", label: "Engagement", icon: Gamepad2 },
-  { id: "analytics", label: "Métricas", icon: BarChart3 },
+  { id: "appearance",  label: "Hero",                 shortLabel: "Hero",     icon: Palette },
+  { id: "design",      label: "Diseño",               shortLabel: "Diseño",   icon: Paintbrush },
+  { id: "sections",    label: "Secciones",            shortLabel: "Sec.",     icon: Layers },
+  { id: "branding",    label: "Branding marketplace", shortLabel: "Branding", icon: Sparkles },
+  { id: "promotions",  label: "Promociones del home", shortLabel: "Promos",   icon: Megaphone },
+  { id: "analytics",   label: "Métricas storefront",  shortLabel: "Métricas", icon: BarChart3 },
 ];
 
 const VALID_TABS = TABS.map((t) => t.id) as readonly TabId[];
@@ -103,18 +100,19 @@ export default function StorePageAdminPage() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <AdminModuleHeader
-        eyebrow="Mi tienda · Contenido público"
-        title="Qué muestra tu página de inicio"
+        eyebrow="Mi tienda pública"
+        title="Qué ve el cliente cuando entra a tu storefront"
         description={
           <>
-            Hero, productos destacados, ofertas y secciones de tu home pública. Define el{" "}
-            <strong>contenido</strong> — no los colores ni el logo. Para eso, andá a{" "}
+            Hero (título, subtítulo, imagen) · Logo y banner para el marketplace · Promociones rotantes · Métricas. Para{" "}
+            <strong>colores, logo del tema y tipografía</strong>, usá{" "}
             <Link
               href="?tab=store-customizer"
               className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
             >
               Identidad y tema →
             </Link>
+            . Para productos, combos o descuentos, usá los módulos dedicados (Productos · Promociones).
           </>
         }
         icon={Globe}
@@ -144,13 +142,10 @@ export default function StorePageAdminPage() {
 
       <div>
         {tab === "appearance" && <AppearanceTab />}
+        {tab === "design" && <DesignTab />}
+        {tab === "sections" && <SectionsTab />}
         {tab === "branding" && <MarketplaceBrandingTab />}
-        {tab === "products" && <ProductsTab />}
-        {tab === "variations" && <VariationsTab />}
-        {tab === "combos" && <CombosTab />}
-        {tab === "discounts" && <DiscountsTab />}
         {tab === "promotions" && <PromotionsTab />}
-        {tab === "engagement" && <EngagementTab />}
         {tab === "analytics" && <AnalyticsTab />}
       </div>
     </div>

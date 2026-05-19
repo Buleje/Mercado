@@ -19,7 +19,7 @@ export function DeleteConfirmModal({ onConfirm, onCancel }: DeleteConfirmModalPr
       onClick={onCancel}
     >
       <div
-        className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-6"
+        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-4">
@@ -27,14 +27,14 @@ export function DeleteConfirmModal({ onConfirm, onCancel }: DeleteConfirmModalPr
             <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
           </div>
           <div>
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">¿Eliminar pedido?</CardTitle>
+            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">¿Eliminar pedido?</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer.</p>
           </div>
         </div>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
           >
             Cancelar
           </button>
@@ -65,11 +65,11 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
       onClick={onCancel}
     >
       <div
-        className="bg-white dark:bg-card rounded-xl w-full max-w-md"
+        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
-        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Rechazar pedido</CardTitle>
+        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Rechazar pedido</CardTitle>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Selecciona un motivo o escribe uno personalizado</p>
         </div>
         <div className="p-5 space-y-3">
@@ -82,7 +82,7 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
                   "text-left px-3 py-2 rounded-lg text-sm border transition-colors",
                   rejectReason === t
                     ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-500)] font-semibold"
-                    : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                 )}
               >
                 {t}
@@ -93,12 +93,12 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
             value={rejectReason}
             onChange={e => onReasonChange(e.target.value)}
             placeholder="O escribe un motivo personalizado..."
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-error-500)]"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
           />
           <div className="flex gap-2 pt-1">
             <button
               onClick={onCancel}
-              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
             >
               Cancelar
             </button>

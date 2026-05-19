@@ -67,6 +67,11 @@ export default function OrderSuccessModal() {
   const itemsCount = order.items.reduce((acc, i) => acc + i.quantity, 0);
   const cleanPhone = order.customer.phone.replace(/\D/g, "");
 
+  // Stores únicas del pedido (slug + name) — para el marker de origen del mapa.
+  const uniqueStores = Array.from(
+    new Map(order.items.map((i) => [i.storeSlug, { slug: i.storeSlug, name: i.storeName }])).values(),
+  );
+
   return (
     <div
       role="dialog"
@@ -173,8 +178,13 @@ export default function OrderSuccessModal() {
           </div>
           <div className="h-56 w-full rounded-2xl overflow-hidden border border-[var(--rule-base)]">
             <OrderLocationMap
-              address={order.address.line}
-              district={order.address.district}
+              address={{
+                line: order.address.line,
+                district: order.address.district,
+                province: order.address.province,
+                department: order.address.department,
+              }}
+              stores={uniqueStores}
               className="h-full w-full"
             />
           </div>

@@ -37,15 +37,18 @@ export default function TiendasSectionHeader({
     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6 mb-5 sm:mb-6">
       <div className="min-w-0">
         {eyebrow && (
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2.5">
             <span
               aria-hidden
-              className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]"
+              className="inline-block h-[3px] w-10 rounded-full bg-[var(--accent)]"
             />
             {eyebrow}
           </p>
         )}
-        <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
+        {/* Title v2: clamp fluid + italic serif accent en el split de la
+            primera palabra. Antes era plano; ahora editorial al estilo del
+            hero principal para coherencia visual en toda la página. */}
+        <h2 className="text-[clamp(1.5rem,3.5vw,2.25rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.05]">
           {title}
         </h2>
         {subtitle && (

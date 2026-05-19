@@ -222,7 +222,7 @@ export default function WriteReviewModal({
               </div>
             </header>
 
-            <div className="px-6 py-5 space-y-5 max-h-[calc(100vh-16rem)] overflow-y-auto">
+            <div className="px-6 py-5 space-y-5 max-h-[calc(100dvh-16rem)] overflow-y-auto">
               {/* Rating — estrellas grandes con feedback */}
               <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 text-center">
                 <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">

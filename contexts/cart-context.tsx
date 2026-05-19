@@ -6,6 +6,7 @@ import {
   useReducer,
   useEffect,
   useCallback,
+  useMemo,
   useRef,
   type ReactNode,
 } from "react";
@@ -238,10 +239,19 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   // FIX 2026-05-07: cargar Set de productIds válidos del tenant para que
   // addItem pueda rechazar productos cross-tenant antes de añadirlos.
   // Fire-and-forget; si falla, addItem permite todo (no romper UX).
+  //
+  // Audit 2026-05-17 01-P1-9: en tenantSlug==="main" (marketplace global)
+  // intencionalmente NO filtramos por ids del tenant porque el carrito
+  // agrega productos de múltiples tiendas (cross-store). La validación de
+  // pertenencia se hace SIEMPRE en backend (lib/db/orders.db.ts +
+  // marketplace/orders endpoint validan storeId/tenantId server-side).
+  // Si llegara un id de otro tenant, backend rechaza con 422; lo único que
+  // se degrada es UX (no se filtra previo a la POST). NO es bypass de
+  // tenant isolation — es trade-off de UX explícito documentado.
   useEffect(() => {
     const s = tenantSlug;
     if (!s || s === "main") {
-      validProductIdsRef.current = null; // sin filtro en main (cross-store legacy)
+      validProductIdsRef.current = null; // marketplace cross-store: backend valida
       return;
     }
     // FIX 2026-05-07 (P0 #5): se eliminó un fetch "fantasma" a
@@ -584,10 +594,66 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   const openCheckout = useCallback(() => dispatch({ type: "OPEN_CHECKOUT" }), []);
   const closeCheckout = useCallback(() => dispatch({ type: "CLOSE_CHECKOUT" }), []);
 
+  // audit P0 #6 (Brandon 2026-05-18): memoizar value para evitar
+  // re-render en cadena de TODA app con cart. Antes value={{...}} creaba
+  // referencia nueva cada render del provider (causado por dispatch,
+  // audio, sync BroadcastChannel) → todos los consumers re-renderizaban.
+  // Deps: state granular + callbacks (callbacks ya son estables por useCallback).
+  const value = useMemo(
+    () => ({
+      items: state.items,
+      isOpen: state.isOpen,
+      count,
+      total,
+      hasPendingOrder: state.hasPendingOrder,
+      confirmModalOpen: state.confirmModalOpen,
+      confirmFromCheckout: state.confirmFromCheckout,
+      checkoutOpen: state.checkoutOpen,
+      markOrderPending,
+      clearPendingOrder,
+      openConfirmModal,
+      closeConfirmModal,
+      openCheckout,
+      closeCheckout,
+      addItem,
+      addMultiple,
+      removeItem,
+      updateQty,
+      setItemNote,
+      clear,
+      toggle,
+      open: openCart,
+      close,
+    }),
+    [
+      state.items,
+      state.isOpen,
+      state.hasPendingOrder,
+      state.confirmModalOpen,
+      state.confirmFromCheckout,
+      state.checkoutOpen,
+      count,
+      total,
+      markOrderPending,
+      clearPendingOrder,
+      openConfirmModal,
+      closeConfirmModal,
+      openCheckout,
+      closeCheckout,
+      addItem,
+      addMultiple,
+      removeItem,
+      updateQty,
+      setItemNote,
+      clear,
+      toggle,
+      openCart,
+      close,
+    ],
+  );
+
   return (
-    <CartContext.Provider
-      value={{ items: state.items, isOpen: state.isOpen, count, total, hasPendingOrder: state.hasPendingOrder, confirmModalOpen: state.confirmModalOpen, confirmFromCheckout: state.confirmFromCheckout, checkoutOpen: state.checkoutOpen, markOrderPending, clearPendingOrder, openConfirmModal, closeConfirmModal, openCheckout, closeCheckout, addItem, addMultiple, removeItem, updateQty, setItemNote, clear, toggle, open: openCart, close }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Lightbulb } from "@buleje/design-system/icons";
 import { useSearchParams } from "next/navigation";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useCustomer } from "@/contexts/customer-context";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceChat from "@/components/marketplace/MarketplaceChat";
 import MarketplaceMiniCart from "@/components/marketplace/MarketplaceMiniCart";
@@ -196,7 +197,7 @@ function RelatedProducts({
           También te puede gustar
         </h2>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {related.map((p, i) => (
           <ProductCardWrapper
             key={`rel-${p.id}`}
@@ -802,13 +803,21 @@ export default function StoreDetail({ slug }: { slug: string }) {
     } catch { /* sessionStorage bloqueado (Safari incógnito, etc) */ }
   }, [slug]);
 
-  // Leer phone del localStorage para el chat
+  // Chat identity: si el cliente esta logueado en el marketplace, usamos
+  // su phone+name del CustomerContext directo — sin pedir formulario.
+  // Fallback: localStorage (caso guest checkout previo). De ahi en
+  // adelante, MarketplaceChat solo pide el MENSAJE, ya tiene los datos.
+  const { customer: marketplaceCustomer } = useCustomer();
   useEffect(() => {
+    if (marketplaceCustomer?.phone) {
+      setCustomerPhone(marketplaceCustomer.phone);
+      return;
+    }
     try {
       const raw = localStorage.getItem("marketplace-customer-phone");
       if (raw) setCustomerPhone(raw);
     } catch { /* silent */ }
-  }, []);
+  }, [marketplaceCustomer?.phone]);
 
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
@@ -1248,7 +1257,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
       )}
 
       {loadingProducts ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
         </div>
       ) : products.length === 0 ? (
@@ -1265,7 +1274,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {products.map((p, i) => (
               <ProductCardWrapper
                 key={p.id}
@@ -1320,13 +1329,16 @@ export default function StoreDetail({ slug }: { slug: string }) {
           /marketplace/carrito como flujo de páginas. */}
       <MarketplaceMiniCart />
 
-      {/* Chat floating widget */}
+      {/* Chat floating widget — si el cliente esta logueado pasamos su
+          name del context para que el chat NO pida nombre/telefono y
+          solo se limite a pedir el mensaje. */}
       {store && customerPhone && (
         <MarketplaceChat
           storeId={store.id}
           storeName={store.name}
           storeLogo={store.logo}
           customerPhone={customerPhone}
+          customerName={marketplaceCustomer?.name ?? "Cliente"}
         />
       )}
     </div>

@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 import { logger } from "@/lib/logger";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
     });
 
     // cross-tenant OK — enriquecimiento usa tenantId solo para imágenes/variantes del tenant que sirve el catálogo
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    const tenantId = resolveMarketplaceTenant(req, { context: "marketplace/catalog" });
 
     const results = await MarketplacePublicDB.getCatalogPage({
       q,

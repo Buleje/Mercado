@@ -64,19 +64,19 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2 mb-4">
           <Star className="h-4 w-4 text-secondary fill-secondary" />
-          <h2 className="text-base sm:text-lg font-extrabold text-foreground">Productos Destacados</h2>
+          <h2 className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">Productos Destacados</h2>
         </div>
 
         {/* MK-10: carousel horizontal con scroll-snap */}
         <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2 -mx-1 px-1">
           {featured.map(product => (
-            <div key={product.id} className="group bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 snap-start w-[160px] sm:w-[200px]">
+            <div key={product.id} className="group bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-[var(--dur-fast)] shrink-0 snap-start w-[160px] sm:w-[200px]">
               <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
                 <SmartProductImage
                   src={product.image}
                   alt={product.name}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
                   sizes="(max-width:640px) 50vw, (max-width:1024px) 25vw, 16vw"
                   placeholderSize={28}
                   showPlaceholderLabel={false}
@@ -88,7 +88,7 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
                 )}
               </div>
               <div className="p-2">
-                <h3 className="font-medium text-foreground text-xs leading-tight line-clamp-2 mb-1.5">{product.name}</h3>
+                <h3 className="font-medium text-[var(--text-primary)] text-xs leading-tight line-clamp-2 mb-1.5">{product.name}</h3>
                 <div className="flex items-center justify-between gap-1">
                   <ProductPrice price={product.price} size="sm" />
                   {(() => {

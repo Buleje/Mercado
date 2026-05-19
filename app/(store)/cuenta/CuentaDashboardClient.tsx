@@ -459,7 +459,7 @@ export function CuentaDashboardClient() {
                     )}
                     {itemCount > 1 && (
                       <span
-                        className="absolute -top-1 -right-1 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] font-extrabold tabular-nums text-white"
+                        className="absolute -top-1 -right-1 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-white"
                         style={{
                           background:
                             "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
@@ -472,7 +472,7 @@ export function CuentaDashboardClient() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-foreground truncate">
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">
                         Pedido #{order.id.slice(-6).toUpperCase()}
                       </p>
                       <span
@@ -544,7 +544,7 @@ export function CuentaDashboardClient() {
               >
                 Centro de puntos
               </p>
-              <p className="text-base font-extrabold text-foreground leading-tight mt-0.5">
+              <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight mt-0.5">
                 Canjea tus {points.toLocaleString()} puntos
               </p>
               <p className="text-sm text-muted leading-tight mt-0.5">

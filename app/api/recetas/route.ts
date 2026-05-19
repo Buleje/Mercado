@@ -4,6 +4,7 @@ import { RecetasDB } from "@/lib/db/recetas.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const IngredienteSchema = z.object({
@@ -51,6 +52,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // CRITICAL FIX 2026-05-11 (audit P0 CRIT-2): validar que TODOS los
+    // productoId de ingredientes (y el productoId final si existe) pertenecen
+    // al tenant. Sin esto, un admin de tenant A creaba receta con productoId
+    // de tenant B, y al producir leakaba/decrementaba stock ajeno.
+    const productIds = parsed.data.ingredientes.map((i) => i.productoId);
+    if (parsed.data.productoId) productIds.push(parsed.data.productoId);
+    // eslint-disable-next-line no-restricted-properties -- ownership check scoped por tenantId obligatorio. Refactor a ProductsDB.countOwned pendiente.
+    const ownedCount = await prisma.product.count({
+      where: { id: { in: productIds }, tenantId: auth.tenantId, deletedAt: null },
+    });
+    if (ownedCount !== new Set(productIds).size) {
+      return NextResponse.json(
+        { error: "Uno o más productos no fueron encontrados en tu inventario" },
+        { status: 404 },
+      );
+    }
+
     const receta = await RecetasDB.create({
       tenantId: auth.tenantId,
       nombre: parsed.data.nombre,
@@ -63,9 +81,7 @@ export async function POST(req: NextRequest) {
       "Crear", "receta",
       `Receta "${parsed.data.nombre}" creada con ${parsed.data.ingredientes.length} ingredientes`,
       receta.id, auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.error("[recetas] activity log failed", { err: String(err) }));
 
     return NextResponse.json(receta, { status: 201 });
   } catch (e) {

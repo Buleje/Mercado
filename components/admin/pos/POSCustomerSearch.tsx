@@ -194,8 +194,25 @@ export default function POSCustomerSearch({
       .catch(() => { setCustomerNotes(""); setLoyaltyPoints(0); });
     setLoadingLastPurchase(true);
     fetch(`/api/customers/${encodeURIComponent(selectedPhone)}/last-purchase`)
-      .then(r => r.json())
-      .then(data => setLastPurchase(data || null))
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: unknown) => {
+        // Validar shape antes de aceptar: el endpoint puede devolver
+        // null (sin compras) o un objeto con items[]. Cualquier otra cosa
+        // (ej. { error } en 5xx, body vacío, JSON corrupto) se trata como
+        // "no hay compras" — protege el render que lee items.length.
+        if (
+          data &&
+          typeof data === "object" &&
+          "items" in data &&
+          Array.isArray((data as { items: unknown }).items) &&
+          "date" in data &&
+          "total" in data
+        ) {
+          setLastPurchase(data as LastPurchase);
+        } else {
+          setLastPurchase(null);
+        }
+      })
       .catch(() => setLastPurchase(null))
       .finally(() => setLoadingLastPurchase(false));
 
@@ -234,7 +251,7 @@ export default function POSCustomerSearch({
             <User className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
+            <p className="text-base font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
               {selectedName || selectedPhone}
             </p>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted tabular-nums">
@@ -244,7 +261,7 @@ export default function POSCustomerSearch({
           <button
             onClick={onClear}
             aria-label="Quitar cliente"
-            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-card/50 transition-colors shrink-0"
+            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-[var(--surface-raised)]/50 transition-colors shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -278,8 +295,8 @@ export default function POSCustomerSearch({
               </button>
             </div>
             {showAbonoRapido && (
-              <div className="px-2 py-2 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg space-y-1.5">
-                <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-foreground">
+              <div className="px-2 py-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg space-y-1.5">
+                <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">
                   Abonar a fiado de {selectedName || selectedPhone}
                 </p>
                 <div className="flex gap-1.5">
@@ -291,7 +308,7 @@ export default function POSCustomerSearch({
                       step="0.10"
                       value={abonoMonto}
                       onChange={(e) => setAbonoMonto(e.target.value)}
-                      className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                      className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                     />
                   </div>
                   <button
@@ -385,11 +402,11 @@ export default function POSCustomerSearch({
           </div>
         )}
         {/* Mejora 17: Producto que suele comprar */}
-        {lastPurchase && lastPurchase.items.length > 0 && (
+        {lastPurchase && Array.isArray(lastPurchase.items) && lastPurchase.items.length > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1">
             <span className="text-sm text-[var(--text-tertiary)] dark:text-muted">
-              🛒 Suele comprar: <span className="font-bold text-[var(--text-secondary)]">{lastPurchase.items[0].name}</span>
-              {lastPurchase.items.length > 1 && <span>, {lastPurchase.items[1].name}</span>}
+              🛒 Suele comprar: <span className="font-bold text-[var(--text-secondary)]">{lastPurchase.items[0]?.name ?? "—"}</span>
+              {lastPurchase.items.length > 1 && lastPurchase.items[1]?.name && <span>, {lastPurchase.items[1].name}</span>}
             </span>
           </div>
         )}
@@ -424,7 +441,7 @@ export default function POSCustomerSearch({
             </div>
           </div>
         )}
-        {lastPurchase && !loadingLastPurchase && (
+        {lastPurchase && Array.isArray(lastPurchase.items) && !loadingLastPurchase && (
           <div className="bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               Última compra: {getRelativeTime(lastPurchase.date)} — {lastPurchase.items.map(i => i.name).slice(0, 3).join(", ")}
@@ -466,14 +483,14 @@ export default function POSCustomerSearch({
           }}
           onFocus={() => setShowResults(true)}
           placeholder="Buscar cliente por nombre o teléfono..."
-          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-base text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           autoComplete="off"
         />
       </div>
 
       {/* Dropdown resultados */}
       {showResults && query.trim().length >= 3 && (
-        <div className="absolute z-40 left-0 right-0 mt-2 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl shadow-lg max-h-80 overflow-y-auto">
+        <div className="absolute z-40 left-0 right-0 mt-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl shadow-lg max-h-80 overflow-y-auto">
           {loading ? (
             <div className="py-6 text-center text-sm font-semibold text-[var(--text-tertiary)] dark:text-muted flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -489,13 +506,13 @@ export default function POSCustomerSearch({
               <button
                 key={c.phone}
                 onClick={() => handleSelect(c)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0"
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-[var(--rule-base)] last:border-0"
               >
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <User className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
+                  <p className="text-base font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                     {c.name}
                   </p>
                   <p className="text-sm text-[var(--text-tertiary)] dark:text-muted tabular-nums">
@@ -521,7 +538,7 @@ export default function POSCustomerSearch({
               setShowResults(false);
               setShowCreateModal(true);
             }}
-            className="w-full flex items-center gap-2.5 px-4 py-3.5 hover:bg-primary/5 transition-colors text-left border-t border-[var(--rule-soft)] dark:border-card-border text-primary font-semibold"
+            className="w-full flex items-center gap-2.5 px-4 py-3.5 hover:bg-primary/5 transition-colors text-left border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-primary font-semibold"
           >
             <UserPlus className="h-5 w-5" />
             <span className="text-base">Crear nuevo cliente</span>

@@ -66,11 +66,12 @@ interface LeafletInstances {
 }
 
 function getCoords(store: MarketplaceStore): [number, number] | null {
+  // Brandon mayo 2026: solo pintamos pins en el mapa cuando la tienda
+  // tiene coordenadas reales (lat/lng). Antes habia fallback a las
+  // coords del centroide de la zona — eso ponia pins falsos para
+  // tiendas sin direccion registrada. Si no hay dato real, no se pinta.
   if (typeof store.lat === "number" && typeof store.lng === "number") {
     return [store.lat, store.lng];
-  }
-  if (store.zone && ZONE_COORDS[store.zone]) {
-    return ZONE_COORDS[store.zone];
   }
   return null;
 }
@@ -84,23 +85,33 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function emojiFor(category: string | null | undefined): string {
-  if (!category) return "🏪";
-  return CATEGORY_EMOJI[category.toLowerCase()] ?? "🏪";
-}
+// Brandon mayo 2026: pin con icono de tienda (SVG estilo Lucide) en
+// lugar de emojis decorativos (regla del proyecto: solo iconos del DS).
+// Mantenemos CATEGORY_EMOJI para compat en otros consumers, pero el pin
+// del mapa siempre usa el mismo icono "negocio" — limpio y consistente.
+const STORE_PIN_SVG = `
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+       aria-hidden="true">
+    <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/>
+    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+    <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>
+    <path d="M2 7h20"/>
+    <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/>
+  </svg>
+`;
 
 /**
- * Devuelve el HTML del pin custom de tienda. Pin tipo "drop" con emoji
- * de categoría centrado, sombra debajo, glow al hover (CSS injectado
- * una sola vez via .buleje-store-pin).
+ * Devuelve el HTML del pin custom de tienda. Pin tipo "drop" con icono
+ * Store (SVG Lucide) centrado, sombra debajo, glow al hover (CSS
+ * injectado una sola vez via .buleje-store-pin).
  */
-function storePinHtml(store: MarketplaceStore): string {
-  const emoji = emojiFor(store.category);
+function storePinHtml(_store: MarketplaceStore): string {
   return `
     <div class="buleje-store-pin">
       <div class="buleje-store-pin__shadow"></div>
       <div class="buleje-store-pin__body">
-        <span class="buleje-store-pin__emoji">${emoji}</span>
+        <span class="buleje-store-pin__icon">${STORE_PIN_SVG}</span>
       </div>
     </div>
   `;
@@ -196,6 +207,20 @@ function ensurePinStyles(): void {
       transform: rotate(-45deg) scale(1.18) translate(2px, -2px);
       box-shadow: 0 8px 22px color-mix(in oklab, var(--accent) 70%, transparent);
     }
+    .buleje-store-pin__icon {
+      transform: rotate(45deg);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+    }
+    .buleje-store-pin__icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    /* Compat antiguo selector __emoji (queda como fallback si el HTML
+       todavia tiene el span legacy mientras se mergea el deploy) */
     .buleje-store-pin__emoji {
       transform: rotate(45deg);
       font-size: 18px;

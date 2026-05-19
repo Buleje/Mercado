@@ -108,7 +108,7 @@ export default function ProfitabilityCalculator() {
           setProducts(data.slice(0, 50));
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[ProfitabilityCalculator] products fetch failed:", err))
       .finally(() => setLoadingProds(false));
   }, []);
 

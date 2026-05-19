@@ -18,8 +18,9 @@
  * en `prisma/migrations/20260502120000_add_payment_approval/` para
  * cuando se pueda correr `migrate deploy` en una red estable.
  *
- * NO TENANT: PaymentApproval es global del SaaS. La IA cruza tenants y
- * el equipo Buleje revisa todas las dudas en un solo dashboard.
+ * MULTI-TENANT: expand phase (ccfffa33) agregó tenantId NULLABLE. Contract
+ * phase (multi-tenant-contract-audit) lo convirtió a NOT NULL. El dashboard
+ * superadmin /superadmin/pagos-yape pasa tenantId: null para vista global.
  */
 
 import "server-only";
@@ -36,6 +37,17 @@ export type PaymentApprovalStatus =
 
 export interface PaymentApproval {
   id: string;
+  /**
+   * tenantId del tenant dueño de la conversación que generó esta approval.
+<<<<<<< Updated upstream
+   * CONTRACT PHASE (2026-05-11): la columna es NOT NULL en DB tras 0 rows
+   * legacy. Todos los callers pasan tenantId obligatorio desde
+   * Conversation.tenantId.
+=======
+   * Contract phase completada (multi-tenant-contract-audit): NOT NULL en DB.
+>>>>>>> Stashed changes
+   */
+  tenantId: string;
   conversationId: string | null;
   customerPhone: string;
   expectedAmount: number;
@@ -54,6 +66,12 @@ export interface PaymentApproval {
 }
 
 interface CreateInput {
+  /**
+   * tenantId del tenant que origina la approval. CRÍTICO para aislamiento:
+   * sin este campo, el superadmin de tenant A puede aprobar pagos de tenant B
+   * via la consulta de pendings sin filtro.
+   */
+  tenantId: string;
   customerPhone: string;
   expectedAmount: number;
   imageUrl: string;
@@ -72,6 +90,11 @@ interface ListPendingOpts {
   limit?: number;
   /** ms desde Date.now() para filtrar `createdAt >= now - sinceMs`. */
   sinceMs?: number;
+  /**
+   * Filtrar al tenantId. SOLO superadmin de plataforma debe pasar null
+   * (vista cross-tenant). Cualquier admin de tenant debe pasar su tenantId.
+   */
+  tenantId?: string | null;
 }
 
 // ─── Bootstrap (CREATE TABLE IF NOT EXISTS) ──────────────────────────────────
@@ -85,6 +108,7 @@ async function bootstrap(): Promise<void> {
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "PaymentApproval" (
         "id"              TEXT PRIMARY KEY,
+        "tenantId"        TEXT NOT NULL,
         "conversationId"  TEXT,
         "customerPhone"   TEXT NOT NULL,
         "expectedAmount"  DECIMAL(12,2) NOT NULL,
@@ -101,12 +125,20 @@ async function bootstrap(): Promise<void> {
         "createdAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+      -- Contract phase (2026-05-11): tenantId NOT NULL aplicado vía Supabase MCP.
+      -- ADD COLUMN IF NOT EXISTS sigue idempotente para envs legacy con expand;
+      -- el SET NOT NULL queda como migration externa (0 rows actuales, safe).
+      ALTER TABLE "PaymentApproval" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
       CREATE INDEX IF NOT EXISTS "PaymentApproval_status_idx"
         ON "PaymentApproval"("status");
       CREATE INDEX IF NOT EXISTS "PaymentApproval_customerPhone_idx"
         ON "PaymentApproval"("customerPhone");
       CREATE INDEX IF NOT EXISTS "PaymentApproval_createdAt_idx"
         ON "PaymentApproval"("createdAt");
+      CREATE INDEX IF NOT EXISTS "PaymentApproval_tenantId_idx"
+        ON "PaymentApproval"("tenantId");
+      CREATE INDEX IF NOT EXISTS "PaymentApproval_tenantId_status_idx"
+        ON "PaymentApproval"("tenantId", "status");
     `);
     bootstrapDone = true;
   } catch (err) {
@@ -122,6 +154,7 @@ async function bootstrap(): Promise<void> {
 function rowToApproval(r: Record<string, unknown>): PaymentApproval {
   return {
     id: String(r.id),
+    tenantId: String(r.tenantId),
     conversationId: r.conversationId == null ? null : String(r.conversationId),
     customerPhone: String(r.customerPhone),
     expectedAmount: Number(r.expectedAmount),
@@ -161,9 +194,10 @@ export const PaymentApprovalDb = {
     // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PaymentApproval" (
-        id, "conversationId", "customerPhone", "expectedAmount", "imageUrl"
-      ) VALUES ($1, $2, $3, $4, $5)`,
+        id, "tenantId", "conversationId", "customerPhone", "expectedAmount", "imageUrl"
+      ) VALUES ($1, $2, $3, $4, $5, $6)`,
       id,
+      input.tenantId,
       input.conversationId ?? null,
       input.customerPhone,
       input.expectedAmount,
@@ -198,20 +232,23 @@ export const PaymentApprovalDb = {
    */
   async findByPhonePending(
     customerPhone: string,
+    tenantId: string,
   ): Promise<PaymentApproval | null> {
     await bootstrap();
     // Audit 2026-05-02 #4: include 'review_required' in the dedupe lookup.
-    // Otherwise a customer reshooting the photo while we're still waiting
-    // for human review creates a SECOND approval, double-billing Vision IA
-    // and confusing the dashboard queue.
+    // CRITICAL FIX 2026-05-11 (P0-2): scope al tenantId. Antes el customer
+    // con phone X en tenant A veía la approval pending del MISMO phone en
+    // tenant B → confusión + posible aprobación cross-tenant.
     // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT * FROM "PaymentApproval"
         WHERE "customerPhone" = $1
+          AND "tenantId" = $2
           AND status IN ('pending', 'review_required')
         ORDER BY "createdAt" DESC
         LIMIT 1`,
       customerPhone,
+      tenantId,
     );
     if (!rows[0]) return null;
     return rowToApproval(rows[0]);
@@ -402,29 +439,49 @@ export const PaymentApprovalDb = {
   async listPending(opts: ListPendingOpts = {}): Promise<PaymentApproval[]> {
     await bootstrap();
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
+    // CRITICAL FIX 2026-05-11 (P0-2): scope opcional al tenantId. Admin de
+    // tenant ve sólo sus approvals pending; superadmin de plataforma puede
+    // pasar tenantId: null explícitamente para vista global.
+    const filterTenant = opts.tenantId !== undefined && opts.tenantId !== null;
 
     if (opts.sinceMs != null && opts.sinceMs > 0) {
       const since = new Date(Date.now() - opts.sinceMs);
+      const sql = filterTenant
+        ? `SELECT * FROM "PaymentApproval"
+            WHERE status IN ('pending', 'review_required')
+              AND "createdAt" >= $1
+              AND "tenantId" = $2
+            ORDER BY "createdAt" DESC
+            LIMIT $3`
+        : `SELECT * FROM "PaymentApproval"
+            WHERE status IN ('pending', 'review_required')
+              AND "createdAt" >= $1
+            ORDER BY "createdAt" DESC
+            LIMIT $2`;
       // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
       const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-        `SELECT * FROM "PaymentApproval"
-          WHERE status IN ('pending', 'review_required')
-            AND "createdAt" >= $1
-          ORDER BY "createdAt" DESC
-          LIMIT $2`,
-        since,
-        limit,
+        sql,
+        ...(filterTenant
+          ? [since, opts.tenantId as string, limit]
+          : [since, limit]),
       );
       return rows.map(rowToApproval);
     }
 
+    const sql = filterTenant
+      ? `SELECT * FROM "PaymentApproval"
+          WHERE status IN ('pending', 'review_required')
+            AND "tenantId" = $1
+          ORDER BY "createdAt" DESC
+          LIMIT $2`
+      : `SELECT * FROM "PaymentApproval"
+          WHERE status IN ('pending', 'review_required')
+          ORDER BY "createdAt" DESC
+          LIMIT $1`;
     // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-      `SELECT * FROM "PaymentApproval"
-        WHERE status IN ('pending', 'review_required')
-        ORDER BY "createdAt" DESC
-        LIMIT $1`,
-      limit,
+      sql,
+      ...(filterTenant ? [opts.tenantId as string, limit] : [limit]),
     );
     return rows.map(rowToApproval);
   },

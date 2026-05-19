@@ -121,7 +121,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
     <div className="modal-backdrop p-4">
       <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] dark:border-card-border">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4 text-primary" />
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
@@ -194,7 +194,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="Buscar por nombre o teléfono..."
-                      className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                      className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                     />
                     {searchLoading && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)] animate-spin" />
@@ -204,7 +204,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
 
                 {/* Customer results */}
                 {!selectedCustomer && customers.length > 0 && (
-                  <div className="mt-1 border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+                  <div className="mt-1 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
                     {customers.map((c) => (
                       <button
                         key={c.id}
@@ -214,7 +214,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                           setCustomers([]);
                           setCustomerSearch("");
                         }}
-                        className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-[var(--rule-soft)] dark:border-card-border last:border-0"
+                        className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0"
                       >
                         <User className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" />
                         <div className="min-w-0">

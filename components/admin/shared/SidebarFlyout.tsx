@@ -2,6 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type FlyoutTheme = "light" | "dark" | "cristal";
@@ -70,8 +71,8 @@ export function SidebarFlyout({
       inactiveIcon: "text-zinc-500",
     },
     light: {
-      bg: "bg-white dark:bg-card",
-      arrow: "bg-white dark:bg-card border-[var(--rule-soft)]",
+      bg: "bg-[var(--surface-raised)]",
+      arrow: "bg-[var(--surface-raised)] border-[var(--rule-soft)]",
       border: "border-[var(--rule-soft)] shadow-lg",
       activeBg: "bg-[var(--accent-soft)] text-primary font-semibold",
       inactiveText: "text-[var(--text-secondary)]",
@@ -130,7 +131,8 @@ export function SidebarFlyout({
                 isActive ? themeStyles.activeIcon : themeStyles.inactiveIcon,
               )}
             />
-            <span className="truncate">{label}</span>
+            <span className="truncate flex-1 text-left">{label}</span>
+            <ScopeBadge tabId={id} variant="chip" />
           </button>
         );
       })}

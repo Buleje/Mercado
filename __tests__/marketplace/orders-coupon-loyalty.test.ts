@@ -81,8 +81,16 @@ const COMMON_PARAMS = {
 function successTx() {
   mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
     const tx = {
-      product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      order:            { create:     vi.fn().mockResolvedValue({}) },
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      order:            {
+        create: vi.fn().mockResolvedValue({}),
+        // PENTEST Sprint A #2: nuevo check de TOCTOU usa tx.order.count
+        // adentro de la $transaction. Default 0 = primer uso del cupón.
+        count:  vi.fn().mockResolvedValue(0),
+      },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           {
         update:      vi.fn().mockResolvedValue({}),
@@ -122,8 +130,16 @@ describe("MarketplaceOrdersDB.createFromCart — cupones", () => {
     // Dentro de la tx se llamó coupon.update
     const txArg = mockTransaction.mock.calls[0][0];
     const tx = {
-      product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      order:            { create:     vi.fn().mockResolvedValue({}) },
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      order:            {
+        create: vi.fn().mockResolvedValue({}),
+        // PENTEST Sprint A #2: nuevo check de TOCTOU usa tx.order.count
+        // adentro de la $transaction. Default 0 = primer uso del cupón.
+        count:  vi.fn().mockResolvedValue(0),
+      },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon: {
         update:     vi.fn().mockResolvedValue({}),
@@ -187,8 +203,16 @@ describe("MarketplaceOrdersDB.createFromCart — cupones", () => {
     // Simular que dentro de la tx la re-verificación detecta overflow
     mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
-        order:            { create:     vi.fn().mockResolvedValue({}) },
+        product: {
+          findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+        order:            {
+        create: vi.fn().mockResolvedValue({}),
+        // PENTEST Sprint A #2: nuevo check de TOCTOU usa tx.order.count
+        // adentro de la $transaction. Default 0 = primer uso del cupón.
+        count:  vi.fn().mockResolvedValue(0),
+      },
         commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
         coupon: {
           update:     vi.fn().mockResolvedValue({}),
@@ -237,8 +261,16 @@ describe("MarketplaceOrdersDB.createFromCart — loyalty points", () => {
 
     const txArg = mockTransaction.mock.calls[0][0];
     const tx = {
-      product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
-      order:            { create:     vi.fn().mockResolvedValue({}) },
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      order:            {
+        create: vi.fn().mockResolvedValue({}),
+        // PENTEST Sprint A #2: nuevo check de TOCTOU usa tx.order.count
+        // adentro de la $transaction. Default 0 = primer uso del cupón.
+        count:  vi.fn().mockResolvedValue(0),
+      },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           { update: vi.fn(), findUnique: vi.fn() },
       customer:         { updateMany: vi.fn().mockResolvedValue({}) },

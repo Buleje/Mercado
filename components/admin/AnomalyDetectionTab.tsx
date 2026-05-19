@@ -60,7 +60,7 @@ export default function AnomalyDetectionTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <AlertTriangle className="h-6 w-6 text-[var(--data-warning-500)]" /> Detección de Anomalías
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Detección automática de patrones inusuales en ventas, stock y operaciones</p>
@@ -72,19 +72,19 @@ export default function AnomalyDetectionTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Sin Resolver</p>
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">{unresolvedCount}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Críticas/Altas</p>
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">{criticalCount}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Total Detectadas</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">{ANOMALIES.length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">{ANOMALIES.length}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Resueltas</p>
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{resolvedIds.size}</p>
         </div>
@@ -92,11 +92,11 @@ export default function AnomalyDetectionTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <select value={filter} onChange={e => setFilter(e.target.value as AnomalyType | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary">
+        <select value={filter} onChange={e => setFilter(e.target.value as AnomalyType | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary">
           <option value="todas">Todos los tipos</option>
           {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <select value={sevFilter} onChange={e => setSevFilter(e.target.value as Severity | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary">
+        <select value={sevFilter} onChange={e => setSevFilter(e.target.value as Severity | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary">
           <option value="todas">Todas severidades</option>
           <option value="critica">Crítica</option><option value="alta">Alta</option>
           <option value="media">Media</option><option value="baja">Baja</option>
@@ -114,14 +114,14 @@ export default function AnomalyDetectionTab() {
           const Icon = config.icon;
           const isResolved = resolvedIds.has(a.id);
           return (
-            <div key={a.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 hover:shadow-[var(--shadow-sm)] transition-shadow", isResolved && "opacity-60")}>
+            <div key={a.id} className={cn("bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5 hover:shadow-[var(--shadow-sm)] transition-shadow", isResolved && "opacity-60")}>
               <div className="flex flex-wrap items-start gap-2 sm:gap-4">
                 <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", config.color)}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{a.title}</CardTitle>
+                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.title}</CardTitle>
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", SEV_COLORS[a.severity])}>{a.severity.toUpperCase()}</span>
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", config.color)}>{config.label}</span>
                     {isResolved && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">Resuelta</span>}
@@ -155,9 +155,9 @@ export default function AnomalyDetectionTab() {
       {/* Detail modal */}
       {selected && (
         <div className="modal-backdrop p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{selected.title}</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{selected.title}</CardTitle>
               <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-base sm:text-xl font-bold">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">

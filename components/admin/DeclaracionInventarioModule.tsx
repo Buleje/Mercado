@@ -262,7 +262,7 @@ export default function DeclaracionInventarioModule() {
 
       {/* Mejora 18: Resumen ejecutivo siempre visible */}
       {resumenLoading ? (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6  animate-pulse">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6  animate-pulse">
           <div className="h-4 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-1/3 mb-3" />
           <div className="h-8 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-1/2 mb-2" />
           <div className="h-3 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-2/3" />
@@ -275,7 +275,7 @@ export default function DeclaracionInventarioModule() {
         const isUp = diff > 0;
         const isDown = diff < 0;
         return (
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
             <div className="flex items-center gap-2 mb-2">
               <Package className="h-5 w-5 text-primary" />
               <p className="text-sm font-bold text-[var(--text-secondary)]">Tu inventario</p>
@@ -347,7 +347,7 @@ export default function DeclaracionInventarioModule() {
             ].map(card => {
               const CardIcon = card.icon;
               return (
-                <div key={card.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
+                <div key={card.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 ">
                   <div className="flex items-center gap-2 mb-2">
                     <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", card.bg)}>
                       <CardIcon className={cn("h-4 w-4", card.color)} />
@@ -390,7 +390,7 @@ export default function DeclaracionInventarioModule() {
             const pctTotal = prevTotal > 0 ? ((diffTotal / prevTotal) * 100) : 0;
 
             return (
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
                 <div className="px-4 py-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                     Comparativa con declaracion anterior ({formatDate(prevDecl.fecha + "T00:00:00")})
@@ -441,7 +441,7 @@ export default function DeclaracionInventarioModule() {
               </div>
             );
           })() : (
-            <div className="bg-[var(--surface-alt)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+            <div className="bg-[var(--surface-alt)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
               <p className="text-xs text-[var(--text-tertiary)]">Primera declaracion -- sin datos anteriores para comparar</p>
             </div>
           )}
@@ -454,7 +454,7 @@ export default function DeclaracionInventarioModule() {
               const catPrecio = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.price, 0);
               const catUnidades = productItems.reduce((s: number, p: ProductItem) => s + p.stock, 0);
               return (
-                <div key={category} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+                <div key={category} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
                   {/* Category header */}
                   <div className="px-4 py-3 bg-[var(--surface-alt)] dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -505,7 +505,7 @@ export default function DeclaracionInventarioModule() {
       )}
 
       {/* Mejora 17: Historial de declaraciones */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-hidden">
         <button
           onClick={() => setShowHistorial(!showHistorial)}
           className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"

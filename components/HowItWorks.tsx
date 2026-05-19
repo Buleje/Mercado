@@ -81,7 +81,7 @@ function StepCard({ step, cardRef }: { step: typeof STEPS[0]; cardRef: React.Ref
             style={{ color: step.color, filter: `drop-shadow(0 4px 8px ${step.shadow})` }}
           />
           <span
-            className="absolute -top-2 -right-2 flex items-center justify-center h-7 w-7 rounded-full text-xs font-black text-white"
+            className="absolute -top-2 -right-2 flex items-center justify-center h-7 w-7 rounded-full text-xs font-extrabold text-white"
             style={{
               background: `linear-gradient(135deg, ${step.color}, ${step.color}bb)`,
               boxShadow: `0 4px 12px ${step.shadow}`,
@@ -92,7 +92,7 @@ function StepCard({ step, cardRef }: { step: typeof STEPS[0]; cardRef: React.Ref
         </div>
       </div>
 
-      <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2">
+      <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-2">
         {step.title}
       </h3>
       <p className="text-sm text-muted leading-relaxed max-w-xs">
@@ -159,11 +159,11 @@ export default function HowItWorks() {
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className={`text-center mb-16 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-16 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Así de fácil
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             ¿Cómo{" "}
             <span className="text-primary relative">
               funciona
@@ -213,10 +213,10 @@ export default function HowItWorks() {
         </div>
 
         {/* CTA */}
-        <div className={`text-center mt-14 transition-all duration-700 delay-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mt-14 transition-all duration-[var(--dur-slower)] delay-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
-            className="group relative inline-flex items-center gap-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-xl px-7 py-3.5 shadow-[var(--shadow-lg)] shadow-primary/20 hover:shadow-[var(--shadow-xl)] transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
+            className="group relative inline-flex items-center gap-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-xl px-7 py-3.5 shadow-[var(--shadow-lg)] shadow-primary/20 hover:shadow-[var(--shadow-xl)] transition-all duration-[var(--dur-base)] hover:-translate-y-0.5 overflow-hidden"
           >
             <span className="relative z-10 flex items-center gap-2.5">
               Empezar a comprar

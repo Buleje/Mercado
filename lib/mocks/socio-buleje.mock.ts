@@ -5,6 +5,15 @@
  * ADR futuro: migrar a prisma.membership + stripe customer.
  */
 
+// __MOCK_PROD_GUARD__: en prod los exports se devuelven igual pero un warn
+// queda en logs para tracking. Antes el guard tiraba throw, pero Next 16
+// evalúa módulos en collect-page-data y rompía el build estático.
+// ADR futuro: migrar a prisma.membership + stripe customer.
+if (process.env.NODE_ENV === "production") {
+  // eslint-disable-next-line no-console
+  console.warn("[mock] socio-buleje.mock.ts cargado en prod — pendiente Stripe + prisma.membership.");
+}
+
 import type { SocioPlan } from "@/lib/validators/socio-buleje";
 
 export type MockSocioMembership = {

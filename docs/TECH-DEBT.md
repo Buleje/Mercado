@@ -130,3 +130,24 @@ Hallazgo crítico: `npx tsc --noEmit` reveló ~916 líneas de errores TypeScript
 2. Describir claramente el problema
 3. Clasificar prioridad: 🔴 Alta / 🟠 Media / 🟡 Baja
 4. Mover a "Resueltas" cuando se arregle
+
+---
+
+## Audit 2026-05-17 — Deuda controlada documentada
+
+| ID | Origen | Descripción | Prioridad | Estado |
+|---|---|---|---|---|
+| TD-048 | `package.json` deps | `npm audit` reporta 11 vulns (0 critical/high, 5 moderate, 6 low). Todas son dev/build (postcss, next-build chain), no runtime prod. Fix: `npm update postcss next prisma` (testear bundle size + bundle analyzer post-update). CI tiene `continue-on-error: true` justificado. | 🟡 Baja | 🟠 Abierta |
+| TD-049 | `vercel.json` deploy strategy | Sin canary 5%→25%→100% (CLAUDE.md regla 14). Vercel community plan no soporta Rolling Releases nativos. Opciones: (1) Vercel Enterprise upgrade ($$$), (2) PostHog feature flag gating manual, (3) ADR documentando trade-off "all-at-once + auto-rollback on Sentry alert". | 🟠 Media | 🟠 Abierta |
+| TD-050 | `prisma/schema.prisma` | 21 columnas con `Decimal(10,2)` cuando estándar es `Decimal(12,2)` (DailySummary, Fiado, Turno, ProduccionLote, Cotizacion). Overflow >99,999,999.99 — improbable hoy, problema a escala. Migración pendiente con ALTER COLUMN TYPE. | 🟡 Baja | 🟠 Abierta |
+| TD-051 | `prisma/schema.prisma` | 8 columnas Float no-geo (CommissionRule.rate, Store.commission, ForecastLog.predictedQty, CustomKpi.{currentValue,target,changePercent}, SupplierReturnItem.cantidad). IEEE-754 causa errores de redondeo en comisiones y forecasting. Migrar a Decimal o Int según semántica. | 🟠 Media | 🟠 Abierta |
+| TD-052 | `prisma/migrations/MANUAL-*.sql` + `proposed-*.sql` | 13 archivos SQL fuera del sistema Prisma migrate (sin prefijo numérico, sin entrada en migration_lock.toml). `migrate reset` los pierde. Decisión: aplicar y mover al sistema oficial, o documentar como "deuda controlada (Round-X)". | 🟠 Media | 🟠 Abierta |
+| TD-053 | `prisma/schema.prisma` Order soft-delete | `Order.deletedAt` existe pero el índice `@@index([tenantId, status, createdAt])` no lo incluye → queries sin `where:{deletedAt:null}` retornan órdenes eliminadas. Schema migration agregar `deletedAt` al compound index. | 🟠 Media | 🟠 Abierta |
+| TD-054 | `lib/prisma.ts` connection pool | `max: 5` × ~10 Fluid Compute instances = ~50 conns. Supabase Hobby cap = 60. Sin circuit breaker. Monitorear dashboard al 70%; opciones documentadas en lib/prisma.ts (lower max, upgrade plan, breaker). | 🟠 Media | 🟠 Abierta |
+| TD-055 | `app/marketplace/explorar/page.tsx` | `"use cache"` en page pero retorna `<ExplorarClient />` ("use client" 306 LOC). El cache funciona pero el HTML cacheado incluye bundle JS completo → desperdicia el benefit. Refactor a server fetch + client island. | 🟡 Baja | 🟠 Abierta |
+| TD-056 | `app/api/delivery/tracking/update/route.ts` GPS race | Cada PATCH parsea-merge-escribe `notes` JSON. Dos PATCH a 50ms uno del otro pierde un ping y peor: puede borrar `rated:true` del rate endpoint. Fix: PostgreSQL `JSONB ||` operator o tabla DeliveryTracking N:1. | 🟠 Media | 🟠 Abierta |
+| TD-057 | `prisma/schema.prisma` CronHealthLog | PK con `@db.Uuid` + `gen_random_uuid()` mientras resto del schema usa `cuid()` (String). Inconsistencia bloquea joins futuros si se relaciona con otros modelos. Migrar a cuid() o documentar como decisión consciente. | 🟡 Baja | 🟠 Abierta |
+| ~~TD-058~~ | ~~`app/api/marketplace/stores/apply/route.ts`~~ | **CERRADO 2026-05-17.** `lib/integrations/reniec.ts` + `lib/integrations/sunat-ruc.ts` con cache 24h, provider selectable (mock/apisperu/decolecta), soft-pass si provider cae, helper `namesMatch` anti-suplantación tolerante a acentos/orden, `isInvoiceable` para validar RUC ACTIVO+HABIDO. Wired en stores/apply: rechaza con 422 si DNI/RUC no existe, advierte si name mismatch RENIEC. Activación prod: setear RENIEC_PROVIDER + SUNAT_RUC_PROVIDER + token. 20/20 tests + 4/4 apply tests verde. | — | ✅ Cerrado |
+| TD-059 | `components/admin/*` 8 archivos con `calc(100vh-Xrem)` | dvh fix pendiente en 8 admin components (StoreCustomizer, StoreCreativeMode, MarketplaceModule, CRMClientesModule, OrderDetailDrawer, POSView, OrdersDetailPanel, WhatsAppInbox). Gate ADR-068/070 bloquea commit por design-token errors legacy (text-gray-*, shadow-2xl, headings raw, text-[10px]). Requiere typography sprint que migre tokens + heading primitives + remove arbitrary text-sizes ANTES del dvh fix. | 🟡 Baja | 🟠 Abierta |
+
+> Origen: `reports/audit-completo-proyecto/REPORT.md` 2026-05-17. P0/P1 críticos cerrados; estos P2 quedan documentados para sprint dedicado.

@@ -118,9 +118,7 @@ export async function GET(req: NextRequest) {
           "cron",
           undefined,
           tenant.id,
-        ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
         notifications.push({
           tenant: tenant.slug,

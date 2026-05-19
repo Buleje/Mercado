@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await OrdersDB.getLastByCustomer(phone, session.tenantId);
+    // audit P0 Cal #2: firma cambiada a (tenantId, phone) — required.
+    const result = await OrdersDB.getLastByCustomer(session.tenantId, phone);
 
     if (!result || result.items.length === 0) {
       return NextResponse.json({

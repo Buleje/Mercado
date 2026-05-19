@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/admin/seed-peru-products
@@ -756,6 +757,8 @@ const PRODUCTOS_PERU: Array<{
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-seed-peru-products"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

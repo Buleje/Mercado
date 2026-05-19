@@ -116,7 +116,7 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
     `Pedido #${shortId(o.id)}\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `Hola *${o.customerName}*, lamentamos informarte que tu pedido fue cancelado.\n\n` +
-    `Si tienes preguntas, escríbenos al: wa.me/51916409675\n\n` +
+    `Si tienes preguntas, escríbenos al: wa.me/51929340532\n\n` +
     `_— Buleje_`,
 };
 

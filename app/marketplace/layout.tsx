@@ -8,6 +8,7 @@ import MotionProvider from "@/components/MotionProvider";
 import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
 import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
 import ConditionalPromoBar from "@/components/marketplace/ConditionalPromoBar";
+import ConditionalGlobalChrome from "@/components/marketplace/ConditionalGlobalChrome";
 import StickyCartBar from "@/components/marketplace/StickyCartBar";
 import BottomNav from "@/components/marketplace/BottomNav";
 import ConditionalShoppingChrome from "@/components/marketplace/ConditionalShoppingChrome";
@@ -53,13 +54,24 @@ export default function MarketplaceLayout({
             <div className="relative min-h-screen bg-[var(--surface-canvas)]">
               <SkipLink />
               {/* Chrome persistente — NO se remonta al navegar entre páginas
-                  del marketplace. Sólo el `<main>` interior se re-renderiza. */}
-              <ConditionalPromoBar />
+                  del marketplace. Sólo el `<main>` interior se re-renderiza.
+                  Brandon mayo 15 v2: en mobile dentro de /marketplace/[slug]
+                  (storefront), el chrome global se oculta porque el
+                  StoreDetailClient tiene su propio top fixed nav Rappi-style. */}
+              {/* Audit P13 (Next 16) + Brandon mayo 15 v3:
+                  ConditionalGlobalChrome usa usePathname() — debe estar en
+                  su propio Suspense para no bloquear el resto del layout
+                  (warning "Uncached data... outside of <Suspense>"). */}
               <Suspense fallback={null}>
-                <MarketplaceNavbar />
-              </Suspense>
-              <Suspense fallback={null}>
-                <ConditionalSecondaryNav />
+                <ConditionalGlobalChrome>
+                  <ConditionalPromoBar />
+                  <Suspense fallback={null}>
+                    <MarketplaceNavbar />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <ConditionalSecondaryNav />
+                  </Suspense>
+                </ConditionalGlobalChrome>
               </Suspense>
               {/*
                 MainWithBackKey: re-monta el subárbol al volver de /marketplace/[slug]

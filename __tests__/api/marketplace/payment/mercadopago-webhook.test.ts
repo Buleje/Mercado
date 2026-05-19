@@ -24,8 +24,10 @@ const mockGetMercadoPagoPayment = vi.fn();
 const mockVerifyMPWebhookSignature = vi.fn();
 const mockOrderUpdateMany = vi.fn();
 const mockOrderFindUnique = vi.fn();
+const mockOrderFindFirst = vi.fn();
 const mockStoreFindFirst = vi.fn();
 const mockTenantFindUnique = vi.fn();
+const mockStripeWebhookQueueCreate = vi.fn();
 const mockSendWhatsApp = vi.fn();
 const mockSendPush = vi.fn();
 const mockCreateNotification = vi.fn();
@@ -40,6 +42,7 @@ vi.mock("@/lib/prisma", () => ({
     order: {
       updateMany: (...args: unknown[]) => mockOrderUpdateMany(...args),
       findUnique: (...args: unknown[]) => mockOrderFindUnique(...args),
+      findFirst: (...args: unknown[]) => mockOrderFindFirst(...args),
     },
     store: {
       findFirst: (...args: unknown[]) => mockStoreFindFirst(...args),
@@ -47,11 +50,24 @@ vi.mock("@/lib/prisma", () => ({
     tenant: {
       findUnique: (...args: unknown[]) => mockTenantFindUnique(...args),
     },
+    stripeWebhookQueue: {
+      create: (...args: unknown[]) => mockStripeWebhookQueueCreate(...args),
+    },
   },
 }));
 
 vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppQueued: (...args: unknown[]) => mockSendWhatsApp(...args),
+}));
+
+// PENTEST 2026-05-18 Sprint B: rate limit agregado al webhook MP marketplace.
+// El tests del modulo bombardean el endpoint > 10 veces dentro de la misma
+// ventana 15min → topan el STRICT limit. Mockeamos applyRateLimit a null
+// (permite pasar) y getClientIp constante para que la lógica testeada sea
+// la del handler, no la del rate limiter.
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: () => null,
+  getClientIp: () => "127.0.0.1",
 }));
 
 vi.mock("@/lib/push-sender", () => ({
@@ -87,10 +103,17 @@ beforeEach(() => {
   mockSendPush.mockResolvedValue(undefined);
   mockOrderUpdateMany.mockResolvedValue({ count: 1 });
   mockOrderFindUnique.mockResolvedValue(null);
+  // PENTEST 2026-05-18 Sprint A #1: nuevo check de monto requiere
+  // order.findFirst con total para comparar contra transaction_amount.
+  // Default: orden de S/100 — los tests "approved" mockean
+  // transaction_amount=100 para hacer match.
+  mockOrderFindFirst.mockResolvedValue({ total: 100, status: "pendiente" });
+  mockStripeWebhookQueueCreate.mockResolvedValue({});
   // Default: store.findFirst resuelve para que el tenantId-scoped updateMany
   // pueda ejecutarse en los tests "happy path".
   mockStoreFindFirst.mockResolvedValue({ tenantId: "tenant-test" });
   mockTenantFindUnique.mockResolvedValue(null);
+  mockCreateNotification.mockResolvedValue(undefined);
   // SECURITY (2026-04-29): secret OBLIGATORIO. Tests que prueban el happy
   // path lo setean + mockean firma valida; tests negativos lo des-setean.
   process.env.MERCADOPAGO_WEBHOOK_SECRET = "test-secret";
@@ -243,10 +266,11 @@ describe("MP webhook — signature validation", () => {
 });
 
 describe("MP webhook — order status mapping", () => {
-  it("payment approved → order.updateMany con status='confirmado' + paymentMethod='mercado_pago'", async () => {
+  it("payment approved con monto correcto → order.updateMany con status='confirmado' + paymentMethod='mercado_pago'", async () => {
     mockGetMercadoPagoPayment.mockResolvedValue({
       status: "approved",
       external_reference: "tienda-test::order-abc-123",
+      transaction_amount: 100, // PENTEST Sprint A #1: debe matchear order.total mockeado
     });
 
     const { POST } = await import(
@@ -273,6 +297,36 @@ describe("MP webhook — order status mapping", () => {
     expect(json.received).toBe(true);
     expect(json.orderId).toBe("order-abc-123");
     expect(json.status).toBe("approved");
+  });
+
+  // PENTEST 2026-05-18 Sprint A #1: amount mismatch attack defense.
+  it("payment approved con monto INCORRECTO → NO confirma + notification HIGH", async () => {
+    mockGetMercadoPagoPayment.mockResolvedValue({
+      status: "approved",
+      external_reference: "tienda-test::order-abc-123",
+      transaction_amount: 0.10, // Atacante pagó S/0.10 contra order de S/100
+    });
+
+    const { POST } = await import(
+      "@/app/api/marketplace/payment/mercadopago/webhook/route"
+    );
+
+    const req = buildRequest({ type: "payment", data: { id: "pay-evil" } });
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.mismatched_amount).toBe(true);
+    // NO debe actualizar la orden a confirmado
+    expect(mockOrderUpdateMany).not.toHaveBeenCalled();
+    // SI debe haber creado una notification HIGH para review manual
+    expect(mockCreateNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: "HIGH",
+        type: "marketplace_payment",
+        title: expect.stringContaining("monto incorrecto"),
+      }),
+    );
   });
 
   it("payment rejected → order.updateMany con status='cancelado'", async () => {

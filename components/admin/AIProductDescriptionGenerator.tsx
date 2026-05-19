@@ -107,10 +107,10 @@ export default function AIProductDescriptionGenerator({
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
+    <div className="rounded-lg border border-border bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" />
-        <span className="text-sm font-medium text-foreground dark:text-foreground">
+        <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           Generador de descripcion con IA
         </span>
       </div>
@@ -124,7 +124,7 @@ export default function AIProductDescriptionGenerator({
 
       {preview && (
         <div className="rounded-md bg-muted dark:bg-muted/50 border border-border px-3 py-2">
-          <p className="text-sm text-foreground dark:text-foreground leading-relaxed whitespace-pre-wrap">
+          <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
             {preview}
           </p>
         </div>

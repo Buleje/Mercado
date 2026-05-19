@@ -44,6 +44,7 @@ import {
   Gift,
   HeartHandshake,
   Radio,
+  UserPlus,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -213,12 +214,19 @@ export const MODULE_INFO: Partial<
     desc: "Bandeja unificada de mensajes, WhatsApp y reseñas pendientes.",
     tip: "Úsala para responder soporte sin perderte entre varios frentes.",
   },
+  "leads-funnel": {
+    icon: UserPlus,
+    iconColor: "text-[var(--accent)]",
+    priority: "high",
+    desc: "Funnel de leads captados (outbound WhatsApp + ads + referidos). Conversión + status workflow.",
+    tip: "Cada lead que llena el formulario aparece acá. Movele el status a 'contacted' cuando lo llames.",
+  },
   "pagina-inicio": {
     icon: Store,
     iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     priority: "medium",
-    desc: "Configura la página pública de tu tienda y cómo se presenta afuera.",
-    tip: "Piensa en esto como la vidriera digital de tu negocio.",
+    desc: "El contenido público de tu storefront: hero, branding marketplace y promociones del home.",
+    tip: "Para colores, logo y tema general, usá 'Identidad y tema'. Para productos/combos/descuentos, usá los módulos dedicados.",
   },
   // ── ENRICH-5: bridges admin para marketplace features ──
   subscriptions: {
@@ -303,6 +311,7 @@ export const BASIC_MODULES: TabCategory[] = [
       "ventas-caja",
       "pedidos",
       "facturacion",
+      "documentos",
       "cotizaciones",
       "guias-remision",
       "notas-credito",
@@ -334,7 +343,7 @@ export const BASIC_MODULES: TabCategory[] = [
   },
 
   // ── 05 · CLIENTES ────────────────────────────────
-  // CRM + créditos informales + préstamos + comunicación.
+  // CRM + créditos informales + préstamos + comunicación + leads.
   {
     id: "clientes",
     label: "Clientes",
@@ -345,6 +354,7 @@ export const BASIC_MODULES: TabCategory[] = [
       "prestamos",
       "marketplace-chat",
       "support-inbox",
+      "leads-funnel",
     ],
   },
 

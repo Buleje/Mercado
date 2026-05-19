@@ -111,9 +111,9 @@ export default function CartRecoveryToast() {
       aria-live="polite"
       className={cn(
         "fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 sm:w-80 z-50",
-        "bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border",
+        "bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]",
         "p-4 flex items-start gap-3",
-        "animate-in slide-in-from-bottom-4 duration-300"
+        "animate-in slide-in-from-bottom-4 duration-[var(--dur-base)]"
       )}
     >
       {/* Icono */}
@@ -123,7 +123,7 @@ export default function CartRecoveryToast() {
 
       {/* Contenido */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-foreground">
+        <p className="text-sm font-bold text-[var(--text-primary)]">
           Tienes {itemCount} producto{itemCount !== 1 ? "s" : ""} esperando
         </p>
         <p className="text-xs text-muted mt-0.5 line-clamp-1">
@@ -141,7 +141,7 @@ export default function CartRecoveryToast() {
           <button
             onClick={handleDismiss}
             aria-label="Cerrar"
-            className="h-9 w-9 flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-lg text-muted hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>

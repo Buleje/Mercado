@@ -2,14 +2,25 @@
 
 import { GitCompareArrows } from "@buleje/design-system/icons";
 import { AnimatePresence, m as motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { useCompare } from "@/contexts/compare-context";
 
 /**
  * Badge flotante que aparece cuando hay productos en la lista de comparacion.
  * Posicionado sobre la BottomNav (bottom-20) para no solaparse.
+ *
+ * Brandon mayo 15 v4 2026: oculto en /marketplace/carrito y /checkout/* — en
+ * el flujo de compra el usuario ya decidió, comparar es distracción.
  */
 export default function CompareFloatingBadge() {
   const { items, open, setOpen } = useCompare();
+  const pathname = usePathname();
+  const isCheckoutFlow =
+    pathname === "/marketplace/carrito" ||
+    pathname?.startsWith("/checkout/") ||
+    pathname === "/checkout";
+
+  if (isCheckoutFlow) return null;
 
   return (
     <AnimatePresence>

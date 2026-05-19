@@ -10,6 +10,7 @@ import { getPlanLimits } from "@/lib/plans";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -228,6 +229,8 @@ const CreateTenantSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-tenants"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   try {
     const session = await requirePlatform(req);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

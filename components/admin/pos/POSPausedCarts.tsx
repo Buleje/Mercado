@@ -139,7 +139,7 @@ export default function POSPausedCarts({
                     if (e.key === "Escape") setShowNameInput(false);
                   }}
                   placeholder="Nombre (opc.)"
-                  className="w-24 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:border-primary text-[var(--text-primary)] dark:text-foreground"
+                  className="w-24 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg outline-none focus:border-primary text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   autoFocus
                 />
                 <button
@@ -193,14 +193,14 @@ export default function POSPausedCarts({
 
       {/* Paused carts list */}
       {showList && paused.length > 0 && (
-        <div className="mt-2 space-y-1.5 bg-gray-50 dark:bg-surface rounded-xl p-2 border border-[var(--rule-soft)] dark:border-card-border">
+        <div className="mt-2 space-y-1.5 bg-gray-50 dark:bg-surface rounded-xl p-2 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           {paused.map((cart) => (
             <div
               key={cart.id}
-              className="flex items-center gap-2 p-2 bg-white dark:bg-card rounded-lg border border-[var(--rule-soft)] dark:border-card-border hover:border-primary/30 transition-colors"
+              className="flex items-center gap-2 p-2 bg-[var(--surface-raised)] rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-primary/30 transition-colors"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
+                <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                   {cart.nombre}
                 </p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">

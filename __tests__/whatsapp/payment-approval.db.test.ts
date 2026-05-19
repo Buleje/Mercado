@@ -95,7 +95,7 @@ describe("PaymentApprovalDb", () => {
   describe("findByPhonePending", () => {
     it("retorna null cuando no hay approval pending para el phone", async () => {
       mockQueryRaw.mockResolvedValue([]);
-      const result = await PaymentApprovalDb.findByPhonePending("51999000111");
+      const result = await PaymentApprovalDb.findByPhonePending("51999000111", "tenant-test");
       expect(result).toBeNull();
     });
 
@@ -103,7 +103,7 @@ describe("PaymentApprovalDb", () => {
       const row = makeApprovalRow({ customerPhone: "51987654321", status: "pending" });
       mockQueryRaw.mockResolvedValue([row]);
 
-      const result = await PaymentApprovalDb.findByPhonePending("51987654321");
+      const result = await PaymentApprovalDb.findByPhonePending("51987654321", "tenant-test");
 
       expect(result).not.toBeNull();
       expect(result!.customerPhone).toBe("51987654321");
@@ -141,8 +141,14 @@ describe("PaymentApprovalDb", () => {
 
     it("delta <5% (exacto) → status permanece pending", async () => {
       // expectedAmount=100, detectedAmount=104 → delta=4 → 4% < 5% → pending
+      // Brandon 2026-05-17: el handler ejecuta 2 $queryRawUnsafe — getById
+      // (devolver el row) y el dedupe de yapeOpCode (devolver [] para no
+      // marcar review_required por reuso). Antes mockResolvedValue (always)
+      // devolvía el row para AMBAS, gateándolo a review_required.
       const row = makeApprovalRow({ expectedAmount: "100.00" });
-      mockQueryRaw.mockResolvedValue([row]);
+      mockQueryRaw
+        .mockResolvedValueOnce([row]) // getById
+        .mockResolvedValueOnce([]); // dedupe yapeOpCode: no hay reuso
 
       await PaymentApprovalDb.setVisionResult("pap_test_001", {
         detectedAmount: 104.0,
@@ -185,8 +191,11 @@ describe("PaymentApprovalDb", () => {
 
     it("delta exactamente 5% → permanece pending (boundary — no supera)", async () => {
       // expectedAmount=100, detectedAmount=105 → delta=5 → pct=0.05 → NOT > 0.05 → pending
+      // Brandon 2026-05-17: idem dedupe yapeOpCode — segundo query devuelve [].
       const row = makeApprovalRow({ expectedAmount: "100.00" });
-      mockQueryRaw.mockResolvedValue([row]);
+      mockQueryRaw
+        .mockResolvedValueOnce([row]) // getById
+        .mockResolvedValueOnce([]); // dedupe yapeOpCode
 
       await PaymentApprovalDb.setVisionResult("pap_test_001", {
         detectedAmount: 105.0,
@@ -268,6 +277,7 @@ describe("PaymentApprovalDb", () => {
       mockQueryRaw.mockResolvedValue([row]);
 
       const result = await PaymentApprovalDb.create({
+        tenantId: "tenant-test",
         customerPhone: "51987654321",
         expectedAmount: 75.0,
         imageUrl: "https://cdn.example.com/img.jpg",
@@ -291,6 +301,7 @@ describe("PaymentApprovalDb", () => {
 
       await expect(
         PaymentApprovalDb.create({
+          tenantId: "tenant-test",
           customerPhone: "51000000000",
           expectedAmount: 50.0,
           imageUrl: "https://example.com/img.jpg",

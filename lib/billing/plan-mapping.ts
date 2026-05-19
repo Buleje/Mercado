@@ -48,10 +48,17 @@ export function tierToPlanId(tier: PlanTier): PlanId {
   return TIER_TO_PLAN_ID[tier] ?? "free";
 }
 
-/** Etiqueta humana para `PlanId` — usa los nombres del sistema nuevo. */
+/** Etiqueta humana para `PlanId` — alineada con plan-tiers.ts (mayo 2026 v2).
+ *
+ *   PlanId      ↔  PlanTier    ↔  Label visible
+ *   free        ↔  basico      ↔  "Free"
+ *   pro         ↔  pro         ↔  "Starter"
+ *   business    ↔  enterprise  ↔  "Pro"
+ *   enterprise  ↔  max         ↔  "Business"
+ */
 export const PLAN_ID_LABEL: Record<PlanId, string> = {
-  free: "Básico",
-  pro: "Pro",
-  business: "Enterprise",
-  enterprise: "Max",
+  free: "Free",
+  pro: "Starter",
+  business: "Pro",
+  enterprise: "Business",
 };

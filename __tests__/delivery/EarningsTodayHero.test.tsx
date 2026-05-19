@@ -176,18 +176,18 @@ describe("EarningsTodayHero — goal progress", () => {
     expect(screen.getByText(/40\.00 para S\/ 80/)).toBeDefined();
   });
 
-  it("muestra '¡Meta!' cuando ganancias >= goal", async () => {
+  it("muestra 'Meta' cuando ganancias >= goal", async () => {
     mockFetchOk({ totals: { deliveries: 10, fees: 75, tips: 10, total: 85 } });
     render(<EarningsTodayHero isOnline={true} goal={80} />);
     await flushFetch();
-    expect(screen.getByText("¡Meta!")).toBeDefined();
+    expect(screen.getByText("Meta")).toBeDefined();
   });
 
   it("muestra cuánto extra se ganó cuando se supera la meta", async () => {
     mockFetchOk({ totals: { deliveries: 10, fees: 75, tips: 10, total: 85 } });
     render(<EarningsTodayHero isOnline={true} goal={80} />);
     await flushFetch();
-    expect(screen.getByText(/5\.00 extra/)).toBeDefined();
+    expect(screen.getByText(/\+S\/ 5\.00 sobre la meta/)).toBeDefined();
   });
 
   it("capea el progreso al 100% cuando se supera la meta", async () => {

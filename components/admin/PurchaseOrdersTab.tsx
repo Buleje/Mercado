@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
 import dynamic from "next/dynamic";
@@ -8,11 +8,11 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
   X, FileText, ScanBarcode, History,
-  TrendingUp, BarChart3, Download, PackageCheck, Copy, ShoppingBag } from "@buleje/design-system/icons";
+  TrendingUp, BarChart3, Download, PackageCheck, Copy, ShoppingBag,
+  Search, Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck } from "@buleje/design-system/icons";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
-import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import OCPDFExport from "./compras/OCPDFExport";
 import SupplierPriceComparison, { QuotationComparator } from "./compras/SupplierPriceComparison";
@@ -28,11 +28,11 @@ const STATUS_LABELS: Record<PurchaseStatus, string> = {
   auto_generated: "Auto-generado",
 };
 const STATUS_COLORS: Record<PurchaseStatus, string> = {
-  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  recibido: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
-  parcial: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
-  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
-  auto_generated: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+  pendiente: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30",
+  recibido: "bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] border-[var(--data-success-500)]/30",
+  parcial: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30",
+  cancelado: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] border-[var(--data-error-500)]/30",
+  auto_generated: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
 };
 
 // ── Mejora 13: Progress bar visual de status OC ─────────────────────────────
@@ -84,6 +84,44 @@ function formatDate(iso: string) {
 }
 
 type ItemDraft = { productId: number; name: string; quantity: number; unitCost: number; unit: string };
+
+// ── KPI Card (audit 2026-05-17): card compacta con ícono tinted box ──
+type KPIAccent = "danger" | "warning" | "success" | "neutral";
+function KPICardOC({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  accent = "neutral",
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: typeof FileText;
+  accent?: KPIAccent;
+}) {
+  const cfg = {
+    danger:  { text: "text-[var(--data-error-500)]",   iconBg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15",     border: "border-[var(--data-error-500)]/30" },
+    warning: { text: "text-[var(--data-warning-500)]", iconBg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15", border: "border-[var(--data-warning-500)]/30" },
+    success: { text: "text-[var(--data-success-500)]", iconBg: "bg-emerald-100 dark:bg-[var(--data-success-500)]/15",               border: "border-[var(--data-success-500)]/30" },
+    neutral: { text: "text-[var(--text-primary)]",     iconBg: "bg-[var(--surface-sunken)]",                                        border: "border-[var(--rule-base)]" },
+  }[accent];
+  return (
+    <div className={cn(
+      "bg-white dark:bg-[var(--color-card)] border-2 rounded-2xl p-4 flex items-center gap-3 min-w-0 transition-shadow hover:shadow-sm",
+      cfg.border,
+    )}>
+      <span className={cn("inline-flex items-center justify-center h-11 w-11 rounded-xl shrink-0", cfg.iconBg)}>
+        <Icon className={cn("h-5 w-5", cfg.text)} strokeWidth={2.2} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
+        <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1 truncate", cfg.text)}>{value}</p>
+        {sub && <p className="text-xs text-[var(--text-secondary)] mt-1 truncate font-medium">{sub}</p>}
+      </div>
+    </div>
+  );
+}
 
 export default function PurchaseOrdersTab() {
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
@@ -421,161 +459,237 @@ export default function PurchaseOrdersTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Órdenes de Compra</SectionTitle>
+    <div className="space-y-4 sm:space-y-5">
+      {/* ─── Hero header ─────────────────────────────────────────────── */}
+      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
+        <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 border border-primary/30 shrink-0">
+          <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Órdenes de Compra</h2>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {orders.length === 0
+              ? "Creá la primera orden a un proveedor. Después podés duplicarla o hacerla recurrente."
+              : `${orders.length} ${orders.length === 1 ? "orden registrada" : "órdenes registradas"} · Total acumulado S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
+          </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setShowCreate(v => !v)}
+          className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <Plus className="h-5 w-5" strokeWidth={2.5} />
+          Nueva orden
+        </button>
+      </section>
+
+      {/* ─── Toolbar: filtro proveedor + acciones ────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
           <select
             value={selectedSupplierId ?? ""}
             onChange={(e) => setSelectedSupplierId(e.target.value || null)}
-            className="text-sm font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card"
+            className="w-full h-11 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
           >
-            <option value="">Ver todo</option>
+            <option value="">Todos los proveedores</option>
             {suppliers.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+              <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>
             ))}
           </select>
-          <button onClick={() => setShowSupplierHistory(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)] dark:text-foreground bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] dark:hover:bg-accent/80 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors">
-            <History className="h-4 w-4" /> Historial
-          </button>
-          <button
-            onClick={() => {
-              if (orders.length === 0) return;
-              const rows = orders.map(o => ({
-                ID: o.id,
-                Proveedor: suppliers.find(s => s.id === o.supplierId)?.name ?? o.supplierId,
-                Estado: STATUS_LABELS[o.status as PurchaseStatus] ?? o.status,
-                "Total (S/)": o.total,
-                Fecha: new Date(o.createdAt).toLocaleDateString("es-PE"),
-                Notas: o.notes ?? "",
-              }));
-              exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
-            }}
-            className="flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors"
-            title="Exportar compras a Excel"
-          >
-            <Download className="h-4 w-4" /> Excel
-          </button>
-          {/* Mejora 16: Comparar cotizaciones completas */}
-          <QuotationComparator orders={orders} suppliers={suppliers} />
-          <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors ">
-            <Plus className="h-4 w-4" /> Nueva orden
-          </button>
         </div>
+        <button
+          type="button"
+          onClick={() => setShowSupplierHistory(v => !v)}
+          className={cn(
+            "inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
+            showSupplierHistory
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+          )}
+        >
+          <History className="h-4 w-4" />
+          <span className="hidden sm:inline">Historial</span>
+        </button>
+        <button
+          type="button"
+          disabled={orders.length === 0}
+          onClick={() => {
+            if (orders.length === 0) return;
+            const rows = orders.map(o => ({
+              ID: o.id,
+              Proveedor: suppliers.find(s => s.id === o.supplierId)?.name ?? o.supplierId,
+              Estado: STATUS_LABELS[o.status as PurchaseStatus] ?? o.status,
+              "Total (S/)": o.total,
+              Fecha: new Date(o.createdAt).toLocaleDateString("es-PE"),
+              Notas: o.notes ?? "",
+            }));
+            exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
+          }}
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          title="Exportar compras a Excel"
+        >
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">Excel</span>
+        </button>
+        {/* Mejora 16: Comparar cotizaciones completas */}
+        <QuotationComparator orders={orders} suppliers={suppliers} />
       </div>
 
-      {/* KPI summary 4 cards minimalistas */}
+      {/* ─── KPI summary 4 cards ─────────────────────────────────────── */}
       {!loading && orders.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
-              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.total}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">órdenes registradas</p>
-            </div>
-            <FileText className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
-          </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
-              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-warning-500)]">{kpis.counts.pendiente}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">{kpis.counts.parcial} parcial{kpis.counts.parcial === 1 ? "" : "es"}</p>
-            </div>
-            <Package className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" />
-          </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Recibidas</p>
-              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success-500)]">{kpis.counts.recibido}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">cerradas con éxito</p>
-            </div>
-            <PackageCheck className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
-          </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total mes</p>
-              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">S/{kpis.totalMes.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">acum. S/{kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
-            </div>
-            <TrendingUp className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
-          </div>
+          <KPICardOC
+            label="Total"
+            value={kpis.total}
+            sub="órdenes registradas"
+            icon={FileText}
+            accent="neutral"
+          />
+          <KPICardOC
+            label="Pendientes"
+            value={kpis.counts.pendiente}
+            sub={`${kpis.counts.parcial} parcial${kpis.counts.parcial === 1 ? "" : "es"}`}
+            icon={Package}
+            accent="warning"
+          />
+          <KPICardOC
+            label="Recibidas"
+            value={kpis.counts.recibido}
+            sub="cerradas con éxito"
+            icon={PackageCheck}
+            accent="success"
+          />
+          <KPICardOC
+            label="Total este mes"
+            value={`S/${kpis.totalMes.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
+            sub={`acum. S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
+            icon={TrendingUp}
+            accent="neutral"
+          />
         </div>
       )}
 
-      {/* Filter pills por estado */}
+      {/* ─── Filter pills por estado ─────────────────────────────────── */}
       {!loading && orders.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           {([
-            { id: "todas",      label: "Todas",      count: kpis.total            },
-            { id: "pendiente",  label: "Pendientes", count: kpis.counts.pendiente },
-            { id: "parcial",    label: "Parciales",  count: kpis.counts.parcial   },
-            { id: "recibido",   label: "Recibidas",  count: kpis.counts.recibido  },
-            { id: "cancelado",  label: "Canceladas", count: kpis.counts.cancelado },
-          ] as const).map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setStatusFilter(p.id)}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
-                statusFilter === p.id
-                  ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
-              )}
-            >
-              {p.label}
-              <span className={cn(
-                "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums min-w-[20px] text-center",
-                statusFilter === p.id ? "bg-white/25" : "bg-[var(--surface-sunken)]"
-              )}>
-                {p.count}
-              </span>
-            </button>
-          ))}
+            { id: "todas",      label: "Todas",      count: kpis.total,             tone: "neutral" as const },
+            { id: "pendiente",  label: "Pendientes", count: kpis.counts.pendiente,  tone: "warning" as const },
+            { id: "parcial",    label: "Parciales",  count: kpis.counts.parcial,    tone: "warning" as const },
+            { id: "recibido",   label: "Recibidas",  count: kpis.counts.recibido,   tone: "success" as const },
+            { id: "cancelado",  label: "Canceladas", count: kpis.counts.cancelado,  tone: "danger"  as const },
+          ]).map((p) => {
+            const active = statusFilter === p.id;
+            const toneCls = {
+              neutral: "bg-[var(--text-primary)] text-white border-[var(--text-primary)]",
+              danger:  "bg-[var(--data-error-500)] text-white border-[var(--data-error-500)]",
+              warning: "bg-[var(--data-warning-500)] text-white border-[var(--data-warning-500)]",
+              success: "bg-[var(--data-success-500)] text-white border-[var(--data-success-500)]",
+            }[p.tone];
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setStatusFilter(p.id as typeof statusFilter)}
+                className={cn(
+                  "inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold transition-colors border-2",
+                  active
+                    ? toneCls
+                    : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                {p.label}
+                <span className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-extrabold tabular-nums min-w-[24px] text-center",
+                  active ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                )}>
+                  {p.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {/* Mejora 15: Badge y cards de pedidos recurrentes */}
+      {/* ─── Mejora 15: cards de pedidos recurrentes ─────────────────── */}
       {upcomingRecurring.length > 0 && (
-        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
-              <History className="h-3.5 w-3.5" /> {upcomingRecurring.length} pedido{upcomingRecurring.length > 1 ? "s" : ""} recurrente{upcomingRecurring.length > 1 ? "s" : ""}
+        <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10 shrink-0">
+              <Repeat className="h-4 w-4 text-primary" strokeWidth={2.2} />
+            </span>
+            <p className="text-sm font-extrabold text-[var(--text-primary)]">
+              {upcomingRecurring.length} pedido{upcomingRecurring.length > 1 ? "s" : ""} recurrente{upcomingRecurring.length > 1 ? "s" : ""} programado{upcomingRecurring.length > 1 ? "s" : ""}
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {upcomingRecurring.map(r => (
-              <div key={r.ocId} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">OC a {r.supplierName}</p>
-                  <button onClick={() => removeRecurring(r.ocId)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors" title="Eliminar recurrencia">
-                    <X className="h-3.5 w-3.5" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {upcomingRecurring.map(r => {
+              const dueToday = r.daysUntil === 0;
+              const dueSoon = r.daysUntil <= 3;
+              return (
+                <div
+                  key={r.ocId}
+                  className={cn(
+                    "rounded-2xl border-2 p-4 bg-white dark:bg-[var(--color-card)] transition-all",
+                    dueToday ? "border-[var(--data-error-500)]/50 ring-2 ring-[var(--data-error-500)]/20" : dueSoon ? "border-[var(--data-warning-500)]/40" : "border-[var(--rule-base)]",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">OC a</p>
+                      <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{r.supplierName}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeRecurring(r.ocId)}
+                      className="h-8 w-8 inline-flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors"
+                      title="Eliminar recurrencia"
+                      aria-label="Eliminar pedido recurrente"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <span className={cn(
+                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-bold border",
+                      dueToday
+                        ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] border-[var(--data-error-500)]/30"
+                        : dueSoon
+                        ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
+                    )}>
+                      <Calendar className="h-3.5 w-3.5" />
+                      {dueToday ? "Hoy" : r.daysUntil === 1 ? "Mañana" : `En ${r.daysUntil} días`}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                      <Repeat className="h-3 w-3" />
+                      Cada {r.intervalDays}d
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const oc = orders.find(o => o.id === r.ocId);
+                      if (oc) duplicateOrder(oc);
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-1.5 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Crear OC ahora
                   </button>
                 </div>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                  {r.daysUntil === 0 ? "Hoy" : r.daysUntil === 1 ? "Manana" : `En ${r.daysUntil} dias`} · Cada {r.intervalDays}d
-                </p>
-                <button
-                  onClick={() => {
-                    const oc = orders.find(o => o.id === r.ocId);
-                    if (oc) duplicateOrder(oc);
-                  }}
-                  className="mt-2 w-full text-xs font-bold text-center py-1.5 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-                >
-                  Crear OC ahora
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Mejora 15: Modal de configuración recurrente */}
       {showRecurringModal && (
         <div className="modal-backdrop p-4" onClick={() => setShowRecurringModal(null)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">Hacer recurrente</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Hacer recurrente</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               OC para {suppliers.find(s => s.id === showRecurringModal.supplierId)?.name} · {showRecurringModal.items.length} productos
             </p>
@@ -598,7 +712,7 @@ export default function PurchaseOrdersTab() {
             </div>
             <div>
               <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Próximo pedido</label>
-              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">
+              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {nextRecurringDateLabel}
               </p>
             </div>
@@ -607,7 +721,7 @@ export default function PurchaseOrdersTab() {
               <select
                 value={recurringNotifyDays}
                 onChange={e => setRecurringNotifyDays(Number(e.target.value))}
-                className="w-full rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+                className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
               >
                 <option value={1}>1 dia antes</option>
                 <option value={2}>2 dias antes</option>
@@ -636,11 +750,11 @@ export default function PurchaseOrdersTab() {
             const maxMonthAmount = Math.max(...stats.monthlyData.map(m => m.amount), 1);
             
             return (
-              <div key={supplier.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+              <div key={supplier.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+                      <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                         <History className="h-5 w-5 text-primary" />
                         {supplier.name}
                       </CardTitle>
@@ -661,25 +775,25 @@ export default function PurchaseOrdersTab() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                     <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Órdenes</p>
-                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.count}</p>
+                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.count}</p>
                     </div>
                     <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Total gastado</p>
-                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{Number(stats.totalAmount).toFixed(2)}</p>
+                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(stats.totalAmount).toFixed(2)}</p>
                     </div>
                     <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
                       <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
-                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{Number(stats.avgAmount).toFixed(2)}</p>
+                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(stats.avgAmount).toFixed(2)}</p>
                     </div>
                     <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase mb-1">Última compra</p>
-                      <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{stats.lastPurchase ? formatDate(stats.lastPurchase) : "—"}</p>
+                      <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.lastPurchase ? formatDate(stats.lastPurchase) : "—"}</p>
                     </div>
                   </div>
 
                   {/* Top Products */}
                   {stats.topProducts.length > 0 && (
-                    <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 mb-3 border border-[var(--rule-base)] dark:border-card-border">
+                    <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 mb-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-2 flex items-center gap-1">
                         <TrendingUp className="h-3.5 w-3.5" />
                         Top 3 productos más comprados
@@ -687,7 +801,7 @@ export default function PurchaseOrdersTab() {
                       <div className="space-y-1.5">
                         {stats.topProducts.map((prod, idx) => (
                           <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="text-[var(--text-primary)] dark:text-foreground flex items-center gap-1.5">
+                            <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
                               <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">#{idx + 1}</span>
                               {prod.name}
                               <span className="text-[var(--text-tertiary)] dark:text-muted text-xs">({prod.count} und)</span>
@@ -701,7 +815,7 @@ export default function PurchaseOrdersTab() {
 
                   {/* Monthly Chart */}
                   <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
-                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground uppercase mb-2 flex items-center gap-1">
+                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] uppercase mb-2 flex items-center gap-1">
                       <BarChart3 className="h-3.5 w-3.5 text-primary" />
                       Gastos mensuales (últimos 6 meses)
                     </p>
@@ -727,13 +841,13 @@ export default function PurchaseOrdersTab() {
 
                 {/* Expanded Timeline */}
                 {isExpanded && (
-                  <div className="border-t border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface p-4">
+                  <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface p-4">
                     <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-3">Cronología completa de compras</p>
                     <div className="space-y-2 max-h-80 overflow-y-auto">
                       {orders.filter(o => o.supplierId === supplier.id).map(order => (
-                        <div key={order.id} className="bg-white dark:bg-card rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
+                        <div key={order.id} className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{formatDate(order.createdAt)}</span>
+                            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatDate(order.createdAt)}</span>
                             <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[order.status])}>
                               {STATUS_LABELS[order.status]}
                             </span>
@@ -753,170 +867,331 @@ export default function PurchaseOrdersTab() {
         </div>
       )}
 
-      {/* Create order modal */}
+      {/* ─── Create order modal (rediseñado 2026-05-17) ──────────────── */}
       {showCreate && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-oc-title"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
           onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}
         >
-          <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
-            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" /> Nueva orden de compra
-              </CardTitle>
-              <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
-                <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
+          <div className="bg-white dark:bg-[var(--color-card)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
+            {/* Header */}
+            <header className="px-5 sm:px-6 py-4 border-b-2 border-[var(--rule-base)] flex items-center gap-3 bg-linear-to-r from-primary/5 to-transparent">
+              <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/15 border border-primary/30 shrink-0">
+                <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <h2 id="create-oc-title" className="text-lg font-extrabold text-[var(--text-primary)]">Nueva orden de compra</h2>
+                <p className="text-sm text-[var(--text-secondary)]">Elegí proveedor, sumá productos y guardá. Después podés marcarla como recibida cuando llegue la mercadería.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreate(false)}
+                aria-label="Cerrar"
+                className="shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              >
+                <X className="h-5 w-5" />
               </button>
-            </div>
-            <form onSubmit={createOrder} className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Proveedor *</label>
-                  <select required value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm">
-                    <option value="">Seleccionar proveedor</option>
-                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</label>
-                  <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas opcionales…" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
-                </div>
-              </div>
+            </header>
 
-              {/* Items */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Productos de la orden</label>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setShowScanner(true)} className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:text-primary flex items-center gap-1 border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2.5 py-1 transition-colors">
-                      <ScanBarcode className="h-3.5 w-3.5" /> Escanear
-                    </button>
-                    <button type="button" onClick={() => { setAddItemMode("search"); setAddItemSearch(""); setAddItemSel(null); setShowAddItemModal(true); }} className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1">
-                      <Plus className="h-3.5 w-3.5" /> Agregar
-                    </button>
+            {/* Body */}
+            <form onSubmit={createOrder} className="flex-1 overflow-y-auto">
+              <div className="px-5 sm:px-6 py-5 space-y-6">
+                {/* ── Sección: Proveedor + Notas ── */}
+                <section className="space-y-3">
+                  <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    Proveedor
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">Proveedor *</label>
+                      <select
+                        required
+                        value={supplierId}
+                        onChange={(e) => setSupplierId(e.target.value)}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
+                      >
+                        <option value="">— Seleccionar proveedor —</option>
+                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (RUC ${s.ruc})` : ""}</option>)}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                        <StickyNote className="inline h-3 w-3 mr-1" />
+                        Notas (opcional)
+                      </label>
+                      <input
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Ej. Entrega antes del 25, pagar a 30 días, traer factura..."
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                      />
+                    </div>
                   </div>
-                </div>
-                {items.length === 0 && (
-                  <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-4">Agrega productos a la orden</p>
-                )}
-                <div className="space-y-2">
-                  {items.map((item, idx) => {
-                    const q = itemQueries[idx] ?? "";
-                    const filtered = q.length > 0
-                      ? products.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || (p.barcode ?? "").includes(q)).slice(0, 6)
-                      : [];
-                    return (
-                      <div key={idx} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-2 space-y-1">
-                        <div className="flex flex-wrap items-start gap-2">
-                          <div className="flex-1 relative">
-                            <input
-                              value={itemQueries[idx] ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setItemQueries(prev => prev.map((q, i) => i === idx ? val : q));
-                                setOpenSearchIdx(idx);
-                              }}
-                              onFocus={() => setOpenSearchIdx(idx)}
-                              onBlur={() => setTimeout(() => setOpenSearchIdx(null), 120)}
-                              placeholder="Buscar producto…"
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
-                            />
-                            {openSearchIdx === idx && filtered.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 z-20 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl mt-0.5 max-h-48 overflow-y-auto">
-                                {filtered.map(p => (
-                                  <button
-                                    key={p.id}
-                                    type="button"
-                                    onMouseDown={() => { changeProduct(idx, p.id); setItemQueries(prev => prev.map((_, i) => i === idx ? p.name : _)); setOpenSearchIdx(null); }}
-                                    className="w-full text-left px-3 py-2 hover:bg-[var(--surface-alt)] dark:hover:bg-surface flex flex-wrap items-center gap-2 text-sm border-b border-[var(--rule-soft)] dark:border-card-border last:border-0"
-                                  >
-                                    <div>
-                                      <div className="font-medium text-[var(--text-primary)] dark:text-foreground">{p.name}</div>
-                                      {p.barcode && <div className="text-xs text-[var(--text-tertiary)] dark:text-muted">{p.barcode}</div>}
-                                    </div>
-                                  </button>
-                                ))}
+                </section>
+
+                {/* ── Sección: Productos ── */}
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                      <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
+                      Productos de la orden
+                      {items.length > 0 && (
+                        <span className="inline-flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-primary/10 text-primary text-xs font-extrabold tabular-nums">
+                          {items.length}
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowScanner(true)}
+                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+                      >
+                        <ScanBarcode className="h-4 w-4" />
+                        Escanear
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setAddItemMode("search"); setAddItemSearch(""); setAddItemSel(null); setShowAddItemModal(true); }}
+                        className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-primary text-white text-xs font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
+                      >
+                        <Plus className="h-4 w-4" strokeWidth={2.5} />
+                        Agregar producto
+                      </button>
+                    </div>
+                  </div>
+
+                  {items.length === 0 ? (
+                    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 px-4 py-10 text-center">
+                      <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--surface-canvas)] mb-3">
+                        <Package className="h-6 w-6 text-[var(--text-tertiary)]" />
+                      </span>
+                      <p className="text-sm font-bold text-[var(--text-primary)]">Sin productos en la orden</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">Click en <strong>Agregar producto</strong> arriba para buscar o crear uno nuevo.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {items.map((item, idx) => {
+                        const q = itemQueries[idx] ?? "";
+                        const filtered = q.length > 0
+                          ? products.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || (p.barcode ?? "").includes(q)).slice(0, 6)
+                          : [];
+                        const lineTotal = item.quantity * item.unitCost;
+                        return (
+                          <div key={idx} className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] p-3 transition-all hover:border-[var(--text-tertiary)]">
+                            <div className="flex items-start gap-2 mb-2">
+                              <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 text-primary text-xs font-extrabold shrink-0">
+                                {idx + 1}
+                              </span>
+                              <div className="flex-1 relative">
+                                <input
+                                  value={itemQueries[idx] ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setItemQueries(prev => prev.map((q, i) => i === idx ? val : q));
+                                    setOpenSearchIdx(idx);
+                                  }}
+                                  onFocus={() => setOpenSearchIdx(idx)}
+                                  onBlur={() => setTimeout(() => setOpenSearchIdx(null), 120)}
+                                  placeholder="Buscar producto…"
+                                  className="w-full h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary"
+                                />
+                                {openSearchIdx === idx && filtered.length > 0 && (
+                                  <div className="absolute top-full left-0 right-0 z-20 bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-2xl mt-1 max-h-56 overflow-y-auto shadow-lg">
+                                    {filtered.map(p => (
+                                      <button
+                                        key={p.id}
+                                        type="button"
+                                        onMouseDown={() => { changeProduct(idx, p.id); setItemQueries(prev => prev.map((_, i) => i === idx ? p.name : _)); setOpenSearchIdx(null); }}
+                                        className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-sunken)] flex items-center gap-2 text-sm border-b border-[var(--rule-soft)] last:border-0"
+                                      >
+                                        <Package className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-bold text-[var(--text-primary)] truncate">{p.name}</p>
+                                          {p.barcode && <p className="text-xs text-[var(--text-tertiary)]">{p.barcode}</p>}
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                            )}
+                              <button
+                                type="button"
+                                onClick={() => removeItem(idx)}
+                                aria-label={`Quitar producto ${idx + 1}`}
+                                className="h-10 w-10 inline-flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2 ml-9 flex-wrap">
+                              <div className="flex items-center gap-1">
+                                <label className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Cant</label>
+                                <input
+                                  type="number" min="1" step="1"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
+                                  className="w-20 h-10 px-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                />
+                                <span className="text-xs font-bold text-[var(--text-tertiary)] ml-1">{item.unit}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <label className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Costo</label>
+                                <div className="relative">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)]">S/</span>
+                                  <input
+                                    type="number" min="0" step="0.01"
+                                    value={item.unitCost}
+                                    onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
+                                    className="w-24 h-10 pl-7 pr-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                  />
+                                </div>
+                              </div>
+                              <div className="ml-auto inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-primary/10 text-primary">
+                                <span className="text-xs font-bold uppercase">Total</span>
+                                <span className="text-base font-extrabold tabular-nums">S/{lineTotal.toFixed(2)}</span>
+                              </div>
+                            </div>
                           </div>
-                          <input
-                            type="number" min="1" step="1"
-                            value={item.quantity}
-                            onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
-                            className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-right text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
-                            placeholder="Cant"
-                          />
-                          <span className="text-xs text-[var(--text-tertiary)] dark:text-muted w-8 pt-2">{item.unit}</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-[var(--text-tertiary)] dark:text-muted pt-2">S/</span>
-                            <input
-                              type="number" min="0" step="0.01"
-                              value={item.unitCost}
-                              onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
-                              className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-right text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
-                              placeholder="Costo"
-                            />
-                          </div>
-                          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-20 text-right pt-2">S/{(item.quantity * item.unitCost).toFixed(2)}</span>
-                          <button type="button" onClick={() => removeItem(idx)} className="p-1 text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] pt-1.5"><X className="h-4 w-4" /></button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {items.length > 0 && (
-                  <div className="flex justify-end mt-2">
-                    <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Total: <span className="text-primary">S/{itemsTotal.toFixed(2)}</span></span>
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
               </div>
 
-              <div className="flex flex-wrap gap-3 pt-1">
-                <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="submit" disabled={saving || !supplierId || items.length === 0} className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
-                  {saving ? "Guardando…" : "Crear orden de compra"}
-                </button>
-              </div>
+              {/* Footer sticky con total + acciones */}
+              <footer className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-5 sm:px-6 py-4">
+                {items.length > 0 && (
+                  <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-[var(--rule-base)]">
+                    <div>
+                      <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Total de la orden</p>
+                      <p className="text-xs text-[var(--text-secondary)]">{items.length} producto{items.length === 1 ? "" : "s"} · {items.reduce((s, i) => s + i.quantity, 0)} unidades</p>
+                    </div>
+                    <p className="text-3xl font-extrabold text-primary tabular-nums">
+                      S/{itemsTotal.toFixed(2)}
+                    </p>
+                  </div>
+                )}
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreate(false)}
+                    className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || !supplierId || items.length === 0}
+                    className="flex-1 sm:flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" strokeWidth={2.5} />}
+                    {saving ? "Guardando…" : "Crear orden de compra"}
+                  </button>
+                </div>
+              </footer>
             </form>
           </div>
         </div>
       )}
 
-      {/* Orders list */}
+      {/* ─── Orders list ─────────────────────────────────────────────── */}
       {loading ? (
-        <TableSkeleton rows={4} cols={5} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
+        <TableSkeleton rows={4} cols={5} className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl" />
       ) : filteredOrders.length === 0 ? (
-        <EmptyState
-          icon={ShoppingBag}
-          title={selectedSupplierId ? "Sin órdenes para este proveedor" : "Sin órdenes de compra"}
-          description={selectedSupplierId ? "Este proveedor no tiene órdenes registradas." : "Crea órdenes de compra a tus proveedores."}
-          className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl"
-        />
+        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-6 py-14 text-center">
+          <span className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-4">
+            <ShoppingBag className="h-8 w-8 text-primary" strokeWidth={2.2} />
+          </span>
+          <h3 className="text-xl font-extrabold text-[var(--text-primary)]">
+            {selectedSupplierId ? "Sin órdenes para este proveedor" : "Sin órdenes de compra"}
+          </h3>
+          <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
+            {selectedSupplierId
+              ? "Este proveedor todavía no tiene órdenes registradas. Creá la primera o cambiá de proveedor."
+              : "Llevá registro de lo que pedís a tus proveedores: fechas, cantidades, costos. Después podés duplicar pedidos frecuentes o hacerlos recurrentes."}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
+          >
+            <Plus className="h-5 w-5" strokeWidth={2.5} />
+            Crear primera orden
+          </button>
+        </div>
       ) : (
         <div className="space-y-3">
-          {filteredOrders.map((o) => (
-            <div key={o.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
-              <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{o.supplierName}</span>
-                    {/* Mejora 13: Progress bar visual */}
-                    <OCProgressBar status={o.status} />
-                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
-                      {STATUS_LABELS[o.status]}
-                    </span>
+          {filteredOrders.map((o) => {
+            const supplier = suppliers.find(s => s.id === o.supplierId);
+            const isExpanded = expanded === o.id;
+            return (
+            <div
+              key={o.id}
+              className={cn(
+                "bg-white dark:bg-[var(--color-card)] border-2 rounded-2xl overflow-hidden transition-all",
+                isExpanded ? "border-primary/40 ring-2 ring-primary/15 shadow-sm" : "border-[var(--rule-base)] hover:border-[var(--text-tertiary)]",
+              )}
+            >
+              <div className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center gap-4">
+                {/* Avatar + datos principales */}
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-primary/10 shrink-0">
+                    <Truck className="h-5 w-5 text-primary" strokeWidth={2.2} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-base font-extrabold text-[var(--text-primary)] truncate">
+                        {o.supplierName}
+                      </p>
+                      <span className={cn("inline-flex items-center gap-1 h-6 px-2 rounded-lg text-xs font-bold border", STATUS_COLORS[o.status])}>
+                        {STATUS_LABELS[o.status]}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap mt-1.5 text-xs text-[var(--text-secondary)] font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                        {formatDate(o.createdAt)}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                        {o.items.length} producto{o.items.length !== 1 ? "s" : ""}
+                      </span>
+                      {supplier?.ruc && (
+                        <span className="inline-flex items-center gap-1">
+                          <Hash className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                          {supplier.ruc}
+                        </span>
+                      )}
+                    </div>
+                    {/* Progress bar visual */}
+                    <div className="mt-3">
+                      <OCProgressBar status={o.status} />
+                    </div>
+                    {o.notes && (
+                      <p className="text-xs text-[var(--text-tertiary)] mt-2 italic line-clamp-1">{o.notes}</p>
+                    )}
                   </div>
-                  <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
-                    {formatDate(o.createdAt)} · {o.items.length} producto{o.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{Number(o.total).toFixed(2)}</span>
-                  </p>
-                  {o.notes && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 italic">{o.notes}</p>}
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
+                    <p className="text-2xl font-extrabold text-primary tabular-nums leading-none mt-0.5">
+                      S/{Number(o.total).toFixed(2)}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {/* Acciones */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0 lg:border-l-2 lg:border-[var(--rule-soft)] lg:pl-4">
                   <select
                     value={o.status}
                     onChange={(e) => updateStatus(o.id, e.target.value as PurchaseStatus)}
-                    className="text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border px-2 py-1.5 outline-none focus:border-primary text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card"
+                    aria-label="Cambiar estado"
+                    className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
                   >
                     {(Object.keys(STATUS_LABELS) as PurchaseStatus[]).map(s => (
                       <option key={s} value={s}>{STATUS_LABELS[s]}</option>
@@ -924,39 +1199,52 @@ export default function PurchaseOrdersTab() {
                   </select>
                   {(o.status === "pendiente" || o.status === "parcial") && (
                     <button
+                      type="button"
                       onClick={() => setRecepcionOC(o)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
-                      title="Registrar recepcion"
+                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--data-success-500)] text-white text-sm font-bold hover:bg-emerald-600 transition-colors shadow-sm"
+                      title="Registrar recepción"
                     >
-                      <PackageCheck className="h-3.5 w-3.5" /> Recibir
+                      <PackageCheck className="h-4 w-4" />
+                      <span className="hidden sm:inline">Recibir</span>
                     </button>
                   )}
-                  <OCPDFExport
-                    oc={o}
-                    supplier={suppliers.find(s => s.id === o.supplierId)}
-                  />
-                  {/* Mejora 19: Duplicar OC */}
+                  <OCPDFExport oc={o} supplier={supplier} />
                   <button
+                    type="button"
                     onClick={() => duplicateOrder(o)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-xs font-bold transition-colors"
+                    className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-base)] text-sm font-bold transition-colors"
                     title="Duplicar orden"
                   >
-                    <Copy className="h-3.5 w-3.5" /> Duplicar
+                    <Copy className="h-4 w-4" />
+                    <span className="hidden md:inline">Duplicar</span>
                   </button>
-                  {/* Mejora 15: Hacer recurrente */}
                   {(o.status === "recibido" || o.status === "parcial") && (
                     <button
+                      type="button"
                       onClick={() => { setShowRecurringModal(o); setRecurringInterval(15); setRecurringNotifyDays(2); }}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent)]/30 text-xs font-bold transition-colors"
+                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-primary hover:bg-primary/10 text-sm font-bold transition-colors"
                       title="Hacer pedido recurrente"
                     >
-                      <History className="h-3.5 w-3.5" /> Recurrente
+                      <Repeat className="h-4 w-4" />
+                      <span className="hidden md:inline">Recurrente</span>
                     </button>
                   )}
-                  <button onClick={() => setExpanded(expanded === o.id ? null : o.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
-                    {expanded === o.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(isExpanded ? null : o.id)}
+                    aria-label={isExpanded ? "Colapsar detalle" : "Ver detalle"}
+                    aria-expanded={isExpanded}
+                    className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  >
+                    {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                   </button>
-                  <button onClick={() => deleteOrder(o.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
+                  <button
+                    type="button"
+                    onClick={() => deleteOrder(o.id)}
+                    aria-label="Eliminar orden"
+                    className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10 transition-colors"
+                    title="Eliminar"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -964,7 +1252,7 @@ export default function PurchaseOrdersTab() {
 
               {/* Expanded details */}
               {expanded === o.id && (
-                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-alt)] dark:bg-surface">
+                <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-alt)] dark:bg-surface">
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Detalle de productos</p>
                   <div className="space-y-1.5">
                     {o.items.map((item, i) => {
@@ -988,13 +1276,13 @@ export default function PurchaseOrdersTab() {
                       return (
                         <div key={i}>
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-[var(--text-primary)] dark:text-foreground flex items-center gap-1.5">
+                            <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
                               <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] dark:text-muted" />
                               {item.quantity}x {item.name} <span className="text-[var(--text-tertiary)] dark:text-muted">({item.unit})</span>
                             </span>
                             <div className="text-right">
                               <span className="text-[var(--text-tertiary)] dark:text-muted text-xs mr-2">S/{Number(item.unitCost).toFixed(2)} c/u</span>
-                              <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">S/{(item.quantity * item.unitCost).toFixed(2)}</span>
+                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{(item.quantity * item.unitCost).toFixed(2)}</span>
                             </div>
                           </div>
                           {/* Mejora 20: Referencia de precio anterior */}
@@ -1009,8 +1297,8 @@ export default function PurchaseOrdersTab() {
                         </div>
                       );
                     })}
-                    <div className="flex justify-between items-center text-sm font-bold border-t border-[var(--rule-base)] dark:border-card-border pt-1.5 mt-1">
-                      <span className="text-[var(--text-primary)] dark:text-foreground">Total</span>
+                    <div className="flex justify-between items-center text-sm font-bold border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] pt-1.5 mt-1">
+                      <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</span>
                       <span className="text-primary">S/{Number(o.total).toFixed(2)}</span>
                     </div>
                   </div>
@@ -1054,7 +1342,8 @@ export default function PurchaseOrdersTab() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1064,9 +1353,9 @@ export default function PurchaseOrdersTab() {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
           onClick={(e) => e.target === e.currentTarget && setShowAddItemModal(false)}
         >
-          <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" /> Agregar producto
               </CardTitle>
               <button onClick={() => setShowAddItemModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
@@ -1077,11 +1366,11 @@ export default function PurchaseOrdersTab() {
             <div className="flex border-b px-5 shrink-0">
               <button
                 onClick={() => setAddItemMode("search")}
-                className={cn("py-2.5 px-3 text-sm font-semibold border-b-2 -mb-px transition-colors", addItemMode === "search" ? "border-primary text-primary" : "border-transparent text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground")}
+                className={cn("py-2.5 px-3 text-sm font-semibold border-b-2 -mb-px transition-colors", addItemMode === "search" ? "border-primary text-primary" : "border-transparent text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]")}
               >Buscar existente</button>
               <button
                 onClick={() => setAddItemMode("new")}
-                className={cn("py-2.5 px-3 text-sm font-semibold border-b-2 -mb-px transition-colors", addItemMode === "new" ? "border-primary text-primary" : "border-transparent text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground")}
+                className={cn("py-2.5 px-3 text-sm font-semibold border-b-2 -mb-px transition-colors", addItemMode === "new" ? "border-primary text-primary" : "border-transparent text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]")}
               >Nuevo producto</button>
             </div>
 
@@ -1093,7 +1382,7 @@ export default function PurchaseOrdersTab() {
                     value={addItemSearch}
                     onChange={(e) => { setAddItemSearch(e.target.value); setAddItemSel(null); }}
                     placeholder="Buscar por nombre o código de barras…"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                   />
                   <div className="space-y-1 max-h-52 overflow-y-auto">
                     {(addItemSearch.length > 0
@@ -1108,25 +1397,25 @@ export default function PurchaseOrdersTab() {
                           "w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors",
                           addItemSel?.id === p.id
                             ? "border-primary bg-primary/5"
-                            : "border-[var(--rule-soft)] dark:border-card-border hover:border-gray-300"
+                            : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-gray-300"
                         )}
                       >
-                        <div className="font-medium text-[var(--text-primary)] dark:text-foreground">{p.name}</div>
+                        <div className="font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</div>
                         <div className="text-xs text-[var(--text-tertiary)] dark:text-muted">{p.unit}{p.barcode ? ` · ${p.barcode}` : ""} · stock: {p.stock ?? 0}</div>
                       </button>
                     ))}
                     {products.length === 0 && <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-6">No hay productos</p>}
                   </div>
                   {addItemSel && (
-                    <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-base)] dark:border-card-border">
-                      <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{addItemSel.name}</p>
+                    <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                      <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{addItemSel.name}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Cantidad</label>
                           <input
                             type="number" min="1" step="1" value={addItemQty}
                             onChange={(e) => setAddItemQty(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
                         </div>
                         <div>
@@ -1134,7 +1423,7 @@ export default function PurchaseOrdersTab() {
                           <input
                             type="number" min="0" step="0.01" value={addItemCost}
                             onChange={(e) => setAddItemCost(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
                         </div>
                       </div>
@@ -1178,13 +1467,13 @@ export default function PurchaseOrdersTab() {
                         required value={newProdForm.name}
                         onChange={(e) => setNewProdForm(p => ({ ...p, name: e.target.value }))}
                         placeholder="Nombre del producto"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
                       <select value={newProdForm.category} onChange={(e) => setNewProdForm(p => ({ ...p, category: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none">
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none">
                         <option value="abarrotes">Abarrotes</option>
                         <option value="bebidas">Bebidas</option>
                         <option value="lacteos">Lácteos</option>
@@ -1199,35 +1488,35 @@ export default function PurchaseOrdersTab() {
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Unidad</label>
                       <input value={newProdForm.unit} onChange={(e) => setNewProdForm(p => ({ ...p, unit: e.target.value }))}
                         placeholder="und, kg, L…"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Precio venta (S/)</label>
                       <input type="number" min="0" step="0.01" value={newProdForm.price}
                         onChange={(e) => setNewProdForm(p => ({ ...p, price: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Costo compra (S/)</label>
                       <input type="number" min="0" step="0.01" value={newProdForm.costPrice}
                         onChange={(e) => setNewProdForm(p => ({ ...p, costPrice: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Cantidad inicial</label>
                       <input type="number" min="0" step="1" value={newProdForm.stock}
                         onChange={(e) => setNewProdForm(p => ({ ...p, stock: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Código de barras</label>
                       <input value={newProdForm.barcode} onChange={(e) => setNewProdForm(p => ({ ...p, barcode: e.target.value }))}
                         placeholder="Opcional"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </div>
                   </div>
@@ -1259,12 +1548,12 @@ export default function PurchaseOrdersTab() {
 
       {/* Mejora 19: Toast de duplicacion */}
       {duplicateToast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-4 right-4 z-50 bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
               <Copy className="h-4 w-4 text-[var(--data-success-500)]" />
             </div>
-            <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{duplicateToast}</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{duplicateToast}</p>
           </div>
         </div>
       )}
@@ -1272,9 +1561,9 @@ export default function PurchaseOrdersTab() {
       {/* Barcode scanner modal */}
       {showScanner && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowScanner(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Escanear código de barras</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
               <button onClick={() => setShowScanner(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
             </div>
             <div className="p-4">

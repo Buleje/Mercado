@@ -25,6 +25,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Eye,
+  Pencil,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
@@ -33,6 +34,7 @@ import { useCustomer, type Customer } from "@/contexts/customer-context";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
+import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
 import { CheckoutTransitionOverlay } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
@@ -52,17 +54,24 @@ type PerStoreResult = {
   success: boolean;
   orderId?: string | number;
   error?: string;
+  /** Código de error del backend para distinguir 409/422 y guiar al cliente. */
+  errorCode?: string;
+  /** Producto que falló stock (para mostrar CTA "Ajustar X en mi carrito"). */
+  errorProductName?: string;
+  /** Stock disponible en el momento del fallo. */
+  errorAvailable?: number | null;
 };
 
 export default function CheckoutConfirmarPage() {
   const router = useRouter();
-  const { byStore, totalByStore, itemCount, grandTotal, clearStore } = useMarketplaceCart();
+  const { byStore, totalByStore, itemCount, grandTotal, clearStore, hydrated: cartHydrated } = useMarketplaceCart();
   const {
     customer,
     address,
     payment,
     coupons,
     loyalty,
+    paymentProofs,
     isCustomerValid,
     isAddressValid,
     couponDiscountTotal,
@@ -81,15 +90,12 @@ export default function CheckoutConfirmarPage() {
   const [toastOpen, setToastOpen] = useState(false);
   const [toastData, setToastData] = useState<{ title: string; subtitle: string } | null>(null);
 
-  // Espera a que el cart + checkout-data estén hidratados antes de redirigir
-  // (fix de la race que mandaba a /datos al avanzar desde /entrega).
-  const [cartReady, setCartReady] = useState(false);
+  // Brandon mayo 15 v4 (audit QA #1): reemplazado `setTimeout(250ms)` por
+  // los flags reales `hydrated` de ambos hooks. En redes lentas el cart no
+  // hidrataba a tiempo y el guard expulsaba al cliente mid-flow.
+  const cartReady = cartHydrated && hydrated;
   useEffect(() => {
-    const t = window.setTimeout(() => setCartReady(true), 250);
-    return () => window.clearTimeout(t);
-  }, []);
-  useEffect(() => {
-    if (!cartReady || !hydrated) return;
+    if (!cartReady) return;
     // CRÍTICO: si ya hay resultados (pedido confirmado), NO redirigir. El
     // flow de success se encarga del redirect a /tiendas. Sin este guard,
     // tras confirmar el reset() vacía customer/address y los redirects
@@ -99,7 +105,7 @@ export default function CheckoutConfirmarPage() {
     else if (!isCustomerValid) router.replace("/checkout/datos");
     else if (!isAddressValid) router.replace("/checkout/entrega");
   }, [
-    cartReady, hydrated, itemCount, isCustomerValid, isAddressValid,
+    cartReady, itemCount, isCustomerValid, isAddressValid,
     router, results.length, submitting,
   ]);
 
@@ -134,6 +140,21 @@ export default function CheckoutConfirmarPage() {
         const g = byStore[sid];
         const couponEntry = coupons[g.storeSlug];
         const redeemForThisStore = idx === 0 ? loyalty.redeemPoints || 0 : 0;
+        const storeProof = paymentProofs[g.storeSlug];
+        const storeSubtotal = totalByStore[sid]?.total ?? 0;
+        // PENTEST 2026-05-18 Fase 1 CRIT #1: amountPEN debe descontar
+        // los descuentos que el cliente CONOCE (cupón + loyalty redeem) ANTES
+        // de firmar el proof token. El tier discount es server-side (calculado
+        // dentro de createFromCart) — el cliente no lo sabe, así que el server
+        // permite que amountPEN sea >= order.total (sobre-pago por tier OK).
+        // Antes: amountPEN = subtotal bruto → PENTEST-001 cancelaba TODA orden
+        // con cupón/loyalty porque order.total < subtotal.
+        const couponDiscountForStore = typeof couponEntry?.discount === "number" ? couponEntry.discount : 0;
+        const loyaltyDiscountForStore = idx === 0 ? loyaltyDiscountTotal : 0;
+        const proofAmount = Math.max(
+          0,
+          storeSubtotal - couponDiscountForStore - loyaltyDiscountForStore,
+        );
         const requestBody = {
           storeSlug: g.storeSlug,
           customerName: customer.name.trim(),
@@ -151,6 +172,18 @@ export default function CheckoutConfirmarPage() {
             retailPrice: i.price,
             unit: i.unit ?? "unidad",
           })),
+          ...(storeProof
+            ? {
+                paymentProof: {
+                  proofUrl: storeProof.proofUrl,
+                  proofToken: storeProof.proofToken,
+                  reference: storeProof.reference,
+                  // CRIT #1: subtotal - cupón - loyalty (descuentos client-side).
+                  // El server tolera tier extra via PENTEST-001 ajustado.
+                  amountPEN: proofAmount,
+                },
+              }
+            : {}),
         };
         return fetch("/api/marketplace/orders", {
           method: "POST",
@@ -179,7 +212,17 @@ export default function CheckoutConfirmarPage() {
                   : typeof data?.error?.message === "string"
                     ? data.error.message
                     : `Error ${r.status}`;
-            throw new Error(detail);
+            // Adjuntar metadata estructurada (code/productName/available)
+            // al Error para que la UI pueda mostrar un mensaje accionable.
+            const errWithMeta = new Error(detail) as Error & {
+              code?: string;
+              productName?: string | null;
+              available?: number | null;
+            };
+            errWithMeta.code = typeof data?.code === "string" ? data.code : undefined;
+            errWithMeta.productName = typeof data?.productName === "string" ? data.productName : null;
+            errWithMeta.available = typeof data?.available === "number" ? data.available : null;
+            throw errWithMeta;
           }
           return r.json();
         });
@@ -205,8 +248,21 @@ export default function CheckoutConfirmarPage() {
           (v && "id" in v ? v.id : undefined);
         return { storeName: g.storeName, storeSlug: g.storeSlug, success: true, orderId };
       }
-      const message = r.reason instanceof Error ? r.reason.message : "Error desconocido";
-      return { storeName: g.storeName, storeSlug: g.storeSlug, success: false, error: message };
+      const reason = r.reason as (Error & {
+        code?: string;
+        productName?: string | null;
+        available?: number | null;
+      }) | undefined;
+      const message = reason instanceof Error ? reason.message : "Error desconocido";
+      return {
+        storeName: g.storeName,
+        storeSlug: g.storeSlug,
+        success: false,
+        error: message,
+        errorCode: reason?.code,
+        errorProductName: reason?.productName ?? undefined,
+        errorAvailable: reason?.available ?? null,
+      };
     });
     setResults(next);
 
@@ -231,10 +287,25 @@ export default function CheckoutConfirmarPage() {
       if (group && firstSuccess.orderId !== undefined) {
         setLastOrder({
           orderId: String(firstSuccess.orderId),
+          storeId: sid,
           storeSlug: group.storeSlug,
           storeName: group.storeName,
           total: totalByStore[sid!]?.total ?? 0,
           itemsCount: group.items.reduce((s, i) => s + i.quantity, 0),
+          // Snapshot completo de items — REQUERIDO para que el modal de
+          // "Repetir tu compra" en /tiendas pueda mostrar la lista marcable.
+          // Sin esto, RepetirUltimoPedido cae al Link fallback y nunca abre
+          // el modal. Brandon, mayo 14 2026.
+          items: group.items.map((i) => ({
+            productId: i.productId,
+            storeProductId: i.storeProductId,
+            name: i.name,
+            imageUrl: i.image ?? null,
+            unit: i.unit ?? null,
+            price: i.price,
+            quantity: i.quantity,
+            category: i.category ?? null,
+          })),
           ts: Date.now(),
         });
       }
@@ -474,11 +545,37 @@ export default function CheckoutConfirmarPage() {
                   <p className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)]">
                     {r.storeName}
                   </p>
-                  {r.error && (
+                  {r.error && r.errorCode === "STOCK_INSUFFICIENT" ? (
+                    <div className="mt-1 space-y-2">
+                      <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-relaxed">
+                        Sin stock para{" "}
+                        <strong className="text-[var(--text-primary)]">
+                          {r.errorProductName ?? "uno de los productos"}
+                        </strong>
+                        {typeof r.errorAvailable === "number" && r.errorAvailable >= 0 && (
+                          <>
+                            {" "}— quedan{" "}
+                            <strong className="tabular-nums text-[var(--data-warning-500,#f97316)]">
+                              {r.errorAvailable}
+                            </strong>
+                            .
+                          </>
+                        )}{" "}
+                        Volvé al carrito a ajustar la cantidad y reintentá.
+                      </p>
+                      <Link
+                        href="/marketplace/carrito"
+                        className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:underline"
+                      >
+                        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                        Ajustar mi carrito
+                      </Link>
+                    </div>
+                  ) : r.error ? (
                     <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mt-0.5">
                       {r.error}
                     </p>
-                  )}
+                  ) : null}
                   {r.success && r.orderId && (
                     <Link
                       href={`/pedido/${r.orderId}/gracias`}
@@ -523,58 +620,62 @@ export default function CheckoutConfirmarPage() {
 
   return (
     <>
-      <div className="pt-6 sm:pt-8 pb-6">
+      {/* Brandon 2026-05-18: header consistente con /carrito y /datos.
+          Back link sutil, h1 grande, paso del flow visible para reducir
+          ansiedad ("¿cuánto falta?"). */}
+      <div className="pt-4 sm:pt-8 pb-5 sm:pb-6">
         <Link
           href="/checkout/entrega"
-          className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors mb-2"
+          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3"
         >
-          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           Volver a entrega
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-          Revisa tu pedido
+        <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
+          Revisá tu pedido
         </h1>
-        <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+        <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+          <span className="font-semibold text-[var(--text-primary)]">Último paso.</span>{" "}
           Verificá que todo esté bien antes de confirmar.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
         <div className="space-y-5">
-          {/* Auth gate editorial */}
+          {/* Auth gate v2 — Brandon 2026-05-18: compactado.
+              Antes: aside con padding p-5/p-6 + iframe italic font-serif
+              + descripción larga + 2 botones — competía con el CTA primario
+              "Confirmar pedido" del summary. Ocupaba ~180px de altura.
+              Ahora: row horizontal h-auto compacta con icono + texto corto
+              + chip "Iniciar sesión" + "Invitado" como text link sutil. */}
           {showAuthBanner && (
             <aside
               aria-label="Iniciar sesión para rastrear pedidos"
-              className="relative overflow-hidden rounded-2xl border-2 border-[var(--accent)]/30 bg-linear-to-br from-[var(--accent-soft)] via-[var(--accent-soft)] to-[var(--surface-raised)] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+              className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-3.5 sm:p-4 flex items-center gap-3"
             >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[var(--accent)]/[0.12] blur-2xl"
-              />
-              <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-                <UserCircle className="h-5 w-5" strokeWidth={2} aria-hidden />
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white shrink-0">
+                <UserCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               </span>
-              <div className="relative flex-1 min-w-0">
-                <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                  Inicia sesión para{" "}
-                  <span className="italic font-serif text-[var(--accent)]">trackearlo.</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[length:var(--ts-sm)] font-extrabold text-[var(--text-primary)] leading-tight">
+                  ¿Tracking + puntos por este pedido?
                 </p>
-                <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
-                  Recibe updates por WhatsApp, acumulá puntos Buleje y compra más rápido la próxima.
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] leading-tight mt-0.5">
+                  Iniciá sesión o continuá como invitado.
                 </p>
               </div>
-              <div className="relative flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={openAuthModal}
-                  className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-5 h-10 text-[length:var(--ts-xs)] font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
+                  className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-3.5 h-9 text-[length:var(--ts-xs)] font-extrabold text-white hover:bg-[var(--accent)]/90 active:scale-95 transition-all shadow-sm"
                 >
                   Iniciar sesión
                 </button>
                 <button
                   type="button"
                   onClick={() => setGuestMode(true)}
-                  className="inline-flex items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 h-10 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors px-1.5"
                 >
                   Invitado
                 </button>
@@ -794,44 +895,37 @@ export default function CheckoutConfirmarPage() {
             </div>
           )}
 
-          {/* Mobile sticky CTA (ronda 4: OrderSummaryCard compact con breakdown rapido) */}
-          <div className="lg:hidden space-y-3">
-            <OrderSummaryCard
-              variant="compact"
-              itemCount={itemCount}
-              savings={couponDiscountTotal + loyaltyDiscountTotal}
-              lines={[]}
-              total={grandTotal - couponDiscountTotal - loyaltyDiscountTotal}
-            />
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={submitting}
-              className={cn(
-                "group inline-flex w-full items-center justify-center gap-2 rounded-full px-6 h-14",
-                "text-[length:var(--ts-sm)] font-black tracking-[var(--ls-tight)] transition-all duration-200",
-                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
-                "shadow-[0_8px_24px_-10px_var(--accent)]",
-                "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
-              )}
-            >
-              <ShieldCheck className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-              {submitting ? "Procesando..." : `Confirmar pedido · ${fmt(grandTotal)}`}
-            </button>
-          </div>
+          {/* Brandon, mayo 14 2026: el CTA mobile vivia inline aca y rompia
+              la consistencia con /carrito /datos /entrega (todas usan
+              CheckoutMobileCtaBar sticky bottom). Removido — el bar global
+              cubre el confirmar abajo. */}
         </div>
 
-        <CheckoutSummary
-          ctaLabel={submitting ? "Procesando..." : "Confirmar pedido"}
-          onCtaClick={handleConfirm}
-          ctaLoading={submitting}
-          couponDiscount={couponDiscountTotal}
-          loyaltyDiscount={loyaltyDiscountTotal}
-          showItems
-          helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
-        />
+        {/* CheckoutSummary oculto en mobile — el cliente ya revisó todo en
+            los pasos previos, en confirmar solo necesita ver y aceptar */}
+        <div className="hidden lg:block">
+          <CheckoutSummary
+            ctaLabel={submitting ? "Procesando..." : "Confirmar pedido"}
+            onCtaClick={handleConfirm}
+            ctaLoading={submitting}
+            couponDiscount={couponDiscountTotal}
+            loyaltyDiscount={loyaltyDiscountTotal}
+            showItems
+            helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
+          />
+        </div>
         <AuthModal open={authModalOpen} onClose={closeAuthModal} />
       </div>
+
+      {/* Sticky bottom CTA mobile — consistente con /carrito /datos /entrega */}
+      <CheckoutMobileCtaBar
+        primaryLabel="Total"
+        total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
+        ctaLabel={submitting ? "Procesando..." : "Confirmar pedido"}
+        ctaOnClick={handleConfirm}
+        ctaDisabled={submitting}
+        helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
+      />
 
       {/* Modal de detalle del pedido (abierto desde el botón ojo) */}
       <OrderDetailsModal
@@ -891,29 +985,36 @@ function ReviewCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6 transition-colors hover:border-[var(--accent)]/40",
+        // Brandon 2026-05-18: card más fina. Antes p-5/p-6 + eyebrow con
+        // pseudo-line accent + kicker uppercase. Ahora layout más limpio:
+        // icono cuadrado accent + título inline. Edit con ícono lápiz sutil.
+        "group rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5 transition-all hover:border-[var(--accent)]/40 hover:shadow-sm",
         wide && "sm:col-span-2",
       )}
     >
       <div className="flex items-start justify-between mb-3 gap-3">
-        <div>
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-            <span
-              aria-hidden
-              className="inline-flex h-[3px] w-5 rounded-full bg-[var(--accent)]"
-            />
-            <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
-            {kicker}
-          </p>
-          <h3 className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            {title}
-          </h3>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span
+            aria-hidden
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"
+          >
+            <Icon className="h-4 w-4" strokeWidth={2.25} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+              {kicker}
+            </p>
+            <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5 truncate">
+              {title}
+            </h3>
+          </div>
         </div>
         <Link
           href={editHref}
-          className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-3 h-7 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors shrink-0"
+          aria-label={`Editar ${title}`}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:scale-95 transition-all shrink-0"
         >
-          Editar
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
         </Link>
       </div>
       {children}

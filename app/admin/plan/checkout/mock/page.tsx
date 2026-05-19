@@ -25,10 +25,14 @@ export default function MockCheckoutPage() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Mapeo PlanId (DB legacy) -> nombre comercial + precio actual.
+  // Alineado con lib/billing/plan-tiers.ts (mayo 2026 v2).
+  //   free ↔ Free (S/0) · pro ↔ Starter (S/89) · business ↔ Pro (S/179) · enterprise ↔ Business (S/349)
   const PLAN_PRICES: Record<string, { name: string; price: string }> = {
-    pro: { name: "Pro", price: "S/ 99" },
-    business: { name: "Business", price: "S/ 249" },
-    enterprise: { name: "Enterprise", price: "Custom" },
+    free:       { name: "Free",     price: "S/ 0" },
+    pro:        { name: "Starter",  price: "S/ 89" },
+    business:   { name: "Pro",      price: "S/ 179" },
+    enterprise: { name: "Business", price: "S/ 349" },
   };
   const planInfo = PLAN_PRICES[plan] ?? { name: plan, price: "—" };
 

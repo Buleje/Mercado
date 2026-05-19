@@ -6,6 +6,7 @@ import { ProductVariantsDB } from "@/lib/db/product-variants.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logActivity } from "@/lib/activity-logger";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // internamente, así que filas legacy guardadas con slug aparecen junto
     // con las nuevas guardadas con CUID. Eliminé el cache compartido
     // entre tenants — el lookup por DB es suficientemente rápido.
-    const headerTenant = req.headers.get("x-tenant-id") ?? "main";
+    const headerTenant = resolveMarketplaceTenant(req, { context: "marketplace/products/variants" });
     const variants = await ProductVariantsDB.list(headerTenant, productId);
     return NextResponse.json({ data: variants });
   } catch (err) {

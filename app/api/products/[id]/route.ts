@@ -113,6 +113,11 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       requestId,
     ).catch((err) => logger.error("[products/id] logActivity update failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
+    // Fase 4 perf (2026-05-16): KPIs admin refrescan al instante tras update.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterProduct(auth.tenantId);
+    } catch { /* fire-and-forget */ }
     return NextResponse.json(updated);
   } catch (e) {
     logger.error("[products/id] PUT/PATCH error", { err: e instanceof Error ? e.message : String(e) });
@@ -138,6 +143,11 @@ export async function DELETE(req: NextRequest, ctx: RouteCtx) {
     const requestId = req.headers.get("x-request-id") ?? undefined;
     logActivity("Eliminar", "producto", `Producto eliminado: ${existing.name}`, String(numId), "admin", requestId).catch((err) => logger.error("[products/id] logActivity delete failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
+    // Fase 4 perf (2026-05-16): KPIs admin refrescan al instante tras delete.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterProduct(auth.tenantId);
+    } catch { /* fire-and-forget */ }
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[products/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });

@@ -66,6 +66,23 @@ const REQUIRED: EnvSpec[] = [
     description: "Stripe Price ID para el plan Pro (price_*) — S/149.00/mes",
     productionOnly: true,
   },
+  {
+    // Audit 2026-05-17 08-P1-3: agregado tras introducir plan Business
+    // (S/349/mes) en sesión 2026-05-11. Antes no se validaba en startup,
+    // un deploy sin la var permitía checkout fallar silencioso en runtime.
+    key: "STRIPE_BUSINESS_PRICE_ID",
+    description: "Stripe Price ID para el plan Business (price_*) — S/349.00/mes",
+    productionOnly: true,
+  },
+  {
+    // Audit 2026-05-17 04-P1-W4: si WHATSAPP_APP_SECRET falta en runtime,
+    // el webhook acepta cualquier POST (sin firma válida no rechaza). Hard
+    // fail en prod fuerza configurar HMAC secret de Meta antes de exponer
+    // el endpoint público.
+    key: "WHATSAPP_APP_SECRET",
+    description: "HMAC secret de la app de Meta — valida X-Hub-Signature-256 en /api/whatsapp/webhook",
+    productionOnly: true,
+  },
   // ── Cron security ─────────────────────────────────────────────────────────
   {
     key: "CRON_SECRET",
@@ -117,6 +134,23 @@ const REQUIRED: EnvSpec[] = [
 //   INTERNAL_WEBHOOK_SECRET — HMAC-SHA256 secret para webhooks internos (whatsapp/voice, etc.)
 //                             Si no se define, fallback a CRON_SECRET con WARNING en log.
 //                             Genera con: openssl rand -hex 32
+//
+// AUTH rotation (audit 2026-05-17 05-P1-1):
+//   AUTH_SECRET_PREVIOUS — secret anterior durante ventana de rotación.
+//                          getAllSecrets() verifica firmas contra current + previous.
+//                          Workflow: PREVIOUS=valor-actual → generar nuevo CURRENT →
+//                          deploy → tras 7+ días (max refresh) borrar PREVIOUS.
+//                          Tokens viejos siguen válidos durante el overlap.
+//
+// RENIEC + SUNAT vendor identity verification (audit 2026-05-17 TD-058):
+//   RENIEC_PROVIDER       — "mock" (default) | "apisperu" | "decolecta"
+//   SUNAT_RUC_PROVIDER    — "mock" (default) | "apisperu" | "decolecta"
+//   RENIEC_API_TOKEN      — Token del provider RENIEC (apis.net.pe o decolecta.com)
+//   SUNAT_RUC_API_TOKEN   — Token del provider SUNAT (fallback al RENIEC token si falta)
+//   En "mock" no hay hits externos — útil para dev. Para activar verificación
+//   real en prod, setear los 2 PROVIDER + 1 TOKEN (mismo token vale para
+//   ambos si usás apis.net.pe). Si el provider cae, soft-pass (no bloquea
+//   onboarding) y admin verifica manual desde el panel.
 //
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
@@ -220,6 +254,19 @@ export function validateEnv(): void {
     missing.push(
       "  ❌  ALLOW_ADMIN_BYPASS_LOGIN=true is set in production — refuse to boot. " +
         "This flag grants passwordless admin access and is DEV-ONLY. Unset it or remove from Vercel env.",
+    );
+  }
+
+  // Pentest 2026-05-19 H2: si Vercel deployea con VERCEL_ENV=production pero
+  // NODE_ENV no fue propagada (preview branch malconfigurado, build mal seteado),
+  // app/api/auth/bypass queda activa porque su guard se basa solo en NODE_ENV.
+  // Hard-fail aquí evita exponer bypass-login en producción real.
+  const vercelEnv = process.env.VERCEL_ENV;
+  if (vercelEnv === "production" && process.env.NODE_ENV !== "production") {
+    throw new Error(
+      `\n🚨 CRITICAL — VERCEL_ENV='production' pero NODE_ENV='${process.env.NODE_ENV ?? "undefined"}'.\n` +
+      "Mismatch peligroso: endpoints DEV-only (auth/bypass) quedan activos en producción.\n" +
+      "Revisar Vercel project settings y framework preset.\n",
     );
   }
 

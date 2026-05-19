@@ -42,8 +42,12 @@ describe("PLANS — catalog integrity", () => {
     expect(PLANS.enterprise.limits.maxOrdersPerMonth).toBe(-1);
   });
 
-  it("pro plan is marked as popular", () => {
-    expect(PLANS.pro.popular).toBe(true);
+  it("business plan is marked as popular (badge 'Más elegido')", () => {
+    // Brandon 2026-05-17: post-migración planes 2026-05-11 el "Más elegido"
+    // pasó de 'pro' (S/49) a 'business' (S/179). 'pro' ahora se llama "Starter"
+    // y business muestra label "Pro". El 60% del mercado va a business.
+    expect(PLANS.business.popular).toBe(true);
+    expect(PLANS.pro.popular).toBe(false);
   });
 
   it("enterprise plan has sla = true", () => {
@@ -91,8 +95,9 @@ describe("getPlanLimits", () => {
 
 describe("getPlanDef", () => {
   it("returns 'pro' plan def with correct name", () => {
+    // Brandon 2026-05-17: id "pro" ahora muestra name "Starter" (rebranding planes).
     const def = getPlanDef("pro");
-    expect(def.name).toBe("Pro");
+    expect(def.name).toBe("Starter");
     expect(def.id).toBe("pro");
   });
 
@@ -155,6 +160,6 @@ describe("planLimitPayload", () => {
 
   it("detail string mentions the plan name", () => {
     const payload = planLimitPayload("productos", 50, 50, "pro");
-    expect(payload.detail).toContain("Pro");
+    expect(payload.detail).toContain("Starter");
   });
 });

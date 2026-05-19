@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { enqueueActivityLog } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const CreateMovimientoSchema = z.object({
   cuentaId: z.string().min(1),
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/treasury/movimientos
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "treasury-movimientos"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;

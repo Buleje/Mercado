@@ -20,20 +20,39 @@ export async function POST(req: NextRequest) {
   }
 
   const response = NextResponse.json({ ok: true });
-  // Clear both access and refresh tokens
-  response.cookies.set(SESSION.COOKIE_NAME, "", {
+  // CRITICAL FIX 2026-05-11 (audit P1-13): logout limpia TODAS las cookies
+  // de sesión + tenant + CSRF + OAuth. Antes solo SESSION/REFRESH se
+  // limpiaban → active-tenant, customer-token, csrf-token persistían y
+  // un siguiente login en otro tenant heredaba estado.
+  const clearOpts = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "strict" as const,
     maxAge: 0,
     path: "/",
-  });
-  response.cookies.set(REFRESH.COOKIE_NAME, "", {
-    httpOnly: true,
+  };
+  const clearOptsClient = {
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax" as const,
     maxAge: 0,
     path: "/",
-  });
+  };
+  // Auth tokens
+  response.cookies.set(SESSION.COOKIE_NAME, "", clearOpts);
+  response.cookies.set(REFRESH.COOKIE_NAME, "", clearOpts);
+  // Tenant scoping cookies (visibles al cliente — sameSite lax)
+  response.cookies.set("active-tenant", "", clearOptsClient);
+  response.cookies.set("active-tenant-slug", "", clearOptsClient);
+  // Customer storefront session (si existía un cliente logueado)
+  response.cookies.set("customer-token", "", clearOpts);
+  response.cookies.set("buleje-customer-session", "", clearOpts);
+  // CSRF double-submit token
+  response.cookies.set("csrf-token", "", clearOpts);
+  // OAuth state (si quedó algún flujo a medias)
+  response.cookies.set("__Host-oauth-state", "", { ...clearOpts, secure: true });
+  response.cookies.set("__Host-oauth-pkce", "", { ...clearOpts, secure: true });
+  // Pending TOTP (si se cerró sesión durante el step-up)
+  response.cookies.set("pending-totp", "", clearOpts);
   return response;
 }

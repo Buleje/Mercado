@@ -6,6 +6,9 @@ import { cacheStore } from "@/lib/cache";
 import { isQueueEnabled } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — probe
+// de salud en tiempo real (DB, cache, queues), no debe cachearse.
+
 export type HealthService = {
   id: string;
   name: string;
@@ -95,7 +98,14 @@ export async function GET(req: NextRequest) {
     // Run probes in parallel
     const [db, cache] = await Promise.all([probeDB(), probeCache()]);
 
-    // Fetch recent order stats (last 1h error proxy)
+    // Brandon 2026-05-16 (audit Info hardening): este count es global
+    // de TODOS los tenants — es una métrica operativa de salud de la
+    // plataforma (probe que la DB responde + hay tráfico). Admin de un
+    // tenant podría inferir tamaño total de la plataforma. Aceptable
+    // como hardening info-level: el endpoint /admin/health solo es
+    // útil para diagnóstico, no expone PII ni nombres de tenants.
+    // Si en el futuro queremos restringir más, mover a /api/superadmin/health.
+    // eslint-disable-next-line no-restricted-properties -- platform-wide health probe; tenantId scoping no aplica.
     const recentOrderCount = await prisma.order
       .count({ where: { createdAt: { gte: new Date(Date.now() - 3_600_000) } } })
       .catch(() => -1);

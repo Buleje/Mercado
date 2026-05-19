@@ -29,7 +29,11 @@ vi.mock("@buleje/design-system", () => ({
 
 // Mock los íconos como spans simples — evita cargar SVGs reales
 vi.mock("@buleje/design-system/icons", () => {
-  const stub = (name: string) => () => <span data-testid={`icon-${name}`} />;
+  const stub = (name: string) => {
+    const IconStub = () => <span data-testid={`icon-${name}`} />;
+    IconStub.displayName = `IconStub(${name})`;
+    return IconStub;
+  };
   return {
     Store: stub("Store"),
     Package: stub("Package"),

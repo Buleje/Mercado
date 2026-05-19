@@ -70,12 +70,18 @@ interface TiendasMainCategoriesGridProps {
    *  tengan ≥1 tienda asociada — si no, ocultamos la categoría (y la sección
    *  entera si no queda ninguna). Evita filtros muertos. */
   stores?: ReadonlyArray<{ category?: string | null }>;
+  /** True mientras stores está cargando — evita parpadeo de defaults
+   *  hardcodeados cuando los filtros vacían el array. Brandon mayo 2026:
+   *  antes con stores=[] mostrabamos los 11 defaults aunque NO había
+   *  tiendas reales asociadas. */
+  storesLoading?: boolean;
 }
 
 export default function TiendasMainCategoriesGrid({
   selected,
   onSelect,
   stores = [],
+  storesLoading = false,
 }: TiendasMainCategoriesGridProps) {
   const [categories, setCategories] = useState<MainCategory[]>(DEFAULT_CATEGORIES);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -182,16 +188,28 @@ export default function TiendasMainCategoriesGrid({
   }, []);
 
   // Filtrar categorías a las que están vinculadas a ≥1 tienda real.
-  // Si stores aún no cargó (length=0), mostramos todo para no parpadear.
+  // Brandon mayo 2026: antes si stores=[] mostrabamos los 11 defaults
+  // (decorativos sin tienda real). Ahora distinguimos "loading" del
+  // resultado vacío real — sólo durante loading mantenemos el render
+  // para evitar layout shift; resuelto a 0 → ocultamos la sección.
   // Comparación case-insensitive (la DB puede tener "Bodega" / "bodega").
+  //
+  // Brandon, mayo 14 2026: ademas computamos el conteo por categoria para
+  // mostrar un badge "N" en cada chip — el cliente ve de un vistazo cuantas
+  // tiendas hay en restaurantes vs farmacias.
+  const categoryCounts = (() => {
+    const counts: Record<string, number> = {};
+    for (const s of stores) {
+      const id = (s.category ?? "").toString().trim().toLowerCase();
+      if (!id) continue;
+      counts[id] = (counts[id] ?? 0) + 1;
+    }
+    return counts;
+  })();
   const visibleCategories = (() => {
-    if (stores.length === 0) return categories;
-    const used = new Set(
-      stores
-        .map((s) => (s.category ?? "").toString().trim().toLowerCase())
-        .filter(Boolean),
-    );
-    return categories.filter((c) => used.has(c.id.toLowerCase()));
+    if (storesLoading) return categories; // skeleton-ish mientras cargan
+    if (stores.length === 0) return []; // resuelto 0 stores → hidden via guard
+    return categories.filter((c) => (categoryCounts[c.id.toLowerCase()] ?? 0) > 0);
   })();
 
   // Si no hay categorías con tiendas, ocultamos la sección entera —
@@ -199,7 +217,7 @@ export default function TiendasMainCategoriesGrid({
   if (visibleCategories.length === 0) return null;
 
   return (
-    <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
+    <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6 mb-5 sm:mb-6">
         <div className="min-w-0">
           <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
@@ -269,10 +287,11 @@ export default function TiendasMainCategoriesGrid({
         onMouseLeave={onMouseLeaveUp}
         onMouseUp={onMouseLeaveUp}
         onMouseMove={onMouseMove}
-        className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1 scroll-smooth cursor-grab"
+        className="flex gap-2 sm:gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1 scroll-smooth cursor-grab"
       >
         {visibleCategories.map((c) => {
           const isActive = selected === c.id;
+          const count = categoryCounts[c.id.toLowerCase()] ?? 0;
           return (
             <button
               key={c.id}
@@ -283,9 +302,12 @@ export default function TiendasMainCategoriesGrid({
               }}
               aria-pressed={isActive}
               className={[
-                "snap-start group shrink-0",
-                "w-[148px] sm:w-[160px] flex flex-col gap-2",
-                "rounded-2xl overflow-hidden border-2 transition-all p-2",
+                "snap-start group shrink-0 relative",
+                // Brandon mayo 14 2026: en mobile las categorías eran muy
+                // grandes (148px) — ahora 108px para que entren 3-3.5 por
+                // pantalla en cel chico. Desktop sigue en 160px.
+                "w-[108px] sm:w-[160px] flex flex-col gap-1.5 sm:gap-2",
+                "rounded-2xl overflow-hidden border-2 transition-all p-1.5 sm:p-2",
                 isActive
                   ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md"
                   : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:-translate-y-0.5 hover:shadow-md",
@@ -298,7 +320,7 @@ export default function TiendasMainCategoriesGrid({
                     src={c.imageUrl}
                     alt={c.label}
                     fill
-                    sizes="(min-width: 640px) 160px, 148px"
+                    sizes="(min-width: 640px) 160px, 108px"
                     className="object-cover transition-transform group-hover:scale-105"
                   />
                 ) : (
@@ -307,17 +329,39 @@ export default function TiendasMainCategoriesGrid({
                     active={isActive}
                   />
                 )}
+                {/* Badge contador: cuantas tiendas hay en esta categoria
+                    (Brandon, mayo 14 2026). Esquina superior derecha. */}
+                {count > 0 && (
+                  <span
+                    aria-label={`${count} ${count === 1 ? "tienda" : "tiendas"}`}
+                    className={[
+                      "absolute top-1 right-1 sm:top-1.5 sm:right-1.5 inline-flex items-center gap-0.5 rounded-full px-1.5 sm:px-2 h-5 sm:h-6 text-[length:var(--ts-2xs)] font-black tabular-nums shadow-md",
+                      isActive
+                        ? "bg-[var(--accent-600,var(--accent))] text-white"
+                        : "bg-white/95 text-[var(--text-primary)] ring-1 ring-black/5",
+                    ].join(" ")}
+                  >
+                    {count}
+                  </span>
+                )}
               </div>
 
-              {/* Solo el nombre, centrado, tipografía marca */}
-              <p
-                className={[
-                  "text-sm font-black text-center tracking-tight leading-tight px-1 pb-1",
-                  isActive ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
-                ].join(" ")}
-              >
-                {c.label}
-              </p>
+              {/* Nombre + contador como subtitulo cuando no hay imagen badge */}
+              <div className="px-0.5 pb-0.5 sm:px-1 sm:pb-1 text-center">
+                <p
+                  className={[
+                    "text-[length:var(--ts-xs)] sm:text-sm font-black tracking-tight leading-tight line-clamp-2",
+                    isActive ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
+                  ].join(" ")}
+                >
+                  {c.label}
+                </p>
+                {count > 0 && (
+                  <p className="hidden sm:block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums mt-0.5">
+                    {count} {count === 1 ? "tienda" : "tiendas"}
+                  </p>
+                )}
+              </div>
             </button>
           );
         })}

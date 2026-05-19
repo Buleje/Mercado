@@ -24,6 +24,7 @@ import {
   Wallet,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { VendorIdentityBadge } from "./VendorIdentityBadge";
 
 export interface VendorApplication {
   id: string;
@@ -151,6 +152,21 @@ export function ApplicationDetailsDrawer({
               <InfoRow icon={<Package className="h-4 w-4 text-gray-400" />} label="Categoría" value={application.category} />
               <InfoRow icon={<Wallet className="h-4 w-4 text-gray-400" />} label="Ingreso mensual estimado" value={application.monthlyRevenue} />
             </div>
+          </div>
+
+          {/* Verificación de identidad — TD-058: RENIEC/SUNAT on-demand */}
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+              Verificación de identidad
+            </p>
+            <VendorIdentityBadge
+              ruc={application.ruc}
+              ownerName={application.ownerName}
+            />
+            <p className="text-[length:var(--ts-2xs)] text-gray-400">
+              Consulta RENIEC/SUNAT en vivo. Resultados cacheados 24h.
+              No se persiste — sirve para decidir si aprobar.
+            </p>
           </div>
 
           {/* Contacto */}

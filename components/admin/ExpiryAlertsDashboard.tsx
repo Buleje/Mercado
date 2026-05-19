@@ -82,7 +82,7 @@ function ExpirySection({
   onDarBaja: (batch: ExpiryBatch) => void;
 }) {
   return (
-    <div className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden", borderClass)}>
+    <div className={cn("bg-[var(--surface-raised)] border rounded-xl overflow-hidden", borderClass)}>
       {/* Header */}
       <button
         onClick={onToggle}
@@ -112,12 +112,12 @@ function ExpirySection({
       {/* Table */}
       {!collapsed && (
         rows.length === 0 ? (
-          <div className="px-4 py-6 text-center border-t border-[var(--rule-soft)] dark:border-card-border">
+          <div className="px-4 py-6 text-center border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <Package className="h-7 w-7 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Sin productos en este rango</p>
           </div>
         ) : (
-          <div className="overflow-x-auto border-t border-[var(--rule-soft)] dark:border-card-border">
+          <div className="overflow-x-auto border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="bg-[var(--surface-alt)] dark:bg-white/5">
@@ -323,7 +323,7 @@ export default function ExpiryAlertsDashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-amber-500">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 border-b-4 border-b-amber-500">
           <div className="flex items-center gap-2 mb-1">
             <Package className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Productos</p>
@@ -331,14 +331,14 @@ export default function ExpiryAlertsDashboard() {
           <p className="text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{batches.length}</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">por vencer en 30d</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-red-500">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 border-b-4 border-b-red-500">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Valor en riesgo</p>
           </div>
           <p className="text-lg font-extrabold font-mono text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(totalValor)}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 border-b-4 border-b-orange-500">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 border-b-4 border-b-orange-500">
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Lotes afectados</p>
@@ -395,7 +395,7 @@ export default function ExpiryAlertsDashboard() {
 
       {/* Empty */}
       {batches.length === 0 && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl py-16 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl py-16 text-center">
           <Package className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-3" />
           <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-muted">Sin productos por vencer en los próximos 30 días</p>
         </div>

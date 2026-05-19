@@ -27,7 +27,7 @@ function PreviewImage({ src, alt, eager }: { src: string; alt: string; eager: bo
       alt={alt}
       width={200}
       height={200}
-      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[var(--dur-slow)]"
       loading={eager ? "eager" : "lazy"}
       priority={eager}
       fetchPriority={eager ? "high" : "auto"}
@@ -62,7 +62,7 @@ export default function ProductsPreview() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-12">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] animate-pulse">
+              <div key={i} className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] animate-pulse">
                 <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
                 <div className="p-3 space-y-2">
                   <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
@@ -82,7 +82,7 @@ export default function ProductsPreview() {
       <section className="py-20 sm:py-28 bg-surface relative overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Package className="h-16 w-16 text-primary/20 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Cargando productos...</h2>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Cargando productos...</h2>
           <p className="text-muted text-sm mb-6">Estamos preparando nuestro catálogo para ti</p>
           <Link href="/tienda" className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm rounded-xl px-6 py-3 hover:bg-primary-dark transition-colors">
             <ShoppingCart className="h-5 w-5" />
@@ -103,12 +103,12 @@ export default function ProductsPreview() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className={`text-center mb-14 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-14 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             <Sparkles className="h-3.5 w-3.5" />
             {hp.previewBadge}
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             {hp.previewTitle}{" "}
             <span className="text-primary relative">
               {hp.previewTitleAccent}
@@ -123,12 +123,12 @@ export default function ProductsPreview() {
         </div>
 
         {/* Category pills */}
-        <div className={`flex flex-wrap items-center justify-center gap-2.5 mb-10 transition-all duration-700 delay-100 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`flex flex-wrap items-center justify-center gap-2.5 mb-10 transition-all duration-[var(--dur-slower)] delay-100 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           {showcaseCategories.map((cat) => (
             <Link
               key={cat.id}
               href="/tienda"
-              className="group inline-flex items-center gap-2 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]"
+              className="group inline-flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]"
             >
               <span className="text-base">{cat.emoji}</span>
               <span>{cat.label}</span>
@@ -150,7 +150,7 @@ export default function ProductsPreview() {
               key={product.id}
               href="/tienda"
               onClick={() => trackProductView({ id: product.id, name: product.name, category: product.category, price: product.price })}
-              className={`group relative bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
+              className={`group relative bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-[var(--dur-base)] ${
                 inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
               style={inView ? { animationDelay: `${150 + i * 80}ms` } : undefined}
@@ -166,7 +166,7 @@ export default function ProductsPreview() {
               <div className="aspect-square overflow-hidden bg-gray-50 relative">
                 <PreviewImage src={product.image} alt={product.name} eager={i < 2} />
                 {/* Hover overlay — "Ver en tienda" */}
-                <div className="absolute inset-0 bg-primary/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute inset-0 bg-primary/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--dur-base)]">
                   <span className="text-white text-sm font-bold flex items-center gap-1.5">
                     <ShoppingCart className="h-5 w-5" />
                     Ver en tienda
@@ -176,7 +176,7 @@ export default function ProductsPreview() {
 
               {/* Info */}
               <div className="p-3">
-                <h3 className="text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                   {product.name}
                 </h3>
                 <div className="flex items-center gap-1 mt-1.5">
@@ -192,10 +192,10 @@ export default function ProductsPreview() {
         </div>
 
         {/* CTA — more prominent */}
-        <div className={`text-center transition-all duration-700 delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center transition-all duration-[var(--dur-slower)] delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
-            className="group inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-extrabold text-base rounded-2xl px-10 py-4.5 shadow-[var(--shadow-lg)] shadow-primary/25 hover:shadow-[var(--shadow-xl)] hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5"
+            className="group inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-extrabold text-base rounded-2xl px-10 py-4.5 shadow-[var(--shadow-lg)] shadow-primary/25 hover:shadow-[var(--shadow-xl)] hover:shadow-primary/30 transition-all duration-[var(--dur-base)] hover:-translate-y-0.5"
           >
             <ShoppingCart className="h-5 w-5" />
             {hp.previewCtaText}

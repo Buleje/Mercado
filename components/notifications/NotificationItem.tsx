@@ -87,7 +87,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
       <button
         onClick={handleClick}
         className={cn(
-          "w-full text-left px-4 py-3 border-l-4 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-accent/50 flex items-start gap-3 group",
+          "w-full text-left px-4 py-3 border-l-4 transition-colors duration-[var(--dur-fast)] hover:bg-gray-50 dark:hover:bg-accent/50 flex items-start gap-3 group",
           borderColor,
           isUnread ? "bg-emerald-50/50 dark:bg-emerald-950/10" : "bg-transparent"
         )}
@@ -96,7 +96,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
         <div
           className={cn(
             "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center mt-0.5",
-            isUnread ? "bg-white dark:bg-card shadow-sm" : "bg-gray-100 dark:bg-surface"
+            isUnread ? "bg-[var(--surface-raised)] shadow-sm" : "bg-gray-100 dark:bg-surface"
           )}
         >
           <Icon className={cn("h-4 w-4", iconColor)} />
@@ -108,7 +108,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
             className={cn(
               "text-sm leading-tight",
               isUnread
-                ? "font-semibold text-gray-900 dark:text-foreground"
+                ? "font-semibold text-gray-900 dark:text-[var(--text-primary)]"
                 : "font-normal text-gray-600 dark:text-muted"
             )}
           >
@@ -155,7 +155,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
       {/* Mejora M-8: Cobro express inline panel */}
       {showCobroExpress && isFiadoVencido && (
         <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-l-4 border-l-emerald-400">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-foreground mb-1.5">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-[var(--text-primary)] mb-1.5">
             Registrar pago
           </p>
           <div className="flex gap-1.5">
@@ -169,7 +169,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                 onChange={(e) => setCobroMonto(e.target.value)}
                 placeholder="Monto"
                 onClick={(e) => e.stopPropagation()}
-                className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-xs font-bold text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-xs font-bold text-gray-900 dark:text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
             <button

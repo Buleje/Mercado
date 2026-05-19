@@ -251,7 +251,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
                     }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-28 h-28 rounded-full bg-white dark:bg-card" />
+                    <div className="w-28 h-28 rounded-full bg-[var(--surface-raised)]" />
                   </div>
                 </div>
               </div>

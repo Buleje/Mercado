@@ -124,7 +124,7 @@ export default function WishListAdminTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" /> Listas de Deseos</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" /> Listas de Deseos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Análisis de wishlists para stock y marketing</p>
         </div>
         <button onClick={() => exportToCSV(lists.flatMap(l => l.items.map(i => ({ cliente: l.customer, producto: i.productName, precio: i.price, en_stock: i.inStock ? "Sí" : "No" }))), "wishlists")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors">
@@ -148,7 +148,7 @@ export default function WishListAdminTab() {
           { label: "Agotados en wishlists",  value: String(outOfStock),           color: "text-[var(--data-error-500)]" },
           { label: "Tasa conversión",        value: `${conversionRate}%`,         color: "text-[var(--data-success-500)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold mt-1", k.color)}>{k.value}</p>
           </div>
@@ -159,15 +159,15 @@ export default function WishListAdminTab() {
       <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
         <div>
           <p className="text-xs font-bold text-primary">Ingreso potencial total en wishlists</p>
-          <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(potentialRevenue)}</p>
+          <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(potentialRevenue)}</p>
         </div>
         <TrendingUp className="h-10 w-10 text-primary opacity-40" />
       </div>
 
       {/* Ranking de productos más deseados */}
       {productCounts.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" /> Productos más deseados
           </CardTitle>
           <div className="space-y-2">
@@ -180,7 +180,7 @@ export default function WishListAdminTab() {
                   <span className="text-xs font-bold text-[var(--text-tertiary)] w-4 shrink-0">{idx + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</span>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
                         <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(p.price)}</span>
                         {!p.inStock && (
@@ -211,7 +211,7 @@ export default function WishListAdminTab() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar cliente o producto..." />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="Buscar cliente o producto..." />
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setFilterType("all")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterType === "all" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Todas</button>
@@ -223,7 +223,7 @@ export default function WishListAdminTab() {
 
       {/* Lista de wishlists */}
       {filtered.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl flex flex-col items-center py-12 gap-2 text-[var(--text-tertiary)] dark:text-muted">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl flex flex-col items-center py-12 gap-2 text-[var(--text-tertiary)] dark:text-muted">
           <Heart className="h-10 w-10 opacity-30" />
           <p className="text-sm">Sin listas de deseos</p>
         </div>
@@ -233,14 +233,14 @@ export default function WishListAdminTab() {
             const totalValue = l.items.reduce((s, i) => s + i.price, 0);
             const convRate = l.items.length > 0 ? ((l.convertedItems / l.items.length) * 100).toFixed(0) : "0";
             return (
-              <div key={l.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+              <div key={l.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
                 <button onClick={() => setExpandedId(expandedId === l.id ? null : l.id)} className="w-full flex items-center justify-between px-4 sm:px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
                       <Heart className="h-5 w-5 text-[var(--text-secondary)]" />
                     </div>
                     <div className="text-left">
-                      <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{l.customer}</h4>
+                      <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.customer}</h4>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{l.items.length} productos · {fmt(totalValue)} potencial · conv. {convRate}%</p>
                     </div>
                   </div>
@@ -256,15 +256,15 @@ export default function WishListAdminTab() {
                 </button>
 
                 {expandedId === l.id && (
-                  <div className="px-4 sm:px-5 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-3 space-y-2">
+                  <div className="px-4 sm:px-5 pb-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-3 space-y-2">
                     {l.items.map(i => (
                       <div key={i.productId} className="flex items-center justify-between py-2 px-3 rounded-xl bg-gray-50 dark:bg-surface">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-lg shrink-0">{i.image}</span>
-                          <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{i.productName}</span>
+                          <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{i.productName}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-2">
-                          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(i.price)}</span>
+                          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(i.price)}</span>
                           <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", i.inStock ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                             {i.inStock ? "En stock" : "Agotado"}
                           </span>

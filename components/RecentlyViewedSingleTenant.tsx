@@ -119,32 +119,32 @@ export default function RecentlyViewed() {
 
   return (
     <section
-      className="py-10 sm:py-14 bg-white dark:bg-background transition-opacity duration-500"
+      className="py-10 sm:py-14 bg-white dark:bg-background transition-opacity duration-[var(--dur-slow)]"
       style={{ opacity: mounted ? 1 : 0 }}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-primary" />
-            <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">Vistos recientemente</h2>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">Vistos recientemente</h2>
             <span className="text-xs text-muted font-medium">({items.length})</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setScrollIdx(i => Math.max(0, i - 1))}
               disabled={scrollIdx === 0}
-              className="h-8 w-8 rounded-full bg-surface border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-100 dark:hover:bg-card transition-colors disabled:opacity-30"
+              className="h-8 w-8 rounded-full bg-surface border border-[var(--rule-base)] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[var(--surface-raised)] transition-colors disabled:opacity-30"
               aria-label="Anterior"
             >
-              <ChevronLeft className="h-4 w-4 text-foreground" />
+              <ChevronLeft className="h-4 w-4 text-[var(--text-primary)]" />
             </button>
             <button
               onClick={() => setScrollIdx(i => Math.min(maxScroll, i + 1))}
               disabled={scrollIdx >= maxScroll}
-              className="h-8 w-8 rounded-full bg-surface border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-100 dark:hover:bg-card transition-colors disabled:opacity-30"
+              className="h-8 w-8 rounded-full bg-surface border border-[var(--rule-base)] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[var(--surface-raised)] transition-colors disabled:opacity-30"
               aria-label="Siguiente"
             >
-              <ChevronRight className="h-4 w-4 text-foreground" />
+              <ChevronRight className="h-4 w-4 text-[var(--text-primary)]" />
             </button>
             <button
               onClick={clearAll}
@@ -157,7 +157,7 @@ export default function RecentlyViewed() {
 
         <div className="overflow-hidden rounded-xl">
           <div
-            className="flex transition-transform duration-400 ease-out gap-2"
+            className="flex transition-transform duration-[var(--dur-slow)] ease-out gap-2"
             style={{ transform: `translateX(-${scrollIdx * (100 / visibleCount)}%)` }}
           >
             {items.map((product) => (
@@ -165,7 +165,7 @@ export default function RecentlyViewed() {
                 key={product.id}
                 className="shrink-0 w-[calc(33.333%-6px)] sm:w-[calc(25%-6px)] lg:w-[calc(16.666%-7px)]"
               >
-                <div className="group relative bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
+                <div className="group relative bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-[var(--dur-fast)]">
                   {/* Remove button */}
                   <button
                     onClick={() => removeItem(product.id)}
@@ -181,7 +181,7 @@ export default function RecentlyViewed() {
                         alt={product.name}
                         fill
                         loading="lazy"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
                         sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
                       />
                     ) : (
@@ -191,7 +191,7 @@ export default function RecentlyViewed() {
                     )}
                   </div>
                   <div className="p-2">
-                    <h3 className="text-xs font-medium text-foreground line-clamp-2 mb-1.5">{product.name}</h3>
+                    <h3 className="text-xs font-medium text-[var(--text-primary)] line-clamp-2 mb-1.5">{product.name}</h3>
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-sm font-extrabold text-primary">S/{Number(product.price).toFixed(2)}</span>
                       {(() => { const qty = cartItems.find(i => i.id === product.id)?.quantity ?? 0; return qty > 0 ? (

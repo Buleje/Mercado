@@ -56,7 +56,7 @@ export function PreferencesPanel() {
             <Settings className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Preferencias</h2>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Preferencias</h2>
             <p className="text-sm text-muted">Personaliza tu experiencia</p>
           </div>
         </div>
@@ -266,8 +266,8 @@ export function PreferencesPanel() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-6">
-      <h3 className="text-lg font-bold text-foreground mb-4">{title}</h3>
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
+      <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">{title}</h3>
       <div className="space-y-4">{children}</div>
     </div>
   );
@@ -295,7 +295,7 @@ function Toggle({
         />
       </div>
       <div className="flex-1">
-        <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+        <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-primary transition-colors">
           {label}
         </div>
         {description && <div className="text-xs text-muted mt-0.5">{description}</div>}
@@ -317,14 +317,14 @@ function Select({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <label className="text-sm font-semibold text-foreground">{label}</label>
+      <label className="text-sm font-semibold text-[var(--text-primary)]">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
           "px-4 py-2 rounded-lg text-sm font-semibold",
           "bg-gray-100 dark:bg-surface",
-          "text-foreground",
+          "text-[var(--text-primary)]",
           "border border-gray-300 dark:border-gray-600",
           "focus:outline-none focus:ring-2 focus:ring-primary",
           "cursor-pointer"

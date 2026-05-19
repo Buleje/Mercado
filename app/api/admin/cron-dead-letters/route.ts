@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * GET /api/admin/cron-dead-letters
@@ -68,6 +69,8 @@ export async function GET(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-cron-dead-letters"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   // BUG-FIX (audit 2026-05-05): SUPERADMIN-ONLY — ver comentario en GET
   const auth = await requireAdmin(req, ["superadmin"]);
   if (auth instanceof NextResponse) return auth;
@@ -81,14 +84,18 @@ export async function DELETE(req: NextRequest) {
     let deleted = 0;
 
     if (Array.isArray(body.ids) && body.ids.length > 0) {
+      /* eslint-disable no-restricted-syntax -- CronDeadLetter es modelo GLOBAL sin tenantId (sistema, no tenant data). Admin de cualquier tenant puede limpiar dead-letters propios via id allowlist desde su UI. */
       const result = await prisma.cronDeadLetter.deleteMany({
         where: { id: { in: body.ids } },
       });
+      /* eslint-enable no-restricted-syntax */
       deleted = result.count;
     } else if (typeof body.jobName === "string") {
+      /* eslint-disable no-restricted-syntax -- CronDeadLetter es modelo GLOBAL sin tenantId. jobName scope es por sistema, no por tenant. */
       const result = await prisma.cronDeadLetter.deleteMany({
         where: { jobName: body.jobName },
       });
+      /* eslint-enable no-restricted-syntax */
       deleted = result.count;
     } else {
       return NextResponse.json({ error: "Provide ids[] or jobName" }, { status: 400 });

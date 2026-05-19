@@ -1,14 +1,16 @@
 "use client";
 
 /**
- * KPIHeroCard — versión expandida del StatCard del DS para los 4 KPIs principales
- * del dashboard del superadmin. Aporta:
- *   - Paleta diferenciada por tono (teal / sky / amber / purple)
- *   - Tipografía hero más grande (text-4xl) y kicker en mayúsculas
- *   - Icono con fondo tonal + ring sutil
- *   - Sparkline coloreado al tono
- *   - Gradient soft de background
- *   - Trend pill con bg, no solo color de texto
+ * KPIHeroCard — KPI hero canónico del dashboard superadmin.
+ *
+ * Rediseño 2026-05-11 — alineado al patrón del proyecto:
+ *  - Sin gradients ni decorative corner blurs coloridos
+ *  - Value siempre `text-primary` (no más teal/sky/amber/purple saturados)
+ *  - Icon badge tone-aware en `bg-[tone]/10 text-[tone]`
+ *  - Sparkline en color `--accent` único
+ *  - Delta pill tone-semantic (success/danger/neutral)
+ *  - Tipografía `font-display extrabold tracking-tight`
+ *  - Hover lift consistente con otros KPIs del proyecto
  */
 
 import { useId, type ReactNode } from "react";
@@ -17,68 +19,14 @@ import { ArrowUpRight, ArrowDownRight, Minus } from "@buleje/design-system/icons
 
 export type KPITone = "teal" | "sky" | "amber" | "purple" | "rose";
 
-interface ToneStyle {
-  text: string; // valor principal
-  bg: string; // gradient soft
-  iconBg: string;
-  iconColor: string;
-  ring: string;
-  spark: string;
-  pillBg: string;
-  pillText: string;
-}
-
-const TONES: Record<KPITone, ToneStyle> = {
-  teal: {
-    text: "var(--brand-primary, #00B4A6)",
-    bg: "linear-gradient(135deg, rgba(0,180,166,0.10) 0%, transparent 60%)",
-    iconBg: "rgba(0,180,166,0.12)",
-    iconColor: "#00998d",
-    ring: "rgba(0,180,166,0.35)",
-    spark: "#00B4A6",
-    pillBg: "rgba(0,180,166,0.10)",
-    pillText: "#00998d",
-  },
-  sky: {
-    text: "#0284c7",
-    bg: "linear-gradient(135deg, rgba(14,165,233,0.10) 0%, transparent 60%)",
-    iconBg: "rgba(14,165,233,0.12)",
-    iconColor: "#0369a1",
-    ring: "rgba(14,165,233,0.35)",
-    spark: "#0ea5e9",
-    pillBg: "rgba(14,165,233,0.10)",
-    pillText: "#0369a1",
-  },
-  amber: {
-    text: "#b45309",
-    bg: "linear-gradient(135deg, rgba(245,158,11,0.10) 0%, transparent 60%)",
-    iconBg: "rgba(245,158,11,0.14)",
-    iconColor: "#b45309",
-    ring: "rgba(245,158,11,0.35)",
-    spark: "#f59e0b",
-    pillBg: "rgba(245,158,11,0.12)",
-    pillText: "#92400e",
-  },
-  purple: {
-    text: "#7c3aed",
-    bg: "linear-gradient(135deg, rgba(139,92,246,0.10) 0%, transparent 60%)",
-    iconBg: "rgba(139,92,246,0.12)",
-    iconColor: "#6d28d9",
-    ring: "rgba(139,92,246,0.35)",
-    spark: "#8b5cf6",
-    pillBg: "rgba(139,92,246,0.10)",
-    pillText: "#6d28d9",
-  },
-  rose: {
-    text: "#be123c",
-    bg: "linear-gradient(135deg, rgba(244,63,94,0.10) 0%, transparent 60%)",
-    iconBg: "rgba(244,63,94,0.12)",
-    iconColor: "#be123c",
-    ring: "rgba(244,63,94,0.35)",
-    spark: "#f43f5e",
-    pillBg: "rgba(244,63,94,0.10)",
-    pillText: "#be123c",
-  },
+// Mapeo de tone (legacy prop) → solo afecta el icon badge.
+// El value, sparkline y resto se mantienen en tokens neutrales canónicos.
+const ICON_BG: Record<KPITone, string> = {
+  teal: "bg-[var(--accent)]/10 text-[var(--accent)]",
+  sky: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
+  amber: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+  purple: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
+  rose: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
 };
 
 interface Props {
@@ -92,16 +40,14 @@ interface Props {
   sparkline?: number[];
 }
 
-function MiniSparkline({ data, color }: { data: number[]; color: string }) {
-  // useId() siempre llamado antes del early return — Rules of Hooks. ID
-  // estable cliente/servidor → sin hydration mismatch en React 19 SSR.
+function MiniSparkline({ data }: { data: number[] }) {
   const reactId = useId();
   if (data.length < 2) return null;
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
   const w = 100;
-  const h = 32;
+  const h = 28;
   const step = w / (data.length - 1);
   const pts = data.map((v, i) => {
     const x = i * step;
@@ -114,13 +60,13 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
       className="mt-3 w-full"
       viewBox={`0 0 ${w} ${h}`}
       preserveAspectRatio="none"
-      style={{ height: 32 }}
+      style={{ height: 28 }}
       aria-hidden
     >
       <defs>
         <linearGradient id={lineId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-          <stop offset="100%" stopColor={color} stopOpacity={0} />
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
         </linearGradient>
       </defs>
       <polygon
@@ -130,7 +76,7 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
       />
       <polyline
         fill="none"
-        stroke={color}
+        stroke="var(--accent)"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -151,96 +97,58 @@ export function KPIHeroCard({
   subValue,
   sparkline,
 }: Props) {
-  const t = TONES[tone];
+  const iconBg = ICON_BG[tone] ?? ICON_BG.teal;
   const trend =
     typeof delta === "number" ? (delta > 0 ? "up" : delta < 0 ? "down" : "flat") : "flat";
   const TrendIcon = trend === "up" ? ArrowUpRight : trend === "down" ? ArrowDownRight : Minus;
-  const deltaColor =
+  const deltaCls =
     trend === "up"
-      ? "var(--data-success, #10b981)"
+      ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
       : trend === "down"
-        ? "var(--data-error, #ef4444)"
-        : "var(--text-tertiary)";
-  const deltaBg =
-    trend === "up"
-      ? "rgba(16,185,129,0.10)"
-      : trend === "down"
-        ? "rgba(239,68,68,0.10)"
-        : "var(--surface-sunken)";
+        ? "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
+        : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)]";
 
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl border bg-[var(--surface-raised)] p-5 sm:p-6 transition-all hover:shadow-lg hover:-translate-y-0.5 group"
-      style={{
-        borderColor: "var(--rule-base)",
-        backgroundImage: t.bg,
-      }}
-    >
-      {/* Decorative corner ring */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full opacity-40 transition-opacity group-hover:opacity-60"
-        style={{ background: `radial-gradient(circle, ${t.ring} 0%, transparent 70%)` }}
-      />
-
-      {/* Header: label + icon */}
-      <div className="relative flex items-start justify-between gap-3 mb-4">
-        <div className="flex-1 min-w-0">
-          <p className="text-[length:var(--ts-2xs,0.75rem)] font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
-            {label}
-          </p>
-        </div>
-        <div
-          className="shrink-0 rounded-xl p-2.5 ring-1 transition-transform group-hover:scale-110"
-          style={{
-            backgroundColor: t.iconBg,
-            color: t.iconColor,
-            boxShadow: `inset 0 0 0 1px ${t.ring}`,
-          }}
-        >
-          <Icon className="h-5 w-5" aria-hidden />
-        </div>
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+      {/* Header: icon badge + label */}
+      <div className="flex items-center gap-2.5">
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
+          <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        </span>
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+          {label}
+        </p>
       </div>
 
-      {/* Value (hero) */}
-      <div
-        className="relative text-[length:clamp(1.75rem,2.5vw,2.5rem)] font-black tabular-nums leading-[1.05] tracking-tight"
-        style={{ color: t.text }}
-      >
+      {/* Value */}
+      <p className="mt-3 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none">
         {value}
-      </div>
+      </p>
 
       {subValue !== undefined && (
-        <p className="relative mt-1.5 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)]">
-          {subValue}
-        </p>
+        <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subValue}</p>
       )}
 
-      {/* Delta pill */}
+      {/* Delta pill canónico (semántico, no decorativo) */}
       {(typeof delta === "number" || deltaLabel) && (
-        <div className="relative mt-4 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
           {typeof delta === "number" && (
             <span
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-xs)] font-extrabold tabular-nums"
-              style={{ backgroundColor: deltaBg, color: deltaColor }}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider tabular-nums ${deltaCls}`}
             >
-              <TrendIcon className="h-3.5 w-3.5" aria-hidden />
+              <TrendIcon className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               {delta > 0 ? "+" : ""}
               {delta.toFixed(1)}%
             </span>
           )}
           {deltaLabel && (
-            <span className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
-              {deltaLabel}
-            </span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">{deltaLabel}</span>
           )}
         </div>
       )}
 
       {/* Sparkline */}
-      {sparkline && sparkline.length >= 2 && (
-        <MiniSparkline data={sparkline} color={t.spark} />
-      )}
+      {sparkline && sparkline.length >= 2 && <MiniSparkline data={sparkline} />}
     </div>
   );
 }

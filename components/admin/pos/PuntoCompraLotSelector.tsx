@@ -28,7 +28,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
     <div className="modal-backdrop p-4">
       <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-xs overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b border-[var(--rule-base)] dark:border-card-border">
+        <div className="flex items-center justify-between p-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2 min-w-0">
             <Package className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
@@ -66,7 +66,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                 onClick={() => onSelect(lot.units, totalPrice)}
                 className={cn(
                   "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all",
-                  "border border-[var(--rule-base)] dark:border-card-border",
+                  "border border-[var(--rule-base)] dark:border-[var(--rule-base)]",
                   "hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 )}

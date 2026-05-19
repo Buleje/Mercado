@@ -17,7 +17,7 @@
 
 import "server-only";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { findTenantBillingByIdOrSlug } from "@/lib/tenant";
 import { isReadOnlyMode } from "@/lib/billing/trial-status";
 import { logger } from "@/lib/logger";
 
@@ -29,16 +29,10 @@ export async function requireActiveSubscription(
   tenantId: string,
 ): Promise<NextResponse | null> {
   try {
-    const tenant = await prisma.tenant.findFirst({
-      where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-      select: {
-        plan: true,
-        trialEndsAt: true,
-        stripeSubscriptionId: true,
-        stripeCurrentPeriodEnd: true,
-        mpSubscriptionId: true,
-      },
-    });
+    // Brandon 2026-05-16 (Fase 2 perf): helper memoizado con React.cache
+    // dedupea el findFirst dentro del mismo request — antes este se llamaba
+    // por cada writer endpoint encadenado en un sólo render tree.
+    const tenant = await findTenantBillingByIdOrSlug(tenantId);
     if (!tenant) {
       // Tenant no encontrado — dejamos que el endpoint principal decida (404 o lo que sea).
       return null;

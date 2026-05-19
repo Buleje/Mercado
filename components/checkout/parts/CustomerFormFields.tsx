@@ -105,7 +105,7 @@ export function CustomerFormFields({
         : "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]";
 
   const inputBase =
-    "w-full h-12 rounded-xl border-2 bg-white dark:bg-card text-foreground placeholder:text-muted/60 focus:outline-none transition-colors text-base tabular-nums";
+    "w-full h-12 rounded-xl border-2 bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-muted/60 focus:outline-none transition-colors text-base tabular-nums";
 
   return (
     <div className="grid md:grid-cols-3 gap-4">

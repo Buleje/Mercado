@@ -78,32 +78,32 @@ export default function ComboSuggestionCard() {
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
+    <div className="rounded-lg border border-border bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShoppingBag className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold text-foreground dark:text-foreground">
+          <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Combos sugeridos
           </span>
         </div>
         <button
           onClick={fetchAndAnalyze}
           disabled={loading}
-          className="rounded-md p-1 text-muted-foreground hover:bg-muted dark:hover:bg-muted/50 transition-colors disabled:opacity-50"
+          className="rounded-md p-1 text-[var(--text-secondary)] hover:bg-muted dark:hover:bg-muted/50 transition-colors disabled:opacity-50"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
         </button>
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-[var(--text-secondary)]">
         Basado en productos comprados juntos en los últimos 100 pedidos
       </p>
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground">
+        <div className="flex items-center justify-center py-6 gap-2 text-[var(--text-secondary)]">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">Analizando ventas...</span>
         </div>
@@ -119,7 +119,7 @@ export default function ComboSuggestionCard() {
 
       {/* Empty state */}
       {!loading && !error && combos.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
+        <p className="text-sm text-[var(--text-secondary)] text-center py-4">
           No hay suficientes ventas con multiples productos para sugerir combos.
         </p>
       )}

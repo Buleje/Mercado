@@ -11,48 +11,83 @@ import {
   Check,
   Heart,
   Timer,
+  // Brandon 2026-05-18 v5: Minus + Plus removidos — el stepper mobile inferior
+  // se quitó porque ahora el CTA mobile = círculo icon-only (igual que desktop).
+  // El decremento se hace desde el carrito.
+  // Audit P0 UX #2 (2026-05-18): Lucide icons reemplazan los emoji unicode
+  // del fallback — los emoji no rinden consistente en todos los browsers
+  // (vimos cajitas vacías en Chromium sin emoji-font). Los Lucide siempre
+  // renderizan como SVG.
+  Pizza,
+  Beef,
+  Beer,
+  Carrot,
+  ChefHat,
+  Cookie,
+  Croissant,
+  Drumstick,
+  Fish,
+  Milk,
+  Sandwich,
+  Apple,
+  Package,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
-// MarketplaceItemPlaceholder reemplazado por ProductImageFallback (audit P12).
 
-// Audit P12: fallback amable para productos sin foto. Antes mostraba un
-// placeholder vectorial gris genérico que parecía bug; ahora muestra emoji
-// grande de la categoría + nombre del producto sobre fondo de marca + CTA
-// honesto "Sin foto · Avisanos para subirla". Convierte un negativo en
-// invitación al bodeguero a colaborar con la curaduría visual.
-const CATEGORY_EMOJI: Record<string, string> = {
-  abarrotes: "🥫",
-  bebidas: "🥤",
-  carnes: "🥩",
-  lacteos: "🥛",
-  frutas: "🍎",
-  verduras: "🥬",
-  panaderia: "🥖",
-  panadería: "🥖",
-  golosinas: "🍬",
-  limpieza: "🧴",
-  hogar: "🏠",
-  mascotas: "🐶",
-  bebes: "👶",
-  bebés: "👶",
-  farmacia: "💊",
-  ferreteria: "🔧",
-  ferretería: "🔧",
-  pollo: "🍗",
-  polleria: "🍗",
-  pollería: "🍗",
-  pescados: "🐟",
-  congelados: "🧊",
-  default: "🛒",
+// Audit P12 + P0 UX #2: fallback amable para productos sin foto. Antes
+// mostraba un placeholder vectorial gris genérico que parecía bug; ahora
+// muestra ÍCONO LUCIDE de la categoría (no emoji unicode) + nombre del
+// producto sobre fondo de marca + CTA honesto "Sin foto". Convierte un
+// negativo en invitación al bodeguero a colaborar con la curaduría visual.
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  abarrotes: Package,
+  bebidas: Beer,
+  carnes: Beef,
+  lacteos: Milk,
+  frutas: Apple,
+  verduras: Carrot,
+  panaderia: Croissant,
+  panadería: Croissant,
+  golosinas: Cookie,
+  limpieza: Package,
+  hogar: Package,
+  mascotas: Package,
+  bebes: Package,
+  bebés: Package,
+  farmacia: Package,
+  ferreteria: Package,
+  ferretería: Package,
+  pollo: Drumstick,
+  polleria: Drumstick,
+  pollería: Drumstick,
+  pescados: Fish,
+  congelados: Package,
+  pizza: Pizza,
+  pizzas: Pizza,
+  pizzeria: Pizza,
+  pizzería: Pizza,
+  sandwich: Sandwich,
+  sandwiches: Sandwich,
+  comida: ChefHat,
+  comidas: ChefHat,
+  restaurante: ChefHat,
+  restaurantes: ChefHat,
+  default: ShoppingCart,
 };
 function ProductImageFallback({ name, category }: { name?: string | null; category?: string | null }) {
   const key = (category ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  const emoji = CATEGORY_EMOJI[key] ?? CATEGORY_EMOJI.default;
+  const Icon = CATEGORY_ICON[key] ?? CATEGORY_ICON.default;
   return (
     <div
       className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]"
       aria-label="Producto sin foto"
     >
-      <span className="text-4xl mb-1.5 opacity-80" aria-hidden>{emoji}</span>
+      <span
+        className="mb-2 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]"
+        aria-hidden
+      >
+        <Icon className="h-7 w-7" strokeWidth={1.75} />
+      </span>
       {name && (
         <p className="text-xs font-semibold text-[var(--text-secondary)] leading-tight line-clamp-2 max-w-[90%]">
           {name}
@@ -107,6 +142,9 @@ export interface UnifiedProductCardProps {
   href?: string;
   /** Índice en la lista, para escalonar la animación de entrada */
   index?: number;
+  /** Si true, oculta el nombre de la tienda (util en storefront /marketplace/[slug]
+      donde el contexto de tienda ya es obvio y repetirlo es ruido visual). */
+  hideStore?: boolean;
 }
 
 /* ── Formateador de moneda ──────────────────────────────────────────────────── */
@@ -149,9 +187,14 @@ export default function UnifiedProductCard({
   endsAt,
   href,
   index = 0,
+  hideStore = false,
 }: UnifiedProductCardProps) {
   const { addItemWithUndo } = useCartWithUndo();
-  const { items: cartItems } = useMarketplaceCart();
+  // Brandon 2026-05-18 v6: importamos `addItem` directo (sin drawer) para
+  // el flow de modifiers — cuando el cliente confirma desde el modal de
+  // adicionales NO queremos abrir el AddedToCartDrawer encima (sería un
+  // modal sobre otro modal). El producto se agrega al cart y se cierra.
+  const { items: cartItems, addItem } = useMarketplaceCart();
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [justAdded, setJustAdded] = useState(false);
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
@@ -222,6 +265,10 @@ export default function UnifiedProductCard({
   const hasModifiers =
     Array.isArray(product.modifierGroups) && product.modifierGroups.length > 0;
 
+  // Brandon 2026-05-18 v5: handleDecrement removido — el stepper mobile
+  // del card se quitó (CTA mobile ahora es círculo icon-only igual que
+  // desktop). El decremento se hace desde el carrito (/marketplace/carrito).
+
   const handleAdd = useCallback(() => {
     if (isOutOfStock) return;
     // Vibration haptic feedback en mobile — confirmación táctil rápida
@@ -249,6 +296,9 @@ export default function UnifiedProductCard({
       image: product.image ?? null,
       unit: product.unit ?? null,
       description: product.description ?? null,
+      // Snapshot del stock para que el carrito pueda capar el inc y evitar
+      // el 409 del checkout. null = restaurante/servicio sin inventario.
+      stock: product.stock ?? null,
     });
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
@@ -280,7 +330,11 @@ export default function UnifiedProductCard({
       transition={{ duration: 0.3, delay: index * 0.05 }}
       whileHover={{ y: -6 }}
       className={cn(
-        "group relative flex w-full flex-col overflow-hidden rounded-xl",
+        // Brandon 2026-05-18 v3: layout horizontal en mobile (estilo PedidosYa/
+        // Cornershop) — imagen 96×96 a la izquierda, info + precio + CTA en
+        // columna derecha. Más cards visibles por scroll, escaneo rápido.
+        // Desktop conserva el vertical card original (sm:flex-col).
+        "group relative flex w-full flex-row sm:flex-col overflow-hidden rounded-2xl sm:rounded-xl",
         "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
         "transition-[border-color,box-shadow,transform] duration-200",
         "hover:border-[var(--accent)]/60 hover:shadow-[0_12px_32px_-8px_color-mix(in oklab, var(--accent) 28%, transparent)]",
@@ -289,21 +343,36 @@ export default function UnifiedProductCard({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* ── Zona imagen ──────────────────────────────────────────────────────── */}
-      <div className="relative">
-        <Link href={productHref} className="block">
-          {/* Aspect 4/3 — landscape, más ancho que alto. Combinado con menos
-              columnas (3 max en desktop) hace que la imagen del producto
-              tenga MUCHO más espacio horizontal. p-2 para que respire un
-              poquito sin desperdiciar área. */}
-          <div className="relative aspect-[4/3] overflow-hidden bg-white dark:bg-gray-900">
+      {/* ── Zona imagen ────────────────────────────────────────────────────────
+          Mobile (xs): wrapper 176×176 con shrink-0 a la izquierda — imagen
+          aún más grande y dominante (Brandon 2026-05-18 v5: pidió que la
+          imagen ocupe más ancho del card para que el cliente la vea bien).
+          Desktop (sm+): wrapper full-width aspect-[4/3] como siempre. */}
+      <div className="relative w-44 sm:w-full shrink-0 sm:shrink">
+        {/* Brandon 2026-05-18 v3: en MOBILE el Link a detalles queda inerte
+            (`pointer-events-none`) — el cliente que toca el card ya no se va
+            a /producto/[slug]. La única acción mobile es el botón "Agregar"
+            inline más abajo. En sm+ recupera `pointer-events-auto` y vuelve
+            a comportarse como link normal (hover, tap → detalles).
+            El href se conserva para SEO/crawlers. */}
+        <Link
+          href={productHref}
+          className="block pointer-events-none sm:pointer-events-auto"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          {/* Mobile: aspect-square 144×144. Desktop: aspect-[4/3] landscape.
+              Brandon 2026-05-18 v4: imagen llena el card (object-cover sin
+              padding) — antes object-contain p-2 dejaba márgenes blancos y
+              hacía ver el producto pequeño. Ahora ocupa el 100% del slot. */}
+          <div className="relative aspect-square sm:aspect-[4/3] h-full sm:h-auto overflow-hidden bg-[var(--surface-sunken)] sm:bg-white dark:sm:bg-gray-900">
             {product.image ? (
               <Image
                 src={product.image}
                 alt={product.name}
                 fill
-                className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.04]"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover sm:object-contain sm:p-2 transition-transform duration-500 group-hover:scale-[1.04]"
+                sizes="(max-width: 640px) 176px, (max-width: 1024px) 50vw, 33vw"
               />
             ) : (
               <ProductImageFallback name={product.name} category={product.category} />
@@ -311,8 +380,12 @@ export default function UnifiedProductCard({
           </div>
         </Link>
 
-        {/* Badges top-left — pill alto contraste para oferta visible al instante */}
-        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1.5">
+        {/* Badges top-left — pill alto contraste para oferta visible al instante.
+            Brandon 2026-05-18 v3: ocultos en mobile xs por falta de espacio
+            (imagen 112×112). El descuento ya aparece como precio tachado +
+            "Ahorra S/X" en el bloque del precio. Liquidación/PERUANO se
+            muestran en sm+ donde la imagen es más grande. */}
+        <div className="hidden sm:flex absolute top-2 left-2 z-10 flex-col gap-1.5">
           {/* Rank badge (variant top) */}
           {variant === "top" && rank !== undefined && (
             <span
@@ -399,6 +472,17 @@ export default function UnifiedProductCard({
           </button>
         </div>
 
+        {/* Brandon 2026-05-18 v3: badge -N% mini en mobile xs cuando hay
+            descuento. Posición top-left. Diseño compacto pill. */}
+        {product.discount != null && product.discount > 0 && (
+          <span
+            className="sm:hidden absolute top-1.5 left-1.5 z-10 inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)] shadow-sm"
+            aria-label={`${product.discount}% de descuento`}
+          >
+            -{product.discount}%
+          </span>
+        )}
+
         {/* Overlay agotado */}
         {isOutOfStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
@@ -407,29 +491,46 @@ export default function UnifiedProductCard({
             </span>
           </div>
         )}
+
+        {/* Brandon 2026-05-18 v3: CTA mobile MOVIDO al footer del card como
+            botón full-width (no overlay sobre la imagen). El overlay icon-only
+            de 44px era pequeño y compartía espacio con badges; ahora el CTA
+            ocupa todo el ancho del card debajo del precio, con label "Agregar"
+            + icon + badge de cantidad en cart. Más grande, más visible, más
+            click-friendly en pulgar. Renderizado en el bloque del precio
+            (líneas siguientes). */}
       </div>
 
       {/* ── Contenido ──────────────────────────────────────────────────────────
-          Tipografía aumentada (ADR storefront 2026-04): nombre base/lg, descripción sm,
-          tienda sm — evita texto diminuto que el usuario no podía leer. */}
-      <div className="flex flex-1 flex-col p-4">
-        {/* Nombre — text-base font-bold, 2 lineas, mayor presencia */}
-        <Link href={productHref}>
-          <h3 className="text-base sm:text-lg font-bold leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.75rem] group-hover:text-[var(--accent)] group-focus-within:text-[var(--accent)] transition-colors">
+          Brandon 2026-05-18 v3: mobile compacto (p-3, gap-y reducido), desktop
+          igual (p-4 con min-h del título para alinear cards en grid). */}
+      <div className="flex flex-1 flex-col p-3 sm:p-4 min-w-0">
+        {/* Nombre — text-base font-bold, 2 lineas, mayor presencia.
+            Mobile: sin min-h (card horizontal escala según content).
+            Link inerte en mobile (el cliente en cel solo usa "Agregar"). */}
+        <Link
+          href={productHref}
+          className="pointer-events-none sm:pointer-events-auto"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          <h3 className="text-sm sm:text-lg font-extrabold sm:font-bold leading-snug text-[var(--text-primary)] line-clamp-2 sm:min-h-[2.75rem] group-hover:text-[var(--accent)] group-focus-within:text-[var(--accent)] transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        {/* Descripción — text-sm bold-medium, leading generoso */}
+        {/* Descripción — text-sm bold-medium, leading generoso.
+            Mobile: 1 línea truncate (espacio limitado en card horizontal). */}
         {product.description && (
-          <p className="mt-2 text-sm font-medium leading-relaxed text-[var(--text-secondary)] line-clamp-2">
+          <p className="mt-1 sm:mt-2 text-xs sm:text-sm font-medium leading-snug sm:leading-relaxed text-[var(--text-secondary)] line-clamp-1 sm:line-clamp-2">
             {product.description}
           </p>
         )}
 
-        {/* Tienda — text-sm, ícono más grande para legibilidad */}
-        {product.storeName && (
-          <div className="mt-2 flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
+        {/* Tienda — sm+ only (en /marketplace/[slug] mobile el contexto es
+            obvio y el card horizontal no tiene espacio para el storeName). */}
+        {product.storeName && !hideStore && (
+          <div className="hidden sm:flex mt-2 items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
             <StoreIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{product.storeName}</span>
           </div>
@@ -492,11 +593,13 @@ export default function UnifiedProductCard({
             )}
           </div>
 
-          {/* CTA circular AGRANDADO h-12 w-12 + icono h-5 w-5 — resalta la accion.
-              Cuando el producto ya está en el carrito, mostramos un badge
-              superpuesto con la cantidad — el usuario sabe al instante qué
-              ya agregó sin abrir el drawer. */}
-          <div className="relative shrink-0">
+          {/* Brandon 2026-05-18 v5: CTA inline UNIFICADO desktop + mobile.
+              Antes el mobile tenía un CTA full-width separado debajo del
+              contenido — Brandon pidió "solo el icono", así que ahora el
+              círculo h-12 w-12 al lado del precio (mismo que desktop) se
+              muestra también en mobile. La imagen del card ocupa más ancho
+              (w-44/176px) sin competir con un CTA full-width. */}
+          <div className="relative shrink-0 flex">
             <button
               type="button"
               onClick={handleAdd}
@@ -509,10 +612,7 @@ export default function UnifiedProductCard({
                     : `Agregar ${product.name} al carrito`
               }
               className={cn(
-                // Round 28 P0 (Mobile): h-10 w-10 = 40px viola WCAG 2.5.5 (44 mín).
-                // Es el botón con mayor frecuencia de tap del marketplace —
-                // máximo impacto en conversión mobile.
-                "inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
+                "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
                 isOutOfStock
                   ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
                   : justAdded
@@ -528,7 +628,6 @@ export default function UnifiedProductCard({
                 <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
               )}
             </button>
-            {/* Badge cantidad en carrito */}
             {inCartQty > 0 && !justAdded && (
               <motion.span
                 key={inCartQty}
@@ -544,15 +643,23 @@ export default function UnifiedProductCard({
           </div>
         </div>
 
-        {/* Pill "✓ Ya pediste N" — feedback secundario debajo del precio. */}
+        {/* Pill "✓ Ya pediste N" — feedback secundario debajo del precio.
+            Brandon 2026-05-18 v3: oculto en mobile porque el stepper inline
+            de abajo ya muestra la cantidad. Solo sm+. */}
         {inCartQty > 0 && (
-          <div className="mt-2 -mb-1 flex items-center justify-end">
+          <div className="hidden sm:flex mt-2 -mb-1 items-center justify-end">
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
               <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Ya pediste {inCartQty}
             </span>
           </div>
         )}
+
+        {/* Brandon 2026-05-18 v5: CTA mobile inferior REMOVIDO. El botón
+            circular icon-only (h-12 w-12) inline al lado del precio
+            arriba ya sirve tanto para mobile como desktop — un solo CTA,
+            sin duplicación visual. Más espacio para que la imagen w-44
+            (176px) ocupe más del ancho del card. */}
 
         {/* Aviso limite comparar */}
         {compareLimitMsg && (
@@ -613,7 +720,12 @@ export default function UnifiedProductCard({
           }}
           groups={product.modifierGroups ?? []}
           onConfirm={({ quantity, modifiers, finalUnitPrice }) => {
-            addItemWithUndo({
+            // Brandon 2026-05-18 v6: usar `addItem` directo (NO
+            // addItemWithUndo) para evitar abrir el AddedToCartDrawer
+            // encima del modal de modifiers. El producto + adicionales
+            // se agregan al cart (y se persisten al checkout/admin igual)
+            // y el cliente vuelve al storefront sin un segundo modal.
+            addItem({
               storeId: product.storeId ?? "",
               storeName: product.storeName ?? "",
               storeSlug: product.storeSlug ?? "",
@@ -624,7 +736,6 @@ export default function UnifiedProductCard({
               basePrice: product.price,
               image: product.image ?? null,
               unit: product.unit ?? null,
-              description: product.description ?? null,
               modifiers,
               modifierHash: modifierHashOf(modifiers),
               quantity,

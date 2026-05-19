@@ -186,7 +186,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
             {data.stockAlerta.map((p, i) => (
               <div key={i} className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-foreground truncate leading-tight">{p.nombre}</p>
+                  <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-[var(--text-primary)] truncate leading-tight">{p.nombre}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex-1 h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                       <div

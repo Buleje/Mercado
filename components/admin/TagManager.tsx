@@ -89,11 +89,11 @@ export default function TagManager() {
   const filtered = tags.filter(t => t.entity === entity);
 
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5 space-y-4">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
         <TagIcon className="h-5 w-5 text-primary" />
-        <CardTitle className="text-base font-bold text-foreground">Etiquetas personalizadas</CardTitle>
+        <CardTitle className="text-base font-bold text-[var(--text-primary)]">Etiquetas personalizadas</CardTitle>
       </div>
 
       {/* Entity filter tabs */}
@@ -106,7 +106,7 @@ export default function TagManager() {
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-colors min-h-[36px]",
               entity === tab.id
-                ? "bg-white dark:bg-card text-primary "
+                ? "bg-[var(--surface-raised)] text-primary "
                 : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
             )}
           >
@@ -125,7 +125,7 @@ export default function TagManager() {
           onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
           placeholder="Nueva etiqueta..."
           maxLength={30}
-          className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
         />
         {/* Color picker */}
         <div className="flex items-center gap-1 flex-wrap">

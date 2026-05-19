@@ -39,7 +39,7 @@ const faqs = [
   {
     question: "¿Cómo hago mi pedido online?",
     answer:
-      "Es muy fácil: navega por nuestro catálogo de productos en buleje.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 916 409 675. Aceptamos pagos por Yape o efectivo contra entrega.",
+      "Es muy fácil: navega por nuestro catálogo de productos en buleje.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 929 340 532. Aceptamos pagos por Yape o efectivo contra entrega.",
   },
   {
     question: "¿Cuánto demora el delivery?",
@@ -95,7 +95,7 @@ export default function FAQ() {
             <HelpCircle className="w-3.5 h-3.5" />
             Ayuda
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             Preguntas{" "}
             <span className="relative inline-block text-primary">
               frecuentes
@@ -116,7 +116,7 @@ export default function FAQ() {
               <div
                 key={i}
                 style={inView ? { animationDelay: `${i * 55}ms` } : undefined}
-                className={`rounded-2xl bg-white dark:bg-card overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
+                className={`rounded-2xl bg-[var(--surface-raised)] overflow-hidden shadow-sm hover:shadow-md transition-all duration-[var(--dur-fast)] ${
                   isOpen ? "shadow-md ring-1 ring-primary/15" : ""
                 } ${
                   inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
@@ -128,25 +128,25 @@ export default function FAQ() {
                   aria-expanded={isOpen}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0 transition-colors duration-200 ${
+                    <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0 transition-colors duration-[var(--dur-fast)] ${
                       isOpen ? "bg-primary text-white" : "bg-primary/8 text-primary"
                     }`}>
                       {i + 1}
                     </span>
-                    <span className={`text-sm sm:text-base font-semibold transition-colors duration-200 ${
-                      isOpen ? "text-primary" : "text-foreground group-hover:text-primary"
+                    <span className={`text-sm sm:text-base font-semibold transition-colors duration-[var(--dur-fast)] ${
+                      isOpen ? "text-primary" : "text-[var(--text-primary)] group-hover:text-primary"
                     }`}>
                       {faq.question}
                     </span>
                   </div>
                   <ChevronDown
-                    className={`h-5 w-5 shrink-0 transition-all duration-200 ${
+                    className={`h-5 w-5 shrink-0 transition-all duration-[var(--dur-fast)] ${
                       isOpen ? "rotate-180 text-primary" : "text-muted"
                     }`}
                   />
                 </button>
                 <div
-                  className={`grid transition-[grid-template-rows] duration-300 ${
+                  className={`grid transition-[grid-template-rows] duration-[var(--dur-base)] ${
                     isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                   }`}
                 >

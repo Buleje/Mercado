@@ -365,7 +365,7 @@ function HowToEarn() {
               strokeWidth={2.25}
             />
             <span>
-              <span className="font-bold text-foreground">1 punto</span> por cada
+              <span className="font-bold text-[var(--text-primary)]">1 punto</span> por cada
               S/ 1 gastado
             </span>
           </li>
@@ -375,7 +375,7 @@ function HowToEarn() {
               strokeWidth={2.25}
             />
             <span>
-              <span className="font-bold text-foreground">+50 pts</span> por
+              <span className="font-bold text-[var(--text-primary)]">+50 pts</span> por
               referido que pida
             </span>
           </li>
@@ -461,7 +461,7 @@ function RewardCard({
           {fmtPoints(reward.pointsCost)} pts
         </div>
       </div>
-      <h3 className="text-base font-extrabold text-foreground leading-tight mb-1">
+      <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight mb-1">
         {reward.name}
       </h3>
       <p className="text-sm text-muted line-clamp-2 mb-4">
@@ -472,7 +472,7 @@ function RewardCard({
         <div className="mb-3">
           <div className="relative h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
             <div
-              className="absolute top-0 left-0 h-full transition-all duration-700"
+              className="absolute top-0 left-0 h-full transition-all duration-[var(--dur-slower)]"
               style={{
                 width: `${progress}%`,
                 background:
@@ -561,7 +561,7 @@ function TransactionRow({ tx }: { tx: LoyaltyTransaction }) {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-foreground truncate">
+        <p className="text-sm font-bold text-[var(--text-primary)] truncate">
           {tx.reason}
         </p>
         <p className="text-xs text-muted mt-0.5 flex items-center gap-1">
@@ -751,7 +751,7 @@ export default function PuntosPage() {
               />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-foreground">
+              <h2 className="text-xl font-extrabold text-[var(--text-primary)]">
                 Identificate para ver tus puntos
               </h2>
               <p className="text-base text-muted mt-2 leading-relaxed">
@@ -944,7 +944,7 @@ export default function PuntosPage() {
         {!loading && !error && (
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
             {/* ─── SIDEBAR ─────────────────────────────────── */}
-            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pr-1">
               <TierRing
                 tierName={tier}
                 totalSpent={totalSpent}
@@ -1047,7 +1047,7 @@ export default function PuntosPage() {
                     </div>
                     <p className="text-base text-muted leading-relaxed mb-4">
                       Te faltan{" "}
-                      <span className="font-extrabold text-foreground">
+                      <span className="font-extrabold text-[var(--text-primary)]">
                         {fmtSoles(Math.max(0, nextTier.minSpent - totalSpent))}
                       </span>{" "}
                       en compras para subir a{" "}
@@ -1065,7 +1065,7 @@ export default function PuntosPage() {
                     </p>
                     <div className="relative h-3 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                       <div
-                        className="absolute top-0 left-0 h-full transition-all duration-700"
+                        className="absolute top-0 left-0 h-full transition-all duration-[var(--dur-slower)]"
                         style={{
                           width: `${Math.min(100, (totalSpent / nextTier.minSpent) * 100)}%`,
                           background:
@@ -1113,12 +1113,12 @@ export default function PuntosPage() {
                       <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent-dark)]">
                         Cerca de desbloquearse
                       </p>
-                      <p className="text-base font-extrabold text-foreground truncate">
+                      <p className="text-base font-extrabold text-[var(--text-primary)] truncate">
                         {nearestReward.name}
                       </p>
                       <p className="text-sm text-muted mt-0.5">
                         Te faltan{" "}
-                        <span className="font-extrabold text-foreground">
+                        <span className="font-extrabold text-[var(--text-primary)]">
                           {fmtPoints(nearestReward.pointsCost - points)} pts
                         </span>
                       </p>
@@ -1131,7 +1131,7 @@ export default function PuntosPage() {
               {rewards.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                    <h2 className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
                       <Gift
                         className="h-5 w-5 text-primary"
                         strokeWidth={2.5}
@@ -1165,7 +1165,7 @@ export default function PuntosPage() {
               {/* Historial */}
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                  <h2 className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
                     <Clock
                       className="h-5 w-5 text-primary"
                       strokeWidth={2.5}
@@ -1190,7 +1190,7 @@ export default function PuntosPage() {
                       className="h-12 w-12 text-primary/40 mx-auto mb-3"
                       strokeWidth={1.75}
                     />
-                    <p className="text-base font-bold text-foreground">
+                    <p className="text-base font-bold text-[var(--text-primary)]">
                       Aún no tenés movimientos
                     </p>
                     <p className="text-sm text-muted mt-1">

@@ -169,7 +169,7 @@ export default function OrderTrackingTimeline({
                 "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2",
                 step.done
                   ? "border-primary bg-primary text-white"
-                  : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-tertiary)]",
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
               )}
               animate={step.current ? { boxShadow: ["0 0 0 0px rgba(45,106,79,0.4)", "0 0 0 6px rgba(45,106,79,0)", "0 0 0 0px rgba(45,106,79,0)"] } : {}}
               transition={step.current ? { repeat: Infinity, duration: 2 } : {}}
@@ -182,7 +182,7 @@ export default function OrderTrackingTimeline({
               <div className="flex flex-wrap items-baseline gap-2">
                 <p className={cn(
                   "text-xs font-bold",
-                  step.done ? "text-[var(--text-primary)] dark:text-foreground" : "text-[var(--text-tertiary)]",
+                  step.done ? "text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "text-[var(--text-tertiary)]",
                   step.current && "text-primary"
                 )}>
                   {step.label}

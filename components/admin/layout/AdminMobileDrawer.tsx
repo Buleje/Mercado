@@ -124,20 +124,21 @@ export function AdminMobileDrawer({
         />
       )}
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — ancho fluido para celulares (85vw deja franja
+          minima clicable para cerrar) con cap en sm+ para tabletas chicas. */}
       <aside
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-72 z-50 bg-white dark:bg-card flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden",
+          "fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border bg-primary/5">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/5">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center">
               <ShoppingBasket className="h-4 w-4" />
             </div>
-            <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">
+            <span className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">
               {activeTenantName || "Buleje"}
             </span>
           </div>
@@ -150,10 +151,10 @@ export function AdminMobileDrawer({
         </div>
 
         {/* Category selector (mobile) */}
-        <div className="relative px-3 py-3 border-b border-[var(--rule-base)] dark:border-card-border">
+        <div className="relative px-3 py-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <button
             onClick={onToggleCategoryDropdown}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent transition-all border border-[var(--rule-base)] dark:border-card-border"
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent transition-all border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
           >
             <div className="flex items-center gap-2">
               {selectedCategory ? (
@@ -189,7 +190,7 @@ export function AdminMobileDrawer({
                 className="fixed inset-0 z-10"
                 onClick={onToggleCategoryDropdown}
               />
-              <div className="absolute top-full left-3 right-3 mt-1 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border z-20 max-h-80 overflow-y-auto py-2">
+              <div className="absolute top-full left-3 right-3 mt-1 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] z-20 max-h-80 overflow-y-auto py-2">
                 <button
                   onClick={() => {
                     onSelectCategory(null);
@@ -199,7 +200,7 @@ export function AdminMobileDrawer({
                     "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
                     !selectedCategory
                       ? "bg-primary/10 text-primary"
-                      : "text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
+                      : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
                   <Layers className="h-4 w-4 shrink-0" />
@@ -221,7 +222,7 @@ export function AdminMobileDrawer({
                         "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
                         selectedCategory === category.id
                           ? "bg-primary/10 text-primary"
-                          : "text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
+                          : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
                       <CategoryIcon className="h-4 w-4 shrink-0" />
@@ -282,7 +283,7 @@ export function AdminMobileDrawer({
             <div className="mb-2">
               <button
                 onClick={onToggleRecentCollapsed}
-                className="w-full text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-[var(--text-secondary)] dark:hover:text-foreground transition-colors"
+                className="w-full text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] transition-colors"
               >
                 <Clock className="h-3 w-3" /> Recientes
                 {recentCollapsed
@@ -355,7 +356,7 @@ export function AdminMobileDrawer({
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-[var(--rule-base)] dark:border-card-border space-y-1">
+        <div className="px-3 py-4 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-1">
           {/* Quick access shortcuts — mobile */}
           <div className="mb-2 space-y-0.5">
             <div className="flex items-center justify-between px-4 mb-1">
@@ -432,12 +433,12 @@ export function AdminMobileDrawer({
                   <Plus className="h-4 w-4" /> Agregar acceso
                 </button>
                 {showAddShortcut && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-48 overflow-y-auto">
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl max-h-48 overflow-y-auto">
                     {availableForShortcut.map((t: TabItem) => (
                       <button
                         key={t.id}
                         onClick={() => onAddShortcut(t.id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                       >
                         <t.icon className="h-4 w-4 shrink-0" /> {t.label}
                       </button>

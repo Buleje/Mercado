@@ -57,7 +57,7 @@ export default function StoreHours() {
             <Clock className="w-3.5 h-3.5" />
             Horarios de atención
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)]">
             Te atendemos{" "}
             <span className="text-primary">todos los días</span>
           </h2>
@@ -102,7 +102,7 @@ export default function StoreHours() {
           </div>
 
           {/* Schedule rows */}
-          <div className="bg-card divide-y" style={{ borderColor: "rgba(45,106,79,0.1)" } as React.CSSProperties}>
+          <div className="bg-[var(--surface-raised)] divide-y" style={{ borderColor: "rgba(45,106,79,0.1)" } as React.CSSProperties}>
             {sortedHours.map((s) => {
               const openH = parseHour(s.open);
               const closeH = parseHour(s.close);
@@ -111,7 +111,7 @@ export default function StoreHours() {
               return (
                 <div key={s.day} className="px-6 sm:px-8 py-5 hover:bg-primary/3 transition-colors">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm sm:text-base font-bold text-foreground">{s.day}</span>
+                    <span className="text-sm sm:text-base font-bold text-[var(--text-primary)]">{s.day}</span>
                     {s.enabled ? (
                       <div className="flex items-center gap-1.5">
                         <span className="font-mono text-sm font-bold" style={{
@@ -154,13 +154,13 @@ export default function StoreHours() {
               <p className="text-sm text-muted">Jr. Ucayali 450, Ucayali — Perú</p>
             </div>
             <a
-              href="tel:+51916409675"
+              href="tel:+51929340532"
               className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline transition-colors"
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/15">
                 <Phone className="w-4 h-4 text-primary" />
               </div>
-              916 409 675
+              929 340 532
             </a>
           </div>
         </div>

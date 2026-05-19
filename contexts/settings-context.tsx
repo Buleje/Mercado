@@ -291,3 +291,12 @@ export function useSettings() {
   if (!ctx) throw new Error("useSettings must be inside SettingsProvider");
   return ctx;
 }
+
+/**
+ * Brandon mayo 2026 v7: variante segura para módulos del admin que viven
+ * fuera del SettingsProvider (que sólo se monta en el storefront).
+ * Devuelve null si no hay provider — el caller hace fallback.
+ */
+export function useSettingsSafe() {
+  return useContext(SettingsContext);
+}

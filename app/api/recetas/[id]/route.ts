@@ -70,22 +70,52 @@ export async function PATCH(
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 
+    // CRITICAL FIX 2026-05-11 (audit P0 CRIT-2): validar ownership de
+    // productoId nuevo y de cada ingrediente antes de persistir el PATCH.
+    const newProductIds: number[] = [];
+    if (parsed.data.productoId) newProductIds.push(parsed.data.productoId);
+    if (parsed.data.ingredientes) {
+      for (const ing of parsed.data.ingredientes) newProductIds.push(ing.productoId);
+    }
+    if (newProductIds.length > 0) {
+      // eslint-disable-next-line no-restricted-properties -- ownership check scoped por tenantId obligatorio. Refactor a ProductsDB pendiente.
+      const ownedCount = await prisma.product.count({
+        where: { id: { in: newProductIds }, tenantId: auth.tenantId, deletedAt: null },
+      });
+      if (ownedCount !== new Set(newProductIds).size) {
+        return NextResponse.json(
+          { error: "Uno o más productos no fueron encontrados en tu inventario" },
+          { status: 404 },
+        );
+      }
+    }
+
     // Build update data
     const updateData: Record<string, unknown> = {};
     if (parsed.data.nombre !== undefined) updateData.nombre = parsed.data.nombre;
     if (parsed.data.descripcion !== undefined) updateData.descripcion = parsed.data.descripcion;
     if (parsed.data.productoId !== undefined) updateData.productoId = parsed.data.productoId;
 
-    // Update basic fields
-    const updated = await prisma.receta.update({
-      where: { id },
+    // Update basic fields — usar updateMany con tenantId para defense-in-depth.
+    // eslint-disable-next-line no-restricted-properties -- updateMany con tenantId obligatorio. Refactor a RecetasDB.update pendiente.
+    await prisma.receta.updateMany({
+      where: { id, tenantId: auth.tenantId },
       data: updateData,
+    });
+    // eslint-disable-next-line no-restricted-properties -- findFirst con tenantId obligatorio. Refactor a RecetasDB pendiente.
+    const updated = await prisma.receta.findFirst({
+      where: { id, tenantId: auth.tenantId },
       include: { ingredientes: true },
     });
+    if (!updated) {
+      return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
+    }
 
     // Replace ingredientes if provided
     if (parsed.data.ingredientes) {
+      // eslint-disable-next-line no-restricted-properties, no-restricted-syntax -- RecetaIngrediente indirecto (ADR-101): FK→Receta. recetaId pre-validado en findFirst arriba.
       await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
+      // eslint-disable-next-line no-restricted-properties -- RecetaIngrediente createMany scoped por recetaId del tenant.
       await prisma.recetaIngrediente.createMany({
         data: parsed.data.ingredientes.map((i) => ({
           recetaId: id,
@@ -105,9 +135,7 @@ export async function PATCH(
       "Actualizar", "receta",
       `Receta "${updated.nombre}" actualizada`,
       id, auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.error("[recetas] activity log failed", { err: String(err) }));
 
     return NextResponse.json(result);
   } catch (e) {
@@ -132,8 +160,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 
-    await prisma.receta.update({
-      where: { id },
+    // eslint-disable-next-line no-restricted-properties -- soft-delete scoped por tenantId. Refactor a RecetasDB.deactivate pendiente.
+    await prisma.receta.updateMany({
+      where: { id, tenantId: auth.tenantId },
       data: { activa: false },
     });
 
@@ -141,9 +170,7 @@ export async function DELETE(
       "Desactivar", "receta",
       `Receta "${existing.nombre}" desactivada`,
       id, auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.error("[recetas] activity log failed", { err: String(err) }));
 
     return NextResponse.json({ ok: true, message: "Receta desactivada" });
   } catch (e) {

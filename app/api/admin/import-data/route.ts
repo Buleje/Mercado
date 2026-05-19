@@ -6,6 +6,7 @@ import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod/v4";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 // ── Schemas de validación ─────────────────────────────────────────────────────
 
@@ -35,6 +36,8 @@ const BodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-import-data"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   // 1. Auth — solo admin puede importar datos
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

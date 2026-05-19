@@ -118,13 +118,13 @@ export default function SocialProofToast() {
       aria-atomic="true"
       aria-label="Actividad reciente de clientes"
       className={cn(
-        "fixed bottom-54 sm:bottom-6 left-4 z-20 max-w-xs transition-all duration-500 pointer-events-auto",
+        "fixed bottom-54 sm:bottom-6 left-4 z-20 max-w-xs transition-all duration-[var(--dur-slow)] pointer-events-auto",
         visible
           ? "opacity-100 translate-y-0 translate-x-0"
           : "opacity-0 translate-y-4 -translate-x-4"
       )}
     >
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] overflow-hidden">
         <div className="flex items-start gap-3 p-3">
           {/* Product image */}
           <div className="relative h-14 w-14 rounded-xl overflow-hidden bg-gray-50 shrink-0 border border-gray-100">
@@ -147,7 +147,7 @@ export default function SocialProofToast() {
           <div className="flex-1 min-w-0 pr-5">
             {notification.type === "review" ? (
               <>
-                <p className="text-xs text-foreground leading-snug">
+                <p className="text-xs text-[var(--text-primary)] leading-snug">
                   <strong className="font-bold">{notification.name}</strong>{" "}
                   dejo una resena
                 </p>
@@ -159,23 +159,23 @@ export default function SocialProofToast() {
               </>
             ) : notification.type === "delivery" ? (
               <>
-                <p className="text-xs text-foreground leading-snug">
+                <p className="text-xs text-[var(--text-primary)] leading-snug">
                   <strong className="font-bold">{notification.name}</strong> de{" "}
                   <span className="text-primary font-semibold">{notification.zone}</span>{" "}
                   pidio delivery
                 </p>
-                <p className="text-sm font-bold text-foreground truncate mt-0.5">
+                <p className="text-sm font-bold text-[var(--text-primary)] truncate mt-0.5">
                   {notification.product.name}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-xs text-foreground leading-snug">
+                <p className="text-xs text-[var(--text-primary)] leading-snug">
                   <strong className="font-bold">{notification.name}</strong> de{" "}
                   <span className="text-primary font-semibold">{notification.zone}</span>{" "}
                   compro
                 </p>
-                <p className="text-sm font-bold text-foreground truncate mt-0.5">
+                <p className="text-sm font-bold text-[var(--text-primary)] truncate mt-0.5">
                   {notification.product.name}
                 </p>
               </>

@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { ProductVariant as PProductVariant } from "@/lib/generated/prisma/client";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { findTenantByIdOrSlug } from "@/lib/tenant";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -93,10 +94,8 @@ async function resolveTenantAliases(tenantIdOrSlug: string): Promise<string[]> {
 
   const ids = new Set<string>([tenantIdOrSlug]);
   try {
-    const t = await prisma.tenant.findFirst({
-      where: { OR: [{ id: tenantIdOrSlug }, { slug: tenantIdOrSlug }] },
-      select: { id: true, slug: true },
-    });
+    // Brandon 2026-05-16 (Fase 3): helper memoizado React.cache.
+    const t = await findTenantByIdOrSlug(tenantIdOrSlug);
     if (t) { ids.add(t.id); ids.add(t.slug); }
   } catch { /* tenant lookup falló — usamos solo el input */ }
 

@@ -96,15 +96,15 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute left-6 top-0 z-50 w-72 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
-          <p className="font-bold text-[var(--text-primary)] dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Calculator className="h-4 w-4 text-primary" /> ¿Qué es Cuadrar la Caja?</p>
+        <div className="absolute left-6 top-0 z-50 w-72 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
+          <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2 text-sm flex items-center gap-1.5"><Calculator className="h-4 w-4 text-primary" /> ¿Qué es Cuadrar la Caja?</p>
           <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Compara el <strong>dinero que debería haber</strong> (fondo + ventas en efectivo) con el <strong>dinero que realmente cuentas</strong> al cerrar cada turno.</p>
-          <p className="font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Ejemplo:</p>
+          <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Ejemplo:</p>
           <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Valentina abre caja con S/200. Vende S/350 en efectivo. Al cerrar se esperan S/550. Si cuenta S/540 → <span className="text-[var(--data-error-500)] font-semibold">faltante S/10</span>.</p>
-          <div className="space-y-1 border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
-            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Tarjetas</span> — resumen global de todos los arqueos.</p>
-            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Tabla</span> — cada fila = un turno cerrado con su diferencia.</p>
-            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">Ver detalle</span> — turno y desglose de billetes.</p>
+          <div className="space-y-1 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-2">
+            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tarjetas</span> — resumen global de todos los arqueos.</p>
+            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tabla</span> — cada fila = un turno cerrado con su diferencia.</p>
+            <p className="text-[var(--text-secondary)] dark:text-muted"><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ver detalle</span> — turno y desglose de billetes.</p>
           </div>
           <p className="mt-2 text-[var(--text-tertiary)] italic">Los cuadres se generan automáticamente al cerrar turnos en <strong>Control de Turnos</strong>.</p>
         </div>
@@ -202,14 +202,14 @@ function CashCounter({
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors"
       >
-        <span className="flex items-center gap-2.5 text-[var(--text-primary)] dark:text-foreground">
+        <span className="flex items-center gap-2.5 text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
             <Coins className="h-4 w-4 text-primary" strokeWidth={1.75} aria-hidden />
           </div>
@@ -222,7 +222,7 @@ function CashCounter({
       </button>
 
       {open && (
-        <div className="px-4 pb-4 space-y-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4">
+        <div className="px-4 pb-4 space-y-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Billetes */}
             <div>
@@ -243,7 +243,7 @@ function CashCounter({
                     const qty = counts[key] ?? 0;
                     return (
                       <tr key={key}>
-                        <td className="py-1.5 font-semibold text-[var(--text-primary)] dark:text-foreground">{b.label}</td>
+                        <td className="py-1.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{b.label}</td>
                         <td className="py-1.5 px-2">
                           <input
                             type="number"
@@ -251,10 +251,10 @@ function CashCounter({
                             value={qty || ""}
                             onChange={e => setCount(key, e.target.value)}
                             placeholder="0"
-                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                         </td>
-                        <td className="py-1.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
+                        <td className="py-1.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                           {qty > 0 ? fmt(qty * b.value) : "—"}
                         </td>
                       </tr>
@@ -283,7 +283,7 @@ function CashCounter({
                     const qty = counts[key] ?? 0;
                     return (
                       <tr key={key}>
-                        <td className="py-1.5 font-semibold text-[var(--text-primary)] dark:text-foreground">{m.label}</td>
+                        <td className="py-1.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.label}</td>
                         <td className="py-1.5 px-2">
                           <input
                             type="number"
@@ -291,10 +291,10 @@ function CashCounter({
                             value={qty || ""}
                             onChange={e => setCount(key, e.target.value)}
                             placeholder="0"
-                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                         </td>
-                        <td className="py-1.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
+                        <td className="py-1.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                           {qty > 0 ? fmt(qty * m.value) : "—"}
                         </td>
                       </tr>
@@ -306,14 +306,14 @@ function CashCounter({
           </div>
 
           {/* Resumen */}
-          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
+          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-center">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Esperado</p>
-              <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">{fmt(expectedAmount)}</p>
+              <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{fmt(expectedAmount)}</p>
             </div>
             <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-center">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Contado</p>
-              <p className={cn("font-extrabold text-sm", hasCount ? "text-[var(--text-primary)] dark:text-foreground" : "text-[var(--text-tertiary)]")}>
+              <p className={cn("font-extrabold text-sm", hasCount ? "text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>
                 {hasCount ? fmt(counted) : "—"}
               </p>
             </div>
@@ -440,10 +440,10 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
               <ExternalLink className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Ir a Turnos
             </button>
           )}
-          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} aria-label="Refrescar" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
+          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} aria-label="Refrescar" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} strokeWidth={1.75} aria-hidden />
           </button>
-          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Descargar
           </button>
         </div>
@@ -461,7 +461,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
           { label: "Total sobrantes", value: fmt(stats.totalSurplus), tone: "success" as const, icon: TrendingUp },
         ].map(({ label, value, tone, icon: Icon }) => {
           const tones = {
-            neutral: { bg: "bg-white dark:bg-card border border-[var(--rule-base)]", color: "text-[var(--text-primary)]", iconColor: "text-[var(--text-secondary)]" },
+            neutral: { bg: "bg-[var(--surface-raised)] border border-[var(--rule-base)]", color: "text-[var(--text-primary)]", iconColor: "text-[var(--text-secondary)]" },
             success: { bg: "bg-[var(--accent-soft)] border border-[var(--data-success-500)]/20 dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)]", iconColor: "text-[var(--data-success-500)]" },
             error: { bg: "bg-[var(--data-error-50)] border border-[var(--data-error-500)]/20 dark:bg-red-950/30", color: "text-[var(--data-error-500)]", iconColor: "text-[var(--data-error-500)]" },
           }[tone];
@@ -485,7 +485,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       />
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 flex justify-center"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
         ) : audits.length === 0 ? (
@@ -528,24 +528,24 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       {/* Detail Modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Cuadre — {detail.date} {detail.shift}</CardTitle>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cuadre — {detail.date} {detail.shift}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">{detail.cashier}{detail.closedBy ? ` · Cerrado por: ${detail.closedBy}` : " · Turno abierto"}</p>
               </div>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-center">
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Esperado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(detail.expectedAmount)}</p></div>
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Contado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Esperado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(detail.expectedAmount)}</p></div>
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Contado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
               <div className={cn("rounded-xl p-3", STATUS_MAP[detail.status].bg)}><p className="text-xs text-[var(--text-tertiary)]">Diferencia</p><p className={cn("font-extrabold", STATUS_MAP[detail.status].color)}>{detail.status !== "pendiente" ? (detail.difference > 0 ? "+" : "") + fmt(detail.difference) : "-"}</p></div>
             </div>
 
             {detail.denominations.length > 0 && (
               <div>
-                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-2 flex items-center gap-1"><Coins className="h-4 w-4" /> Desglose de denominaciones</h4>
+                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2 flex items-center gap-1"><Coins className="h-4 w-4" /> Desglose de denominaciones</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                   {detail.denominations.filter(d => d.count > 0).map(d => (
                     <div key={`${d.type}-${d.value}`} className="flex items-center justify-between bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-3 py-1.5 text-xs">
@@ -553,7 +553,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                         {d.type === "billete" ? <Banknote className="h-3 w-3" /> : <Coins className="h-3 w-3" />}
                         S/ {d.value < 1 ? Number(d.value).toFixed(2) : d.value}
                       </span>
-                      <span className="font-bold text-[var(--text-primary)] dark:text-foreground">×{d.count} = {fmt(d.value * d.count)}</span>
+                      <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">×{d.count} = {fmt(d.value * d.count)}</span>
                     </div>
                   ))}
                 </div>

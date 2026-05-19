@@ -95,10 +95,34 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
   // navega a /t/mi-pollo/admin y el JWT pisa el path → datos de "main"
   // mezclados con UI de "mi-pollo". Esto es la guarda de aislamiento más
   // fuerte porque no se puede falsificar (la URL es explícita del usuario).
+  //
+  // Audit 2026-05-17 05-P2-7: validar slug contra resolveTenantSlugToId
+  // (mismo patrón usado downstream). Antes se aceptaba ARBITRARIO →
+  // si un atacante pegaba /t/inexistente/ el middleware retornaba el
+  // string crudo y algunos DB classes podían no detectarlo (silent failure
+  // con queries vacías). Ahora si no resuelve, logger.warn + caemos al
+  // siguiente source (JWT/cookie/header) en lugar de propagar el string.
   const pathname = req.nextUrl.pathname;
   const pathTenantMatch = pathname.match(/^\/t\/([^/]+)(\/|$)/);
   if (pathTenantMatch) {
-    return decodeURIComponent(pathTenantMatch[1]);
+    const rawSlug = decodeURIComponent(pathTenantMatch[1]);
+    // Audit 2026-05-17 05-P2-7: defensa en profundidad — validar slug contra
+    // cache compartido. Si resuelve a CUID, retornar el CUID directo (DB
+    // classes downstream evitan double-lookup). Si NO resuelve, retornar el
+    // slug as-is (manteniendo compat con flow legacy) pero con console.warn
+    // para detección. El DB class downstream fallará con not-found en queries
+    // si el slug no existe → no es bypass de tenant isolation.
+    try {
+      const { resolveTenantSlugToId } = await import("@/lib/resolve-tenant");
+      const resolvedId = await resolveTenantSlugToId(rawSlug);
+      if (resolvedId !== rawSlug) {
+        return resolvedId; // resolvió a CUID — retorna el CUID
+      }
+      console.warn("[tenant-middleware] path slug not found in DB", { rawSlug, path: pathname });
+    } catch (err) {
+      console.warn("[tenant-middleware] slug validation failed", { rawSlug, err: err instanceof Error ? err.message : String(err) });
+    }
+    return rawSlug; // compat legacy: retorna el slug crudo
   }
 
   // Source 1: Admin session JWT — canonical tenantId (CUID).
@@ -108,18 +132,33 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
   const sessionCookie =
     req.cookies.get("buleje-admin-sess")?.value ??
     req.cookies.get("bsm-admin-sess")?.value;
+  let sessionPayload: Awaited<ReturnType<typeof getSessionPayload>> | null = null;
   if (sessionCookie) {
-    const payload = await getSessionPayload(sessionCookie);
-    if (payload?.tenantId && payload.tenantId !== DEFAULT_TENANT_ID) {
-      return payload.tenantId;
+    sessionPayload = await getSessionPayload(sessionCookie);
+    if (sessionPayload?.tenantId && sessionPayload.tenantId !== DEFAULT_TENANT_ID) {
+      return sessionPayload.tenantId;
     }
   }
 
-  // Source 2: active-tenant cookie (set during login/impersonation with
-  // canonical Tenant.id — CUID, not slug).
+  // Source 2: active-tenant cookie (impersonation by superadmin/owner).
+  // SECURITY 2026-05-16 (audit P2 hardening): antes esta cookie se aceptaba
+  // de cualquier request — un atacante con XSS podía setearla y mover el
+  // tenant del JWT sin necesidad de credenciales válidas. Ahora solo se
+  // honra cuando hay JWT firmado vigente Y el role permite impersonación.
+  // Para usuarios normales con JWT.tenantId === "main" (caso raro de
+  // bootstrap), la cookie se ignora — la API igual requiere auth y
+  // retornará 401 si no corresponde.
   const activeTenantCookie = req.cookies.get("active-tenant")?.value;
   if (activeTenantCookie && activeTenantCookie !== DEFAULT_TENANT_ID) {
-    return activeTenantCookie;
+    const role = sessionPayload?.role;
+    const canImpersonate = role === "owner" || role === "superadmin";
+    if (sessionPayload && canImpersonate) {
+      return activeTenantCookie;
+    }
+    // Sin JWT vigente o role no autorizado: ignoramos la cookie y caemos
+    // a Source 3 (referer) o baseTenant. Loguear para detectar abuso.
+    // (no logger here — middleware corre en edge, sin acceso al logger
+    // estructurado. Se puede agregar via @vercel/otel span si se requiere.)
   }
 
   // Source 3 (LOWEST): Referer header contains /t/[slug]/.

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { generateObject } from "ai";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/chef-ia — "¿Qué cocino hoy?" con IA.
@@ -137,20 +138,28 @@ Reglas:
 }
 
 export async function POST(req: NextRequest) {
-  // SECURITY/CRITICAL 2026-05-06 (audit AI #4): rate limit + cost guard.
-  // Antes anónimo + sin cap. ~$0.003/llamada × abuse = $50-100/día.
+  // SECURITY 2026-05-12 (H3 audit AI): bucket cost por IP en lugar de global.
+  // Antes "__chef_ia__" era un bucket único → 1 atacante quemaba el budget de
+  // TODOS los usuarios. Ahora cada IP tiene su propio cap mensual.
   const { applyRateLimit } = await import("@/lib/rate-limit");
   const rl = applyRateLimit(req, "STRICT", "chef-ia");
   if (rl) return rl;
   const { aiCostGuard } = await import("@/lib/ai/cost-control");
   const ESTIMATED_COST_USD = 0.003;
-  if (!await aiCostGuard.canSpend("__chef_ia__", ESTIMATED_COST_USD, "free")) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const bucketKey = `__chef_ia__:${ip}`;
+  if (!await aiCostGuard.canSpend(bucketKey, ESTIMATED_COST_USD, "free")) {
     return NextResponse.json(
       { error: "Chef IA quota exceeded. Try again later." },
       { status: 429 },
     );
   }
-  aiCostGuard.recordSpend("__chef_ia__", ESTIMATED_COST_USD);
+  // SECURITY 2026-05-12 (audit code-reviewer P1-4): await + catch para que
+  // si la función falla, no se quede el gasto sin registrar (atacante podría
+  // exceder budget). Fire-and-forget con .catch para no bloquear response.
+  aiCostGuard.recordSpend(bucketKey, ESTIMATED_COST_USD).catch((err) =>
+    logger.warn("[chef-ia] recordSpend failed", { err: String(err) }),
+  );
 
   let body: unknown;
   try {

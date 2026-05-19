@@ -8,7 +8,7 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
   Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
   Home, Zap, RotateCw, Star, Phone, ShoppingBag, Tag, MapPin, Compass, Wallet,
-  Bell, AlertCircle, CheckCheck, ArrowRight,
+  Bell, AlertCircle, CheckCheck, ArrowRight, Info,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -247,7 +247,27 @@ export default function Header() {
   const { navLinks: storedNavLinks, businessName, storeTheme } = useSettings();
   const { resolved: _theme, toggle: _toggleTheme } = useTheme();
   const megaRef = useRef<HTMLDivElement>(null);
-  const navLinks = storedNavLinks?.length ? storedNavLinks : DEFAULT_NAV_LINKS;
+  const baseNavLinks = storedNavLinks?.length ? storedNavLinks : DEFAULT_NAV_LINKS;
+
+  // Brandon mayo 2026: en /t/[slug]/tienda inyectamos un link "Información"
+  // al inicio del nav para que el cliente pueda volver al landing del tenant
+  // (/t/[slug]) sin perder navegación. Solo se inyecta si NO existe ya.
+  const isOnTenantStore = pathname?.startsWith(`/t/${tenantSlug}/tienda`) ?? false;
+  const navLinks = (() => {
+    if (!isOnTenantStore || !tenantSlug) return baseNavLinks;
+    const hasInfoLink = baseNavLinks.some((l) => l.id === "tenant-info");
+    if (hasInfoLink) return baseNavLinks;
+    return [
+      {
+        id: "tenant-info",
+        label: "Información",
+        icon: "info" as const,
+        href: `/t/${tenantSlug}`,
+        visible: true,
+      } as unknown as (typeof baseNavLinks)[number],
+      ...baseNavLinks,
+    ];
+  })();
 
   // Loyalty data
   const [loyalty, setLoyalty] = useState<{ loyaltyPoints: number; loyaltyTier: string; totalSpent: number } | null>(null);
@@ -607,7 +627,7 @@ export default function Header() {
 
   const navLinkCls = cn(
     "px-4 py-2.5 rounded-lg text-base font-semibold transition-all",
-    scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10"
+    scrolled ? "text-[var(--text-primary)] hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10"
   );
 
   // Helper: resuelve active state basado en el pathname actual.
@@ -645,7 +665,7 @@ export default function Header() {
               aria-haspopup="true"
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-base font-semibold",
-                scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
+                scrolled ? "text-[var(--text-primary)] hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
                 inicioOpen && (scrolled ? "text-primary bg-primary/8" : "text-white bg-white/15")
               )}
             >
@@ -656,7 +676,7 @@ export default function Header() {
               onMouseEnter={cancelClose}
               onMouseLeave={closeDropdown}
               className={cn(
-                "absolute top-full left-0 mt-2 z-[60] w-145 min-w-135 bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border overflow-hidden",
+                "absolute top-full left-0 mt-2 z-[60] w-145 min-w-135 bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] overflow-hidden",
                 inicioOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
               )}
             >
@@ -678,7 +698,7 @@ export default function Header() {
                         <IIcon className="h-4 w-4" strokeWidth={1.5} />
                       </span>
                       <div>
-                        <p className="font-extrabold tracking-tight text-sm text-foreground group-hover:text-primary">{item.label}</p>
+                        <p className="font-extrabold tracking-tight text-sm text-[var(--text-primary)] group-hover:text-primary">{item.label}</p>
                         <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{item.desc}</p>
                       </div>
                     </a>
@@ -706,7 +726,7 @@ export default function Header() {
                         <CIcon className="h-4 w-4" strokeWidth={1.5} />
                       </span>
                       <div>
-                        <p className="font-extrabold tracking-tight text-xs text-foreground group-hover:text-primary">{cat.label}</p>
+                        <p className="font-extrabold tracking-tight text-xs text-[var(--text-primary)] group-hover:text-primary">{cat.label}</p>
                         <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5">{cat.desc}</p>
                       </div>
                     </Link>
@@ -726,6 +746,20 @@ export default function Header() {
         return (
           <Link key="tienda" href={tenantPath("/tienda")} className={cn(navLinkCls, "flex items-center gap-1.5 relative", isNavActive("tienda") && activeNavCls)}>
             <ShoppingBag className="h-4 w-4" strokeWidth={1.75} /> Tienda
+          </Link>
+        );
+      case "tenant-info":
+        // Brandon mayo 2026: link inyectado automaticamente cuando estamos en
+        // /t/[slug]/tienda. Vuelve al landing del tenant /t/[slug] con info,
+        // horarios, sobre nosotros, etc.
+        if (!tenantSlug) return null;
+        return (
+          <Link
+            key="tenant-info"
+            href={`/t/${tenantSlug}`}
+            className={cn(navLinkCls, "flex items-center gap-1.5 relative")}
+          >
+            <Info className="h-4 w-4" strokeWidth={1.75} /> Información
           </Link>
         );
       case "explorar":
@@ -797,7 +831,7 @@ export default function Header() {
   };
 
   const renderMobileNavItem = (id: string) => {
-    const cls = "block px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors";
+    const cls = "block px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors";
     switch (id) {
       case "inicio":
         if (isTenantStore) return null;
@@ -806,10 +840,10 @@ export default function Header() {
             <button
               onClick={() => setMobileInicioOpen((o) => !o)}
               aria-expanded={mobileInicioOpen}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors"
             >
               <span>Inicio</span>
-              <span className={cn("transition-transform duration-200 inline-block", mobileInicioOpen && "rotate-180")}>
+              <span className={cn("transition-transform duration-[var(--dur-fast)] inline-block", mobileInicioOpen && "rotate-180")}>
                 <ChevronDown className="h-4 w-4 text-muted" />
               </span>
             </button>
@@ -829,7 +863,7 @@ export default function Header() {
                           <IIcon className="h-4 w-4" strokeWidth={1.5} />
                         </span>
                         <div>
-                          <p className="text-sm font-extrabold tracking-tight text-foreground">{item.label}</p>
+                          <p className="text-sm font-extrabold tracking-tight text-[var(--text-primary)]">{item.label}</p>
                           <p className="text-xs text-muted">{item.desc}</p>
                         </div>
                       </a>
@@ -851,7 +885,7 @@ export default function Header() {
                             <span className={cn("flex items-center justify-center h-8 w-8 rounded-lg shrink-0", cat.iconBg, cat.iconColor)}>
                               <CIcon className="h-4 w-4" strokeWidth={1.5} />
                             </span>
-                            <span className="text-xs font-extrabold tracking-tight text-foreground">{cat.label}</span>
+                            <span className="text-xs font-extrabold tracking-tight text-[var(--text-primary)]">{cat.label}</span>
                           </Link>
                         );
                       })}
@@ -943,7 +977,7 @@ export default function Header() {
         "store-header fixed left-0 right-0 z-50",
         announcementVisible ? "top-11" : "top-0",
         scrolled
-          ? "bg-white/97 backdrop-blur-md shadow-[var(--shadow-lg)] dark:bg-card/97"
+          ? "bg-white/97 backdrop-blur-md shadow-[var(--shadow-lg)] dark:bg-[var(--surface-raised)]/97"
           : ""
       )}
       style={{
@@ -1027,21 +1061,21 @@ export default function Header() {
                   "w-full rounded-xl font-medium outline-none transition-all",
                   isTenantStore ? "pl-11 pr-10 py-3 text-base" : "pl-9 pr-8 py-2 text-sm",
                   scrolled
-                    ? "bg-gray-100 text-foreground placeholder:text-muted focus:ring-2 focus:ring-primary/30"
+                    ? "bg-gray-100 text-[var(--text-primary)] placeholder:text-muted focus:ring-2 focus:ring-primary/30"
                     : "bg-white/15 text-white border border-white/25 placeholder:text-white/50 focus:border-white/50 focus:bg-white/20"
                 )}
               />
               {searchQuery && (
                 <button
                   onClick={() => { setSearchQuery(""); setInlineSearchFocused(false); }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-[var(--text-primary)]"
                   aria-label="Limpiar búsqueda"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
               {inlineSearchFocused && (suggestions.length > 0 || searchQuery.length === 0) && (
-                <div className="absolute top-full mt-2 w-full min-w-72 bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-96 overflow-y-auto">
+                <div className="absolute top-full mt-2 w-full min-w-72 bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] overflow-hidden z-50 max-h-96 overflow-y-auto">
                   {/* Sugerencias al escribir — con imagen, precio y stock */}
                   {suggestions.length > 0 && (
                     <div className="pt-2 pb-1">
@@ -1050,10 +1084,10 @@ export default function Header() {
                         <button
                           key={item.id}
                           onMouseDown={() => { handleSearchSelect(item.name); setInlineSearchFocused(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-primary/5 text-left transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-primary/5 text-left transition-colors"
                         >
                           {item.image ? (
-                            <Image src={item.image} alt="" width={40} height={40} className="h-10 w-10 rounded-xl object-cover bg-gray-100 dark:bg-surface shrink-0 border border-gray-200 dark:border-card-border" unoptimized={item.image.startsWith("data:")} />
+                            <Image src={item.image} alt="" width={40} height={40} className="h-10 w-10 rounded-xl object-cover bg-gray-100 dark:bg-surface shrink-0 border border-[var(--rule-base)]" unoptimized={item.image.startsWith("data:")} />
                           ) : (
                             <div className="h-10 w-10 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
                               <Package className="h-4 w-4 text-muted" />
@@ -1082,7 +1116,7 @@ export default function Header() {
                     <>
                       {/* Búsquedas recientes */}
                       {recentSearches.length > 0 && (
-                        <div className="px-4 pt-3 pb-2 border-t border-gray-100 dark:border-card-border first:border-t-0">
+                        <div className="px-4 pt-3 pb-2 border-t border-[var(--rule-base)] first:border-t-0">
                           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2 inline-flex items-center gap-1.5"><Flame className="h-3 w-3" aria-hidden /> Recientes</p>
                           <div className="flex flex-wrap gap-1.5">
                             {recentSearches.slice(0, 4).map(term => (
@@ -1099,7 +1133,7 @@ export default function Header() {
                       )}
 
                       {/* Categorías */}
-                      <div className="px-4 pt-3 pb-3 border-t border-gray-100 dark:border-card-border first:border-t-0">
+                      <div className="px-4 pt-3 pb-3 border-t border-[var(--rule-base)] first:border-t-0">
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-3">Categorías</p>
                         <div className="grid grid-cols-2 gap-1.5">
                           {filteredCategories.slice(0, 8).map(cat => {
@@ -1108,7 +1142,7 @@ export default function Header() {
                               <button
                                 key={cat.id}
                                 onMouseDown={() => { setInlineSearchFocused(false); handleCategoryClick(cat.id); }}
-                                className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-left"
+                                className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-left"
                               >
                                 {/* Sin caja-icono en tienda individual. */}
                                 {!isTenantStore && (
@@ -1125,7 +1159,7 @@ export default function Header() {
 
                       {/* Productos populares */}
                       {trendingProducts.length > 0 && (
-                        <div className="px-4 pt-2 pb-3 border-t border-gray-100 dark:border-card-border">
+                        <div className="px-4 pt-2 pb-3 border-t border-[var(--rule-base)]">
                           <p className="text-xs font-bold uppercase tracking-wider text-muted mb-3 flex items-center gap-1.5">
                             <Flame className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} /> Populares ahora
                           </p>
@@ -1134,7 +1168,7 @@ export default function Header() {
                               <button
                                 key={p.id}
                                 onMouseDown={() => { handleSearchSelect(p.name); setInlineSearchFocused(false); }}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-foreground hover:bg-primary/8 hover:text-primary text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-primary)] hover:bg-primary/8 hover:text-primary text-left"
                               >
                                 {p.image && (
                                   <Image src={p.image} alt="" width={40} height={40} className="h-10 w-10 rounded-xl object-cover bg-gray-100 shrink-0" unoptimized={p.image.startsWith("data:")} />
@@ -1162,7 +1196,7 @@ export default function Header() {
               className={cn(
                 "relative flex items-center justify-center rounded-full transition-all shrink-0",
                 hasActiveOrder
-                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400 shadow-[var(--shadow-lg)] shadow-amber-400/30 hover:bg-amber-200"
+                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400 shadow-[var(--shadow-lg)] shadow-md/30 hover:bg-amber-200"
                   : scrolled
                     ? "h-9 w-9 bg-primary/10 text-primary hover:bg-primary/20"
                     : "h-9 w-9 bg-white/15 text-white hover:bg-white/25"
@@ -1184,11 +1218,11 @@ export default function Header() {
               <button
                 onClick={() => setUserMenuOpen((o) => !o)}
                 className={cn(
-                  "flex items-center gap-2 rounded-full text-sm font-semibold transition-all duration-200 px-3 py-2 ml-1",
+                  "flex items-center gap-2 rounded-full text-sm font-semibold transition-all duration-[var(--dur-fast)] px-3 py-2 ml-1",
                   scrolled
                     ? customer
                       ? "bg-primary/10 text-primary hover:bg-primary/20"
-                      : "bg-gray-100 text-foreground hover:bg-primary/10 hover:text-primary"
+                      : "bg-gray-100 text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary"
                     : "bg-white/15 backdrop-blur-sm text-white border border-white/20 hover:bg-white/25"
                 )}
                 aria-label="Menú de usuario"
@@ -1202,17 +1236,17 @@ export default function Header() {
               </button>
               
               {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-card rounded-xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border overflow-hidden animate-[fadeDown_0.15s_ease-out] z-50">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--surface-raised)] rounded-xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] overflow-hidden animate-[fadeDown_0.15s_ease-out] z-50">
                   <div className="py-1.5">
                     <a
                       href={tenantPath("/mi-panel")}
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary transition-colors"
                     >
                       <User className="h-4 w-4" />
                       <span className="flex-1">Mi panel</span>
                       <span
-                        className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                        className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
                         style={{
                           background:
                             "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
@@ -1231,7 +1265,7 @@ export default function Header() {
                     <a
                       href={tenantPath("/mis-pedidos")}
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary transition-colors"
                     >
                       <ClipboardList className="h-4 w-4" />
                       <span>Mis pedidos</span>
@@ -1240,7 +1274,7 @@ export default function Header() {
                       <a
                         href={tenantPath("/puntos")}
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary transition-colors"
                       >
                         <Trophy className="h-4 w-4 text-[var(--data-warning-500)]" />
                         <span className="flex-1">Mis puntos</span>
@@ -1273,7 +1307,7 @@ export default function Header() {
                     </button>
                     {customer && (
                       <>
-                        <div className="mx-3 my-1 border-t border-gray-100 dark:border-card-border" />
+                        <div className="mx-3 my-1 border-t border-[var(--rule-base)]" />
                         <button
                           onClick={() => {
                             clear();
@@ -1301,9 +1335,9 @@ export default function Header() {
             <button
               onClick={() => setSearchOpen(true)}
               className={cn(
-                "lg:hidden flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200",
+                "lg:hidden flex h-11 w-11 items-center justify-center rounded-full transition-all duration-[var(--dur-fast)]",
                 scrolled
-                  ? "text-foreground hover:bg-primary/10 hover:text-primary"
+                  ? "text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary"
                   : "text-white/70 hover:text-white hover:bg-white/15"
               )}
               aria-label="Buscar productos"
@@ -1320,9 +1354,9 @@ export default function Header() {
                 <button
                   onClick={() => setNotifOpen((p) => !p)}
                   className={cn(
-                    "relative flex items-center justify-center h-11 w-11 rounded-full transition-all duration-200",
+                    "relative flex items-center justify-center h-11 w-11 rounded-full transition-all duration-[var(--dur-fast)]",
                     scrolled
-                      ? "text-foreground hover:bg-muted"
+                      ? "text-[var(--text-primary)] hover:bg-muted"
                       : "text-white/70 hover:text-white hover:bg-white/15"
                   )}
                   aria-label={`Notificaciones${_unreadCount > 0 ? ` (${_unreadCount} sin leer)` : ""}`}
@@ -1422,7 +1456,7 @@ export default function Header() {
                         >
                           <Sparkles className="h-8 w-8 text-primary/60" strokeWidth={1.75} />
                         </div>
-                        <p className="text-base font-extrabold text-foreground">
+                        <p className="text-base font-extrabold text-[var(--text-primary)]">
                           Sin notificaciones
                         </p>
                         <p className="text-xs text-muted mt-1">
@@ -1495,8 +1529,8 @@ export default function Header() {
                                     className={cn(
                                       "text-sm leading-tight truncate",
                                       isUnread
-                                        ? "font-extrabold text-foreground"
-                                        : "font-bold text-foreground",
+                                        ? "font-extrabold text-[var(--text-primary)]"
+                                        : "font-bold text-[var(--text-primary)]",
                                     )}
                                   >
                                     {n.title}
@@ -1569,7 +1603,7 @@ export default function Header() {
             <button
               onClick={toggle}
               className={cn(
-                "relative flex items-center justify-center h-12 w-12 rounded-full transition-all duration-200",
+                "relative flex items-center justify-center h-12 w-12 rounded-full transition-all duration-[var(--dur-fast)]",
                 scrolled
                   ? "bg-primary text-white shadow-[var(--shadow-lg)] hover:bg-primary-dark"
                   : "bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
@@ -1599,11 +1633,11 @@ export default function Header() {
               id="order-status-nav-btn-mobile"
               onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); }}
               className={cn(
-                "lg:hidden relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200",
+                "lg:hidden relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-[var(--dur-fast)]",
                 scrolled
                   ? hasActiveOrder
                     ? "text-[var(--data-warning-600)] hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                    : "text-foreground hover:bg-primary/10 hover:text-primary"
+                    : "text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary"
                   : hasActiveOrder
                     ? "text-amber-300 hover:bg-white/15"
                     : "text-white/70 hover:text-white hover:bg-white/15"
@@ -1625,7 +1659,7 @@ export default function Header() {
             <button
               onClick={() => setMobileOpen((o) => !o)}
               className={cn("lg:hidden h-11 w-11 flex items-center justify-center rounded-lg transition-colors",
-                scrolled ? "text-foreground hover:bg-gray-100" : "text-white hover:bg-white/10")}
+                scrolled ? "text-[var(--text-primary)] hover:bg-gray-100" : "text-white hover:bg-white/10")}
               aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={mobileOpen}
               aria-controls="mobile-menu"
@@ -1660,7 +1694,7 @@ export default function Header() {
                   className={cn(
                     "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
                     scrolled
-                      ? "bg-white text-foreground hover:bg-gray-50 border border-gray-200"
+                      ? "bg-white text-[var(--text-primary)] hover:bg-gray-50 border border-gray-200"
                       : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
                   )}
                 >
@@ -1706,7 +1740,7 @@ export default function Header() {
           id="mobile-menu"
           role="navigation"
           aria-label="Menú principal"
-          className="lg:hidden bg-white dark:bg-card border-t dark:border-card-border shadow-[var(--shadow-xl)] overflow-hidden animate-[fadeDown_0.3s_ease-out] pb-[env(safe-area-inset-bottom)]"
+          className="lg:hidden bg-[var(--surface-raised)] border-t dark:border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden animate-[fadeDown_0.3s_ease-out] pb-[env(safe-area-inset-bottom)]"
         >
             <div className="px-4 py-5 space-y-1">
               {/* Buscador — mobile */}
@@ -1719,24 +1753,24 @@ export default function Header() {
                   onKeyDown={(e) => { if (e.key === "Enter" && searchQuery.trim()) { handleSearchSubmit(); setMobileOpen(false); } }}
                   placeholder="¿Qué producto buscas?"
                   autoComplete="off"
-                  className="w-full pl-10 pr-10 py-3 rounded-2xl text-sm font-medium bg-gray-100 text-foreground placeholder:text-muted outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl text-sm font-medium bg-gray-100 text-[var(--text-primary)] placeholder:text-muted outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted hover:text-[var(--text-primary)]"
                     aria-label="Limpiar"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 )}
                 {suggestions.length > 0 && (
-                  <div className="absolute top-full mt-1.5 w-full bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-72 overflow-y-auto">
+                  <div className="absolute top-full mt-1.5 w-full bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] overflow-hidden z-50 max-h-72 overflow-y-auto">
                     {suggestions.map((item) => (
                       <button
                         key={item.id}
                         onMouseDown={() => { handleSearchSelect(item.name); setMobileOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-primary/5 text-left transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-primary/5 text-left transition-colors"
                       >
                         {item.image ? (
                           <Image src={item.image} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={item.image.startsWith("data:")} />
@@ -1772,7 +1806,7 @@ export default function Header() {
                 </button>
                 <button
                   onClick={() => { openCustomerModal("profile"); setMobileOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors"
                 >
                   <UserCircle className="h-5 w-5" />
                   <span>{customer ? `Mi cuenta \u2014 ${customer.name?.split(" ")[0] ?? "Mi cuenta"}` : "Mi cuenta"}</span>
@@ -1780,7 +1814,7 @@ export default function Header() {
                 <a
                   href={tenantPath("/mis-pedidos")}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors"
                 >
                   <ClipboardList className="h-5 w-5" />
                   <span>Mis pedidos</span>
@@ -1830,7 +1864,7 @@ export default function Header() {
       {/* Search Overlay */}
       {searchOpen && (
         <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm animate-[fadeDown_0.2s_ease-out]" onClick={() => setSearchOpen(false)}>
-          <div className="bg-white dark:bg-card shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto max-w-3xl px-4 py-4">
               <div className="flex items-center gap-3">
                 <Search className="h-5 w-5 text-muted shrink-0" aria-hidden="true" />
@@ -1845,7 +1879,7 @@ export default function Header() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSearchSubmit(); if (e.key === "Escape") setSearchOpen(false); }}
                   placeholder="¿Qué producto buscas?"
-                  className="flex-1 text-lg text-foreground bg-transparent outline-none placeholder:text-muted"
+                  className="flex-1 text-lg text-[var(--text-primary)] bg-transparent outline-none placeholder:text-muted"
                   autoComplete="off"
                 />
                 {/* X4: Voice search button */}
@@ -1873,13 +1907,13 @@ export default function Header() {
 
               {/* Suggestions */}
               {suggestions.length > 0 && (
-                <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3 space-y-1">
+                <div className="mt-3 border-t border-[var(--rule-base)] pt-3 space-y-1">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Sugerencias</p>
                   {suggestions.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => handleSearchSelect(item.name)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-foreground hover:bg-primary/5 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-primary)] hover:bg-primary/5 transition-colors text-left"
                     >
                       {item.image ? (
                         <Image src={item.image} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={item.image.startsWith("data:")} />
@@ -1899,8 +1933,8 @@ export default function Header() {
 
               {/* No results state */}
               {searchQuery.trim().length >= 2 && suggestions.length === 0 && (
-                <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-4 text-center">
-                  <p className="text-sm font-bold text-foreground">No encontramos &ldquo;{searchQuery.trim()}&rdquo;</p>
+                <div className="mt-3 border-t border-[var(--rule-base)] pt-4 text-center">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">No encontramos &ldquo;{searchQuery.trim()}&rdquo;</p>
                   <p className="text-xs text-muted mt-1">Prueba con otro término o explora nuestras categorías</p>
                   <div className="flex flex-wrap gap-2 justify-center mt-3">
                     {filteredCategories.slice(0, 4).map(cat => {
@@ -1909,7 +1943,7 @@ export default function Header() {
                         <button
                           key={cat.id}
                           onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-gray-200 dark:border-card-border text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-[var(--rule-base)] text-xs font-semibold text-[var(--text-primary)] hover:border-primary hover:text-primary transition-colors"
                         >
                           <CIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
                           {cat.label}
@@ -1922,7 +1956,7 @@ export default function Header() {
 
               {/* AC4: Trending / recent searches */}
               {searchQuery.length === 0 && recentSearches.length > 0 && (
-                <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
+                <div className="mt-3 border-t border-[var(--rule-base)] pt-3">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2 inline-flex items-center gap-1.5"><Flame className="h-3 w-3" aria-hidden /> Búsquedas recientes</p>
                   <div className="flex flex-wrap gap-1.5">
                     {recentSearches.map(term => (
@@ -1940,7 +1974,7 @@ export default function Header() {
 
               {/* Trending products — popular items being added to cart */}
               {searchQuery.length === 0 && trendingProducts.length > 0 && (
-                <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
+                <div className="mt-3 border-t border-[var(--rule-base)] pt-3">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1">
                     <Flame className="h-3 w-3 text-[var(--accent)]" strokeWidth={1.75} /> Productos populares ahora
                   </p>
@@ -1949,7 +1983,7 @@ export default function Header() {
                       <button
                         key={p.id}
                         onClick={() => handleSearchSelect(p.name)}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary transition-colors text-left"
                       >
                         {p.image && (
                           <Image src={p.image} alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={p.image.startsWith("data:")} />
@@ -1967,7 +2001,7 @@ export default function Header() {
 
               {/* Quick categories */}
               {searchQuery.length === 0 && (
-                <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
+                <div className="mt-3 border-t border-[var(--rule-base)] pt-3">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Categorías populares</p>
                   <div className="flex flex-wrap gap-2">
                     {filteredCategories.map((cat) => {
@@ -1976,7 +2010,7 @@ export default function Header() {
                         <button
                           key={cat.id}
                           onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary hover:text-primary transition-colors"
                         >
                           <CIcon className="h-4 w-4" strokeWidth={1.75} />
                           {cat.label}

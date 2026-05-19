@@ -21,8 +21,8 @@ function paymentLabel(method?: string): string {
 export function VendorRecentSales({ sales }: Props) {
   if (sales.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Receipt className="h-5 w-5 text-primary" />
           Ventas recientes de hoy
         </CardTitle>
@@ -42,8 +42,8 @@ export function VendorRecentSales({ sales }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
-      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
+      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
         <Receipt className="h-5 w-5 text-primary" />
         Ventas recientes de hoy
       </CardTitle>
@@ -53,7 +53,7 @@ export function VendorRecentSales({ sales }: Props) {
           <li key={sale.id} className="py-3 flex items-start gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-[var(--text-primary)] dark:text-foreground truncate">
+                <span className="font-semibold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                   {sale.customer.name}
                 </span>
                 <span className="text-xs text-[var(--text-tertiary)] shrink-0">

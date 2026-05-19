@@ -62,17 +62,17 @@ export default function AccessibilityBar() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="bg-card border border-border border-l-0 rounded-r-xl p-2 shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all"
+        className="bg-[var(--surface-raised)] border border-border border-l-0 rounded-r-xl p-2 shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all"
         aria-label="Opciones de accesibilidad"
         title="Accesibilidad"
       >
-        <Type className="w-4 h-4 text-foreground" />
+        <Type className="w-4 h-4 text-[var(--text-primary)]" />
       </button>
 
       {/* Panel */}
       {open && (
-        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1 bg-card border border-border rounded-xl shadow-[var(--shadow-xl)] p-3 w-44 space-y-3">
-          <p className="text-xs font-bold text-foreground">Accesibilidad</p>
+        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1 bg-[var(--surface-raised)] border border-border rounded-xl shadow-[var(--shadow-xl)] p-3 w-44 space-y-3">
+          <p className="text-xs font-bold text-[var(--text-primary)]">Accesibilidad</p>
 
           {/* Font size */}
           <div>
@@ -86,7 +86,7 @@ export default function AccessibilityBar() {
                   className={`flex-1 py-1.5 rounded-lg text-center font-bold transition-colors ${
                     prefs.fontSize === i
                       ? "bg-primary text-white"
-                      : "bg-gray-100 dark:bg-white/10 text-foreground hover:bg-gray-200 dark:hover:bg-white/20"
+                      : "bg-gray-100 dark:bg-white/10 text-[var(--text-primary)] hover:bg-gray-200 dark:hover:bg-white/20"
                   } ${i === 0 ? "text-xs" : i === 1 ? "text-sm" : "text-base"}`}
                   title={fs.title}
                 >
@@ -102,7 +102,7 @@ export default function AccessibilityBar() {
             <button
               type="button"
               onClick={toggleTheme}
-              className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg bg-gray-100 dark:bg-white/10 text-foreground hover:bg-gray-200 dark:hover:bg-white/20 transition-colors text-xs font-medium"
+              className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg bg-gray-100 dark:bg-white/10 text-[var(--text-primary)] hover:bg-gray-200 dark:hover:bg-white/20 transition-colors text-xs font-medium"
             >
               <Sun className="w-3.5 h-3.5 dark:hidden" />
               <Moon className="w-3.5 h-3.5 hidden dark:block" />
@@ -114,7 +114,7 @@ export default function AccessibilityBar() {
           <button
             type="button"
             onClick={reset}
-            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-muted hover:text-foreground transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-muted hover:text-[var(--text-primary)] transition-colors"
           >
             <RotateCcw className="w-3 h-3" />
             Restaurar

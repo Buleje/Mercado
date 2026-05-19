@@ -84,7 +84,7 @@ export default function POSMetricsStrip() {
   // Loading skeletons
   if (loading) {
     return (
-      <div className="h-9 bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center gap-4 px-4">
+      <div className="h-9 bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center gap-4 px-4">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
@@ -98,7 +98,7 @@ export default function POSMetricsStrip() {
   // Fetch error — show "Verificando..." instead of misleading "Sin turno activo"
   if (fetchError && !data) {
     return (
-      <div className="h-9 bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-center gap-2 px-4">
+      <div className="h-9 bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-center gap-2 px-4">
         <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)] animate-pulse" />
         <span className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted">
           Verificando turno...
@@ -162,7 +162,7 @@ export default function POSMetricsStrip() {
   const topProd = data.topProductos?.[0];
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border">
+    <div className="bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
       <div className="h-9 flex items-center gap-3 sm:gap-5 px-4 overflow-x-auto scrollbar-hide">
         {items.map((item) => (
           <div key={item.label} className="flex items-center gap-1.5 shrink-0" title={item.title}>
@@ -176,21 +176,21 @@ export default function POSMetricsStrip() {
           </div>
         ))}
         {topPay && topPay.total > 0 && (
-          <div className="hidden md:flex items-center gap-1.5 shrink-0 pl-3 border-l border-[var(--rule-soft)] dark:border-card-border" title={`${topPay.pct}% de las ventas`}>
+          <div className="hidden md:flex items-center gap-1.5 shrink-0 pl-3 border-l border-[var(--rule-soft)] dark:border-[var(--rule-base)]" title={`${topPay.pct}% de las ventas`}>
             <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
               Top pago:
             </span>
-            <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-foreground capitalize">
+            <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">
               {topPay.metodo} ({topPay.pct}%)
             </span>
           </div>
         )}
         {topProd && (
-          <div className="hidden lg:flex items-center gap-1.5 shrink-0 pl-3 border-l border-[var(--rule-soft)] dark:border-card-border" title={`${topProd.cantidad} unidades vendidas`}>
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0 pl-3 border-l border-[var(--rule-soft)] dark:border-[var(--rule-base)]" title={`${topProd.cantidad} unidades vendidas`}>
             <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
               Top producto:
             </span>
-            <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-foreground truncate max-w-[200px]">
+            <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[200px]">
               {topProd.nombre} ×{topProd.cantidad}
             </span>
           </div>

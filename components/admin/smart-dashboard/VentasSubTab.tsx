@@ -272,7 +272,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
         try { const stored = localStorage.getItem("daily-goal"); if (stored) dailyGoal = Number(stored) || 800; } catch { /* ignore */ }
         const dailyGoalPct = dailyGoal > 0 ? (revenueToday / dailyGoal) * 100 : 0;
         return (
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" /> Meta del día

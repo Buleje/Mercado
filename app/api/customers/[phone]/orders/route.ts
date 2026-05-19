@@ -4,6 +4,10 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { logger } from "@/lib/logger";
+import { z } from "zod";
+import { enqueueActivityLog } from "@/lib/queue";
+
+const PhoneSchema = z.string().min(7).max(20).regex(/^\+?[0-9\- ]+$/, "Teléfono inválido");
 
 // -- GET /api/customers/[phone]/orders -- public, rate-limited ----------------
 // Returns orders for a customer identified by phone number.
@@ -26,7 +30,14 @@ export async function GET(
 
   const tenantId = getTenantIdFromRequest(req);
   const { phone } = await params;
-  const normalizedPhone = normalizePhone(phone);
+
+  const phoneParsed = PhoneSchema.safeParse(phone);
+  if (!phoneParsed.success) {
+    return NextResponse.json({ error: "Teléfono inválido" }, { status: 400 });
+  }
+  const safePhone = phoneParsed.data;
+
+  const normalizedPhone = normalizePhone(safePhone);
 
   // Customer-session check: si hay cookie firmada con HMAC y el phone
   // del path coincide con el customerId del session, autorizamos.
@@ -46,6 +57,15 @@ export async function GET(
 
   try {
     const orders = await OrdersDB.getByCustomerPhone(tenantId, normalizedPhone);
+    enqueueActivityLog({
+      action: "leer",
+      resource: "cliente_pii",
+      resourceId: safePhone,
+      userId: normalizedPhone,
+      tenantId,
+      details: { description: `Lectura PII cliente ${safePhone.slice(-4)} desde /api/customers/${safePhone}/orders` },
+      timestamp: new Date().toISOString(),
+    }).catch(() => { /* fire-and-forget */ });
     // Return safe customer-facing fields only (no internal admin notes or full details)
     const safe = orders.map((o) => ({
       id: o.id,

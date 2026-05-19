@@ -31,7 +31,7 @@ interface KPICardProps {
  * - Alert mode → `var(--data-error)` (antes `#e63946` hardcoded).
  * - Icon chip → alpha via `color-mix` (antes `${color}15` concat string).
  * - Change deltas → tokens `--data-success` / `--data-error`.
- * - Surface → `bg-[var(--surface-raised)]` (antes `bg-white dark:bg-card`).
+ * - Surface → `bg-[var(--surface-raised)]` (antes `bg-[var(--surface-raised)]`).
  *
  * Para KPIs sin tenant branding dinamico, usar `UnifiedKPITile` que tiene
  * intent semantico + sparkline auto-color.

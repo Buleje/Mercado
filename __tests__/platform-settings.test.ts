@@ -6,7 +6,10 @@
  * Covers:
  *   - PlatformSettingsDB: get / getAll / set / setMany / delete
  *   - lib/plans.ts:       getPlanPrice / getAllPlanPrices fallback + override
- *   - lib/plans.ts:       DEFAULT_PLAN_PRICES = {free:0, pro:49, business:149, enterprise:299}
+ *   - lib/plans.ts:       DEFAULT_PLAN_PRICES = {free:0, pro:89, business:179, enterprise:349}
+ *
+ * Brandon 2026-05-17: precios actualizados 2026-05-11 (commit migración planes).
+ * Pre-2026-05-11: {pro:49, business:149, enterprise:299}.
  *
  * Estrategia: mockear `@/lib/prisma` y `@/lib/cache` para evitar DB real.
  * `getOrSet` mock ejecuta directamente el factory (bypass de cache) para que
@@ -81,16 +84,16 @@ beforeEach(() => {
 // ─── DEFAULT_PLAN_PRICES ─────────────────────────────────────────────────────
 
 describe("DEFAULT_PLAN_PRICES", () => {
-  it("tiene el precio canónico de enterprise = 299 (alineado a Stripe price_1TRogQ)", () => {
-    expect(DEFAULT_PLAN_PRICES.enterprise).toBe(299);
+  it("tiene el precio canónico de enterprise = 349", () => {
+    expect(DEFAULT_PLAN_PRICES.enterprise).toBe(349);
   });
 
   it("tiene los 4 planes con los defaults correctos", () => {
     expect(DEFAULT_PLAN_PRICES).toEqual({
       free: 0,
-      pro: 49,
-      business: 149,
-      enterprise: 299,
+      pro: 89,
+      business: 179,
+      enterprise: 349,
     });
   });
 });
@@ -112,12 +115,12 @@ describe("PlatformSettingsDB.get", () => {
 
   it("devuelve el valor typado cuando el key existe", async () => {
     mockFindUnique.mockResolvedValueOnce({
-      value: { free: 0, pro: 49, business: 149, enterprise: 299 },
+      value: { free: 0, pro: 89, business: 179, enterprise: 349 },
     });
 
     const result = await PlatformSettingsDB.get<Record<string, number>>("plan-prices");
 
-    expect(result).toEqual({ free: 0, pro: 49, business: 149, enterprise: 299 });
+    expect(result).toEqual({ free: 0, pro: 89, business: 179, enterprise: 349 });
   });
 });
 
@@ -126,7 +129,7 @@ describe("PlatformSettingsDB.get", () => {
 describe("PlatformSettingsDB.getAll", () => {
   it("devuelve un Record plano de todos los settings", async () => {
     mockFindMany.mockResolvedValueOnce([
-      { key: "plan-prices", value: { free: 0, pro: 49, business: 149, enterprise: 299 } },
+      { key: "plan-prices", value: { free: 0, pro: 89, business: 179, enterprise: 349 } },
       { key: "maintenance-mode", value: false },
       { key: "commission-default", value: 2.5 },
     ]);
@@ -134,7 +137,7 @@ describe("PlatformSettingsDB.getAll", () => {
     const result = await PlatformSettingsDB.getAll();
 
     expect(result).toEqual({
-      "plan-prices": { free: 0, pro: 49, business: 149, enterprise: 299 },
+      "plan-prices": { free: 0, pro: 89, business: 179, enterprise: 349 },
       "maintenance-mode": false,
       "commission-default": 2.5,
     });
@@ -155,7 +158,7 @@ describe("PlatformSettingsDB.set", () => {
 
     await PlatformSettingsDB.set(
       "plan-prices",
-      { free: 0, pro: 49, business: 149, enterprise: 299 },
+      { free: 0, pro: 89, business: 179, enterprise: 349 },
       "admin@bsm",
     );
 
@@ -163,11 +166,11 @@ describe("PlatformSettingsDB.set", () => {
       where: { key: "plan-prices" },
       create: {
         key: "plan-prices",
-        value: { free: 0, pro: 49, business: 149, enterprise: 299 },
+        value: { free: 0, pro: 89, business: 179, enterprise: 349 },
         updatedBy: "admin@bsm",
       },
       update: {
-        value: { free: 0, pro: 49, business: 149, enterprise: 299 },
+        value: { free: 0, pro: 89, business: 179, enterprise: 349 },
         updatedBy: "admin@bsm",
       },
     });
@@ -176,7 +179,7 @@ describe("PlatformSettingsDB.set", () => {
   it("invalida el cache del key Y el cache de __all__ tras set()", async () => {
     mockUpsert.mockResolvedValueOnce({});
 
-    await PlatformSettingsDB.set("plan-prices", { pro: 49 });
+    await PlatformSettingsDB.set("plan-prices", { pro: 89 });
 
     expect(mockInvalidate).toHaveBeenCalledWith("platform-settings:plan-prices");
     expect(mockInvalidate).toHaveBeenCalledWith("platform-settings:__all__");
@@ -204,7 +207,7 @@ describe("PlatformSettingsDB.setMany", () => {
 
     await PlatformSettingsDB.setMany(
       {
-        "plan-prices": { free: 0, pro: 49, business: 149, enterprise: 299 },
+        "plan-prices": { free: 0, pro: 89, business: 179, enterprise: 349 },
         "maintenance-mode": false,
       },
       "admin@bsm",
@@ -265,18 +268,18 @@ describe("PlatformSettingsDB.delete", () => {
 // ─── getPlanPrice / getAllPlanPrices ─────────────────────────────────────────
 
 describe("getPlanPrice (lib/plans.ts)", () => {
-  it("retorna DEFAULT_PLAN_PRICES.enterprise (299) si no hay override en DB", async () => {
+  it("retorna DEFAULT_PLAN_PRICES.enterprise (349) si no hay override en DB", async () => {
     mockFindUnique.mockResolvedValueOnce(null); // plan-prices no existe
 
     const price = await getPlanPrice("enterprise");
 
-    expect(price).toBe(299);
+    expect(price).toBe(349);
   });
 
-  it("retorna DEFAULT_PLAN_PRICES.pro (49) si no hay override", async () => {
+  it("retorna DEFAULT_PLAN_PRICES.pro (89) si no hay override", async () => {
     mockFindUnique.mockResolvedValueOnce(null);
     const price = await getPlanPrice("pro");
-    expect(price).toBe(49);
+    expect(price).toBe(89);
   });
 
   it("retorna el valor de la DB cuando hay override", async () => {
@@ -290,13 +293,13 @@ describe("getPlanPrice (lib/plans.ts)", () => {
   });
 
   it("cae a default por-plano cuando el override es parcial", async () => {
-    // Solo pro está overrideado, enterprise debe caer al default 299.
+    // Solo pro está overrideado, enterprise debe caer al default 349.
     mockFindUnique.mockResolvedValueOnce({
       value: { pro: 59 },
     });
 
     const enterprisePrice = await getPlanPrice("enterprise");
-    expect(enterprisePrice).toBe(299);
+    expect(enterprisePrice).toBe(349);
   });
 });
 
@@ -308,9 +311,9 @@ describe("getAllPlanPrices (lib/plans.ts)", () => {
 
     expect(prices).toEqual({
       free: 0,
-      pro: 49,
-      business: 149,
-      enterprise: 299,
+      pro: 89,
+      business: 179,
+      enterprise: 349,
     });
   });
 
@@ -338,8 +341,8 @@ describe("getAllPlanPrices (lib/plans.ts)", () => {
 
     expect(prices).toEqual({
       free: 0,
-      pro: 49,
-      business: 149,
+      pro: 89,
+      business: 179,
       enterprise: 699,
     });
   });

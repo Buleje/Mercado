@@ -31,7 +31,7 @@ export default function CashRegisterChart({
   tendencia,
 }: CashRegisterChartProps) {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3">
       <div className="flex items-center justify-between mb-2">
         <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">
           Tendencia de diferencias (ultimos {diffsCount} cierres)

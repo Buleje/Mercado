@@ -293,7 +293,7 @@ function ColorPicker({
 }) {
   return (
     <div className="space-y-3">
-      <label className="text-sm font-semibold text-foreground">{label}</label>
+      <label className="text-sm font-semibold text-[var(--text-primary)]">{label}</label>
       <div className="flex flex-wrap gap-2.5 items-center">
         {COLOR_PRESETS.map((c) => (
           <button
@@ -329,7 +329,7 @@ function ColorPicker({
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-semibold text-foreground">{label}</label>
+      <label className="text-sm font-semibold text-[var(--text-primary)]">{label}</label>
       {children}
     </div>
   );
@@ -353,7 +353,7 @@ function StyleSection({
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-bold text-foreground leading-tight">{title}</h3>
+          <h3 className="text-base font-bold text-[var(--text-primary)] leading-tight">{title}</h3>
           <p className="text-sm text-muted leading-snug mt-0.5">{description}</p>
         </div>
       </header>
@@ -363,7 +363,7 @@ function StyleSection({
 }
 
 const inputCls =
-  "w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
+  "w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
 
 // ── Sugerencias rápidas para Hero (chips para auto-completar) ───────────────
 
@@ -429,7 +429,7 @@ function HeroTab({
           <ImageIcon className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0">
-          <p className="text-base font-bold text-foreground">El primer mensaje que ve tu cliente</p>
+          <p className="text-base font-bold text-[var(--text-primary)]">El primer mensaje que ve tu cliente</p>
           <p className="text-sm text-muted mt-0.5">
             El hero es el banner grande arriba de tu tienda. Vendé el por qué — qué problema resolves,
             en cuánto tiempo, con qué garantía. Cambiá los textos abajo y mirá el preview en vivo.
@@ -446,7 +446,7 @@ function HeroTab({
         <div className="space-y-3">
           {/* Device toggle + abrir tienda */}
           <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100 dark:bg-surface border-2 border-[var(--rule-soft)] dark:border-card-border">
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100 dark:bg-surface border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               {[
                 { value: "desktop" as const, label: "Desktop", icon: Monitor },
                 { value: "mobile" as const, label: "Mobile", icon: Smartphone },
@@ -462,8 +462,8 @@ function HeroTab({
                     className={cn(
                       "inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold transition-all",
                       active
-                        ? "bg-white dark:bg-card text-primary shadow"
-                        : "text-muted hover:text-foreground"
+                        ? "bg-[var(--surface-raised)] text-primary shadow"
+                        : "text-muted hover:text-[var(--text-primary)]"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -476,7 +476,7 @@ function HeroTab({
               href={storefrontUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-foreground hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface"
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface"
             >
               <ExternalLink className="h-4 w-4" />
               Ver en tienda
@@ -487,7 +487,7 @@ function HeroTab({
           <div className="flex justify-center">
             <div
               className={cn(
-                "relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border transition-all",
+                "relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] transition-all",
                 previewDevice === "desktop" ? "w-full" : "w-[390px] max-w-full"
               )}
               style={
@@ -654,7 +654,7 @@ function HeroTab({
                     "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                     theme.heroTitle === s
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -702,7 +702,7 @@ function HeroTab({
                     "px-3 py-2 rounded-xl text-sm font-semibold border-2 text-left transition-all max-w-md",
                     theme.heroSubtitle === s
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -745,7 +745,7 @@ function HeroTab({
                     "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                     theme.heroBadge === s
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -754,7 +754,7 @@ function HeroTab({
               <button
                 type="button"
                 onClick={() => update("heroBadge", "")}
-                className="px-3 h-9 rounded-xl text-sm font-semibold border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-muted hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]"
+                className="px-3 h-9 rounded-xl text-sm font-semibold border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-muted hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]"
               >
                 Sin badge
               </button>
@@ -792,7 +792,7 @@ function HeroTab({
                   "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                   theme.heroOriginBadge === s
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
                 )}
               >
                 {s}
@@ -840,7 +840,7 @@ function HeroTab({
         <div className="space-y-5">
           {/* Texto del CTA */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-foreground">Texto del botón</label>
+            <label className="text-sm font-semibold text-[var(--text-primary)]">Texto del botón</label>
             <input
               type="text"
               value={theme.heroCTA}
@@ -868,7 +868,7 @@ function HeroTab({
                       "inline-flex items-center gap-2 px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                       active
                         ? "border-primary bg-primary/10 text-primary"
-                        : "border-[var(--rule-base)] dark:border-card-border text-foreground hover:border-primary/40 hover:bg-primary/5"
+                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -881,7 +881,7 @@ function HeroTab({
 
           {/* Destino del botón */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-foreground">Destino del botón</label>
+            <label className="text-sm font-semibold text-[var(--text-primary)]">Destino del botón</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {([
                 { value: "tienda",     label: "Tienda",     desc: "Lleva al catálogo de productos",  icon: <ShoppingBag className="h-5 w-5" /> },
@@ -900,17 +900,17 @@ function HeroTab({
                       "p-4 rounded-2xl border-2 text-left transition-all flex items-start gap-3",
                       active
                         ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                        : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                     )}
                   >
                     <div className={cn(
                       "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
-                      active ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-foreground"
+                      active ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-primary)]"
                     )}>
                       {s.icon}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-foreground leading-tight">{s.label}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">{s.label}</p>
                       <p className="text-xs text-muted leading-snug mt-0.5">{s.desc}</p>
                     </div>
                   </button>
@@ -945,7 +945,7 @@ function HeroTab({
             <Star className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground">Checklist del hero perfecto</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Checklist del hero perfecto</p>
             <ul className="text-xs text-muted mt-2 space-y-1.5">
               <li className="flex items-start gap-1.5">
                 <Check className="h-3.5 w-3.5 mt-0.5 text-[var(--data-success-500)] shrink-0" />
@@ -1004,7 +1004,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
   return (
     <div
       className={cn(
-        "w-full h-full rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border flex flex-col text-sm shadow-inner",
+        "w-full h-full rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col text-sm shadow-inner",
         theme.darkModeDefault ? "bg-gray-900 text-white" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
       )}
       style={{ fontFamily: fontMap[theme.fontFamily] ?? fontMap.sistema }}
@@ -1375,7 +1375,7 @@ export default function StoreCustomizer() {
             href={`/t/${activeTenantSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
           >
             <Store className="h-4 w-4" />
             Ver tienda
@@ -1413,10 +1413,10 @@ export default function StoreCustomizer() {
       />
 
       {/* ── Panel de contenido ──────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border overflow-hidden">
+      <div className="flex flex-col flex-1 min-h-0 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] overflow-hidden">
 
         {/* Tab header with active tab info — usa SectionTitle del DS */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)]/40 shrink-0">
+        <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 shrink-0">
           {activeTabMeta && <activeTabMeta.icon className="h-5 w-5 text-primary" />}
           <SectionTitle className="text-base">{activeTabMeta?.label}</SectionTitle>
         </div>
@@ -1430,11 +1430,11 @@ export default function StoreCustomizer() {
                 {/* Logo card — área generosa con hover state propio */}
                 <div className="space-y-3">
                   <div className="flex items-baseline justify-between">
-                    <label className="text-sm font-semibold text-foreground">Logo de tu tienda</label>
+                    <label className="text-sm font-semibold text-[var(--text-primary)]">Logo de tu tienda</label>
                     <span className="text-xs text-muted">PNG/JPG/WebP · máx 5 MB · cuadrado idealmente</span>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-start gap-5 p-5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface">
-                    <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary hover:shadow-[var(--shadow-md)] transition-all relative group">
+                  <div className="flex flex-col sm:flex-row items-start gap-5 p-5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface">
+                    <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary hover:shadow-[var(--shadow-md)] transition-all relative group">
                       {theme.logo ? (
                         <>
                           <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="128px" />
@@ -1456,7 +1456,7 @@ export default function StoreCustomizer() {
                       )}
                     </div>
                     <div className="flex-1 space-y-2">
-                      <p className="text-base font-bold text-foreground">
+                      <p className="text-base font-bold text-[var(--text-primary)]">
                         {theme.logo ? "Logo cargado" : "Sube tu logo"}
                       </p>
                       <p className="text-sm text-muted leading-relaxed">
@@ -1553,7 +1553,7 @@ export default function StoreCustomizer() {
                     <Palette className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-foreground">La paleta de tu marca</p>
+                    <p className="text-base font-bold text-[var(--text-primary)]">La paleta de tu marca</p>
                     <p className="text-sm text-muted mt-0.5">
                       Empezá con una plantilla ya curada o ajustá cada color manual. Cada cambio se previsualiza en vivo abajo y se aplica a botones, links, badges y CTAs en toda tu tienda.
                     </p>
@@ -1586,7 +1586,7 @@ export default function StoreCustomizer() {
                             "rounded-2xl border-2 text-left transition-all overflow-hidden hover:shadow-[var(--shadow-md)]",
                             active
                               ? "border-primary ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                              : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                           )}
                         >
                           {/* Mini-mockup banner — gradient con los 3 colores reales */}
@@ -1620,7 +1620,7 @@ export default function StoreCustomizer() {
                               <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-[var(--shadow-md)]" style={{ backgroundColor: t.colors.accentColor || t.colors.primaryColor }} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-base font-bold text-foreground leading-tight">{t.name}</p>
+                              <p className="text-base font-bold text-[var(--text-primary)] leading-tight">{t.name}</p>
                               <p className="text-sm text-muted line-clamp-2 mt-0.5">{t.description}</p>
                             </div>
                           </div>
@@ -1637,11 +1637,11 @@ export default function StoreCustomizer() {
                   description="Ajustá cada color por separado. Tip: el primario manda en CTAs y links, el secundario en badges de oferta."
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-[var(--shadow-sm)]" style={{ backgroundColor: theme.primaryColor }} />
-                          <p className="text-sm font-bold text-foreground">Primario</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)]">Primario</p>
                         </div>
                         <span
                           className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
@@ -1658,11 +1658,11 @@ export default function StoreCustomizer() {
                       <p className="text-xs text-muted leading-snug">Botones de compra, links, badges activos y acentos del header.</p>
                     </div>
 
-                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-[var(--shadow-sm)]" style={{ backgroundColor: theme.secondaryColor }} />
-                          <p className="text-sm font-bold text-foreground">Secundario</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)]">Secundario</p>
                         </div>
                         <span
                           className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
@@ -1679,11 +1679,11 @@ export default function StoreCustomizer() {
                       <p className="text-xs text-muted leading-snug">CTAs alternos, badges de descuento, ofertas y temporada.</p>
                     </div>
 
-                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-[var(--shadow-sm)]" style={{ backgroundColor: theme.accentColor }} />
-                          <p className="text-sm font-bold text-foreground">Acento</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)]">Acento</p>
                         </div>
                         <span
                           className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
@@ -1702,12 +1702,12 @@ export default function StoreCustomizer() {
                   </div>
 
                   {/* Pista de contraste WCAG */}
-                  <div className="mt-4 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border p-3 flex items-start gap-2.5">
+                  <div className="mt-4 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 flex items-start gap-2.5">
                     <div className="shrink-0 mt-0.5">
                       <Sliders className="h-4 w-4 text-muted" />
                     </div>
                     <div className="text-xs text-muted leading-snug">
-                      <span className="font-bold text-foreground">Contraste:</span> los colores primario y secundario se usan con texto blanco en botones — asegurate de que sean lo suficientemente oscuros para que el texto se lea bien (target hex con luminosidad &lt; 60%).
+                      <span className="font-bold text-[var(--text-primary)]">Contraste:</span> los colores primario y secundario se usan con texto blanco en botones — asegurate de que sean lo suficientemente oscuros para que el texto se lea bien (target hex con luminosidad &lt; 60%).
                     </div>
                   </div>
                 </StyleSection>
@@ -1718,7 +1718,7 @@ export default function StoreCustomizer() {
                   title="Vista previa en vivo"
                   description="Cómo se aplican tus colores a un componente real de tu tienda."
                 >
-                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
                     {/* Mini header con primary */}
                     <div
                       className="px-5 py-3 flex items-center justify-between"
@@ -1734,7 +1734,7 @@ export default function StoreCustomizer() {
                     </div>
 
                     {/* Body con cards y CTAs */}
-                    <div className="p-5 bg-white dark:bg-card space-y-4">
+                    <div className="p-5 bg-[var(--surface-raised)] space-y-4">
                       {/* Hero stripe con gradient */}
                       <div
                         className="rounded-xl p-4 relative overflow-hidden"
@@ -1825,7 +1825,7 @@ export default function StoreCustomizer() {
                         "p-4 rounded-2xl border-2 transition-all",
                         !theme.darkModeDefault
                           ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                       )}
                     >
                       <div className="aspect-[4/3] mb-3 rounded-xl bg-white dark:bg-[var(--color-card)] border border-gray-200 overflow-hidden flex flex-col">
@@ -1838,7 +1838,7 @@ export default function StoreCustomizer() {
                       </div>
                       <div className="flex items-center justify-center gap-2">
                         <Sun className="h-4 w-4 text-[var(--data-warning-500)]" />
-                        <p className="text-sm font-bold text-foreground">Modo claro</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo claro</p>
                       </div>
                     </button>
 
@@ -1851,7 +1851,7 @@ export default function StoreCustomizer() {
                         "p-4 rounded-2xl border-2 transition-all",
                         theme.darkModeDefault
                           ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                       )}
                     >
                       <div className="aspect-[4/3] mb-3 rounded-xl bg-gray-950 border border-gray-800 overflow-hidden flex flex-col">
@@ -1864,7 +1864,7 @@ export default function StoreCustomizer() {
                       </div>
                       <div className="flex items-center justify-center gap-2">
                         <Moon className="h-4 w-4 text-[var(--data-success-500)]" />
-                        <p className="text-sm font-bold text-foreground">Modo oscuro</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo oscuro</p>
                       </div>
                     </button>
                   </div>
@@ -1881,7 +1881,7 @@ export default function StoreCustomizer() {
                     <Layout className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-foreground">Las secciones que ve tu cliente</p>
+                    <p className="text-base font-bold text-[var(--text-primary)]">Las secciones que ve tu cliente</p>
                     <p className="text-sm text-muted mt-0.5">
                       Activá, desactivá y reordená los bloques de tu tienda con drag &amp; drop.
                       Las secciones desactivadas no se renderizan — la página se compacta automáticamente.
@@ -1910,7 +1910,7 @@ export default function StoreCustomizer() {
                     <Phone className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-foreground">Cómo te puede contactar el cliente</p>
+                    <p className="text-base font-bold text-[var(--text-primary)]">Cómo te puede contactar el cliente</p>
                     <p className="text-sm text-muted mt-0.5">
                       Aparecen en el footer, mapa, sección de contacto y JSON-LD para Google. WhatsApp es el canal #1 — asegurate de que esté activo.
                     </p>
@@ -1925,7 +1925,7 @@ export default function StoreCustomizer() {
                 >
                   <div className="space-y-5">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <label className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                         <Phone className="h-4 w-4 text-[var(--data-success-500)]" />
                         WhatsApp
                         <span className="text-xs font-normal text-muted ml-1">recomendado</span>
@@ -1942,7 +1942,7 @@ export default function StoreCustomizer() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-foreground">Email</label>
+                        <label className="text-sm font-semibold text-[var(--text-primary)]">Email</label>
                         <input
                           type="email"
                           value={theme.email}
@@ -1952,7 +1952,7 @@ export default function StoreCustomizer() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-foreground">Teléfono fijo</label>
+                        <label className="text-sm font-semibold text-[var(--text-primary)]">Teléfono fijo</label>
                         <input
                           type="tel"
                           value={theme.phone}
@@ -1964,7 +1964,7 @@ export default function StoreCustomizer() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <label className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                         <Map className="h-4 w-4 text-primary" />
                         Dirección física
                       </label>
@@ -1986,16 +1986,16 @@ export default function StoreCustomizer() {
                   title="Horarios de atención"
                   description="Aparecen en el footer y validan si tu tienda está 'Abierta' o 'Cerrada' al cliente."
                 >
-                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
                     {DAYS.map(({ key, label }, idx) => (
                       <div
                         key={key}
                         className={cn(
                           "flex items-center gap-3 px-4 py-3",
-                          idx > 0 && "border-t border-[var(--rule-soft)] dark:border-card-border"
+                          idx > 0 && "border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
                         )}
                       >
-                        <span className="text-sm font-bold text-foreground w-20 shrink-0">{label}</span>
+                        <span className="text-sm font-bold text-[var(--text-primary)] w-20 shrink-0">{label}</span>
                         <div className="flex-1 grid grid-cols-2 gap-2 items-center">
                           <input
                             type="time"
@@ -2006,7 +2006,7 @@ export default function StoreCustomizer() {
                                 [key]: { ...theme.schedules[key], open: e.target.value },
                               })
                             }
-                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             aria-label={`Apertura ${label}`}
                           />
                           <input
@@ -2018,7 +2018,7 @@ export default function StoreCustomizer() {
                                 [key]: { ...theme.schedules[key], close: e.target.value },
                               })
                             }
-                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             aria-label={`Cierre ${label}`}
                           />
                         </div>
@@ -2041,7 +2041,7 @@ export default function StoreCustomizer() {
                     <Sparkles className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-foreground">Cómo se ven los elementos</p>
+                    <p className="text-base font-bold text-[var(--text-primary)]">Cómo se ven los elementos</p>
                     <p className="text-sm text-muted mt-0.5">
                       Cada opción muestra una vista previa real. Tus cambios se aplican al guardar y se ven inmediatamente en tu tienda online.
                     </p>
@@ -2072,7 +2072,7 @@ export default function StoreCustomizer() {
                             "group p-3 rounded-2xl border-2 text-left transition-all",
                             active
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+                              : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                           )}
                         >
                           {/* Mini-card preview */}
@@ -2081,7 +2081,7 @@ export default function StoreCustomizer() {
                             s.value === "minimal" && "border-0",
                             s.value === "shadow"  && "shadow-[var(--shadow-md)]",
                             s.value === "border"  && "border-2",
-                            s.value === "glass"   && "backdrop-blur-md bg-white/60 dark:bg-surface/60 border border-white/40 dark:border-card-border"
+                            s.value === "glass"   && "backdrop-blur-md bg-white/60 dark:bg-surface/60 border border-white/40 dark:border-[var(--rule-base)]"
                           )}
                           style={s.value === "border" ? { borderColor: theme.primaryColor } : undefined}>
                             {/* Imagen placeholder */}
@@ -2094,7 +2094,7 @@ export default function StoreCustomizer() {
                               <div className="h-2 w-1/3 rounded-full" style={{ backgroundColor: theme.primaryColor }} />
                             </div>
                           </div>
-                          <p className="text-sm font-bold text-foreground leading-tight">{s.label}</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">{s.label}</p>
                           <p className="text-xs text-muted leading-tight mt-0.5">{s.desc}</p>
                         </button>
                       );
@@ -2125,7 +2125,7 @@ export default function StoreCustomizer() {
                             "p-4 rounded-2xl border-2 transition-all",
                             active
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+                              : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                           )}
                         >
                           {/* Preview real del botón */}
@@ -2138,7 +2138,7 @@ export default function StoreCustomizer() {
                           >
                             Comprar
                           </div>
-                          <p className="text-sm font-bold text-foreground text-center">{s.label}</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)] text-center">{s.label}</p>
                         </button>
                       );
                     })}
@@ -2169,7 +2169,7 @@ export default function StoreCustomizer() {
                             "p-3 rounded-2xl border-2 text-left transition-all",
                             active
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+                              : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                           )}
                         >
                           {/* Mini-mockup del navbar */}
@@ -2206,7 +2206,7 @@ export default function StoreCustomizer() {
                               <div className="h-1.5 w-3/4 rounded-full bg-gray-200 dark:bg-gray-700" />
                             </div>
                           </div>
-                          <p className="text-sm font-bold text-foreground">{s.label}</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
                           <p className="text-xs text-muted">{s.desc}</p>
                         </button>
                       );
@@ -2223,7 +2223,7 @@ export default function StoreCustomizer() {
                   <div className="space-y-6">
                     {/* Sombras con preview de cajas */}
                     <div>
-                      <p className="text-sm font-semibold text-foreground mb-3">Intensidad de sombras</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">Intensidad de sombras</p>
                       <div className="grid grid-cols-3 gap-3">
                         {([
                           { value: "none", label: "Sin sombra", cls: "" },
@@ -2241,11 +2241,11 @@ export default function StoreCustomizer() {
                                 "p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-2.5",
                                 active
                                   ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                  : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
-                              <div className={cn("w-10 h-10 rounded-xl bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border", s.cls)} />
-                              <p className="text-sm font-bold text-foreground">{s.label}</p>
+                              <div className={cn("w-10 h-10 rounded-xl bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)]", s.cls)} />
+                              <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
                             </button>
                           );
                         })}
@@ -2254,7 +2254,7 @@ export default function StoreCustomizer() {
 
                     {/* Animaciones */}
                     <div>
-                      <p className="text-sm font-semibold text-foreground mb-3">Animaciones de la interfaz</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">Animaciones de la interfaz</p>
                       <div className="grid grid-cols-3 gap-3">
                         {([
                           { value: "none",    label: "Ninguna",   desc: "Estática" },
@@ -2272,7 +2272,7 @@ export default function StoreCustomizer() {
                                 "p-3 rounded-2xl border-2 transition-all text-center",
                                 active
                                   ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                  : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
                               <Sparkles
@@ -2283,7 +2283,7 @@ export default function StoreCustomizer() {
                                   s.value === "dynamic" && "text-primary animate-pulse"
                                 )}
                               />
-                              <p className="text-sm font-bold text-foreground">{s.label}</p>
+                              <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
                               <p className="text-xs text-muted mt-0.5">{s.desc}</p>
                             </button>
                           );
@@ -2293,7 +2293,7 @@ export default function StoreCustomizer() {
 
                     {/* Fondo con preview de patrón */}
                     <div>
-                      <p className="text-sm font-semibold text-foreground mb-3">Patrón de fondo</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">Patrón de fondo</p>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {([
                           { value: "none",     label: "Liso" },
@@ -2312,7 +2312,7 @@ export default function StoreCustomizer() {
                                 "p-3 rounded-2xl border-2 transition-all",
                                 active
                                   ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                  : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
                               <div
@@ -2330,7 +2330,7 @@ export default function StoreCustomizer() {
                                     : undefined
                                 }
                               />
-                              <p className="text-sm font-bold text-foreground text-center">{s.label}</p>
+                              <p className="text-sm font-bold text-[var(--text-primary)] text-center">{s.label}</p>
                             </button>
                           );
                         })}
@@ -2350,7 +2350,7 @@ export default function StoreCustomizer() {
                     <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-foreground">Textos y mensajes de tu tienda</p>
+                    <p className="text-base font-bold text-[var(--text-primary)]">Textos y mensajes de tu tienda</p>
                     <p className="text-sm text-muted mt-0.5">
                       Configurá los mensajes que aparecen automáticamente al cliente: el saludo de WhatsApp, el footer con tu storytelling y el popup de bienvenida con cupón.
                     </p>
@@ -2366,7 +2366,7 @@ export default function StoreCustomizer() {
                   <div className="space-y-5">
                     {/* WhatsApp */}
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground">Saludo de WhatsApp</label>
+                      <label className="text-sm font-semibold text-[var(--text-primary)]">Saludo de WhatsApp</label>
                       <input
                         type="text"
                         value={theme.whatsappMessage}
@@ -2383,7 +2383,7 @@ export default function StoreCustomizer() {
 
                     {/* Footer text */}
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground">Texto del footer</label>
+                      <label className="text-sm font-semibold text-[var(--text-primary)]">Texto del footer</label>
                       <textarea
                         value={theme.footerText}
                         onChange={(e) => update("footerText", e.target.value)}
@@ -2409,11 +2409,11 @@ export default function StoreCustomizer() {
                     "rounded-2xl border-2 p-5 transition-colors",
                     theme.welcomePopupEnabled
                       ? "bg-primary/5 dark:bg-primary/10 border-primary/30"
-                      : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border"
+                      : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                   )}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="text-base font-bold text-foreground">
+                        <p className="text-base font-bold text-[var(--text-primary)]">
                           {theme.welcomePopupEnabled ? "Popup activo" : "Popup desactivado"}
                         </p>
                         <p className="text-sm text-muted mt-0.5">
@@ -2487,8 +2487,8 @@ export default function StoreCustomizer() {
                   title="QR de tu tienda"
                   description="Imprímelo y pégalo en tu local físico. Los clientes lo escanean y entran a tu tienda online."
                 >
-                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
-                    <div className="bg-white dark:bg-[var(--color-card)] p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border shrink-0">
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
+                    <div className="bg-white dark:bg-[var(--color-card)] p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
                       <Image
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "https://tu-tienda.buleje.pe")}`}
                         alt="QR de la tienda"
@@ -2498,9 +2498,9 @@ export default function StoreCustomizer() {
                     </div>
                     <div className="flex-1 flex flex-col justify-center gap-3 text-center sm:text-left">
                       <div>
-                        <p className="text-base font-bold text-foreground">Tu QR ya está listo</p>
+                        <p className="text-base font-bold text-[var(--text-primary)]">Tu QR ya está listo</p>
                         <p className="text-sm text-muted mt-0.5">
-                          Apunta a <span className="font-mono text-foreground">/t/{activeTenantSlug}</span>
+                          Apunta a <span className="font-mono text-[var(--text-primary)]">/t/{activeTenantSlug}</span>
                         </p>
                       </div>
                       <a
@@ -2525,7 +2525,7 @@ export default function StoreCustomizer() {
                     <Package className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-foreground">Qué productos ve el cliente</p>
+                    <p className="text-base font-bold text-[var(--text-primary)]">Qué productos ve el cliente</p>
                     <p className="text-sm text-muted mt-0.5">
                       Activá o pausá productos del inventario en tu tienda online sin borrarlos. Útil para retirar items de temporada o stockout temporario.
                     </p>
@@ -2544,7 +2544,7 @@ export default function StoreCustomizer() {
                     <Settings2 className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-foreground">Configuración fina y SEO</p>
+                    <p className="text-base font-bold text-[var(--text-primary)]">Configuración fina y SEO</p>
                     <p className="text-sm text-muted mt-0.5">
                       Tipografía con preview real, densidad, favicon, tracking con validación, CSS custom con snippets y vista previa de cómo aparece tu tienda en Google.
                     </p>
@@ -2570,16 +2570,16 @@ export default function StoreCustomizer() {
                             "p-3 rounded-2xl border-2 text-center transition-all",
                             active
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+                              : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                           )}
                         >
                           <div
-                            className="h-12 mb-2 rounded-xl bg-gray-50 dark:bg-surface flex items-center justify-center text-2xl font-extrabold text-foreground"
+                            className="h-12 mb-2 rounded-xl bg-gray-50 dark:bg-surface flex items-center justify-center text-2xl font-extrabold text-[var(--text-primary)]"
                             style={{ fontFamily: f.stack }}
                           >
                             Aa
                           </div>
-                          <p className="text-sm font-bold text-foreground leading-tight" style={{ fontFamily: f.stack }}>
+                          <p className="text-sm font-bold text-[var(--text-primary)] leading-tight" style={{ fontFamily: f.stack }}>
                             {f.label}
                           </p>
                           <p className="text-[length:var(--ts-xs)] text-muted leading-snug mt-0.5">{f.vibe}</p>
@@ -2599,7 +2599,7 @@ export default function StoreCustomizer() {
                     {/* Border radius slider */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-foreground">Bordes redondeados</label>
+                        <label className="text-sm font-semibold text-[var(--text-primary)]">Bordes redondeados</label>
                         <span className="text-base font-bold text-primary bg-primary/10 px-3 py-1 rounded-full tabular-nums">{theme.borderRadius}px</span>
                       </div>
                       <input
@@ -2611,11 +2611,11 @@ export default function StoreCustomizer() {
                         className="w-full accent-teal-600 h-2 rounded-full cursor-pointer"
                       />
                       {/* Preview multi-elemento: input, badge, card, botón */}
-                      <div className="rounded-2xl bg-gray-50 dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-card-border">
+                      <div className="rounded-2xl bg-gray-50 dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-3">Vista previa en vivo</p>
                         <div className="flex items-center gap-3 flex-wrap">
                           <div
-                            className="h-10 w-32 bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border flex items-center px-3 text-xs text-muted transition-all"
+                            className="h-10 w-32 bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] flex items-center px-3 text-xs text-muted transition-all"
                             style={{ borderRadius: `${theme.borderRadius}px` }}
                           >
                             Input
@@ -2627,7 +2627,7 @@ export default function StoreCustomizer() {
                             BADGE
                           </span>
                           <div
-                            className="h-12 w-20 bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border shadow-[var(--shadow-sm)] transition-all"
+                            className="h-12 w-20 bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] shadow-[var(--shadow-sm)] transition-all"
                             style={{ borderRadius: `${theme.borderRadius}px` }}
                           />
                           <button
@@ -2643,7 +2643,7 @@ export default function StoreCustomizer() {
 
                     {/* Espaciado — cards con mockup más rico */}
                     <div className="space-y-3">
-                      <label className="text-sm font-semibold text-foreground">Densidad de espaciado</label>
+                      <label className="text-sm font-semibold text-[var(--text-primary)]">Densidad de espaciado</label>
                       <div className="grid grid-cols-3 gap-3">
                         {([
                           { value: "compact",  label: "Compacto",  desc: "Más en menos espacio", pad: "py-1.5", gap: "gap-1" },
@@ -2661,7 +2661,7 @@ export default function StoreCustomizer() {
                                 "p-3 rounded-2xl border-2 transition-all text-center",
                                 active
                                   ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                  : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
+                                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
                               <div className={cn("rounded-xl bg-gray-50 dark:bg-surface mb-2 flex flex-col justify-center px-2", s.pad, s.gap)}>
@@ -2670,7 +2670,7 @@ export default function StoreCustomizer() {
                                 <div className="h-0.5 rounded-full bg-gray-300 dark:bg-gray-600 w-2/3" />
                                 <div className="h-2 rounded-md mt-1 mx-auto w-12" style={{ backgroundColor: theme.primaryColor }} />
                               </div>
-                              <p className="text-sm font-bold text-foreground">{s.label}</p>
+                              <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
                               <p className="text-xs text-muted mt-0.5">{s.desc}</p>
                             </button>
                           );
@@ -2690,8 +2690,8 @@ export default function StoreCustomizer() {
                     {/* Browser tab preview */}
                     <div>
                       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Cómo se verá la pestaña del navegador</p>
-                      <div className="rounded-t-xl bg-gray-200 dark:bg-gray-800 px-2 pt-2 border border-b-0 border-[var(--rule-soft)] dark:border-card-border">
-                        <div className="inline-flex items-center gap-2 max-w-[260px] bg-white dark:bg-card rounded-t-lg border-t border-x border-[var(--rule-soft)] dark:border-card-border px-3 py-2">
+                      <div className="rounded-t-xl bg-gray-200 dark:bg-gray-800 px-2 pt-2 border border-b-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                        <div className="inline-flex items-center gap-2 max-w-[260px] bg-[var(--surface-raised)] rounded-t-lg border-t border-x border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-3 py-2">
                           {theme.favicon ? (
                             <Image src={theme.favicon} alt="favicon" width={16} height={16} className="h-4 w-4 rounded shrink-0 object-cover" />
                           ) : theme.logo ? (
@@ -2699,10 +2699,10 @@ export default function StoreCustomizer() {
                           ) : (
                             <div className="h-4 w-4 rounded shrink-0 bg-primary" />
                           )}
-                          <span className="text-xs text-foreground truncate">{theme.storeName || "Tu tienda"}</span>
+                          <span className="text-xs text-[var(--text-primary)] truncate">{theme.storeName || "Tu tienda"}</span>
                         </div>
                       </div>
-                      <div className="rounded-b-xl bg-gray-100 dark:bg-surface px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-card-border">
+                      <div className="rounded-b-xl bg-gray-100 dark:bg-surface px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <span className="text-xs font-mono text-muted">localhost:3000/t/{activeTenantSlug}</span>
                       </div>
                     </div>
@@ -2720,7 +2720,7 @@ export default function StoreCustomizer() {
                         />
                       </div>
                       <div className="flex-1 space-y-2 pt-1">
-                        <p className="text-sm font-semibold text-foreground">Subí tu favicon</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">Subí tu favicon</p>
                         <ul className="text-xs text-muted space-y-1 list-disc pl-4">
                           <li>Formato cuadrado — 32×32, 180×180 o 512×512 px</li>
                           <li>JPG, PNG, WebP o SVG (recomendado)</li>
@@ -2737,14 +2737,14 @@ export default function StoreCustomizer() {
                   title="Cómo aparece en Google"
                   description="Vista previa del resultado en buscador. Se calcula desde el Nombre, Descripción y URL de tu tienda."
                 >
-                  <div className="rounded-2xl bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border p-5 space-y-1.5">
+                  <div className="rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 space-y-1.5">
                     <p className="text-xs text-muted truncate">
                       {typeof window !== "undefined" ? window.location.origin : "tu-dominio.com"}
                       <span className="mx-1">›</span>t<span className="mx-1">›</span>{activeTenantSlug}
                     </p>
                     <p className="text-xl font-medium leading-snug" style={{ color: "#1a0dab" }}>
                       {theme.storeName || "Tu tienda"}
-                      {theme.slogan && <span className="text-foreground"> — {theme.slogan}</span>}
+                      {theme.slogan && <span className="text-[var(--text-primary)]"> — {theme.slogan}</span>}
                     </p>
                     <p className="text-sm text-[var(--text-secondary)] leading-snug line-clamp-2">
                       {theme.description || "Configurá tu descripción en la pestaña Identidad para que Google sepa de qué trata tu tienda."}
@@ -2765,7 +2765,7 @@ export default function StoreCustomizer() {
                     {/* Google Analytics */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-foreground">Google Analytics (GA4)</label>
+                        <label className="text-sm font-semibold text-[var(--text-primary)]">Google Analytics (GA4)</label>
                         {theme.analyticsId?.trim().startsWith("G-") ? (
                           <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
                             <Check className="h-3 w-3" /> Configurado
@@ -2796,7 +2796,7 @@ export default function StoreCustomizer() {
                     {/* Meta Pixel */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-foreground">Meta Pixel (Facebook / Instagram)</label>
+                        <label className="text-sm font-semibold text-[var(--text-primary)]">Meta Pixel (Facebook / Instagram)</label>
                         {theme.pixelId && /^\d{14,17}$/.test(theme.pixelId.trim()) ? (
                           <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
                             <Check className="h-3 w-3" /> Configurado
@@ -2842,9 +2842,9 @@ export default function StoreCustomizer() {
                             key={s.label}
                             type="button"
                             onClick={() => update("customCSS", ((theme.customCSS || "").trimEnd() + "\n\n" + s.css).trimStart())}
-                            className="text-left p-3 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-primary/5 transition-all"
+                            className="text-left p-3 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-primary/5 transition-all"
                           >
-                            <p className="text-sm font-bold text-foreground">{s.label}</p>
+                            <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
                             <p className="text-xs text-muted leading-snug mt-0.5">{s.description}</p>
                           </button>
                         ))}
@@ -2854,7 +2854,7 @@ export default function StoreCustomizer() {
                     {/* Editor */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-foreground">Editor CSS</label>
+                        <label className="text-sm font-semibold text-[var(--text-primary)]">Editor CSS</label>
                         <span className="text-xs font-mono text-muted">{(theme.customCSS || "").length} chars</span>
                       </div>
                       <textarea
@@ -2894,7 +2894,7 @@ export default function StoreCustomizer() {
                       <Settings2 className="h-5 w-5 text-[var(--data-error-500)]" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-base font-bold text-foreground">Zona de peligro</p>
+                      <p className="text-base font-bold text-[var(--text-primary)]">Zona de peligro</p>
                       <p className="text-sm text-muted mt-0.5">Restaurar borra todos los cambios no guardados de esta sesión y vuelve al theme inicial.</p>
                     </div>
                   </div>
@@ -2911,7 +2911,7 @@ export default function StoreCustomizer() {
           </div>
 
           {/* Botón guardar — fijo abajo del panel */}
-          <div className="shrink-0 px-6 py-4 border-t-2 border-[var(--rule-base)] dark:border-card-border space-y-2 bg-white dark:bg-card">
+          <div className="shrink-0 px-6 py-4 border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2 bg-[var(--surface-raised)]">
             {error && (
               <p className="text-sm text-[var(--data-error-500)] font-semibold text-center">{error}</p>
             )}

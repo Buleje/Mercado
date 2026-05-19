@@ -117,7 +117,7 @@ function SparklineKPICard({
   const resolvedValueColor = valueColor ?? "var(--text-primary)";
   return (
     <div
-      className="bg-[var(--surface-raised)] dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 relative overflow-hidden"
+      className="bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 relative overflow-hidden"
     >
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="h-3.5 w-3.5" style={{ color: resolvedIconColor }} />
@@ -237,8 +237,8 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
       )}
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">Cobros vs Nuevos préstamos (6 meses)</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Cobros vs Nuevos préstamos (6 meses)</CardTitle>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
             <ResponsiveContainer minWidth={0} width="100%" height={250}>
               <AreaChart data={areaData}>
@@ -269,8 +269,8 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
               <User className="h-4 w-4 text-[var(--text-secondary)]" /> Top 5 deudores
             </CardTitle>
             {topDeudores.length > 0 ? (
@@ -292,8 +292,8 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-2 flex items-center gap-2">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2 flex items-center gap-2">
               <Shield className="h-4 w-4 text-[var(--text-secondary)]" /> Distribución por estado
             </CardTitle>
             {donutData.length > 0 ? (
@@ -320,8 +320,8 @@ export function PrestamosDashboard({ prestamos, resumen }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
               <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Dado vs Recibido
             </CardTitle>
             <div className="space-y-6">

@@ -43,10 +43,33 @@ const MIN_TOTAL_ORDERS = 5;
 const MIN_DISTINCT_STORES = 5;
 const TOP_N = 5;
 
-export default function MisTiendasFavoritasStrip() {
+interface MisTiendasFavoritasStripProps {
+  /**
+   * Brandon 2026-05-18 perf P0 #3: catálogo de tiendas inyectado desde el
+   * padre. Si llega, salta el fetch interno duplicado a
+   * `/api/marketplace/stores` (el padre /tiendas ya lo tiene materializado).
+   * Si no llega (uso desde otra parte del marketplace sin lista en scope),
+   * el strip cae al fetch propio para retro-compatibilidad.
+   */
+  stores?: MarketplaceStoreFull[];
+}
+
+export default function MisTiendasFavoritasStrip({
+  stores: storesFromParent,
+}: MisTiendasFavoritasStripProps = {}) {
   const { orders } = useCustomerOrders();
-  const [allStores, setAllStores] = useState<MarketplaceStoreFull[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [allStores, setAllStores] = useState<MarketplaceStoreFull[]>(
+    storesFromParent ?? [],
+  );
+  const [loaded, setLoaded] = useState(Boolean(storesFromParent?.length));
+
+  // Re-sync si el padre actualiza el catálogo (filtros, refresh, etc).
+  useEffect(() => {
+    if (storesFromParent && storesFromParent.length > 0) {
+      setAllStores(storesFromParent);
+      setLoaded(true);
+    }
+  }, [storesFromParent]);
 
   // Top stores con count
   const ranking = useMemo(() => {
@@ -71,6 +94,8 @@ export default function MisTiendasFavoritasStrip() {
 
   useEffect(() => {
     if (!eligible || loaded) return;
+    // Si el padre ya inyectó stores, no hacemos round-trip (perf P0 #3).
+    if (storesFromParent && storesFromParent.length > 0) return;
     let cancelled = false;
     fetch("/api/marketplace/stores")
       .then((r) => (r.ok ? r.json() : null))
@@ -88,7 +113,7 @@ export default function MisTiendasFavoritasStrip() {
     return () => {
       cancelled = true;
     };
-  }, [eligible, loaded]);
+  }, [eligible, loaded, storesFromParent]);
 
   const enriched = useMemo(() => {
     if (!eligible) return [];

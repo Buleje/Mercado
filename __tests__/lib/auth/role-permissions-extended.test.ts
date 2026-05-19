@@ -93,28 +93,40 @@ describe("RBAC — role: tienda_owner", () => {
   });
 });
 
-describe("RBAC — roles sin PERMISSIONS configurado (deny-by-default)", () => {
-  // owner, manager, analista existen en AdminRole pero NO en PERMISSIONS.
-  // checkPermission retorna false → usuarios bloqueados de facto.
-  // TD-047: estos roles necesitan configuración antes de habilitar UI.
+describe("RBAC — owner/manager/analista declarados explícitamente (audit 05-P1-3)", () => {
+  // Audit 2026-05-17 05-P1-3: antes deny-by-default (sin entrada en PERMISSIONS)
+  // pero require-admin los pasaba por managementTier bypass → inconsistencia
+  // entre declaración y runtime. Ahora declarados:
+  //   owner    ~ admin (paridad full)
+  //   manager  ~ admin sin delete catálogo/clientes y sin admin-users
+  //   analista ~ read-only sobre el dominio operacional
 
-  it("owner: deny-by-default (no PERMISSIONS configurado)", () => {
-    expect(checkPermission("owner", "orders", "read")).toBe(false);
-    expect(checkPermission("owner", "products", "read")).toBe(false);
-    expect(checkPermission("owner", "settings", "read")).toBe(false);
-    expect(getAccessibleResources("owner")).toEqual([]);
+  it("owner: paridad funcional con admin", () => {
+    expect(checkPermission("owner", "orders", "read")).toBe(true);
+    expect(checkPermission("owner", "orders", "delete")).toBe(true);
+    expect(checkPermission("owner", "products", "delete")).toBe(true);
+    expect(checkPermission("owner", "settings", "write")).toBe(true);
+    expect(checkPermission("owner", "admin-users", "delete")).toBe(true);
+    expect(getAccessibleResources("owner").length).toBeGreaterThan(20);
   });
 
-  it("manager: deny-by-default (no PERMISSIONS configurado)", () => {
-    expect(checkPermission("manager", "orders", "read")).toBe(false);
-    expect(checkPermission("manager", "analytics", "read")).toBe(false);
-    expect(getAccessibleResources("manager")).toEqual([]);
+  it("manager: read+write pero sin delete crítico ni admin-users", () => {
+    expect(checkPermission("manager", "orders", "read")).toBe(true);
+    expect(checkPermission("manager", "orders", "write")).toBe(true);
+    expect(checkPermission("manager", "orders", "delete")).toBe(true);
+    expect(checkPermission("manager", "products", "write")).toBe(true);
+    expect(checkPermission("manager", "products", "delete")).toBe(false);
+    expect(checkPermission("manager", "admin-users", "read")).toBe(false);
+    expect(checkPermission("manager", "analytics", "read")).toBe(true);
   });
 
-  it("analista: deny-by-default (no PERMISSIONS configurado)", () => {
-    expect(checkPermission("analista", "analytics", "read")).toBe(false);
-    expect(checkPermission("analista", "orders", "read")).toBe(false);
-    expect(getAccessibleResources("analista")).toEqual([]);
+  it("analista: read-only sobre dominio operacional", () => {
+    expect(checkPermission("analista", "analytics", "read")).toBe(true);
+    expect(checkPermission("analista", "orders", "read")).toBe(true);
+    expect(checkPermission("analista", "orders", "write")).toBe(false);
+    expect(checkPermission("analista", "products", "delete")).toBe(false);
+    expect(checkPermission("analista", "settings", "read")).toBe(false);
+    expect(checkPermission("analista", "admin-users", "read")).toBe(false);
   });
 
   it("superadmin: NO configurado en PERMISSIONS — auth flow lo maneja por separado", () => {

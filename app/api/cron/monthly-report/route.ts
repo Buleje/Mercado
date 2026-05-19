@@ -372,7 +372,17 @@ export async function GET(req: NextRequest) {
 
   try {
     const url      = new URL(req.url);
-    const tenantId = url.searchParams.get("tenantId") ?? "main";
+    const tenantIdParam = url.searchParams.get("tenantId");
+    if (!tenantIdParam) {
+      // P1-1 multi-tenant: cron sin tenantId param antes caía silenciosamente a "main".
+      // Ahora exige explícito — schedule debe llamarse con ?tenantId=<id> por cada tenant.
+      logger.warn("[cron/monthly-report] tenantId param missing — returning 400");
+      return NextResponse.json(
+        { error: "tenantId requerido" },
+        { status: 400 },
+      );
+    }
+    const tenantId = tenantIdParam;
 
     // Mes anterior por defecto (o forzado por query params)
     const now          = new Date();
@@ -412,9 +422,7 @@ export async function GET(req: NextRequest) {
       `Reporte mensual ${report.period} generado — ingresos S/${report.ingresos.toFixed(2)}`,
       undefined,
       "cron",
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
     return NextResponse.json({
       ok:         true,

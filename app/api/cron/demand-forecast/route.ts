@@ -120,9 +120,7 @@ export async function GET(req: NextRequest) {
             `Cron demand-forecast: ${pos.length} PO(s) auto-generadas`,
             undefined,
             "cron",
-          ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+          ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
         }
 
         // ── 5. Sugerencias de precio ─────────────────────────────────────────
@@ -176,9 +174,7 @@ export async function GET(req: NextRequest) {
 
       // Limpiar logs de forecast con más de 90 días de antigüedad
       for (const tenant of tenants) {
-        ForecastingDB.cleanup(tenant.slug, 90).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        ForecastingDB.cleanup(tenant.slug, 90).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
       }
 
       const totalDuration = Date.now() - cronStart;

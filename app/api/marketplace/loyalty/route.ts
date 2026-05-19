@@ -11,6 +11,7 @@ import { toErrorPayload, newTraceId, ApiError } from "@/lib/api-error";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 
 /**
  * Marketplace loyalty route — TD-030 / ADR-024
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
     //     customer en DB (platform-level: el cliente existe en "main" típico).
     //     Evita 403 LOYALTY_CROSS_TENANT cuando el header trae otro tenant
     //     (ej. marketplace en subdominio `luis` pero el customer vive en `main`).
-    let tenantId = req.headers.get("x-tenant-id") ?? "main";
+    let tenantId = resolveMarketplaceTenant(req, { context: "marketplace/loyalty" });
     let adminMode = false;
     try {
       const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);

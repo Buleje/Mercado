@@ -97,11 +97,11 @@ export default function ScenarioSimulatorTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Simulador de Escenarios</SectionTitle>
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Simulador de Escenarios</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Modifica variables y visualiza el impacto financiero en tiempo real</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={handleReset} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors border border-[var(--rule-base)] dark:border-card-border">
+          <button onClick={handleReset} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <RotateCcw className="h-4 w-4" /> Reset
           </button>
           <button onClick={() => setShowSaveModal(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
@@ -122,9 +122,9 @@ export default function ScenarioSimulatorTab() {
         ].map(kpi => {
           const d = diff(kpi.value, kpi.base);
           return (
-            <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+            <div key={kpi.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 ">
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">{kpi.label}</p>
-              <p className={cn("text-lg font-extrabold mt-1", kpi.value < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{kpi.format(kpi.value)}</p>
+              <p className={cn("text-lg font-extrabold mt-1", kpi.value < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{kpi.format(kpi.value)}</p>
               {d !== 0 && (
                 <div className={cn("flex items-center gap-1 text-xs font-bold mt-1", d > 0 ? (kpi.label === "Costos totales" || kpi.label === "Break-even" ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]") : (kpi.label === "Costos totales" || kpi.label === "Break-even" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"))}>
                   {d > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -137,8 +137,8 @@ export default function ScenarioSimulatorTab() {
       </div>
 
       {/* Variables sliders */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6 ">
-        <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">Variables del negocio</CardTitle>
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-6 ">
+        <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Variables del negocio</CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {BASE_VARIABLES.map(v => {
             const current = overrides[v.id] ?? v.baseValue;
@@ -146,8 +146,8 @@ export default function ScenarioSimulatorTab() {
             return (
               <div key={v.id} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className={cn("text-sm font-semibold", isModified ? "text-primary" : "text-[var(--text-primary)] dark:text-foreground")}>{v.label}</label>
-                  <span className={cn("text-sm font-bold tabular-nums", isModified ? "text-primary" : "text-[var(--text-primary)] dark:text-foreground")}>
+                  <label className={cn("text-sm font-semibold", isModified ? "text-primary" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{v.label}</label>
+                  <span className={cn("text-sm font-bold tabular-nums", isModified ? "text-primary" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                     {v.unit === "S/" ? fmt(current) : v.unit === "%" ? `${current}%` : v.unit === "days" ? `${current} días` : current}
                   </span>
                 </div>
@@ -173,15 +173,15 @@ export default function ScenarioSimulatorTab() {
 
       {/* Comparison vs saved */}
       {compareResult && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">Comparación con: {saved.find(s => s.id === compareId)?.name}</CardTitle>
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Comparación con: {saved.find(s => s.id === compareId)?.name}</CardTitle>
             <button onClick={() => setCompareId(null)} className="text-sm text-[var(--text-secondary)] dark:text-muted hover:text-[var(--data-error-500)]">Cerrar</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <th className="text-left py-2 text-[var(--text-secondary)] dark:text-muted font-semibold">Métrica</th>
                   <th className="text-right py-2 text-[var(--text-secondary)] dark:text-muted font-semibold">Actual</th>
                   <th className="text-right py-2 text-[var(--text-secondary)] dark:text-muted font-semibold">Guardado</th>
@@ -195,9 +195,9 @@ export default function ScenarioSimulatorTab() {
                   { label: "Utilidad", a: currentResult.profit, b: compareResult.profit },
                   { label: "Margen", a: currentResult.margin, b: compareResult.margin },
                 ].map(row => (
-                  <tr key={row.label} className="border-b border-[var(--rule-soft)] dark:border-card-border">
-                    <td className="py-2 text-[var(--text-primary)] dark:text-foreground font-semibold">{row.label}</td>
-                    <td className="py-2 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{row.label === "Margen" ? fmtPct(row.a) : fmt(row.a)}</td>
+                  <tr key={row.label} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                    <td className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-semibold">{row.label}</td>
+                    <td className="py-2 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{row.label === "Margen" ? fmtPct(row.a) : fmt(row.a)}</td>
                     <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{row.label === "Margen" ? fmtPct(row.b) : fmt(row.b)}</td>
                     <td className={cn("py-2 text-right font-bold", row.a - row.b > 0 ? "text-[var(--data-success-500)]" : row.a - row.b < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]")}>
                       {row.a - row.b > 0 ? "+" : ""}{row.label === "Margen" ? fmtPct(row.a - row.b) : fmt(row.a - row.b)}
@@ -211,8 +211,8 @@ export default function ScenarioSimulatorTab() {
       )}
 
       {/* Saved scenarios */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6 ">
-        <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">Escenarios guardados</CardTitle>
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-6 ">
+        <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Escenarios guardados</CardTitle>
         {saved.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-8">No hay escenarios guardados</p>
         ) : (
@@ -220,9 +220,9 @@ export default function ScenarioSimulatorTab() {
             {saved.map(sc => {
               const result = computeScenario(sc.overrides);
               return (
-                <div key={sc.id} className="border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:border-primary/50 transition-colors">
+                <div key={sc.id} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 hover:border-primary/50 transition-colors">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{sc.name}</h4>
+                    <h4 className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{sc.name}</h4>
                     <button onClick={() => handleDelete(sc.id)} className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -261,20 +261,20 @@ export default function ScenarioSimulatorTab() {
       {/* Save modal */}
       {showSaveModal && (
         <div className="modal-backdrop p-4" onClick={() => setShowSaveModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Guardar escenario</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Guardar escenario</CardTitle>
               <button onClick={() => setShowSaveModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-foreground mb-1">Nombre del escenario</label>
+                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Nombre del escenario</label>
                 <input
                   type="text"
                   value={saveName}
                   onChange={e => setSaveName(e.target.value)}
                   placeholder="Ej: Expansión Q3 2025"
-                  className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-colors"
+                  className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
                   autoFocus
                 />
               </div>

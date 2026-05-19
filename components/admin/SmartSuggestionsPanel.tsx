@@ -53,14 +53,14 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
   if (visible.length === 0 && !loading) return null;
 
   return (
-    <div className={cn("rounded-xl border overflow-hidden", compact ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card")}>
+    <div className={cn("rounded-xl border overflow-hidden", compact ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]")}>
       <button
         className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 hover:bg-black/[0.02] transition-colors"
         onClick={() => setExpanded(e => !e)}
       >
         <div className="flex flex-wrap items-center gap-2">
           <Lightbulb className="h-4 w-4 text-[var(--data-warning-500)]" />
-          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
+          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Sugerencias inteligentes
           </span>
           {visible.length > 0 && (
@@ -71,7 +71,7 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-2.5 border-t border-[var(--rule-soft)] dark:border-card-border pt-3">
+        <div className="px-4 pb-4 space-y-2.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-3">
           {loading ? (
             <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)] dark:text-muted py-2">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Analizando datos del negocio…
@@ -86,7 +86,7 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
                     <Icon className="h-3.5 w-3.5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground leading-tight">{s.title}</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-tight">{s.title}</p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 leading-relaxed">{s.body}</p>
                     {s.module && onNavigate && (
                       <button

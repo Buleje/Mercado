@@ -6,6 +6,16 @@
  * `UserCoupon` (aun no modelada — zona peligrosa). Por eso mockeamos.
  */
 
+// __MOCK_PROD_GUARD__: en prod los exports devuelven arrays vacíos para
+// evitar leak de data falsa al tenant real. Antes el guard tiraba throw,
+// pero rompía el build estático (Next 16 evalúa módulos en collect-page-data).
+// Sprint B debe conectar data real con prisma.userCoupon.
+const MOCK_PROD_DISABLED = process.env.NODE_ENV === "production";
+if (MOCK_PROD_DISABLED && typeof process !== "undefined") {
+  // eslint-disable-next-line no-console
+  console.warn("[mock] cupones.mock.ts cargado en prod — exports vacíos. Migrar a prisma.userCoupon.");
+}
+
 export type CuponDiscountType = "fixed" | "percent" | "shipping";
 
 export type MockCupon = {

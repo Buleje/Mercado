@@ -173,13 +173,13 @@ export default function HRTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Users className="h-6 w-6 text-primary" /> Recursos Humanos
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Gestión de empleados, asistencia y recursos del personal</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(employees.map(e => ({ nombre: e.name, dni: e.dni, cargo: e.role, departamento: e.department, teléfono: e.phone, email: e.email, ingreso: e.startDate, antiguedad: yearsOf(e.startDate), salario: e.baseSalary, estado: e.status })), "empleados")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(employees.map(e => ({ nombre: e.name, dni: e.dni, cargo: e.role, departamento: e.department, teléfono: e.phone, email: e.email, ingreso: e.startDate, antiguedad: yearsOf(e.startDate), salario: e.baseSalary, estado: e.status })), "empleados")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -191,7 +191,7 @@ export default function HRTab() {
       {/* KPIs */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {[
-          { label: "Total", value: stats.total, color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
+          { label: "Total", value: stats.total, color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
           { label: "Activos", value: stats.activo, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Vacaciones", value: stats.vacaciones, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Presentes hoy", value: stats.presente, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
@@ -207,9 +207,9 @@ export default function HRTab() {
 
       {/* New employee form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Registrar empleado</CardTitle>
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Registrar empleado</CardTitle>
             <button onClick={() => { setShowForm(false); setDniMsg(null); }}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -223,7 +223,7 @@ export default function HRTab() {
                   onChange={e => { setForm(p => ({ ...p, dni: e.target.value.replace(/\D/g, "").slice(0, 8) })); setDniMsg(null); }}
                   placeholder="00000000"
                   maxLength={8}
-                  className="flex-1 min-w-0 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="flex-1 min-w-0 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 {form.dni.length === 8 && (
                   <button
@@ -245,14 +245,14 @@ export default function HRTab() {
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Estado</label>
-              <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value as EmployeeStatus }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+              <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value as EmployeeStatus }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {(Object.keys(STATUS_EMP) as EmployeeStatus[]).map(s => <option key={s} value={s}>{STATUS_EMP[s].label}</option>)}
               </select>
             </div>
             <EField label="Cargo *" value={form.role} onChange={v => setForm(p => ({ ...p, role: v }))} placeholder="Ej: Cajero, Almacenero..." />
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Departamento</label>
-              <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+              <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {["Ventas", "Logística", "Operaciones", "Administración", "TI"].map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
@@ -261,11 +261,11 @@ export default function HRTab() {
             <EField label="Fecha ingreso" value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} type="date" />
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Salario base (S/)</label>
-              <input type="number" value={form.baseSalary} onChange={e => setForm(p => ({ ...p, baseSalary: parseFloat(e.target.value) || 0 }))} min="1025" step="25" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="number" value={form.baseSalary} onChange={e => setForm(p => ({ ...p, baseSalary: parseFloat(e.target.value) || 0 }))} min="1025" step="25" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => { setShowForm(false); setDniMsg(null); }} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
+            <button onClick={() => { setShowForm(false); setDniMsg(null); }} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
             <button onClick={handleAddEmployee} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Registrar</button>
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function HRTab() {
       {/* View tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {(["empleados", "asistencia"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg capitalize transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg capitalize transition-colors", view === v ? "bg-primary text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
             {v.charAt(0).toUpperCase() + v.slice(1)}
           </button>
         ))}
@@ -286,13 +286,13 @@ export default function HRTab() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, DNI o cargo..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, DNI o cargo..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as EmployeeStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as EmployeeStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               <option value="todos">Todos los estados</option>
               {(Object.keys(STATUS_EMP) as EmployeeStatus[]).map(s => <option key={s} value={s}>{STATUS_EMP[s].label}</option>)}
             </select>
-            <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+            <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               <option value="todos">Todos los depto.</option>
               {departments.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
@@ -301,12 +301,12 @@ export default function HRTab() {
             {filteredEmployees.map(e => {
               const sm = STATUS_EMP[e.status];
               return (
-                <div key={e.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex flex-wrap items-start gap-2 sm:gap-4">
+                <div key={e.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex flex-wrap items-start gap-2 sm:gap-4">
                   <div className={cn("w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shrink-0", e.color)}>{e.photoInitials}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
                       <div>
-                        <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{e.name}</p>
+                        <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{e.name}</p>
                         <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{e.role} · {e.department}</p>
                       </div>
                       <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full shrink-0", sm.bg, sm.color)}>{sm.label}</span>
@@ -315,7 +315,7 @@ export default function HRTab() {
                       <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> DNI {e.dni}</span>
                       <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {yearsOf(e.startDate)}</span>
                       {e.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {e.phone}</span>}
-                      <span className="flex items-center gap-1 font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(e.baseSalary)}/mes</span>
+                      <span className="flex items-center gap-1 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(e.baseSalary)}/mes</span>
                     </div>
                   </div>
                 </div>
@@ -330,12 +330,12 @@ export default function HRTab() {
       {view === "asistencia" && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
-            <label className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Fecha:</label>
-            <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+            <label className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha:</label>
+            <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
           </div>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+              <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <tr>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Empleado</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Cargo</th>
@@ -353,7 +353,7 @@ export default function HRTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0", emp.color)}>{emp.photoInitials}</div>
-                          <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{emp.name}</span>
+                          <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{emp.name}</span>
                         </div>
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{emp.role}</td>
@@ -392,7 +392,7 @@ function EField({ label, value, onChange, type = "text", placeholder, span }: { 
   return (
     <div className={span ? `col-span-${span}` : ""}>
       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
     </div>
   );
 }

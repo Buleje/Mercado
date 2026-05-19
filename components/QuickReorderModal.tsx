@@ -127,13 +127,13 @@ export default function QuickReorderModal({
     <div className="fixed inset-0 z-7000 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
-        className="relative bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90svh] flex flex-col overflow-hidden animate-[scaleIn_0.2s_ease-out]"
+        className="relative bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-2xl shadow-[var(--shadow-xl)] w-full sm:max-w-md max-h-[90svh] flex flex-col overflow-hidden animate-[scaleIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)]">
           <div>
-            <h3 className="font-extrabold text-foreground flex items-center gap-2">
+            <h3 className="font-extrabold text-[var(--text-primary)] flex items-center gap-2">
               <RotateCcw className="h-4.5 w-4.5 text-primary" />
               Volver a pedir
             </h3>
@@ -147,7 +147,7 @@ export default function QuickReorderModal({
         </div>
 
         {/* Select all / deselect */}
-        <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)]">
           <span className="text-xs font-semibold text-muted">
             {selectedCount} de {selectableItems.filter((i) => i.available).length} seleccionados
           </span>
@@ -180,10 +180,10 @@ export default function QuickReorderModal({
                 className={cn(
                   "rounded-xl border-2 p-3 transition-all",
                   !item.available
-                    ? "border-gray-100 bg-gray-50 dark:bg-surface dark:border-card-border opacity-60"
+                    ? "border-gray-100 bg-gray-50 dark:bg-surface dark:border-[var(--rule-base)] opacity-60"
                     : isSelected
                     ? "border-primary/30 bg-primary/3"
-                    : "border-gray-100 dark:border-card-border hover:border-gray-200"
+                    : "border-[var(--rule-base)] hover:border-gray-200"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -222,7 +222,7 @@ export default function QuickReorderModal({
                   <div className="flex-1 min-w-0">
                     <p className={cn(
                       "text-sm font-semibold truncate",
-                      item.available ? "text-foreground" : "text-muted line-through"
+                      item.available ? "text-[var(--text-primary)]" : "text-muted line-through"
                     )}>
                       {item.name}
                     </p>
@@ -259,14 +259,14 @@ export default function QuickReorderModal({
                     <div className="flex items-center bg-gray-100 dark:bg-surface rounded-lg overflow-hidden shrink-0">
                       <button
                         onClick={() => updateQty(idx, qty - 1)}
-                        className="h-8 w-7 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-card transition-colors"
+                        className="h-8 w-7 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[var(--surface-raised)] transition-colors"
                       >
                         <Minus className="h-3 w-3 text-muted" />
                       </button>
-                      <span className="w-6 text-center text-xs font-bold text-foreground">{qty}</span>
+                      <span className="w-6 text-center text-xs font-bold text-[var(--text-primary)]">{qty}</span>
                       <button
                         onClick={() => updateQty(idx, qty + 1)}
-                        className="h-8 w-7 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-card transition-colors"
+                        className="h-8 w-7 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[var(--surface-raised)] transition-colors"
                       >
                         <Plus className="h-3 w-3 text-muted" />
                       </button>
@@ -279,7 +279,7 @@ export default function QuickReorderModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-100 dark:border-card-border px-5 py-4 space-y-3 bg-white dark:bg-card">
+        <div className="border-t border-[var(--rule-base)] px-5 py-4 space-y-3 bg-[var(--surface-raised)]">
           {/* Estimated total */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted font-medium">Total estimado</span>

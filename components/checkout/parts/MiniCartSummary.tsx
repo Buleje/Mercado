@@ -37,13 +37,13 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
           />
         </svg>
       </summary>
-      <div className="mt-1.5 max-h-32 overflow-y-auto rounded-lg border border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border">
+      <div className="mt-1.5 max-h-32 overflow-y-auto rounded-lg border border-[var(--rule-base)] divide-y divide-gray-50 dark:divide-card-border">
         {items.map((item) => (
           <div
             key={item.id}
             className="flex items-center justify-between px-3 py-1.5 text-xs"
           >
-            <span className="text-gray-700 dark:text-foreground truncate flex-1 min-w-0">
+            <span className="text-gray-700 dark:text-[var(--text-primary)] truncate flex-1 min-w-0">
               {item.quantity}× {item.name}
             </span>
             <span className="text-gray-500 font-semibold ml-2 shrink-0">

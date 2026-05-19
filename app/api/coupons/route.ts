@@ -6,6 +6,11 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 
+// PENTEST 2026-05-18 Sprint A #3: validar que discountValue <= 100 cuando
+// discountType=percent. Antes Zod solo validaba .positive() y un admin
+// comprometido podía crear cupón percent=500% (preview en /validate
+// retornaba S/9999 sobre carrito de S/100). El cap también aplica en
+// /validate y /coupons/[id], pero el origen del dato debe ser válido.
 const CouponPostSchema = z.object({
   code: z.string().min(1).max(50),
   description: z.string().max(300).optional(),
@@ -15,7 +20,10 @@ const CouponPostSchema = z.object({
   maxUses: z.number().min(1).optional(),
   active: z.boolean().optional(),
   expiresAt: z.string().optional(),
-});
+}).refine(
+  (d) => d.discountType !== "percent" || d.discountValue <= 100,
+  { message: "discountValue debe ser ≤100 cuando discountType=percent", path: ["discountValue"] },
+);
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);

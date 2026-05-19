@@ -405,9 +405,9 @@ describe("CT-05 — PATCH /api/delivery/assignments: no actualiza assignment aje
 // en el bloque de construcción del where.
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("CT-06 — GET /api/delivery/assignments: IDOR en listado", () => {
+describe("CT-06 — GET /api/delivery/assignments: IDOR en listado (FIXED 2026-05-05)", () => {
   it.skip(
-    "TODO (IDOR): atacante TENANT_A no debe ver assignments de TENANT_B — actualmente el GET no filtra tenantId",
+    "TODO REESCRIBIR (fix YA aplicado en route.ts:40 — `where = { tenantId: auth.tenantId }`). El test asume comportamiento pre-fix.",
     async () => {
       // El handler construye `where = {}` sin incluir tenantId (route.ts L36-54).
       // Fix: where.tenantId = auth.tenantId antes del findMany.
@@ -657,9 +657,9 @@ describe("CT-11 — DELETE /api/customer/data: scope por phone + tenantId", () =
 // tenantId. Impacto: Ley 29733 PE (datos personales).
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("CT-12 — GET /api/customer/data: IDOR en export PII", () => {
+describe("CT-12 — GET /api/customer/data: IDOR en export PII (FIXED 2026-05-05)", () => {
   it.skip(
-    "TODO (IDOR Ley 29733): atacante TENANT_A no debe exportar PII de customer de TENANT_B — findUnique({phone}) no valida tenantId",
+    "TODO REESCRIBIR (fix YA aplicado en route.ts:41-42 — `findFirst({phone, tenantId})`). Ley 29733 cumplida en código, test pendiente de update.",
     async () => {
       // El handler usa prisma.customer.findUnique({where:{phone}}) (route.ts L36).
       // Esto retorna el customer de cualquier tenant que tenga ese phone (IDOR).

@@ -145,11 +145,11 @@ function buildThemeStyle({
 function TenantTiendaSkeleton() {
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)] animate-pulse">
-      <section className="bg-[#060a0d]" style={{ minHeight: "320px" }}>
+      <section className="bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)]" style={{ minHeight: "320px" }}>
         <div className="max-w-5xl mx-auto px-4 py-16 text-center space-y-4">
-          <div className="h-3 w-28 bg-white/20 rounded mx-auto" />
-          <div className="h-10 w-72 bg-white/15 rounded-lg mx-auto" />
-          <div className="h-4 w-56 bg-white/10 rounded mx-auto" />
+          <div className="h-3 w-28 bg-[var(--rule-soft)] rounded mx-auto" />
+          <div className="h-10 w-72 bg-[var(--rule-base)] rounded-lg mx-auto" />
+          <div className="h-4 w-56 bg-[var(--rule-soft)] rounded mx-auto" />
         </div>
       </section>
       <section className="max-w-7xl mx-auto px-4 py-12">

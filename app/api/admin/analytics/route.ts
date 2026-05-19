@@ -4,6 +4,9 @@ import { requireAdmin } from "@/lib/require-admin";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — analytics
+// con cookies (requireAdmin) y aggregates en tiempo real.
+
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "analista"]);
   if (auth instanceof NextResponse) return auth;
@@ -14,7 +17,9 @@ export async function GET(req: NextRequest) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
-    const validStatuses: ("entregado" | "confirmado" | "en_camino")[] = ["entregado", "confirmado", "en_camino"];
+    // Brandon mayo 2026 v7: solo `entregado` cuenta como venta. Antes incluía
+    // `confirmado` y `en_camino` que aún pueden ser cancelados → inflaba KPIs.
+    const validStatuses: ["entregado"] = ["entregado"];
 
     const [currentAgg, prevAgg] = await Promise.all([
       prisma.order.aggregate({

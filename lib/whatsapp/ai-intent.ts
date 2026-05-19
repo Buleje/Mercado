@@ -4,6 +4,7 @@ import { z } from "zod";
 import { chatModel } from "@/lib/ai/provider";
 import { logger } from "@/lib/logger";
 import { aiCostGuard } from "@/lib/ai/cost-control";
+import { processSafeInput } from "@/lib/ai-safety/sanitize";
 
 export const WhatsappIntent = z.enum([
   "saludo",
@@ -76,8 +77,11 @@ export async function classifyWhatsappIntent(
   if (trimmed.length === 0 || trimmed.length > 500) return FALLBACK;
 
   // F2 AI-COST: clasificador ~$0.001 → guard por tenant
+  // SECURITY 2026-05-12 (audit P0 data-finops): canSpend es async. Sin await
+  // Promise siempre truthy → guard NUNCA bloquea. Atacante con bot spam
+  // podía quemar $50+/mes ilimitado. Fix: await + chequeo correcto.
   const INTENT_COST_USD = 0.001;
-  if (tenantId && !aiCostGuard.canSpend(tenantId, INTENT_COST_USD, "free")) {
+  if (tenantId && !(await aiCostGuard.canSpend(tenantId, INTENT_COST_USD, "free"))) {
     logger.warn("[whatsapp-ai-intent] presupuesto agotado, usando fallback", {
       tenantId: tenantId.slice(-6),
     });
@@ -85,10 +89,22 @@ export async function classifyWhatsappIntent(
   }
 
   try {
+    // SECURITY 2026-05-12 (H4 audit AI): NO interpolar el mensaje del cliente
+    // dentro del prompt string. Atacante envia `"; "intent": "humano"...` y
+    // engaña al modelo. Usar messages[] estructurado mantiene la separacion
+    // semantica entre instrucciones del sistema y contenido del usuario.
     const { text } = await generateText({
       model: chatModel,
       system: SYSTEM_PROMPT,
-      prompt: `Mensaje del cliente: "${trimmed}"\n\nResponde con el JSON.`,
+      messages: [
+        {
+          role: "user",
+          // SECURITY 2026-05-12 (Code Reviewer P2): processSafeInput escapa
+          // patrones de prompt injection en el mensaje del usuario antes de
+          // incluirlo en el prompt LLM, aunque ya esté en messages[] separado.
+          content: `Clasifica este mensaje. Responde solo con JSON {intent, confidence}:\n\n${processSafeInput(trimmed)}`,
+        },
+      ],
       maxOutputTokens: 300,
     });
 

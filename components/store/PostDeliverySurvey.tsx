@@ -52,7 +52,7 @@ function StarRating({
                 "h-8 w-8 transition-colors duration-[var(--dur-fast)]",
                 star <= active
                   ? "fill-yellow-400 text-yellow-400"
-                  : "fill-muted text-muted-foreground"
+                  : "fill-muted text-[var(--text-secondary)]"
               )}
             />
           </button>
@@ -109,17 +109,17 @@ export default function PostDeliverySurvey({
 
   if (step === "done") {
     return (
-      <div className="rounded-xl border border-[var(--accent)] bg-card dark:bg-card p-6 text-center space-y-3">
+      <div className="rounded-xl border border-[var(--accent)] bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-6 text-center space-y-3">
         <div className="flex justify-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)]">
             <Check className="h-6 w-6 text-white" />
           </div>
         </div>
         <div>
-          <p className="text-base font-semibold text-foreground dark:text-foreground">
+          <p className="text-base font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Gracias por tu opinion
           </p>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
             Tu resena nos ayuda a mejorar cada dia. Hasta la próxima en Buleje.
           </p>
         </div>
@@ -132,7 +132,7 @@ export default function PostDeliverySurvey({
                   "h-5 w-5",
                   i < rating
                     ? "fill-yellow-400 text-yellow-400"
-                    : "fill-muted text-muted-foreground"
+                    : "fill-muted text-[var(--text-secondary)]"
                 )}
               />
             ))}
@@ -145,13 +145,13 @@ export default function PostDeliverySurvey({
   // ── Survey form ────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-xl border border-border bg-card dark:bg-card p-4 space-y-4">
+    <div className="rounded-xl border border-border bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4 space-y-4">
       {/* Header */}
       <div>
-        <p className="text-base font-semibold text-foreground dark:text-foreground">
+        <p className="text-base font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           Como fue tu experiencia?
         </p>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
           Pedido #{orderId} — Tu opinion importa mucho.
         </p>
       </div>
@@ -172,7 +172,7 @@ export default function PostDeliverySurvey({
 
       {/* Comment */}
       <div className="space-y-1.5">
-        <label className="text-xs text-muted-foreground">
+        <label className="text-xs text-[var(--text-secondary)]">
           Comentario (opcional)
         </label>
         <textarea
@@ -183,7 +183,7 @@ export default function PostDeliverySurvey({
           rows={3}
           className={cn(
             "w-full rounded-md border border-border bg-background dark:bg-background",
-            "text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground",
+            "text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]",
             "px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50",
             "disabled:opacity-50"
           )}

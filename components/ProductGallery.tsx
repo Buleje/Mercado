@@ -60,7 +60,7 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
       <div className="space-y-3">
         <div
           ref={imgRef}
-          className="relative aspect-square bg-gray-50 dark:bg-surface rounded-2xl overflow-hidden cursor-zoom-in group border border-gray-100 dark:border-card-border"
+          className="relative aspect-square bg-gray-50 dark:bg-surface rounded-2xl overflow-hidden cursor-zoom-in group border border-[var(--rule-base)]"
           onClick={() => setLightbox(true)}
           onMouseEnter={() => setZoom(true)}
           onMouseLeave={() => setZoom(false)}
@@ -71,7 +71,7 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
             alt={`${alt} - imagen ${selected + 1}`}
             fill
             className={cn(
-              "object-cover transition-transform duration-300",
+              "object-cover transition-transform duration-[var(--dur-base)]",
               zoom && "scale-150",
             )}
             style={zoom ? { transformOrigin: `${zoomPos.x}% ${zoomPos.y}%` } : undefined}
@@ -80,7 +80,7 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
           <button
-            className="absolute bottom-3 right-3 h-10 w-10 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute bottom-3 right-3 h-10 w-10 rounded-full bg-white/80 dark:bg-[var(--surface-raised)]/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label="Ampliar imagen"
             onClick={(e) => {
               e.stopPropagation();
@@ -94,14 +94,14 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); navigate(-1); }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 dark:bg-[var(--surface-raised)]/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="Imagen anterior"
               >
                 <ChevronLeft className="h-5 w-5 text-gray-700 dark:text-muted" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); navigate(1); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 dark:bg-[var(--surface-raised)]/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="Imagen siguiente"
               >
                 <ChevronRight className="h-5 w-5 text-gray-700 dark:text-muted" />
@@ -135,7 +135,7 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
                   "relative h-16 w-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all",
                   i === selected
                     ? "border-primary ring-2 ring-primary/20"
-                    : "border-gray-200 dark:border-card-border hover:border-gray-400",
+                    : "border-[var(--rule-base)] hover:border-gray-400",
                 )}
               >
                 <Image

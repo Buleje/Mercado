@@ -1,5 +1,7 @@
 "use client";
 
+// CR-2.3: importar constante unificada — fuente de verdad server-side (100 pts = S/1).
+import { PTS_PER_SOL } from "@/lib/loyalty-constants";
 import { m } from "framer-motion";
 import {
   Tag,
@@ -450,7 +452,7 @@ export function CheckoutPaymentSection({
                 }
                 onKeyDown={(e) => e.key === "Enter" && onValidateCoupon()}
                 placeholder="CÓDIGO"
-                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted text-foreground bg-white dark:bg-card focus:outline-none transition-colors"
+                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none transition-colors"
                 style={{
                   borderColor:
                     "color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
@@ -490,9 +492,8 @@ export function CheckoutPaymentSection({
         )}
       </section>
 
-      {/* Loyalty redemption */}
-      {loyaltyPoints !== null && loyaltyPoints >= 50 && (() => {
-        const PTS_PER_SOL = 50;
+      {/* Loyalty redemption — CR-2.3: usa PTS_PER_SOL importado de lib/loyalty-constants */}
+      {loyaltyPoints !== null && loyaltyPoints >= PTS_PER_SOL && (() => {
         const maxSoles = Math.floor(loyaltyPoints / PTS_PER_SOL);
         return (
           <>
@@ -501,7 +502,7 @@ export function CheckoutPaymentSection({
               <SectionHeader
                 icon={Gift}
                 title="Canjear puntos"
-                hint={`Tienes ${loyaltyPoints} pts · 50 pts = S/1`}
+                hint={`Tienes ${loyaltyPoints} pts · ${PTS_PER_SOL} pts = S/1`}
               />
               <div className="flex items-center gap-3">
                 <input

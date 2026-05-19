@@ -1,6 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
+
+export interface CustomSubcategoryEntry {
+  id: string;
+  label: string;
+  imageUrl: string | null;
+}
+
+export interface CustomCategoryEntry {
+  id: string;
+  label: string;
+  imageUrl: string | null;
+  subcategories: CustomSubcategoryEntry[];
+}
 
 export interface MarketplaceStoreData {
   id?: string;
@@ -14,6 +28,10 @@ export interface MarketplaceStoreData {
   isActive: boolean;
   vacationMode?: boolean;
   vacationMessage?: string;
+  /** Campos "extras" persistidos en store-extras.json (no en Prisma). */
+  subcategory?: string | null;
+  coverageZones?: string[];
+  customCategories?: CustomCategoryEntry[];
 }
 
 const DEFAULT_STORE: MarketplaceStoreData = {
@@ -21,10 +39,13 @@ const DEFAULT_STORE: MarketplaceStoreData = {
   name: "",
   description: "",
   logoUrl: "",
-  category: "Abarrotes",
-  zone: "Centro",
+  category: "",
+  zone: "",
   commissionRate: 5,
   isActive: false,
+  subcategory: null,
+  coverageZones: [],
+  customCategories: [],
 };
 
 export function useMarketplaceTienda() {
@@ -39,7 +60,16 @@ export function useMarketplaceTienda() {
     fetch("/api/marketplace/stores?my=true")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (d && (d.slug || d.name)) setStore(d as MarketplaceStoreData);
+        if (d && (d.slug || d.name)) {
+          // El endpoint ya devuelve subcategory/coverageZones/customCategories
+          // (ver app/api/marketplace/stores/route.ts ?my=true). Normalizamos.
+          setStore({
+            ...(d as MarketplaceStoreData),
+            subcategory: d.subcategory ?? null,
+            coverageZones: Array.isArray(d.coverageZones) ? d.coverageZones : [],
+            customCategories: Array.isArray(d.customCategories) ? d.customCategories : [],
+          });
+        }
       })
       .catch(() => setError("Error al cargar datos de la tienda."))
       .finally(() => setLoading(false));
@@ -55,7 +85,7 @@ export function useMarketplaceTienda() {
     try {
       const res = await fetch("/api/marketplace/stores", {
         method: store.id ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(store),
       });
       if (!res.ok) {
@@ -63,7 +93,35 @@ export function useMarketplaceTienda() {
         throw new Error((errData as { error?: string }).error || "Error al guardar");
       }
       const data = await res.json();
-      setStore(data as MarketplaceStoreData);
+
+      // Guardar los extras (subcategory + coverageZones + customCategories) en
+      // su endpoint paralelo. No es crítico para Store.category — si falla,
+      // mostramos warning pero no rompemos el flujo.
+      try {
+        const exRes = await fetch("/api/admin/marketplace/store-extras", {
+          method: "PUT",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            subcategory: store.subcategory ?? null,
+            coverageZones: store.coverageZones ?? [],
+            customCategories: store.customCategories ?? [],
+          }),
+        });
+        if (!exRes.ok && typeof window !== "undefined") {
+          window.console.warn("[useMarketplaceTienda] store-extras PUT non-ok", exRes.status);
+        }
+      } catch (err) {
+        if (typeof window !== "undefined") {
+          window.console.warn("[useMarketplaceTienda] store-extras PUT failed", err);
+        }
+      }
+
+      setStore({
+        ...(data as MarketplaceStoreData),
+        subcategory: store.subcategory ?? null,
+        coverageZones: store.coverageZones ?? [],
+        customCategories: store.customCategories ?? [],
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {

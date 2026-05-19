@@ -25,6 +25,8 @@ import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useTenant } from "@/contexts/tenant-context";
+import { SIDEBAR_STYLE_PRESETS, type DefaultSidebarStyle } from "@/lib/admin-template";
+import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
 import {
   getVerticalConfig,
   filterTabsForVertical,
@@ -230,7 +232,7 @@ export function AdminSidebar({
   // Plantilla del superadmin — overlay reactivo que oculta módulos y reescribe labels.
   // Se actualiza solo cuando se dispara el evento custom buleje:admin-template-changed
   // o el storage event de otra pestaña.
-  const { resolveLabel, isHiddenByTemplate } = useAdminTemplateOverlay();
+  const { resolveLabel, isHiddenByTemplate, template } = useAdminTemplateOverlay();
 
   const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() => {
     if (typeof window === "undefined") return "buleje";
@@ -292,6 +294,63 @@ export function AdminSidebar({
       );
     } catch { /* ignore */ }
   }, [applyToHeader, sidebarTheme, accent]);
+
+  // ── Estilo default del sidebar heredado del superadmin (plantilla) ──
+  // El superadmin elige en /superadmin/plantilla un estilo (buleje / ejecutivo
+  // / sereno / vibrante / personalizado). El admin SIEMPRE refleja lo que el
+  // superadmin guardó — sin excepciones — para evitar drift visual entre las
+  // dos vistas.
+  //
+  // Brandon 2026-05-16: antes "personalizado" hacía `return` y dejaba el
+  // sidebar con lo que tuviera en localStorage (casi siempre "buleje"). Eso
+  // provocaba que superadmin mostrara "Personalizado" seleccionado pero admin
+  // se viera "Estilo Buleje". Ahora "personalizado" mapea al preset buleje
+  // como base — el cliente puede ajustar después desde el panel admin.
+  React.useEffect(() => {
+    const style = template.defaultSidebarStyle ?? "buleje";
+    const presetKey = (style === "personalizado" ? "buleje" : style) as Exclude<DefaultSidebarStyle, "personalizado">;
+    const preset = SIDEBAR_STYLE_PRESETS[presetKey];
+    if (!preset) return;
+    if (sidebarTheme !== preset.theme) {
+      setSidebarTheme(preset.theme);
+      try { localStorage.setItem("admin-sidebar-theme", preset.theme); } catch { /* ignore */ }
+    }
+    if (accent !== preset.accent) {
+      setAccent(preset.accent);
+      try { localStorage.setItem("admin-sidebar-accent", preset.accent); } catch { /* ignore */ }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo reaccionamos a cambios del template
+  }, [template.defaultSidebarStyle]);
+
+  // ── Sincronizar --accent en :root cuando cambia el accent local ──
+  // El sidebar (y el shell entero) usa var(--accent) masivamente. Cambiar
+  // solo el state interno no muta la variable CSS, así que el "ejecutivo"
+  // ámbar solo se veía en la barra activa pero no en bordes/halos. Idéntico
+  // patrón a SuperAdminShell:317 — un solo punto de verdad para tinte.
+  React.useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    const ACCENT_VARS: Record<AccentColor, string> = {
+      teal: "var(--accent-buleje, #00B4A6)",
+      emerald: "#10B981",
+      sky: "#0EA5E9",
+      violet: "#8B5CF6",
+      amber: "#F59E0B",
+      rose: "#F43F5E",
+    };
+    const hex = ACCENT_VARS[accent];
+    // teal usa el accent original del tema → limpiar overrides para que
+    // herede del theme global; las otras opciones sobreescriben.
+    if (accent === "teal") {
+      root.style.removeProperty("--accent");
+      root.style.removeProperty("--accent-soft");
+      root.style.removeProperty("--accent-600");
+    } else {
+      root.style.setProperty("--accent", hex);
+      root.style.setProperty("--accent-soft", `${hex}26`);
+      root.style.setProperty("--accent-600", hex);
+    }
+  }, [accent]);
 
   // ── Hidden categories (persisted in localStorage) ──
   const [hiddenCategories, setHiddenCategories] = React.useState<Set<string>>(() => {
@@ -488,12 +547,12 @@ export function AdminSidebar({
         };
       default: // light
         return {
-          bg: "bg-white dark:bg-card",
+          bg: "bg-[var(--surface-raised)]",
           text: "text-[var(--text-secondary)]",
           hover: "hover:bg-[var(--accent-soft)]/40 hover:text-[var(--text-primary)]",
-          border: "border-[var(--rule-soft)] dark:border-card-border",
+          border: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
           activeItem: "bg-[var(--accent-soft)] text-primary font-semibold shadow-[inset_0_0_0_1px_color-mix(in oklab, var(--accent) 20%, transparent)]",
-          headerBorder: "border-[var(--rule-soft)] dark:border-card-border",
+          headerBorder: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
         };
     }
   }, [sidebarTheme]);
@@ -642,11 +701,11 @@ export function AdminSidebar({
         compras: "text-orange-300/90",
         finanzas: "text-emerald-300/90",
         clientes: "text-[var(--data-error-500)]/90",
-        "marketplace-ops": "text-fuchsia-300/90",
+        "marketplace-ops": "text-[var(--accent)]/90",
         analytics: "text-cyan-300/90",
         comunicacion: "text-teal-300/90",
         documentos: "text-slate-300/90",
-        "mi-tienda": "text-pink-300/90",
+        "mi-tienda": "text-[var(--accent)]/90",
         metas: "text-yellow-300/90",
       }
     : {
@@ -657,11 +716,11 @@ export function AdminSidebar({
         compras: "text-orange-600",
         finanzas: "text-[var(--data-success-600)]",
         clientes: "text-[var(--data-error-500)]",
-        "marketplace-ops": "text-fuchsia-600",
+        "marketplace-ops": "text-[var(--accent)]",
         analytics: "text-cyan-600",
         comunicacion: "text-[var(--accent-dark)]",
         documentos: "text-slate-600",
-        "mi-tienda": "text-pink-600",
+        "mi-tienda": "text-[var(--accent)]",
         metas: "text-yellow-600",
       };
 
@@ -730,7 +789,7 @@ export function AdminSidebar({
           {activeTenantLogo ? (
             <div className={cn(
               "relative shrink-0",
-              isDarkTheme && "drop-shadow-[0_0_12px_color-mix(in oklab, var(--accent) 25%, transparent)]"
+              isDarkTheme && "drop-shadow-md"
             )}>
               <Image
                 src={activeTenantLogo}
@@ -738,19 +797,24 @@ export function AdminSidebar({
                 width={40}
                 height={40}
                 className={cn(
-                  "h-10 w-10 rounded-xl object-cover",
+                  // Brandon mayo 2026 v4: fondo blanco SIEMPRE — el logo
+                  // del tenant tiene mejor contraste sobre blanco que sobre
+                  // gradient verde/accent, especialmente en sidebar oscuro.
+                  "h-10 w-10 rounded-xl object-contain bg-white p-0.5",
                   isDarkTheme
-                    ? "ring-1 ring-[color-mix(in_oklab,var(--accent)_45%,transparent)]"
-                    : "ring-2 ring-gray-100 dark:ring-card-border",
+                    ? "ring-2 ring-white/40"
+                    : "ring-2 ring-gray-200 dark:ring-card-border",
                 )}
               />
             </div>
           ) : (
             <div className={cn(
-              "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
+              // Sin logo del tenant: usamos BulejeMark sobre blanco con
+              // accent color para el icon (mantiene identidad de marca).
+              "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-white ring-2",
               isDarkTheme
-                ? "bg-linear-to-br from-[color-mix(in_oklab,var(--accent)_42%,transparent)] to-[color-mix(in_oklab,var(--accent)_8%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--accent)_50%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] shadow-[0_0_16px_-2px_color-mix(in_oklab,var(--accent)_45%,transparent)]"
-                : "bg-linear-to-br from-primary/15 to-primary/5 ring-1 ring-primary/20 text-primary",
+                ? "ring-white/40 text-[color:var(--accent)] shadow-[var(--shadow-md)]"
+                : "ring-gray-200 text-primary shadow-sm",
             )}>
               <BulejeMark size={22} strokeWidth={1.75} />
             </div>
@@ -762,7 +826,7 @@ export function AdminSidebar({
                   "font-bold text-sm leading-tight tracking-tight truncate flex-1 min-w-0",
                   isDarkTheme
                     ? "text-white"
-                    : "text-[var(--text-primary)] dark:text-foreground",
+                    : "text-[var(--text-primary)] dark:text-[var(--text-primary)]",
                 )}>
                   {verticalConfig.branding?.sidebarTitle ?? activeTenantName ?? "Buleje"}
                 </p>
@@ -937,6 +1001,9 @@ export function AdminSidebar({
                       )} />
 
                       <span className="truncate flex-1 text-left">{displayLabel}</span>
+                      {isSingleTab && (
+                        <ScopeBadge tabId={catTabs[0] as string} variant="dot" />
+                      )}
 
                       {totalAlerts > 0 && (
                         <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
@@ -968,7 +1035,7 @@ export function AdminSidebar({
                       const tipText = MODULE_INFO[tipTabId as Tab]?.tip;
                       if (!tipText) return null;
                       return (
-                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity duration-100 delay-[60ms] z-50">
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity duration-[var(--dur-micro)] delay-[60ms] z-50">
                           <div className="relative bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 max-w-[220px] leading-relaxed shadow-lg border border-[var(--rule-base)] dark:border-white/10">
                             <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-white dark:border-r-[var(--surface-raised)]" />
                             {tipText}
@@ -1015,6 +1082,7 @@ export function AdminSidebar({
                                       : (isDarkTheme ? "text-white/45" : "text-[var(--text-tertiary)]")
                                   )} />
                                   <span className="truncate">{subTabLabel}</span>
+                                  <ScopeBadge tabId={subTabId} variant="dot" />
                                   {isFeaturedSub && subAlertCount === 0 && subTabId !== "asistente-ia" && (
                                     <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--data-warning-500)]/20 text-[var(--data-warning-700)] dark:text-[var(--data-warning-400)] leading-none">
                                       Destacado
@@ -1085,9 +1153,16 @@ export function AdminSidebar({
                 )}
                 <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110", tab === id ? "text-[var(--data-success-500)]" : "")} />
                 <span className="truncate flex-1 text-left">{label}</span>
+                <ScopeBadge tabId={id} variant="chip" />
                 {alertCount > 0 && (
-                  <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
-                    {alertCount}
+                  // Brandon mayo 2026: badge agrandado + tipografía más fuerte
+                  // + ring para que se note sin animación constante (la pulse
+                  // continua cansa la vista). Solo pulse 1x cuando aparece.
+                  <span
+                    className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-[var(--data-error-500)] text-white text-xs font-extrabold tabular-nums leading-none ring-2 ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
+                    title={`${alertCount} ${alertCount === 1 ? "alerta" : "alertas"} sin leer`}
+                  >
+                    {alertCount > 99 ? "99+" : alertCount}
                   </span>
                 )}
               </button>
@@ -1118,7 +1193,12 @@ export function AdminSidebar({
                   {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-white/70" />}
                   <Icon className="h-5 w-5 shrink-0 transition-transform duration-[var(--dur-base)]" />
                   {alertCount > 0 && (
-                    <span className="absolute top-1 right-1 text-[length:var(--ts-2xs)] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
+                    // Modo compact: badge en esquina sup-der del icono con ring
+                    // que separa visualmente del icon. Sin animación.
+                    <span
+                      className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error-500)] text-white text-xs font-extrabold tabular-nums leading-none ring-2 ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
+                      title={`${alertCount} ${alertCount === 1 ? "alerta" : "alertas"} sin leer`}
+                    >
                       {alertCount > 9 ? "9+" : alertCount}
                     </span>
                   )}
@@ -1226,7 +1306,7 @@ export function AdminSidebar({
       {configMode && !effectiveCompact && !presentationMode && (
         <aside
           className={cn(
-            "hidden md:flex fixed top-0 bottom-0 z-50 flex-col overflow-hidden border-r shadow-2xl",
+            "hidden md:flex fixed top-0 bottom-0 z-50 flex-col overflow-hidden border-r shadow-[var(--shadow-xl)]",
             themeClasses.border,
           )}
           style={{ left: 0, width: 400 }}
@@ -1283,7 +1363,7 @@ export function AdminSidebar({
             style={{ position: "fixed", top: sidebarFlyout.top, left: 264, zIndex: 50 }}
             onMouseEnter={() => { if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current); }}
             onMouseLeave={() => { flyoutTimerRef.current = setTimeout(() => onSidebarFlyoutChange(null), 150); }}
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"
           >
             {catTabs.map(tabId => {
               const tabInfo = allTabs.find(t => t.id === tabId);
@@ -1297,11 +1377,12 @@ export function AdminSidebar({
                     "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors",
                     tab === tabId
                       ? "bg-primary/10 text-primary font-semibold"
-                      : "text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface font-medium"
+                      : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface font-medium"
                   )}
                 >
                   <FlyoutTabIcon className="h-4 w-4 shrink-0" />
                   <span className="truncate flex-1 text-left">{resolveLabel(tabId, tabInfo.label)}</span>
+                  <ScopeBadge tabId={tabId} variant="chip" />
                   {tab === tabId && <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
                 </button>
               );
@@ -1345,7 +1426,7 @@ export function AdminSidebar({
           onClick={() => setShowIndustryModal(false)}
         >
           <div
-            className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-sm mx-4 p-6"
+            className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-sm mx-4 p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-base font-bold text-[var(--text-primary)] mb-1">

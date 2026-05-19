@@ -73,6 +73,9 @@ SESSION_HANDOFF*.md
 /.claude/cache/
 /.claude/settings.local.json
 /.claude/scheduled_tasks.lock
+/.claude/.watchdog.log
+/.claude/.watchdog.pid
+/.claude/.mem-guard.log
 
 # Phase 3 runtime artifacts (never commit)
 /backups/db/*.sql
@@ -166,6 +169,7 @@ lint-output.txt
 tsc-errors.log
 check-tenants.sql
 reports/smoke-test/
+reports/footer-redesign/
 reports/baseline/2026-04-17-ds-sprint-c/lint-design-tokens-pre.txt
 
 # Visual verify artifacts (transient — solo baselines se commitean)
@@ -185,3 +189,16 @@ reports/forecasting/
 # Lighthouse Chrome temp dirs (Windows path leaked into WSL)
 C:*lighthouse.*
 lighthouse.*
+
+# Runtime data JSONs (analytics, clicks) — generados por endpoints en disco,
+# no son código. Schemas y seeds iniciales sí se versionan.
+lib/data/marketplace-category-clicks.json
+lib/data/*-runtime.json
+lib/data/store-extras.json
+
+# RLS credentials (passwords reales — nunca commitear)
+docs/security/rls-credentials-*.md
+!docs/security/rls-credentials-TEMPLATE.md
+
+# Vercel env backups (contienen secrets — NUNCA commitear)
+docs/security/vercel-env-backups/

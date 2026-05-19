@@ -109,9 +109,9 @@ function computePoints(amount: number): number {
 // ── CustomersDB ───────────────────────────────────────────────────────────────
 
 export const CustomersDB = {
-  async getAll(tenantId: string): Promise<DbCustomer[]> {
+  async getAll(tenantId: string, limit = 2000): Promise<DbCustomer[]> {
     const where: Record<string, unknown> = { tenantId };
-    const rows = await prisma.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" } });
+    const rows = await prisma.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" }, take: limit });
     return rows.map(mapCustomer);
   },
 
@@ -385,6 +385,7 @@ export const ShoppingListsDB = {
     const existing = await prisma.shoppingList.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     if (data.items) {
+      // eslint-disable-next-line no-restricted-syntax -- ShoppingListItem indirecto (ADR-101) FK→ShoppingList. shoppingListId pre-validado via findFirst con tenantId arriba.
       await prisma.shoppingListItem.deleteMany({ where: { shoppingListId: id } });
       await prisma.shoppingListItem.createMany({ data: data.items.map(i => ({ shoppingListId: id, productId: i.productId, quantity: i.quantity })) });
     }

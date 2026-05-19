@@ -56,7 +56,7 @@ function TestiCard({ item, position }: { item: TItem; position: "left" | "center
         transition: "transform 0.38s ease-out, opacity 0.38s ease-out",
       }}
       className={cn(
-        "relative bg-white dark:bg-card rounded-2xl border dark:border-card-border flex flex-col h-full",
+        "relative bg-[var(--surface-raised)] rounded-2xl border dark:border-[var(--rule-base)] flex flex-col h-full",
         isCenter
           ? cn(
               "p-7 shadow-xl",
@@ -82,7 +82,7 @@ function TestiCard({ item, position }: { item: TItem; position: "left" | "center
         className={cn(
           "leading-relaxed mb-5 flex-1",
           isCenter
-            ? "text-base text-foreground line-clamp-5"
+            ? "text-base text-[var(--text-primary)] line-clamp-5"
             : "text-sm text-gray-500 line-clamp-3"
         )}
       >
@@ -115,7 +115,7 @@ function TestiCard({ item, position }: { item: TItem; position: "left" | "center
           <p
             className={cn(
               "font-bold",
-              isCenter ? "text-foreground text-sm" : "text-gray-600 text-xs"
+              isCenter ? "text-[var(--text-primary)] text-sm" : "text-gray-600 text-xs"
             )}
           >
             {item.name}
@@ -235,7 +235,7 @@ export default function Testimonials() {
             <Star className="w-3.5 h-3.5 fill-primary" />
             Reseñas verificadas
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             Lo que dicen nuestros{" "}
             <span className="relative inline-block text-primary">
               clientes
@@ -254,7 +254,7 @@ export default function Testimonials() {
                 <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
               ))}
             </div>
-            <span className="font-extrabold text-foreground text-lg">4.8</span>
+            <span className="font-extrabold text-[var(--text-primary)] text-lg">4.8</span>
             <span className="text-muted text-sm">·</span>
             <span className="text-muted text-sm font-medium">+800 reseñas</span>
           </div>
@@ -364,7 +364,7 @@ export default function Testimonials() {
                 key={i}
                 onClick={() => goTo(i)}
                 className={cn(
-                  "h-2 rounded-full transition-all duration-300",
+                  "h-2 rounded-full transition-all duration-[var(--dur-base)]",
                   i === safeCurrent ? "w-6 bg-primary" : "w-2 bg-primary/30 hover:bg-primary/50"
                 )}
                 aria-label={`Testimonio ${i + 1}`}

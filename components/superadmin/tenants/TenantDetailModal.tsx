@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   X, Building2, ExternalLink, Loader2,
   Copy, Globe, RotateCcw, KeyRound, ShoppingBag,
-  Eye, EyeOff, LogIn, AlertTriangle,
+  Eye, EyeOff, AlertTriangle,
 } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
@@ -30,27 +30,31 @@ function pct(u: number, m: number) {
   return m === -1 ? 0 : Math.min(100, Math.round((u / m) * 100));
 }
 
-interface SavedCredential {
-  username: string;
-  password: string;
-  savedAt?: string;
-}
-
+/**
+ * SECURITY 2026-05-16 (P0 fix): eliminado el storage de credenciales en
+ * `localStorage["sa-cred-${slug}"]`. Antes este modal guardaba
+ * {username, password} como JSON en plaintext — robable por cualquier
+ * XSS o extensión maliciosa. El feature "Guardar credenciales" + "Iniciar
+ * como X" usaba `?auto=1` en /admin/login para auto-rellenar.
+ *
+ * Ahora:
+ *  - Reset password muestra la contraseña temporal SOLO en `resetResult`
+ *    (estado React efímero, vive en memoria del componente).
+ *  - El superadmin debe copiarla a su gestor de contraseñas y pegarla
+ *    manualmente en la pestaña de admin/login (que ya tiene autocomplete
+ *    de browser).
+ *  - Eliminados: handleSaveCredentials (prompt → localStorage),
+ *    handleLoginWithSaved (auto-login URL), renderSavedCredentials,
+ *    useEffect de lectura de localStorage.
+ */
 export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
   const t = tenant;
   const [showPass, setShowPass] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
   const [credCopied, setCredCopied] = useState(false);
-  const [savedCredentials, setSavedCredentials] = useState<string | null>(null);
+  const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
   const storeInfo = t.stores?.[0];
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`sa-cred-${t.slug}`);
-      if (saved) setSavedCredentials(saved);
-    } catch { /* silent */ }
-  }, [t.slug]);
 
   const handleResetPassword = async () => {
     setResetLoading(true); setResetResult(null);
@@ -58,41 +62,12 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
       const res = await fetch(`/api/superadmin/tenants/${t.slug}/reset-password`, { method: "POST", credentials: "include" });
       const data = await res.json() as { tempPassword?: string; error?: string };
       if (res.ok && data.tempPassword) {
-        setResetResult(`Contraseña temporal: ${data.tempPassword}`);
-        try {
-          localStorage.setItem(`sa-cred-${t.slug}`, JSON.stringify({
-            username: "admin",
-            password: data.tempPassword,
-            savedAt: new Date().toISOString(),
-          }));
-          setSavedCredentials(JSON.stringify({ username: "admin", password: data.tempPassword }));
-        } catch { /* silent */ }
+        setResetResult(data.tempPassword);
       } else {
-        setResetResult(res.ok ? "Reset enviado." : `Error: ${data.error ?? "No se pudo resetear"}`);
+        setResetResult(res.ok ? null : `Error: ${data.error ?? "No se pudo resetear"}`);
       }
     } catch { setResetResult("Error de red."); }
     finally { setResetLoading(false); }
-  };
-
-  const handleSaveCredentials = () => {
-    const username = prompt("Usuario de la tienda:", "admin");
-    if (!username) return;
-    const password = prompt("Contraseña:");
-    if (!password) return;
-    try {
-      const cred = JSON.stringify({ username, password, savedAt: new Date().toISOString() });
-      localStorage.setItem(`sa-cred-${t.slug}`, cred);
-      setSavedCredentials(cred);
-    } catch { /* silent */ }
-  };
-
-  const handleLoginWithSaved = () => {
-    if (!savedCredentials) return;
-    try {
-      const cred = JSON.parse(savedCredentials) as SavedCredential;
-      const loginUrl = `/admin/login?user=${encodeURIComponent(cred.username)}&tenant=${encodeURIComponent(t.slug)}&auto=1`;
-      window.open(loginUrl, "_blank");
-    } catch { /* silent */ }
   };
 
   const handleCopyInfo = () => {
@@ -101,23 +76,18 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
     setTimeout(() => setCredCopied(false), 2000);
   };
 
-  const renderSavedCredentials = () => {
-    if (!savedCredentials) return null;
-    try {
-      const cred = JSON.parse(savedCredentials) as SavedCredential;
-      return (
-        <div className="bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-[var(--accent-dark)]/40 rounded-lg p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--accent)] uppercase tracking-wider">Credenciales guardadas</span>
-            {cred.savedAt && <span className="text-[length:var(--ts-xs)] text-[var(--accent)]">{new Date(cred.savedAt).toLocaleDateString("es-PE")}</span>}
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div><span className="text-[var(--accent)] text-[length:var(--ts-xs)]">Usuario</span><p className="font-mono text-teal-800 dark:text-teal-200">{cred.username}</p></div>
-            <div><span className="text-[var(--accent)] text-[length:var(--ts-xs)]">Contraseña</span><p className="font-mono text-teal-800 dark:text-teal-200">{showPass ? cred.password : "••••••"}</p></div>
-          </div>
-        </div>
-      );
-    } catch { return null; }
+  const handleCopyTempPassword = () => {
+    if (!resetResult || resetResult.startsWith("Error")) return;
+    void navigator.clipboard.writeText(resetResult);
+    setTempPasswordCopied(true);
+    setTimeout(() => setTempPasswordCopied(false), 2000);
+  };
+
+  const handleOpenAdminLogin = () => {
+    // Solo precarga el username "admin" (no el password). El superadmin
+    // debe pegar la contraseña manualmente — no se transmite por URL.
+    const loginUrl = `/admin/login?user=admin&tenant=${encodeURIComponent(t.slug)}`;
+    window.open(loginUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -200,8 +170,6 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
               )}
             </div>
 
-            {renderSavedCredentials()}
-
             <div className="flex flex-col sm:flex-row gap-2 pt-1">
               <button type="button" onClick={handleCopyInfo} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold">
                 <Copy className="w-3.5 h-3.5" /> {credCopied ? "¡Copiado!" : "Copiar info"}
@@ -209,20 +177,38 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
               <button type="button" onClick={() => void handleResetPassword()} disabled={resetLoading} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/40 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-semibold disabled:opacity-50">
                 {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Reset contraseña
               </button>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button type="button" onClick={handleSaveCredentials} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/40 border border-[var(--data-success-500)] dark:border-[var(--data-success-500)]/40 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-semibold hover:bg-[var(--data-success-100)] dark:hover:bg-[var(--data-success-500)]/60">
-                <KeyRound className="w-3.5 h-3.5" /> Guardar credenciales
+              <button type="button" onClick={handleOpenAdminLogin} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold">
+                <ExternalLink className="w-3.5 h-3.5" /> Abrir login
               </button>
-              {savedCredentials && (
-                <button type="button" onClick={handleLoginWithSaved} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-white text-xs font-semibold" style={{ background: "linear-gradient(135deg, #3b82f6, #6366f1)" }}>
-                  <LogIn className="w-3.5 h-3.5" /> Iniciar como {t.name}
-                </button>
-              )}
             </div>
+            {/*
+              SECURITY 2026-05-16: la contraseña temporal del reset se
+              muestra UNA SOLA VEZ tras ejecutar el reset. NO se persiste
+              en localStorage ni se transmite por URL. El superadmin debe
+              copiarla manualmente (botón "Copiar") y pegarla en el form
+              de admin/login que abre la pestaña.
+            */}
             {resetResult && (
-              <div className="text-xs bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-[var(--accent-dark)]/40 text-[var(--accent)] rounded-lg px-3 py-2 font-mono">
-                {resetResult}
+              <div className="text-xs bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 border-2 border-[var(--data-warning-500)]/40 rounded-lg px-3 py-2.5 space-y-2">
+                <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-500)] flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Contraseña temporal (se muestra una sola vez)
+                </p>
+                {resetResult.startsWith("Error") ? (
+                  <p className="font-mono text-[var(--data-error-500)]">{resetResult}</p>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 font-mono text-sm font-extrabold text-[var(--text-primary)] bg-[var(--surface-raised)] px-2 py-1 rounded select-all">
+                      {showPass ? resetResult : "•".repeat(Math.max(6, resetResult.length))}
+                    </code>
+                    <button type="button" onClick={() => setShowPass((v) => !v)} className="text-[var(--text-tertiary)] hover:text-[var(--accent)]" aria-label="Mostrar/ocultar">
+                      {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                    <button type="button" onClick={handleCopyTempPassword} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[var(--data-warning-500)] text-white text-xs font-extrabold">
+                      <Copy className="w-3 h-3" /> {tempPasswordCopied ? "Copiado" : "Copiar"}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -106,7 +106,7 @@ function ToggleRow({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-extrabold text-foreground">{label}</p>
+          <p className="text-sm font-extrabold text-[var(--text-primary)]">{label}</p>
           {sublabel && (
             <p className="text-xs text-muted mt-0.5">{sublabel}</p>
           )}
@@ -153,7 +153,7 @@ function SelectPills<T extends string>({
           />
         </div>
         <div>
-          <p className="text-sm font-extrabold text-foreground">{label}</p>
+          <p className="text-sm font-extrabold text-[var(--text-primary)]">{label}</p>
           {sublabel && <p className="text-xs text-muted">{sublabel}</p>}
         </div>
       </div>
@@ -169,7 +169,7 @@ function SelectPills<T extends string>({
               className={cn(
                 "flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-sm font-bold transition-all",
                 !active &&
-                  "text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
+                  "text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
               )}
               style={
                 active
@@ -247,7 +247,7 @@ function LinkRow({
         <p
           className={cn(
             "text-sm font-extrabold",
-            danger ? "text-[var(--data-error-600)] dark:text-red-400" : "text-foreground",
+            danger ? "text-[var(--data-error-600)] dark:text-red-400" : "text-[var(--text-primary)]",
           )}
         >
           {label}
@@ -261,7 +261,7 @@ function LinkRow({
           "h-4 w-4 shrink-0 transition-colors",
           danger
             ? "text-[var(--data-error-500)]/40"
-            : "text-muted group-hover:text-foreground",
+            : "text-muted group-hover:text-[var(--text-primary)]",
         )}
         strokeWidth={2.5}
       />
@@ -514,7 +514,7 @@ export default function PreferenciasPage() {
       >
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           {/* ─── SIDEBAR ─────────────────────────────────── */}
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pr-1">
             {/* Navegador rápido */}
             <div
               className="rounded-2xl p-2"
@@ -532,7 +532,7 @@ export default function PreferenciasPage() {
                   <a
                     key={key}
                     href={anchor}
-                    className="flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-all"
+                    className="flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-all"
                   >
                     <span className="flex items-center gap-2">
                       <Icon className="h-4 w-4" strokeWidth={2.25} />
@@ -571,19 +571,19 @@ export default function PreferenciasPage() {
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center justify-between">
                     <span className="text-muted">Canales activos</span>
-                    <span className="font-extrabold text-foreground tabular-nums">
+                    <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
                       {activeChannelsCount}
                     </span>
                   </li>
                   <li className="flex items-center justify-between">
                     <span className="text-muted">Tipos activados</span>
-                    <span className="font-extrabold text-foreground tabular-nums">
+                    <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
                       {activeNotifsCount}
                     </span>
                   </li>
                   <li className="flex items-center justify-between">
                     <span className="text-muted">Modo</span>
-                    <span className="font-extrabold text-foreground capitalize">
+                    <span className="font-extrabold text-[var(--text-primary)] capitalize">
                       {theme === "system" ? "Auto" : theme}
                     </span>
                   </li>
@@ -730,7 +730,7 @@ export default function PreferenciasPage() {
             <div>
               <Link
                 href="/mi-panel"
-                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-muted hover:text-foreground transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-muted hover:text-[var(--text-primary)] transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
                 Volver a mi cuenta

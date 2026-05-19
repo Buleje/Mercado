@@ -207,15 +207,23 @@ describe("Integridad: fail-closed para roles inexistentes", () => {
     },
   );
 
-  it("roles en AdminRole sin entrada en PERMISSIONS (owner, manager, analista) → denegados", () => {
-    // Estos roles existen en el tipo AdminRole pero no tienen entrada en PERMISSIONS
-    // → fail-closed: ningún permiso concedido
-    const rolesWithoutPermissions = ["owner", "manager", "analista"] as Role[];
-    for (const role of rolesWithoutPermissions) {
-      expect(hasAnyPermission(role, "orders")).toBe(false);
-      expect(hasAnyPermission(role, "products")).toBe(false);
-      expect(getAccessibleResources(role)).toEqual([]);
-    }
+  it("owner/manager/analista declarados explícitamente en PERMISSIONS (audit 05-P1-3)", () => {
+    // Audit 2026-05-17 05-P1-3: estos roles ANTES no tenían entrada en
+    // PERMISSIONS (fail-closed) pero require-admin los pasaba por
+    // managementTier bypass → inconsistencia. Ahora se declaran explícitos.
+    // owner ~ admin (mismas keys), manager sin delete catálogo/admin-users,
+    // analista solo read.
+    expect(hasAnyPermission("owner", "orders")).toBe(true);
+    expect(checkPermission("owner", "admin-users", "delete")).toBe(true);
+
+    expect(hasAnyPermission("manager", "orders")).toBe(true);
+    expect(checkPermission("manager", "admin-users", "write")).toBe(false);
+    expect(checkPermission("manager", "products", "delete")).toBe(false);
+
+    expect(hasAnyPermission("analista", "orders")).toBe(true);
+    expect(checkPermission("analista", "orders", "read")).toBe(true);
+    expect(checkPermission("analista", "orders", "write")).toBe(false);
+    expect(checkPermission("analista", "products", "delete")).toBe(false);
   });
 
   it("superadmin sin entrada en PERMISSIONS tampoco tiene grants", () => {

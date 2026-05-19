@@ -111,7 +111,7 @@ export default function CustomerJourneyDemoPage() {
               currentStatus="en_camino"
               etaMinutes={18}
               driverName="Carlos Medina"
-              driverPhone="916409675"
+              driverPhone="929340532"
               events={[
                 { status: "confirmado", at: "14:05" },
                 { status: "preparando", at: "14:08" },

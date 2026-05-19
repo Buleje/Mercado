@@ -55,8 +55,14 @@ export interface DashboardAggregates {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-/** Order statuses that count as "completed revenue" for dashboard KPIs. */
-const COMPLETED_STATUSES = ["entregado", "confirmado", "en_camino"] as const;
+/**
+ * Order statuses that count as "completed revenue" for dashboard KPIs.
+ *
+ * Brandon mayo 2026 v7: ESTRICTO. Antes incluía `confirmado` y `en_camino`
+ * que aún pueden ser cancelados — eso inflaba revenue/ventas. Ahora solo
+ * cuenta el pedido cuando llegó al cliente final (`entregado`).
+ */
+const COMPLETED_STATUSES = ["entregado"] as const;
 
 /** Order statuses that count as "active cart in flight". */
 const ACTIVE_CART_STATUSES = ["pendiente", "confirmado"] as const;

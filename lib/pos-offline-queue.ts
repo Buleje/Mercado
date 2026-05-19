@@ -86,12 +86,31 @@ const MAX_RETRIES = 5;
 export async function syncPendingSales(): Promise<number> {
   const pending = await getAll();
   let synced = 0;
+
+  // Audit 2026-05-17 07-P1-1: agregar CSRF headers al sync offline.
+  // Antes, syncPendingSales hacía POST /api/sales SIN x-csrf-token,
+  // mientras que useCSRF + usePOSOffline SÍ lo enviaban — endpoint
+  // rechazaba el resync con 403 por inconsistencia. Ahora delegamos
+  // al helper csrfHeaders del cliente (lib/csrf-client.ts) que lee la
+  // cookie csrf-token y la replica como header (double-submit).
+  // Import dinámico porque el module se carga también en SW context.
+  let csrfHeadersFn: ((extra?: HeadersInit) => HeadersInit) | null = null;
+  try {
+    const mod = await import("@/lib/csrf-client");
+    csrfHeadersFn = mod.csrfHeaders;
+  } catch {
+    // SW context o csrf-client no disponible — degrade gracefully
+  }
+
   for (const sale of pending) {
     if (sale.retries >= MAX_RETRIES) continue; // skip dead-letter entries
     try {
+      const headers: HeadersInit = csrfHeadersFn
+        ? csrfHeadersFn({ "Content-Type": "application/json" })
+        : { "Content-Type": "application/json" };
       const res = await fetch("/api/sales", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(sale.payload),
       });
       if (res.ok) {

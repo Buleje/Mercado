@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -30,6 +31,25 @@ export async function GET(
     const turno = await prisma.turno.findUnique({ where: { id } });
     if (!turno || turno.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Turno no encontrado" }, { status: 404 });
+    }
+
+    // SECURITY 2026-05-17 (audit A2): cajero solo puede ver SU summary.
+    // Antes cualquier cajero del tenant podía consultar ventasTotal, top
+    // productos y métodos de pago de un compañero. Sigue el mismo patrón
+    // que el cierre de turno (A1) y /api/turnos/activo.
+    //
+    // Audit 2026-05-17 B-P0-1: comparar adminUserId (CUID) con auth.username
+    // (string) siempre daba 403. Resolver username → adminUserId con
+    // AdminUsersDB.resolveIdByUsername (mismo patrón que activo:25 y cerrar).
+    const isCajeroOnly = auth.role === "cajero";
+    if (isCajeroOnly) {
+      const resolvedId = await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username);
+      if (!resolvedId || turno.adminUserId !== resolvedId) {
+        return NextResponse.json(
+          { error: "No tenés permiso para ver el resumen de otro cajero" },
+          { status: 403 },
+        );
+      }
     }
 
     // T2: scoped por cashierId del turno + ventana temporal abrioEn..(cerroEn|now).

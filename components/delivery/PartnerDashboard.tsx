@@ -10,13 +10,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, ArrowRight, RefreshCw, AlertTriangle } from "@buleje/design-system/icons";
 import {
-  MotoIcon,
   PackageIcon,
-  PinIcon,
-  TimerIcon,
-  StarBadge,
-  CheckBadge,
-  CashIcon,
   EmptyRoadIllustration,
   LiveSignal,
 } from "./icons";
@@ -168,7 +162,7 @@ export default function PartnerDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-8">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-8">
       {/* ── Hero status (solo desktop) ───────────────────────── */}
       <header className="hidden lg:flex items-center justify-between">
         <div>
@@ -198,11 +192,12 @@ export default function PartnerDashboard() {
           SECCIÓN 1 — HOY · datos del momento
           ══════════════════════════════════════════════════════════════ */}
       <section className="space-y-4">
-        {/* Hero ganancias — full-width, lo más visible */}
+        {/* Hero ganancias — full-width, lo más visible. La meta diaria queda
+            como default del propio componente (S/80 documentado) hasta que se
+            implemente el endpoint /api/delivery/me/goal personalizado. */}
         <EarningsTodayHero
           isOnline={me.isOnline}
           onlineSinceMs={onlineSinceMs}
-          goal={80}
         />
 
         {/* Chat + SOS — solo si hay pedido activo (acción inmediata) */}
@@ -219,10 +214,10 @@ export default function PartnerDashboard() {
           desc="Bonus activos y zonas con más demanda"
         />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-5">
             <StreaksAndBonusCard isOnline={me.isOnline} />
           </div>
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-7">
             <HotZonesPanel
               isOnline={me.isOnline}
               currentLat={me.lat}
@@ -252,7 +247,7 @@ export default function PartnerDashboard() {
       {me.currentOrderId && (
         <Link
           href={`/delivery-app/pedido/${me.currentOrderId}`}
-          className="block group rounded-3xl border-2 border-[var(--accent)] bg-gradient-to-br from-[var(--accent-soft)] to-transparent p-5 lg:p-6 transition-transform hover:translate-y-[-2px]"
+          className="block group rounded-3xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-5 lg:p-6 transition-colors hover:bg-[var(--accent)]/15"
         >
           <div className="flex items-start gap-4">
             <div className="h-14 w-14 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
@@ -309,44 +304,13 @@ export default function PartnerDashboard() {
         )}
 
         {offers.length > 0 && (
-          <div className="grid sm:grid-cols-2 gap-3 lg:gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
             {offers.map((o) => (
               <OfferCard key={o.id} offer={o} />
             ))}
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function Stat({
-  icon,
-  value,
-  label,
-  tone,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-  tone: "accent" | "success" | "amber";
-}) {
-  const toneRing: Record<typeof tone, string> = {
-    accent: "bg-[var(--accent-soft)]",
-    success: "bg-[var(--data-success-500)]/10",
-    amber: "bg-[var(--brand-secondary)]/10",
-  } as const;
-  return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 lg:p-5 text-center">
-      <div className={`mx-auto h-10 w-10 rounded-xl flex items-center justify-center mb-2 ${toneRing[tone]}`}>
-        {icon}
-      </div>
-      <div className="text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">
-        {value}
-      </div>
-      <div className="mt-0.5 text-xs lg:text-sm font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
-        {label}
-      </div>
     </div>
   );
 }

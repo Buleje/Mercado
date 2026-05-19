@@ -4,6 +4,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 async function requirePlatform(req: NextRequest) {
@@ -67,6 +68,8 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-tenants-X-delete"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const session = await requirePlatform(req);
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

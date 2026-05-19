@@ -67,7 +67,7 @@ export default function StockPrediction() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+          <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <TrendingDown className="h-5 w-5 text-primary" />
             Prediccion de stock
           </SectionTitle>
@@ -78,7 +78,7 @@ export default function StockPrediction() {
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -109,10 +109,10 @@ export default function StockPrediction() {
 
       {/* Loading */}
       {loading && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden animate-pulse">
-          <div className="h-10 bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border" />
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden animate-pulse">
+          <div className="h-10 bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]" />
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
+            <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0">
               <div className="h-4 w-32 bg-gray-200 dark:bg-surface rounded-full" />
               <div className="h-4 w-16 bg-gray-100 dark:bg-surface/60 rounded-full" />
               <div className="h-4 w-20 bg-gray-100 dark:bg-surface/60 rounded-full" />
@@ -132,7 +132,7 @@ export default function StockPrediction() {
 
       {/* Empty state */}
       {!loading && !error && items.length === 0 && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-8 text-center">
           <Package className="h-10 w-10 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">No hay datos suficientes para predecir el stock</p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Se necesitan ventas registradas en los últimos 30 días</p>
@@ -141,10 +141,10 @@ export default function StockPrediction() {
 
       {/* Table */}
       {!loading && !error && items.length > 0 && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <tr>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoria</th>
@@ -163,13 +163,13 @@ export default function StockPrediction() {
                       urgencyBg(item.daysRemaining)
                     )}
                   >
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground max-w-48 truncate">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] max-w-48 truncate">
                       {item.productName}
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">
                       {item.category}
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                       {item.stock} <span className="text-xs font-normal text-[var(--text-tertiary)]">{item.unit}</span>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">
@@ -198,7 +198,7 @@ export default function StockPrediction() {
               </tbody>
             </table>
           </div>
-          <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-[var(--rule-soft)] dark:border-card-border text-xs text-[var(--text-tertiary)] dark:text-muted">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-xs text-[var(--text-tertiary)] dark:text-muted">
             Top {items.length} productos con menor tiempo estimado de stock · Basado en ventas de los últimos 30 días
           </div>
         </div>

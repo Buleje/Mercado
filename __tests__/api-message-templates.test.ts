@@ -54,6 +54,17 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
+  applyRateLimitWithTenant: vi.fn(() => null),
+  getClientIp: vi.fn(() => "127.0.0.1"),
+}));
+
+// Brandon 2026-05-17: MessageTemplatesDB.list usa getOrSet con cache de 60s.
+// Sin mock, el primer test puebla el cache con [] y los siguientes ven cache
+// stale. Bypass directo al factory para que cada test vea su mockResolvedValue.
+vi.mock("@/lib/cache", () => ({
+  getOrSet: vi.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
+  invalidate: vi.fn(),
+  invalidateByPrefix: vi.fn(),
 }));
 
 import { GET, POST, PATCH, DELETE } from "@/app/api/message-templates/route";

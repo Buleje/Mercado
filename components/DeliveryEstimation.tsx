@@ -119,7 +119,7 @@ export default function DeliveryEstimation({
           <div className="flex-1">
             <div className="flex items-center gap-1.5 mb-1">
               <Truck className="h-4 w-4 text-primary" />
-              <span className="text-sm font-extrabold text-foreground">{eta.primary}</span>
+              <span className="text-sm font-extrabold text-[var(--text-primary)]">{eta.primary}</span>
             </div>
             <p className="text-[length:var(--ts-2xs)] text-muted leading-relaxed">{eta.secondary}</p>
           </div>
@@ -160,7 +160,7 @@ export default function DeliveryEstimation({
                     <Icon className="h-3 w-3" />
                   </div>
                   <span className={cn(
-                    "text-[8px] mt-0.5 font-medium text-center leading-tight",
+                    "text-[length:var(--ts-2xs)] mt-0.5 font-medium text-center leading-tight",
                     isFirst ? "text-primary" : "text-gray-400"
                   )}>
                     {step.label}
@@ -181,7 +181,7 @@ export default function DeliveryEstimation({
       {/* Extra info chips */}
       <div className="flex items-center gap-2 px-4 pb-3 flex-wrap">
         {slot && (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-muted bg-white dark:bg-card px-2 py-1 rounded-full border border-gray-100 dark:border-card-border">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-muted bg-[var(--surface-raised)] px-2 py-1 rounded-full border border-[var(--rule-base)]">
             <Clock className="h-3 w-3" />
             <slot.Icon aria-hidden="true" className="h-3 w-3" />
             {slot.label}
@@ -194,7 +194,7 @@ export default function DeliveryEstimation({
           </span>
         )}
         {distanceKm != null && (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-muted bg-white dark:bg-card px-2 py-1 rounded-full border border-gray-100 dark:border-card-border">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-muted bg-[var(--surface-raised)] px-2 py-1 rounded-full border border-[var(--rule-base)]">
             <MapPin className="h-3 w-3" />
             {distanceKm.toFixed(1)} km
           </span>

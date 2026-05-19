@@ -142,7 +142,7 @@ export default function ImportCSVTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <Upload className="h-4 w-4 text-primary" /> Importar CSV
         </CardTitle>
         {phase !== "idle" && (
@@ -154,9 +154,9 @@ export default function ImportCSVTab() {
 
       {/* Idle: File input */}
       {phase === "idle" && (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
+        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-8 text-center">
           <Upload className="h-10 w-10 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
-          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-1">
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
             Selecciona un archivo CSV
           </p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-4">
@@ -190,9 +190,9 @@ export default function ImportCSVTab() {
       {/* Preview */}
       {phase === "preview" && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1">
+              <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
                 <Table className="h-3.5 w-3.5 text-primary" />
                 Vista previa — {allRows.length} filas encontradas
               </p>
@@ -201,7 +201,7 @@ export default function ImportCSVTab() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[400px] text-xs">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border">
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <th className="pb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-left">#</th>
                     {headers.map(h => (
                       <th key={h} className={cn(
@@ -215,10 +215,10 @@ export default function ImportCSVTab() {
                 </thead>
                 <tbody>
                   {previewRows.map((row, i) => (
-                    <tr key={i} className="border-t border-gray-50 dark:border-card-border">
+                    <tr key={i} className="border-t border-[var(--rule-base)]">
                       <td className="py-1.5 text-[var(--text-tertiary)]">{i + 1}</td>
                       {row.map((cell, j) => (
-                        <td key={j} className="py-1.5 text-[var(--text-primary)] dark:text-foreground">{cell || "—"}</td>
+                        <td key={j} className="py-1.5 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{cell || "—"}</td>
                       ))}
                     </tr>
                   ))}
@@ -233,7 +233,7 @@ export default function ImportCSVTab() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={reset} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface">
+            <button onClick={reset} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface">
               Cancelar
             </button>
             <button
@@ -254,9 +254,9 @@ export default function ImportCSVTab() {
 
       {/* Success */}
       {phase === "success" && (
-        <div className="bg-white dark:bg-card border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-6 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-6 text-center">
           <CheckCircle className="h-10 w-10 text-[var(--data-success-500)] mx-auto mb-3" />
-          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-1">
+          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
             Importación exitosa
           </p>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">
@@ -285,9 +285,9 @@ export default function ImportCSVTab() {
 
       {/* Error */}
       {phase === "error" && (
-        <div className="bg-white dark:bg-card border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-6 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-6 text-center">
           <X className="h-10 w-10 text-[var(--data-error-500)] mx-auto mb-3" />
-          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-1">
+          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
             Error en la importación
           </p>
           <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 rounded-xl p-3 text-left mb-3 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">

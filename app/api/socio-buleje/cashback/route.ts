@@ -25,7 +25,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    const tenantId = req.headers.get("x-tenant-id");
+    if (!tenantId) {
+      logger.warn("[api/socio-buleje/cashback] missing x-tenant-id", { traceId });
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "tenant requerido", traceId } },
+        { status: 400 },
+      );
+    }
     const { userId, limit } = parsed.data;
 
     // SECURITY/CRITICAL 2026-05-06 (pentest H002): autorización obligatoria.

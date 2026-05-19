@@ -70,7 +70,7 @@ const baseTenant: TenantInfo = {
   id:         "tenant-main",
   slug:       "bodega-san-martin",
   name:       "Buleje",
-  ownerPhone: "916409675",
+  ownerPhone: "929340532",
 };
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

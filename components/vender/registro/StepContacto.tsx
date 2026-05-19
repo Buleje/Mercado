@@ -61,7 +61,7 @@ export default function StepContacto({
               id="whatsapp"
               type="tel"
               inputMode="numeric"
-              placeholder="916409675"
+              placeholder="929340532"
               maxLength={9}
               value={value.whatsapp ?? ""}
               onChange={(e) =>

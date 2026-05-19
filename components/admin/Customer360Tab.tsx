@@ -159,14 +159,14 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
     fetch(`/api/customers/${encodeURIComponent(phone)}/favorite-products`)
       .then(r => r.ok ? r.json() : [])
       .then((data: FavoriteProduct[]) => setFavorites(data))
-      .catch(() => {})
+      .catch((err) => console.warn("[Customer360Tab] favorites fetch failed:", err))
       .finally(() => setLoading(false));
   }, [phone]);
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
           <Award className="h-4 w-4 text-[var(--data-warning-500)]" /> Productos Favoritos
         </CardTitle>
         <div className="animate-pulse space-y-2">
@@ -180,8 +180,8 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
 
   if (totalPurchases < 3) {
     return (
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
           <Award className="h-4 w-4 text-[var(--data-warning-500)]" /> Productos Favoritos
         </CardTitle>
         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted py-2">Aun no hay suficiente historial</p>
@@ -198,8 +198,8 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-      <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+      <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
         <Award className="h-4 w-4 text-[var(--data-warning-500)]" /> Productos Favoritos
       </CardTitle>
       <div className="space-y-2.5">
@@ -208,7 +208,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
             <span className="text-sm w-6 text-center shrink-0">{MEDAL_ICONS[i] ?? `${i + 1}.`}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2 mb-0.5">
-                <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</span>
+                <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</span>
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted shrink-0">
                   {p.totalQty} veces · S/{Number(p.totalSpent).toFixed(0)} · {formatFreq(p.freqPerMonth)}
                 </span>
@@ -302,8 +302,8 @@ const HOURS_DISPLAY = Array.from({ length: 9 }, (_, i) => {
 function PurchaseHeatmap({ orders }: { orders: Order[] }) {
   if (orders.length < 5) {
     return (
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
           <Clock className="h-4 w-4" style={{ color: "var(--accent)" }} /> Cuando compra?
         </CardTitle>
         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center py-4">
@@ -349,8 +349,8 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
   const peakHourStr = peakHour < 12 ? `${peakHour}am` : peakHour === 12 ? "12pm" : `${peakHour - 12}pm`;
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-      <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+      <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
         <Clock className="h-4 w-4" style={{ color: "var(--accent)" }} /> Cuando compra?
       </CardTitle>
 
@@ -385,8 +385,8 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
       </div>
 
       {/* Insight */}
-      <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
-        Este cliente suele comprar los <strong className="text-[var(--text-primary)] dark:text-foreground">{DAYS[peakDay]}</strong> a las <strong className="text-[var(--text-primary)] dark:text-foreground">{peakHourStr}</strong>
+      <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-3 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+        Este cliente suele comprar los <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{DAYS[peakDay]}</strong> a las <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{peakHourStr}</strong>
       </p>
     </div>
   );
@@ -430,9 +430,9 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <Users className="h-4 w-4 text-[var(--data-success-500)]" /> Cuenta Familiar
           {savingFamily && <Loader2 className="h-3 w-3 animate-spin text-[var(--text-tertiary)]" />}
         </CardTitle>
@@ -445,7 +445,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           {getInitials(customer.name)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{customer.name} <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">(titular)</span></p>
+          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{customer.name} <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">(titular)</span></p>
           <p className="text-xs text-[var(--text-tertiary)]">{customer.phone}</p>
         </div>
         <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
@@ -457,7 +457,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
             {getInitials(m.nombre)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{m.nombre} <span className="text-[var(--text-tertiary)] font-normal">({m.relacion})</span></p>
+            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{m.nombre} <span className="text-[var(--text-tertiary)] font-normal">({m.relacion})</span></p>
             <p className="text-xs text-[var(--text-tertiary)]">{m.teléfono}</p>
           </div>
           <button onClick={() => saveFamily(familyMembers.filter((_, idx) => idx !== i))} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0">
@@ -470,10 +470,10 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
         <div className="mt-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 space-y-2">
           <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Nuevo miembro familiar</p>
           <div className="grid grid-cols-2 gap-2">
-            <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
-            <input type="tel" placeholder="Teléfono" value={newMember.teléfono} onChange={e => setNewMember({...newMember, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
+            <input type="text" placeholder="Nombre" value={newMember.nombre} onChange={e => setNewMember({...newMember, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <input type="tel" placeholder="Teléfono" value={newMember.teléfono} onChange={e => setNewMember({...newMember, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
           </div>
-          <select value={newMember.relacion} onChange={e => setNewMember({...newMember, relacion: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground w-full">
+          <select value={newMember.relacion} onChange={e => setNewMember({...newMember, relacion: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] w-full">
             <option value="esposa">Esposa/o</option>
             <option value="hijo">Hijo/a</option>
             <option value="padre">Padre/Madre</option>
@@ -486,7 +486,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
           </div>
         </div>
       ) : (
-        <button onClick={() => setAddingMember(true)} className="mt-2 w-full py-2 rounded-lg border border-dashed border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-tertiary)] hover:text-primary hover:border-primary/40 transition-colors">
+        <button onClick={() => setAddingMember(true)} className="mt-2 w-full py-2 rounded-lg border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-tertiary)] hover:text-primary hover:border-primary/40 transition-colors">
           + Agregar miembro familiar
         </button>
       )}
@@ -681,7 +681,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
         <AlertCircle className="h-10 w-10 text-[var(--data-error-500)]" />
-        <p className="font-bold text-[var(--text-primary)] dark:text-foreground">Cliente no encontrado</p>
+        <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente no encontrado</p>
         <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">No existe el número {phone}</p>
       </div>
     );
@@ -710,7 +710,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <User className="h-5 w-5 text-primary" />
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Cliente 360°</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente 360°</SectionTitle>
         </div>
         {onClose && (
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
@@ -723,7 +723,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <m.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6"
+        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6"
       >
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* Avatar with auto-generated color */}
@@ -737,7 +737,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground truncate">{customer.name}</CardTitle>
+              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{customer.name}</CardTitle>
               {/* Mejora 16: Dias como cliente */}
               {firstOrder && (() => {
                 const dias = Math.floor((Date.now() - new Date(firstOrder.createdAt).getTime()) / 86400000);
@@ -792,12 +792,12 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </m.div>
 
       {/* Mejora 10R2: Notas rapidas (observaciones) */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <button
           onClick={() => setObsExpanded(!obsExpanded)}
           className="w-full px-4 sm:px-5 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
         >
-          <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+          <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <FileText className="h-4 w-4 text-[var(--data-warning-500)]" />
             Notas
             {observaciones && <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)] inline-block" />}
@@ -811,7 +811,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => handleObservacionesChange(e.target.value)}
               placeholder="Prefiere delivery lunes, Alergico al mani, etc."
               rows={3}
-              className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <div className="flex items-center gap-2 text-xs">
               {savingObs && <span className="text-[var(--text-tertiary)] flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Guardando...</span>}
@@ -824,8 +824,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
       {/* Mejora 9: Purchase chart mini (last 6 months) */}
       {orders.length > 0 && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" style={{ color: "var(--accent)" }} /> Compras ultimos 6 meses
           </CardTitle>
           <div className="flex items-end gap-1" style={{ height: 80 }}>
@@ -859,50 +859,50 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             })()}
           </div>
           <div className="flex items-center gap-4 mt-3 text-xs text-[var(--text-secondary)] dark:text-muted">
-            <span>Total: <strong className="text-[var(--text-primary)] dark:text-foreground">{fmt(totalSpent)}</strong></span>
-            <span>Promedio: <strong className="text-[var(--text-primary)] dark:text-foreground">{fmt(avgTicket)}</strong></span>
-            <span>Pedidos: <strong className="text-[var(--text-primary)] dark:text-foreground">{orders.length}</strong></span>
+            <span>Total: <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(totalSpent)}</strong></span>
+            <span>Promedio: <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(avgTicket)}</strong></span>
+            <span>Pedidos: <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{orders.length}</strong></span>
           </div>
         </div>
       )}
 
       {/* Ficha completa del cliente */}
       {(customer.documento || customer.categoria || customer.departamento || customer.email || customer.observaciones) && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3">Datos de la ficha</CardTitle>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">Datos de la ficha</CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
             {customer.tipoPersona && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Tipo:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground capitalize">{customer.tipoPersona}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Tipo:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">{customer.tipoPersona}</span></div>
             )}
             {customer.documento && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">{customer.tipoDocumento ?? 'Doc'}:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground font-mono">{customer.documento}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">{customer.tipoDocumento ?? 'Doc'}:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] font-mono">{customer.documento}</span></div>
             )}
             {customer.razonSocial && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Razon Social:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{customer.razonSocial}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Razon Social:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.razonSocial}</span></div>
             )}
             {customer.email && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Email:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{customer.email}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Email:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.email}</span></div>
             )}
             {customer.whatsappSecundario && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">WA 2:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{customer.whatsappSecundario}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">WA 2:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.whatsappSecundario}</span></div>
             )}
             {customer.departamento && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Ubigeo:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{[customer.departamento, customer.provincia, customer.distrito].filter(Boolean).join(', ')}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Ubigeo:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{[customer.departamento, customer.provincia, customer.distrito].filter(Boolean).join(', ')}</span></div>
             )}
             {customer.direccion && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Direccion:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{customer.direccion}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Direccion:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.direccion}</span></div>
             )}
             {customer.vendedorAsignado && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Vendedor:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{customer.vendedorAsignado}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Vendedor:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.vendedorAsignado}</span></div>
             )}
             {customer.genero && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Genero:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{customer.genero === 'M' ? 'Masculino' : customer.genero === 'F' ? 'Femenino' : 'Otro'}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Genero:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.genero === 'M' ? 'Masculino' : customer.genero === 'F' ? 'Femenino' : 'Otro'}</span></div>
             )}
             {customer.fechaNacimiento && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Nacimiento:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{new Date(customer.fechaNacimiento).toLocaleDateString('es-PE')}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Nacimiento:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{new Date(customer.fechaNacimiento).toLocaleDateString('es-PE')}</span></div>
             )}
             {customer.comoLlego && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Llego por:</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground capitalize">{customer.comoLlego}</span></div>
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Llego por:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">{customer.comoLlego}</span></div>
             )}
           </div>
           {/* Badges */}
@@ -925,7 +925,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             )}
           </div>
           {customer.observaciones && (
-            <p className="mt-3 text-xs text-[var(--text-secondary)] dark:text-muted italic border-t border-[var(--rule-soft)] dark:border-card-border pt-2">{customer.observaciones}</p>
+            <p className="mt-3 text-xs text-[var(--text-secondary)] dark:text-muted italic border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-2">{customer.observaciones}</p>
           )}
         </div>
       )}
@@ -933,8 +933,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       {/* Crédito + Etiquetas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Límite de crédito */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" /> Límite de crédito
           </CardTitle>
           {editingCreditLimit ? (
@@ -946,7 +946,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 step={0.01}
                 value={creditLimitInput}
                 onChange={e => setCreditLimitInput(e.target.value)}
-                className="w-32 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="0.00"
               />
               <button
@@ -1003,8 +1003,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         </div>
 
         {/* Etiquetas */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
             <Star className="h-4 w-4 text-[var(--text-secondary)]" /> Etiquetas
             {savingTags && <Loader2 className="h-3 w-3 animate-spin text-[var(--text-tertiary)] ml-1" />}
           </CardTitle>
@@ -1044,7 +1044,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => setNewTag(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(newTag); } }}
               placeholder="Nueva etiqueta (Enter para agregar)"
-              className="flex-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-1.5 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
@@ -1054,7 +1054,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 <button
                   key={s}
                   onClick={() => handleAddTag(s)}
-                  className="text-xs text-[var(--text-tertiary)] hover:text-primary border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-full px-2 py-0.5 hover:border-primary/40 transition-colors"
+                  className="text-xs text-[var(--text-tertiary)] hover:text-primary border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-full px-2 py-0.5 hover:border-primary/40 transition-colors"
                 >
                   + {s}
                 </button>
@@ -1078,13 +1078,13 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             key={k.label}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-4"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-4"
           >
             <div className="flex items-center gap-1.5 mb-1.5">
               <k.icon className={cn("h-3.5 w-3.5", k.color)} />
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             </div>
-            <p className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">{k.value}</p>
+            <p className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{k.value}</p>
           </m.div>
         ))}
       </div>
@@ -1095,8 +1095,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Productos favoritos (local, basado en pedidos cargados) */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
             <Heart className="h-4 w-4 text-[var(--text-secondary)]" /> Top productos (pedidos)
           </CardTitle>
           {topProducts.length === 0 ? (
@@ -1112,7 +1112,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                       style={{ width: `${Math.min((p.count / (topProducts[0]?.count ?? 1)) * 100, 100)}%` }}
                     />
                   </div>
-                  <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-[120px]">{p.name}</span>
+                  <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[120px]">{p.name}</span>
                   <span className="text-xs text-[var(--text-tertiary)] shrink-0">x{p.count}</span>
                 </div>
               ))}
@@ -1121,8 +1121,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         </div>
 
         {/* Timeline */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" /> Actividad reciente
           </CardTitle>
           {timeline.length === 0 ? (
@@ -1137,7 +1137,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                       <Icon className="h-3 w-3 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{ev.title}</p>
+                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{ev.title}</p>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted truncate">{ev.detail}</p>
                     </div>
                     <span className="text-xs text-[var(--text-tertiary)] shrink-0">{fmtRelative(ev.date)}</span>
@@ -1150,8 +1150,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </div>
 
       {/* Historial de pedidos */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
           <Package className="h-4 w-4 text-primary" /> Historial de pedidos
           <span className="text-xs text-[var(--text-tertiary)] font-normal ml-auto">{orders.length} total</span>
         </CardTitle>
@@ -1161,7 +1161,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[500px] text-sm">
               <thead>
-                <tr className="text-left border-b border-[var(--rule-soft)] dark:border-card-border">
+                <tr className="text-left border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Pedido</th>
                   <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Fecha</th>
                   <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Items</th>
@@ -1177,11 +1177,11 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     const st = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.pendiente;
                     const Icon = st.Icon;
                     return (
-                      <tr key={o.id} className="border-t border-gray-50 dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+                      <tr key={o.id} className="border-t border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                         <td className="py-2 font-mono text-xs text-[var(--text-secondary)] dark:text-muted pr-2">#{o.id.slice(-6).toUpperCase()}</td>
                         <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(o.createdAt)}</td>
                         <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
-                        <td className="py-2 font-bold text-[var(--text-primary)] dark:text-foreground text-right">{fmt(o.total)}</td>
+                        <td className="py-2 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{fmt(o.total)}</td>
                         <td className="py-2">
                           <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
                             <Icon className="h-2.5 w-2.5" />{st.label}
@@ -1200,8 +1200,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <PurchaseHeatmap orders={orders} />
 
       {/* Mejora 16: Historial de Puntos de Lealtad */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
           <Star className="h-4 w-4 text-[var(--data-warning-500)]" /> Historial de Puntos
         </CardTitle>
         {(() => {
@@ -1227,7 +1227,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               <div className="flex items-center gap-3 p-3 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl">
                 <Star className="h-6 w-6 text-[var(--data-warning-500)]" />
                 <div>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{totalPoints} puntos</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{totalPoints} puntos</p>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted">= S/{(totalPoints * 0.05).toFixed(2)} en descuento</p>
                 </div>
                 {totalPoints >= 100 && (
@@ -1261,8 +1261,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       </div>
 
       {/* Notas del vendedor */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-primary" /> Notas del vendedor
         </CardTitle>
         <textarea
@@ -1270,7 +1270,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           onChange={e => setNotes(e.target.value)}
           placeholder="Ej: Cliente prefiere pago con Yape. Pide factura."
           rows={3}
-          className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <div className="flex items-center justify-between mt-2">
           <AnimatePresence>

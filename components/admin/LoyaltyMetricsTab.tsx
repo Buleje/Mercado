@@ -121,7 +121,7 @@ export default function LoyaltyMetricsTab() {
         {kpis.map((k) => (
           <div
             key={k.label}
-            className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-4 space-y-1"
+            className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-1"
           >
             <div className="flex items-center gap-2">
               <k.icon className={cn("h-4 w-4", k.color)} />
@@ -136,8 +136,8 @@ export default function LoyaltyMetricsTab() {
       </div>
 
       {/* Tier distribution */}
-      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-5">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">
+      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">
           Distribución por nivel
         </CardTitle>
         <div className="space-y-3">
@@ -152,7 +152,7 @@ export default function LoyaltyMetricsTab() {
             return (
               <div key={tier} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground capitalize">
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">
                     {tier}
                   </span>
                   <span className="text-[var(--text-secondary)]">
@@ -172,8 +172,8 @@ export default function LoyaltyMetricsTab() {
       </div>
 
       {/* Top customers table */}
-      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-5">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">
+      <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">
           Top 10 clientes con más puntos
         </CardTitle>
         {topCustomers.length === 0 ? (
@@ -197,7 +197,7 @@ export default function LoyaltyMetricsTab() {
                   <tr key={c.phone} className="border-b border-gray-50 hover:bg-[var(--surface-alt)]/50">
                     <td className="py-2 pr-3 font-bold text-[var(--text-tertiary)]">{i + 1}</td>
                     <td className="py-2 pr-3">
-                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs">
                         {c.name ?? "Sin nombre"}
                       </p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.phone}</p>

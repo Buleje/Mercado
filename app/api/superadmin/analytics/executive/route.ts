@@ -35,8 +35,14 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const last30Start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+  // Acepta from/to (YYYY-MM-DD). Si no vienen, fallback al mes en curso / últimos 30d.
+  const fromParam = req.nextUrl.searchParams.get("from");
+  const toParam = req.nextUrl.searchParams.get("to");
+  const periodStart = fromParam ? new Date(fromParam) : new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodEnd = toParam ? new Date(toParam) : now;
+  const startOfMonth = periodStart;
+  const last30Start = periodStart;
+  const periodEndDate = periodEnd;
   const monthFmt = new Intl.DateTimeFormat("es-PE", { month: "short" });
 
   // Pre-compute month windows para AOV (últimos 6 meses)
@@ -82,12 +88,12 @@ export async function GET(req: NextRequest) {
     }),
     prisma.order.groupBy({
       by: ["paymentMethod"],
-      where: { createdAt: { gte: startOfMonth }, status: { not: "cancelado" } },
+      where: { createdAt: { gte: startOfMonth, lte: periodEndDate }, status: { not: "cancelado" } },
       _count: { _all: true },
       _sum: { total: true },
     }),
     prisma.order.findMany({
-      where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
+      where: { createdAt: { gte: last30Start, lte: periodEndDate }, status: { not: "cancelado" } },
       select: { tenantId: true, createdAt: true },
     }),
     prisma.store.groupBy({
@@ -110,7 +116,7 @@ export async function GET(req: NextRequest) {
     prisma.orderItem.groupBy({
       by: ["productId", "name"],
       where: {
-        order: { createdAt: { gte: startOfMonth }, status: { not: "cancelado" } },
+        order: { createdAt: { gte: startOfMonth, lte: periodEndDate }, status: { not: "cancelado" } },
       },
       _sum: { quantity: true, price: true },
       orderBy: { _sum: { quantity: "desc" } },
@@ -118,16 +124,16 @@ export async function GET(req: NextRequest) {
     }),
     prisma.order.groupBy({
       by: ["status"],
-      where: { createdAt: { gte: last30Start } },
+      where: { createdAt: { gte: last30Start, lte: periodEndDate } },
       _count: { _all: true },
     }),
     prisma.order.findMany({
-      where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
+      where: { createdAt: { gte: last30Start, lte: periodEndDate }, status: { not: "cancelado" } },
       select: { createdAt: true },
     }),
     prisma.order.groupBy({
       by: ["source"],
-      where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
+      where: { createdAt: { gte: last30Start, lte: periodEndDate }, status: { not: "cancelado" } },
       _count: { _all: true },
       _sum: { total: true },
     }),

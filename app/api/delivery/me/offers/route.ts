@@ -18,11 +18,26 @@ export async function GET(req: NextRequest) {
   const session = await requirePartner(req);
   if (session instanceof NextResponse) return session;
 
+  // Brandon mayo 2026 v7: además de las condiciones de pending+no expirada,
+  // filtramos solo offers cuyo tenant tenga `useThirdPartyDelivery=true`. Si
+  // el dueño del negocio desactivó la red Buleje, las offers existentes no
+  // se sirven al rider (defensa en profundidad, además del filtro al crear).
+  // Order no tiene relación nombrada con Tenant; hacemos 2 queries pequeñas.
+  // Raw SQL: defensa contra cache del Prisma Client en dev tras migración.
+  const enabledTenants = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT id FROM "Tenant" WHERE "useThirdPartyDelivery" = true
+  `;
+  const enabledTenantIds = enabledTenants.map((t) => t.id);
+  if (enabledTenantIds.length === 0) {
+    return NextResponse.json({ offers: [] });
+  }
+
   const offers = await prisma.deliveryOffer.findMany({
     where: {
       partnerId: session.partnerId,
       status: "pending",
       expiresAt: { gt: new Date() },
+      tenantId: { in: enabledTenantIds },
     },
     orderBy: { offeredAt: "desc" },
     select: {

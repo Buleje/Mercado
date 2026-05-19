@@ -100,7 +100,7 @@ export default function ReturnLogisticsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <RotateCcw className="h-6 w-6 text-primary" />
             Logística Inversa
           </SectionTitle>
@@ -136,7 +136,7 @@ export default function ReturnLogisticsTab() {
           { label: "Reembolsado (mes)",    value: fmt(kpis.totalRefund),    color: "text-[var(--data-error-500)]",     icon: XCircle },
           { label: "Tasa de rechazo",      value: `${kpis.rejectedPct}%`,   color: "text-[var(--text-secondary)]",  icon: AlertTriangle },
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
+          <div key={label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 flex items-start gap-3">
             <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
               <Icon className="h-4 w-4" />
             </div>
@@ -156,7 +156,7 @@ export default function ReturnLogisticsTab() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"
                 placeholder="Buscar por pedido o cliente…"
               />
             </div>
@@ -182,7 +182,7 @@ export default function ReturnLogisticsTab() {
 
           <div className="space-y-3">
             {filtered.map(r => (
-              <div key={r.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+              <div key={r.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
                 {/* Summary row */}
                 <button
                   onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
@@ -190,7 +190,7 @@ export default function ReturnLogisticsTab() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{r.orderId}</span>
+                      <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.orderId}</span>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", STATUS_CONFIG[r.status].color)}>
                         {STATUS_CONFIG[r.status].label}
                       </span>
@@ -213,7 +213,7 @@ export default function ReturnLogisticsTab() {
 
                 {/* Expanded: timeline + items */}
                 {expandedId === r.id && (
-                  <div className="px-4 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-4">
+                  <div className="px-4 pb-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4 space-y-4">
                     {/* Timeline */}
                     {r.status !== "rechazada" && (
                       <div className="relative flex items-center gap-0">
@@ -231,7 +231,7 @@ export default function ReturnLogisticsTab() {
                                     ? "bg-primary border-primary text-white"
                                     : current
                                     ? "bg-primary/10 border-primary text-primary"
-                                    : "bg-gray-100 dark:bg-surface border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)]"
+                                    : "bg-gray-100 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-tertiary)]"
                                 )}>
                                   <Icon className="h-3.5 w-3.5" />
                                 </div>
@@ -255,7 +255,7 @@ export default function ReturnLogisticsTab() {
                     {/* Items */}
                     <div className="flex flex-wrap gap-2">
                       {r.items.map((item, i) => (
-                        <span key={i} className="text-[length:var(--ts-2xs)] bg-gray-50 dark:bg-surface px-2 py-1.5 rounded-lg text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-soft)] dark:border-card-border">
+                        <span key={i} className="text-[length:var(--ts-2xs)] bg-gray-50 dark:bg-surface px-2 py-1.5 rounded-lg text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                           {item.name} ×{item.qty} <span className="text-primary font-bold">({fmt(item.price)})</span>
                         </span>
                       ))}
@@ -283,8 +283,8 @@ export default function ReturnLogisticsTab() {
       )}
 
       {view === "reasons" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-6 space-y-4">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Motivos más frecuentes de devolución</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 sm:p-6 space-y-4">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Motivos más frecuentes de devolución</CardTitle>
           {reasonFreq.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)] text-center py-6">Sin datos todavía</p>
           ) : (
@@ -292,7 +292,7 @@ export default function ReturnLogisticsTab() {
               {reasonFreq.map(([reason, count]) => (
                 <div key={reason}>
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{reason}</span>
+                    <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{reason}</span>
                     <span className="font-extrabold text-primary">{count} <span className="text-xs font-normal text-[var(--text-tertiary)]">({((count / returns.length) * 100).toFixed(0)}%)</span></span>
                   </div>
                   <div className="w-full h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">

@@ -348,12 +348,19 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const navItemIdleClass = isBuleje
     ? "text-white/65 hover:bg-white/[0.06] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  // Brandon mayo 2026 v3: logo con mejor contraste — gradient ámbar fuerte
+  // sobre dark, ring sutil que separa del fondo, sombra cálida. Labels en
+  // blanco con drop-shadow para legibilidad sobre cualquier theme.
   const logoBoxClass = isBuleje
-    ? "bg-[linear-gradient(135deg,#00B4A6_0%,#0d9488_100%)] text-white shadow-lg shadow-[#00B4A6]/30"
-    : "bg-[var(--accent-600,var(--accent))] text-white";
-  const logoLabelClass = isBuleje ? "text-white" : "text-[var(--text-primary)]";
-  const logoSubLabelClass = isBuleje ? "text-[#5eead4]" : "text-[var(--accent)]";
-  const logoBorderClass = isBuleje ? "border-white/[0.08]" : "border-[var(--rule-base)]";
+    ? "bg-[linear-gradient(135deg,#00B4A6_0%,#0d9488_100%)] text-white shadow-md ring-2 ring-[#34d4be]/30"
+    : "bg-[linear-gradient(135deg,#fbbf24_0%,#d97706_100%)] text-zinc-900 shadow-md ring-2 ring-amber-300/40";
+  const logoLabelClass = isBuleje
+    ? "text-white"
+    : "text-white dark:text-white drop-shadow-sm";
+  const logoSubLabelClass = isBuleje
+    ? "text-[#5eead4]"
+    : "text-amber-300 dark:text-amber-300";
+  const logoBorderClass = isBuleje ? "border-white/[0.08]" : "border-white/[0.10]";
   const collapseBtnClass = isBuleje
     ? "text-white/45 hover:bg-white/[0.06] hover:text-white/85"
     : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]";

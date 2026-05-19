@@ -1,6 +1,5 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cacheLife as cacheLife } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/delivery/partner-session";
 
@@ -12,13 +11,13 @@ import { requirePartner } from "@/lib/delivery/partner-session";
  *   - tips: suma de tipAmount
  *   - byDay: array para gráfico (últimos N días)
  *
- * Cache: stale 30s / revalidate 55s / expire 120s
- * Amortigua el polling cada 60s del PartnerDashboard —
- * evita N queries idénticas a DB desde el mismo partner.
+ * Brandon mayo 2026 v7: removido `"use cache"` + `cacheLife()` — en Next 16
+ * una función cacheada no puede consumir cookies/headers de la request, y
+ * `requirePartner(req)` las necesita. El resultado eran HTTP 500 al cargar
+ * /delivery-app/ganancias. El polling de 60s del PartnerDashboard es bajo
+ * para hacer caching ad-hoc innecesario.
  */
 export async function GET(req: NextRequest) {
-  "use cache";
-  cacheLife({ stale: 30, revalidate: 55, expire: 120 });
   const session = await requirePartner(req);
   if (session instanceof NextResponse) return session;
 

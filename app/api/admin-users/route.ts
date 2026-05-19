@@ -7,6 +7,7 @@ import { z } from "zod";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { enqueueActivityLog } from "@/lib/queue";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const CreateSchema = z.object({
   username: z.string().min(3).max(32).regex(/^[a-z0-9_.]+$/i, "Solo letras, números, punto y guión bajo"),
@@ -54,32 +55,39 @@ export async function POST(req: NextRequest) {
   const { username, password, role, name } = parsed.data;
   const db = prismaForTenant(auth.tenantId);
 
-  // Plan limit check
-  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] } });
-  const limits = getPlanLimits(tenant?.plan ?? "free");
-  const currentUserCount = await db.adminUser.count({ where: { active: true } });
-  if (!withinLimit(currentUserCount, limits.maxUsers)) {
-    return NextResponse.json(
-      planLimitPayload("usuarios", currentUserCount, limits.maxUsers, tenant?.plan ?? "free"),
-      { status: 402 }
-    );
-  }
+  try {
+    // Plan limit check
+    const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] } });
+    const limits = getPlanLimits(tenant?.plan ?? "free");
+    // H5 audit: contar TODOS los usuarios (incl. inactivos) para evitar bypass
+    // desactivar → crear → reactivar que eluda el límite del plan.
+    const currentUserCount = await db.adminUser.count({});
+    if (!withinLimit(currentUserCount, limits.maxUsers)) {
+      return NextResponse.json(
+        planLimitPayload("usuarios", currentUserCount, limits.maxUsers, tenant?.plan ?? "free"),
+        { status: 402 }
+      );
+    }
 
-  const existing = await db.adminUser.findFirst({ where: { username } });
-  if (existing) {
-    return NextResponse.json({ error: "El usuario ya existe" }, { status: 409 });
-  }
+    const existing = await db.adminUser.findFirst({ where: { username } });
+    if (existing) {
+      return NextResponse.json({ error: "El usuario ya existe" }, { status: 409 });
+    }
 
-  const passwordHash = await hash(password, 12);
-  const user = await db.adminUser.create({
-    data: { tenantId: auth.tenantId, username, passwordHash, role, name, active: true },
-    select: { id: true, username: true, role: true, name: true, active: true, createdAt: true },
-  });
-
-  enqueueActivityLog({ action: "Crear", resource: "usuario_admin", resourceId: user.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${username}' creado con rol '${role}'` }, timestamp: new Date().toISOString() }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+    const passwordHash = await hash(password, 12);
+    const user = await db.adminUser.create({
+      data: { tenantId: auth.tenantId, username, passwordHash, role, name, active: true },
+      select: { id: true, username: true, role: true, name: true, active: true, createdAt: true },
     });
-  return NextResponse.json(user, { status: 201 });
+
+    enqueueActivityLog({ action: "Crear", resource: "usuario_admin", resourceId: user.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${username}' creado con rol '${role}'` }, timestamp: new Date().toISOString() }).catch(() => {
+        /* fire-and-forget per CLAUDE.md rule #7 */
+      });
+    return NextResponse.json(user, { status: 201 });
+  } catch (e) {
+    logger.error("[admin-users] POST error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Error interno al crear usuario" }, { status: 500 });
+  }
 }
 
 // PATCH /api/admin-users – update name, role, password or active status

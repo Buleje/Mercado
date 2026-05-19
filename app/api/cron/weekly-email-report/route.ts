@@ -141,9 +141,7 @@ export async function GET(req: NextRequest) {
           "system",
           undefined,
           tenant.slug,
-        ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
       }
 
       return { emailsSent, tenantsProcessed: tenants.length };

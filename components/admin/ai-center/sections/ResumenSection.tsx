@@ -496,7 +496,7 @@ export default function ResumenSection({ data }: Props) {
         {/* CTA principal — ver oportunidades del día (módulo Sugerencias IA) */}
         <a
           href="?tab=sugerencias-ia"
-          className="inline-flex items-center gap-2 self-start sm:self-auto rounded-lg bg-[var(--text-primary)] px-3.5 py-2 text-xs font-bold text-white hover:bg-[var(--text-secondary)] transition-colors shrink-0"
+          className="inline-flex items-center gap-2 self-start sm:self-auto rounded-lg bg-[var(--accent)] px-3.5 py-2 text-xs font-bold text-white hover:bg-[var(--accent-dark)] dark:text-[var(--surface-canvas)] transition-colors shrink-0 shadow-sm"
         >
           <Sparkles className="h-3.5 w-3.5" />
           Ver oportunidades del día
@@ -674,23 +674,19 @@ export default function ResumenSection({ data }: Props) {
               Oportunidades detectadas
             </CardTitle>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 [&>*:nth-child(1)]:[--opp-accent:#15803d] [&>*:nth-child(1)]:[--opp-bg:rgb(220_252_231)] [&>*:nth-child(2)]:[--opp-accent:#0891b2] [&>*:nth-child(2)]:[--opp-bg:rgb(207_250_254)] [&>*:nth-child(3)]:[--opp-accent:#c2410c] [&>*:nth-child(3)]:[--opp-bg:rgb(255_237_213)]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 [&>*:nth-child(1)]:[--opp-accent:#15803d] [&>*:nth-child(1)]:[--opp-bg:rgb(220_252_231)] [&>*:nth-child(1)]:[--opp-accent-dark:#4ade80] [&>*:nth-child(1)]:[--opp-bg-dark:rgb(20_83_45/0.35)] [&>*:nth-child(2)]:[--opp-accent:#0891b2] [&>*:nth-child(2)]:[--opp-bg:rgb(207_250_254)] [&>*:nth-child(2)]:[--opp-accent-dark:#22d3ee] [&>*:nth-child(2)]:[--opp-bg-dark:rgb(22_78_99/0.35)] [&>*:nth-child(3)]:[--opp-accent:#c2410c] [&>*:nth-child(3)]:[--opp-bg:rgb(255_237_213)] [&>*:nth-child(3)]:[--opp-accent-dark:#fb923c] [&>*:nth-child(3)]:[--opp-bg-dark:rgb(124_45_18/0.35)]">
             {opportunities.map((opp, i) => (
               <div
                 key={i}
-                className="rounded-xl p-5 border-2 transition-transform hover:scale-[1.02]"
-                style={{
-                  backgroundColor: "var(--opp-bg, var(--accent-soft))",
-                  borderColor: "color-mix(in srgb, var(--opp-accent, var(--data-success)) 30%, transparent)",
-                }}
+                className="rounded-xl p-5 border-2 transition-transform hover:scale-[1.02] bg-[var(--opp-bg)] dark:bg-[var(--opp-bg-dark)] border-[color-mix(in_srgb,var(--opp-accent)_30%,transparent)] dark:border-[color-mix(in_srgb,var(--opp-accent-dark)_40%,transparent)]"
               >
-                <p className="text-sm font-extrabold mb-2 leading-tight" style={{ color: "var(--opp-accent, var(--data-success))" }}>
+                <p className="text-sm font-extrabold mb-2 leading-tight text-[var(--opp-accent)] dark:text-[var(--opp-accent-dark)]">
                   {opp.title}
                 </p>
                 <p className="text-sm text-[var(--text-primary)] mb-2 leading-relaxed font-medium">
                   {opp.detail}
                 </p>
-                <p className="text-xs font-semibold leading-relaxed" style={{ color: "var(--opp-accent, var(--data-success))" }}>
+                <p className="text-xs font-semibold leading-relaxed text-[var(--opp-accent)] dark:text-[var(--opp-accent-dark)]">
                   {opp.impact}
                 </p>
               </div>

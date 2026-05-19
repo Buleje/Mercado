@@ -46,10 +46,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 3. Resolver tenant desde header.
-  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const slugOrId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  // 3. Resolver tenant desde header — sin silent fallback a "main".
+  //
+  // CRITICAL FIX 2026-05-11 (audit P0-8): antes el handler hacía
+  // `?? "main"` dos veces, ocultando errores y mandando pedidos guest al
+  // tenant principal cuando el header venía corrupto. Ahora retornamos 400
+  // explícito si el slug no se resuelve a un tenant real.
+  const rawTenantId = req.headers.get("x-tenant-id")?.trim();
+  if (!rawTenantId) {
+    return NextResponse.json(
+      { error: "Tenant requerido (header x-tenant-id ausente)" },
+      { status: 400 },
+    );
+  }
+  const slugOrId = await resolveTenantSlug(rawTenantId);
+  if (!slugOrId) {
+    return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
+  }
   const tenantId = await resolveTenantSlugToId(slugOrId);
+  if (!tenantId) {
+    return NextResponse.json({ error: "Tenant inválido" }, { status: 404 });
+  }
 
   // 4. ADR-084 guard — bloquea pedidos a tenants con trial expirado.
   const trialBlocked = await requireActiveSubscription(tenantId);

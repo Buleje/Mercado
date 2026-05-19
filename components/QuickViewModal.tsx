@@ -142,7 +142,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-view-title"
-        className="relative bg-white dark:bg-card rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-2xl lg:max-w-4xl lg:max-h-[88vh] max-h-[92vh] overflow-hidden flex flex-col lg:flex-row border border-gray-100 dark:border-card-border animate-[scaleIn_0.2s_ease-out]"
+        className="relative bg-[var(--surface-raised)] rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-2xl lg:max-w-4xl lg:max-h-[88vh] max-h-[92vh] overflow-hidden flex flex-col lg:flex-row border border-[var(--rule-base)] animate-[scaleIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
         aria-hidden="false"
       >
@@ -166,7 +166,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
               onClick={(e) => { e.stopPropagation(); toggleFav(String(product.id)); }}
               className={cn(
                 "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-[var(--shadow-md)]",
-                fav ? "bg-[var(--data-error-500)] text-white" : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)]"
+                fav ? "bg-[var(--data-error-500)] text-white" : "bg-white/80 dark:bg-[var(--surface-raised)]/80 text-gray-400 hover:text-[var(--data-error-500)]"
               )}
               aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
             >
@@ -174,7 +174,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
             </button>
             {category && (
               <div className="hidden lg:flex absolute bottom-3 left-3 items-center gap-2">
-                <span className="px-2.5 py-1 rounded-full bg-white/90 dark:bg-card/90 text-xs font-semibold text-foreground shadow backdrop-blur-sm">
+                <span className="px-2.5 py-1 rounded-full bg-white/90 dark:bg-[var(--surface-raised)]/90 text-xs font-semibold text-[var(--text-primary)] shadow backdrop-blur-sm">
                   {category.emoji} {category.label}
                 </span>
                 {reviews.length > 0 && (
@@ -188,22 +188,22 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
         </div>
 
         {/* Close button */}
-        <button onClick={onClose} className="absolute top-3 right-3 z-20 p-2 rounded-full bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card transition-colors shadow-[var(--shadow-md)]" aria-label="Cerrar">
+        <button onClick={onClose} className="absolute top-3 right-3 z-20 p-2 rounded-full bg-white/80 dark:bg-[var(--surface-raised)]/80 hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-colors shadow-[var(--shadow-md)]" aria-label="Cerrar">
           <X className="h-5 w-5 text-gray-600 dark:text-muted" />
         </button>
 
         {/* Right panel: scrollable content */}
         <div className="flex-1 flex flex-col overflow-y-auto lg:overflow-hidden">
-          <div className="p-5 sm:p-6 pb-3 border-b border-gray-100 dark:border-card-border shrink-0">
+          <div className="p-5 sm:p-6 pb-3 border-b border-[var(--rule-base)] shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <h3 id="quick-view-title" className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight mb-1">{product.name}</h3>
+                <h3 id="quick-view-title" className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] leading-tight mb-1">{product.name}</h3>
                 <p className="text-sm text-muted lg:hidden">
                   {category?.emoji} {category?.label ?? product.category}
                   {reviews.length > 0 && (
                     <span className="ml-3 inline-flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" />
-                      <span className="font-semibold text-foreground">{avgRating.toFixed(1)}</span>
+                      <span className="font-semibold text-[var(--text-primary)]">{avgRating.toFixed(1)}</span>
                       <span className="text-muted">({reviews.length})</span>
                     </span>
                   )}
@@ -242,7 +242,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
           </div>
 
           {/* Tabs */}
-          <div role="tablist" aria-label="Secciones del producto" className="flex border-b border-gray-100 dark:border-card-border shrink-0">
+          <div role="tablist" aria-label="Secciones del producto" className="flex border-b border-[var(--rule-base)] shrink-0">
             {([["info", "Detalles"], ["reviews", "Reseñas"], ["alsoBought", "Compran juntos"], ["related", "Relacionados"]] as const).map(([key, label]) => (
               <button
                 key={key}
@@ -255,7 +255,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                   "flex-1 py-3 text-sm font-semibold transition-all border-b-2",
                   tab === key
                     ? "text-primary border-primary bg-primary/5"
-                    : "text-muted border-transparent hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
+                    : "text-muted border-transparent hover:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
                 )}
               >
                 {label} {key === "reviews" && reviews.length > 0 && `(${reviews.length})`}
@@ -270,11 +270,11 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-surface dark:bg-surface rounded-xl p-3 text-center">
                     <p className="text-xs text-muted mb-1">Categoría</p>
-                    <p className="font-bold text-foreground text-sm">{category?.label}</p>
+                    <p className="font-bold text-[var(--text-primary)] text-sm">{category?.label}</p>
                   </div>
                   <div className="bg-surface dark:bg-surface rounded-xl p-3 text-center">
                     <p className="text-xs text-muted mb-1">Unidad</p>
-                    <p className="font-bold text-foreground text-sm">{product.unit}</p>
+                    <p className="font-bold text-[var(--text-primary)] text-sm">{product.unit}</p>
                   </div>
                   {product.badge && (
                     <div className="bg-surface dark:bg-surface rounded-xl p-3 text-center">
@@ -289,14 +289,14 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                 </div>
 
                 {staticDesc && (
-                  <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 border border-gray-100 dark:border-card-border">
+                  <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 border border-[var(--rule-base)]">
                     <p className="text-xs font-semibold text-muted mb-1">Descripción</p>
-                    <p className="text-sm text-foreground leading-relaxed">{staticDesc}</p>
+                    <p className="text-sm text-[var(--text-primary)] leading-relaxed">{staticDesc}</p>
                   </div>
                 )}
 
                 <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4 border border-primary/10">
-                  <p className="text-sm text-foreground font-medium flex items-start gap-2">
+                  <p className="text-sm text-[var(--text-primary)] font-medium flex items-start gap-2">
                     <Truck className="h-4 w-4 mt-0.5 text-primary shrink-0" aria-hidden="true" />
                     <span><strong>Delivery gratis</strong>. Paga con <strong>Yape</strong> o <strong>efectivo</strong> contra entrega.</span>
                   </p>
@@ -310,7 +310,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                   const W = (priceHistory.length - 1) * 40;
                   const points = prices.map((p, i) => `${i * 40},${50 - ((p - min) / range) * 42}`).join(" ");
                   return (
-                    <div className="bg-surface dark:bg-surface rounded-xl p-4 border border-gray-100 dark:border-card-border">
+                    <div className="bg-surface dark:bg-surface rounded-xl p-4 border border-[var(--rule-base)]">
                       <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-3 flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" aria-hidden="true" /> Historial de precios</p>
                       <div className="relative h-14">
                         <svg viewBox={`0 0 ${W || 1} 55`} className="w-full h-full" preserveAspectRatio="none">
@@ -348,7 +348,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                       <span className="ml-auto text-xs text-muted group-open:hidden">▼</span>
                       <span className="ml-auto text-xs text-muted hidden group-open:inline">▲</span>
                     </summary>
-                    <form onSubmit={handleSubmitReview} className="mt-3 space-y-3 pb-3 border-b border-gray-100 dark:border-card-border">
+                    <form onSubmit={handleSubmitReview} className="mt-3 space-y-3 pb-3 border-b border-[var(--rule-base)]">
                       <div className="flex items-center gap-1">
                         {[1,2,3,4,5].map(s => (
                           <button key={s} type="button" onMouseEnter={() => setFormHover(s)} onMouseLeave={() => setFormHover(0)} onClick={() => setFormRating(s)} className="p-0.5" aria-label={`${s} estrellas`}>
@@ -358,9 +358,9 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                         {formRating > 0 && <span className="ml-2 text-xs text-muted">{["","Muy malo","Malo","Regular","Bueno","Excelente"][formRating]}</span>}
                       </div>
                       <input type="text" value={formName} onChange={e => setFormName(e.target.value)} placeholder="Tu nombre" maxLength={60}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                       <textarea value={formText} onChange={e => setFormText(e.target.value)} placeholder={`¿Qué te pareció ${product.name}?`} maxLength={400} rows={2}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                       {reviewError && <p className="text-xs text-[var(--data-error-500)]">{reviewError}</p>}
                       <button type="submit" disabled={submitting}
                         className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-50 transition-colors">
@@ -370,7 +370,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                     </form>
                   </details>
                 ) : (
-                  <div className="flex items-center gap-2 text-[var(--data-success-600)] text-sm font-semibold py-2 border-b border-gray-100 dark:border-card-border">
+                  <div className="flex items-center gap-2 text-[var(--data-success-600)] text-sm font-semibold py-2 border-b border-[var(--rule-base)]">
                     ✓ ¡Gracias! Tu reseña está en revisión
                   </div>
                 )}
@@ -383,9 +383,9 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                   </div>
                 ) : (
                   reviews.map((r, i) => (
-                    <div key={r.id ?? i} className="bg-surface dark:bg-surface rounded-xl p-4 border border-gray-100 dark:border-card-border">
+                    <div key={r.id ?? i} className="bg-surface dark:bg-surface rounded-xl p-4 border border-[var(--rule-base)]">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-bold text-sm text-foreground">{r.name}</span>
+                        <span className="font-bold text-sm text-[var(--text-primary)]">{r.name}</span>
                         <div className="flex items-center gap-0.5">
                           {Array.from({ length: 5 }).map((_, s) => (
                             <Star key={s} className={cn("h-3.5 w-3.5", s < r.rating ? "text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" : "text-gray-300")} />
@@ -409,12 +409,12 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                   </div>
                 ) : (
                   coPurchased.map((cp) => (
-                    <div key={cp.id} className="bg-surface dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
-                      <div className="relative aspect-square bg-gray-50 dark:bg-card">
+                    <div key={cp.id} className="bg-surface dark:bg-surface rounded-xl border border-[var(--rule-base)] overflow-hidden">
+                      <div className="relative aspect-square bg-gray-50 dark:bg-[var(--surface-raised)]">
                         {cp.image && <Image src={cp.image} alt={cp.name} fill className="object-cover" sizes="200px" loading="lazy" />}
                       </div>
                       <div className="p-3">
-                        <p className="text-sm font-semibold text-foreground line-clamp-1">{cp.name}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-1">{cp.name}</p>
                         <div className="flex items-center justify-between mt-1.5">
                           <span className="font-extrabold text-primary text-sm">S/{Number(cp.price).toFixed(2)}</span>
                           <button
@@ -441,12 +441,12 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                   </div>
                 ) : (
                   relatedProducts.map((rp) => (
-                    <div key={rp.id} className="bg-surface dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
-                      <div className="relative aspect-square bg-gray-50 dark:bg-card">
+                    <div key={rp.id} className="bg-surface dark:bg-surface rounded-xl border border-[var(--rule-base)] overflow-hidden">
+                      <div className="relative aspect-square bg-gray-50 dark:bg-[var(--surface-raised)]">
                         {rp.image && <Image src={rp.image} alt={rp.name} fill className="object-cover" sizes="200px" loading="lazy" />}
                       </div>
                       <div className="p-3">
-                        <p className="text-sm font-semibold text-foreground line-clamp-1">{rp.name}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-1">{rp.name}</p>
                         <div className="flex items-center justify-between mt-1.5">
                           <span className="font-extrabold text-primary text-sm">S/{Number(rp.price).toFixed(2)}</span>
                           <button

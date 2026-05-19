@@ -77,12 +77,12 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
     <section ref={ref} className="py-14 sm:py-20 bg-surface">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className={`text-center mb-10 sm:mb-12 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-10 sm:mb-12 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <TrendingUp className="w-3.5 h-3.5" />
             Esta semana
           </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)]">
             Más{" "}
             <span className="relative inline-block text-primary">
               vendidos
@@ -106,7 +106,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
             return (
               <div
                 key={product.id}
-                className={`group relative bg-card rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
+                className={`group relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-[var(--dur-base)] ${
                   inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
@@ -124,7 +124,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
                     alt={product.name}
                     fill
                     sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 16vw"
-                    className="object-cover group-hover:scale-108 transition-transform duration-500"
+                    className="object-cover group-hover:scale-108 transition-transform duration-[var(--dur-slow)]"
                     placeholder="blur"
                     blurDataURL={BLUR_DATA_URL}
                     placeholderSize={28}
@@ -137,12 +137,12 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
                     </div>
                   )}
                   {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-[var(--dur-base)]" />
                 </div>
 
                 {/* Info */}
                 <div className="p-4">
-                  <h3 className="text-sm sm:text-base font-semibold text-foreground line-clamp-2 leading-tight mb-2.5">
+                  <h3 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] line-clamp-2 leading-tight mb-2.5">
                     {product.name}
                   </h3>
                   <div className="flex items-center justify-between gap-1">

@@ -12,12 +12,14 @@
  */
 
 const CUSTOMER_COOKIE = "buleje-customer-sess";
-// 365 días — sesión "remember me forever". Pero la seguridad real viene
-// de la rotación: cada visita autenticada re-emite el token con un
-// nuevo exp 365 días en el futuro (sliding expiration). Un usuario
-// activo nunca tiene que volver a loguearse; uno que no vuelve en >1
-// año entra de nuevo. Patrón usado por Amazon/Mercado Libre/Stripe.
-const CUSTOMER_SESSION_MS = 365 * 24 * 60 * 60 * 1000;
+// Audit 2026-05-17 05-P2-6: TTL reducido de 365d → 60d.
+// Antes: cookie filtrada = 1 año de acceso sin recourse (sin jti, sin
+// blacklist, sin rotación de AUTH_SECRET por defecto). 60d cubre el caso
+// "remember me" típico (compra mensual recurrente) sin exponer durante
+// un año entero si la cookie filtra. Sliding rotation a >50% del lifetime
+// mantiene usuarios activos sin re-login. Patrón Amazon/Mercado Libre
+// pueden tener 365d porque tienen MFA+device-binding; nosotros aún no.
+const CUSTOMER_SESSION_MS = 60 * 24 * 60 * 60 * 1000;
 /** Si pasó >50 % de la vida útil, rotamos al siguiente request. */
 const ROTATE_THRESHOLD_MS = CUSTOMER_SESSION_MS / 2;
 
@@ -31,14 +33,32 @@ export interface CustomerPayload {
 
 // ── Internal crypto helpers (same pattern as lib/session.ts) ──
 
-function getCustomerSecret(): string {
+/**
+ * Audit 2026-05-17 05-P1-1: rotación multi-secret también para customer.
+ * Se firma con CURRENT, se verifica con CURRENT + PREVIOUS para zero-downtime
+ * rotation. Misma derivación "-customer" para mantener cripto-independencia
+ * entre admin y customer tokens.
+ */
+function getCustomerSecretCurrent(): string {
   const secret = process.env.AUTH_SECRET;
   if (!secret) {
     throw new Error("AUTH_SECRET required — add to .env");
   }
-  // Derive a separate secret for customer tokens so admin and customer
-  // tokens are cryptographically independent.
   return secret + "-customer";
+}
+
+function getCustomerSecretsAll(): string[] {
+  const current = getCustomerSecretCurrent();
+  const previous = process.env.AUTH_SECRET_PREVIOUS;
+  if (previous && previous !== process.env.AUTH_SECRET) {
+    return [current, previous + "-customer"];
+  }
+  return [current];
+}
+
+// Compat con call sites existentes — firma siempre usa current.
+function getCustomerSecret(): string {
+  return getCustomerSecretCurrent();
 }
 
 async function signHmac(secret: string, data: string): Promise<Uint8Array> {
@@ -54,7 +74,7 @@ async function signHmac(secret: string, data: string): Promise<Uint8Array> {
   return new Uint8Array(raw);
 }
 
-async function verifyHmac(
+async function verifyHmacWithSecret(
   secret: string,
   data: string,
   sigB64: string,
@@ -73,6 +93,22 @@ async function verifyHmac(
   } catch {
     return false;
   }
+}
+
+/**
+ * Verifica contra todos los customer secrets activos (current + previous).
+ * El primer parámetro es ignorado por compatibilidad con call sites.
+ */
+async function verifyHmac(
+  _secretIgnored: string,
+  data: string,
+  sigB64: string,
+): Promise<boolean> {
+  const secrets = getCustomerSecretsAll();
+  for (const s of secrets) {
+    if (await verifyHmacWithSecret(s, data, sigB64)) return true;
+  }
+  return false;
 }
 
 function b64Encode(str: string): string {

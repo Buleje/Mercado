@@ -78,7 +78,7 @@ export default function SecurityLogsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Lock className="h-6 w-6 text-primary" /> Logs de Seguridad
             {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
@@ -113,7 +113,7 @@ export default function SecurityLogsTab() {
           { label: "Intentos fallidos auth", value: failedAuth,   color: failedAuth > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]" },
           { label: "Cambios de config",      value: roleChanges,  color: "text-[var(--text-secondary)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             {loading
               ? <div className="h-7 w-12 bg-gray-100 dark:bg-surface rounded animate-pulse mt-1" />
@@ -123,21 +123,21 @@ export default function SecurityLogsTab() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-4 space-y-3">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-4 space-y-3">
         {/* Búsqueda + fechas */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
             <input value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"
               placeholder="Buscar acción, usuario, detalle…" />
           </div>
           <div className="flex items-center gap-2">
             <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" />
+              className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs" />
             <span className="text-xs text-[var(--text-tertiary)]">—</span>
             <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" />
+              className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs" />
           </div>
         </div>
         {/* Chips */}
@@ -179,7 +179,7 @@ export default function SecurityLogsTab() {
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-20 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border animate-pulse" />
+            <div key={i} className="h-20 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -194,14 +194,14 @@ export default function SecurityLogsTab() {
             const Cat = CATEGORY_CONFIG[l.category] ?? CATEGORY_CONFIG.auth;
             const CatIcon = Cat.icon;
             return (
-              <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", l.severity === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30" : l.severity === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/20" : "border-[var(--rule-base)] dark:border-card-border")}>
+              <div key={l.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-4", l.severity === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30" : l.severity === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/20" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
                 <div className="flex flex-wrap items-start gap-3">
                   <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", Cat.color)}>
                     <CatIcon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{l.action}</span>
+                      <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.action}</span>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", SEVERITY_COLORS[l.severity])}>{l.severity}</span>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
                         l.success ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>

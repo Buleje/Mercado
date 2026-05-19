@@ -11,7 +11,7 @@ const SEGMENT_CONFIG: Record<SegmentLabel, { label: string; icon: React.ElementT
   regular:   { label: "Regular",    icon: Star,          color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]",        bg: "bg-[var(--data-info-50)] dark:bg-sky-950/30",          border: "border-[var(--data-info-500)] dark:border-[var(--data-info-500)]",        barColor: "bg-[var(--data-info-500)]" },
   nuevo:     { label: "Nuevo",      icon: UserPlus,      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",barColor: "bg-[var(--accent-soft)]" },
   en_riesgo: { label: "En Riesgo",  icon: AlertTriangle, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",      border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",   barColor: "bg-[var(--data-warning-500)]" },
-  dormido:   { label: "Dormido",    icon: Moon,          color: "text-[var(--text-tertiary)]",      bg: "bg-[var(--surface-alt)] dark:bg-surface",            border: "border-[var(--rule-base)] dark:border-card-border",  barColor: "bg-gray-400" },
+  dormido:   { label: "Dormido",    icon: Moon,          color: "text-[var(--text-tertiary)]",      bg: "bg-[var(--surface-alt)] dark:bg-surface",            border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]",  barColor: "bg-gray-400" },
 };
 
 const TIER_COLORS: Record<string, string> = {
@@ -80,7 +80,7 @@ export default function CustomerSegmentationTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
           <Users className="h-6 w-6 text-primary" />Segmentación de Clientes
         </SectionTitle>
         <div className="flex items-center gap-2 flex-wrap">
@@ -92,14 +92,14 @@ export default function CustomerSegmentationTab() {
           </button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-44" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm w-44" />
           </div>
         </div>
       </div>
 
       {/* Gráfico de distribución por segmento */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">Distribución de clientes</CardTitle>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">Distribución de clientes</CardTitle>
         <div className="flex h-8 rounded-xl overflow-hidden gap-0.5">
           {(Object.keys(SEGMENT_CONFIG) as SegmentLabel[]).map(seg => {
             const count = data.counts[seg] ?? 0;
@@ -128,7 +128,7 @@ export default function CustomerSegmentationTab() {
                 <span className={cn("w-3 h-3 rounded-full", cfg.barColor)} />
                 <Icon className={cn("h-3 w-3", cfg.color)} />
                 <span className="text-[var(--text-secondary)] dark:text-muted">{cfg.label}</span>
-                <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{count}</span>
+                <span className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{count}</span>
               </button>
             );
           })}
@@ -137,7 +137,7 @@ export default function CustomerSegmentationTab() {
 
       {/* Segment pills */}
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setActiveSegment("all")} className={cn("px-3 py-1.5 rounded-full text-sm font-bold border transition", activeSegment === "all" ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface")}>
+        <button onClick={() => setActiveSegment("all")} className={cn("px-3 py-1.5 rounded-full text-sm font-bold border transition", activeSegment === "all" ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface")}>
           Todos · {totalCustomers}
         </button>
         {(Object.keys(SEGMENT_CONFIG) as SegmentLabel[]).map(seg => {
@@ -185,10 +185,10 @@ export default function CustomerSegmentationTab() {
 
       {/* Vista tabla o RFM */}
       {view === "tabla" ? (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+              <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
                   <th className="text-left px-4 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Segmento</th>
@@ -208,7 +208,7 @@ export default function CustomerSegmentationTab() {
                   return (
                     <tr key={c.phone} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition">
                       <td className="px-4 py-3">
-                        <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{c.name}</p>
+                        <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
                       </td>
                       <td className="px-4 py-3">
@@ -219,8 +219,8 @@ export default function CustomerSegmentationTab() {
                       <td className="px-4 py-3">
                         <span className={cn("px-2 py-0.5 rounded-full text-xs font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{c.orderCount}</td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">S/{Number(c.totalSpent).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.orderCount}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(c.totalSpent).toFixed(2)}</td>
                       <td className="px-4 py-3 text-right text-xs">
                         {c.daysSinceLast === null ? <span className="text-[var(--text-tertiary)]">—</span> : (
                           <span className={cn(c.daysSinceLast > 60 ? "text-[var(--data-error-500)] font-semibold" : c.daysSinceLast > 30 ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-secondary)] dark:text-muted")}>
@@ -239,16 +239,16 @@ export default function CustomerSegmentationTab() {
         /* Vista RFM */
         <div className="space-y-2">
           {filtered.length === 0 && (
-            <div className="text-center py-10 text-[var(--text-tertiary)] bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">No se encontraron clientes</div>
+            <div className="text-center py-10 text-[var(--text-tertiary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">No se encontraron clientes</div>
           )}
           {filtered.slice(0, 50).map(c => {
             const { r, f, m } = getRFMScores(c, data.customers);
             const cfg = SEGMENT_CONFIG[c.segment];
             return (
-              <div key={c.phone} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-4">
+              <div key={c.phone} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <div>
-                    <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{c.name}</p>
+                    <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -267,7 +267,7 @@ export default function CustomerSegmentationTab() {
                     <div key={metric.label}>
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{metric.label}</span>
-                        <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{metric.value}</span>
+                        <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{metric.value}</span>
                       </div>
                       <div className="h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                         <div className={cn("h-full rounded-full transition-all", metric.color)} style={{ width: `${metric.value}%` }} />

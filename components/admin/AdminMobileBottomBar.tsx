@@ -61,8 +61,11 @@ export function AdminMobileBottomBar({
     .reduce((sum, [, v]) => sum + v, 0);
 
   return (
+    // Audit 2026-05-17 07-P2-2: touch targets ≥48px (WCAG 2.1 AA pide ≥44).
+    // Antes py-1.5 + h-5 w-5 = ~32-36px → fácil mis-tap en mobile. Ahora
+    // py-3 + min-h-[48px] cumple holgado.
     <nav
-      className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-card border-t border-[var(--rule-base)] dark:border-card-border flex items-stretch"
+      className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-[var(--surface-raised)] border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] flex items-stretch"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 4px)" }}
       aria-label="Navegación rápida"
     >
@@ -71,7 +74,7 @@ export function AdminMobileBottomBar({
           key={id}
           onClick={() => onNavigate(id)}
           className={cn(
-            "flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[length:var(--ts-2xs)] font-semibold transition-colors relative",
+            "flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[48px] text-[length:var(--ts-2xs)] font-semibold transition-colors relative",
             currentTab === id ? "text-primary" : "text-[var(--text-tertiary)] dark:text-muted"
           )}
           aria-current={currentTab === id ? "page" : undefined}
@@ -93,7 +96,7 @@ export function AdminMobileBottomBar({
 
       <button
         onClick={onOpenMobileNav}
-        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted transition-colors"
+        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[48px] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted transition-colors"
         aria-label="Más opciones"
       >
         <span className="relative inline-flex">

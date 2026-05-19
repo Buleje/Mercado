@@ -29,6 +29,11 @@ export default function POSFiadoPanel({
   const [showCobrar, setShowCobrar] = useState(false);
   const [cobroMonto, setCobroMonto] = useState("");
   const [cobrando, setCobrando] = useState(false);
+  // Audit 2026-05-17 P1-1: antes `catch { /* Silent fail */ }` perdía
+  // errores de cobro y el cajero no sabía si el cobro pasó. Ahora
+  // distinguimos: éxito + remaining (P2-6), conflict 409 (P1-3), error real.
+  const [cobroError, setCobroError] = useState<string | null>(null);
+  const [cobroResult, setCobroResult] = useState<{ cobrado: number; remaining: number } | null>(null);
 
   const fetchResumen = useCallback(async () => {
     if (!customerPhone || customerPhone.length < 6) {
@@ -59,6 +64,8 @@ export default function POSFiadoPanel({
     const monto = Number(cobroMonto);
     if (!monto || monto <= 0 || !data) return;
     setCobrando(true);
+    setCobroError(null);
+    setCobroResult(null);
     try {
       const res = await fetch(`/api/fiados/cobrar`, {
         method: "POST",
@@ -68,13 +75,28 @@ export default function POSFiadoPanel({
           monto,
         }),
       });
+      const body = await res.json().catch(() => ({} as Record<string, unknown>));
       if (res.ok) {
-        setShowCobrar(false);
+        // Audit P2-6: si remaining > 0 el cajero cobró más que la deuda;
+        // se le devolvió/mantuvo en caja y debe enterarse.
+        const cobrado = Number(body.totalCobrado ?? monto);
+        const remaining = Number(body.remaining ?? 0);
+        setCobroResult({ cobrado, remaining });
         setCobroMonto("");
         fetchResumen(); // Refresh
+        // Cierra el mini-modal solo si no hubo remaining (cero confusión)
+        if (remaining <= 0.01) {
+          setTimeout(() => { setShowCobrar(false); setCobroResult(null); }, 1500);
+        }
+      } else if (res.status === 409) {
+        setCobroError("Otro cajero está cobrando ahora mismo. Reintentá en un segundo.");
+      } else if (res.status === 404) {
+        setCobroError(typeof body.error === "string" ? body.error : "No hay fiados activos");
+      } else {
+        setCobroError(typeof body.error === "string" ? body.error : `Error ${res.status}`);
       }
-    } catch {
-      // Silent fail
+    } catch (err) {
+      setCobroError(err instanceof Error ? err.message : "Error de red — verificá tu conexión");
     }
     setCobrando(false);
   };
@@ -85,7 +107,7 @@ export default function POSFiadoPanel({
   // Loading
   if (loading) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
         <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-tertiary)]" />
         <span className="text-xs text-[var(--text-tertiary)]">Consultando fiados...</span>
       </div>
@@ -132,9 +154,9 @@ export default function POSFiadoPanel({
 
       {/* Cobrar mini modal */}
       {showCobrar && (
-        <div className="p-3 rounded-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border  space-y-2">
+        <div className="p-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)]  space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
+            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Cobrar fiado
             </p>
             <button
@@ -157,9 +179,9 @@ export default function POSFiadoPanel({
                 inputMode="decimal"
                 step="0.10"
                 value={cobroMonto}
-                onChange={(e) => setCobroMonto(e.target.value)}
+                onChange={(e) => { setCobroMonto(e.target.value); setCobroError(null); }}
                 placeholder={Number(data.montoPendiente).toFixed(2)}
-                className="w-full pl-7 pr-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                className="w-full pl-7 pr-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
             <button
@@ -174,6 +196,28 @@ export default function POSFiadoPanel({
               )}
             </button>
           </div>
+          {cobroError && (
+            <div role="alert" className="flex items-start gap-1.5 p-2 rounded-md bg-[var(--data-error-50)] border border-[var(--data-error-500)]/40">
+              <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-error-500)] shrink-0 mt-px" />
+              <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-error-500)]">{cobroError}</p>
+            </div>
+          )}
+          {cobroResult && cobroResult.remaining > 0.01 && (
+            <div role="status" className="flex items-start gap-1.5 p-2 rounded-md bg-[var(--data-warning-50)] border border-[var(--data-warning-500)]/40">
+              <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0 mt-px" />
+              <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-warning-500)]">
+                Cobrado {fmt(cobroResult.cobrado)}. Sobran {fmt(cobroResult.remaining)} — devolver al cliente o usar para nuevo fiado.
+              </p>
+            </div>
+          )}
+          {cobroResult && cobroResult.remaining <= 0.01 && (
+            <div role="status" className="flex items-center gap-1.5 p-2 rounded-md bg-[var(--accent-soft)] border border-[var(--data-success-500)]/40">
+              <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0" />
+              <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-success-500)]">
+                Cobrado {fmt(cobroResult.cobrado)} ✓
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

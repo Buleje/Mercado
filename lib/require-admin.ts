@@ -44,13 +44,31 @@ export async function requireAdmin(
     return NextResponse.json({ error: "session revoked" }, { status: 401 });
   }
 
+  // Audit 2026-05-17 05-P1-2: defense-in-depth — rechazar role="superadmin"
+  // en JWT de tipo admin SESSION cookie. Los superadmins reales tienen
+  // PLATFORM_SESSION separada (lib/platform-session.ts). Si un atacante
+  // forjara role:"superadmin" en un JWT admin, ANTES pasaba por
+  // managementTier y obtenía acceso total. AHORA → 403 inmediato.
+  if (payload.role === "superadmin") {
+    logger.warn("[AUTH] superadmin role in admin SESSION — refusing (use PLATFORM_SESSION)", {
+      username: payload.username,
+      method,
+      path,
+      ip,
+    });
+    return NextResponse.json(
+      { error: "forbidden", message: "superadmin debe usar /superadmin/login (sesión de plataforma)" },
+      { status: 403 },
+    );
+  }
+
   // Management-tier bypass — roles con visibilidad total del tenant:
-  //   superadmin (plataforma) > admin (tenant) > owner (dueño) > manager (encargado)
+  //   admin (tenant) > owner (dueño) > manager (encargado)
   // Deben poder acceder a cualquier endpoint admin sin que cada route los
   // liste explicitamente en allowedRoles. Evita cascadas de 403 para dueño/
-  // encargado y el super-bypass de la plataforma. cajero/almacenero/analista
-  // siguen siendo chequeados explicitamente porque su scope es limitado.
-  const managementTier: readonly AdminRole[] = ["superadmin", "admin", "owner", "manager"];
+  // encargado. cajero/almacenero/analista siguen chequeados explicitamente
+  // porque su scope es limitado. superadmin removido — ya rechazado arriba.
+  const managementTier: readonly AdminRole[] = ["admin", "owner", "manager"];
   const isManagementTier = managementTier.includes(payload.role);
 
   if (allowedRoles && !isManagementTier && !allowedRoles.includes(payload.role)) {
@@ -66,7 +84,23 @@ export async function requireAdmin(
   // The header may contain a slug (from Referer) which doesn't match DB IDs.
   // RULE: for DB queries, always prefer the JWT's tenantId (CUID).
   const headerTenantId = req.headers.get("x-tenant-id");
-  const effectiveTenantId = payload.tenantId || headerTenantId || "main";
+  // CRITICAL FIX 2026-05-11 (audit P1-1): nunca defaultear silenciosamente a
+  // "main". Si JWT y header están vacíos, retornar 401 para forzar al cliente
+  // a re-autenticarse en vez de operar como tenant principal por error.
+  const effectiveTenantId = payload.tenantId || headerTenantId;
+  if (!effectiveTenantId) {
+    logger.error("[AUTH] No tenantId in JWT or header — refusing to default to 'main'", {
+      username: payload.username,
+      role: payload.role,
+      method,
+      path,
+      ip,
+    });
+    return NextResponse.json(
+      { error: "unauthorized", message: "Sesión sin tenant — vuelve a iniciar sesión" },
+      { status: 401 },
+    );
+  }
 
   if (headerTenantId && headerTenantId !== payload.tenantId) {
     // Mismatch between middleware header and JWT. This happens when:
@@ -134,6 +168,9 @@ export async function tryAdmin(req: NextRequest): Promise<SessionPayload | null>
   const headerTenantId = req.headers.get("x-tenant-id");
   // JWT's tenantId is always the canonical CUID — prefer it over header
   // which may contain a slug from Referer.
-  const effectiveTenantId = payload.tenantId || headerTenantId || "main";
+  // CRITICAL FIX 2026-05-11 (audit P1-1): si ambos son null, devolver null
+  // (sesión inválida) en vez de defaultear a "main" silenciosamente.
+  const effectiveTenantId = payload.tenantId || headerTenantId;
+  if (!effectiveTenantId) return null;
   return { ...payload, tenantId: effectiveTenantId };
 }

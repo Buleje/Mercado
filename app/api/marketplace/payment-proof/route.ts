@@ -7,6 +7,7 @@ import { PaymentProofsDB, type PaymentMethod, type BillingCycle } from "@/lib/db
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import * as Sentry from "@sentry/nextjs";
 
 /**
  * POST /api/marketplace/payment-proof  (multipart/form-data)
@@ -42,7 +43,9 @@ const SchemaFields = z.object({
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
-const BUCKET = "media";
+// PENTEST-002 (2026-05-18): bucket privado para PII de comprobantes.
+// Mismo env var que checkout/payment-proof para consistencia.
+const BUCKET = process.env.SUPABASE_PROOF_BUCKET ?? "order-proofs";
 
 /**
  * F5: Validar magic bytes — el Content-Type puede ser spoofed fácilmente.
@@ -111,22 +114,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No pudimos procesar la imagen" }, { status: 500 });
   }
 
-  // F5: usar crypto.randomBytes en vez de Math.random para el nombre de archivo
+  // PENTEST-002 cerrado: bucket privado `order-proofs` (sin acceso público).
   const ts = Date.now();
-  const rand = randomBytes(8).toString("hex");
+  const rand = randomBytes(24).toString("hex");
   const path = `payment-proofs/${parsed.data.tenantSlug}-${ts}-${rand}.webp`;
 
-  let publicUrl: string;
+  // PENTEST-002: sin fallback a getPublicUrl. Bucket privado obligatorio.
+  const SIGNED_TTL_SEC = 7 * 24 * 3600; // 7 días para revisión de superadmin
+  let proofUrl: string;
   try {
     const supabase = getSupabaseAdmin();
     const { error: upErr } = await supabase.storage
       .from(BUCKET)
       .upload(path, optimized, { contentType: "image/webp", upsert: false });
     if (upErr) {
-      logger.error("[payment-proof] supabase upload failed", { error: upErr.message });
+      logger.error("[payment-proof] supabase upload failed", {
+        error: upErr.message,
+        bucket: BUCKET,
+      });
       return NextResponse.json({ error: "Error subiendo la imagen" }, { status: 500 });
     }
-    publicUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    const signed = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(path, SIGNED_TTL_SEC);
+    if (!signed.data?.signedUrl) {
+      // Sin fallback público — PII protegida, Ley 29733.
+      Sentry.captureException(
+        new Error(`[payment-proof] createSignedUrl failed: ${signed.error?.message ?? "unknown"}`),
+        { extra: { path, bucket: BUCKET } },
+      );
+      logger.error("[payment-proof] createSignedUrl failed — PENTEST-002 no-fallback", {
+        error: signed.error?.message,
+        path,
+        bucket: BUCKET,
+      });
+      return NextResponse.json(
+        { error: "Error generando URL segura para la imagen" },
+        { status: 500 },
+      );
+    }
+    proofUrl = signed.data.signedUrl;
   } catch (err) {
     logger.error("[payment-proof] upload threw", { error: String(err) });
     return NextResponse.json({ error: "Error subiendo la imagen" }, { status: 500 });
@@ -148,7 +175,7 @@ export async function POST(req: NextRequest) {
       billingCycle: parsed.data.billingCycle as BillingCycle,
       amountPEN: parsed.data.amountPEN,
       method: parsed.data.method as PaymentMethod,
-      proofUrl: publicUrl,
+      proofUrl: proofUrl,
       reference: parsed.data.reference ?? null,
     });
     return NextResponse.json({ ok: true, id: proof.id });

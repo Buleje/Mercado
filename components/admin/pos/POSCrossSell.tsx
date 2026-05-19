@@ -87,7 +87,7 @@ export default function POSCrossSell({
       <div className="flex-1 min-w-0">
         <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">
           Clientes tambien llevan{" "}
-          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
+          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {suggestion.name}
           </span>{" "}
           ({fmt(suggestion.price)})

@@ -40,10 +40,17 @@ describe("getTierDiscountPct", () => {
 
 describe("useLoyalty", () => {
   it("carga puntos y tier al llamar fetchPoints", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ loyaltyPoints: 250, loyaltyTier: "oro" }),
-    });
+    // fetchPoints hace primero un pre-check de sesión en /api/auth/customer/me
+    // antes de llamar al endpoint de loyalty (para evitar 401 en consola).
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ authenticated: true }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ loyaltyPoints: 250, loyaltyTier: "oro" }),
+      });
 
     const { result } = renderHook(() => {
       const { state, dispatch } = useCheckoutState();
@@ -59,7 +66,10 @@ describe("useLoyalty", () => {
       expect(result.current.state.loyalty.points).toBe(250);
     });
     expect(result.current.state.loyalty.tier).toBe("oro");
-    expect(mockFetch).toHaveBeenCalledWith("/api/loyalty/987654321");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/loyalty/987654321",
+      expect.objectContaining({ credentials: "include" }),
+    );
   });
 
   it("ignora teléfonos demasiado cortos", async () => {

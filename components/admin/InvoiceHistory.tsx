@@ -124,7 +124,7 @@ export default function InvoiceHistory() {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Historial de Comprobantes
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
@@ -151,7 +151,7 @@ export default function InvoiceHistory() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar por cliente, número..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           />
         </div>
 
@@ -163,7 +163,7 @@ export default function InvoiceHistory() {
               onClick={() => setTipoFilter(t)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 tipoFilter === t
-                  ? "bg-white dark:bg-card text-primary "
+                  ? "bg-[var(--surface-raised)] text-primary "
                   : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]"
               }`}
             >
@@ -180,7 +180,7 @@ export default function InvoiceHistory() {
               onClick={() => setEstadoFilter(e)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 estadoFilter === e
-                  ? "bg-white dark:bg-card text-primary "
+                  ? "bg-[var(--surface-raised)] text-primary "
                   : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]"
               }`}
             >
@@ -220,7 +220,7 @@ export default function InvoiceHistory() {
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-[var(--text-secondary)] dark:text-muted uppercase border-b border-[var(--rule-base)] dark:border-card-border">
+                <tr className="text-xs text-[var(--text-secondary)] dark:text-muted uppercase border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <th className="text-left py-2 px-2 font-bold">Tipo</th>
                   <th className="text-left py-2 px-2 font-bold">Serie-Número</th>
                   <th className="text-left py-2 px-2 font-bold">Cliente</th>
@@ -233,7 +233,7 @@ export default function InvoiceHistory() {
                 {paginatedRecords.map((record) => (
                   <tr
                     key={record.id}
-                    className="border-b border-[var(--rule-soft)] dark:border-card-border/50 hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors"
+                    className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors"
                   >
                     <td className="py-2.5 px-2">
                       <span
@@ -246,11 +246,11 @@ export default function InvoiceHistory() {
                         {record.tipo === "factura" ? "Factura" : "Boleta"}
                       </span>
                     </td>
-                    <td className="py-2.5 px-2 font-mono font-bold text-[var(--text-primary)] dark:text-foreground">
+                    <td className="py-2.5 px-2 font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                       {record.numeroCompleto}
                     </td>
                     <td className="py-2.5 px-2">
-                      <div className="text-[var(--text-primary)] dark:text-foreground font-semibold">
+                      <div className="text-[var(--text-primary)] dark:text-[var(--text-primary)] font-semibold">
                         {record.clienteNombre}
                       </div>
                       {record.clienteDoc && (
@@ -262,7 +262,7 @@ export default function InvoiceHistory() {
                     <td className="py-2.5 px-2 text-[var(--text-secondary)] dark:text-muted">
                       {fmtDate(record.fecha)}
                     </td>
-                    <td className="py-2.5 px-2 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
+                    <td className="py-2.5 px-2 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                       {fmt(record.total)}
                     </td>
                     <td className="py-2.5 px-2 text-center">
@@ -279,7 +279,7 @@ export default function InvoiceHistory() {
             {paginatedRecords.map((record) => (
               <div
                 key={record.id}
-                className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 space-y-2"
+                className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <span
@@ -294,7 +294,7 @@ export default function InvoiceHistory() {
                   <EstadoBadge estado={record.estado} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-sm text-[var(--text-primary)] dark:text-foreground">
+                  <span className="font-mono font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {record.numeroCompleto}
                   </span>
                   <span className="font-extrabold text-primary">{fmt(record.total)}</span>
@@ -316,7 +316,7 @@ export default function InvoiceHistory() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -326,7 +326,7 @@ export default function InvoiceHistory() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface disabled:opacity-30 transition-colors"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

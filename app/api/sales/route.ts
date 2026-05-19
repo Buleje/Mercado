@@ -13,6 +13,8 @@ import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduc
 import { applyRateLimit } from "@/lib/rate-limit";
 import { conteoLockKey } from "@/app/api/inventory/conteo/route";
 import { getOrSet } from "@/lib/cache";
+import { FiadosDB } from "@/lib/db/fiados.db";
+import { CustomersDB } from "@/lib/db/customers.db";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -67,41 +69,42 @@ export async function GET(req: NextRequest) {
     const cashierIdParam = searchParams.get("cashierId");
     const allParam = searchParams.get("all");
 
-    let data = await withDbRetry(() => SalesDB.getAll(auth.tenantId));
+    // Audit 2026-05-17 B-P0-4: paginación + filtros Prisma-side (skip/take).
+    // Antes: getAll() + 3 array.filter() en JS + slice() — cargaba todas las
+    // ventas del tenant en RAM antes de cortar (OOM con >10k ventas).
+    //
+    // SECURITY (audit A3 mantenido): cajero solo puede ver SUS ventas.
+    // Antes el query param `?cashierId=X` se aceptaba sin validar — un cajero
+    // podía listar ventas de cualquier compañero del tenant. Roles management ven todo.
+    const isCajeroOnly = auth.role === "cajero";
+    const effectiveCashierId = isCajeroOnly ? auth.username : cashierIdParam || undefined;
 
-    // Filter: cashierId
-    if (cashierIdParam) {
-      data = data.filter((s) => s.cashierId === cashierIdParam);
-    }
+    const fromDate = fromParam ? (() => {
+      const d = new Date(fromParam);
+      return Number.isNaN(d.getTime()) ? undefined : d;
+    })() : undefined;
+    const toDate = toParam ? (() => {
+      const d = new Date(toParam);
+      return Number.isNaN(d.getTime()) ? undefined : d;
+    })() : undefined;
 
-    // Filter: today=1
-    if (todayParam === "1") {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      const cutoff = startOfDay.getTime();
-      data = data.filter((s) => new Date(s.createdAt).getTime() >= cutoff);
-    }
-
-    // Filter: from / to
-    if (fromParam) {
-      const fromTs = new Date(fromParam).getTime();
-      if (!Number.isNaN(fromTs)) data = data.filter((s) => new Date(s.createdAt).getTime() >= fromTs);
-    }
-    if (toParam) {
-      const toTs = new Date(toParam).getTime();
-      if (!Number.isNaN(toTs)) data = data.filter((s) => new Date(s.createdAt).getTime() <= toTs);
-    }
-
-    const total = data.length;
-
-    // Pagination — default 500 cap, bypass solo con ?all=1
     if (allParam !== "1") {
       const limit = Math.min(Math.max(parseInt(limitParam ?? "500", 10) || 500, 1), 1000);
       const page = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
-      const start = (page - 1) * limit;
-      data = data.slice(start, start + limit);
 
-      return NextResponse.json(data, {
+      const { items, total } = await withDbRetry(() =>
+        SalesDB.getAllFilteredPaginated({
+          tenantId: auth.tenantId,
+          page,
+          limit,
+          today: todayParam === "1",
+          from: fromDate,
+          to: toDate,
+          cashierId: effectiveCashierId,
+        })
+      );
+
+      return NextResponse.json(items, {
         headers: {
           "X-Total-Count": String(total),
           "X-Page": String(page),
@@ -110,8 +113,22 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json(data, {
-      headers: { "X-Total-Count": String(total) },
+    // ?all=1 → comportamiento legacy (devolver todo). Solo permitido para
+    // exportaciones admin. Filtros aplicados Prisma-side via paginado de
+    // página única.
+    const { items: allData, total: allTotal } = await withDbRetry(() =>
+      SalesDB.getAllFilteredPaginated({
+        tenantId: auth.tenantId,
+        page: 1,
+        limit: 100000, // cap soft pero suficiente para exportes
+        today: todayParam === "1",
+        from: fromDate,
+        to: toDate,
+        cashierId: effectiveCashierId,
+      })
+    );
+    return NextResponse.json(allData, {
+      headers: { "X-Total-Count": String(allTotal) },
     });
   } catch (e) {
     logger.error("[sales] GET error", { err: e instanceof Error ? e.message : String(e), tenantId: auth.tenantId });
@@ -208,6 +225,25 @@ async function salesHandler(
   }
   const finalTotal = Math.max(0, total - discountAmount);
 
+  // SECURITY 2026-05-17 (audit C3): amountPaid debe ser >= finalTotal para
+  // métodos no-fiado. Antes el server aceptaba `amountPaid=1` con `total=24.9`,
+  // creando ventas con `change` negativo (deuda silenciosa que descuadraba
+  // el arqueo de turno). Fiado es la única excepción permitida — esa deuda
+  // se traquea explícitamente en la tabla Fiado.
+  const payment = data.payment ?? "efectivo";
+  const requiresFullPayment = payment !== "fiado";
+  if (requiresFullPayment && data.amountPaid != null) {
+    // Tolerancia de 1 céntimo por redondeo de IGV cliente↔server.
+    if (data.amountPaid + 0.01 < finalTotal) {
+      return NextResponse.json(
+        {
+          error: `Monto pagado (S/${data.amountPaid.toFixed(2)}) es menor que el total (S/${finalTotal.toFixed(2)}). Usá fiado si la deuda es intencional.`,
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   // Validate customerPhone: only set it if the customer actually exists in DB
   // (the Sale.customerPhone is a FK → Customer.phone; passing an unknown phone throws a FK error)
   let resolvedCustomerPhone: string | undefined = undefined;
@@ -220,6 +256,79 @@ async function salesHandler(
       select: { phone: true },
     });
     resolvedCustomerPhone = existingCustomer?.phone ?? undefined;
+  }
+
+  // ── Fiado: pre-validar antes de la transacción ────────────────────────────
+  // Audit 2026-05-17 (POS↔Fiado integration): si el pago es "fiado" la deuda
+  // DEBE quedar trackeada en la tabla Fiado. Antes esto se hacía en el cliente
+  // (POSView), fuera de transacción → si el POST /api/fiados fallaba después
+  // del POST /api/sales, quedaba una venta con payment=fiado SIN registro de
+  // deuda ("deuda fantasma"). Ahora server-side y atómico.
+  //
+  // Pre-validaciones que viven AFUERA de la tx (queries de scoring no deben
+  // alargar el lock):
+  //   1. Phone obligatorio (sin cliente no se puede cobrar fiado a nadie).
+  //   2. Customer debe existir o se crea on-the-fly (vía CustomersDB.upsert).
+  //   3. Scoring: 3+ vencidos / activos >60 días / supera límite (FiadosDB.validateForNewFiado).
+  const isFiado = (data.payment ?? "efectivo") === "fiado";
+  let fiadoPhoneForTx: string | null = null;
+  let fiadoDescripcion: string | null = null;
+
+  if (isFiado) {
+    const phoneInput = (data.customerPhone ?? "").trim();
+    if (!phoneInput) {
+      return NextResponse.json(
+        { error: "Venta al fiado requiere seleccionar un cliente con teléfono" },
+        { status: 400 },
+      );
+    }
+
+    // Si el customer ya existía lo usamos; si no, lo creamos antes de la tx
+    // (CustomersDB.upsert es idempotente).
+    let customer = await CustomersDB.getByPhone(phoneInput, auth.tenantId);
+    if (!customer) {
+      await CustomersDB.upsert(
+        {
+          phone: phoneInput,
+          name: `Cliente ${phoneInput.slice(-4)}`,
+          location: "",
+          reference: "",
+          locations: [],
+          activeLocationId: null,
+          loyaltyPoints: 0,
+          loyaltyTier: "bronce",
+          totalSpent: 0,
+          creditBalance: 0,
+          creditLimit: 0,
+          tags: null,
+          notifOrderUpdates: true,
+          notifPromotions: true,
+          notifRestock: true,
+        },
+        auth.tenantId,
+      );
+      customer = await CustomersDB.getByPhone(phoneInput, auth.tenantId);
+    }
+    const creditLimitNum = customer?.creditLimit ?? 0;
+
+    // Scoring crediticio — mismas 3 reglas que el endpoint /api/fiados POST.
+    const validation = await FiadosDB.validateForNewFiado(
+      auth.tenantId,
+      phoneInput,
+      finalTotal,
+      creditLimitNum,
+    );
+    if (validation) {
+      return NextResponse.json({ error: validation.error }, { status: validation.status });
+    }
+
+    fiadoPhoneForTx = phoneInput;
+    fiadoDescripcion = data.items
+      .map((i) => `${i.name} x${i.quantity}`)
+      .join(", ")
+      .slice(0, 500);
+    // El customerPhone resuelto AHORA está garantizado (acabamos de crear/verificar).
+    resolvedCustomerPhone = phoneInput;
   }
 
   // SECURITY 2026-05-07 (X2): id siempre generado server-side.
@@ -249,9 +358,12 @@ async function salesHandler(
     }
   }
 
-  // ── Transacción ACID: venta + decremento de stock atómicos ──────────────────
-  // Si el stock falla, la venta también se revierte. Ninguno queda a medias.
+  // ── Transacción ACID: venta + decremento de stock + Fiado (si aplica) ──────
+  // Si CUALQUIERA falla, todo se revierte. Antes el Fiado se creaba fuera de
+  // transacción desde el cliente → quedaba ventas con payment=fiado sin
+  // registro de deuda en la tabla Fiado.
   let sale;
+  let createdFiadoId: string | null = null;
   try {
     const saleRow = await prisma.$transaction(async (tx) => {
       // Pre-validar IDs de producto SCOPED a tenant — sin tenantId aquí un
@@ -297,7 +409,19 @@ async function salesHandler(
         include: { items: true },
       });
 
-      // 2. Decremento atómico con guardia anti-TOCTOU.
+      // 2. Si es fiado → crear el registro de Fiado en la misma tx para que
+      //    venta y deuda nazcan atómicas. Si falla acá, la venta se revierte.
+      if (isFiado && fiadoPhoneForTx) {
+        const fiado = await FiadosDB.createInTransaction(tx, {
+          tenantId: auth.tenantId,
+          customerId: fiadoPhoneForTx,
+          total: finalTotal,
+          descripcion: fiadoDescripcion ?? undefined,
+        });
+        createdFiadoId = fiado.id;
+      }
+
+      // 3. Decremento atómico con guardia anti-TOCTOU.
       //    `updateMany` con `stock: { gte: qty }` falla si entre la
       //    pre-validación y este punto otro cajero vendió las mismas
       //    unidades — evita stock negativo bajo concurrencia POS.
@@ -464,8 +588,12 @@ async function salesHandler(
     user: cashierId || "system",
   });
 
-  // Asegurar que comprobanteNumero se incluya en la respuesta
-  const response = { ...sale, ...(comprobanteNumero ? { comprobanteNumero } : {}) };
+  // Asegurar que comprobanteNumero + fiadoId se incluyan en la respuesta
+  const response = {
+    ...sale,
+    ...(comprobanteNumero ? { comprobanteNumero } : {}),
+    ...(createdFiadoId ? { fiadoId: createdFiadoId } : {}),
+  };
   return NextResponse.json(response, { status: 201 });
 }
 

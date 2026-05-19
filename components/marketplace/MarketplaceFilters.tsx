@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Check,
   DollarSign,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
@@ -30,6 +31,12 @@ export interface MarketplaceFiltersState {
   nearbyEnabled: boolean;
 }
 
+export interface ZoneOption {
+  id: string;
+  label: string;
+  count?: number;
+}
+
 export interface MarketplaceFiltersProps {
   filters: MarketplaceFiltersState;
   userCoords: { lat: number; lng: number } | null;
@@ -39,6 +46,32 @@ export interface MarketplaceFiltersProps {
   /** Si true, no renderiza el row horizontal de PRODUCT_CATEGORIES
       (porque el caller lo está renderizando arriba en formato propio). */
   hideProductCategory?: boolean;
+  /** Zonas disponibles. Si se provee, se muestra sección "Zona" en el drawer mobile. */
+  zones?: ZoneOption[];
+  /** Id de zona seleccionada ("" = todas). */
+  zone?: string;
+  /** Setter de zona. */
+  onZoneChange?: (zone: string) => void;
+  /**
+   * Brandon 2026-05-18: sort externo (StoresSortKey) que se renderiza dentro
+   * del drawer mobile reemplazando el select interno de filters.sortBy.
+   * Cuando se provee, el toolbar de /tiendas NO renderea su propio
+   * StoresSortSelector — todo el control de orden vive dentro del modal.
+   */
+  extraSort?: {
+    value: string;
+    onChange: (v: string) => void;
+    options: ReadonlyArray<{ id: string; label: string }>;
+  };
+  /**
+   * Brandon 2026-05-18: handler global "Limpiar todo" que limpia search,
+   * category, chips, sort, todo. Si se provee, el botón "Limpiar" del action
+   * bar sticky usa este en lugar del onReset interno (que solo limpia los
+   * filters del state interno).
+   */
+  onClearAll?: () => void;
+  /** Total de filtros activos (incluye los del caller — chips, search, etc.). */
+  globalActiveCount?: number;
 }
 
 /* ── Constantes ─────────────────────────────────────────────────────────────── */
@@ -194,6 +227,11 @@ function FiltersDrawer({
   onRequestGeo,
   onReset,
   activeCount,
+  zones,
+  zone,
+  onZoneChange,
+  extraSort,
+  onClearAll,
 }: {
   open: boolean;
   onClose: () => void;
@@ -204,6 +242,15 @@ function FiltersDrawer({
   onRequestGeo: () => void;
   onReset: () => void;
   activeCount: number;
+  zones?: ZoneOption[];
+  zone?: string;
+  onZoneChange?: (zone: string) => void;
+  extraSort?: {
+    value: string;
+    onChange: (v: string) => void;
+    options: ReadonlyArray<{ id: string; label: string }>;
+  };
+  onClearAll?: () => void;
 }) {
   useEffect(() => {
     if (open) {
@@ -219,49 +266,141 @@ function FiltersDrawer({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:hidden" role="dialog" aria-modal="true" aria-label="Filtros">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-[var(--text-primary)]/55 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
 
-      {/* Sheet — 60-80% viewport height, scrollable body, sticky action bar */}
-      <div className="relative w-full max-h-[80vh] min-h-[60vh] rounded-t-3xl bg-white dark:bg-gray-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
+      {/* Brandon 2026-05-18 v3: Sheet rediseñado.
+          - rounded-t-[28px] (alineado con el modal cupón bienvenida)
+          - max-h-[88vh] (mejor para pantallas bajas + teclado abierto)
+          - shadow-[var(--shadow-xl)] del DS en lugar de shadow-2xl Tailwind
+          - Header con eyebrow + título + descripción (jerarquía premium)
+          - Botón X 40x40 (WCAG AA) */}
+      <div className="relative w-full max-h-[88vh] min-h-[60vh] rounded-t-[28px] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] motion-safe:animate-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-300 flex flex-col border-t border-[var(--rule-soft)]">
         {/* Drag handle */}
-        <div className="shrink-0 px-5 pt-5 pb-0">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--rule-soft)] dark:bg-gray-700" aria-hidden="true" />
-          {/* Header */}
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Filtros</span>
+        <div className="shrink-0 px-6 pt-3 pb-0">
+          <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--text-tertiary)]/30" aria-hidden="true" />
+          {/* Header premium */}
+          <div className="flex items-start justify-between gap-3 mb-3 pt-1">
+            <div className="min-w-0">
+              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+                <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
+                Refiná tu búsqueda
+              </p>
+              <h2 className="text-xl font-extrabold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+                Filtrá las tiendas
+              </h2>
+              <p className="mt-0.5 text-xs text-[var(--text-secondary)] font-medium">
+                Elegí orden, zona, categoría y precio.
+              </p>
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:bg-gray-800 dark:text-gray-300"
+              className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors border border-[var(--rule-soft)] active:scale-95"
               aria-label="Cerrar filtros"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" strokeWidth={2.5} />
             </button>
           </div>
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* Sort */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          {/* Sort — usa extraSort cuando el caller lo provee (caso /tiendas con
+              StoresSortKey). Si no, el sort interno de MarketplaceFiltersState. */}
           <div>
-            <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
+            <label htmlFor="mobile-sort" className="mb-2 block text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
               Ordenar por
             </label>
-            <select
-              id="mobile-sort"
-              value={filters.sortBy}
-              onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}
-              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-3 pr-9 text-sm font-semibold text-[var(--text-primary)] dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            {extraSort ? (
+              <select
+                id="mobile-sort"
+                value={extraSort.value}
+                onChange={(e) => extraSort.onChange(e.target.value)}
+                className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] py-3 pl-4 pr-9 text-base font-bold text-[var(--text-primary)]"
+              >
+                {extraSort.options.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+            ) : (
+              <select
+                id="mobile-sort"
+                value={filters.sortBy}
+                onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}
+                className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] py-3 pl-4 pr-9 text-base font-bold text-[var(--text-primary)]"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            )}
           </div>
+
+          {/* Zona */}
+          {zones && zones.length > 1 && onZoneChange && (
+            <div>
+              <p className="mb-2.5 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+                <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)]">
+                  <MapPin className="h-3 w-3" strokeWidth={2.5} />
+                </span>
+                Zona
+              </p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por zona">
+                <button
+                  type="button"
+                  onClick={() => onZoneChange("")}
+                  aria-pressed={!zone}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold transition-colors",
+                    !zone
+                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      : "border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50",
+                  )}
+                >
+                  Todas las zonas
+                </button>
+                {zones.filter((z) => z.id !== "").map((z) => {
+                  const active = zone === z.id;
+                  return (
+                    <button
+                      key={z.id}
+                      type="button"
+                      onClick={() => onZoneChange(active ? "" : z.id)}
+                      aria-pressed={active}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold transition-colors",
+                        active
+                          ? "bg-[var(--accent)] text-white shadow-sm"
+                          : "border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50",
+                      )}
+                    >
+                      <MapPin className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                      {z.label}
+                      {typeof z.count === "number" && z.count > 0 && (
+                        <span
+                          className={cn(
+                            "inline-flex min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold tabular-nums",
+                            active ? "bg-white/20 text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                          )}
+                        >
+                          {z.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Categories */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">Categoría</p>
+            <p className="mb-2.5 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+              <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)]">
+                <SlidersHorizontal className="h-3 w-3" strokeWidth={2.5} />
+              </span>
+              Categoría
+            </p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
               {PRODUCT_CATEGORIES.map((cat) => (
                 <button
@@ -288,7 +427,12 @@ function FiltersDrawer({
 
           {/* Price Range */}
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">Precio</p>
+            <p className="mb-3 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+              <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)] font-mono text-[10px]">
+                S/
+              </span>
+              Precio
+            </p>
             <PriceRangePopover
               min={filters.minPrice}
               max={filters.maxPrice}
@@ -318,26 +462,29 @@ function FiltersDrawer({
           </button>
         </div>
 
-        {/* Sticky action bar */}
-        <div className="shrink-0 border-t border-gray-100 dark:border-gray-800 px-5 py-4 flex gap-3">
-          {activeCount > 0 ? (
-            <button
-              type="button"
-              onClick={onReset}
-              aria-label="Limpiar todos los filtros"
-              className="min-h-12 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-bold text-[var(--text-secondary)] dark:text-gray-300 hover:border-red-300 hover:text-[var(--data-error-500)] transition-colors"
-            >
-              Limpiar
-            </button>
-          ) : (
-            <div className="flex-1" aria-hidden="true" />
-          )}
+        {/* Brandon 2026-05-18 v3: sticky bar con safe-area-inset + jerarquía
+            visual entre "Limpiar" (secundario) y "Aplicar" (primario). */}
+        <div
+          className="shrink-0 border-t border-[var(--rule-soft)] px-6 pt-3 flex gap-3 bg-[var(--surface-raised)]"
+          style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom))" }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              if (onClearAll) onClearAll();
+              else onReset();
+            }}
+            aria-label="Limpiar todos los filtros"
+            className="h-12 flex-1 rounded-2xl text-sm font-extrabold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors active:scale-[0.985]"
+          >
+            Limpiar
+          </button>
           <button
             type="button"
             onClick={onClose}
-            className="min-h-12 flex-[2] rounded-2xl bg-primary text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors"
+            className="h-12 flex-[2] rounded-2xl bg-[var(--text-primary)] text-sm font-extrabold text-[var(--surface-raised)] hover:opacity-90 transition-opacity active:scale-[0.985] uppercase tracking-wide"
           >
-            Aplicar
+            Ver tiendas
           </button>
         </div>
       </div>
@@ -348,12 +495,28 @@ function FiltersDrawer({
 /* ── Componente principal: barra horizontal compacta ────────────────────────── */
 
 export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
-  const { filters, onChange, onRequestGeo, geoLoading, hideProductCategory } = props;
+  const {
+    filters,
+    onChange,
+    onRequestGeo,
+    geoLoading,
+    hideProductCategory,
+    zones,
+    zone,
+    onZoneChange,
+    extraSort,
+    onClearAll,
+    globalActiveCount,
+  } = props;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
 
-  const activeCount = countActiveFilters(filters);
+  const baseActiveCount = countActiveFilters(filters);
+  const zoneActive = !!zone;
+  // Si el caller pasa globalActiveCount, lo usamos (cuenta search + chips +
+  // sort externo). Si no, calculamos del estado interno.
+  const activeCount = globalActiveCount ?? (baseActiveCount + (zoneActive ? 1 : 0));
   const priceActive = filters.minPrice > 0 || filters.maxPrice < MAX_PRICE_LIMIT;
   const currentSort = SORT_OPTIONS.find((o) => o.value === filters.sortBy) ?? SORT_OPTIONS[0];
 
@@ -405,8 +568,16 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
         geoLoading={geoLoading}
         onChange={onChange}
         onRequestGeo={onRequestGeo}
-        onReset={handleReset}
+        onReset={() => {
+          handleReset();
+          onZoneChange?.("");
+        }}
         activeCount={activeCount}
+        zones={zones}
+        zone={zone}
+        onZoneChange={onZoneChange}
+        extraSort={extraSort}
+        onClearAll={onClearAll}
       />
 
       {/* ── Desktop: barra horizontal compacta ── */}

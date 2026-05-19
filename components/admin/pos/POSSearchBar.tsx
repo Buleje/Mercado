@@ -155,7 +155,7 @@ export default function POSSearchBar({
           onFocus={() => setShowResults(true)}
           placeholder="Buscar producto, código de barras..."
           aria-label="Buscar productos"
-          className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-colors"
+          className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
           autoComplete="off"
         />
         <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted px-1.5 py-0.5 rounded font-mono">
@@ -165,7 +165,7 @@ export default function POSSearchBar({
 
       {/* Search results dropdown */}
       {showResults && debouncedQuery.trim() && (
-        <div className="absolute z-30 left-0 right-0 mx-3 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-80 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 mx-3 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl max-h-80 overflow-y-auto">
           {results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-[var(--text-tertiary)] dark:text-muted">
               <Package className="h-5 w-5 mb-1" />
@@ -180,7 +180,7 @@ export default function POSSearchBar({
                   key={p.id}
                   onClick={() => handleAdd(p)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0",
+                    "w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-[var(--rule-base)] last:border-0",
                     outOfStock && "opacity-50",
                     isFirstHighlight && "ring-2 ring-primary bg-primary/5"
                   )}
@@ -201,7 +201,7 @@ export default function POSSearchBar({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
+                    <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                       {p.name}
                     </p>
                     <div className="flex items-center gap-1.5">

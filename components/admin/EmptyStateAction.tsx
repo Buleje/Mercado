@@ -38,7 +38,7 @@ export default function EmptyStateAction({
         <Icon className="h-8 w-8 text-muted" />
       </div>
 
-      <CardTitle className="text-base font-bold text-foreground mb-1">{title}</CardTitle>
+      <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-1">{title}</CardTitle>
       <p className="text-sm text-muted max-w-xs mb-4">{description}</p>
 
       {actionLabel && (

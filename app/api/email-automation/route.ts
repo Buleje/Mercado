@@ -35,27 +35,48 @@ export async function GET(req: NextRequest) {
       distinct: ["customerPhone"],
     });
 
-    for (const { customerPhone, tenantId } of recentOrders) {
-      if (!customerPhone) continue;
-      const orderCount = await prisma.order.count({ where: { customerPhone, tenantId } });
-      if (orderCount !== 1) continue; // only first order
+    // Brandon perf P0 #2a: batch lookup de counts y notificaciones existentes.
+    // Antes: (order.count + customerNotif.findFirst + customerNotif.create) × N = 3xN queries.
+    // Ahora: 1 groupBy + 1 findMany + 1 createMany = 3 queries totales independientes de N.
+    const validPhones = recentOrders.map((o) => o.customerPhone).filter((p): p is string => !!p);
 
-      // Check if welcome notification already sent
-      const existing = await prisma.customerNotification.findFirst({
-        where: { customerPhone, tenantId, title: "¡Bienvenido a Buleje!" },
-      });
-      if (existing) continue;
+    if (validPhones.length > 0) {
+      const [countsByPhone, existingWelcome] = await Promise.all([
+        prisma.order.groupBy({
+          by: ["customerPhone", "tenantId"],
+          where: { customerPhone: { in: validPhones } },
+          _count: { id: true },
+        }),
+        prisma.customerNotification.findMany({
+          where: { customerPhone: { in: validPhones }, title: "¡Bienvenido a Buleje!" },
+          select: { customerPhone: true, tenantId: true },
+        }),
+      ]);
 
-      await prisma.customerNotification.create({
-        data: {
-          tenantId,
-          customerPhone,
-          title: "¡Bienvenido a Buleje!",
-          body: "Gracias por tu primer pedido. Como cliente nuevo, disfruta envío gratis en tu próxima compra. ¡Esperamos verte pronto! 🎉",
-          type: "promotion",
-        },
+      const countMap = new Map(
+        countsByPhone.map((r) => [`${r.customerPhone}:${r.tenantId}`, r._count.id]),
+      );
+      const notifiedSet = new Set(existingWelcome.map((n) => `${n.customerPhone}:${n.tenantId}`));
+
+      const toCreate = recentOrders.filter(({ customerPhone, tenantId }) => {
+        if (!customerPhone) return false;
+        const count = countMap.get(`${customerPhone}:${tenantId}`) ?? 0;
+        return count === 1 && !notifiedSet.has(`${customerPhone}:${tenantId}`);
       });
-      results.welcome++;
+
+      if (toCreate.length > 0) {
+        await prisma.customerNotification.createMany({
+          data: toCreate.map(({ tenantId, customerPhone }) => ({
+            tenantId,
+            customerPhone: customerPhone!,
+            title: "¡Bienvenido a Buleje!",
+            body: "Gracias por tu primer pedido. Como cliente nuevo, disfruta envío gratis en tu próxima compra. ¡Esperamos verte pronto! 🎉",
+            type: "promotion",
+          })),
+          skipDuplicates: true,
+        });
+        results.welcome = toCreate.length;
+      }
     }
 
     // ── 2. Post-delivery review request ─────────────────────
@@ -67,31 +88,60 @@ export async function GET(req: NextRequest) {
       select: { id: true, customerPhone: true, tenantId: true },
     });
 
-    for (const order of deliveredOrders) {
-      if (!order.customerPhone) continue;
-      // Check preferences
-      const customer = await prisma.customer.findUnique({
-        where: { phone: order.customerPhone },
-        select: { notifOrderUpdates: true },
-      });
-      if (!customer?.notifOrderUpdates) continue;
+    // Brandon perf P0 #2b: batch lookup de prefs de cliente y notificaciones existentes.
+    // Antes: (customer.findUnique + customerNotif.findFirst + customerNotif.create) × N = 3xN.
+    // Ahora: 1 findMany customers + 1 findMany notifs + 1 createMany = 3 queries totales.
+    const deliveredPhones = deliveredOrders
+      .map((o) => o.customerPhone)
+      .filter((p): p is string => !!p);
 
-      // Check if review request already sent for this order
-      const existing = await prisma.customerNotification.findFirst({
-        where: { customerPhone: order.customerPhone, tenantId: order.tenantId, body: { contains: order.id.slice(-6) } },
-      });
-      if (existing) continue;
+    if (deliveredPhones.length > 0) {
+      const deliveredOrderIds6 = deliveredOrders.map((o) => o.id.slice(-6));
 
-      await prisma.customerNotification.create({
-        data: {
-          tenantId: order.tenantId,
-          customerPhone: order.customerPhone,
-          title: "¿Cómo fue tu pedido?",
-          body: `Tu pedido #${order.id.slice(-6)} fue entregado. ¡Cuéntanos cómo te fue! Tu opinión nos ayuda a mejorar. ⭐`,
-          type: "order",
-        },
+      const [customersWithPrefs, existingReviewNotifs] = await Promise.all([
+        prisma.customer.findMany({
+          where: { phone: { in: deliveredPhones } },
+          select: { phone: true, notifOrderUpdates: true },
+        }),
+        prisma.customerNotification.findMany({
+          where: {
+            customerPhone: { in: deliveredPhones },
+            title: "¿Cómo fue tu pedido?",
+            // Filtramos las que ya tienen el id de alguna de las ordenes procesadas
+            body: { contains: deliveredOrderIds6[0] ?? "" },
+          },
+          select: { body: true, customerPhone: true },
+        }),
+      ]);
+
+      const prefsMap = new Map(customersWithPrefs.map((c) => [c.phone, c.notifOrderUpdates]));
+      // Para el dedup: set de "phone:orderId6" ya notificados
+      const reviewedSet = new Set(
+        existingReviewNotifs.map((n) => {
+          const match = deliveredOrderIds6.find((id6) => n.body.includes(id6));
+          return match ? `${n.customerPhone}:${match}` : null;
+        }).filter((k): k is string => k !== null),
+      );
+
+      const reviewsToCreate = deliveredOrders.filter((order) => {
+        if (!order.customerPhone) return false;
+        if (!prefsMap.get(order.customerPhone)) return false;
+        return !reviewedSet.has(`${order.customerPhone}:${order.id.slice(-6)}`);
       });
-      results.review++;
+
+      if (reviewsToCreate.length > 0) {
+        await prisma.customerNotification.createMany({
+          data: reviewsToCreate.map((order) => ({
+            tenantId: order.tenantId,
+            customerPhone: order.customerPhone!,
+            title: "¿Cómo fue tu pedido?",
+            body: `Tu pedido #${order.id.slice(-6)} fue entregado. ¡Cuéntanos cómo te fue! Tu opinión nos ayuda a mejorar. ⭐`,
+            type: "order",
+          })),
+          skipDuplicates: true,
+        });
+        results.review = reviewsToCreate.length;
+      }
     }
 
     // ── 3. Abandoned cart reminder ──────────────────────────

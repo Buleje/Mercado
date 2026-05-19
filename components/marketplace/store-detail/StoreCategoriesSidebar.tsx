@@ -89,44 +89,59 @@ function CategoryRow({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "w-full flex items-center gap-3 px-3 h-12 rounded-xl text-left transition-colors",
+        // Brandon 2026-05-18: h-14 (56px) en mobile = mejor tap target premium,
+        // más grande que el actual h-12 (48px). Bordes redondeados 2xl. Padding
+        // px-3.5 para más respiración. Transición scale activa al tap.
+        "w-full flex items-center gap-3.5 px-3.5 h-14 rounded-2xl text-left transition-all duration-150 active:scale-[0.98]",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         active
-          ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/25"
-          : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+          ? "bg-linear-to-r from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 ring-1 ring-white/10"
+          : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]",
       )}
     >
-      {/* Thumbnail */}
+      {/* Thumbnail h-10 (40px, antes 32px) — más prominente */}
       <span className={cn(
-        "shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full overflow-hidden",
-        active ? "bg-white/15" : "bg-[var(--surface-sunken)]",
+        "shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-xl overflow-hidden",
+        active ? "bg-white/20 ring-2 ring-white/30" : "bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]",
       )}>
         {imageUrl ? (
           <Image
             src={imageUrl}
             alt=""
-            width={32}
-            height={32}
+            width={40}
+            height={40}
             className="w-full h-full object-cover"
             unoptimized
           />
         ) : (
-          <Tag className={cn("h-4 w-4", active ? "text-white" : "text-[var(--text-tertiary)]")} />
+          <Tag className={cn("h-4.5 w-4.5", active ? "text-white" : "text-[var(--text-tertiary)]")} strokeWidth={2.25} />
         )}
       </span>
 
-      {/* Label */}
-      <span className="flex-1 text-sm font-bold capitalize truncate">{label}</span>
-
-      {/* Count */}
-      <span className={cn(
-        "shrink-0 inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums",
-        active
-          ? "bg-white/25 text-white"
-          : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-      )}>
-        {count}
+      {/* Label + indicador secundario opcional */}
+      <span className="flex-1 min-w-0">
+        <span className="block text-sm font-extrabold capitalize truncate leading-tight">{label}</span>
+        <span className={cn(
+          "block text-[length:var(--ts-2xs)] font-bold mt-0.5 tabular-nums",
+          active ? "text-white/85" : "text-[var(--text-tertiary)]",
+        )}>
+          {count} {count === 1 ? "producto" : "productos"}
+        </span>
       </span>
+
+      {/* Count badge — más grande y visible, no hace falta porque está inline arriba */}
+      {active ? (
+        <span aria-hidden className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/25">
+          <Tag className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className="shrink-0 inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--text-tertiary)] border border-[var(--rule-soft)]"
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }

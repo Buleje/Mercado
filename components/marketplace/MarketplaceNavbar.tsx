@@ -25,6 +25,7 @@ import {
   Moon,
   LogOut,
   Compass,
+  Home as HomeIcon,
   Store,
   ChefHat,
   Sparkles,
@@ -32,9 +33,11 @@ import {
   Tag,
   Package,
   Wallet,
+  ShoppingCart,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { CartBadge } from "@/components/marketplace/MarketplaceCart";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useTheme } from "@/contexts/theme-context";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCustomer } from "@/contexts/customer-context";
@@ -50,9 +53,11 @@ const NotificationsMenu = dynamic(
   {},
 );
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
+import SharedMobileNavDrawer from "@/components/marketplace/SharedMobileNavDrawer";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
+import { useHasActiveOffers } from "@/hooks/use-active-offers";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import { useLocale } from "@/contexts/locale-context";
@@ -86,6 +91,15 @@ type NavLink = {
 };
 
 const PRIMARY_LINKS: readonly NavLink[] = [
+  {
+    // Brandon mayo 14 2026 v2: agregado link "Inicio" → home B2C (Rappi-style).
+    // Aparece primero — siempre es la salida natural del marketplace al hero.
+    id: "inicio",
+    href: "/",
+    labelKey: "nav.home",
+    icon: HomeIcon,
+    matchEquals: "/",
+  },
   {
     id: "explorar",
     href: "/marketplace/explorar",
@@ -210,7 +224,6 @@ export default function MarketplaceNavbar() {
   const pathname = usePathname();
   const navSearchParams = useSearchParams();
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const mobileSearchRef = useRef<HTMLInputElement>(null);
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
   // Cuando volvemos del callback OAuth con `?oauth=complete&name=...`,
   // pre-llenamos el AuthModal con el nombre del usuario y solo le pedimos
@@ -238,6 +251,8 @@ export default function MarketplaceNavbar() {
   }, []);
   const { count: wishlistCount } = useWishlist();
   const { customer, clear } = useCustomer();
+  // Carrito — usado en mobile para mostrar conteo encima del icono.
+  const { itemCount: cartItemCount } = useMarketplaceCart();
   const { resolved: themeResolved, toggle: toggleTheme } = useTheme();
   const { t } = useLocale();
   const scrolled = useScrolledPastThreshold(40);
@@ -255,10 +270,16 @@ export default function MarketplaceNavbar() {
   const navVisibility = useNavVisibility("marketplace");
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
-  // En modo tiendas-only forzamos siempre visibles "ofertas" y "como-pagar"
-  // — son utilitarios que ayudan a comprar y no deben ocultarse junto al resto.
-  const FORCE_VISIBLE_IN_TIENDAS_ONLY = new Set(["ofertas", "como-pagar"]);
+  // Brandon 2026-05-18 v3: gate "Ofertas" si no hay descuentos activos en
+  // ningún tenant. Antes el link estaba forzado visible en modo tiendas-only,
+  // ahora gatea por dato real (no prometer descuentos inexistentes).
+  const hasActiveOffers = useHasActiveOffers();
+  // En modo tiendas-only forzamos siempre visible "como-pagar" — utilitario
+  // que ayuda a comprar. "Ofertas" ya no se fuerza: respeta hasActiveOffers.
+  const FORCE_VISIBLE_IN_TIENDAS_ONLY = new Set(["como-pagar"]);
   const visibleLinks = PRIMARY_LINKS.filter((l) => {
+    // Ofertas — solo visible si hay ofertas activas (independiente de superadmin).
+    if (l.id === "ofertas" && hasActiveOffers !== true) return false;
     if (isTiendasOnly && FORCE_VISIBLE_IN_TIENDAS_ONLY.has(l.id)) return true;
     return navVisibility[l.id] !== false;
   });
@@ -311,13 +332,6 @@ export default function MarketplaceNavbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, [userMenuOpen]);
 
-  // Autofocus search al abrir drawer mobile
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const timer = setTimeout(() => mobileSearchRef.current?.focus(), 60);
-    return () => clearTimeout(timer);
-  }, [mobileMenuOpen]);
-
   // Body scroll lock mientras drawer mobile abierto
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -360,11 +374,12 @@ export default function MarketplaceNavbar() {
       >
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center gap-3 lg:gap-4">
-            {/* ── Logo ── */}
+            {/* ── Logo (desktop+tablet) — Brandon, mayo 14 2026: siempre lleva a /tiendas.
+                 En mobile vive dentro del input de búsqueda (mayo 15 2026). ── */}
             <Link
-              href="/marketplace"
-              aria-label="Buleje — Ir al marketplace"
-              className="flex items-center shrink-0 text-[var(--accent)]"
+              href="/tiendas"
+              aria-label="Buleje — Ir al directorio de tiendas"
+              className="hidden md:flex items-center shrink-0 text-[var(--accent)]"
             >
               <BulejeWordmark
                 size={36}
@@ -434,8 +449,12 @@ export default function MarketplaceNavbar() {
 
             {/* ── Right cluster (desktop) ── */}
             <div className="hidden md:flex items-center gap-1.5 ml-auto">
-              {/* Language + Theme — siempre arrancan en español + light */}
-              <LanguageSwitcher />
+              {/* Language + Theme — siempre arrancan en español + light.
+                  Brandon mayo 2026: el selector de idioma solo aparece
+                  cuando el superadmin tiene activo el modo "Marketplace
+                  completo". En Solo Tiendas (default) es ruido — los
+                  vecinos de Pucallpa solo hablan español. */}
+              {!isTiendasOnly && <LanguageSwitcher />}
               <ThemeToggle className="!h-10 !w-10" />
               <div
                 className="mx-0.5 h-6 w-px bg-[var(--rule-soft)]"
@@ -620,251 +639,118 @@ export default function MarketplaceNavbar() {
               )}
             </div>
 
-            {/* ── Mobile: cart + hamburger ── */}
-            <div className="flex md:hidden items-center gap-1 ml-auto">
-              {/* Order tracker badge mobile */}
-              <OrderTrackerNavBadge variant="compact" />
-              <span data-tour="cart" className="inline-flex">
-                <CartBadge onClick={handleOpenCart} />
-              </span>
+            {/* ── Mobile bar (Brandon, mayo 15 2026) ──
+                 Layout: [Hamburger] [Search pill: logo + placeholder + lupa] [User] [Cart-with-count-on-top].
+                 El logo desktop arriba se oculta — vive dentro del input ahora.
+                 OrderTrackerNavBadge se mueve al drawer en mobile (real-estate). */}
+            <div className="flex md:hidden items-center gap-1.5 w-full">
+              {/* Hamburger */}
               <button
-                onClick={() => setMobileMenuOpen((o) => !o)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800"
-                aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                onClick={() => setMobileMenuOpen(true)}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                aria-label="Abrir menú"
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-drawer"
               >
-                {mobileMenuOpen ? (
-                  <X className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
-                ) : (
-                  <Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
+                <Menu className="h-6 w-6" aria-hidden="true" strokeWidth={2} />
+              </button>
+
+              {/* Search pill: logo Buleje (mark) · placeholder · lupa */}
+              <form
+                onSubmit={handleSearch}
+                role="search"
+                aria-label={t("nav.search")}
+                className="flex-1 min-w-0"
+              >
+                <div className="relative flex items-center h-11 rounded-full bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1.5">
+                  {/* Logo (solo mark, sin texto) al inicio del input */}
+                  <Link
+                    href="/tiendas"
+                    aria-label="Buleje — Inicio"
+                    className="shrink-0 inline-flex items-center"
+                    onClick={(e) => {
+                      // Si el input tiene foco, evita perderlo al tocar el logo.
+                      e.currentTarget.blur();
+                    }}
+                  >
+                    <BulejeWordmark size={28} showText={false} />
+                  </Link>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Categoría, producto o tienda"
+                    aria-label={t("nav.search")}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-medium"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Buscar"
+                    className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
+                  >
+                    <Search className="h-4 w-4" aria-hidden="true" strokeWidth={2.5} />
+                  </button>
+                </div>
+              </form>
+
+              {/* User — iniciales si está autenticado, ícono si no */}
+              {customer ? (
+                <Link
+                  href="/marketplace/mi-cuenta"
+                  aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
+                  className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-[length:var(--ts-sm)] font-black text-white shadow-sm active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                >
+                  {getInitials(customer.name)}
+                </Link>
+              ) : (
+                <button
+                  onClick={openAuthModal}
+                  aria-label={t("nav.login")}
+                  className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                >
+                  <UserCircle className="h-6 w-6" aria-hidden="true" strokeWidth={1.75} />
+                </button>
+              )}
+
+              {/* Cart — ícono con contador ARRIBA (centrado), no al costado */}
+              <button
+                data-tour="cart"
+                onClick={handleOpenCart}
+                aria-label={`Carrito — ${cartItemCount} ${cartItemCount === 1 ? "producto" : "productos"}`}
+                className="relative shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              >
+                {cartItemCount > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-0 left-1/2 -translate-x-1/2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white shadow-sm leading-none ring-2 ring-[var(--surface-raised)] tabular-nums"
+                  >
+                    {cartItemCount > 99 ? "99+" : cartItemCount}
+                  </span>
                 )}
+                <ShoppingCart
+                  className="h-6 w-6 mt-1.5"
+                  aria-hidden="true"
+                  strokeWidth={2}
+                />
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* ── Mobile drawer lateral ── */}
-      {mobileMenuOpen && (
-        <div className="md:hidden" role="presentation">
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-label="Cerrar menú"
-            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
-          />
-          <aside
-            id="mobile-drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menú del marketplace"
-            className="fixed inset-y-0 right-0 z-[70] flex w-[90vw] max-w-sm flex-col bg-[var(--surface-canvas)] shadow-2xl animate-in slide-in-from-right duration-200 overscroll-contain"
-          >
-            {/* Header drawer */}
-            <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3">
-              <span className="inline-flex items-center gap-2 text-[var(--accent)]">
-                <BulejeWordmark
-                  size={28}
-                  strokeWidth={1.75}
-                  textSize={16}
-                  className="text-[var(--accent-600)] dark:text-white"
-                />
-              </span>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Cerrar menú"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800"
-              >
-                <X className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
-              </button>
-            </div>
-
-            {/* Search top, autofocus */}
-            <form
-              onSubmit={handleSearch}
-              role="search"
-              aria-label={t("nav.search")}
-              className="border-b border-[var(--rule-soft)] px-4 py-3"
-            >
-              <div className="relative">
-                <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
-                  aria-hidden="true"
-                  strokeWidth={1.75}
-                />
-                <input
-                  ref={mobileSearchRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("nav.searchPlaceholder")}
-                  aria-label={t("nav.search")}
-                  className="w-full rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 border border-gray-200 dark:border-gray-700 pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
-                />
-              </div>
-            </form>
-
-            {/* Scrollable: links + mega-menu + switchers */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3">
-              <div className="space-y-0.5">
-                {renderedLinks.map((link) => {
-                  if (link.discover) return null;
-                  const active = isActive(link);
-                  const LinkIcon = link.icon;
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
-                        active
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900",
-                      )}
-                    >
-                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-alt)] dark:bg-gray-900">
-                        <LinkIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-                      </span>
-                      <span className="flex-1">{t(link.labelKey)}</span>
-                      {link.showLiveDot && hasActiveLive && (
-                        <span
-                          aria-label={t("nav.liveNow")}
-                          className="relative inline-flex h-2 w-2"
-                        >
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error-500)] opacity-75" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
-                        </span>
-                      )}
-                      {link.showNewBadge && (
-                        <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-500)]">
-                          {t("nav.new")}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {/* Separator + Descubrí mega-menu */}
-              <div className="mt-3 border-t border-[var(--rule-soft)] pt-3">
-                <DiscoverMegaMenu
-                  variant="mobile"
-                  onNavigate={() => setMobileMenuOpen(false)}
-                />
-              </div>
-
-              {/* Currency + Locale switchers removidos — default: Soles + Español */}
-            </div>
-
-            {/* Footer drawer — auth + theme fijo abajo */}
-            <div className="border-t border-[var(--rule-soft)] px-3 py-3 space-y-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              {customer ? (
-                <>
-                  <Link
-                    href="/marketplace/mi-cuenta"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
-                  >
-                    <UserCircle
-                      className="h-4 w-4 text-[var(--text-secondary)]"
-                      aria-hidden="true"
-                      strokeWidth={1.75}
-                    />
-                    <span>
-                      {t("nav.account")}
-                      {customer.name ? ` — ${customer.name.split(" ")[0]}` : ""}
-                    </span>
-                  </Link>
-                  <Link
-                    href="/mis-pedidos"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
-                  >
-                    <Package
-                      className="h-4 w-4 text-[var(--text-secondary)]"
-                      aria-hidden="true"
-                      strokeWidth={1.75}
-                    />
-                    <span>{t("nav.orders")}</span>
-                  </Link>
-                  <Link
-                    href="/marketplace/favoritos"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
-                  >
-                    <Heart
-                      className={cn(
-                        "h-4 w-4",
-                        wishlistCount > 0
-                          ? "fill-current text-[var(--data-error-500)]"
-                          : "text-[var(--text-secondary)]",
-                      )}
-                      aria-hidden="true"
-                      strokeWidth={1.75}
-                    />
-                    <span className="flex-1">{t("nav.favorites")}</span>
-                    {wishlistCount > 0 && (
-                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
-                        {wishlistCount > 99 ? "99+" : wishlistCount}
-                      </span>
-                    )}
-                  </Link>
-                </>
-              ) : (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    openAuthModal();
-                  }}
-                  className="w-full flex items-center justify-center rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 min-h-[44px]"
-                >
-                  {t("nav.login")}
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  toggleTheme();
-                }}
-                className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900 text-left"
-              >
-                {themeResolved === "dark" ? (
-                  <Sun
-                    className="h-4 w-4 text-[var(--text-secondary)]"
-                    aria-hidden="true"
-                    strokeWidth={1.75}
-                  />
-                ) : (
-                  <Moon
-                    className="h-4 w-4 text-[var(--text-secondary)]"
-                    aria-hidden="true"
-                    strokeWidth={1.75}
-                  />
-                )}
-                <span>
-                  {themeResolved === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
-                </span>
-              </button>
-              {customer && (
-                <button
-                  onClick={() => {
-                    clear();
-                    setMobileMenuOpen(false);
-                    window.location.reload();
-                  }}
-                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] text-left"
-                >
-                  <LogOut className="h-4 w-4" aria-hidden="true" strokeWidth={1.75} />
-                  <span>{t("nav.logout")}</span>
-                </button>
-              )}
-            </div>
-          </aside>
-        </div>
-      )}
+      {/* ── Mobile drawer (Brandon, mayo 15 2026 v2) ──
+           - Sale por la IZQUIERDA (mismo lado que el hamburger)
+           - Transición suave: 320ms cubic-bezier easeOut + fade del backdrop
+           - Sin input de búsqueda interno (ya vive en la nav bar)
+           - Header gradient con logo + saludo + decorative blobs
+           - Items con indicator pill izquierdo + chevron derecho */}
+      {/* Brandon 2026-05-18: drawer unificado SharedMobileNavDrawer.
+          Antes había drawer inline gigante (~280 líneas) duplicado con el
+          del StoreDetailClient. Ahora ambos consumen el mismo componente. */}
+      <SharedMobileNavDrawer
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
 
       <AuthModal
         open={authModalOpen}

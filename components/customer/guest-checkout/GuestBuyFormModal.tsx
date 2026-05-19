@@ -236,7 +236,7 @@ export default function GuestBuyFormModal({
                     label="Celular (9 dígitos)"
                     value={phone}
                     onChange={setPhone}
-                    placeholder="916409675"
+                    placeholder="929340532"
                     type="tel"
                     inputMode="numeric"
                   />

@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { enqueueActivityLog } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const CreateCuentaSchema = z.object({
   nombre: z.string().min(1).max(200),
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/treasury/cuentas
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "treasury-cuentas"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/treasury/cuentas — update
 export async function PATCH(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "treasury-cuentas"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;

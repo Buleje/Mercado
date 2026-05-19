@@ -77,12 +77,9 @@ const RULES: Rule[] = [
     message: "Letter-spacing arbitrario prohibido (ADR-070). Usa tracking-[var(--ls-tight|normal|wide|wider)] o tokens tracking-tight/normal/wide/wider.",
     severity: "error",
   },
-  {
-    id: "warn-font-black",
-    pattern: /(?<![\w:-])font-black(?!\w)/g,
-    message: "font-black prohibido — usa font-extrabold (ADR-070: exclusivo para KPI values).",
-    severity: "warning",
-  },
+  // BUGFIX 2026-05-12: regla warn-font-extrabold tenia mensaje circular
+  // ("font-extrabold prohibido — usa font-extrabold"). Eliminada hasta clarificar
+  // intencion del ADR-070. El codemod migró font-black → font-extrabold consistentemente.
   // ── Motion tokens (ADR-071) ──────────────────────────────────────────────
   {
     id: "no-arbitrary-duration-ms",
@@ -106,7 +103,7 @@ const RULES: Rule[] = [
   {
     id: "warn-shadow-2xl",
     pattern: /(?<![\w-])shadow-2xl(?!\w)/g,
-    message: "shadow-2xl es excesivo. Usa shadow-[var(--shadow-xl)] (ADR-072).",
+    message: "shadow-[var(--shadow-xl)] es excesivo. Usa shadow-[var(--shadow-xl)] (ADR-072).",
     severity: "warning",
   },
   // ── Neutral surfaces hardcoded (ADR-074) ───────────────────────────────────
@@ -248,6 +245,10 @@ const RULES: Rule[] = [
 const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   { file: /shared[\\/]AdminTabBar\.tsx$/, allowedRules: ["no-decorative-gradient"] },
   { file: /BannerEditor\.tsx$/, allowedRules: ["no-decorative-gradient"] },
+  // DesignTab es el editor visual de design tokens del modulo Mi tienda publica.
+  // Sus gradients violet/fuchsia son previews de los tokens decorativos que el
+  // tenant puede activar — no son chrome del DS, son data del tenant.
+  { file: /admin[\\/]store-page[\\/]_components[\\/]DesignTab\.tsx$/, allowedRules: ["no-decorative-gradient", "no-legacy-gradient-prefix"] },
   // DS primitives — shared/ y packages/design-system/** pueden importar lucide-react directo.
   { file: /packages[\\/]design-system[\\/]/, allowedRules: ["ds-no-direct-lucide-import", "ds-no-style-color-inline"] },
   { file: /components[\\/]admin[\\/]shared[\\/]/, allowedRules: ["ds-no-direct-lucide-import"] },

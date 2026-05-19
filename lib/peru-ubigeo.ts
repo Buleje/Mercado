@@ -135,30 +135,87 @@ export function findDistritoByName(
 /**
  * Best-match desde un payload de reverse-geocode (Nominatim u otro).
  * Tolera variaciones tipicas: "Lima Province", "Distrito de Surco", etc.
+ *
+ * Estrategia robusta:
+ *   - Departamento: state | region (Nominatim a veces invierte)
+ *   - Provincia: county | region | municipality (Nominatim PE usa "region"
+ *     para provincia política, ej. "Coronel Portillo")
+ *   - Distrito: suburb | city_district | town | village | city
+ *     Fallback: scan display_name buscando un distrito conocido dentro
+ *     de la provincia detectada (resuelve el caso Callería/Pucallpa donde
+ *     Nominatim no expone distrito como campo separado).
  */
 export function bestMatchFromGeocode(input: {
-  state?: string | null; // departamento
-  county?: string | null; // provincia
-  city?: string | null; // ciudad/distrito
+  state?: string | null; // departamento (Nominatim default)
+  region?: string | null; // provincia en muchas zonas de PE
+  county?: string | null; // provincia alternativa
+  municipality?: string | null; // municipio (a veces distrito)
+  city?: string | null; // ciudad
+  town?: string | null;
+  village?: string | null;
   suburb?: string | null;
   city_district?: string | null;
+  neighbourhood?: string | null;
+  /** display_name de Nominatim para parseo fallback de distrito. */
+  displayName?: string | null;
 }): {
   departamento: DepartamentoEntry | null;
   provincia: ProvinciaEntry | null;
   distrito: DistritoEntry | null;
 } {
-  const dep = input.state ? findDepartamentoByName(input.state.replace(/\s+(province|department)$/i, "")) : null;
+  // 1. DEPARTAMENTO — state es lo más común; region como fallback.
+  const depRaw = input.state ?? input.region ?? null;
+  const dep = depRaw
+    ? findDepartamentoByName(depRaw.replace(/\s+(province|department|region)$/i, ""))
+    : null;
   if (!dep) return { departamento: null, provincia: null, distrito: null };
 
-  const provName = input.county ?? input.city ?? null;
-  const prov = provName ? findProvinciaByName(dep.code, provName.replace(/^provincia\s+de\s+/i, "")) : null;
-
+  // 2. PROVINCIA — region es lo más común en PE para provincia política;
+  //    county y municipality son fallbacks. Si region ya se usó para
+  //    departamento (porque state estaba vacío), no la reutilizamos.
+  const provCandidates = [
+    input.region && input.state ? input.region : null, // region solo si NO se usó para dep
+    input.county,
+    input.municipality,
+  ].filter(Boolean) as string[];
+  let prov: ProvinciaEntry | null = null;
+  for (const cand of provCandidates) {
+    prov = findProvinciaByName(dep.code, cand.replace(/^provincia\s+de\s+/i, ""));
+    if (prov) break;
+  }
   if (!prov) return { departamento: dep, provincia: null, distrito: null };
 
-  const distName = input.suburb ?? input.city_district ?? input.city ?? null;
-  const dist = distName
-    ? findDistritoByName(dep.code, prov.code, distName.replace(/^distrito\s+de\s+/i, ""))
-    : null;
+  // 3. DISTRITO — probar campos directos primero, luego parsear displayName.
+  const distCandidates = [
+    input.suburb,
+    input.city_district,
+    input.neighbourhood,
+    input.town,
+    input.village,
+    input.municipality,
+    input.city,
+  ].filter(Boolean) as string[];
+  let dist: DistritoEntry | null = null;
+  for (const cand of distCandidates) {
+    dist = findDistritoByName(dep.code, prov.code, cand.replace(/^distrito\s+de\s+/i, ""));
+    if (dist) break;
+  }
+  // Fallback: parsear display_name buscando un distrito conocido de la provincia.
+  if (!dist && input.displayName) {
+    const distritosOfProv = DISTRITOS_BY_DEP_PROV.get(`${dep.code}/${prov.code}`) ?? [];
+    const normalizedDisplay = norm(input.displayName);
+    for (const d of distritosOfProv) {
+      // Buscar el nombre del distrito como palabra completa en display_name.
+      // RegExp con \b no funciona bien con acentos normalizados, hacemos match simple.
+      const distNameNorm = norm(d.nombre);
+      // Wrap con limites de palabra simulados (separadores comunes).
+      const pattern = new RegExp(`(^|[,\\s])${distNameNorm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([,\\s]|$)`);
+      if (pattern.test(normalizedDisplay)) {
+        dist = d;
+        break;
+      }
+    }
+  }
 
   return { departamento: dep, provincia: prov, distrito: dist };
 }

@@ -66,7 +66,7 @@ export default function DynamicReorderTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Punto de Reorden Dinámico</SectionTitle>
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Punto de Reorden Dinámico</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Cálculo automático de cuándo y cuánto reordenar basado en demanda real</p>
         </div>
         <button
@@ -114,19 +114,19 @@ export default function DynamicReorderTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <input type="text" placeholder="Buscar producto o SKU..." value={search} onChange={e => setSearch(e.target.value)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary w-56" />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <input type="text" placeholder="Buscar producto o SKU..." value={search} onChange={e => setSearch(e.target.value)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary w-56" />
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="all">Todos los estados</option>
           <option value="urgente">Urgente</option>
           <option value="pronto">Pronto</option>
           <option value="ok">OK</option>
           <option value="sobrestock">Sobrestock</option>
         </select>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="all">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
           <option value="stockout">Días agotamiento</option>
           <option value="name">Nombre</option>
           <option value="stock">Stock actual</option>
@@ -134,11 +134,11 @@ export default function DynamicReorderTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border  overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]  overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+              <tr className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Producto</th>
                 <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Stock</th>
                 <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Venta/día</th>
@@ -153,17 +153,17 @@ export default function DynamicReorderTab() {
               {filtered.map(p => {
                 const cfg = STATUS_CONFIG[p.status];
                 return (
-                  <tr key={p.id} onClick={() => setDetail(p)} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface cursor-pointer transition-colors">
+                  <tr key={p.id} onClick={() => setDetail(p)} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface cursor-pointer transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{p.name}</p>
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</p>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{p.sku} · {p.category}</p>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-[var(--text-primary)] dark:text-foreground">{p.currentStock}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-foreground">{Number(p.avgDailySales).toFixed(1)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.currentStock}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-[var(--text-primary)]">{Number(p.avgDailySales).toFixed(1)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-primary">{p.dynamicROP}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-foreground">{p.eoq}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.eoq}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      <span className={cn("font-extrabold", p.daysUntilStockout <= 3 ? "text-[var(--data-error-500)]" : p.daysUntilStockout <= 7 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{p.daysUntilStockout}d</span>
+                      <span className={cn("font-extrabold", p.daysUntilStockout <= 3 ? "text-[var(--data-error-500)]" : p.daysUntilStockout <= 7 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{p.daysUntilStockout}d</span>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       {p.trend === "up" && <TrendingUp className="h-4 w-4 text-[var(--data-success-500)] mx-auto" />}
@@ -187,19 +187,19 @@ export default function DynamicReorderTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.name}</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
               <button onClick={() => setDetail(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
-                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">SKU</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.sku}</p></div>
-                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Categoría</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.category}</p></div>
-                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock actual</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.currentStock} u</p></div>
-                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Venta diaria promedio</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{Number(detail.avgDailySales).toFixed(1)} u/día</p></div>
-                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Lead time proveedor</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.leadTimeDays} días</p></div>
-                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock seguridad</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.safetyStock} u</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">SKU</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.sku}</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Categoría</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.category}</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock actual</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.currentStock} u</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Venta diaria promedio</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{Number(detail.avgDailySales).toFixed(1)} u/día</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Lead time proveedor</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.leadTimeDays} días</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock seguridad</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.safetyStock} u</p></div>
               </div>
 
               <div className="bg-primary/5 rounded-xl p-4 space-y-2">
@@ -230,8 +230,8 @@ export default function DynamicReorderTab() {
       )}
 
       {/* Methodology */}
-      <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm mb-2">Metodología del cálculo</CardTitle>
+      <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
+        <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-2">Metodología del cálculo</CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-[var(--text-secondary)] dark:text-muted">
           <div><strong>ROP (Punto de Reorden):</strong> Venta diaria × Lead Time + Stock Seguridad. Ajustado dinámicamente según tendencia de ventas.</div>
           <div><strong>EOQ (Cantidad Económica):</strong> Lote óptimo de compra que minimiza costos totales de inventario. Basado en demanda anual y costos de ordenar.</div>

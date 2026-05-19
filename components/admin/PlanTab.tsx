@@ -134,7 +134,7 @@ function FeatureRow({ label, available }: { label: string; available: boolean })
       ) : (
         <XCircle className="w-4 h-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />
       )}
-      <span className={available ? "text-foreground" : "text-muted line-through"}>{label}</span>
+      <span className={available ? "text-[var(--text-primary)]" : "text-muted line-through"}>{label}</span>
     </div>
   );
 }

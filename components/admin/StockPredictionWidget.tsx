@@ -71,13 +71,13 @@ function urgencyClass(days: number) {
     return "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-[var(--data-error-700)] dark:text-red-400";
   if (days < 7)
     return "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400";
-  return "bg-muted dark:bg-muted/40 border-border text-foreground dark:text-foreground";
+  return "bg-muted dark:bg-muted/40 border-border text-[var(--text-primary)] dark:text-[var(--text-primary)]";
 }
 
 function urgencyIcon(days: number) {
   if (days < 3) return <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />;
   if (days < 7) return <Clock className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />;
-  return <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
+  return <Package className="h-3.5 w-3.5 shrink-0 text-[var(--text-secondary)]" />;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -139,19 +139,19 @@ export default function StockPredictionWidget() {
   const warningCount = items.filter((i) => i.daysLeft >= 3 && i.daysLeft < 7).length;
 
   return (
-    <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
+    <div className="rounded-lg border border-border bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold text-foreground dark:text-foreground">
+          <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Prediccion de agotamiento de stock
           </span>
         </div>
         <button
           onClick={fetchData}
           disabled={loading}
-          className="rounded-md p-1 text-muted-foreground hover:bg-muted dark:hover:bg-muted/50 transition-colors disabled:opacity-50"
+          className="rounded-md p-1 text-[var(--text-secondary)] hover:bg-muted dark:hover:bg-muted/50 transition-colors disabled:opacity-50"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
@@ -176,7 +176,7 @@ export default function StockPredictionWidget() {
 
       {/* Loading state */}
       {loading && (
-        <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground">
+        <div className="flex items-center justify-center py-6 gap-2 text-[var(--text-secondary)]">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">Calculando predicciones...</span>
         </div>
@@ -192,7 +192,7 @@ export default function StockPredictionWidget() {
 
       {/* Empty state */}
       {!loading && !error && items.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
+        <p className="text-sm text-[var(--text-secondary)] text-center py-4">
           No hay datos de ventas suficientes para predecir.
         </p>
       )}
@@ -224,7 +224,7 @@ export default function StockPredictionWidget() {
 
       {/* Last updated */}
       {lastUpdated && (
-        <p className="text-xs text-muted-foreground text-right">
+        <p className="text-xs text-[var(--text-secondary)] text-right">
           Actualizado: {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
           {" "}· se refresca cada 5 min
         </p>

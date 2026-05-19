@@ -242,7 +242,9 @@ export default function DashboardTab() {
                   osc.start();
                   osc.stop(ctx.currentTime + 0.35);
                 } else {
-                  ctx.close().catch(() => {});
+                  // AudioContext.close() puede fallar si el ctx ya está cerrado
+                  // por el browser — best-effort, no afecta funcionalidad.
+                  ctx.close().catch(() => { /* AudioContext already closed */ });
                 }
               }
             } catch { /* optional sound — silently skip */ }
@@ -1336,7 +1338,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         {/* KPI cards skeleton */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-2">
+            <div key={i} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-2">
               <div className="h-3 w-16 bg-[var(--rule-soft)] dark:bg-surface rounded" />
               <div className="h-7 w-24 bg-[var(--rule-soft)] dark:bg-surface rounded" />
               <div className="h-3 w-20 bg-[var(--rule-soft)] dark:bg-surface rounded" />
@@ -1344,7 +1346,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           ))}
         </div>
         {/* Orders list skeleton */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3">
           <div className="h-4 w-28 bg-[var(--rule-soft)] dark:bg-surface rounded" />
           {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -1359,7 +1361,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           ))}
         </div>
         {/* Chart skeleton */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
           <div className="h-4 w-36 bg-[var(--rule-soft)] dark:bg-surface rounded mb-4" />
           <div className="flex flex-wrap items-end gap-2 h-32">
             {[40, 70, 55, 85, 60, 90, 75].map((h, i) => (
@@ -1466,7 +1468,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               <Download className="h-3.5 w-3.5" />
             </button>
             {showExport && (
-              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg py-1 z-50 min-w-40">
+              <div className="absolute right-0 top-full mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg py-1 z-50 min-w-40">
                 {[
                   { key:"ventas", label:"Ventas CSV" },
                   { key:"pedidos", label:"Pedidos CSV" },
@@ -1475,7 +1477,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   { key:"pdf", label:"Reporte PDF" },
                 ].map(opt => (
                   <button key={opt.key} onClick={()=>handleExport(opt.key)}
-                    className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+                    className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
                     {opt.label}
                   </button>
                 ))}
@@ -1509,7 +1511,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           </a>
           {/* Auto-refresh toggle */}
-          <div className="flex items-center gap-1.5 ml-1 border-l border-[var(--rule-base)] dark:border-card-border pl-2">
+          <div className="flex items-center gap-1.5 ml-1 border-l border-[var(--rule-base)] dark:border-[var(--rule-base)] pl-2">
             <button
               onClick={() => setAutoRefresh(v => !v)}
               className={cn(
@@ -1598,10 +1600,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto">
             {/* ── Col 1: Ventas + Caja ── */}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
-              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Ventas</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ventas</span>
                 </div>
                 {st.daily.length > 0 && (
                   <div className="relative h-20 mb-2">
@@ -1631,10 +1633,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   ))}
                 </div>
               </div>
-              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <Banknote className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Caja</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Caja</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                   {[
@@ -1655,7 +1657,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       <div key={p.method} className="flex flex-wrap items-center gap-2">
                         <div className="w-2 h-2 rounded-full shrink-0" style={{background: p.color}} />
                         <span className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted flex-1 truncate">{p.label}</span>
-                        <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(p.total)}</span>
+                        <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(p.total)}</span>
                       </div>
                     ))}
                   </div>
@@ -1664,10 +1666,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             </div>
             {/* ── Col 2: Productos + Inventario ── */}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
-              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <TrendingUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Productos (Top ingresos)</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Productos (Top ingresos)</span>
                 </div>
                 {st.topRev.length === 0 ? (
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted py-2 text-center">Sin ventas registradas</p>
@@ -1681,7 +1683,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
                               <span className="text-xs text-[var(--text-secondary)] truncate">{p.name}</span>
-                              <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground ml-1 shrink-0">{fmt(p.revenue)}</span>
+                              <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] ml-1 shrink-0">{fmt(p.revenue)}</span>
                             </div>
                             <div className="h-1 bg-[var(--surface-sunken)] dark:bg-accent rounded-full overflow-hidden">
                               <div className="h-full rounded-full" style={{width:`${(p.revenue/maxRev)*100}%`,background:i<3?"#111827":"#d1d5db"}} />
@@ -1693,21 +1695,21 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   );
                 })()}
                 {st.catSales.length > 0 && (
-                  <div className="mt-2.5 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div className="mt-2.5 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {st.catSales.slice(0, 4).map(c => (
                       <div key={c.cat} className="flex items-center gap-1.5 min-w-0">
                         <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{background: c.color}} />
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted truncate flex-1">{c.label}</span>
-                        <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] dark:text-foreground shrink-0">{fmt(c.total)}</span>
+                        <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] shrink-0">{fmt(c.total)}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <Package className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Inventario</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
@@ -1725,13 +1727,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   <div className="space-y-1">
                     {st.agotados.slice(0, 2).map(p => (
                       <div key={p.id} className="flex items-center justify-between py-1.5 px-2 bg-[var(--data-error-50)] dark:bg-red-950/30 rounded-lg">
-                        <span className="text-xs text-[var(--text-primary)] dark:text-foreground truncate flex-1">{p.name}</span>
+                        <span className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate flex-1">{p.name}</span>
                         <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] ml-2 shrink-0">Agotado</span>
                       </div>
                     ))}
                     {st.stockCritico.filter(p => (p.stock ?? 0) > 0).slice(0, 4).map(p => (
                       <div key={p.id} className="flex items-center justify-between py-1.5 px-2 bg-[var(--data-warning-50)] dark:bg-amber-950/30 rounded-lg">
-                        <span className="text-xs text-[var(--text-primary)] dark:text-foreground truncate flex-1">{p.name}</span>
+                        <span className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate flex-1">{p.name}</span>
                         <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] ml-2 shrink-0">{p.stock}/{p.stockMin}</span>
                       </div>
                     ))}
@@ -1744,10 +1746,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             </div>
             {/* ── Col 3: Clientes + Compras ── */}
             <div className="flex flex-col gap-3 overflow-y-auto min-h-0" style={{scrollbarWidth:"thin" as React.CSSProperties["scrollbarWidth"]}}>
-              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <Users className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Clientes</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Clientes</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
@@ -1777,7 +1779,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
                               <span className="text-xs text-[var(--text-secondary)] truncate">{c.name}</span>
-                              <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground ml-1 shrink-0">{fmt(c.total)}</span>
+                              <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] ml-1 shrink-0">{fmt(c.total)}</span>
                             </div>
                             <div className="h-1 bg-[var(--surface-sunken)] dark:bg-accent rounded-full overflow-hidden">
                               <div className="h-full rounded-full bg-[var(--text-primary)]" style={{width:`${(c.total/mx)*100}%`}} />
@@ -1789,10 +1791,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   );
                 })()}
               </div>
-              <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 shrink-0">
-                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 shrink-0">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <Truck className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Compras</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Compras</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
@@ -1813,7 +1815,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
                               <span className="text-xs text-[var(--text-secondary)] truncate">{s.name}</span>
-                              <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground ml-1 shrink-0">{fmt(s.total)}</span>
+                              <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] ml-1 shrink-0">{fmt(s.total)}</span>
                             </div>
                             <div className="h-1 bg-[var(--surface-sunken)] dark:bg-accent rounded-full overflow-hidden">
                               <div className="h-full rounded-full bg-[var(--text-primary)]" style={{width:`${(s.total/mx)*100}%`}} />
@@ -1825,7 +1827,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   </div>
                 )}
                 {st.overdue.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
+                  <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-1">
                       {st.overdue.length} cuenta{st.overdue.length !== 1 ? "s" : ""} vencida{st.overdue.length !== 1 ? "s" : ""}
                     </p>
@@ -1874,7 +1876,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           value={dashSearch}
           onChange={e => { setDashSearch(e.target.value); if (section !== "ventas" && e.target.value) setSection("ventas"); }}
           placeholder="Buscar pedido, cliente…"
-          className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-accent/50 text-[var(--text-primary)] dark:text-foreground placeholder-gray-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-card transition-colors"
+          className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-accent/50 text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder-gray-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-[var(--surface-raised)] transition-colors"
         />
         {dashSearch && (
           <button onClick={() => setDashSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] font-bold text-sm">×</button>
@@ -1884,14 +1886,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
 
       {/* ── Section Tabs ── */}
       {!expandAll && (
-      <div className={cn("flex border-b border-[var(--rule-soft)] dark:border-card-border overflow-x-auto", fullscreen && "justify-center gap-1")} style={{scrollbarWidth:"none" as React.CSSProperties["scrollbarWidth"],marginBottom:"20px"}}>
+      <div className={cn("flex border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] overflow-x-auto", fullscreen && "justify-center gap-1")} style={{scrollbarWidth:"none" as React.CSSProperties["scrollbarWidth"],marginBottom:"20px"}}>
         {SECTIONS.map(s => (
           <button key={s.id} onClick={()=>setSection(s.id)}
             className={cn(
               "flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold whitespace-nowrap border-b-2 -mb-px transition-all shrink-0",
               fullscreen ? "text-sm" : "text-xs",
               section===s.id
-                ? "border-gray-900 dark:border-foreground text-[var(--text-primary)] dark:text-foreground"
+                ? "border-gray-900 dark:border-foreground text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 : "border-transparent text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
             )}>
             <s.icon className="h-3.5 w-3.5" />{s.label}
@@ -1936,15 +1938,15 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {/* Revenue row */}
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div className="text-center">
-                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{todayRev.toFixed(0)}</p>
+                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{todayRev.toFixed(0)}</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Ingresos</p>
               </div>
               <div className="text-center border-x border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{todayCount}</p>
+                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{todayCount}</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Transacciones</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{todayAvg.toFixed(0)}</p>
+                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{todayAvg.toFixed(0)}</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Ticket prom.</p>
               </div>
             </div>
@@ -1989,7 +1991,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         <div style={{marginBottom:"16px"}}>
           <div className="flex items-center gap-1.5 mb-2.5">
             <Lightbulb className="h-3.5 w-3.5 text-[var(--data-warning-500)]" />
-            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Alertas inteligentes</span>
+            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Alertas inteligentes</span>
             <span className="text-xs text-[var(--text-tertiary)] dark:text-muted ml-1">{st.insights.length}</span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -2047,7 +2049,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
             <BarChart3 className="h-3.5 w-3.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           </div>
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Resumen</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Resumen</CardTitle>
         </div>
       )}
       {(expandAll || section === "resumen") && (
@@ -2061,7 +2063,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <Target className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">Metas del Mes</CardTitle>
+                    <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Metas del Mes</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" })}</p>
                   </div>
                 </div>
@@ -2117,7 +2119,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                             </div>
                             <div>
                               <p className="text-xs font-semibold text-[var(--text-secondary)]">{metric.label}</p>
-                              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{metric.format(metric.value)}</p>
+                              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{metric.format(metric.value)}</p>
                             </div>
                           </div>
                           {status === "complete" && <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />}
@@ -2183,13 +2185,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {/* Edit Goals Modal */}
           {editingMonthlyGoals && (
             <div className="modal-backdrop p-4" onClick={() => setEditingMonthlyGoals(false)}>
-              <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
                       <Target className="h-4 w-4 text-white" />
                     </div>
-                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Metas del mes</CardTitle>
+                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Metas del mes</CardTitle>
                   </div>
                   <button onClick={() => setEditingMonthlyGoals(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
@@ -2207,7 +2209,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         value={tempGoals.revenue || ""}
                         onChange={e => setTempGoals(prev => ({ ...prev, revenue: Number(e.target.value) }))}
                         placeholder="5000"
-                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                     <div>
@@ -2221,7 +2223,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         value={tempGoals.orders || ""}
                         onChange={e => setTempGoals(prev => ({ ...prev, orders: Number(e.target.value) }))}
                         placeholder="100"
-                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                     <div>
@@ -2235,7 +2237,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         value={tempGoals.customers || ""}
                         onChange={e => setTempGoals(prev => ({ ...prev, customers: Number(e.target.value) }))}
                         placeholder="50"
-                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                     <div>
@@ -2249,7 +2251,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                         value={tempGoals.avgTicket || ""}
                         onChange={e => setTempGoals(prev => ({ ...prev, avgTicket: Number(e.target.value) }))}
                         placeholder="50"
-                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
                       />
                     </div>
                   </div>
@@ -2257,7 +2259,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"><strong>Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
+                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <button onClick={() => setEditingMonthlyGoals(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">Cancelar</button>
                   <button onClick={saveMonthlyGoals} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--text-primary)] hover:opacity-90 transition-colors ">Guardar metas</button>
                 </div>
@@ -2268,13 +2270,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {/* Goal History Modal */}
           {showGoalHistory && (
             <div className="modal-backdrop p-4" onClick={() => setShowGoalHistory(false)}>
-              <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+              <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
                       <BarChart3 className="h-4 w-4 text-white" />
                     </div>
-                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Histórico de metas</CardTitle>
+                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Histórico de metas</CardTitle>
                   </div>
                   <button onClick={() => setShowGoalHistory(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
@@ -2292,13 +2294,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           const date = new Date(monthKey + "-01");
                           const monthLabel = date.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
                           return (
-                            <div key={monthKey} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 border border-[var(--rule-soft)] dark:border-card-border">
-                              <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 capitalize">{monthLabel}</h4>
+                            <div key={monthKey} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                              <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 capitalize">{monthLabel}</h4>
                               <div className="grid sm:grid-cols-2 gap-3 text-xs">
                                 <div>
                                   <span className="text-[var(--text-secondary)] dark:text-muted block mb-1">Ingresos</span>
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(entry.actual?.revenue || 0)}</span>
+                                    <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(entry.actual?.revenue || 0)}</span>
                                     <span className="text-[var(--text-tertiary)] dark:text-muted">/</span>
                                     <span className="text-[var(--text-secondary)] dark:text-muted">{fmt(entry.goals?.revenue || 0)}</span>
                                     {entry.goals?.revenue > 0 && (
@@ -2314,7 +2316,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                                 <div>
                                   <span className="text-[var(--text-secondary)] dark:text-muted block mb-1">Pedidos</span>
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{entry.actual?.orders || 0}</span>
+                                    <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{entry.actual?.orders || 0}</span>
                                     <span className="text-[var(--text-tertiary)] dark:text-muted">/</span>
                                     <span className="text-[var(--text-secondary)] dark:text-muted">{entry.goals?.orders || 0}</span>
                                     {entry.goals?.orders > 0 && (
@@ -2344,7 +2346,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)]">
               <div className="flex flex-wrap items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
-                <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">
+                <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   Comparado con{" "}
                   {period === "hoy" ? "ayer" : period === "semana" ? "semana anterior" : period === "mes" ? "mes anterior" : "período anterior"}
                 </span>
@@ -2485,10 +2487,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             const maxVal = Math.max(...hourData, 1);
             if (allTx.length === 0) return null;
             return (
-              <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card p-4">
+              <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <Clock className="h-4 w-4 text-[var(--text-secondary)]" />
-                  <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">Ventas por hora — Mapa de calor</p>
+                  <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ventas por hora — Mapa de calor</p>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1">
                   {hourData.map((val, h) => {
@@ -2528,7 +2530,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {editingGoal ? (
               <form onSubmit={(e) => { e.preventDefault(); const v = dailyGoal; localStorage.setItem("daily-sales-goal", String(v)); setEditingGoal(false); }} className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-[var(--text-secondary)]">S/</span>
-                <input type="number" min={0} step={10} value={dailyGoal || ""} onChange={(e) => setDailyGoal(Number(e.target.value))} className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 text-sm text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary" autoFocus />
+                <input type="number" min={0} step={10} value={dailyGoal || ""} onChange={(e) => setDailyGoal(Number(e.target.value))} className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-raised)] outline-none focus:border-primary" autoFocus />
                 <button type="submit" className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold">Guardar</button>
               </form>
             ) : dailyGoal > 0 ? (() => {
@@ -2625,7 +2627,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               )}
             </div>
 
-            <div className="lg:col-span-2 bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4">
+            <div className="lg:col-span-2 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-3">Métodos de pago</p>
               {st.payments.length === 0 ? <Empty /> : (
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4">
@@ -2637,7 +2639,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           <div className="w-2 h-2 rounded-full" style={{background:p.color}} />
                           <span className="text-[var(--text-secondary)]">{p.label}</span>
                         </div>
-                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{st.payTotal>0?((p.total/st.payTotal)*100).toFixed(0):0}%</span>
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{st.payTotal>0?((p.total/st.payTotal)*100).toFixed(0):0}%</span>
                       </div>
                     ))}
                   </div>
@@ -2706,10 +2708,10 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   const winner = isSignificant ? (bConvRate > aConvRate ? variantB.id : variantA.id) : null;
                   
                   return (
-                    <div key={test.id} className="border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+                    <div key={test.id} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">{test.name}</h4>
+                          <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{test.name}</h4>
                           <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted mt-0.5">{test.hypothesis}</p>
                         </div>
                         <DBadge color={test.status === "running" ? "green" : test.status === "completed" ? "blue" : "gray"}>
@@ -2723,14 +2725,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           return (
                             <div key={v.id} className={cn(
                               "p-2 rounded-lg border-2 transition-all",
-                              isWinner ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface"
+                              isWinner ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface"
                             )}>
                               <div className="flex items-center gap-1.5 mb-1">
                                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{v.name}</span>
                                 {isWinner && <Trophy className="h-3 w-3 text-[var(--data-success-500)]" />}
                               </div>
                               <div className="text-xs">
-                                <div className="font-bold text-[var(--text-primary)] dark:text-foreground">{convRate.toFixed(1)}%</div>
+                                <div className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{convRate.toFixed(1)}%</div>
                                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{v.visitors} visitantes • {v.conversions} conversiones</div>
                                 {test.metric === "revenue" && <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-semibold">S/{Number(v.revenue).toFixed(2)}</div>}
                               </div>
@@ -2763,13 +2765,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           {/* A/B Test Modal */}
           {showABTestModal && (
             <div className="modal-backdrop p-4" onClick={() => setShowABTestModal(false)}>
-              <div className="bg-white dark:bg-card rounded-xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-[var(--text-primary)] flex items-center justify-center">
                       <Beaker className="h-4 w-4 text-white" />
                     </div>
-                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Nueva Prueba A/B</CardTitle>
+                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva Prueba A/B</CardTitle>
                   </div>
                   <button onClick={() => setShowABTestModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
@@ -2778,31 +2780,31 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nombre del test</label>
                     <input type="text" value={abTestForm.name} onChange={e => setAbTestForm(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Ej: Banner promocional vs. Sin banner"
-                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Hipótesis</label>
                     <textarea value={abTestForm.hypothesis} onChange={e => setAbTestForm(prev => ({ ...prev, hypothesis: e.target.value }))}
                       placeholder="Ej: Agregar un banner con descuento aumentará la conversión en 15%"
                       rows={2}
-                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm resize-none" />
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm resize-none" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Variante A (Control)</label>
                       <input type="text" value={abTestForm.variantA} onChange={e => setAbTestForm(prev => ({ ...prev, variantA: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Variante B</label>
                       <input type="text" value={abTestForm.variantB} onChange={e => setAbTestForm(prev => ({ ...prev, variantB: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Métrica a medir</label>
                     <select value={abTestForm.metric} onChange={e => setAbTestForm(prev => ({ ...prev, metric: e.target.value as "revenue"|"conversion"|"aov"|"retention" }))}
-                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm">
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm">
                       <option value="conversion">Tasa de conversión</option>
                       <option value="revenue">Ingresos</option>
                       <option value="aov">Valor promedio de orden</option>
@@ -2813,19 +2815,19 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Fecha inicio</label>
                       <input type="date" value={abTestForm.startDate} onChange={e => setAbTestForm(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Fecha fin</label>
                       <input type="date" value={abTestForm.endDate} onChange={e => setAbTestForm(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-[var(--text-primary)] outline-none text-sm" />
+                        className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
                     </div>
                   </div>
                   <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                     <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"><strong>Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
+                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <button onClick={() => setShowABTestModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">Cancelar</button>
                   <button onClick={() => {
                     const newTest: ABTest = {
@@ -2970,7 +2972,7 @@ function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTre
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
   const arrowUp = delta != null ? delta >= 0 : false;
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
       {/* Visual gradient indicator on top edge for significant changes */}
       {delta != null && Math.abs(delta) >= 10 && (
         <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]")} />
@@ -2978,7 +2980,7 @@ function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTre
       <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="flex flex-col gap-1.5">
-          <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none">{animatedValue}</p>
+          <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-none">{animatedValue}</p>
           {delta != null && delta !== undefined ? (
             <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
               {arrowUp ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
@@ -3002,7 +3004,7 @@ function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTre
 
 function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4">
+    <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4">
       <div className="flex items-center justify-between mb-4">
         <CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}>
           <Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}
@@ -3045,8 +3047,8 @@ function Donut({ data, total, size = 96 }: { data: { total: number; color: strin
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <div className="w-full h-full rounded-full" style={{ background: `conic-gradient(${segments.join(", ")})` }} />
-      <div className="absolute rounded-full bg-white dark:bg-card flex items-center justify-center" style={{ inset: size*0.2 }}>
-        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-foreground">{fmt(total)}</span>
+      <div className="absolute rounded-full bg-[var(--surface-raised)] flex items-center justify-center" style={{ inset: size*0.2 }}>
+        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(total)}</span>
       </div>
     </div>
   );

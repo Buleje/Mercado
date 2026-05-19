@@ -144,7 +144,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
         </div>
         <div className="rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Clientes con datos</p>
-          <p className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">{clvList.length}</p>
+          <p className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{clvList.length}</p>
         </div>
       </div>
 
@@ -246,7 +246,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
                   >
                     <td className="px-2 py-1.5 text-[var(--text-tertiary)]">{i + 1}</td>
                     <td className="px-2 py-1.5">
-                      <p className="font-medium text-[var(--text-primary)] dark:text-foreground truncate max-w-[90px]">{c.name}</p>
+                      <p className="font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[90px]">{c.name}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.phone}</p>
                     </td>
                     <td className="px-2 py-1.5 text-center">

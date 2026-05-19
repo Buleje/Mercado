@@ -5,6 +5,7 @@ import { GiftCardsDB } from "@/lib/db/gift-cards.db";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/admin/gift-cards/[id]/cancel — ADR-077
@@ -25,6 +26,8 @@ export async function POST(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-gift-cards-X-cancel"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

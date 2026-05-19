@@ -449,7 +449,7 @@ export default function ForecastingDashboard() {
               {/* Headline — ingresos proyectados */}
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+                  <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {formatCurrency(state.forecast.weeklyAvg)}
                   </p>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">
@@ -536,7 +536,7 @@ export default function ForecastingDashboard() {
                     </span>
                     {/* Nombre + barra */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
+                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                         {item.productName}
                       </p>
                       <div className="mt-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
@@ -634,7 +634,7 @@ export default function ForecastingDashboard() {
                           {/* Nombre + proveedor */}
                           <td className="py-2.5 px-2">
                             <div className="flex flex-col gap-0.5">
-                              <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">
+                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                                 {item.productName}
                               </span>
                               <span className="text-xs text-[var(--text-tertiary)]">
@@ -771,7 +771,7 @@ function PanelCard({
       <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-2">
           <span className="text-primary">{icon}</span>
-          <h3 className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
+          <h3 className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {title}
           </h3>
         </div>
@@ -859,7 +859,7 @@ function MetricChip({
         "text-sm font-extrabold",
         danger
           ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
-          : "text-[var(--text-primary)] dark:text-foreground",
+          : "text-[var(--text-primary)] dark:text-[var(--text-primary)]",
       )}>
         {value}
       </p>
@@ -909,7 +909,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
     )}>
       {/* Nombre + badge de razón */}
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground leading-snug">
+        <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-snug">
           {s.productName}
         </p>
         <span className={cn(

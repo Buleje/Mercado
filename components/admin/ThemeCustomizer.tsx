@@ -117,7 +117,7 @@ function ColorField({
     <div className="flex items-center gap-3">
       <div className="relative shrink-0">
         <div
-          className="w-10 h-10 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border  cursor-pointer"
+          className="w-10 h-10 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)]  cursor-pointer"
           style={{ backgroundColor: value }}
         />
         <input
@@ -140,7 +140,7 @@ function ColorField({
           if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onChange(v);
         }}
         maxLength={7}
-        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
       />
     </div>
   );
@@ -151,7 +151,7 @@ function ColorField({
 function LivePreview({ colors }: { colors: ThemeColors }) {
   return (
     <div
-      className="rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border "
+      className="rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] "
       style={{ backgroundColor: colors.background }}
     >
       {/* Fake navbar */}
@@ -288,7 +288,7 @@ export default function ThemeCustomizer() {
         {/* Left: controls */}
         <div className="space-y-5">
           {/* Presets */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-3">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-3">
             <p className="text-sm font-semibold text-[var(--text-secondary)]">Presets</p>
             <div className="flex flex-wrap gap-2">
               {PRESETS.map(preset => (
@@ -299,7 +299,7 @@ export default function ThemeCustomizer() {
                     "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
                     activePreset === preset.id
                       ? "border-primary bg-primary/10 text-primary dark:text-[#4a9e78]"
-                      : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                   )}
                 >
                   <div
@@ -314,7 +314,7 @@ export default function ThemeCustomizer() {
           </div>
 
           {/* Color pickers */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4">
             <p className="text-sm font-semibold text-[var(--text-secondary)]">Colores personalizados</p>
             {COLOR_FIELDS.map(f => (
               <ColorField
@@ -328,7 +328,7 @@ export default function ThemeCustomizer() {
           </div>
 
           {/* CSS variables info */}
-          <div className="bg-[var(--surface-canvas)]/50 border border-[var(--rule-soft)] dark:border-card-border/50 rounded-xl p-4 space-y-1.5">
+          <div className="bg-[var(--surface-canvas)]/50 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 rounded-xl p-4 space-y-1.5">
             <p className="text-xs font-semibold text-[var(--text-tertiary)]">
               Variables CSS aplicadas
             </p>
@@ -348,7 +348,7 @@ export default function ThemeCustomizer() {
             <button
               onClick={handleReset}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
             >
               <RotateCcw className="w-4 h-4" />
               Restablecer

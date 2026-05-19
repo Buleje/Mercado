@@ -674,7 +674,8 @@ export default function GuiasRemisionModule() {
   const _handleCopyReceptionLink = async () => {
     if (!selected) return;
     const url = `buleje.pe/recepcion/guia/${selected.id}`;
-    await navigator.clipboard.writeText(url).catch(() => {});
+    // Clipboard best-effort: falla por permisos del browser, UI feedback igual.
+    await navigator.clipboard.writeText(url).catch(() => { /* clipboard best-effort */ });
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };

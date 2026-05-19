@@ -258,7 +258,7 @@ export default function AICommandCenter() {
   return (
     <div
       className={cn(
-        "flex flex-col bg-white dark:bg-card overflow-hidden",
+        "flex flex-col bg-[var(--surface-raised)] overflow-hidden",
         maximized
           ? "fixed inset-0 z-[9999]"
           : "rounded-xl border border-[var(--rule-base)] min-h-[600px]",
@@ -279,7 +279,7 @@ export default function AICommandCenter() {
                 className={cn(
                   "relative inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap",
                   isActive
-                    ? "bg-[var(--text-primary)] text-white"
+                    ? "bg-[var(--accent)] text-white dark:bg-[var(--accent)] dark:text-[var(--surface-canvas)]"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
                 )}
                 title={`${s.label} (Alt+${SECTIONS.indexOf(s) + 1})`}
@@ -370,7 +370,7 @@ export default function AICommandCenter() {
       {autoplay && maximized && (
         <div className="h-1 bg-gray-100 shrink-0 overflow-hidden" data-export-hide="true">
           <div
-            className="h-full bg-[var(--data-success-500)] transition-[width] duration-75 ease-linear"
+            className="h-full bg-[var(--data-success-500)] transition-[width] duration-[var(--dur-micro)] ease-linear"
             style={{ width: `${autoplayProgress}%` }}
             role="progressbar"
             aria-valuenow={Math.round(autoplayProgress)}

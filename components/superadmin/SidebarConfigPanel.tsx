@@ -80,12 +80,14 @@ const KEYS = {
   iconStyle: "superadmin-nav-icon-style",
 } as const;
 
+// Brandon mayo 2026: default cambiado a preset "Ejecutivo" — dark + amber +
+// density compact. El preset "Buleje" sigue disponible pero ya no es default.
 const DEFAULTS: SidebarPrefs = {
   hidden: [],
   order: [],
-  theme: "buleje",
-  accent: "teal",
-  density: "normal",
+  theme: "dark",
+  accent: "amber",
+  density: "compact",
   iconStyle: "monochrome",
 };
 

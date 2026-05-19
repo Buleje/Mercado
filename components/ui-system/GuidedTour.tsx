@@ -66,13 +66,17 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
     }
   }, [tourId, forceShow]);
 
-  // Lock body scroll
+  // audit P0 UX #2 (2026-05-18): QUITADO scroll lock — el tour era bloqueante
+  // porque overflow:hidden impedía interactuar con el catálogo. El overlay SVG
+  // ya tiene pointer-events:none, así que el usuario puede agregar al carrito
+  // mientras lee el tour. El scroll lock original era un anti-pattern UX.
+  // scrollLockRef se conserva para no romper la ref; simplemente no se usa.
   useEffect(() => {
     if (!active) return;
     scrollLockRef.current = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // No locking — tour no bloqueante
     return () => {
-      document.body.style.overflow = scrollLockRef.current;
+      // Noop: no hubo lock que revertir
     };
   }, [active]);
 
@@ -156,18 +160,52 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
   const spotlightShape = step.spotlight ?? "rounded";
 
   // Tooltip positioning
+  // audit P0 UX #1 (Brandon 2026-05-18): antes el tooltip podía overflow
+  // por el borde IZQUIERDO/DERECHO del viewport en mobile cuando el target
+  // estaba cerca de los bordes (search bar full-width → tooltip centrado
+  // con translate(-50%) salía de pantalla). Ahora clamp horizontal a
+  // [16px, viewport - tooltipWidth - 16px] usando posición absoluta sin
+  // transform-x. Vertical sigue con transform si aplica.
   const MARGIN = 12;
   const tooltipStyle: React.CSSProperties = (() => {
+    const vw =
+      typeof window !== "undefined" ? window.innerWidth : 393;
+    // Match `w-[min(calc(100vw-2rem),22rem)]` del wrapper: 22rem = 352px.
+    const tooltipWidth = Math.min(vw - 32, 352);
+    const tooltipHalf = tooltipWidth / 2;
+    const SAFE = 16;
+
+    // Clamp horizontal del centro del target para que el tooltip
+    // (con translate(-50%, 0)) no se salga del viewport.
+    const clampX = (centerX: number) =>
+      Math.max(SAFE + tooltipHalf, Math.min(centerX, vw - SAFE - tooltipHalf));
+
     switch (placement) {
       case "top":
-        return { left: rect.left + rect.width / 2, top: rect.top - MARGIN, transform: "translate(-50%, -100%)" };
+        return {
+          left: clampX(rect.left + rect.width / 2),
+          top: rect.top - MARGIN,
+          transform: "translate(-50%, -100%)",
+        };
       case "left":
-        return { left: rect.left - MARGIN, top: rect.top + rect.height / 2, transform: "translate(-100%, -50%)" };
+        return {
+          left: rect.left - MARGIN,
+          top: rect.top + rect.height / 2,
+          transform: "translate(-100%, -50%)",
+        };
       case "right":
-        return { left: rect.right + MARGIN, top: rect.top + rect.height / 2, transform: "translate(0, -50%)" };
+        return {
+          left: rect.right + MARGIN,
+          top: rect.top + rect.height / 2,
+          transform: "translate(0, -50%)",
+        };
       case "bottom":
       default:
-        return { left: rect.left + rect.width / 2, top: rect.bottom + MARGIN, transform: "translate(-50%, 0)" };
+        return {
+          left: clampX(rect.left + rect.width / 2),
+          top: rect.bottom + MARGIN,
+          transform: "translate(-50%, 0)",
+        };
     }
   })();
 
@@ -178,11 +216,11 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
   return (
     <div
       role="dialog"
-      aria-modal="true"
+      aria-modal="false"
       aria-labelledby="tour-title"
-      className="fixed inset-0 z-[100] motion-safe:animate-[fadeIn_0.2s] motion-reduce:animate-none"
+      className="fixed inset-0 z-[100] motion-safe:animate-[fadeIn_0.2s] motion-reduce:animate-none pointer-events-none"
     >
-      {/* SVG mask with cutout */}
+      {/* SVG mask with cutout — pointer-events:none para no bloquear el catálogo */}
       <svg
         aria-hidden
         className="absolute inset-0 w-full h-full"
@@ -226,9 +264,9 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
         }}
       />
 
-      {/* Tooltip */}
+      {/* Tooltip — pointer-events:auto para que sus botones sean clickeables */}
       <div
-        className="absolute w-[min(calc(100vw-2rem),22rem)] rounded-2xl bg-[var(--surface-raised)] shadow-2xl p-5 space-y-3"
+        className="absolute w-[min(calc(100vw-2rem),22rem)] rounded-2xl bg-[var(--surface-raised)] shadow-2xl p-5 space-y-3 pointer-events-auto"
         style={tooltipStyle}
       >
         <div className="flex items-start justify-between gap-3">

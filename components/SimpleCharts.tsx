@@ -23,7 +23,7 @@ export function SimpleBarChart({
 }: SimpleBarChartProps) {
   if (data.length === 0) {
     return (
-      <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-6", className)}>
+      <div className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6", className)}>
         <p className="text-sm text-gray-400 dark:text-muted text-center">No hay datos disponibles</p>
       </div>
     );
@@ -32,9 +32,9 @@ export function SimpleBarChart({
   const maxValue = Math.max(...data.map(d => d.value), 1);
 
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 sm:p-6", className)}>
+    <div className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6", className)}>
       {title && (
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground/80 mb-4">{title}</h3>
+        <h3 className="text-sm font-bold text-gray-700 dark:text-[var(--text-primary)]/80 mb-4">{title}</h3>
       )}
       
       <div className="relative" style={{ height: `${height}px` }}>
@@ -47,13 +47,13 @@ export function SimpleBarChart({
               <div key={index} className="flex-1 flex flex-col items-center gap-2 group">
                 <div className="w-full relative flex items-end justify-center" style={{ height: `${height - 40}px` }}>
                   {showValues && point.value > 0 && (
-                    <div className="absolute -top-6 text-xs font-bold text-gray-700 dark:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-6 text-xs font-bold text-gray-700 dark:text-[var(--text-primary)] opacity-0 group-hover:opacity-100 transition-opacity">
                       {point.value}
                     </div>
                   )}
                   <div
                     className={cn(
-                      "w-full rounded-t-lg transition-all duration-500 ease-out hover:opacity-80",
+                      "w-full rounded-t-lg transition-all duration-[var(--dur-slow)] ease-out hover:opacity-80",
                       color
                     )}
                     style={{
@@ -91,7 +91,7 @@ export function SimpleLineChart({
 }: SimpleLineChartProps) {
   if (data.length === 0) {
     return (
-      <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-6", className)}>
+      <div className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6", className)}>
         <p className="text-sm text-gray-400 dark:text-muted text-center">No hay datos disponibles</p>
       </div>
     );
@@ -114,9 +114,9 @@ export function SimpleLineChart({
   const areaD = `${pathD} L 100 100 L 0 100 Z`;
 
   return (
-    <div className={cn("bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-4 sm:p-6", className)}>
+    <div className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6", className)}>
       {title && (
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground/80 mb-4">{title}</h3>
+        <h3 className="text-sm font-bold text-gray-700 dark:text-[var(--text-primary)]/80 mb-4">{title}</h3>
       )}
       
       <div className="relative" style={{ height: `${height}px` }}>

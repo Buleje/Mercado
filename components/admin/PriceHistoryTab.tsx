@@ -107,7 +107,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <TrendingUp className="h-6 w-6 text-primary" />
           Historial de Precios
         </SectionTitle>
@@ -127,7 +127,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               "historial-precios"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -142,18 +142,18 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Producto o usuario…"
-              className="w-full pl-9 pr-9 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-9 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground" />
+                <X className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)]" />
               </button>
             )}
           </div>
           <select
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-foreground"
+            className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           >
             <option value="">Todos los productos</option>
             {[...new Set(history.map(h => h.productId))].map(pid => (
@@ -174,10 +174,10 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
 
       {/* Table */}
       {filtered.length > 0 && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Fecha</span>
@@ -204,14 +204,14 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
                         {fmtDate(h.changedAt)}
                       </td>
                       {productId == null && (
-                        <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">
+                        <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                           {productMap[h.productId] ?? `Producto #${h.productId}`}
                         </td>
                       )}
                       <td className="px-4 py-3 text-right text-[var(--text-tertiary)] line-through">
                         {fmt(h.oldPrice)}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                         {fmt(h.newPrice)}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -232,7 +232,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface">
+          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface">
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{filtered.length} cambio{filtered.length !== 1 ? "s" : ""} registrado{filtered.length !== 1 ? "s" : ""}</p>
           </div>
         </div>

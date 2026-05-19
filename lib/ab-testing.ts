@@ -24,8 +24,15 @@ export const ABTestDB = {
     return rows.map(r => ({ id: r.id, name: r.name, description: r.description, variants: r.variants as Variant[], active: r.active, createdAt: toISO(r.createdAt) }));
   },
 
-  async create(name: string, description: string, variants: Variant[], tenantId = "main"): Promise<ABTestDef> {
-    const row = await prisma.aBTest.create({ data: { name, description, variants, tenantId } });
+  async create(name: string, description: string, variants: Variant[], tenantId?: string): Promise<ABTestDef> {
+    // P1-1 multi-tenant: tenantId requerido pero con fallback observable.
+    // TODO: eliminar fallback cuando todos los callers pasen tenantId.
+    const effectiveTenantId = tenantId ?? "main";
+    if (!tenantId) {
+      // eslint-disable-next-line no-console -- ab-testing no importa logger para evitar ciclo
+      console.warn("[ab-testing] create missing tenantId — falling back to 'main'", { name });
+    }
+    const row = await prisma.aBTest.create({ data: { name, description, variants, tenantId: effectiveTenantId } });
     return { id: row.id, name: row.name, description: row.description, variants: row.variants as Variant[], active: row.active, createdAt: toISO(row.createdAt) };
   },
 
@@ -35,6 +42,7 @@ export const ABTestDB = {
   },
 
   async delete(id: string): Promise<void> {
+    // eslint-disable-next-line no-restricted-syntax -- ABTestEvent indirecto (ADR-101) FK→ABTest. Caller (app/api/ab-tests POST) ya hace IDOR check con tenantId.
     await prisma.aBTestEvent.deleteMany({ where: { testId: id } });
     await prisma.aBTest.delete({ where: { id } });
   },
@@ -56,8 +64,13 @@ export const ABTestDB = {
     return test.variants[0];
   },
 
-  async trackEvent(testId: string, variantId: string, visitorId: string, event: "impression" | "conversion", value?: number, tenantId = "main"): Promise<void> {
-    await prisma.aBTestEvent.create({ data: { testId, variantId, visitorId, event, value, tenantId } });
+  async trackEvent(testId: string, variantId: string, visitorId: string, event: "impression" | "conversion", value?: number, tenantId?: string): Promise<void> {
+    const effectiveTenantId = tenantId ?? "main";
+    if (!tenantId) {
+      // eslint-disable-next-line no-console
+      console.warn("[ab-testing] trackEvent missing tenantId — falling back to 'main'", { testId, event });
+    }
+    await prisma.aBTestEvent.create({ data: { testId, variantId, visitorId, event, value, tenantId: effectiveTenantId } });
   },
 
   async getResults(testId: string): Promise<{ variantId: string; impressions: number; conversions: number; totalValue: number; conversionRate: number }[]> {

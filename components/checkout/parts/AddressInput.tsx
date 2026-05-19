@@ -92,7 +92,7 @@ export function AddressInput({
                 <select
                   value={address.streetType}
                   onChange={(e) => onStreetTypeChange(e.target.value)}
-                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                 >
                   <option value="Calle">Calle</option>
                   <option value="Avenida">Avenida</option>
@@ -109,7 +109,7 @@ export function AddressInput({
                   value={address.streetNumber}
                   onChange={(e) => onStreetNumberChange(e.target.value)}
                   placeholder="N° / Lote"
-                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                 />
               </div>
               <input
@@ -117,7 +117,7 @@ export function AddressInput({
                 value={address.streetName}
                 onChange={(e) => onStreetNameChange(e.target.value)}
                 placeholder="Nombre de la vía (ej: Ucayali, San Martín)"
-                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
               />
               {address.location && (
                 <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
@@ -139,7 +139,7 @@ export function AddressInput({
                 onChange={(e) => onLocationChange(e.target.value)}
                 placeholder="Ej: Jr. Ucayali 450"
                 data-testid="location-input"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
               />
             </div>
           )}
@@ -149,13 +149,13 @@ export function AddressInput({
             onClick={handleRequestGeoFromButton}
             disabled={ui.loadingGeo}
             data-testid="request-geo"
-            className="group relative mt-2 w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl border-2 border-primary bg-linear-to-r from-primary to-primary-dark text-white text-sm font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.97] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+            className="group relative mt-2 w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl border-2 border-primary bg-linear-to-r from-primary to-primary-dark text-white text-sm font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.97] transition-all duration-[var(--dur-base)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
           >
             {!ui.loadingGeo && (
               <span className="absolute inset-0 bg-white/20 animate-[pulse_2s_ease-in-out_infinite]" />
             )}
             {!ui.loadingGeo && (
-              <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent group-hover:translate-x-full transition-transform duration-700" />
+              <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent group-hover:translate-x-full transition-transform duration-[var(--dur-slower)]" />
             )}
             <span className={cn("relative z-10", !ui.loadingGeo && "animate-bounce")}>
               {ui.loadingGeo ? (

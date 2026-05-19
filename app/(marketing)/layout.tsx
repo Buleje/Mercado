@@ -71,7 +71,7 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-background text-[var(--text-primary)]">
       {/* ── Navbar ──────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -97,7 +97,7 @@ export default function MarketingLayout({
                 ) : (
                   <Link
                     href={link.href}
-                    className="rounded-md px-3 py-2 text-sm font-medium text-foreground/70 transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[44px] inline-flex items-center dark:text-foreground/60 dark:hover:text-foreground"
+                    className="rounded-md px-3 py-2 text-sm font-medium text-[var(--text-primary)]/70 transition-colors hover:text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[44px] inline-flex items-center dark:text-[var(--text-primary)]/60 dark:hover:text-[var(--text-primary)]"
                   >
                     {link.label}
                   </Link>
@@ -119,7 +119,7 @@ export default function MarketingLayout({
       <SocialProofToast />
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer className="border-t border-border/60 bg-surface dark:bg-card">
+      <footer className="border-t border-border/60 bg-surface dark:bg-[var(--surface-raised)]">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <p className="text-sm text-muted">

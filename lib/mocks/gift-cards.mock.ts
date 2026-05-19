@@ -6,6 +6,15 @@
  * dedicado.
  */
 
+// __MOCK_PROD_GUARD__: en prod los exports se devuelven igual pero un warn
+// queda en logs para tracking. Antes el guard tiraba throw, pero Next 16
+// evalúa módulos en collect-page-data y rompía el build estático.
+// ADR pendiente: integración real con tabla GiftCard de Prisma.
+if (process.env.NODE_ENV === "production") {
+  // eslint-disable-next-line no-console
+  console.warn("[mock] gift-cards.mock.ts cargado en prod — pendiente migración a tabla GiftCard.");
+}
+
 export type GiftCardStatus = "activa" | "canjeada" | "expirada";
 export type GiftCardDesign =
   | "cumpleanos"

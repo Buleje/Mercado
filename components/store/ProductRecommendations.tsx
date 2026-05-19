@@ -58,7 +58,7 @@ export function ProductRecommendations({
     <section className={cn("py-6", className)}>
       <div className="flex items-center gap-2 mb-4 px-1">
         <Sparkles className="h-5 w-5 text-[var(--data-warning-500)]" />
-        <h3 className="text-lg font-bold text-gray-800 dark:text-foreground">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-[var(--text-primary)]">
           Productos para ti
         </h3>
       </div>
@@ -75,14 +75,14 @@ export function ProductRecommendations({
               href={`/marketplace/${tenantSlug}/producto/${rec.productId}`}
               className="snap-start shrink-0 w-36 group"
             >
-              <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <div className="aspect-square bg-[var(--surface-sunken)] relative">
                   <div className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)] opacity-70">
                     <CanastaVacia size={72} strokeWidth={1.5} />
                   </div>
                 </div>
                 <div className="p-2.5">
-                  <p className="text-xs font-medium text-gray-700 dark:text-foreground line-clamp-2 leading-tight mb-1">
+                  <p className="text-xs font-medium text-gray-700 dark:text-[var(--text-primary)] line-clamp-2 leading-tight mb-1">
                     {rec.name}
                   </p>
                   <p className="text-sm font-bold text-primary">

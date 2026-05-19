@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { logger } from "@/lib/logger";
 
@@ -22,6 +23,8 @@ export async function POST(
 ) {
   const rateLimited = applyRateLimit(req, "AUTH", "sa-reset-password");
   if (rateLimited) return rateLimited;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
 
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

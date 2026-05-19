@@ -3,15 +3,15 @@
 /**
  * OverviewTab — Vista consolidada del Security Center.
  *
- * 4 KPIs hero (Vulnerabilidades, Login fallidos 24h, IPs bloqueadas,
- * Sesiones activas) + timeline de los últimos 10 eventos de seguridad.
+ * Hero KPIs (4) + Eventos recientes (severity-colored) + Postura (TOTP barra)
+ * + IPs sospechosas (extraído del endpoint, antes oculto).
  *
- * Datos REALES desde:
- *  - GET /api/superadmin/security/posture (KPIs + TOTP coverage)
- *  - GET /api/superadmin/security?days=1   (eventos recientes del audit log)
+ * Datos REALES:
+ *  - GET /api/superadmin/security/posture
+ *  - GET /api/superadmin/security?days=7
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -23,18 +23,12 @@ import {
   AlertTriangle,
   Info,
   Loader2,
+  TrendingUp,
+  CheckCircle2,
   type LucideIcon,
 } from "@buleje/design-system/icons";
-import {
-  AdminGrid,
-  AdminSection,
-  StatCard,
-  BadgeStatus,
-  BodyText,
-  Caption,
-} from "@buleje/design-system";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────
 
 interface PostureResponse {
   data: {
@@ -69,31 +63,42 @@ interface SecurityEventsResponse {
 
 type Severity = "critical" | "high" | "medium" | "low" | "info";
 
-const SEVERITY_ICON: Record<Severity, LucideIcon> = {
-  critical: ShieldAlert,
-  high: ShieldAlert,
-  medium: AlertTriangle,
-  low: Info,
-  info: Shield,
+const SEVERITY_META: Record<
+  Severity,
+  { icon: LucideIcon; label: string; cls: string; dot: string }
+> = {
+  critical: {
+    icon: ShieldAlert,
+    label: "Crítica",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    dot: "bg-rose-500",
+  },
+  high: {
+    icon: ShieldAlert,
+    label: "Alta",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    dot: "bg-rose-500",
+  },
+  medium: {
+    icon: AlertTriangle,
+    label: "Media",
+    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
+    dot: "bg-amber-500",
+  },
+  low: {
+    icon: Info,
+    label: "Baja",
+    cls: "border-sky-300/60 bg-sky-50/60 text-sky-700 dark:border-sky-700/40 dark:bg-sky-950/30 dark:text-sky-300",
+    dot: "bg-sky-500",
+  },
+  info: {
+    icon: Shield,
+    label: "Info",
+    cls: "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
+    dot: "bg-[var(--text-tertiary)]",
+  },
 };
 
-const SEVERITY_LABEL: Record<Severity, string> = {
-  critical: "Crítica",
-  high: "Alta",
-  medium: "Media",
-  low: "Baja",
-  info: "Info",
-};
-
-const SEVERITY_BADGE: Record<Severity, "info" | "warning" | "error" | "neutral"> = {
-  critical: "error",
-  high: "error",
-  medium: "warning",
-  low: "info",
-  info: "neutral",
-};
-
-// Mapea action del audit log a severity + título legible.
 const ACTION_META: Record<string, { severity: Severity; title: string }> = {
   login_success: { severity: "info", title: "Login exitoso" },
   login_failed: { severity: "medium", title: "Login fallido" },
@@ -115,13 +120,17 @@ function fmtRelative(iso: string): string {
   return `hace ${Math.round(diffH / 24)}d`;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────────────────────
 
 export function OverviewTab() {
   const [posture, setPosture] = useState<PostureResponse["data"] | null>(null);
   const [events, setEvents] = useState<SecurityEventsResponse["data"]["events"]>([]);
+  const [suspiciousIPs, setSuspiciousIPs] = useState<
+    SecurityEventsResponse["data"]["suspiciousIPs"]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -135,7 +144,8 @@ export function OverviewTab() {
       const pData = (await pRes.json()) as PostureResponse;
       const eData = (await eRes.json()) as SecurityEventsResponse;
       setPosture(pData.data);
-      setEvents(eData.data.events.slice(0, 10));
+      setEvents(eData.data.events.slice(0, 20));
+      setSuspiciousIPs(eData.data.suspiciousIPs ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar");
     } finally {
@@ -143,7 +153,9 @@ export function OverviewTab() {
     }
   }, []);
 
-  useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => {
+    void reload();
+  }, [reload]);
 
   // Listener para botón "Actualizar" del Hero (custom event).
   useEffect(() => {
@@ -151,6 +163,14 @@ export function OverviewTab() {
     window.addEventListener("security-overview-refresh", handler);
     return () => window.removeEventListener("security-overview-refresh", handler);
   }, [reload]);
+
+  const filteredEvents = useMemo(() => {
+    if (severityFilter === "all") return events;
+    return events.filter((ev) => {
+      const sev = ACTION_META[ev.action]?.severity ?? "info";
+      return sev === severityFilter;
+    });
+  }, [events, severityFilter]);
 
   if (loading && !posture) {
     return (
@@ -163,13 +183,23 @@ export function OverviewTab() {
 
   if (error && !posture) {
     return (
-      <div role="alert" className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-4">
-        <div className="flex items-start gap-2 text-[var(--data-error-500)]">
-          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+      <div
+        role="alert"
+        className="rounded-2xl border border-rose-300/60 bg-rose-50/40 p-5 dark:border-rose-700/40 dark:bg-rose-950/30"
+      >
+        <div className="flex items-start gap-3 text-[var(--accent)] dark:text-[var(--accent)]">
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
-            <BodyText className="font-semibold text-[var(--data-error-500)]">No se pudo cargar el panel</BodyText>
-            <Caption className="text-[var(--data-error-500)]/80">{error}</Caption>
-            <button onClick={reload} className="mt-2 text-xs font-bold underline">Reintentar</button>
+            <p className="font-display text-base font-extrabold">
+              No se pudo cargar el panel
+            </p>
+            <p className="text-sm opacity-80 mt-0.5">{error}</p>
+            <button
+              onClick={reload}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-current px-3 py-1.5 text-xs font-bold transition hover:bg-rose-100 dark:hover:bg-rose-900/40"
+            >
+              Reintentar
+            </button>
           </div>
         </div>
       </div>
@@ -178,100 +208,131 @@ export function OverviewTab() {
 
   if (!posture) return null;
 
-  const totpStatus = posture.totpCoverage.total === 0
-    ? "warning" as const
-    : posture.totpCoverage.enrolled === posture.totpCoverage.total
-      ? "ok" as const
-      : "warning" as const;
+  const totpPct =
+    posture.totpCoverage.total === 0
+      ? 0
+      : Math.round((posture.totpCoverage.enrolled / posture.totpCoverage.total) * 100);
 
   return (
     <div className="space-y-6">
-      <AdminGrid cols={4} gap={4}>
-        <StatCard
+      {/* ─── KPIs Hero (4 cards) ─────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
           icon={ShieldAlert}
           label="Vulnerabilidades"
-          value={posture.vulnerabilities.connected ? posture.vulnerabilities.count : "—"}
-          subValue={
+          value={posture.vulnerabilities.connected ? String(posture.vulnerabilities.count) : "—"}
+          subtitle={
             posture.vulnerabilities.connected
-              ? `Escaneadas por ${posture.vulnerabilities.scannerName}`
+              ? `Escáner: ${posture.vulnerabilities.scannerName}`
               : "Sin escáner conectado"
           }
-          emphasis={posture.vulnerabilities.count > 0 ? "warning" : "neutral"}
-          density="comfortable"
+          tone={posture.vulnerabilities.count > 0 ? "warning" : "neutral"}
         />
-        <StatCard
+        <KpiCard
           icon={Lock}
           label="Login fallidos 24h"
-          value={posture.loginsFailed24h}
-          subValue="Ventana últimas 24 horas"
-          emphasis={posture.loginsFailed24h > 10 ? "warning" : "neutral"}
-          density="comfortable"
+          value={String(posture.loginsFailed24h)}
+          subtitle="Ventana últimas 24 horas"
+          tone={posture.loginsFailed24h > 10 ? "warning" : "neutral"}
         />
-        <StatCard
+        <KpiCard
           icon={Ban}
           label="IPs bloqueadas"
-          value={posture.ipsBlocked}
-          subValue="≥5 fails en 24h"
-          density="comfortable"
+          value={String(posture.ipsBlocked)}
+          subtitle="≥5 fails en 24h"
+          tone={posture.ipsBlocked > 0 ? "danger" : "neutral"}
         />
-        <StatCard
+        <KpiCard
           icon={Users}
           label="Sesiones activas"
-          value={posture.activeSessions}
-          subValue="Estimadas vía audit log"
-          density="comfortable"
+          value={String(posture.activeSessions)}
+          subtitle="Estimadas vía audit log"
+          tone="success"
         />
-      </AdminGrid>
+      </div>
 
-      <AdminSection
-        title="Eventos recientes"
-        description={`Últimos ${events.length} eventos de seguridad en toda la plataforma`}
-      >
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          {events.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <Shield className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-2" />
-              <BodyText className="font-semibold">Sin eventos en la ventana</BodyText>
-              <Caption className="text-[var(--text-tertiary)]">
-                No hubo logins, intentos fallidos ni cambios de configuración en los últimos 7 días.
-              </Caption>
+      {/* ─── Eventos recientes + Postura side-by-side ─────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Eventos (col 2) */}
+        <section className="lg:col-span-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+          <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                <Shield className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Eventos recientes
+                </h3>
+                <p className="text-xs text-[var(--text-tertiary)]">
+                  {filteredEvents.length} de {events.length} en los últimos 7 días
+                </p>
+              </div>
+            </div>
+            <select
+              value={severityFilter}
+              onChange={(e) => setSeverityFilter(e.target.value as Severity | "all")}
+              className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            >
+              <option value="all">Todas las severidades</option>
+              <option value="critical">Críticas</option>
+              <option value="high">Altas</option>
+              <option value="medium">Medias</option>
+              <option value="low">Bajas</option>
+              <option value="info">Info</option>
+            </select>
+          </header>
+          {filteredEvents.length === 0 ? (
+            <div className="px-5 py-12 text-center">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
+                <Shield className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
+              </div>
+              <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+                Sin eventos en la ventana
+              </p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                No hubo actividad que coincida con el filtro.
+              </p>
             </div>
           ) : (
             <ul className="divide-y divide-[var(--rule-soft)]">
-              {events.map((ev) => {
+              {filteredEvents.map((ev) => {
                 const meta = ACTION_META[ev.action] ?? { severity: "info" as Severity, title: ev.action };
-                const Icon = SEVERITY_ICON[meta.severity];
+                const sev = SEVERITY_META[meta.severity];
+                const Icon = sev.icon;
                 return (
                   <li
                     key={ev.id}
-                    className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-sunken)]"
+                    className="group flex items-start gap-3 px-5 py-3 transition hover:bg-[var(--surface-sunken)]/50"
                   >
-                    <div className="mt-0.5 shrink-0 rounded-lg bg-[var(--surface-sunken)] p-1.5">
-                      <Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
+                    <div className="mt-0.5">
+                      <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border ${sev.cls}`}>
+                        <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                      </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <BodyText className="font-medium">{meta.title}</BodyText>
-                        <BadgeStatus
-                          variant={SEVERITY_BADGE[meta.severity]}
-                          label={SEVERITY_LABEL[meta.severity]}
-                          size="sm"
-                        />
+                        <p className="font-bold text-sm text-[var(--text-primary)]">
+                          {meta.title}
+                        </p>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${sev.cls}`}
+                        >
+                          <span className={`h-1 w-1 rounded-full ${sev.dot}`} />
+                          {sev.label}
+                        </span>
                       </div>
-                      <Caption className="mt-0.5 block text-[var(--text-tertiary)]">
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                         {ev.detail}
-                        {ev.ipAddress && (
-                          <>
-                            {" "}
-                            <span className="inline-flex items-center gap-1">
-                              <Globe className="h-3 w-3" aria-hidden />
-                              {ev.ipAddress}
-                            </span>
-                          </>
-                        )}
-                      </Caption>
+                      </p>
+                      {ev.ipAddress && (
+                        <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                          <Globe className="h-2.5 w-2.5" aria-hidden />
+                          {ev.ipAddress}
+                        </span>
+                      )}
                     </div>
-                    <time className="shrink-0 whitespace-nowrap text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                    <time className="shrink-0 whitespace-nowrap text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                       {fmtRelative(ev.createdAt)}
                     </time>
                   </li>
@@ -279,43 +340,169 @@ export function OverviewTab() {
               })}
             </ul>
           )}
-        </div>
-      </AdminSection>
+        </section>
 
-      <AdminSection
-        title="Checks de postura"
-        description="Estado agregado de controles críticos"
-      >
-        <AdminGrid cols={3} gap={4}>
-          <PostureCard
-            icon={ShieldCheck}
-            label="TOTP 2FA"
-            status={totpStatus}
-            detail={
-              posture.totpCoverage.total === 0
-                ? "Sin superadmins activos"
-                : `${posture.totpCoverage.enrolled} de ${posture.totpCoverage.total} superadmin${posture.totpCoverage.total === 1 ? "" : "s"} enrolado${posture.totpCoverage.enrolled === 1 ? "" : "s"}`
-            }
-          />
-          <PostureCard
-            icon={Lock}
-            label="Lockout automático"
-            status="ok"
-            detail="5 intentos → 15 min bloqueo"
-          />
-          <PostureCard
-            icon={Shield}
-            label="Auditoría activa"
-            status="ok"
-            detail="Registro continuo de acciones"
-          />
-        </AdminGrid>
-      </AdminSection>
+        {/* Postura (col 1) */}
+        <aside className="space-y-4">
+          {/* TOTP Coverage con progress bar */}
+          <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                  <ShieldCheck className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <h4 className="font-display text-sm font-extrabold text-[var(--text-primary)]">
+                    Cobertura TOTP 2FA
+                  </h4>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                    Superadmins con 2FA habilitado
+                  </p>
+                </div>
+              </div>
+              <span className="font-display text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
+                {totpPct}%
+              </span>
+            </div>
+            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  totpPct === 100
+                    ? "bg-[var(--data-success-500)]"
+                    : totpPct >= 50
+                      ? "bg-amber-500"
+                      : "bg-rose-500"
+                }`}
+                style={{ width: `${totpPct}%` }}
+                aria-hidden
+              />
+            </div>
+            <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+              {posture.totpCoverage.enrolled} de {posture.totpCoverage.total} enrolados
+            </p>
+          </div>
+
+          {/* Checks postura compactos */}
+          <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+            <header className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
+                <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              </span>
+              <h4 className="font-display text-sm font-extrabold text-[var(--text-primary)]">
+                Checks de postura
+              </h4>
+            </header>
+            <ul className="divide-y divide-[var(--rule-soft)]">
+              <PostureCheck
+                icon={Lock}
+                label="Lockout automático"
+                status="ok"
+                detail="5 intentos → 15 min bloqueo"
+              />
+              <PostureCheck
+                icon={Shield}
+                label="Auditoría activa"
+                status="ok"
+                detail="Registro continuo de acciones"
+              />
+              <PostureCheck
+                icon={ShieldCheck}
+                label="TOTP enrolado"
+                status={totpPct === 100 ? "ok" : "warning"}
+                detail={`${totpPct}% cobertura`}
+              />
+            </ul>
+          </div>
+        </aside>
+      </div>
+
+      {/* ─── IPs sospechosas (extraído del endpoint, antes oculto) ── */}
+      {suspiciousIPs.length > 0 && (
+        <section className="rounded-2xl border border-amber-300/60 bg-amber-50/30 overflow-hidden dark:border-amber-700/40 dark:bg-amber-950/20">
+          <header className="flex items-center gap-3 border-b border-amber-200/60 dark:border-amber-700/40 px-5 py-3.5">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+              <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            </span>
+            <div>
+              <h3 className="font-display text-base font-extrabold tracking-tight text-amber-800 dark:text-amber-200">
+                IPs sospechosas detectadas
+              </h3>
+              <p className="text-xs text-amber-700/80 dark:text-amber-400/80">
+                {suspiciousIPs.length} IP{suspiciousIPs.length === 1 ? "" : "s"} con ≥3 intentos
+                fallidos en los últimos 7 días
+              </p>
+            </div>
+          </header>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 p-4">
+            {suspiciousIPs.slice(0, 12).map((sip) => (
+              <div
+                key={sip.ip}
+                className="flex items-center justify-between gap-3 rounded-xl border border-amber-300/40 bg-[var(--surface-raised)] px-3 py-2 dark:border-amber-700/30"
+              >
+                <span className="font-mono text-xs font-bold text-[var(--text-primary)] truncate">
+                  {sip.ip}
+                </span>
+                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                  <TrendingUp className="h-2.5 w-2.5" />
+                  {sip.failedAttempts} fails
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
 
-function PostureCard({
+/* ───────────────────────── components ───────────────────────── */
+
+function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  subtitle,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  subtitle: string;
+  tone: "neutral" | "warning" | "danger" | "success";
+}) {
+  const iconBg =
+    tone === "warning"
+      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+      : tone === "danger"
+        ? "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
+        : tone === "success"
+          ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
+          : "bg-[var(--accent)]/10 text-[var(--accent)]";
+  const valueTone =
+    tone === "warning"
+      ? "text-amber-700 dark:text-amber-300"
+      : tone === "danger"
+        ? "text-[var(--accent)] dark:text-[var(--accent)]"
+        : "text-[var(--text-primary)]";
+  return (
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start justify-between gap-3">
+        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
+          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+        </span>
+      </div>
+      <p className="mt-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+        {label}
+      </p>
+      <p className={`mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight ${valueTone}`}>
+        {value}
+      </p>
+      <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subtitle}</p>
+    </div>
+  );
+}
+
+function PostureCheck({
   icon: Icon,
   label,
   status,
@@ -326,26 +513,28 @@ function PostureCard({
   status: "ok" | "warning" | "error";
   detail: string;
 }) {
-  const badge =
-    status === "ok"
-      ? { variant: "success" as const, label: "Activo" }
-      : status === "warning"
-        ? { variant: "warning" as const, label: "Revisar" }
-        : { variant: "error" as const, label: "Inactivo" };
+  const meta = {
+    ok: { cls: "text-[var(--data-success-500)]", dot: "bg-[var(--data-success-500)]", txt: "Activo" },
+    warning: { cls: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500", txt: "Revisar" },
+    error: { cls: "text-[var(--accent)] dark:text-[var(--accent)]", dot: "bg-rose-500", txt: "Inactivo" },
+  }[status];
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="shrink-0 rounded-lg bg-[var(--surface-sunken)] p-2">
-            <Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <BodyText className="font-semibold">{label}</BodyText>
-            <Caption className="text-[var(--text-tertiary)]">{detail}</Caption>
-          </div>
+    <li className="flex items-center justify-between gap-3 px-5 py-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <Icon
+          className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]"
+          strokeWidth={1.75}
+          aria-hidden
+        />
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-[var(--text-primary)]">{label}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{detail}</p>
         </div>
-        <BadgeStatus variant={badge.variant} label={badge.label} size="sm" dot />
       </div>
-    </div>
+      <span className={`inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+        {meta.txt}
+      </span>
+    </li>
   );
 }

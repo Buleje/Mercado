@@ -89,7 +89,7 @@ function TimelineStep({
           "relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           isDone
             ? "border-[var(--accent)] bg-[var(--accent)]"
-            : "border-border bg-card dark:border-border dark:bg-card",
+            : "border-border bg-[var(--surface-raised)] dark:border-border dark:bg-[var(--surface-raised)]",
         )}
       >
         {isDone ? (
@@ -103,7 +103,7 @@ function TimelineStep({
 
       {/* text */}
       <div className="pb-6">
-        <p className={cn("text-sm font-semibold", isDone ? "text-foreground dark:text-foreground" : "text-muted-foreground dark:text-muted")}>
+        <p className={cn("text-sm font-semibold", isDone ? "text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "text-[var(--text-secondary)] dark:text-muted")}>
           {step.label}
           {isActive && (
             <span className="ml-2 inline-flex items-center rounded-full bg-[#f97316]/20 px-2 py-0.5 text-xs font-medium text-[#f97316]">
@@ -111,7 +111,7 @@ function TimelineStep({
             </span>
           )}
         </p>
-        <p className="mt-0.5 text-xs text-muted-foreground dark:text-muted">{step.description}</p>
+        <p className="mt-0.5 text-xs text-[var(--text-secondary)] dark:text-muted">{step.description}</p>
       </div>
     </li>
   );
@@ -123,15 +123,15 @@ function OrderResult({ order }: { order: PublicOrder }) {
   return (
     <div className="mt-8 space-y-6">
       {/* header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card p-4 dark:bg-card dark:border-border">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-[var(--surface-raised)] p-4 dark:bg-[var(--surface-raised)] dark:border-border">
         <div>
-          <p className="text-xs text-muted-foreground dark:text-muted">Pedido</p>
-          <p className="font-mono text-sm font-semibold text-foreground dark:text-foreground">#{order.id.slice(0, 8).toUpperCase()}</p>
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Pedido</p>
+          <p className="font-mono text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">#{order.id.slice(0, 8).toUpperCase()}</p>
         </div>
         <StatusBadge status={order.status} />
         <div className="text-right">
-          <p className="text-xs text-muted-foreground dark:text-muted">Total</p>
-          <p className="text-sm font-bold text-foreground dark:text-foreground">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Total</p>
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             S/ {Number(order.total).toFixed(2)}
           </p>
         </div>
@@ -139,8 +139,8 @@ function OrderResult({ order }: { order: PublicOrder }) {
 
       {/* timeline */}
       {!isCancelled && (
-        <div className="rounded-xl border border-border bg-card p-5 dark:bg-card dark:border-border">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted">
+        <div className="rounded-xl border border-border bg-[var(--surface-raised)] p-5 dark:bg-[var(--surface-raised)] dark:border-border">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] dark:text-muted">
             Estado del pedido
           </p>
           <ul>
@@ -166,15 +166,15 @@ function OrderResult({ order }: { order: PublicOrder }) {
       )}
 
       {/* items */}
-      <div className="rounded-xl border border-border bg-card p-5 dark:bg-card dark:border-border">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted">
+      <div className="rounded-xl border border-border bg-[var(--surface-raised)] p-5 dark:bg-[var(--surface-raised)] dark:border-border">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] dark:text-muted">
           Productos
         </p>
         <ul className="space-y-2">
           {order.items.map((item, idx) => (
             <li key={idx} className="flex items-center justify-between text-sm">
-              <span className="text-foreground dark:text-foreground">{item.name}</span>
-              <span className="text-muted-foreground dark:text-muted">
+              <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.name}</span>
+              <span className="text-[var(--text-secondary)] dark:text-muted">
                 x{item.quantity}
                 {item.unit ? ` ${item.unit}` : ""}
               </span>
@@ -185,9 +185,9 @@ function OrderResult({ order }: { order: PublicOrder }) {
 
       {/* delivery slot */}
       {order.deliverySlot && (
-        <div className="rounded-xl border border-border bg-card p-4 dark:bg-card dark:border-border">
-          <p className="text-xs text-muted-foreground dark:text-muted">Hora estimada de entrega</p>
-          <p className="mt-1 text-sm font-semibold text-foreground dark:text-foreground">{order.deliverySlot}</p>
+        <div className="rounded-xl border border-border bg-[var(--surface-raised)] p-4 dark:bg-[var(--surface-raised)] dark:border-border">
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Hora estimada de entrega</p>
+          <p className="mt-1 text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{order.deliverySlot}</p>
         </div>
       )}
     </div>
@@ -248,9 +248,9 @@ export default function TrackingForm() {
           placeholder="Número de pedido (ej. abc12345)"
           required
           className={cn(
-            "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",
+            "flex-1 rounded-xl border border-border bg-[var(--surface-raised)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]",
             "focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
-            "dark:bg-card dark:border-border dark:text-foreground dark:placeholder:text-muted",
+            "dark:bg-[var(--surface-raised)] dark:border-border dark:text-[var(--text-primary)] dark:placeholder:text-muted",
           )}
         />
         <input
@@ -261,9 +261,9 @@ export default function TrackingForm() {
           placeholder="Tu teléfono"
           required
           className={cn(
-            "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",
+            "flex-1 rounded-xl border border-border bg-[var(--surface-raised)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]",
             "focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
-            "dark:bg-card dark:border-border dark:text-foreground dark:placeholder:text-muted",
+            "dark:bg-[var(--surface-raised)] dark:border-border dark:text-[var(--text-primary)] dark:placeholder:text-muted",
           )}
         />
         <button

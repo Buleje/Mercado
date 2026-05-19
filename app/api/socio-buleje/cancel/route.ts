@@ -27,7 +27,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    const tenantId = req.headers.get("x-tenant-id");
+    if (!tenantId) {
+      logger.warn("[api/socio-buleje/cancel] missing x-tenant-id", { traceId });
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "tenant requerido", traceId } },
+        { status: 400 },
+      );
+    }
     const { userId, reason, immediate } = parsed.data;
     const membership = await SocioBulejeDB.cancel(tenantId, userId, reason, immediate ?? false);
 

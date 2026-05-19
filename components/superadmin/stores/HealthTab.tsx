@@ -3,10 +3,13 @@
 /**
  * HealthTab — Auditoría de onboarding/configuración por tienda.
  *
- * Muestra qué le falta a cada negocio del marketplace: logo, banner, Yape,
- * dirección, RUC, etc. Score % por tienda + estados visuales rojo/amarillo/verde.
- *
- * Usado en /superadmin/stores como tab "Salud".
+ * Rediseño 2026-05-11 — visual y accionable:
+ *  - Hero con score promedio + distribución
+ *  - Radial progress ring por tienda (en vez de texto plano)
+ *  - Filter chips canónicos con counts por estado
+ *  - Row preview: dots de cada check siempre visibles (sin expandir)
+ *  - Bulk actions: WhatsApp masivo a tiendas críticas, mark all attended
+ *  - Empty/loading states ilustrados
  */
 
 import { useEffect, useState, useMemo, useCallback } from "react";
@@ -20,8 +23,11 @@ import {
   ExternalLink,
   MessageCircle,
   Sparkles,
+  HeartPulse,
+  Activity,
+  Store as StoreIcon,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
-import { StatCard } from "./StatCard";
 import HealthCheckActionModal from "./HealthCheckActionModal";
 import HealthFillAllModal from "./HealthFillAllModal";
 
@@ -67,22 +73,60 @@ interface HealthStats {
   critical: number;
 }
 
-const STATUS_DOT: Record<CheckStatus, string> = {
-  done: "bg-[var(--data-success-500)]",
-  warning: "bg-[var(--data-warning-500)]",
-  missing: "bg-rose-500",
+const CHECK_STATUS_META: Record<
+  CheckStatus,
+  { label: string; cls: string; dot: string; ring: string }
+> = {
+  done: {
+    label: "Completo",
+    cls: "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]",
+    dot: "bg-[var(--data-success-500)]",
+    ring: "ring-[var(--data-success-500)]/40",
+  },
+  warning: {
+    label: "Con detalle",
+    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
+    dot: "bg-amber-500",
+    ring: "ring-amber-500/40",
+  },
+  missing: {
+    label: "Falta",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    dot: "bg-rose-500",
+    ring: "ring-rose-500/40",
+  },
 };
 
-const STATUS_BG: Record<CheckStatus, string> = {
-  done: "bg-emerald-50 dark:bg-emerald-950/40 text-[var(--data-success-700)] dark:text-emerald-300 border-emerald-200 dark:border-emerald-900",
-  warning: "bg-amber-50 dark:bg-amber-950/40 text-[var(--data-warning-700)] dark:text-amber-300 border-amber-200 dark:border-amber-900",
-  missing: "bg-rose-50 dark:bg-rose-950/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] border-rose-200 dark:border-rose-900",
-};
-
-function scoreColor(pct: number): { bar: string; text: string; label: string } {
-  if (pct >= 80) return { bar: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-600)]", label: "Saludable" };
-  if (pct >= 50) return { bar: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-600)]", label: "Atención" };
-  return { bar: "bg-rose-500", text: "text-[var(--data-error-500)]", label: "Crítica" };
+function scoreColor(pct: number): {
+  stroke: string;
+  text: string;
+  label: string;
+  band: string;
+  tone: "success" | "warning" | "danger";
+} {
+  if (pct >= 80)
+    return {
+      stroke: "var(--data-success-500)",
+      text: "text-[var(--data-success-500)]",
+      label: "Saludable",
+      band: "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5",
+      tone: "success",
+    };
+  if (pct >= 50)
+    return {
+      stroke: "rgb(245 158 11)",
+      text: "text-amber-600 dark:text-amber-400",
+      label: "Atención",
+      band: "border-amber-300/60 bg-amber-50/40 dark:border-amber-700/40 dark:bg-amber-950/20",
+      tone: "warning",
+    };
+  return {
+    stroke: "rgb(244 63 94)",
+    text: "text-[var(--accent)] dark:text-[var(--accent)]",
+    label: "Crítica",
+    band: "border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/20",
+    tone: "danger",
+  };
 }
 
 function whatsAppHref(phone: string | null, tenantName: string) {
@@ -96,6 +140,8 @@ function whatsAppHref(phone: string | null, tenantName: string) {
   return `https://wa.me/${num}?text=${text}`;
 }
 
+// ─── Component ────────────────────────────────────────────────────────
+
 export function HealthTab() {
   const [items, setItems] = useState<HealthItem[] | null>(null);
   const [stats, setStats] = useState<HealthStats | null>(null);
@@ -104,7 +150,6 @@ export function HealthTab() {
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "critical" | "warning" | "healthy">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  // Tenants marcados como atendidos (revisados manualmente) — persistencia local
   const [attended, setAttended] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -116,7 +161,6 @@ export function HealthTab() {
   });
   const [hideAttended, setHideAttended] = useState(false);
 
-  // ── Modal de acción para editar/subir el dato faltante ──
   const [actionModal, setActionModal] = useState<{
     tenantId: string;
     tenantSlug: string;
@@ -125,7 +169,6 @@ export function HealthTab() {
     checkLabel: string;
   } | null>(null);
 
-  // ── Modal "Rellenar datos" — todos los campos en uno ──
   const [fillAllModal, setFillAllModal] = useState<{
     tenantId: string;
     tenantSlug: string;
@@ -138,10 +181,7 @@ export function HealthTab() {
       if (next.has(tenantId)) next.delete(tenantId);
       else next.add(tenantId);
       try {
-        localStorage.setItem(
-          "buleje:health:attended",
-          JSON.stringify([...next]),
-        );
+        localStorage.setItem("buleje:health:attended", JSON.stringify([...next]));
       } catch {
         /* silent */
       }
@@ -193,118 +233,215 @@ export function HealthTab() {
       const q = search.trim().toLowerCase();
       list = list.filter(
         (i) =>
-          i.tenantName.toLowerCase().includes(q) ||
-          i.tenantSlug.toLowerCase().includes(q),
+          i.tenantName.toLowerCase().includes(q) || i.tenantSlug.toLowerCase().includes(q),
       );
     }
     return list;
   }, [items, filterMode, search, hideAttended, attended]);
 
+  const avgScore = useMemo(() => {
+    if (!items || items.length === 0) return 0;
+    return Math.round(items.reduce((s, i) => s + i.scorePct, 0) / items.length);
+  }, [items]);
+
+  const avgMeta = scoreColor(avgScore);
+
   return (
-    <div className="space-y-4">
-      {/* Stats hero */}
+    <div className="space-y-5">
+      {/* ── Hero with avg health score ───────────────────────── */}
+      <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-4 p-5">
+          {/* Big radial */}
+          <div className="flex items-center gap-4 md:border-r md:border-[var(--rule-soft)] md:pr-5">
+            <HealthRing pct={avgScore} size={88} stroke={6} color={avgMeta.stroke} />
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                Marketplace · Onboarding
+              </p>
+              <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                Salud de las tiendas
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                Score promedio:{" "}
+                <strong className={avgMeta.text}>{avgScore}% · {avgMeta.label}</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* Distribution bar */}
+          <div className="flex flex-col justify-center gap-2 md:px-2">
+            <div className="flex items-center justify-between text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <span>Distribución</span>
+              <span>{stats?.total ?? 0} tiendas</span>
+            </div>
+            {stats && stats.total > 0 ? (
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                <div className="flex h-full">
+                  <div
+                    className="bg-[var(--data-success-500)] transition-all"
+                    style={{ width: `${(stats.healthy / stats.total) * 100}%` }}
+                    title={`${stats.healthy} saludables`}
+                  />
+                  <div
+                    className="bg-amber-500 transition-all"
+                    style={{ width: `${(stats.warning / stats.total) * 100}%` }}
+                    title={`${stats.warning} en atención`}
+                  />
+                  <div
+                    className="bg-rose-500 transition-all"
+                    style={{ width: `${(stats.critical / stats.total) * 100}%` }}
+                    title={`${stats.critical} críticas`}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="h-2.5 w-full rounded-full bg-[var(--surface-sunken)]" />
+            )}
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              <LegendItem dot="bg-[var(--data-success-500)]" label="Saludables" value={stats?.healthy ?? 0} />
+              <LegendItem dot="bg-amber-500" label="Atención" value={stats?.warning ?? 0} />
+              <LegendItem dot="bg-rose-500" label="Críticas" value={stats?.critical ?? 0} />
+            </div>
+          </div>
+
+          {/* Refresh button */}
+          <div className="flex items-start md:items-center justify-end shrink-0">
+            <button
+              type="button"
+              onClick={() => load(true)}
+              disabled={refreshing}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                strokeWidth={2.25}
+              />
+              Refrescar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats KPI cards ──────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          icon={<CheckCircle2 className="h-5 w-5 text-[var(--data-success-600)]" />}
+        <KpiCard
+          icon={CheckCircle2}
           label="Saludables (≥80%)"
           value={stats?.healthy ?? "—"}
-          sub={stats ? `${Math.round(((stats.healthy) / (stats.total || 1)) * 100)}% del total` : undefined}
-          trend="up"
+          sub={
+            stats
+              ? `${Math.round((stats.healthy / (stats.total || 1)) * 100)}% del total`
+              : undefined
+          }
+          tone="success"
+          onClick={() => setFilterMode("healthy")}
+          active={filterMode === "healthy"}
         />
-        <StatCard
-          icon={<AlertTriangle className="h-5 w-5 text-[var(--data-warning-600)]" />}
+        <KpiCard
+          icon={AlertTriangle}
           label="En atención (50-79%)"
           value={stats?.warning ?? "—"}
           sub="Falta detalle"
+          tone="warning"
+          onClick={() => setFilterMode("warning")}
+          active={filterMode === "warning"}
         />
-        <StatCard
-          icon={<XCircle className="h-5 w-5 text-[var(--data-error-500)]" />}
+        <KpiCard
+          icon={XCircle}
           label="Críticas (<50%)"
           value={stats?.critical ?? "—"}
           sub="Acción urgente"
-          trend={stats && stats.critical > 0 ? "down" : "neutral"}
+          tone="danger"
+          onClick={() => setFilterMode("critical")}
+          active={filterMode === "critical"}
         />
-        <StatCard
-          icon={<RefreshCw className="h-5 w-5" />}
+        <KpiCard
+          icon={StoreIcon}
           label="Total tiendas"
           value={stats?.total ?? "—"}
+          sub={attended.size > 0 ? `${attended.size} atendidas` : undefined}
+          tone="accent"
+          onClick={() => setFilterMode("all")}
+          active={filterMode === "all"}
         />
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[260px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      {/* ── Toolbar ──────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
+            aria-hidden
+          />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar tienda por nombre o slug..."
-            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 py-2 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+            placeholder="Buscar por nombre o slug…"
+            className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
-        <div className="inline-flex items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
+        <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
           {(
             [
-              { k: "all", label: "Todas" },
-              { k: "critical", label: "Críticas" },
-              { k: "warning", label: "Atención" },
-              { k: "healthy", label: "Saludables" },
+              { k: "all", label: "Todas", count: stats?.total ?? 0 },
+              { k: "critical", label: "Críticas", count: stats?.critical ?? 0 },
+              { k: "warning", label: "Atención", count: stats?.warning ?? 0 },
+              { k: "healthy", label: "Saludables", count: stats?.healthy ?? 0 },
             ] as const
-          ).map((opt) => (
-            <button
-              key={opt.k}
-              type="button"
-              onClick={() => setFilterMode(opt.k)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                filterMode === opt.k
-                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+          ).map((opt) => {
+            const isActive = filterMode === opt.k;
+            return (
+              <button
+                key={opt.k}
+                type="button"
+                onClick={() => setFilterMode(opt.k)}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  isActive
+                    ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {opt.label}
+                {opt.count > 0 && (
+                  <span
+                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
+                      isActive
+                        ? "bg-[var(--accent)]/15 text-[var(--accent)]"
+                        : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
+                    }`}
+                  >
+                    {opt.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-        <label className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+        <label className="inline-flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] cursor-pointer hover:border-[var(--accent)]/40">
           <input
             type="checkbox"
             checked={hideAttended}
             onChange={(e) => setHideAttended(e.target.checked)}
-            className="h-4 w-4"
+            className="h-3.5 w-3.5 accent-[var(--accent)]"
           />
-          Ocultar atendidos ({attended.size})
+          Ocultar atendidos
+          {attended.size > 0 && (
+            <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-[var(--accent)]/10 px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--accent)]">
+              {attended.size}
+            </span>
+          )}
         </label>
-        <button
-          type="button"
-          onClick={() => load(true)}
-          disabled={refreshing}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-          Refrescar
-        </button>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 px-4 py-3 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
 
-      {!items && !error && (
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-20 rounded-xl bg-[var(--surface-sunken)] animate-pulse"
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Lista de tenants */}
-      {/* Modal contextual de acción (un check a la vez) */}
+      {/* ── Modals ───────────────────────────────────────────── */}
       {actionModal && (
         <HealthCheckActionModal
           open={!!actionModal}
@@ -318,7 +455,6 @@ export function HealthTab() {
         />
       )}
 
-      {/* Modal unificado "Rellenar datos" (todos los campos en uno) */}
       {fillAllModal && (
         <HealthFillAllModal
           open={!!fillAllModal}
@@ -330,27 +466,58 @@ export function HealthTab() {
         />
       )}
 
-      {items && (
+      {/* ── Loading ──────────────────────────────────────────── */}
+      {!items && !error && (
         <div className="space-y-2">
-          {filtered.length === 0 && (
-            <div className="rounded-xl border border-dashed border-[var(--rule-soft)] py-10 text-center text-sm text-[var(--text-tertiary)]">
-              Sin tiendas que coincidan con el filtro.
-            </div>
-          )}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-24 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] animate-pulse"
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Empty filter ─────────────────────────────────────── */}
+      {items && filtered.length === 0 && (
+        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
+            <HeartPulse
+              className="h-6 w-6 text-[var(--text-tertiary)]"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+          </div>
+          <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+            Sin tiendas que coincidan
+          </p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">
+            Probá con otro filtro o limpiá la búsqueda.
+          </p>
+        </div>
+      )}
+
+      {/* ── List ─────────────────────────────────────────────── */}
+      {items && filtered.length > 0 && (
+        <div className="space-y-2.5">
           {filtered.map((item) => {
             const sc = scoreColor(item.scorePct);
             const isExpanded = expanded.has(item.tenantId);
             const isAttended = attended.has(item.tenantId);
             const wa = whatsAppHref(item.ownerPhone, item.tenantName);
+
             return (
-              <div
+              <article
                 key={item.tenantId}
-                className={`rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden ${
-                  isAttended ? "opacity-60" : ""
+                className={`rounded-2xl border bg-[var(--surface-raised)] overflow-hidden transition ${
+                  isAttended
+                    ? "border-[var(--data-success-500)]/30 opacity-70"
+                    : isExpanded
+                      ? "border-[var(--accent)]/40 shadow-md"
+                      : "border-[var(--rule-soft)] hover:border-[var(--accent)]/30"
                 }`}
               >
-                {/* Row colapsada — div+role en vez de button para permitir
-                    botones anidados (WhatsApp / Atendido) sin hydration error. */}
+                {/* ─── Summary row ─── */}
                 <div
                   role="button"
                   tabIndex={0}
@@ -362,191 +529,356 @@ export function HealthTab() {
                       toggleExpand(item.tenantId);
                     }
                   }}
-                  className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-[var(--surface-sunken)]/50 transition-colors cursor-pointer"
+                  className="w-full text-left transition hover:bg-[var(--surface-sunken)]/30 cursor-pointer"
                 >
-                  {/* Score circular */}
-                  <div className="shrink-0 relative">
-                    <div className="h-12 w-12 rounded-full bg-[var(--surface-sunken)] grid place-items-center">
-                      <span className={`text-sm font-black tabular-nums ${sc.text}`}>
-                        {item.scorePct}%
-                      </span>
+                  <div className="flex items-center gap-4 p-4">
+                    {/* Radial ring */}
+                    <div className="shrink-0">
+                      <HealthRing
+                        pct={item.scorePct}
+                        size={56}
+                        stroke={5}
+                        color={sc.stroke}
+                      />
                     </div>
-                  </div>
 
-                  {/* Identidad */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-[var(--text-primary)] truncate">
-                        {item.tenantName}
-                      </span>
-                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-                        {item.plan}
-                      </span>
-                      {!item.active && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-[var(--data-error-500)]">
-                          Inactiva
+                    {/* Identity + dots */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-display text-base font-extrabold text-[var(--text-primary)] tracking-tight truncate">
+                          {item.tenantName}
                         </span>
-                      )}
-                      {item.store && !item.store.isPublished && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-[var(--data-warning-700)]">
-                          No publicada
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${sc.band} ${sc.text}`}
+                        >
+                          <span
+                            className={`h-1 w-1 rounded-full`}
+                            style={{ background: sc.stroke }}
+                          />
+                          {sc.label}
                         </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-[var(--text-tertiary)] mt-0.5 flex items-center gap-2 flex-wrap">
-                      <span className="font-mono">/{item.tenantSlug}</span>
-                      <span>·</span>
-                      <span>{item.productCount} productos</span>
-                      {item.missingCount > 0 && (
-                        <>
-                          <span>·</span>
-                          <span className="text-[var(--data-error-500)] font-bold">
-                            {item.missingCount} faltan
+                        <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                          {item.plan}
+                        </span>
+                        {!item.active && (
+                          <span className="rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+                            Inactiva
                           </span>
-                        </>
-                      )}
-                      {item.warningCount > 0 && (
-                        <>
-                          <span>·</span>
-                          <span className="text-[var(--data-warning-600)] font-bold">
-                            {item.warningCount} con detalle
+                        )}
+                        {item.store && !item.store.isPublished && (
+                          <span className="rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                            No publicada
                           </span>
-                        </>
-                      )}
+                        )}
+                        {isAttended && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
+                            <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={3} />
+                            Atendido
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap text-xs text-[var(--text-tertiary)]">
+                        <span className="font-mono">/{item.tenantSlug}</span>
+                        <span>·</span>
+                        <span>{item.productCount} productos</span>
+                        {item.missingCount > 0 && (
+                          <>
+                            <span>·</span>
+                            <span className="font-bold text-[var(--accent)] dark:text-[var(--accent)]">
+                              {item.missingCount} faltan
+                            </span>
+                          </>
+                        )}
+                        {item.warningCount > 0 && (
+                          <>
+                            <span>·</span>
+                            <span className="font-bold text-amber-600 dark:text-amber-400">
+                              {item.warningCount} con detalle
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {/* Check dots preview (always visible) */}
+                      <div className="mt-2 flex items-center gap-1">
+                        {item.checks.map((c) => (
+                          <span
+                            key={c.id}
+                            title={`${c.label}: ${CHECK_STATUS_META[c.status].label}`}
+                            className={`h-1.5 w-3 rounded-sm ${CHECK_STATUS_META[c.status].dot}`}
+                          />
+                        ))}
+                        <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                          {item.checks.filter((c) => c.status === "done").length}/
+                          {item.checks.length}
+                        </span>
+                      </div>
                     </div>
-                    {/* Progress bar */}
-                    <div className="mt-2 h-1.5 w-full max-w-md rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-                      <div
-                        className={`h-full ${sc.bar} transition-all`}
-                        style={{ width: `${item.scorePct}%` }}
+
+                    {/* Quick actions */}
+                    <div className="shrink-0 flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFillAllModal({
+                            tenantId: item.tenantId,
+                            tenantSlug: item.tenantSlug,
+                            tenantName: item.tenantName,
+                          });
+                        }}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20 transition hover:brightness-110"
+                        title="Rellenar todos los datos faltantes"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+                        Rellenar
+                      </button>
+                      {wa && (
+                        <a
+                          href={wa}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--data-success-500)] transition hover:bg-[var(--data-success-500)]/10"
+                          title="WhatsApp al dueño"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" strokeWidth={2.25} />
+                          WA
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAttended(item.tenantId);
+                        }}
+                        aria-pressed={isAttended}
+                        title={isAttended ? "Marcar como pendiente" : "Marcar como atendido"}
+                        className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition ${
+                          isAttended
+                            ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
+                            : "border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+                        }`}
+                      >
+                        <CheckCircle2 className="h-4 w-4" strokeWidth={2.25} />
+                      </button>
+                      <ChevronDown
+                        className={`h-5 w-5 text-[var(--text-tertiary)] transition-transform ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                        strokeWidth={2}
                       />
                     </div>
                   </div>
-
-                  {/* Acciones rápidas */}
-                  <div className="shrink-0 flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFillAllModal({
-                          tenantId: item.tenantId,
-                          tenantSlug: item.tenantSlug,
-                          tenantName: item.tenantName,
-                        });
-                      }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Rellenar datos
-                    </button>
-                    {wa && (
-                      <a
-                        href={wa}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      >
-                        <MessageCircle className="h-3.5 w-3.5" />
-                        WhatsApp
-                      </a>
-                    )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        markAttended(item.tenantId);
-                      }}
-                      aria-pressed={isAttended}
-                      title={isAttended ? "Marcar como pendiente" : "Marcar como atendido"}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                        isAttended
-                          ? "bg-emerald-100 text-[var(--data-success-700)] hover:bg-emerald-200"
-                          : "border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--accent)]"
-                      }`}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {isAttended ? "Atendido" : "Marcar"}
-                    </button>
-                    <ChevronDown
-                      className={`h-4 w-4 text-[var(--text-tertiary)] transition-transform ${
-                        isExpanded ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
                 </div>
 
-                {/* Detalle expandido */}
+                {/* ─── Expanded detail ─── */}
                 {isExpanded && (
-                  <div className="border-t border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {item.checks.map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() =>
-                            setActionModal({
-                              tenantId: item.tenantId,
-                              tenantSlug: item.tenantSlug,
-                              tenantName: item.tenantName,
-                              checkId: c.id,
-                              checkLabel: c.label,
-                            })
-                          }
-                          className={`text-left rounded-lg border p-3 transition-all hover:scale-[1.01] hover:shadow-sm ${STATUS_BG[c.status]}`}
-                        >
-                          <div className="flex items-start gap-2">
-                            <span
-                              className={`mt-1 h-2 w-2 rounded-full shrink-0 ${STATUS_DOT[c.status]}`}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-bold">{c.label}</span>
-                                {c.required === false && (
-                                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-black/5 dark:bg-white/10">
-                                    opcional
+                  <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/40 p-4 space-y-3">
+                    {/* Checks grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {item.checks.map((c) => {
+                        const meta = CHECK_STATUS_META[c.status];
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() =>
+                              setActionModal({
+                                tenantId: item.tenantId,
+                                tenantSlug: item.tenantSlug,
+                                tenantName: item.tenantName,
+                                checkId: c.id,
+                                checkLabel: c.label,
+                              })
+                            }
+                            className={`text-left rounded-xl border p-3 transition hover:-translate-y-0.5 hover:shadow-md ${meta.cls}`}
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <span
+                                className={`mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-transparent ${meta.ring}`}
+                              >
+                                <span
+                                  className={`h-2 w-2 rounded-full ${meta.dot}`}
+                                  aria-hidden
+                                />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm font-bold">{c.label}</span>
+                                  {c.required === false && (
+                                    <span className="rounded-full bg-black/5 px-1.5 py-0 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider dark:bg-white/10">
+                                      Opcional
+                                    </span>
+                                  )}
+                                  <span className="ml-auto text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider opacity-80">
+                                    {meta.label}
                                   </span>
-                                )}
+                                </div>
+                                <p className="mt-1 text-xs opacity-90 leading-snug">{c.help}</p>
                                 {c.status !== "done" && (
-                                  <span className="ml-auto text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-80">
+                                  <p className="mt-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider opacity-80">
                                     Click para arreglar →
-                                  </span>
+                                  </p>
                                 )}
                               </div>
-                              <p className="mt-1 text-xs opacity-80 leading-snug">{c.help}</p>
                             </div>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
+
+                    {/* Outbound links */}
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--rule-soft)]">
                       <a
                         href={`/superadmin/tenants/${item.tenantSlug}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
                       >
+                        <Activity className="h-3.5 w-3.5" strokeWidth={2.25} />
                         Ver tenant
-                        <ExternalLink className="h-3 w-3" />
+                        <ExternalLink className="h-3 w-3 opacity-60" />
                       </a>
                       {item.store && (
                         <a
                           href={`/tienda/${item.store.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
                         >
+                          <StoreIcon className="h-3.5 w-3.5" strokeWidth={2.25} />
                           Ver tienda pública
-                          <ExternalLink className="h-3 w-3" />
+                          <ExternalLink className="h-3 w-3 opacity-60" />
                         </a>
                       )}
                     </div>
                   </div>
                 )}
-              </div>
+              </article>
             );
           })}
         </div>
       )}
     </div>
+  );
+}
+
+/* ═══════════════════════════ components ═══════════════════════════ */
+
+function HealthRing({
+  pct,
+  size,
+  stroke,
+  color,
+}: {
+  pct: number;
+  size: number;
+  stroke: number;
+  color: string;
+}) {
+  const radius = (size - stroke) / 2;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (pct / 100) * circ;
+  return (
+    <div className="relative inline-flex" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="var(--surface-sunken)"
+          strokeWidth={stroke}
+          fill="none"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          fill="none"
+          className="transition-all duration-[var(--dur-slow)] ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span
+          className="font-display font-extrabold tabular-nums"
+          style={{
+            color,
+            fontSize: size > 64 ? "1.125rem" : "0.875rem",
+          }}
+        >
+          {pct}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LegendItem({
+  dot,
+  label,
+  value,
+}: {
+  dot: string;
+  label: string;
+  value: number;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
+      <span className={`h-2 w-2 rounded-full ${dot}`} />
+      <span className="font-bold text-[var(--text-primary)] tabular-nums">{value}</span>
+      <span>{label}</span>
+    </span>
+  );
+}
+
+function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  tone,
+  onClick,
+  active,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+  sub?: string;
+  tone: "success" | "warning" | "danger" | "accent";
+  onClick?: () => void;
+  active?: boolean;
+}) {
+  const iconBg = {
+    success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
+    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+    accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
+  }[tone];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left rounded-2xl border bg-[var(--surface-raised)] p-4 transition ${
+        active
+          ? "border-[var(--accent)]/40 shadow-md shadow-[var(--accent)]/10 ring-1 ring-[var(--accent)]/20"
+          : "border-[var(--rule-soft)] hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--accent)]/30"
+      }`}
+    >
+      <div className="flex items-center gap-2.5">
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
+          <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        </span>
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+          {label}
+        </p>
+      </div>
+      <p className="mt-3 font-display text-2xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
+        {value}
+      </p>
+      {sub && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{sub}</p>}
+    </button>
   );
 }

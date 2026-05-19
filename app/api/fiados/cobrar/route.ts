@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { FiadosDB } from "@/lib/db/fiados.db";
+import { FiadosDB, FiadoConflictError } from "@/lib/db/fiados.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const CobrarSchema = z.object({
   customerPhone: z.string().min(1),
@@ -17,11 +18,12 @@ const CobrarSchema = z.object({
  * Distributes the payment across active fiados oldest-first.
  */
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "fiados-cobrar"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId;
 
   try {
     const raw = await req.json();
@@ -57,6 +59,13 @@ export async function POST(req: NextRequest) {
       remaining: result.remaining,
     });
   } catch (e) {
+    // Audit 2026-05-17 P1-3: race-condition de Prisma → 409 Conflict.
+    if (e instanceof FiadoConflictError) {
+      return NextResponse.json(
+        { error: e.message, code: "FIADO_CONFLICT", retryable: true },
+        { status: 409 }
+      );
+    }
     logger.error("[Fiados Cobrar] unexpected error", { error: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: "Internal server error" },

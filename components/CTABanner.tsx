@@ -120,7 +120,7 @@ export default function CTABanner() {
               </span>
             </Link>
             <a
-              href="https://wa.me/51916409675?text=Hola%2C%20quiero%20hacer%20un%20pedido"
+              href="https://wa.me/51929340532?text=Hola%2C%20quiero%20hacer%20un%20pedido"
               onClick={() => trackWhatsAppClick("cta-banner")}
               target="_blank"
               rel="noopener noreferrer"

@@ -70,9 +70,13 @@ export default function StoreHero({
   const locationLabel = zone ?? distanceLabel;
 
   return (
+    // Brandon, mayo 14 2026: hero entero oculto en mobile. El nombre,
+    // descripcion, "Ver catalogo" y favorito viajaron al BackToTiendasButton
+    // como toolbar compacta (StoreDetailClient). El banner + categorias chips
+    // sticky bastan para identidad en mobile.
     <section
       aria-labelledby="store-hero-heading"
-      className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-2"
+      className="hidden md:block max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-2"
     >
       <div
         className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-sm"
@@ -101,13 +105,24 @@ export default function StoreHero({
 
           {/* CTAs — derecha en desktop, full-width abajo en mobile */}
           <div className="flex items-center gap-2 shrink-0">
-            <a
-              href="#catalogo"
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-black text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg"
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                // Smooth scroll al catalogo sin recargar la pagina (Brandon,
+                // mayo 14 2026). El href="#catalogo" provocaba que el browser
+                // mueva el hash y, con Next 16 + RSC, terminaba reordenando
+                // el subarbol y haciendo flashear el header.
+                const el = document.getElementById("catalogo");
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-black text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
             >
               Ver catálogo
               <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-            </a>
+            </button>
             {whatsappNumber && (
               <a
                 href={`https://wa.me/51${whatsappNumber.replace(/\D/g, "")}`}
@@ -131,8 +146,11 @@ export default function StoreHero({
           </div>
         </div>
 
-        {/* ── Stats strip — 4 KPIs con dividers ─────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 border-t-2 border-[var(--rule-base)]">
+        {/* ── Stats strip — 4 KPIs con dividers ───────────────────────
+            Brandon, mayo 14 2026: en mobile el stats + trust strip toman
+            mucho scroll antes del catalogo y duplican info que ya vive en
+            el banner cerrado/abierto. Solo desktop (md+) los mantiene. */}
+        <div className="hidden md:grid grid-cols-2 sm:grid-cols-4 border-t-2 border-[var(--rule-base)]">
           {/* Rating — sin reseñas muestra empty state explícito en lugar
               de un guión "—" críptico (designer audit). */}
           <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
@@ -215,8 +233,9 @@ export default function StoreHero({
           </div>
         </div>
 
-        {/* ── Trust chips strip — payment methods + sello marca ─────── */}
-        <div className="flex flex-wrap items-center gap-2 p-4 sm:px-7 sm:py-4 lg:px-8 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-3xl">
+        {/* ── Trust chips strip — payment methods + sello marca ───────
+            Mobile: oculto junto al stats strip (Brandon, mayo 14 2026). */}
+        <div className="hidden md:flex flex-wrap items-center gap-2 p-4 sm:px-7 sm:py-4 lg:px-8 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-3xl">
           <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 px-3 py-1 text-xs font-bold text-[var(--data-success-500)]">
             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
             Tienda verificada

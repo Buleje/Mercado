@@ -1064,6 +1064,120 @@ body {
   background-color: rgba(255, 255, 255, 0.02);
 }
 
+/* ── Dark mode shell root override ─────────────────────────────────────────
+ * Brandon 2026-05-16: el wrapper del admin tiene `bg-gray-50 dark:bg-[var(--surface-canvas)]`
+ * pero Tailwind 4 a veces no genera la regla dark con arbitrary value + var,
+ * o el orden de capas hace que bg-gray-50 gane. !important asegura que en
+ * dark mode el shell root se pinte canvas.
+ */
+.dark [data-admin-shell="true"] {
+  background-color: #0d1117 !important;
+  /* Re-forzar las vars semantic surfaces porque en este scope se
+     override-ean a oklch light por algun layer intermedio de Tailwind 4. */
+  --surface-canvas: #0d1117;
+  --surface-sunken: #161b22;
+  --surface-raised: #1c2230;
+  /* Brandon 2026-05-18: subido contraste de hairlines en dark.
+     Antes #2e3645/#232a38 era casi imperceptible sobre #1c2230 (Δ luma ~7-14).
+     Ahora #3a4254/#2a3242 da Δ ~13-21 — visible sin ser estridente.
+     Separa cards del fondo y mantiene jerarquía visual. */
+  --rule-base: #3a4254;
+  --rule-soft: #2a3242;
+  --text-primary: #f0f3f7;
+  --text-secondary: #b8c0cc;
+  --text-tertiary: #8590a3;
+}
+/* bg-[var(--surface-raised)] arbitrary values en Tailwind 4 a veces resuelven
+   en el momento de generar la utility a la var del :root (light). Forzamos
+   en dark con !important a la version dark hardcoded. */
+.dark [data-admin-shell="true"] .bg-\[var\(--surface-raised\)\] {
+  background-color: #1c2230 !important;
+}
+.dark [data-admin-shell="true"] .bg-\[var\(--surface-canvas\)\] {
+  background-color: #0d1117 !important;
+}
+.dark [data-admin-shell="true"] .bg-\[var\(--surface-sunken\)\] {
+  background-color: #161b22 !important;
+}
+.dark [data-admin-shell="true"] .border-\[var\(--rule-base\)\] {
+  border-color: #2e3645 !important;
+}
+.dark [data-admin-shell="true"] .border-\[var\(--rule-soft\)\] {
+  border-color: #232a38 !important;
+}
+
+/* ── Dark mode defensive overrides para admin shell ─────────────────────────
+ * Brandon 2026-05-16: muchos componentes del admin tienen `bg-white`,
+ * `text-gray-*`, `border-gray-*` sin variante `dark:` porque se escribieron
+ * antes de la migración a tokens. En dark mode esos islotes de blanco rompen
+ * la coherencia visual. Estas reglas defensivas mapean esas clases comunes
+ * a tokens correctos del DS dentro del admin shell. Si un componente quiere
+ * permanecer claro a propósito (ej. previews de ticket, mockups), debe usar
+ * un wrapper con `data-keep-light` para opt-out (no implementado aún —
+ * añadir si surge la necesidad).
+ *
+ * Scope: solo dentro de `.dark [data-admin-shell="true"]` para evitar
+ * pisar el sidebar buleje (que usa white/[0.04] translúcido sobre slate).
+ */
+/* Colores hardcoded para evitar guerra con vars que pueden estar
+   override-eadas a oklch light en alguna scope intermedia. */
+.dark [data-admin-shell="true"] main .bg-white,
+.dark [data-admin-shell="true"] [role="tabpanel"] .bg-white {
+  background-color: #1c2230 !important;  /* --surface-raised */
+}
+.dark [data-admin-shell="true"] main .bg-gray-50,
+.dark [data-admin-shell="true"] [role="tabpanel"] .bg-gray-50 {
+  background-color: #0d1117 !important;  /* --surface-canvas */
+}
+.dark [data-admin-shell="true"] main .bg-gray-100,
+.dark [data-admin-shell="true"] [role="tabpanel"] .bg-gray-100 {
+  background-color: #161b22 !important;  /* --surface-sunken */
+}
+.dark [data-admin-shell="true"] main .text-gray-900,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-900,
+.dark [data-admin-shell="true"] main .text-gray-800,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-800 {
+  color: #f0f3f7 !important;  /* --text-primary */
+}
+.dark [data-admin-shell="true"] main .text-gray-700,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-700,
+.dark [data-admin-shell="true"] main .text-gray-600,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-600 {
+  color: #b8c0cc !important;  /* --text-secondary */
+}
+.dark [data-admin-shell="true"] main .text-gray-500,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-500,
+.dark [data-admin-shell="true"] main .text-gray-400,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-400 {
+  color: #8590a3 !important;  /* --text-tertiary */
+}
+.dark [data-admin-shell="true"] main .border-gray-200,
+.dark [data-admin-shell="true"] [role="tabpanel"] .border-gray-200,
+.dark [data-admin-shell="true"] main .border-gray-100,
+.dark [data-admin-shell="true"] [role="tabpanel"] .border-gray-100 {
+  border-color: #2e3645 !important;  /* --rule-base */
+}
+.dark [data-admin-shell="true"] main .border-gray-300,
+.dark [data-admin-shell="true"] [role="tabpanel"] .border-gray-300 {
+  border-color: #232a38 !important;  /* --rule-soft */
+}
+/* Divide helpers (Tailwind divide-*) usan border-color en > * + * */
+.dark [data-admin-shell="true"] main .divide-gray-200 > * + *,
+.dark [data-admin-shell="true"] [role="tabpanel"] .divide-gray-200 > * + *,
+.dark [data-admin-shell="true"] main .divide-gray-100 > * + *,
+.dark [data-admin-shell="true"] [role="tabpanel"] .divide-gray-100 > * + * {
+  border-color: #2e3645 !important;
+}
+/* Headings y body text con color por default — h1/h2/h3 sin clase explícita */
+.dark [data-admin-shell="true"] main h1,
+.dark [data-admin-shell="true"] main h2,
+.dark [data-admin-shell="true"] main h3,
+.dark [data-admin-shell="true"] [role="tabpanel"] h1,
+.dark [data-admin-shell="true"] [role="tabpanel"] h2,
+.dark [data-admin-shell="true"] [role="tabpanel"] h3 {
+  color: #f0f3f7;
+}
+
 /* ── Mejora 20: Densidad de tabla configurable ──────────────────────────── */
 .table-compact td,
 .table-compact th { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; font-size: 0.75rem !important; line-height: 1rem !important; }
@@ -2723,4 +2837,28 @@ body:has(header.store-header) > nav[aria-label="Breadcrumb"] {
 }
 body.tenant-storefront > nav[aria-label="Breadcrumb"] {
   display: none !important;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   ADMIN DASHBOARD — colapsar wrappers de charts ocultos + estirar último impar
+   Brandon (2026-05-15): cuando un chart tiene defaultVisible=false (o el
+   usuario lo ocultó), DashboardSection retorna un `<div data-chart-hidden>`
+   en vez de null para que el wrapper draggable lo detecte y se colapse del
+   grid — sin esto, quedaban huecos blancos enormes al lado de los charts
+   visibles "impares".
+   ──────────────────────────────────────────────────────────────────────── */
+.draggable-section:has(> div > div > div > [data-chart-hidden]),
+.draggable-section:has([data-chart-hidden]) {
+  display: none !important;
+}
+
+/* Si la cantidad de halves visibles es IMPAR, el último queda alone en su
+   fila — lo estiramos a ancho completo. Si es PAR, los halves parean
+   normalmente. Combinamos:
+     - `:nth-child(2n+1 of S)` → la posición es impar contando solo halves visibles
+     - `:nth-last-child(1 of S)` → es el último half visible
+   Esto evita el bug donde, con 2 halves visibles, el último se estiraba
+   rompiendo el pareo. Soporte: Chrome 111+, Safari 9+, Firefox 113+. */
+.draggable-section:nth-child(2n+1 of .draggable-section:not([data-fullspan="true"]):not(:has([data-chart-hidden]))):nth-last-child(1 of .draggable-section:not([data-fullspan="true"]):not(:has([data-chart-hidden]))) {
+  grid-column: 1 / -1;
 }

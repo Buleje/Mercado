@@ -58,6 +58,15 @@ interface Props {
    *    para drag bidireccional.
    */
   layout?: "column" | "grid";
+  /**
+   * Brandon mayo 2026 v6: ancho mínimo de cada columna en `layout="grid"`.
+   * El default `"36rem"` (576px) requería ≥ 1152px de contenido para 2
+   * cols, lo cual con la barra lateral del admin no se daba. Bajándolo a
+   * `"22rem"` (352px) las 2 cols aparecen desde ~750px de contenido y los
+   * charts pareados (ej. Distribución gasto + Frecuencia) se ven lado a
+   * lado en monitores comunes.
+   */
+  minColumnWidth?: string;
 }
 
 interface PersistState {
@@ -81,7 +90,7 @@ interface PersistState {
  *  - Toast "Layout guardado" en primer drag
  *  - Persiste en localStorage (orden + hidden)
  */
-export function DraggableSections({ items, storageKey, gap = 1, layout = "column" }: Props) {
+export function DraggableSections({ items, storageKey, gap = 1, layout = "column", minColumnWidth = "36rem" }: Props) {
   const [state, setState] = useState<PersistState>(() => ({
     order: items.map((i) => i.id),
     hidden: [],
@@ -115,8 +124,11 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
       if (cleanOrder.some((id, i) => id !== items[i]?.id) || cleanHidden.length > 0) {
         firstDragRef.current = false; // ya interactuó antes
       }
-    } catch {
-      /* ignore */
+    } catch (err) {
+      // Brandon 2026-05-16 (audit P1): antes era `catch { /* ignore */ }`.
+      // En Safari privado o storage lleno, la lectura falla silenciosamente
+      // y el layout default reaparece sin que el user sepa por qué.
+      console.warn("[DraggableSections] no se pudo leer layout guardado:", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
@@ -126,8 +138,10 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
     if (!storageKey) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {
-      /* ignore */
+    } catch (err) {
+      // Storage lleno o bloqueado (Safari privado, modo incógnito iOS).
+      // El user reordena pero los cambios NO persisten al recargar.
+      console.warn("[DraggableSections] no se pudo guardar layout (storage lleno o bloqueado):", err);
     }
   }
 
@@ -192,12 +206,18 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
                 ? {
                     display: "grid",
                     gap: `${gap}rem`,
-                    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 36rem), 1fr))",
+                    gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minColumnWidth}), 1fr))`,
                     // 2026-04-24: gridAutoRows 1fr asegura que todas las
                     // secciones de una misma fila compartan altura.
                     // Combinado con h-full dentro de DashboardSection el
                     // chart rellena el espacio y no quedan huecos.
                     gridAutoRows: "1fr",
+                    // Brandon mayo 2026 v6: gridAutoFlow "dense" rellena
+                    // huecos automáticos cuando un chart con span="half"
+                    // queda solo en su fila (porque el compañero está
+                    // oculto por defaultVisible=false). Sin esto, queda
+                    // un hueco blanco enorme al lado del chart impar.
+                    gridAutoFlow: "row dense",
                     alignItems: "stretch",
                   }
                 : { display: "flex", flexDirection: "column", gap: `${gap}rem` }
@@ -207,6 +227,8 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
               {validOrder.map((id, index) => {
                 const item = items.find((i) => i.id === id);
                 if (!item) return null;
+                const rendered = item.render();
+                if (!rendered) return null;
                 const isFullSpan = layout === "grid" && item.span === "full";
                 return (
                   <DraggableSection
@@ -219,7 +241,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
                     onPresent={() => setPresentingId(id)}
                     fullSpan={isFullSpan}
                   >
-                    {item.render()}
+                    {rendered}
                   </DraggableSection>
                 );
               })}
@@ -315,7 +337,12 @@ function DraggableSection({
   };
 
   return (
-    <div ref={setNodeRef} style={dndStyle} className="group">
+    <div
+      ref={setNodeRef}
+      style={dndStyle}
+      className="group draggable-section"
+      data-fullspan={fullSpan ? "true" : undefined}
+    >
       <m.div
         initial={hydrated ? false : { opacity: 0, y: 10 }}
         animate={{

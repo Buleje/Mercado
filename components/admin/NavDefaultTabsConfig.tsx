@@ -88,18 +88,18 @@ export function NavDefaultTabsConfig() {
   };
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
       <div className="space-y-1">
         {NAV_MODULES.map((mod) => (
           <div
             key={mod.id}
             className="flex items-center justify-between py-2.5 border-b border-[var(--rule-soft)] dark:border-white/5 last:border-b-0"
           >
-            <span className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground">{mod.name}</span>
+            <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{mod.name}</span>
             <select
               value={defaults[mod.id] ?? mod.tabs[0].id}
               onChange={(e) => handleChange(mod.id, e.target.value)}
-              className="text-xs border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card rounded-lg px-2.5 py-1.5 text-[var(--text-primary)] dark:text-foreground focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] outline-none transition-all"
+              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-lg px-2.5 py-1.5 text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] outline-none transition-all"
             >
               {mod.tabs.map((t) => (
                 <option key={t.id} value={t.id}>{t.label}</option>

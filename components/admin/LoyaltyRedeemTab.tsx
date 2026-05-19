@@ -64,7 +64,7 @@ export default function LoyaltyRedeemTab() {
     fetch("/api/loyalty/redeem")
       .then((r) => (r.ok ? r.json() : []))
       .then((data: Reward[]) => setRewards(data))
-      .catch(() => {})
+      .catch((err) => console.warn("[LoyaltyRedeemTab] rewards fetch failed:", err))
       .finally(() => setLoadingRewards(false));
   }, []);
 

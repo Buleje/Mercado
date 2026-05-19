@@ -40,7 +40,7 @@ export default memo(function PuntoCompraProductCard({
       disabled={isOutOfStock}
       aria-label={isOutOfStock ? `${displayName} — agotado` : `Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}`}
       className={cn(
-        "relative border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 transition-all bg-white dark:bg-card",
+        "relative border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 transition-all bg-[var(--surface-raised)]",
         "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         isOutOfStock
           ? "opacity-60 cursor-not-allowed"

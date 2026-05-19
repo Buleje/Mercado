@@ -7,7 +7,13 @@ import { DashboardDB } from "@/lib/db/dashboard.db";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
-const DASHBOARD_TTL_SEC = 15; // Cached for 15 s — keeps polling cheap
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — depende
+// de cookies (requireAdmin) + queries en tiempo real polleadas cada 15s.
+
+// Audit 2026-05-19: subido 15s → 300s. Los writes invalidan vía
+// invalidateAdminCache; el polling sigue siendo cheap porque ahora
+// 1 query/5min en vez de 1 query/15s = -95% queries dashboard.
+const DASHBOARD_TTL_SEC = 300;
 
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, "MODERATE", "admin-dashboard");

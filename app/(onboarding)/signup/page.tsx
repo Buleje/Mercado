@@ -33,7 +33,7 @@ const StoreSchema = z.object({
   slug: z
     .string()
     .regex(SLUG_RE, "Solo minúsculas, números y guiones (mín. 4 chars)"),
-  plan: z.enum(["free", "pro", "business"]),
+  plan: z.enum(["free", "pro", "business", "enterprise"]),
   type: z.enum(["store", "supplier", "delivery"]).default("store"),
 });
 
@@ -49,7 +49,7 @@ interface FormData {
   ownerPhone: string;
   storeName: string;
   slug: string;
-  plan: "free" | "pro" | "business";
+  plan: "free" | "pro" | "business" | "enterprise";
   type: "store" | "supplier" | "delivery";
 }
 
@@ -90,30 +90,38 @@ function inputCls(hasError?: boolean) {
 }
 
 const PLAN_OPTIONS: {
-  id: "free" | "pro" | "business";
+  id: "free" | "pro" | "business" | "enterprise";
   label: string;
   price: string;
   features: string[];
   highlight?: boolean;
 }[] = [
+  // Alineado con lib/billing/plan-tiers.ts (mayo 2026 v2).
+  // PlanId DB legacy: free / pro / business / enterprise
   {
     id: "free",
     label: "Free",
     price: "S/ 0/mes",
-    features: ["Hasta 50 productos", "1 usuario", "Sin delivery"],
+    features: ["Hasta 20 productos", "30 pedidos/mes", "WhatsApp + POS basico"],
   },
   {
     id: "pro",
-    label: "Pro",
-    price: "S/ 49/mes",
-    features: ["Productos ilimitados", "3 usuarios", "Delivery incluido"],
-    highlight: true,
+    label: "Starter",
+    price: "S/ 89/mes",
+    features: ["Productos ilimitados", "Inventario + fiados", "Yape automatico", "1er mes gratis"],
   },
   {
     id: "business",
+    label: "Pro",
+    price: "S/ 179/mes",
+    features: ["2 sucursales · 5 admins", "SUNAT facturacion", "Marketplace destacado", "Promos + scoring"],
+    highlight: true,
+  },
+  {
+    id: "enterprise",
     label: "Business",
-    price: "S/ 99/mes",
-    features: ["Todo Pro", "10 usuarios", "Multi-tienda", "Soporte prioritario"],
+    price: "S/ 349/mes",
+    features: ["Sucursales ilimitadas", "Forecasting IA", "Lives streaming", "Soporte 24/7"],
   },
 ];
 
@@ -593,10 +601,12 @@ export default function SignupPage() {
                   label="Plan"
                   value={
                     form.plan === "free"
-                      ? "Free (14 dias trial)"
+                      ? "Free (gratis siempre · limites estrictos)"
                       : form.plan === "pro"
-                        ? "Pro — S/ 49/mes"
-                        : "Business — S/ 99/mes"
+                        ? "Starter — S/ 89/mes (1er mes gratis)"
+                        : form.plan === "business"
+                          ? "Pro — S/ 179/mes (1er mes 50% off)"
+                          : "Business — S/ 349/mes (1er mes 50% off)"
                   }
                 />
                 {form.ownerPhone && (

@@ -145,7 +145,7 @@ export default function POSExpressMode({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Codigo + Enter (ej: 003x5 = producto 003, cant. 5)"
-          className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-white dark:bg-card text-center"
+          className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
           autoComplete="off"
         />
       </form>
@@ -169,7 +169,7 @@ export default function POSExpressMode({
             <button
               key={p.id}
               onClick={() => onAddToCart(p.id)}
-              className="shrink-0 px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-medium bg-white dark:bg-card border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 text-[var(--text-primary)] dark:text-foreground hover:border-primary transition-all whitespace-nowrap flex items-center gap-1"
+              className="shrink-0 px-2 py-1 rounded-lg text-[length:var(--ts-xs)] font-medium bg-[var(--surface-raised)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:border-primary transition-all whitespace-nowrap flex items-center gap-1"
             >
               <span className="truncate max-w-20">{p.name}</span>
               <span className="font-bold text-primary">{fmt(p.price)}</span>

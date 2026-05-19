@@ -9,7 +9,9 @@ import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-sessio
 
 const QuerySchema = z.object({
   phone: z.string().min(6).max(20),
-  tenantId: z.string().min(1).default("main"),
+  // P1-1 multi-tenant: tenantId requerido sin default — cliente debe pasarlo
+  // explícito; antes "main" recibía pedidos de cualquier tenant si se omitía.
+  tenantId: z.string().min(1),
 });
 
 /**
@@ -29,7 +31,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const parsed = QuerySchema.safeParse({
       phone: searchParams.get("phone") ?? "",
-      tenantId: searchParams.get("tenantId") ?? "main",
+      tenantId: searchParams.get("tenantId") ?? "",
     });
 
     if (!parsed.success) {

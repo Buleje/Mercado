@@ -89,7 +89,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
     const prevMonthEnd = new Date(monthStart.getTime() - 1);
     const costMap = new Map(products.map(p => [p.id, p.costPrice ?? p.price * 0.7]));
 
-    const mOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= monthStart && new Date(o.createdAt) <= monthEnd);
+    const mOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= monthStart && new Date(o.createdAt) <= monthEnd);
     const mSales = sales.filter(s => new Date(s.createdAt) >= monthStart && new Date(s.createdAt) <= monthEnd);
 
     // Active products
@@ -102,7 +102,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
     mSales.forEach(s => s.items.forEach(i => { unidadesVendidas += i.quantity; }));
 
     // Previous month units
-    const pOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= prevMonthStart && new Date(o.createdAt) <= prevMonthEnd);
+    const pOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= prevMonthStart && new Date(o.createdAt) <= prevMonthEnd);
     const pSales = sales.filter(s => new Date(s.createdAt) >= prevMonthStart && new Date(s.createdAt) <= prevMonthEnd);
     let prevUnidades = 0;
     pOrders.forEach(o => o.items.forEach(i => { prevUnidades += i.quantity; }));
@@ -111,7 +111,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
 
     // Products with no movement
     const soldIds = new Set<number>();
-    orders.filter(o => o.status !== "cancelado").forEach(o => o.items.forEach(i => soldIds.add(i.id)));
+    orders.filter(o => o.status === "entregado").forEach(o => o.items.forEach(i => soldIds.add(i.id)));
     sales.forEach(s => s.items.forEach(i => soldIds.add(i.productId)));
     const sinMovimiento = activeProducts.filter(p => !soldIds.has(p.id)).length;
     const productosSinMov = activeProducts.filter(p => !soldIds.has(p.id)).map(p => ({
@@ -178,7 +178,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
     // Stock projection
     const last30 = new Date(now.getTime() - 30 * 86400000);
     const prodSales30d = new Map<number, number>();
-    orders.filter(o => new Date(o.createdAt) >= last30 && o.status !== "cancelado").forEach(o =>
+    orders.filter(o => new Date(o.createdAt) >= last30 && o.status === "entregado").forEach(o =>
       o.items.forEach(i => { prodSales30d.set(i.id, (prodSales30d.get(i.id) ?? 0) + i.quantity); })
     );
     sales.filter(s => new Date(s.createdAt) >= last30).forEach(s =>
@@ -201,7 +201,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
     // Product affinities (co-purchase)
     const coMap = new Map<string, { a: string; b: string; count: number }>();
     const baskets = [
-      ...orders.filter(o => o.status !== "cancelado").map(o => o.items.map(i => ({ id: i.id, name: i.name }))),
+      ...orders.filter(o => o.status === "entregado").map(o => o.items.map(i => ({ id: i.id, name: i.name }))),
       ...sales.map(s => s.items.map(i => ({ id: i.productId, name: i.name }))),
     ];
     baskets.forEach(basket => {
@@ -261,11 +261,11 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
       </div>
 
       {/* ── Rotación indicator ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl px-5 py-3">
         <RefreshCw className={cn("h-4 w-4", refreshing ? "animate-spin text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)]")} />
         <div className="flex-1 flex items-center gap-4 text-sm">
           <span className="text-[var(--text-secondary)] dark:text-muted">Rotación promedio:</span>
-          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{Number(data.rotacionPromedio).toFixed(1)}x</span>
+          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{Number(data.rotacionPromedio).toFixed(1)}x</span>
           <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">(uds vendidas / stock promedio)</span>
         </div>
         {data.claseA > 0 && (

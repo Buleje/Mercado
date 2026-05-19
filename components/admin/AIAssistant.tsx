@@ -618,8 +618,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
     return content.split("\n").map((line, i) => {
       // Headers
-      if (line.startsWith("### ")) return <h4 key={i} className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mt-3 mb-1">{line.slice(4)}</h4>;
-      if (line.startsWith("## ")) return <CardTitle key={i} className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground mt-3 mb-1">{line.slice(3)}</CardTitle>;
+      if (line.startsWith("### ")) return <h4 key={i} className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-3 mb-1">{line.slice(4)}</h4>;
+      if (line.startsWith("## ")) return <CardTitle key={i} className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-3 mb-1">{line.slice(3)}</CardTitle>;
 
       // Mejora 40: Progress bar detection — e.g. [PROGRESS:75|Stock]
       const progressMatch = line.match(/\[PROGRESS:(\d+)\|(.+?)\]/);
@@ -668,7 +668,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   const formatInline = (text: string, moduleRegex: RegExp) => {
     const safe = escapeHtml(text);
     return safe
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-[var(--text-primary)] dark:text-foreground">$1</strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/`(.+?)`/g, '<code class="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-accent px-1 py-0.5 rounded font-mono">$1</code>')
       .replace(moduleRegex, (_match, mod) => {
@@ -694,7 +694,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             action.status === "done" ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
             action.status === "error" ? "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
             action.status === "executing" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)]" :
-            "bg-white dark:bg-accent/30 border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)]"
+            "bg-white dark:bg-accent/30 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)]"
           )}>
             {action.status === "pending" && (
               <button onClick={() => handleExecuteAction(msg.id, i)} className="flex items-center gap-1.5 font-semibold text-primary hover:underline">
@@ -760,7 +760,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     ].filter((c, i, arr) => c && arr.indexOf(c) === i).slice(0, 5);
     if (chips.length === 0) return null;
     return (
-      <div className="flex flex-wrap gap-1.5 px-3 py-1.5 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0">
+      <div className="flex flex-wrap gap-1.5 px-3 py-1.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
         {chips.map((chip, idx) => (
           <button key={`${chip}-${idx}`} onClick={() => sendMessage(chip)}
             className="px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--accent-muted)]/50 transition-colors">
@@ -805,7 +805,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           <div className="max-w-[85%]">
             <div className={cn(
               "rounded-xl px-3 py-2 text-xs leading-relaxed",
-              msg.role === "user" ? "bg-primary text-white rounded-br-md" : "bg-[var(--surface-alt)] dark:bg-accent/50 text-[var(--text-secondary)] rounded-bl-md border border-[var(--rule-soft)] dark:border-card-border"
+              msg.role === "user" ? "bg-primary text-white rounded-br-md" : "bg-[var(--surface-alt)] dark:bg-accent/50 text-[var(--text-secondary)] rounded-bl-md border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
             )}>
               {msg.role === "assistant" ? renderContent(msg.content) : msg.content}
             </div>
@@ -835,7 +835,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           <div className="w-6 h-6 rounded-lg bg-[var(--text-primary)] flex items-center justify-center shrink-0">
             <Bot className="h-3 w-3 text-white" />
           </div>
-          <div className="bg-[var(--surface-alt)] dark:bg-accent/50 rounded-xl rounded-bl-md px-3 py-2 border border-[var(--rule-soft)] dark:border-card-border">
+          <div className="bg-[var(--surface-alt)] dark:bg-accent/50 rounded-xl rounded-bl-md px-3 py-2 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Analizando…
@@ -849,7 +849,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
   // Mejora 37: Input area (shared)
   const renderInputArea = (compact?: boolean) => (
-    <div className={cn("px-3 py-2 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0", compact && "py-1.5")}>
+    <div className={cn("px-3 py-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0", compact && "py-1.5")}>
       <div className="flex items-end gap-2">
         <div className="flex-1 relative">
           <textarea ref={inputRef} value={input}
@@ -865,8 +865,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             placeholder={isListening ? "Escuchando..." : isOffline ? "Modo offline..." : "Pregunta algo... (/ para comandos)"}
             rows={1}
             className={cn(
-              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
-              isListening ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : "border-[var(--rule-base)] dark:border-card-border"
+              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+              isListening ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
             )}
             style={{ maxHeight: compact ? 60 : 80 }}
             disabled={loading}
@@ -905,8 +905,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     if (!showCmdPalette) return null;
     return (
       <div className="absolute bottom-full left-0 right-0 mb-1 z-10">
-        <div className="mx-3 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border">
+        <div className="mx-3 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <Command className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
             <input autoFocus type="text" value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="Buscar comando…"
               className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
@@ -939,9 +939,9 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
   // ── Embedded mode ─────────────────────────────────────────────────────────
   if (embedded) {
     return (
-      <div className="flex flex-col h-full w-full bg-white dark:bg-card">
+      <div className="flex flex-col h-full w-full bg-[var(--surface-raised)]">
         {/* Compact header */}
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--text-primary)] text-[var(--surface-canvas)] shrink-0">
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--text-primary)] text-[var(--surface-canvas)] shrink-0">
           <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
             <Bot className="h-4 w-4" />
           </div>
@@ -965,7 +965,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
 
         {/* Mejora 30: Grouped quick actions */}
         {messages.length <= 2 && !loading && (
-          <div className="px-4 py-2.5 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0 space-y-2">
+          <div className="px-4 py-2.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 space-y-2">
             {Object.entries(groupedActions).map(([category, actions]) => (
               <div key={category}>
                 <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-1">{category}</p>
@@ -1027,7 +1027,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           )}
           {/* Mejora 33: Mini health score label */}
           {healthScore !== null && notifications.length === 0 && (
-            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-bold bg-white dark:bg-card text-[var(--text-secondary)] px-1.5 rounded-full border border-[var(--rule-base)] dark:border-card-border ">
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] px-1.5 rounded-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] ">
               {healthScore}%
             </span>
           )}
@@ -1039,8 +1039,8 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         <>
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => { setShowCmdPalette(false); setCmdSearch(""); }} />
           <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-4">
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <input autoFocus type="text" value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="¿Qué quieres hacer?"
                   className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
@@ -1074,14 +1074,14 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       {/* Mejora 28: Chat panel with 3 sizes */}
       {open && (
         <div className={cn(
-          "fixed z-50 flex flex-col bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border transition-all duration-[var(--dur-base)]",
+          "fixed z-50 flex flex-col bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] transition-all duration-[var(--dur-base)]",
           expanded ? "inset-4 rounded-xl" :
           widgetSize === "mini" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-80 h-96 max-h-[70vh] rounded-xl" :
           widgetSize === "large" ? "bottom-20 right-4 sm:bottom-6 sm:right-6 w-[480px] h-[700px] max-h-[90vh] rounded-xl" :
           "bottom-20 right-4 sm:bottom-6 sm:right-6 w-95 sm:w-105 h-150 max-h-[85vh] rounded-xl"
         )}>
           {/* Header */}
-          <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--text-primary)] text-[var(--surface-canvas)] rounded-t-2xl shrink-0">
+          <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--text-primary)] text-[var(--surface-canvas)] rounded-t-2xl shrink-0">
             <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center">
               <Bot className="h-5 w-5" />
             </div>
@@ -1141,7 +1141,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {/* Stats panel */}
           {showPanel === "stats" && (
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              <h4 className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+              <h4 className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-[var(--text-secondary)]" /> Estadísticas de Uso
               </h4>
               {(() => {
@@ -1193,14 +1193,14 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {/* History panel */}
           {showPanel === "history" && (
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-              <h4 className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+              <h4 className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[var(--text-secondary)]" /> Sesiones Anteriores
               </h4>
               {(() => {
                 const sessions = getSessions();
                 if (sessions.length === 0) return <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">No hay sesiones guardadas.</p>;
                 return sessions.map(s => (
-                  <div key={s.id} className="bg-[var(--surface-alt)] dark:bg-accent/30 rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+                  <div key={s.id} className="bg-[var(--surface-alt)] dark:bg-accent/30 rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{s.date}</span>
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{s.messageCount} msgs</span>

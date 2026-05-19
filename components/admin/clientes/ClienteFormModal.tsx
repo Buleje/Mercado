@@ -168,11 +168,11 @@ type Props = {
 function Section({ title, defaultOpen, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   return (
-    <div className="border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+    <div className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors"
       >
         {title}
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -349,7 +349,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
 
   // ── Input helpers ───────────────────────────────────────────────────────
 
-  const inputCls = "w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base transition-all placeholder:text-[var(--text-tertiary)]";
+  const inputCls = "w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-white dark:bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base transition-all placeholder:text-[var(--text-tertiary)]";
   const labelCls = "block text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5";
   const selectCls = cn(inputCls, "appearance-none");
 
@@ -406,7 +406,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                         form.tipoPersona === t
                           ? "bg-primary text-white border-primary"
-                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
                       {t === 'natural' ? 'Natural' : 'Jurídica'}
@@ -446,7 +446,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         onClick={() => buscarDni(form.documento)}
                         disabled={dniLoading}
                         title="Buscar nombre en RENIEC"
-                        className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
+                        className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
                       >
                         {dniLoading ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-secondary)] dark:text-muted" />
@@ -506,7 +506,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                           "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                           form.tipoPersona === t
                             ? "bg-primary text-white border-primary"
-                            : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                            : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
                         {t === 'natural' ? 'Natural' : 'Jurídica'}
@@ -539,7 +539,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                           onClick={() => buscarDni(form.documento)}
                           disabled={dniLoading}
                           title="Buscar nombre en RENIEC"
-                          className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
+                          className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
                         >
                           {dniLoading ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-secondary)] dark:text-muted" />
@@ -697,7 +697,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
               {/* Seccion 5: Fiado Digital */}
               <Section title="5. Fiado Digital">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Activar credito</label>
+                  <label className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Activar credito</label>
                   <button
                     type="button"
                     onClick={() => set('creditoActivo', !form.creditoActivo)}
@@ -806,7 +806,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
             >
               Cancelar
             </button>

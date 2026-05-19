@@ -87,6 +87,13 @@ vi.mock("@/lib/cache", () => ({
   invalidate:         vi.fn(),
   invalidateByPrefix: vi.fn(),
   invalidateAll:      vi.fn(),
+  // Audit 2026-05-17 TD-058: cacheStore usado por lib/integrations/reniec.ts
+  // y sunat-ruc.ts — sin esto los tests fallan con "cacheStore is undefined".
+  cacheStore: {
+    get: vi.fn(() => null),
+    set: vi.fn(),
+    del: vi.fn(),
+  },
 }));
 
 // ── Import SUT AFTER mocks ────────────────────────────────────────────────────
@@ -106,6 +113,8 @@ const VALID_PAYLOAD = {
   ownerName:  "Juan Pérez",
   ownerPhone: "+51987654321",
   ownerEmail: "juan@bodega.pe",
+  // Audit 2026-05-17 01-P1-6: DNI obligatorio (o RUC) en stores/apply
+  ownerDni:   "12345678",
   storeName:  "Bodega Don Juan",
   description: "La mejor bodega del barrio",
   category:   "Abarrotes",

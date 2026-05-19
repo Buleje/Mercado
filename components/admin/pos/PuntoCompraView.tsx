@@ -26,6 +26,7 @@ import {
   Plus,
   X as XIcon,
   Check as CheckIcon,
+  Trash2,
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,12 @@ const PuntoCompraFrequentItems = dynamic(() => import("./PuntoCompraFrequentItem
 const PuntoCompraBundles = dynamic(() => import("./PuntoCompraBundles"), { ssr: false });
 const PuntoCompraOrderCreator = dynamic(() => import("./PuntoCompraOrderCreator"), { ssr: false });
 const PuntoCompraLotSelector = dynamic(() => import("./PuntoCompraLotSelector"), { ssr: false });
+const RecurringExpenseModal = dynamic(() => import("./RecurringExpenseModal"), { ssr: false });
+
+// Helpers para parsear metadata extra de gastos recurrentes (encoded en `description`).
+import { decodeExpenseDescription, summarizeMeta } from "@/lib/expense-meta";
+import { findCategory, CATEGORY_COLOR_CLASSES } from "@/lib/expense-categories";
+import { getCategoryIcon } from "@/lib/expense-icons";
 
 const DRAFT_KEY = "poc-draft";
 
@@ -109,6 +116,34 @@ export default function PuntoCompraView() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<SortBy>("stock");
   const [soloReponer, setSoloReponer] = useState(false);
+
+  // Audit 2026-05-17 (feature compras Brandon):
+  //  - showInventario: oculta los productos del inventario por defecto.
+  //    Solo se ven al habilitar "Usar artículos de mi inventario".
+  //    Persistencia localStorage para no perder preferencia.
+  //  - expenseCatalog: gastos recurrentes (Expense.recurring=true) que se
+  //    muestran como cards de "Artículos para Comprar" (alquiler, gasolina,
+  //    internet, etc.). Click → ejecuta gasto real via /from-template.
+  const [showInventario, setShowInventario] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("poc-show-inventario") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("poc-show-inventario", showInventario ? "1" : "0"); } catch { /* quota */ }
+  }, [showInventario]);
+
+  type ExpenseTemplate = {
+    id: string;
+    category: string;
+    description: string;
+    amount: number;
+    recurring: boolean;
+  };
+  const [expenseCatalog, setExpenseCatalog] = useState<ExpenseTemplate[]>([]);
+  const [expenseCatalogLoading, setExpenseCatalogLoading] = useState(true);
+  const [showNewExpense, setShowNewExpense] = useState(false);
+  const [expenseError, setExpenseError] = useState<string | null>(null);
+  const [executingTemplateId, setExecutingTemplateId] = useState<string | null>(null);
   const [showIGV, setShowIGV] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -157,7 +192,7 @@ export default function PuntoCompraView() {
           return r.activa && today >= start && today <= end;
         });
         setActivePromos(activas);
-      }).catch(() => {}),
+      }).catch((err) => console.warn("[PuntoCompraView] promos fetch failed:", err)),
     ]);
       } finally {
         setLoading(false);
@@ -211,7 +246,7 @@ export default function PuntoCompraView() {
         setPriceHistory(history);
         localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify({ data: history, ts: Date.now() }));
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[PuntoCompraView] price history fetch failed:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -250,6 +285,87 @@ export default function PuntoCompraView() {
       // Silencioso — keep cache
     }
   }, []);
+
+  // ── Fetch catálogo de gastos recurrentes (audit 2026-05-17) ───────────────────
+  const fetchExpenseCatalog = useCallback(async () => {
+    setExpenseCatalogLoading(true);
+    try {
+      const res = await fetch("/api/expenses?recurring=true");
+      if (res.ok) {
+        const data = await res.json();
+        setExpenseCatalog(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.warn("[PuntoCompraView] expense catalog fetch failed", err);
+    } finally {
+      setExpenseCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchExpenseCatalog(); }, [fetchExpenseCatalog]);
+
+  // Ejecuta un gasto a partir de un template recurring
+  const executeExpenseFromTemplate = useCallback(async (template: ExpenseTemplate) => {
+    if (executingTemplateId) return;
+    setExecutingTemplateId(template.id);
+    try {
+      const { csrfHeaders } = await import("@/lib/csrf-client");
+      const res = await fetch(`/api/expenses/from-template/${template.id}`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        playDing();
+        setToastMsg(`Gasto registrado: ${template.description || template.category} · S/${template.amount.toFixed(2)}`);
+        setTimeout(() => setToastMsg(null), 3000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setExpenseError(err.error || "Error al registrar gasto");
+        setTimeout(() => setExpenseError(null), 4000);
+      }
+    } catch (err) {
+      console.warn("[PuntoCompraView] from-template failed", err);
+      setExpenseError("Error de conexión");
+      setTimeout(() => setExpenseError(null), 4000);
+    } finally {
+      setExecutingTemplateId(null);
+    }
+  }, [executingTemplateId, playDing]);
+
+  // Eliminar template recurrente del catálogo. Pide confirmación con prompt nativo
+  // para evitar borrados accidentales. Se invalida cache local + refetch.
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
+  const handleDeleteTemplate = useCallback(async (tpl: ExpenseTemplate, humanDesc: string) => {
+    if (deletingTemplateId) return;
+    if (!window.confirm(`¿Eliminar "${humanDesc || tpl.category}" del catálogo?\n\nNo se borran los gastos ya pagados, sólo la plantilla.`)) return;
+    setDeletingTemplateId(tpl.id);
+    try {
+      const { csrfHeaders } = await import("@/lib/csrf-client");
+      const res = await fetch(`/api/expenses/${tpl.id}`, {
+        method: "DELETE",
+        headers: csrfHeaders({}),
+      });
+      if (res.ok) {
+        setExpenseCatalog((prev) => prev.filter((e) => e.id !== tpl.id));
+        playDing();
+        setToastMsg(`Eliminado: ${humanDesc || tpl.category}`);
+        setTimeout(() => setToastMsg(null), 2500);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setExpenseError(err.error || "Error al eliminar");
+        setTimeout(() => setExpenseError(null), 4000);
+      }
+    } catch (err) {
+      console.warn("[PuntoCompraView] delete template failed", err);
+      setExpenseError("Error de conexión");
+      setTimeout(() => setExpenseError(null), 4000);
+    } finally {
+      setDeletingTemplateId(null);
+    }
+  }, [deletingTemplateId, playDing]);
+
+  // (creación de gastos recurrentes ahora vive en RecurringExpenseModal — onCreated dispara fetchExpenseCatalog)
 
   // ── Fetch suppliers (stale-while-revalidate, TTL 30min) ──────────────────────
   const fetchSuppliers = useCallback(async () => {
@@ -799,8 +915,214 @@ export default function PuntoCompraView() {
         </select>
       </div>
 
-      {/* Pills de categorías */}
-      <div
+      {/* ════════════════════════════════════════════════════════════════════
+          Audit 2026-05-17 (feature Brandon): Artículos para Comprar (gastos
+          recurrentes) + toggle "Mostrar inventario".
+          - Catálogo SIEMPRE visible: gastos recurrentes (alquiler, gasolina, etc.)
+          - Productos del inventario solo si toggle ON (default OFF)
+          ════════════════════════════════════════════════════════════════════ */}
+
+      {/* ════════════════════════════════════════════════════════════════════
+          Catálogo de gastos recurrentes — rediseñado 2026-05-17
+          - Cards con ícono + color por categoría
+          - Badge de frecuencia + método de pago (de metadata embebida)
+          - Empty state con CTA gigante
+          - Toolbar header con sticky info
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden mb-4">
+        {/* Header del módulo */}
+        <header className="px-5 py-4 border-b-2 border-[var(--rule-base)] bg-linear-to-r from-[var(--accent-soft)]/30 to-transparent dark:from-[var(--accent-muted)]/20 flex items-center gap-3 flex-wrap">
+          <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 border border-[var(--data-warning-500)]/30 shrink-0">
+            <Tag className="h-5 w-5 text-[var(--data-warning-500)]" strokeWidth={2.2} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-extrabold text-[var(--text-primary)] truncate">
+              Artículos para Comprar
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)]">
+              Gastos fijos del negocio. Click en una card para registrar el gasto del mes.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowNewExpense(true)}
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo gasto recurrente
+          </button>
+        </header>
+
+        {/* Body del catálogo */}
+        <div className="p-4 sm:p-5">
+          {expenseCatalogLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-32 rounded-2xl bg-gray-100 dark:bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          ) : expenseCatalog.length === 0 ? (
+            <div className="text-center py-10 px-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
+              <span className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/20 mb-3">
+                <Tag className="h-7 w-7 text-[var(--data-warning-500)]" />
+              </span>
+              <p className="text-base font-bold text-[var(--text-primary)]">Aún no tenés gastos fijos cargados</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-md mx-auto">
+                Cargá una vez tus pagos recurrentes (alquiler, internet, gasolina) y después solo hacés <strong>click</strong> en la card cuando toca pagar.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowNewExpense(true)}
+                className="mt-4 inline-flex items-center gap-2 h-12 px-5 rounded-2xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow"
+              >
+                <Plus className="h-5 w-5" />
+                Crear mi primer gasto recurrente
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {expenseCatalog.map((tpl) => {
+                const { description: humanDesc, meta } = decodeExpenseDescription(tpl.description || "");
+                const catDef = findCategory(tpl.category, "global");
+                const colorKey = meta.colorKey ?? catDef.color;
+                const iconKey = meta.iconKey ?? catDef.iconKey;
+                const cls = CATEGORY_COLOR_CLASSES[colorKey] ?? CATEGORY_COLOR_CLASSES.gray;
+                const Icon = getCategoryIcon(iconKey);
+                const isExecuting = executingTemplateId === tpl.id;
+                const metaSummary = summarizeMeta(meta);
+                const isDeleting = deletingTemplateId === tpl.id;
+                return (
+                  <div
+                    key={tpl.id}
+                    className={cn(
+                      "group relative rounded-2xl border-2 bg-white dark:bg-[var(--color-card)] hover:-translate-y-0.5 hover:shadow-lg transition-all",
+                      cls.border,
+                      (isExecuting || isDeleting) && cn("ring-2", cls.ring),
+                      isDeleting && "opacity-60",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => executeExpenseFromTemplate(tpl)}
+                      disabled={isExecuting || isDeleting}
+                      aria-label={`Registrar gasto ${humanDesc || tpl.category} por S/${tpl.amount.toFixed(2)}`}
+                      className="w-full text-left p-4 rounded-2xl disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className={cn("inline-flex items-center justify-center h-10 w-10 rounded-xl shrink-0", cls.iconBg)}>
+                          <Icon className={cn("h-5 w-5", cls.text)} strokeWidth={2} />
+                        </span>
+                        <div className="flex-1 min-w-0 pr-7">
+                          <p className={cn("text-xs font-bold uppercase tracking-wider", cls.text)}>
+                            {tpl.category}
+                          </p>
+                          <p className="text-sm font-bold text-[var(--text-primary)] line-clamp-2 leading-tight mt-0.5">
+                            {humanDesc || "Sin descripción"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-end justify-between gap-2">
+                        <div>
+                          <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
+                            S/{tpl.amount.toFixed(2)}
+                          </p>
+                          {metaSummary && (
+                            <p className="text-xs text-[var(--text-secondary)] mt-1 font-medium">
+                              {metaSummary}
+                            </p>
+                          )}
+                          {meta.supplierName && (
+                            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate max-w-[16ch]">
+                              {meta.supplierName}
+                            </p>
+                          )}
+                        </div>
+                        <span className={cn(
+                          "inline-flex items-center gap-1 h-8 px-3 rounded-xl text-xs font-bold border-2 transition-all",
+                          cls.iconBg, cls.text, cls.border,
+                          "group-hover:scale-105"
+                        )}>
+                          {isExecuting ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Pagando
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+                              Pagar
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </button>
+                    {/* Botón eliminar — top-right, oculto hasta hover/focus */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(tpl, humanDesc); }}
+                      disabled={isExecuting || isDeleting}
+                      aria-label={`Eliminar ${humanDesc || tpl.category} del catálogo`}
+                      className="absolute top-2 right-2 h-8 w-8 inline-flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--data-error-500)]"
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {expenseError && (
+            <div className="mt-4 p-3 rounded-2xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 border-2 border-[var(--data-error-500)]/40 text-sm font-semibold text-[var(--data-error-500)]">
+              {expenseError}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Modal nuevo template de gasto (componente completo) */}
+      <RecurringExpenseModal
+        open={showNewExpense}
+        onClose={() => setShowNewExpense(false)}
+        onCreated={() => { fetchExpenseCatalog(); playDing(); }}
+        tenantSlug={typeof window !== "undefined" ? (window.location.pathname.split("/")[2] || "main") : "main"}
+      />
+
+      {/* Toggle "Mostrar inventario" */}
+      <div className="flex items-center justify-between mb-3 p-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)]">
+        <div>
+          <p className="text-sm font-bold text-[var(--text-primary)]">
+            Usar artículos de mi inventario
+          </p>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+            {showInventario
+              ? "Mostrando productos del inventario abajo. Apagá para enfocarte solo en gastos."
+              : "Productos del inventario ocultos. Encendé para hacer compra de reposición."}
+          </p>
+        </div>
+        <button
+          role="switch"
+          aria-checked={showInventario}
+          onClick={() => setShowInventario(!showInventario)}
+          className={cn(
+            "relative w-12 h-6 rounded-full transition-colors shrink-0",
+            showInventario ? "bg-primary" : "bg-[var(--rule-base)]",
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform",
+              showInventario ? "translate-x-6" : "translate-x-0",
+            )}
+          />
+        </button>
+      </div>
+
+      {/* Pills de categorías — solo cuando se muestra inventario */}
+      {showInventario && <div
         className="flex gap-1.5 overflow-x-auto scrollbar-none mb-3 pb-1"
         role="tablist"
         aria-label="Filtrar por categoría"
@@ -825,7 +1147,7 @@ export default function PuntoCompraView() {
             </button>
           );
         })}
-      </div>
+      </div>}
 
       {/* Input de código de barras */}
       {showScanner && (
@@ -933,7 +1255,21 @@ export default function PuntoCompraView() {
       <div className="flex flex-col lg:flex-row gap-4">
         {/* ── Columna productos ── */}
         <div className="flex-1 min-w-0">
-          {loading ? (
+          {/* Audit 2026-05-17: oculto si el toggle "Mostrar inventario" está OFF.
+              El usuario puede agregar gastos via el catálogo de arriba sin ver
+              productos de inventario que no quiera comprar. */}
+          {!showInventario ? (
+            <div className="bg-[var(--surface-sunken)] border border-dashed border-[var(--rule-base)] rounded-xl p-6 text-center">
+              <Package className="h-8 w-8 mx-auto text-[var(--text-tertiary)] mb-2" strokeWidth={1.5} />
+              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                Productos de inventario ocultos
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">
+                Encendé el toggle <strong>&quot;Usar artículos de mi inventario&quot;</strong> arriba
+                para ver y agregar productos de reposición al carrito.
+              </p>
+            </div>
+          ) : loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div

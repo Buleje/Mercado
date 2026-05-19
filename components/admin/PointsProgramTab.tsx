@@ -106,7 +106,7 @@ export default function PointsProgramTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" /> Programa de Puntos</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" /> Programa de Puntos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Fidelización con puntos, niveles y recompensas</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -127,7 +127,7 @@ export default function PointsProgramTab() {
           { label: "Puntos canjeados (historial)", value: pointsRedeemed.toLocaleString(), color: "text-[var(--data-warning-500)]" },
           { label: "Puntos emitidos (historial)",  value: pointsEarned.toLocaleString(),   color: "text-[var(--text-secondary)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl sm:text-2xl font-extrabold mt-1", k.color)}>{k.value}</p>
           </div>
@@ -136,8 +136,8 @@ export default function PointsProgramTab() {
 
       {/* Barra de distribución por tier */}
       {totalMembers > 0 && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">Distribución de miembros</CardTitle>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">Distribución de miembros</CardTitle>
           <div className="flex h-6 rounded-xl overflow-hidden gap-0.5">
             {tiers.filter(t => t.members > 0).map(t => {
               const pct = (t.members / totalMembers) * 100;
@@ -153,7 +153,7 @@ export default function PointsProgramTab() {
               <div key={t.name} className="flex items-center gap-1.5 text-xs">
                 <span className={cn("w-3 h-3 rounded-full", t.color)} />
                 <span className="capitalize text-[var(--text-secondary)] dark:text-muted">{t.name}</span>
-                <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{t.members}</span>
+                <span className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{t.members}</span>
               </div>
             ))}
           </div>
@@ -166,7 +166,7 @@ export default function PointsProgramTab() {
           {tiers.map(t => {
             const isExpanded = expandedTier === t.name;
             return (
-              <div key={t.name} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden")}>
+              <div key={t.name} className={cn("bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden")}>
                 <button className="w-full p-3 sm:p-5" onClick={() => setExpandedTier(isExpanded ? null : t.name)}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -174,13 +174,13 @@ export default function PointsProgramTab() {
                         <Trophy className="h-5 w-5" />
                       </div>
                       <div className="text-left">
-                        <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground capitalize">{t.name}</CardTitle>
+                        <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">{t.name}</CardTitle>
                         <p className="text-xs text-[var(--text-secondary)] dark:text-muted">S/{t.minSpent.toLocaleString()}+ gastados · {t.multiplier}x puntos</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{t.members}</p>
+                        <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{t.members}</p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">miembros</p>
                       </div>
                       {isExpanded ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
@@ -189,14 +189,14 @@ export default function PointsProgramTab() {
                 </button>
 
                 {isExpanded && (
-                  <div className={cn("border-t border-[var(--rule-soft)] dark:border-card-border p-3 sm:p-5", t.bgColor)}>
+                  <div className={cn("border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3 sm:p-5", t.bgColor)}>
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       <div className="text-center">
-                        <p className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">{t.totalPoints.toLocaleString()}</p>
+                        <p className="text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{t.totalPoints.toLocaleString()}</p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">puntos totales</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">{t.avgPoints.toLocaleString()}</p>
+                        <p className="text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{t.avgPoints.toLocaleString()}</p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">puntos prom./cliente</p>
                       </div>
                     </div>
@@ -223,9 +223,9 @@ export default function PointsProgramTab() {
 
       {/* Historial de movimientos */}
       {view === "history" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
-            <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Movimientos recientes</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Movimientos recientes</CardTitle>
             <button onClick={() => exportToCSV(movements.map(m => ({ cliente: m.customer, nivel: m.tier, tipo: m.action, puntos: m.points, descripcion: m.description, fecha: fmtDate(m.date) })), "puntos-historial")} className="text-xs text-primary font-semibold flex items-center gap-1">
               <Download className="h-3 w-3" /> CSV
             </button>
@@ -243,7 +243,7 @@ export default function PointsProgramTab() {
                     {m.action === "earn" ? <ArrowUp className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{m.customer} <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">({m.tier})</span></p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{m.customer} <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">({m.tier})</span></p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{m.description}</p>
                   </div>
                   <div className="text-right shrink-0">
@@ -259,14 +259,14 @@ export default function PointsProgramTab() {
 
       {/* Configuración del programa */}
       {view === "config" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-6 space-y-5">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2"><Settings className="h-5 w-5 text-primary" />Configuración del Programa</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 sm:p-6 space-y-5">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2"><Settings className="h-5 w-5 text-primary" />Configuración del Programa</CardTitle>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">Puntos por S/1 gastado</label>
               <div className="flex items-center gap-2">
-                <input type="number" min={1} max={10} value={pointsPerSol} onChange={e => setPointsPerSol(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-bold" />
+                <input type="number" min={1} max={10} value={pointsPerSol} onChange={e => setPointsPerSol(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-bold" />
                 <span className="text-sm text-[var(--text-secondary)] dark:text-muted">pts / S/1</span>
               </div>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">Actualmente: S/1 = {pointsPerSol} punto{pointsPerSol !== 1 ? "s" : ""}</p>
@@ -275,7 +275,7 @@ export default function PointsProgramTab() {
             <div>
               <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">Puntos para S/1 de descuento</label>
               <div className="flex items-center gap-2">
-                <input type="number" min={10} max={1000} step={10} value={redeemRate} onChange={e => setRedeemRate(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-bold" />
+                <input type="number" min={10} max={1000} step={10} value={redeemRate} onChange={e => setRedeemRate(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-bold" />
                 <span className="text-sm text-[var(--text-secondary)] dark:text-muted">pts = S/1</span>
               </div>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">100 puntos = S/{(100 / redeemRate).toFixed(2)} descuento</p>
@@ -288,7 +288,7 @@ export default function PointsProgramTab() {
               {tiers.map(t => (
                 <div key={t.name} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-surface">
                   <div className={cn("w-3 h-3 rounded-full shrink-0", t.color)} />
-                  <span className="text-sm font-bold capitalize text-[var(--text-primary)] dark:text-foreground w-20">{t.name}</span>
+                  <span className="text-sm font-bold capitalize text-[var(--text-primary)] dark:text-[var(--text-primary)] w-20">{t.name}</span>
                   <span className="text-xs text-[var(--text-secondary)] dark:text-muted">desde S/{t.minSpent.toLocaleString()} gastados</span>
                   <span className={cn("ml-auto text-xs font-bold", t.color.replace("bg-", "text-"))}>{t.multiplier}x puntos</span>
                 </div>

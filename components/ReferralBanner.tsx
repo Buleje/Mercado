@@ -62,13 +62,13 @@ export default function ReferralBanner() {
             <Users className="w-3.5 h-3.5" />
             Programa de referidos
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground leading-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] leading-tight">
             Invita amigos,{" "}
             <span className="text-primary">gana puntos</span>
           </h2>
           <p className="mt-3 text-muted text-base max-w-md leading-relaxed">
             Comparte tu cÃ³digo y por cada amigo que haga su primer pedido,
-            ambos ganan <strong className="text-foreground">50 puntos</strong> de lealtad.
+            ambos ganan <strong className="text-[var(--text-primary)]">50 puntos</strong> de lealtad.
           </p>
         </div>
 
@@ -94,12 +94,12 @@ export default function ReferralBanner() {
               {/* Points stats */}
               <div className="flex items-stretch gap-0 mb-8">
                 <div className="flex flex-col pr-8">
-                  <span className="text-4xl font-black text-white leading-none">{referralCount}</span>
+                  <span className="text-4xl font-extrabold text-white leading-none">{referralCount}</span>
                   <span className="text-xs text-white/45 uppercase tracking-widest font-semibold mt-2">Referidos</span>
                 </div>
                 <div style={{ width: 1, background: "rgba(255,255,255,0.15)", alignSelf: "stretch" }} />
                 <div className="flex flex-col pl-8">
-                  <span className="text-4xl font-black leading-none" style={{ color: "var(--color-secondary)" }}>{referralCount * 50}</span>
+                  <span className="text-4xl font-extrabold leading-none" style={{ color: "var(--color-secondary)" }}>{referralCount * 50}</span>
                   <span className="text-xs text-white/45 uppercase tracking-widest font-semibold mt-2">Puntos ganados</span>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export default function ReferralBanner() {
               <div className="flex flex-col gap-4">
                 {STEPS.map((s, i) => (
                   <div key={s.n} className="flex items-center gap-4">
-                    <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black"
+                    <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-extrabold"
                       style={{ background: i === 2 ? "var(--color-secondary)" : "rgba(255,255,255,0.15)", color: "#fff" }}>
                       {s.n}
                     </div>
@@ -135,7 +135,7 @@ export default function ReferralBanner() {
                 padding: "1.5rem 2rem",
                 textAlign: "center",
               }}>
-                <p className="text-4xl sm:text-5xl font-black text-white tracking-[var(--ls-wider)] font-mono select-all">
+                <p className="text-4xl sm:text-5xl font-extrabold text-white tracking-[var(--ls-wider)] font-mono select-all">
                   {code}
                 </p>
               </div>

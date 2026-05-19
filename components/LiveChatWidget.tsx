@@ -201,21 +201,23 @@ export default function LiveChatWidget() {
 
   return (
     <>
-      {/* Floating button — solo visible cuando el chat está cerrado.
-          Mismo nivel vertical que Repetir pedido y WhatsApp (bottom-6).
-          Posicionado a la izquierda de WhatsApp con gap horizontal. */}
+      {/* Floating launcher — anclado al borde lateral derecho.
+          2026-05-10: simplificado. Antes asumía coexistencia con WhatsApp y
+          Repetir-pedido y se posicionaba en `right-24` (offset 96px) lo que
+          dejaba el chat "flotando en el aire" cuando esos widgets quedaban
+          ocultos en landing/info. Ahora va siempre pegado al edge derecho. */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-24 sm:right-28 z-50 h-14 rounded-full px-5 gap-2.5 flex items-center justify-center transition-all duration-300 active:scale-95"
+          className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 h-14 sm:h-[60px] rounded-full px-5 gap-2.5 flex items-center justify-center transition-all duration-[var(--dur-base)] hover:gap-3 hover:shadow-[var(--shadow-xl)] active:scale-95"
           style={{
             background:
               "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
             color: "white",
             boxShadow:
-              "0 12px 28px -6px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+              "0 12px 28px -6px color-mix(in oklch, var(--color-primary, #00B4A6) 45%, transparent)",
           }}
-          aria-label="Abrir chat"
+          aria-label="Abrir chat con el negocio"
         >
           <MessageCircle className="w-6 h-6" strokeWidth={2.25} />
           <span className="text-base font-extrabold hidden sm:inline">Chat</span>
@@ -227,12 +229,12 @@ export default function LiveChatWidget() {
         </button>
       )}
 
-      {/* Chat window — abre desde bottom-right donde estaba el botón */}
+      {/* Chat window — abre desde el mismo edge derecho que el launcher. */}
       {open && (
         <div
           className={cn(
             "fixed z-50 flex flex-col overflow-hidden",
-            "bottom-24 right-4 sm:right-6 md:bottom-6 md:right-24 w-[92vw] sm:w-[420px] max-h-[640px] rounded-3xl",
+            "bottom-5 right-4 sm:bottom-6 sm:right-6 w-[92vw] sm:w-[420px] max-h-[640px] rounded-3xl",
             "dark:bg-[#0f1117] animate-[fadeUp_0.3s_ease-out]",
           )}
           style={{
@@ -506,7 +508,7 @@ export default function LiveChatWidget() {
                 {contextProduct && (
                   <button
                     onClick={() => send(`¿Tienen ${contextProduct.name} disponible?`)}
-                    className="col-span-2 flex items-center gap-2 px-3 h-11 rounded-xl text-sm font-bold text-foreground transition-colors text-left"
+                    className="col-span-2 flex items-center gap-2 px-3 h-11 rounded-xl text-sm font-bold text-[var(--text-primary)] transition-colors text-left"
                     style={{
                       background:
                         "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, transparent)",
@@ -528,7 +530,7 @@ export default function LiveChatWidget() {
                   <button
                     key={q.text}
                     onClick={() => send(q.text)}
-                    className="flex items-center gap-2 px-3 h-11 rounded-xl text-sm font-semibold text-foreground transition-colors text-left hover:bg-[var(--surface-sunken)]/60"
+                    className="flex items-center gap-2 px-3 h-11 rounded-xl text-sm font-semibold text-[var(--text-primary)] transition-colors text-left hover:bg-[var(--surface-sunken)]/60"
                     style={{
                       background: "var(--color-card)",
                       border:
@@ -595,7 +597,7 @@ export default function LiveChatWidget() {
               onChange={e => setInput(e.target.value)}
               placeholder="Escribe tu mensaje..."
               maxLength={500}
-              className="flex-1 h-12 px-4 rounded-2xl text-sm outline-none transition-all placeholder:text-muted text-foreground"
+              className="flex-1 h-12 px-4 rounded-2xl text-sm outline-none transition-all placeholder:text-muted text-[var(--text-primary)]"
               style={{
                 background: "var(--surface-sunken)",
                 border:

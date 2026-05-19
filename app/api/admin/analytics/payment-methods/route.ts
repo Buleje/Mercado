@@ -5,6 +5,8 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio.
+
 /**
  * GET /api/admin/analytics/payment-methods
  *
@@ -28,9 +30,10 @@ export async function GET(req: NextRequest) {
   const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 30, 1), 365);
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  const validStatuses: ("entregado" | "confirmado" | "en_camino")[] = [
-    "entregado", "confirmado", "en_camino",
-  ];
+  // Brandon mayo 2026 v7: solo `entregado` cuenta como venta para métricas
+  // de payment methods. Pedidos en confirmado/en_camino pueden cancelarse
+  // y distorsionan la atribución por medio de pago.
+  const validStatuses: ["entregado"] = ["entregado"];
 
   // 1 query agregada — Postgres hace COUNT + SUM por paymentMethod.
   // eslint-disable-next-line no-restricted-properties -- analytics scoped por tenantId; agregacion server-side.

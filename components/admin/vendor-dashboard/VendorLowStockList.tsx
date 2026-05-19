@@ -19,8 +19,8 @@ function urgencyColor(stock: number | undefined): string {
 export function VendorLowStockList({ products }: Props) {
   if (products.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)]" />
           Stock bajo
         </CardTitle>
@@ -35,8 +35,8 @@ export function VendorLowStockList({ products }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
-      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
+      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
         <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)]" />
         Stock bajo
         <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--data-warning-500)] text-white text-xs font-bold">
@@ -64,7 +64,7 @@ export function VendorLowStockList({ products }: Props) {
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
+              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                 {p.name}
               </p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{p.category}</p>

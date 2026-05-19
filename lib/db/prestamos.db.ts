@@ -411,10 +411,12 @@ export const PrestamosDB = {
     }
 
     // PrestamoCuota has no tenantId column — scoped via prestamoId which was verified above
+    /* eslint-disable no-restricted-syntax -- PrestamoCuota indirecto (ADR-101): prestamoId pre-validado al tenant. */
     await prisma.prestamoCuota.updateMany({
       where: { id: cuotaId, prestamoId: cuota.prestamoId },
       data: { pagadoEn: new Date(), montoPagado: monto, moraCalculada: moraCalc },
     });
+    /* eslint-enable no-restricted-syntax */
 
     // Check if all cuotas paid → mark PAGADO
     const allCuotas = await prisma.prestamoCuota.findMany({
@@ -447,9 +449,11 @@ export const PrestamosDB = {
     if (saldoPendiente <= 0) return null;
 
     // Delete unpaid cuotas
+    /* eslint-disable no-restricted-syntax -- PrestamoCuota indirecto (ADR-101): prestamoId pre-validado en `existing` arriba. */
     await prisma.prestamoCuota.deleteMany({
       where: { prestamoId: id, pagadoEn: null },
     });
+    /* eslint-enable no-restricted-syntax */
 
     // Calculate new cuotas for remaining balance
     const tasa = data.nuevaTasa ?? existing.tasaInteres;
@@ -563,6 +567,7 @@ export const PrestamosDB = {
         select: { id: true },
       });
       if (!doc) return false;
+      // eslint-disable-next-line no-restricted-syntax -- PrestamoDocumento indirecto (ADR-101): id pre-validado via findFirst con prestamo.tenantId arriba.
       await prisma.prestamoDocumento.deleteMany({ where: { id: docId } });
       return true;
     } catch { return false; }

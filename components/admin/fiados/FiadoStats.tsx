@@ -68,6 +68,19 @@ type MejorPagadorMes = {
   total: number;
 };
 
+/**
+ * Vista del módulo Fiados — sub-tab activo.
+ * Audit 2026-05-17: agregamos navegación interna porque FiadosModule tenía
+ * 10+ widgets en una sola scroll vertical. Cada vista muestra sólo lo que
+ * le toca.
+ *
+ *  - "all"      → comportamiento legacy (renderiza todo, default por compat).
+ *  - "resumen"  → KPI + progreso + proyección + banners (pagaron, mejor pagador, más antiguo).
+ *  - "analisis" → gráfica tendencia 12m + ranking riesgo + calendario + tags por zona.
+ *  - "deudores" → ninguna sección de FiadoStats (la tabla la pinta FiadosModule).
+ */
+export type FiadoStatsView = "all" | "resumen" | "analisis" | "deudores";
+
 type FiadoStatsProps = {
   fiados: Fiado[];
   loading: boolean;
@@ -85,6 +98,8 @@ type FiadoStatsProps = {
   statusFilter: FiadoStatus | "";
   setStatusFilter: (v: FiadoStatus | "") => void;
   FiadoTendenciaCobro: React.ComponentType;
+  /** Sub-tab activo. Default "all" para preservar el render legacy. */
+  view?: FiadoStatsView;
 };
 
 /**
@@ -101,13 +116,19 @@ const STATUS_META: Record<FiadoStatus, { label: string; variant: "warning" | "su
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
-export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, setShowQuickClient, statusFilter, setStatusFilter, FiadoTendenciaCobro }: FiadoStatsProps) {
+export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, setShowQuickClient, statusFilter, setStatusFilter, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
   const [calMes, setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [calDiaSeleccionado, setCalDiaSeleccionado] = useState<string | null>(null);
 
+  // Sub-tab visibility flags. KPI inline (header bar) se muestra SIEMPRE
+  // excepto en "deudores" (la tabla ya tiene sus propios contadores).
+  const showHeaderKpi = view === "all" || view === "resumen" || view === "analisis";
+  const showResumen = view === "all" || view === "resumen";
+  const showAnalisis = view === "all" || view === "analisis";
+
   return (
     <>
-      {!loading && fiados.length > 0 && (() => {
+      {showHeaderKpi && !loading && fiados.length > 0 && (() => {
         const now = new Date();
         now.setHours(0, 0, 0, 0);
         const todayStart = now.getTime();
@@ -169,8 +190,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora QW-11f: Progreso de cobro del mes */}
-      {!loading && (tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0 || totalSaldo > 0) && (() => {
+      {/* Mejora QW-11f: Progreso de cobro del mes — tab Resumen */}
+      {showResumen && !loading && (tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0 || totalSaldo > 0) && (() => {
         const meta = tendenciaMorosidad.prestadoEsteMes + totalSaldo;
         const cobrado = tendenciaMorosidad.cobradoEsteMes;
         const pct = meta > 0 ? Math.min(100, Math.round((cobrado / meta) * 100)) : 0;
@@ -197,8 +218,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora 19 (ronda 3): Proyección de cobro */}
-      {!loading && fiados.length > 0 && (
+      {/* Mejora 19 (ronda 3): Proyección de cobro — tab Resumen */}
+      {showResumen && !loading && fiados.length > 0 && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" />
@@ -236,8 +257,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         </div>
       )}
 
-      {/* Mejora QW-11g: Fiados agrupados por zona/tipo */}
-      {!loading && fiados.length > 0 && (() => {
+      {/* Mejora QW-11g: Fiados agrupados por zona/tipo — tab Análisis */}
+      {showAnalisis && !loading && fiados.length > 0 && (() => {
         // Agrupar por prefijo del nombre (zona aproximada)
         // ADR-074 Phase 2: todos los tags usan el mismo surface neutro +
         // icono neutral. El tipo de zona se identifica por el ICONO, no
@@ -281,8 +302,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora P-9: Clientes que pagaron esta semana */}
-      {!loading && pagosEstaSemana.total > 0 && (() => {
+      {/* Mejora P-9: Clientes que pagaron esta semana — tab Resumen */}
+      {showResumen && !loading && pagosEstaSemana.total > 0 && (() => {
         const allPaid = pagosEstaSemana.pagaron === pagosEstaSemana.total;
         const mostPaid = pagosEstaSemana.pagaron > pagosEstaSemana.total / 2;
         const tone = allPaid ? "success" : mostPaid ? "success" : "neutral";
@@ -304,8 +325,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora P-10: Mejor pagador del mes */}
-      {!loading && mejorPagadorMes && (
+      {/* Mejora P-10: Mejor pagador del mes — tab Resumen */}
+      {showResumen && !loading && mejorPagadorMes && (
         <div
           className="rounded-xl border border-[var(--rule-soft)] px-4 py-2.5 flex items-center gap-2"
           style={{ background: "color-mix(in oklch, var(--data-success) 10%, transparent)" }}
@@ -316,8 +337,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         </div>
       )}
 
-      {/* Mejora QW-7: Fiado mas antiguo destacado */}
-      {fiadoMasAntiguo && (
+      {/* Mejora QW-7: Fiado mas antiguo destacado — tab Resumen */}
+      {showResumen && fiadoMasAntiguo && (
         <div
           className="rounded-xl border border-[var(--rule-soft)] p-3 flex flex-col sm:flex-row sm:items-center gap-2"
           style={{ background: "color-mix(in oklch, var(--data-error) 8%, transparent)" }}
@@ -353,19 +374,98 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* NOTE: Search + status chips se renderizan en FiadosModule (parent) — NO duplicar aquí */}
 
-      {/* Mejora 16: Gráfica de cobro mensual */}
-      <FiadoTendenciaCobro />
+      {/* Mejora 16: Gráfica de cobro mensual — tab Análisis */}
+      {showAnalisis && <FiadoTendenciaCobro />}
 
-      {/* Mejora 19: Ranking de deudores por riesgo */}
-      {(() => {
+      {/* Audit 2026-05-17: Antigüedad de la deuda (aging buckets).
+          Estándar contable — el dueño ve qué deudas son recuperables vs
+          tóxicas. 4 buckets: 0-7d / 8-30d / 31-60d / +60d (perdidas). */}
+      {showAnalisis && (() => {
+        const activos = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && f.saldo > 0);
+        if (activos.length === 0) return null;
+
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const buckets = [
+          { key: "fresca", label: "Al día (0-7d)", desc: "Sin vencer o recién vencidas", min: -Infinity, max: 7, count: 0, total: 0, tone: "var(--data-success)" },
+          { key: "media", label: "8-30 días", desc: "Cobranza temprana", min: 8, max: 30, count: 0, total: 0, tone: "var(--data-warning)" },
+          { key: "vencida", label: "31-60 días", desc: "Cobranza intensiva", min: 31, max: 60, count: 0, total: 0, tone: "var(--data-error)" },
+          { key: "perdida", label: "+60 días", desc: "Riesgo de pérdida", min: 61, max: Infinity, count: 0, total: 0, tone: "var(--data-error)" },
+        ];
+
+        for (const f of activos) {
+          const vence = f.fechaVence ? new Date(f.fechaVence) : new Date(f.createdAt);
+          const dias = Math.max(0, Math.floor((now.getTime() - vence.getTime()) / 86400000));
+          const b = buckets.find(b => dias >= b.min && dias <= b.max);
+          if (b) { b.count++; b.total += f.saldo; }
+        }
+
+        const totalDeuda = buckets.reduce((s, b) => s + b.total, 0);
+
+        return (
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Antigüedad de la deuda</p>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">Cuánto te deben distribuido por días de atraso</p>
+              </div>
+              <p className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(totalDeuda)}</p>
+            </div>
+            {/* Barra apilada visual */}
+            <div className="flex h-2 rounded-full overflow-hidden bg-[var(--surface-sunken)] mb-3">
+              {buckets.map(b => {
+                const pct = totalDeuda > 0 ? (b.total / totalDeuda) * 100 : 0;
+                if (pct === 0) return null;
+                return (
+                  <div
+                    key={b.key}
+                    style={{ width: `${pct}%`, background: b.tone }}
+                    title={`${b.label}: ${formatCurrency(b.total)} (${pct.toFixed(0)}%)`}
+                  />
+                );
+              })}
+            </div>
+            {/* Grid de 4 tarjetitas */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {buckets.map(b => {
+                const pct = totalDeuda > 0 ? (b.total / totalDeuda) * 100 : 0;
+                return (
+                  <div
+                    key={b.key}
+                    className="rounded-lg p-3 border border-[var(--rule-soft)]"
+                    style={{ background: `color-mix(in oklch, ${b.tone} 8%, transparent)` }}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="inline-block w-2 h-2 rounded-full" style={{ background: b.tone }} />
+                      <span className="text-xs font-bold text-[var(--text-primary)]">{b.label}</span>
+                    </div>
+                    <p className="text-base font-extrabold tabular-nums" style={{ color: b.tone }}>
+                      {formatCurrency(b.total)}
+                    </p>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      {b.count} {b.count === 1 ? "fiado" : "fiados"} · {pct.toFixed(0)}%
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Mejora 19: Top deudores por riesgo (mejorado audit 2026-05-17) — tab Análisis */}
+      {showAnalisis && (() => {
         const activos = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && f.saldo > 0);
         if (activos.length === 0) {
           return (
-            <div
-              className="border border-[var(--rule-soft)] rounded-xl p-4 text-center"
-              style={{ background: "color-mix(in oklch, var(--data-success) 10%, transparent)" }}
-            >
-              <p className="text-sm font-bold text-[var(--data-success-500)]">Sin deudores pendientes — Excelente!</p>
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-xl p-6 flex flex-col items-center gap-2 text-center">
+              <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+                <Shield className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
+              </div>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Sin deudores pendientes</p>
+              <p className="text-xs text-[var(--text-secondary)] max-w-xs">
+                Cuando empieces a fiar, verás aquí el ranking de quién te debe más y cuánto se atrasa.
+              </p>
             </div>
           );
         }
@@ -383,61 +483,100 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           return { ...f, diasVencido, riskScore, riskLevel };
         }).sort((a, b) => b.riskScore - a.riskScore).slice(0, 5);
 
-        // Risk levels mapeados a variantes StatusBadge + tono semantico
-        const riskTone: Record<RiskLevel, { badgeVariant: "error" | "warning" | "success"; dataVar: string }> = {
-          ALTO: { badgeVariant: "error", dataVar: "var(--data-error)" },
-          MEDIO: { badgeVariant: "warning", dataVar: "var(--data-warning)" },
-          BAJO: { badgeVariant: "success", dataVar: "var(--data-success)" },
+        const maxSaldo = Math.max(...scored.map(s => s.saldo));
+
+        const riskTone: Record<RiskLevel, { badgeVariant: "error" | "warning" | "success"; dataVar: string; label: string }> = {
+          ALTO: { badgeVariant: "error", dataVar: "var(--data-error)", label: "Riesgo alto" },
+          MEDIO: { badgeVariant: "warning", dataVar: "var(--data-warning)", label: "Riesgo medio" },
+          BAJO: { badgeVariant: "success", dataVar: "var(--data-success)", label: "Al día" },
         };
 
         return (
-          <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5 text-[var(--text-primary)]" /> Top Deudores por Riesgo
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-              {scored.map(f => {
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5" /> Top deudores
+                </p>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  Ordenado por riesgo (saldo + días de atraso). Los {Math.min(5, scored.length)} más urgentes.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {scored.map((f, idx) => {
                 const tone = riskTone[f.riskLevel];
+                const pctBar = maxSaldo > 0 ? (f.saldo / maxSaldo) * 100 : 0;
+                const name = f.customerName || `Cliente ${(f.customerId || "").slice(-4)}`;
+                const initial = name.charAt(0).toUpperCase();
                 return (
                   <div
                     key={f.id}
-                    className="rounded-lg border border-[var(--rule-soft)] p-3 cursor-pointer hover:shadow-[var(--shadow-sm)] transition-shadow"
-                    style={{ background: `color-mix(in oklch, ${tone.dataVar} 8%, transparent)` }}
+                    className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)] transition-shadow cursor-pointer overflow-hidden"
                     onClick={() => openDetail(f)}
                   >
-                    <div className="flex items-center justify-between mb-1.5 gap-2">
-                      <p className="text-xs font-bold text-[var(--text-primary)] truncate">{f.customerName || f.customerId}</p>
-                      <StatusBadge variant={tone.badgeVariant} label={f.riskLevel} size="sm" />
-                    </div>
-                    <p className="text-sm font-extrabold tabular-nums" style={{ color: tone.dataVar }}>
-                      {formatCurrency(f.saldo)}
-                      {f.diasVencido > 0 && <span className="text-xs font-normal ml-1">· {f.diasVencido}d vencido</span>}
-                    </p>
-                    <div className="flex gap-1.5 mt-2">
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          openDetail(f);
-                        }}
-                        className="flex-1 text-xs font-bold text-center py-1 rounded-lg bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] transition-colors border border-[var(--rule-soft)]"
+                    <div className="flex items-center gap-3 p-3">
+                      {/* Avatar circular numerado por riesgo */}
+                      <div
+                        className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-extrabold shrink-0"
+                        style={{ background: `color-mix(in oklch, ${tone.dataVar} 18%, transparent)`, color: tone.dataVar }}
                       >
-                        Cobrar
-                      </button>
-                      {f.customerId && (
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            const nombre = f.customerName || f.customerId;
-                            const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje. Cuando puedas pasa a regularizarlo!`;
-                            const cleanPhone = f.customerId.replace(/\D/g, "");
-                            window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
-                          }}
-                          // WhatsApp brand color (#25D366) — excepcion documentada (no token equivalent)
-                          className="text-xs font-bold px-2 py-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
-                        >
-                          <MessageCircle className="h-3 w-3" />
-                        </button>
-                      )}
+                        {initial}
+                      </div>
+                      {/* Info principal */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                            {idx === 0 && <span className="text-[var(--text-tertiary)] mr-1">#{idx + 1}</span>}
+                            {name}
+                          </p>
+                          <StatusBadge variant={tone.badgeVariant} label={tone.label} size="sm" />
+                        </div>
+                        <p className="text-xs text-[var(--text-secondary)] truncate">
+                          {f.descripcion ? f.descripcion : "Sin descripción"}
+                          {f.diasVencido > 0 && (
+                            <span className="ml-1 font-bold text-[var(--data-error-500)]">
+                              · {f.diasVencido} {f.diasVencido === 1 ? "día atrasado" : "días atrasados"}
+                            </span>
+                          )}
+                        </p>
+                        {/* Barra de proporción visual */}
+                        <div className="mt-1.5 h-1.5 w-full bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${pctBar}%`, background: tone.dataVar }}
+                          />
+                        </div>
+                      </div>
+                      {/* Monto + acciones */}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <p className="text-lg font-extrabold tabular-nums leading-none" style={{ color: tone.dataVar }}>
+                          {formatCurrency(f.saldo)}
+                        </p>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={e => { e.stopPropagation(); openDetail(f); }}
+                            className="text-xs font-bold px-2.5 py-1 rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors"
+                          >
+                            Cobrar
+                          </button>
+                          {f.customerId && (
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                const nombre = f.customerName || f.customerId;
+                                const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje. Cuando puedas pasa a regularizarlo!`;
+                                const cleanPhone = f.customerId.replace(/\D/g, "");
+                                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                              }}
+                              aria-label="Enviar recordatorio por WhatsApp"
+                              className="text-xs font-bold p-1.5 rounded-lg bg-[#25D366]/12 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -447,8 +586,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora M2: Calendario de Vencimientos de Fiados */}
-      {(() => {
+      {/* Mejora M2: Calendario de Vencimientos de Fiados — tab Análisis */}
+      {showAnalisis && (() => {
         const activosConVence = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && f.fechaVence);
         const sinVence = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && !f.fechaVence).length;
 
@@ -476,11 +615,15 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
 
-        const mesNombre = primerDia.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
+        // Audit 2026-05-17 (mejoras Análisis): "Mayo De 2026" → "Mayo 2026".
+        // Intl en es-PE devuelve "mayo de 2026" — quitamos el " de " manualmente.
+        const mesNombre = primerDia
+          .toLocaleDateString("es-PE", { month: "long", year: "numeric" })
+          .replace(/ de /i, " ");
 
         const celdas: React.ReactNode[] = [];
         // Celdas vacias al inicio
-        for (let i = 0; i < startDay; i++) celdas.push(<div key={`empty-${i}`} className="p-1 min-h-[50px]" />);
+        for (let i = 0; i < startDay; i++) celdas.push(<div key={`empty-${i}`} className="p-1 min-h-[44px]" />);
         // Dias del mes
         for (let d = 1; d <= diasMes; d++) {
           const diaKey = `${calMes.year}-${String(calMes.month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -488,37 +631,40 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           const esHoy = diaKey === hoyStr;
           const esPasado = new Date(calMes.year, calMes.month, d) < hoy;
           const tieneVencidos = esPasado && fiadosDia.length > 0;
+          const tienePorVencer = !esPasado && fiadosDia.length > 0;
+          const montoDia = fiadosDia.reduce((s, f) => s + f.saldo, 0);
 
           celdas.push(
             <button
               key={diaKey}
               onClick={() => fiadosDia.length > 0 && setCalDiaSeleccionado(calDiaSeleccionado === diaKey ? null : diaKey)}
+              aria-label={fiadosDia.length > 0 ? `Día ${d}: ${fiadosDia.length} fiados, S/${montoDia.toFixed(2)}` : `Día ${d}: sin vencimientos`}
               className={cn(
-                "p-1 min-h-[50px] rounded-lg text-center transition-colors relative",
-                esHoy && "ring-2 ring-[var(--data-success-500)]",
-                tieneVencidos && "bg-[color-mix(in_oklch,var(--data-error)_8%,transparent)]",
+                "p-1 min-h-[44px] rounded-lg text-center transition-colors relative flex flex-col items-center justify-start gap-0.5",
+                esHoy && "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface-raised)]",
+                tieneVencidos && "bg-[color-mix(in_oklch,var(--data-error)_10%,transparent)] border border-[var(--data-error-500)]/20",
+                tienePorVencer && "bg-[color-mix(in_oklch,var(--data-warning)_10%,transparent)] border border-[var(--data-warning-500)]/20",
                 fiadosDia.length > 0 && "cursor-pointer hover:bg-[var(--surface-sunken)]",
-                calDiaSeleccionado === diaKey && "bg-[color-mix(in_oklch,var(--accent)_12%,transparent)]",
+                calDiaSeleccionado === diaKey && "bg-[color-mix(in_oklch,var(--accent)_18%,transparent)] ring-1 ring-[var(--accent)]",
               )}
             >
               <span
                 className={cn(
-                  "text-xs font-bold",
-                  esHoy ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)]",
+                  "text-xs font-bold leading-tight",
+                  esHoy ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
                 )}
               >
                 {d}
               </span>
               {fiadosDia.length > 0 && (
-                <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                  <span
-                    className={cn(
-                      "w-2 h-2 rounded-full",
-                      tieneVencidos ? "bg-[var(--data-error-500)]" : "bg-[var(--data-warning-500)]",
-                    )}
-                  />
-                  <span className="text-xs font-bold text-[var(--text-secondary)]">{fiadosDia.length}</span>
-                </div>
+                <span
+                  className={cn(
+                    "text-[length:var(--ts-2xs)] font-bold tabular-nums leading-none",
+                    tieneVencidos ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]",
+                  )}
+                >
+                  S/{montoDia >= 1000 ? `${(montoDia / 1000).toFixed(1)}k` : montoDia.toFixed(0)}
+                </span>
               )}
             </button>
           );
@@ -526,44 +672,66 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
         return (
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-[var(--text-primary)]" /> Calendario de Vencimientos
-              </p>
-              <p className="text-xs text-[var(--text-secondary)]">
-                Este mes: {countMes} fiados vencen · Total: {formatCurrency(totalMes)}
-              </p>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" /> Calendario de vencimientos
+                </p>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  {countMes > 0
+                    ? `${countMes} ${countMes === 1 ? "fiado vence" : "fiados vencen"} este mes · Total ${formatCurrency(totalMes)}`
+                    : "Sin vencimientos este mes"}
+                </p>
+              </div>
+              {/* Leyenda compacta */}
+              <div className="flex items-center gap-3 text-xs">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-sm bg-[var(--data-warning-500)]" />
+                  <span className="text-[var(--text-secondary)]">Por vencer</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-sm bg-[var(--data-error-500)]" />
+                  <span className="text-[var(--text-secondary)]">Vencido</span>
+                </span>
+              </div>
             </div>
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden p-3">
-              {/* Nav */}
+            <div className="rounded-lg">
+              {/* Nav del mes */}
               <div className="flex items-center justify-between mb-2">
                 <button
                   onClick={() => setCalMes(p => { const d = new Date(p.year, p.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
-                  className="p-1 rounded-lg hover:bg-[var(--surface-sunken)]"
+                  aria-label="Mes anterior"
+                  className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
                 <p className="text-sm font-bold text-[var(--text-primary)] capitalize">{mesNombre}</p>
                 <button
                   onClick={() => setCalMes(p => { const d = new Date(p.year, p.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
-                  className="p-1 rounded-lg hover:bg-[var(--surface-sunken)]"
+                  aria-label="Mes siguiente"
+                  className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>
               {/* Header dias */}
-              <div className="grid grid-cols-7 gap-0.5 mb-0.5">
-                {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map(d => (
-                  <div key={d} className="text-center text-xs font-bold text-[var(--text-tertiary)] py-1">{d}</div>
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map(d => (
+                  <div key={d} className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] py-1">{d}</div>
                 ))}
               </div>
               {/* Grid dias */}
-              <div className="grid grid-cols-7 gap-0.5">{celdas}</div>
+              <div className="grid grid-cols-7 gap-1">{celdas}</div>
               {sinVence > 0 && (
-                <p className="text-xs text-[var(--data-warning-500)] mt-2 text-center">
-                  {sinVence} fiados activos sin fecha de vencimiento
-                </p>
+                <div className="mt-3 flex items-center gap-2 p-2.5 rounded-lg bg-[var(--data-warning-50)] border border-[var(--data-warning-500)]/30">
+                  <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
+                  <p className="text-xs font-semibold text-[var(--data-warning-500)]">
+                    {sinVence} {sinVence === 1 ? "fiado activo" : "fiados activos"} sin fecha de vencimiento — agrégala para que aparezcan en el calendario.
+                  </p>
+                </div>
               )}
+            </div>
             </div>
             {/* Detalle del día seleccionado */}
             {calDiaSeleccionado && porDia[calDiaSeleccionado] && (

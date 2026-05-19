@@ -62,6 +62,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 1. PARETO DE PROVEEDORES ─────────────────────────────────────────────
   const pareto = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<string, number>();
     purchases
@@ -88,6 +89,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 2. SALUD DE CUENTAS (Gauge) ──────────────────────────────────────────
   const salud = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const now = Date.now();
     const active = payables.filter((p) => p.status !== "pagado");
     if (active.length === 0) return { pct: 100, ok: 0, urgente: 0, vencidas: 0, total: 0 };
@@ -132,6 +134,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 4. MIX DE COMPRAS POR PROVEEDOR (stacked 14d) ──────────────────────
   const mixProv = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, Map<string, number>>();
     const add = (iso: string, prov: string, amount: number) => {
@@ -169,6 +172,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 5. WATERFALL DE DEUDA ────────────────────────────────────────────────
   const waterfall = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const deudaActual = payables
       .filter((p) => p.status !== "pagado")
@@ -202,6 +206,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 6. COMPARATIVA SEMANAL COMPRAS ───────────────────────────────────────
   const comp = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map(() => ({ day: "", current: 0, previous: 0 }));
@@ -285,8 +290,10 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "salud-cuentas",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Salud de cuentas · estado al día"
+          chartId="compras.advanced.salud-cuentas"
+          hasData={true}
+          defaultVisible={false}
+kicker="Salud de cuentas · estado al día"
           title="Porcentaje de cuentas sin problemas"
           kpis={[
             { label: "OK (>7d)", value: String(salud.ok), tone: "success" },
@@ -365,8 +372,10 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "mix-proveedores",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Mix de compras · rango activo"
+          chartId="compras.advanced.mix-proveedores"
+          hasData={true}
+          defaultVisible={false}
+kicker="Mix de compras · rango activo"
           title="Composición diaria por proveedor top-5"
           kpis={[
             { label: "Días con data", value: String(mixProv.rows.length), tone: "neutral" },
@@ -433,8 +442,10 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
       id: "comparativa-semana",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Comparativa · compras semana a semana"
+          chartId="compras.advanced.comparativa-semana"
+          hasData={true}
+          defaultVisible={false}
+kicker="Comparativa · compras semana a semana"
           title="Esta semana vs semana pasada"
         >
           <BulejeComparisonOverlay

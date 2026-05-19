@@ -45,7 +45,7 @@ export default function DeliveryScheduleTab() {
       .then((d) => {
         if (d.deliveryConfig) setConfig({ ...DEFAULT_DELIVERY, ...d.deliveryConfig });
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[DeliveryScheduleTab] settings fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

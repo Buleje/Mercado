@@ -107,6 +107,10 @@ export default function SearchAutocomplete({
   // ── Voice search (Web Speech API) ──────────────────────────────────────────
   // Declarado DESPUÉS de fetchSuggestions para evitar TDZ en el dep array.
   const [isListening, setIsListening] = useState(false);
+  // Transcript en vivo — se actualiza con cada interim result para que el
+  // overlay tipo Google muestre lo que el usuario va dictando en tiempo real.
+  const [interimTranscript, setInterimTranscript] = useState("");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
 
@@ -126,44 +130,96 @@ export default function SearchAutocomplete({
     const recognition = new SpeechRecognitionAPI();
     recognition.lang = "es-PE";
     recognition.continuous = false;
-    recognition.interimResults = false;
+    // interimResults=true permite mostrar la transcripción en vivo durante
+    // el dictado (el overlay tipo Google necesita feedback visual inmediato).
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    setInterimTranscript("");
+    setVoiceError(null);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
-      const transcript: string = event?.results?.[0]?.[0]?.transcript ?? "";
-      if (transcript) {
-        setValue(transcript);
+      let interim = "";
+      let finalText = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0]?.transcript ?? "";
+        if (event.results[i].isFinal) finalText += t;
+        else interim += t;
+      }
+      if (interim) setInterimTranscript(interim);
+      if (finalText) {
+        const clean = finalText.trim();
+        setValue(clean);
+        setInterimTranscript(clean);
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
-          fetchSuggestions(transcript);
-          onSearch(transcript);
+          fetchSuggestions(clean);
+          onSearch(clean);
         }, 0);
+        // Pequeño delay para que el usuario vea el resultado final en el overlay
+        // antes de cerrarlo (mejor UX que cerrar instantáneamente).
+        setTimeout(() => {
+          setIsListening(false);
+          setInterimTranscript("");
+        }, 600);
       }
-      setIsListening(false);
     };
 
-    recognition.onerror = () => {
-      setIsListening(false);
-      window.dispatchEvent(
-        new CustomEvent("marketplace-toast", {
-          detail: { message: "No pudimos escucharte, prueba de nuevo", type: "error" },
-        }),
-      );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (e: any) => {
+      const code = e?.error ?? "unknown";
+      const msg =
+        code === "not-allowed" || code === "service-not-allowed"
+          ? "Habilitá el micrófono en tu navegador para buscar por voz"
+          : code === "no-speech"
+            ? "No te escuchamos, intentá de nuevo"
+            : "No pudimos escucharte, probá de nuevo";
+      setVoiceError(msg);
+      // No cerramos el overlay inmediatamente — mostramos el error 2.5s
+      setTimeout(() => {
+        setIsListening(false);
+        setVoiceError(null);
+        setInterimTranscript("");
+      }, 2500);
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      // Si terminó sin dispatch de result final, cerramos overlay.
+      setTimeout(() => {
+        setIsListening((prev) => {
+          if (prev) setInterimTranscript("");
+          return false;
+        });
+      }, 100);
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      // start() puede tirar si ya hay una instancia activa.
+      setIsListening(false);
+    }
   }, [speechSupported, isListening, fetchSuggestions, onSearch]);
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
+    try { recognitionRef.current?.stop(); } catch { /* ignore */ }
     setIsListening(false);
+    setInterimTranscript("");
+    setVoiceError(null);
   }, []);
+
+  // ESC cierra overlay de voz
+  useEffect(() => {
+    if (!isListening) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") stopListening();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isListening, stopListening]);
 
   const handleChange = (nextValue: string) => {
     setValue(nextValue);
@@ -288,7 +344,7 @@ export default function SearchAutocomplete({
           placeholder={placeholder}
           autoComplete="off"
           className={cn(
-            "w-full pl-12 py-3.5 pr-12 rounded-2xl border text-base font-medium",
+            "w-full pl-12 py-3.5 pr-14 rounded-2xl border text-base font-medium",
             "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
             "text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)]",
             "outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
@@ -317,19 +373,21 @@ export default function SearchAutocomplete({
           <button
             type="button"
             onClick={isListening ? stopListening : startListening}
-            aria-label="Buscar por voz"
+            aria-label={isListening ? "Detener búsqueda por voz" : "Buscar por voz (micrófono)"}
             aria-pressed={isListening}
+            title={isListening ? "Escuchando… toca para detener" : "Buscar por voz"}
             className={cn(
-              "absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors",
+              // Tap target accesible (≥44×44 en mobile) y boton mas visible.
+              "absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full transition-all",
               isListening
-                ? "text-[var(--data-error-500)] animate-pulse hover:bg-red-50 dark:hover:bg-red-900/20"
-                : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800",
+                ? "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] ring-2 ring-[var(--data-error-500)]/40 animate-pulse"
+                : "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)]/15 hover:scale-105",
             )}
           >
             {isListening ? (
-              <MicOff className="h-4 w-4" aria-hidden="true" />
+              <MicOff className="h-5 w-5" aria-hidden="true" strokeWidth={2} />
             ) : (
-              <Mic className="h-4 w-4" aria-hidden="true" />
+              <Mic className="h-5 w-5" aria-hidden="true" strokeWidth={2} />
             )}
           </button>
         ) : null}
@@ -436,6 +494,148 @@ export default function SearchAutocomplete({
           </m.div>
         )}
       </AnimatePresence>
+
+      {/* ── Voice overlay tipo Google ─────────────────────────────────────────
+           Full-screen modal centrado con orbe pulsante + transcript live.
+           Brandon, mayo 14 2026: cuando el cliente toca el mic, le aparece
+           este overlay grande con animación radial — feedback inmediato de
+           que la app lo está escuchando (igual que el "Hey Google"). */}
+      <VoiceOverlay
+        open={isListening}
+        transcript={interimTranscript}
+        error={voiceError}
+        onClose={stopListening}
+      />
     </form>
+  );
+}
+
+// ── VoiceOverlay ─────────────────────────────────────────────────────────────
+
+interface VoiceOverlayProps {
+  open: boolean;
+  transcript: string;
+  error: string | null;
+  onClose: () => void;
+}
+
+function VoiceOverlay({ open, transcript, error, onClose }: VoiceOverlayProps) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <m.div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Buscar por voz"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          onClick={onClose}
+          className="fixed inset-0 flex items-center justify-center px-6 backdrop-blur-2xl bg-slate-950/70 dark:bg-black/80"
+          style={{ zIndex: 2147483647 }}
+        >
+          <m.div
+            initial={{ scale: 0.92, y: 12, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.95, y: 8, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md flex flex-col items-center gap-6 rounded-[28px] bg-white dark:bg-gray-900 px-8 py-10 shadow-2xl shadow-black/50"
+          >
+            {/* Cerrar */}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar dictado por voz"
+              className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Orbe pulsante con anillos animados — estilo Google */}
+            <div className="relative flex items-center justify-center h-32 w-32">
+              {/* Anillos pulsantes */}
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full bg-[var(--accent)]/20 animate-ping"
+                style={{ animationDuration: "1.6s" }}
+              />
+              <span
+                aria-hidden
+                className="absolute inset-4 rounded-full bg-[var(--accent)]/30 animate-ping"
+                style={{ animationDuration: "1.2s", animationDelay: "0.2s" }}
+              />
+              <span
+                aria-hidden
+                className="absolute inset-8 rounded-full bg-[var(--accent)]/40 animate-ping"
+                style={{ animationDuration: "0.9s", animationDelay: "0.4s" }}
+              />
+              {/* Core */}
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] shadow-xl shadow-[var(--accent)]/40">
+                <Mic className="h-9 w-9 text-white" strokeWidth={2.25} aria-hidden />
+              </div>
+            </div>
+
+            {/* Estado / transcript */}
+            <div className="text-center min-h-[3.5rem] flex flex-col items-center justify-center w-full">
+              {error ? (
+                <p className="text-base font-bold text-[var(--data-error-500)]">
+                  {error}
+                </p>
+              ) : transcript ? (
+                <p className="text-lg sm:text-xl font-semibold text-[var(--text-primary)] dark:text-white leading-snug break-words max-w-full">
+                  &ldquo;{transcript}&rdquo;
+                </p>
+              ) : (
+                <>
+                  <p className="text-lg font-bold text-[var(--text-primary)] dark:text-white">
+                    Te escucho…
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                    Decí qué buscás (ej. &ldquo;pollo&rdquo;, &ldquo;arroz&rdquo;)
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Equalizer bars decorativas */}
+            {!error && (
+              <div
+                aria-hidden
+                className="flex items-end justify-center gap-1.5 h-8 w-full"
+              >
+                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                  <span
+                    key={i}
+                    className="w-1.5 rounded-full bg-[var(--accent)]"
+                    style={{
+                      animation: `voice-bar 0.9s ease-in-out ${i * 0.08}s infinite`,
+                      height: "30%",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            <p className="text-xs text-[var(--text-tertiary)]">
+              Toca afuera o presiona <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-gray-800 font-mono text-[10px]">ESC</kbd> para cerrar
+            </p>
+
+            <style jsx>{`
+              @keyframes voice-bar {
+                0%, 100% { height: 25%; opacity: 0.4; }
+                50% { height: 100%; opacity: 1; }
+              }
+              @media (prefers-reduced-motion: reduce) {
+                :global([role="dialog"][aria-label="Buscar por voz"] *) {
+                  animation: none !important;
+                }
+              }
+            `}</style>
+          </m.div>
+        </m.div>
+      )}
+    </AnimatePresence>
   );
 }

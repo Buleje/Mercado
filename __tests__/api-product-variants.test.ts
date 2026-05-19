@@ -51,6 +51,13 @@ vi.mock("@/lib/db/product-variants.db", () => ({
   },
 }));
 
+const { mockProductsGetById } = vi.hoisted(() => ({ mockProductsGetById: vi.fn() }));
+vi.mock("@/lib/db/products.db", () => ({
+  ProductsDB: {
+    getById: mockProductsGetById,
+  },
+}));
+
 import { GET, POST, PUT, DELETE } from "@/app/api/marketplace/products/[id]/variants/route";
 
 const AUTH = { tenantId: "test-tenant", role: "admin", username: "tester" };
@@ -134,6 +141,8 @@ describe("POST /api/marketplace/products/[id]/variants", () => {
     vi.clearAllMocks();
     mockRequireAdmin.mockResolvedValue(AUTH);
     mockVCreate.mockResolvedValue(VARIANT_ROJO);
+    // ProductsDB.getById retorna un producto válido por defecto (ownership check)
+    mockProductsGetById.mockResolvedValue({ id: 42, tenantId: "test-tenant", name: "Producto Test" });
   });
 
   it("crea variante con priceModifier negativo (descuento) → 201", async () => {

@@ -250,7 +250,7 @@ export function StepConfirmar({
                   Entregaremos a
                 </RowLabel>
                 <div className="pl-5">
-                  <p className="text-base font-bold text-foreground leading-snug">
+                  <p className="text-base font-bold text-[var(--text-primary)] leading-snug">
                     {displayLocation}
                   </p>
                   {displayReference && (
@@ -268,7 +268,7 @@ export function StepConfirmar({
           <div className="space-y-2">
             <RowLabel icon={Phone}>Cliente</RowLabel>
             <div className="pl-5">
-              <p className="text-base font-bold text-foreground truncate leading-tight">
+              <p className="text-base font-bold text-[var(--text-primary)] truncate leading-tight">
                 {displayName}
               </p>
               <div className="flex items-center gap-1.5 text-sm text-muted mt-0.5 tabular-nums">
@@ -289,7 +289,7 @@ export function StepConfirmar({
               Método de pago
             </RowLabel>
             <div className="pl-5 flex items-center gap-2 flex-wrap">
-              <p className="text-base font-bold text-foreground">
+              <p className="text-base font-bold text-[var(--text-primary)]">
                 {methodLabel}
               </p>
               {isYape && state.payment.yapeOpNumber && (
@@ -361,7 +361,7 @@ export function StepConfirmar({
                       </div>
                     )}
                     <span
-                      className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] font-extrabold tabular-nums text-white"
+                      className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-white"
                       style={{
                         background:
                           "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
@@ -371,14 +371,14 @@ export function StepConfirmar({
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate leading-tight">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate leading-tight">
                       {i.name}
                     </p>
                     <p className="text-xs text-muted tabular-nums mt-0.5">
                       {fmt(i.price)} c/u
                     </p>
                   </div>
-                  <span className="shrink-0 text-sm font-bold text-foreground tabular-nums">
+                  <span className="shrink-0 text-sm font-bold text-[var(--text-primary)] tabular-nums">
                     {fmt(i.price * i.quantity)}
                   </span>
                 </div>
@@ -627,7 +627,7 @@ export function StepConfirmarFooter({
         </button>
       </div>
 
-      <div className="flex items-center justify-center gap-5 mt-4 text-[11px] font-bold uppercase tracking-wider text-muted">
+      <div className="flex items-center justify-center gap-5 mt-4 text-xs font-bold uppercase tracking-wider text-muted">
         <span className="flex items-center gap-1.5">
           <Shield
             className="h-3.5 w-3.5"

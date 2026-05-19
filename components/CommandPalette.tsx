@@ -256,9 +256,9 @@ export default function CommandPalette() {
                 <Clock className="w-3 h-3" />
                 Búsquedas recientes
               </p>
-              {recentSearches.map((search, i) => (
+              {recentSearches.map((search) => (
                 <button
-                  key={i}
+                  key={search}
                   onClick={() => setQuery(search)}
                   className="w-full text-left px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
                 >

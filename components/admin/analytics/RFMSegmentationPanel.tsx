@@ -158,7 +158,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
                 <SegIcon className={cn("h-4 w-4 shrink-0", style.text)} />
                 <p className={cn("text-xs font-bold leading-tight truncate", style.text)}>{seg}</p>
               </div>
-              <p className="text-2xl font-mono font-extrabold text-[var(--text-primary)] dark:text-foreground">
+              <p className="text-2xl font-mono font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {segmentCounts.counts[seg]}
               </p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{pctRevenue}% revenue</p>
@@ -182,7 +182,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
                 "px-2 py-0.5 rounded text-xs border transition-colors",
                 sortKey === k
                   ? "bg-primary text-white border-primary"
-                  : "bg-white dark:bg-card text-[var(--text-secondary)] border-[var(--rule-base)]"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)]"
               )}
             >
               {k === "M" ? "Valor" : k === "F" ? "Frecuencia" : k === "R" ? "Recencia" : "Nombre"}
@@ -223,7 +223,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
                   )}
                 >
                   <td className="px-3 py-2">
-                    <p className="font-medium text-[var(--text-primary)] dark:text-foreground truncate max-w-[100px]">{c.name}</p>
+                    <p className="font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[100px]">{c.name}</p>
                     <p className="text-[var(--text-tertiary)]">{c.phone}</p>
                   </td>
                   <td className="px-2 py-2 text-center">

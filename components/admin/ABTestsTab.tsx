@@ -80,7 +80,7 @@ export default function ABTestsTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
           <FlaskConical className="h-6 w-6 text-primary" />A/B Testing
         </SectionTitle>
         <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition">
@@ -92,11 +92,11 @@ export default function ABTestsTab() {
       {tests.length === 0 && <p className="text-center text-[var(--text-tertiary)] dark:text-muted py-12">No hay A/B tests creados aún.</p>}
       <div className="space-y-3">
         {tests.map(t => (
-          <div key={t.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+          <div key={t.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{t.name}</CardTitle>
+                  <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{t.name}</CardTitle>
                   <span className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted"}`}>
                     {t.active ? "Activo" : "Inactivo"}
                   </span>
@@ -125,7 +125,7 @@ export default function ABTestsTab() {
 
             {/* Results expanded */}
             {expandedId === t.id && results[t.id] && (
-              <div className="mt-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-4">
+              <div className="mt-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4">
                 <h4 className="text-sm font-bold mb-2 text-[var(--text-primary)] dark:text-muted">Resultados</h4>
                 {results[t.id].length === 0 ? (
                   <p className="text-xs text-[var(--text-tertiary)]">Sin datos aún</p>
@@ -164,22 +164,22 @@ export default function ABTestsTab() {
       {/* Create modal */}
       {showCreate && (
         <div className="modal-backdrop p-4" onClick={() => setShowCreate(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)]" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <CardTitle className="text-lg font-extrabold text-foreground">Nuevo A/B Test</CardTitle>
+              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo A/B Test</CardTitle>
               <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-3">
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del test" className="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-surface dark:border-card-border" />
-              <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Descripción (opcional)" className="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-surface dark:border-card-border" />
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del test" className="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-surface dark:border-[var(--rule-base)]" />
+              <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Descripción (opcional)" className="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-surface dark:border-[var(--rule-base)]" />
 
               <div>
                 <p className="text-sm font-bold mb-2">Variantes</p>
                 {variants.map((v, i) => (
                   <div key={i} className="flex flex-wrap gap-2 mb-2">
-                    <input value={v.id} onChange={e => { const nv = [...variants]; nv[i] = { ...v, id: e.target.value }; setVariants(nv); }} placeholder="ID" className="w-16 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-card-border" />
-                    <input value={v.label} onChange={e => { const nv = [...variants]; nv[i] = { ...v, label: e.target.value }; setVariants(nv); }} placeholder="Etiqueta" className="flex-1 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-card-border" />
-                    <input type="number" value={v.weight} onChange={e => { const nv = [...variants]; nv[i] = { ...v, weight: +e.target.value }; setVariants(nv); }} className="w-16 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-card-border" />
+                    <input value={v.id} onChange={e => { const nv = [...variants]; nv[i] = { ...v, id: e.target.value }; setVariants(nv); }} placeholder="ID" className="w-16 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-[var(--rule-base)]" />
+                    <input value={v.label} onChange={e => { const nv = [...variants]; nv[i] = { ...v, label: e.target.value }; setVariants(nv); }} placeholder="Etiqueta" className="flex-1 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-[var(--rule-base)]" />
+                    <input type="number" value={v.weight} onChange={e => { const nv = [...variants]; nv[i] = { ...v, weight: +e.target.value }; setVariants(nv); }} className="w-16 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-[var(--rule-base)]" />
                     {variants.length > 2 && (
                       <button onClick={() => setVariants(variants.filter((_, j) => j !== i))} className="text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}

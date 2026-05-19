@@ -68,7 +68,7 @@ export default function ForecastCard({ className }: Props) {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5",
+      "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5",
       className,
     )}>
       <div className="flex items-center justify-between mb-4">
@@ -102,7 +102,7 @@ export default function ForecastCard({ className }: Props) {
         <div className="space-y-6">
           {/* Revenue headline */}
           <div>
-            <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+            <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               {formatCurrency(result.predictedRevenue)}
             </p>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">

@@ -20,6 +20,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { AdminTotpDB } from "@/lib/db/admin-totp.db";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const verifySchema = z.object({
   code: z
@@ -30,6 +31,8 @@ const verifySchema = z.object({
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-2fa-verify"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   // 1. Auth
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

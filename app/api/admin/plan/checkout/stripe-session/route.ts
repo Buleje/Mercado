@@ -6,6 +6,7 @@ import { PLANS, type PlanTier } from "@/lib/billing/plan-tiers";
 import { tierToPlanId } from "@/lib/billing/plan-mapping";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/admin/plan/checkout/stripe-session
@@ -31,8 +32,16 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "admin-plan-checkout-stripe-session"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // Audit 2026-05-19: endpoint crea sesión Stripe — STRICT.
+  const _rl = await applyRateLimit(req, "STRICT", "admin-plan-checkout-stripe-session"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
+  // Audit 2026-05-17 Q-P0-2: roles explícitos.
+  // Antes requireAdmin(req) sin array permitía cajero/almacenero/analista
+  // (management-tier bypass solo cubre admin/owner/manager/superadmin), pero
+  // iniciar sesión Stripe del tenant es decisión de facturación SaaS que
+  // SOLO debería poder tomar el dueño (owner) o admin del tenant.
+  const auth = await requireAdmin(req, ["owner", "admin"]);
   if (auth instanceof NextResponse) return auth;
 
   const json = await req.json().catch(() => null);
@@ -56,6 +65,9 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Resuelve tenant + customer Stripe ────────────────────────────────────
+  // Tenant resolution legítimo: endpoint admin que actúa sobre el tenant
+  // del caller (no cross-tenant). Refactor a TenantsDB pendiente.
+  // eslint-disable-next-line no-restricted-properties -- legacy: resolver tenant por id o slug; refactor a TenantsDB pendiente
   const tenant = await prisma.tenant.findFirst({
     where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
   });
@@ -73,6 +85,7 @@ export async function POST(req: NextRequest) {
       },
     });
     customerId = customer.id;
+    // eslint-disable-next-line no-restricted-properties -- legacy: update stripeCustomerId del tenant resuelto arriba; refactor a TenantsDB.setStripeCustomerId pendiente
     await prisma.tenant.update({
       where: { id: tenant.id },
       data: { stripeCustomerId: customerId },

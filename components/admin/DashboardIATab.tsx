@@ -156,8 +156,8 @@ function recentActivity(orders: Order[], sales: Sale[], limit = 5) {
 }
 
 // ── Skeletons ────────────────────────────────────────────────────────────────
-function KPISkeleton() { return (<div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">{Array.from({ length: 6 }).map((_, i) => (<div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse"><div className="h-3 w-16 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-3" /><div className="h-7 w-20 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-2" /><div className="h-3 w-12 bg-[var(--surface-sunken)] rounded" /></div>))}</div>); }
-function ChartSkeleton() { return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5 animate-pulse"><div className="h-4 w-40 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-4" /><div className="flex items-end gap-2 h-32">{[65, 45, 80, 55, 90, 40, 70].map((h, i) => (<div key={i} className="flex-1 bg-[var(--surface-sunken)] rounded-t-md" style={{ height: `${h}%` }} />))}</div></div>); }
+function KPISkeleton() { return (<div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">{Array.from({ length: 6 }).map((_, i) => (<div key={i} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 animate-pulse"><div className="h-3 w-16 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-3" /><div className="h-7 w-20 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-2" /><div className="h-3 w-12 bg-[var(--surface-sunken)] rounded" /></div>))}</div>); }
+function ChartSkeleton() { return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 animate-pulse"><div className="h-4 w-40 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-4" /><div className="flex items-end gap-2 h-32">{[65, 45, 80, 55, 90, 40, 70].map((h, i) => (<div key={i} className="flex-1 bg-[var(--surface-sunken)] rounded-t-md" style={{ height: `${h}%` }} />))}</div></div>); }
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -412,7 +412,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
             <GreetingIcon className="w-5 h-5 text-primary dark:text-[var(--data-success-500)]" />
           </div>
           <div>
-            <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{greetingText}</SectionTitle>
+            <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{greetingText}</SectionTitle>
             <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] dark:text-muted">
               <CalendarDays className="w-3.5 h-3.5" />
               <span>Hoy: {todayFormatted}</span>
@@ -428,8 +428,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                 className={cn(
                   "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
                   period === key
-                    ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
-                    : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground",
+                    ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] "
+                    : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]",
                 )}
               >
                 {lbl}
@@ -439,7 +439,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
           <button
             onClick={() => void fetchData(true)}
             disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-card transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--surface-raised)] transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
             Actualizar
@@ -453,7 +453,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
         const goalColor = goalPct >= 100 ? "bg-[var(--accent-soft)]" : goalPct >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
         const goalTextColor = goalPct >= 100 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : goalPct >= 50 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]";
         return (
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <div className="flex items-center justify-between mb-2">
               <span className={cn("text-sm font-bold", goalTextColor)}>
                 Meta del dia: {formatCurrency(kpis.todayRevForGoal)} de {formatCurrency(dailyGoal)} ({goalPct}%)
@@ -471,7 +471,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                         setEditingGoal(false);
                       }
                     }}
-                    className="w-20 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+                    className="w-20 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                     autoFocus
                   />
                   <button
@@ -482,7 +482,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
               ) : (
                 <button
                   onClick={() => { setGoalInput(String(dailyGoal)); setEditingGoal(true); }}
-                  className="text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:text-muted dark:hover:text-foreground transition-colors"
+                  className="text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:text-muted dark:hover:text-[var(--text-primary)] transition-colors"
                 >Editar meta</button>
               )}
             </div>
@@ -517,7 +517,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       {chartData.hourly.length > 0 && (() => {
         const hourlyMax = Math.max(...chartData.hourly.map((h) => h.total), 1);
         return (
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <CardTitle className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-3">Horario de ventas</CardTitle>
             <div className="space-y-1.5" style={{ maxHeight: "100px", overflowY: "auto" }}>
               {chartData.hourly.map((h) => (
@@ -544,7 +544,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       {/* ── Charts row ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Weekly sales bar chart */}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
           <CardTitle className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-4">
             Ventas ultimos 7 dias
           </CardTitle>
@@ -570,7 +570,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
         </div>
 
         {/* Top 5 products */}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
           <CardTitle className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-4">
             Top 5 productos
           </CardTitle>
@@ -585,7 +585,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                     <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted w-4 text-right">{i + 1}.</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</span>
+                        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</span>
                         <div className="flex items-center gap-2 ml-2 shrink-0">
                           <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{formatCurrency(p.revenue)}</span>
                           <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">+{formatCurrency(p.profit)} ganancia</span>
@@ -609,7 +609,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       {/* ── Payment + Actions row ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Payment breakdown */}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
           <CardTitle className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-4">
             Pagos por metodo
           </CardTitle>
@@ -620,7 +620,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
               {chartData.payments.map((pm) => (
                 <div key={pm.method}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{pm.method}</span>
+                    <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{pm.method}</span>
                     <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{pm.pct}%</span>
                   </div>
                   <div className="h-2.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
@@ -633,7 +633,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
         </div>
 
         {/* Urgent actions */}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
           <CardTitle className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-4">
             Acciones urgentes
           </CardTitle>
@@ -654,14 +654,14 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                     key={a.id}
                     onClick={() => navigateTo(a.href)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg border-l-4 bg-[var(--surface-alt)] dark:bg-surface hover:bg-[var(--surface-sunken)] dark:hover:bg-card transition-colors text-left",
+                      "w-full flex items-center gap-3 p-3 rounded-lg border-l-4 bg-[var(--surface-alt)] dark:bg-surface hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-raised)] transition-colors text-left",
                       actionBorderColor[a.color],
                     )}
                   >
                     <div className={cn("w-2 h-2 rounded-full shrink-0", actionDotColor[a.color])} />
                     <Icon className="w-4 h-4 text-[var(--text-secondary)] dark:text-muted shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{a.label}</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{a.label}</p>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{a.detail}</p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-[var(--text-tertiary)] dark:text-muted shrink-0" />
@@ -675,7 +675,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
 
       {/* ── Recent Activity ──────────────────────────────────────────────── */}
       {chartData.recent.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
           <CardTitle className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-4">
             Actividad reciente
           </CardTitle>
@@ -687,8 +687,8 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
                   <span className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full bg-[var(--rule-soft)] dark:bg-accent text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">{methodIcons[item.method] ?? "?"}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{item.customer}</span>
-                      <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground ml-2 shrink-0">{formatCurrency(item.amount)}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{item.customer}</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] ml-2 shrink-0">{formatCurrency(item.amount)}</span>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{item.time}</span>
@@ -703,7 +703,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       )}
 
       {/* ── WhatsApp Daily Report ─────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 sm:p-5">
         <CardTitle className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-4">
           Reporte diario por WhatsApp
         </CardTitle>
@@ -722,9 +722,9 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       </div>
 
       {/* ── AI Quick Chat ──────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 sm:p-5">
         {chatAnswer && (
-          <div className="mb-3 bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-line">
+          <div className="mb-3 bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-line">
             {chatAnswer}
           </div>
         )}
@@ -735,7 +735,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void handleAsk(); }}
             placeholder="Preguntame sobre tu negocio..."
-            className="flex-1 bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg px-4 py-2.5 text-sm text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            className="flex-1 bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-4 py-2.5 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             disabled={chatLoading}
           />
           <button
@@ -774,13 +774,13 @@ function KPICard({
     ? "border-red-300 dark:border-red-800/40"
     : alert === "yellow"
       ? "border-yellow-300 dark:border-yellow-800/40"
-      : "border-[var(--rule-base)] dark:border-card-border";
+      : "border-[var(--rule-base)] dark:border-[var(--rule-base)]";
 
   const alertValue = alert === "red"
     ? "text-[var(--data-error-600)] dark:text-red-400"
     : alert === "yellow"
       ? "text-yellow-600 dark:text-yellow-400"
-      : "text-[var(--text-primary)] dark:text-foreground";
+      : "text-[var(--text-primary)] dark:text-[var(--text-primary)]";
 
   const renderTrend = () => {
     if (!t) return sub ? <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">{sub}</p> : <div className="h-4 mt-1" />;
@@ -801,7 +801,7 @@ function KPICard({
   };
 
   return (
-    <div className={cn("bg-white dark:bg-card rounded-xl border p-4 transition-colors", alertBorder)} title={tooltip}>
+    <div className={cn("bg-[var(--surface-raised)] rounded-xl border p-4 transition-colors", alertBorder)} title={tooltip}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] dark:text-muted leading-tight">{label}</span>
         <Icon className="w-4 h-4 text-primary dark:text-[var(--data-success-500)] shrink-0" />

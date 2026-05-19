@@ -66,7 +66,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       const label = cStart.toLocaleDateString("es-PE", { month: "short" });
       const allPhonesBefore = new Set<string>();
       orders
-        .filter((o) => o.status !== "cancelado" && new Date(o.createdAt) < cStart)
+        .filter((o) => o.status === "entregado" && new Date(o.createdAt) < cStart)
         .forEach((o) => {
           if (o.customer?.phone) allPhonesBefore.add(o.customer.phone);
         });
@@ -79,7 +79,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       orders
         .filter(
           (o) =>
-            o.status !== "cancelado" &&
+            o.status === "entregado" &&
             new Date(o.createdAt) >= cStart &&
             new Date(o.createdAt) <= cEnd,
         )
@@ -111,7 +111,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
           const hasPurchase =
             orders.some(
               (o) =>
-                o.status !== "cancelado" &&
+                o.status === "entregado" &&
                 o.customer?.phone === phone &&
                 new Date(o.createdAt) >= mS &&
                 new Date(o.createdAt) <= mE,
@@ -165,7 +165,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       m.set(phone, cur);
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) =>
         addOrder(o.customer?.phone, o.customer?.name, o.createdAt, o.total),
       );
@@ -237,7 +237,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       if (cur == null || t < cur) firstByPhone.set(phone, t);
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => pushFirst(o.customer?.phone, o.createdAt));
     sales.forEach((s) => pushFirst(s.customerPhone, s.createdAt));
 
@@ -281,7 +281,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       if (bi < 0) return;
       matrix[bi][dow] += 1;
     };
-    orders.filter((o) => o.status !== "cancelado").forEach((o) => add(o.createdAt));
+    orders.filter((o) => o.status === "entregado").forEach((o) => add(o.createdAt));
     sales.forEach((s) => add(s.createdAt));
     const max = Math.max(1, ...matrix.flat());
     const peak = matrix.reduce(
@@ -314,7 +314,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       lastByPhone.set(phone, cur);
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => register(o.customer?.phone, o.customer?.name, o.createdAt, o.total));
     sales.forEach((s) => register(s.customerPhone, s.customerPhone, s.createdAt, s.total));
 
@@ -343,9 +343,12 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="clientes.advanced.cohort-retention"
+          hasData={true}
+          defaultVisible={false}
           kicker="Cohort analysis · retención mes a mes"
           title="Cuántos vuelven después de la 1ra compra"
+          description="Agrupá clientes por el mes en que llegaron (cohorte) y mirá cuántos siguieron comprando 1, 2 y 3 meses después. Si los porcentajes caen mucho, perdés clientes rápido."
           kpis={[
             { label: "Cohortes", value: String(cohort.length), tone: "neutral" },
             {
@@ -450,9 +453,12 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "rfm-quadrant",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="RFM · recency × frequency · monetary = tamaño"
+          chartId="clientes.advanced.rfm-quadrant"
+          hasData={true}
+          defaultVisible={false}
+kicker="RFM · recency × frequency · monetary = tamaño"
           title="Segmentación estratégica de clientes"
+          description="Cada punto es un cliente. Arriba a la derecha (Champions) son los que vuelven seguido y gastan mucho. Abajo a la izquierda (En riesgo) son los que ya casi no vuelven. Cuidá los de arriba a la derecha primero."
           kpis={[
             { label: "🏆 Champions", value: String(rfm.counts.champions), tone: "success" },
             { label: "💙 Leales", value: String(rfm.counts.loyal), tone: "primary" },
@@ -533,9 +539,12 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "rating-distribution",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Satisfacción · todos los periodos"
+          chartId="clientes.advanced.rating-distribution"
+          hasData={true}
+          defaultVisible={false}
+kicker="Satisfacción · todos los periodos"
           title="Distribución de reseñas por rating"
+          description="Cuántas reseñas tenés en cada nivel de estrellas. Las 1★ y 2★ son alertas — responde rápido en público para mostrar que te importa. Las 4★ y 5★ pedile que las compartan en redes."
           kpis={[
             { label: "Total reseñas", value: String(ratingChart.total), tone: "primary" },
             { label: "Promedio", value: Number(ratingChart.promedio).toFixed(1), tone: "success" },
@@ -574,9 +583,12 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "comparativa-nuevos",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Comparativa · nuevos clientes semana a semana"
+          chartId="clientes.advanced.comparativa-nuevos"
+          hasData={true}
+          defaultVisible={false}
+kicker="Comparativa · nuevos clientes semana a semana"
           title="Adquisición · esta semana vs pasada"
+          description="Compará cuánta gente nueva entró esta semana vs la semana pasada, día por día. Si ves caída, revisá si pasó algo (clima, competencia, promo terminada) y reaccioná esa misma semana."
         >
           <BulejeComparisonOverlay
             data={comp}
@@ -602,9 +614,12 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
             : "—";
         return (
           <DashboardSection
-          hideHeader
+            chartId="clientes.advanced.heatmap-actividad"
+            hasData={true}
+            defaultVisible={false}
             kicker="Heatmap · franja × día · rango activo"
             title="Cuándo compran tus clientes"
+            description="Cuadritos más oscuros = más compras. Encontrá tu hora pico (ej. martes a la noche) y reforzá personal en esa franja. Las zonas casi blancas son momentos perfectos para tirar una promo flash."
             kpis={[
               { label: "Total compras 30d", value: String(heatmap.matrix.flat().reduce((s, v) => s + v, 0)), tone: "primary" },
               { label: "Franja pico", value: peakLabel, tone: "success" },
@@ -664,9 +679,12 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="clientes.advanced.churn-risk"
+          hasData={true}
+          defaultVisible={false}
           kicker="Churn risk · clientes en peligro de abandono"
           title="Clientes valiosos que no vuelven"
+          description="Lista de clientes que antes compraban seguido y ahora desaparecieron. Llamálos uno por uno con un descuento personal — recuperar un cliente cuesta 5× menos que conseguir uno nuevo."
           kpis={[
             {
               label: "Alto riesgo (>60d)",
@@ -737,5 +755,5 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="clientes-advanced-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="clientes-advanced-order" layout="column" gap={4} />;
 });

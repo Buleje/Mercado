@@ -63,7 +63,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
           <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold tracking-wider uppercase rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
             Disponibilidad limitada
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)]">
             Últimas unidades
           </h2>
           <p className="text-muted text-sm mt-2">
@@ -81,7 +81,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
             return (
               <div
                 key={product.id}
-                className={`group relative rounded-2xl bg-white dark:bg-card border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-300 ${
+                className={`group relative rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden transition-all duration-[var(--dur-base)] ${
                   inView
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-4"
@@ -100,7 +100,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                     src={product.image}
                     alt={product.name}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     placeholder="blur"
                     blurDataURL={BLUR_DATA_URL}
@@ -111,7 +111,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                   {/* Progress bar — teal accent, sin urgencia rojo alarmista */}
                   <div className="absolute bottom-0 inset-x-0 h-1 bg-[var(--rule-soft)]">
                     <div
-                      className="h-full bg-[var(--accent)] transition-all duration-700"
+                      className="h-full bg-[var(--accent)] transition-all duration-[var(--dur-slower)]"
                       style={{
                         width: `${Math.max(5, (stockLeft / LOW_STOCK_THRESHOLD) * 100)}%`,
                       }}
@@ -121,7 +121,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
 
                 {/* Info */}
                 <div className="p-3 sm:p-4">
-                  <h3 className="font-semibold text-sm text-foreground line-clamp-2 leading-snug mb-1">
+                  <h3 className="font-semibold text-sm text-[var(--text-primary)] line-clamp-2 leading-snug mb-1">
                     {product.name}
                   </h3>
 
@@ -133,7 +133,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                   {qty > 0 ? (
                     <div className="flex items-center justify-between gap-2 bg-primary/10 dark:bg-primary/20 rounded-xl px-2 py-1.5">
                       <button
-                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)] hover:bg-gray-50 transition-colors"
+                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--surface-raised)] text-primary shadow-[var(--shadow-sm)] hover:bg-gray-50 transition-colors"
                         onClick={() => updateQty(product.id, qty - 1)}
                         aria-label="Quitar uno"
                       >
@@ -154,7 +154,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                   ) : (
                     <button
                       onClick={() => guardedAdd(product)}
-                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold shadow-[var(--shadow-sm)] transition-all duration-200 active:scale-95"
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold shadow-[var(--shadow-sm)] transition-all duration-[var(--dur-fast)] active:scale-95"
                     >
                       <ShoppingCart className="h-3.5 w-3.5" />
                       Agregar al carrito

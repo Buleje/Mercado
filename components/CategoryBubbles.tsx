@@ -58,7 +58,7 @@ export default function CategoryBubbles() {
       className="pt-2 pb-4 sm:pt-3 sm:pb-5 bg-white dark:bg-background"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h3 className="text-center text-lg sm:text-xl font-bold text-foreground mb-4">
+        <h3 className="text-center text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-4">
           Explora por <span className="text-primary">Categoría</span>
         </h3>
 
@@ -67,7 +67,7 @@ export default function CategoryBubbles() {
           <button
             onClick={() => scroll("left")}
             className={cn(
-              "absolute left-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-[var(--shadow-md)] transition-all dark:border-card-border dark:bg-card/95",
+              "absolute left-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-[var(--shadow-md)] transition-all dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]/95",
               canScrollLeft ? "opacity-100" : "pointer-events-none opacity-35"
             )}
             aria-label="Desplazar a la izquierda"
@@ -82,7 +82,7 @@ export default function CategoryBubbles() {
                 key={cat.id}
                 href={buildCatHref(cat.id)}
                 className={cn(
-                  "flex items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-3 min-h-[44px] text-sm font-semibold text-[var(--text-secondary)] transition-all duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] text-center leading-tight",
+                  "flex items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-3 min-h-[44px] text-sm font-semibold text-[var(--text-secondary)] transition-all duration-[var(--dur-fast)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] text-center leading-tight",
                   inView ? "animate-[fadeUp_0.4s_ease-out_both]" : "opacity-0",
                 )}
                 style={inView ? { animationDelay: `${i * 50}ms` } : undefined}
@@ -104,7 +104,7 @@ export default function CategoryBubbles() {
                 key={cat.id}
                 href={buildCatHref(cat.id)}
                 className={cn(
-                  "group inline-flex shrink-0 snap-start items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-all duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:-translate-y-0.5 sm:px-5 sm:py-3",
+                  "group inline-flex shrink-0 snap-start items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-all duration-[var(--dur-fast)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:-translate-y-0.5 sm:px-5 sm:py-3",
                   inView ? "animate-[fadeUp_0.4s_ease-out_both]" : "opacity-0",
                 )}
                 style={inView ? { animationDelay: `${i * 50}ms` } : undefined}
@@ -119,7 +119,7 @@ export default function CategoryBubbles() {
           <button
             onClick={() => scroll("right")}
             className={cn(
-              "absolute right-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-[var(--shadow-md)] transition-all dark:border-card-border dark:bg-card/95",
+              "absolute right-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-[var(--shadow-md)] transition-all dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]/95",
               canScrollRight ? "opacity-100" : "pointer-events-none opacity-35"
             )}
             aria-label="Desplazar a la derecha"

@@ -1,28 +1,20 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, memo } from "react";
+import { useRef, memo } from "react";
 import {
   MapPin,
   Star,
-  ShoppingBag,
-  ChevronRight,
   Package,
   LocateFixed,
-  Store,
-  ShoppingCart,
-  Building2,
-  Apple,
-  Beef,
-  CroissantIcon,
-  Wine,
-  Pill,
-  UtensilsCrossed,
+  Plane,
+  HardHat,
+  Moon,
+  Bike,
 } from "lucide-react";
 import Image from "next/image";
-import { m, AnimatePresence } from "framer-motion";
+import { m } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
-import { Plane, HardHat, Moon } from "lucide-react";
 import { StoreCardCanonical } from "@buleje/design-system";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
@@ -64,21 +56,6 @@ export const ZONES = [
 ];
 
 export { deriveActiveZones };
-
-/* ── Currency formatter ────────────────────────────────────────────────────── */
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
-
-/* ── ProductPreview type (internal to store card) ──────────────────────────── */
-
-interface ProductPreview {
-  id: number;
-  name: string;
-  price: number;
-  image: string | null;
-  unit: string | null;
-}
 
 /* ── StoreCardWrapper ──────────────────────────────────────────────────────── */
 /**
@@ -175,63 +152,28 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   index: number;
   lastOrder?: LastOrderInfo;
 }) {
-  const [preview, setPreview] = useState<ProductPreview[]>([]);
-  const [previewLoaded, setPreviewLoaded] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  // Brandon, mayo 14 2026: product preview strip eliminado de las cards.
+  // Antes mostrábamos 3 productos en hover/intersección — generaba ~10×
+  // requests adicionales y saturaba visualmente la card. Si el cliente
+  // quiere ver productos, hace click → storefront completo.
   const cardRef = useRef<HTMLDivElement>(null);
-
-  const loadPreview = useCallback(async () => {
-    if (previewLoaded || previewLoading) return;
-    setPreviewLoading(true);
-    try {
-      const res = await fetch(`/api/marketplace/stores/${store.slug}/products?limit=3`);
-      if (res.ok) {
-        const json = await res.json();
-        setPreview(json.data?.slice(0, 3) ?? []);
-      }
-    } catch {
-      /* silent fail */
-    }
-    setPreviewLoading(false);
-    setPreviewLoaded(true);
-  }, [store.slug, previewLoaded, previewLoading]);
-
-  // Lazy load via IntersectionObserver — solo solicita el preview cuando
-  // la card entra al viewport. Reduce 10× requests en grids con 50 tiendas.
-  // Hover/focus siguen activando el load para usuarios con scroll lento.
-  useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") {
-      // Fallback: cargar inmediatamente en navegadores antiguos
-      loadPreview();
-      return;
-    }
-    const el = cardRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            loadPreview();
-            obs.disconnect();
-            break;
-          }
-        }
-      },
-      { rootMargin: "200px 0px", threshold: 0.05 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [loadPreview]);
 
   // ── Slots para StoreCardCanonical ──────────────────────────────────────────
 
   const badges = (
     <>
-      {/* Rating — primero y mas prominente (decision factor #1) */}
+      {/* Rating + reseñas count — decision factor #1.
+          Brandon 2026-05-18: antes solo "4.8". Ahora "4.8 · 120" con count
+          inline (signal social que valida el rating frente a "fake-rating-de-1-review"). */}
       {store.rating > 0 && (
-        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
           <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
-          {Number(store.rating).toFixed(1)}
+          <span className="tabular-nums">{Number(store.rating).toFixed(1)}</span>
+          {store.reviewCount > 0 && (
+            <span className="text-[var(--text-tertiary)] font-semibold tabular-nums">
+              · {store.reviewCount}
+            </span>
+          )}
         </span>
       )}
       {/* Pediste hoy — historial reciente */}
@@ -257,93 +199,45 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     </>
   );
 
+  // Footer minimal — meta row (zona + delivery time) + trust chips
+  // (envío gratis o mín pedido). La card entera ya es un Link al
+  // storefront, no necesita CTA visible. Estados de vacaciones/cerrada
+  // se comunican con el overlay sobre la imagen.
+  //
+  // Brandon 2026-05-18: agregar señales de confianza visibles antes del
+  // tap — Envío gratis o "Mín. S/15". Antes el cliente solo veía zona
+  // + minutos, decidía a ciegas el costo total.
   const footer = (
-    <div className="flex flex-col gap-1.5">
-      {/* Meta row compacta — solo zona + delivery time, sin description ni reseñas */}
-      <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+    <div className="flex flex-col gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+      <div className="flex items-center gap-2">
         {store.zone && (
-          <span className="inline-flex items-center gap-0.5 truncate">
-            <MapPin className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1 truncate">
+            <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
             <span className="truncate">{store.zone}</span>
           </span>
         )}
-        <span aria-hidden className="text-[var(--rule-base)]">·</span>
-        <span className="inline-flex items-center gap-0.5 font-semibold text-[var(--text-secondary)] shrink-0">
+        {store.zone && <span aria-hidden className="text-[var(--rule-base)]">·</span>}
+        <span className="inline-flex items-center gap-1 font-bold text-[var(--text-secondary)] shrink-0">
           {store.deliveryMinutes && store.deliveryMinutes > 0
             ? `${Math.max(15, store.deliveryMinutes - 10)}–${store.deliveryMinutes + 5} min`
             : "25–35 min"}
         </span>
       </div>
-      {/* CTA row — accion-oriented + estado */}
-      <div className="flex items-center justify-between pt-1.5 border-t border-[var(--rule-soft)]">
-        <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] group-hover:gap-1.5 transition-all">
-          Pedir
-          <ChevronRight className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
-        </span>
-        {store.vacationMode ? (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-500)]">
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" />
-            Vacaciones
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success,_#00b66a)]" />
-            Activa
-          </span>
-        )}
-      </div>
-      {/* Product preview strip — visible on hover */}
-      <AnimatePresence>
-        {(previewLoading || previewLoaded) && (
-          <m.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="pt-2 border-t border-[var(--rule-soft)] overflow-hidden"
-          >
-            {previewLoading ? (
-              <div className="flex gap-2" aria-busy="true" aria-label="Cargando productos...">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} aria-hidden="true" className="flex-1 h-16 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
-                ))}
-              </div>
-            ) : preview.length > 0 ? (
-              <div className="flex gap-2">
-                {preview.map((p) => (
-                  <div key={p.id} className="flex-1 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                    <div className="relative h-12 bg-[var(--surface-sunken)]">
-                      {p.image ? (
-                        <Image
-                          src={p.image}
-                          alt={p.name}
-                          fill
-                          className="object-cover"
-                          sizes="72px"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Package className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-1.5 py-1">
-                      <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] line-clamp-1">
-                        {p.name}
-                      </p>
-                      <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
-                        {fmt(p.price)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center py-1">Sin productos disponibles</p>
-            )}
-          </m.div>
-        )}
-      </AnimatePresence>
+      {(store.freeDelivery || (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {store.freeDelivery && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] border border-[var(--accent)]/30 text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
+              <Bike className="h-2.5 w-2.5" strokeWidth={2.25} aria-hidden="true" />
+              Envío gratis
+            </span>
+          )}
+          {store.minOrderAmount != null && store.minOrderAmount > 0 && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] tabular-nums">
+              Mín. S/{store.minOrderAmount}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -357,8 +251,6 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: index * 0.04 }}
-      onMouseEnter={loadPreview}
-      onFocus={loadPreview}
       className="relative"
     >
       {/* Overlay status (cerrado / construcción) — sobrepuesto al canonical
@@ -468,15 +360,26 @@ function passesChips(
   for (const chip of chips) {
     switch (chip) {
       case "open_now": {
-        // Only filter if the store carries openHours data
+        // Only filter if the store carries openHours data.
+        // PENTEST 2026-05-18 Fase 2 P0 #28: openHours puede venir como
+        // Array<DayHours> O como Record<string, unknown> (JSONB del backend
+        // se deserializa como objeto en algunos paths). Si es Object con keys
+        // string, store.openHours[dayIndex] retorna undefined → return false
+        // silenciaba tiendas que SÍ están abiertas. Fix: validar Array.isArray
+        // antes de indexar. Si NO es array, skipear el filtro (mejor mostrar
+        // la tienda y dejar que el usuario decida que filtrarla por error).
         if (!("openHours" in store) || store.openHours == null) break;
+        if (!Array.isArray(store.openHours)) {
+          // Schema desconocido — saltar el filtro en lugar de silenciar la tienda
+          break;
+        }
         const now = new Date();
         const dayIndex = now.getDay(); // 0=Sun … 6=Sat
         const minutesNow = now.getHours() * 60 + now.getMinutes();
         const todayHours = store.openHours[dayIndex];
-        if (!todayHours) return false;
-        const open = todayHours.open * 60 + todayHours.openMin;
-        const close = todayHours.close * 60 + todayHours.closeMin;
+        if (!todayHours || typeof todayHours.open !== "number") break;
+        const open = todayHours.open * 60 + (todayHours.openMin ?? 0);
+        const close = todayHours.close * 60 + (todayHours.closeMin ?? 0);
         if (minutesNow < open || minutesNow >= close) return false;
         break;
       }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/compliance/data-export
@@ -27,25 +28,16 @@ const ExportSchema = z.object({
   tenantId: z.string().min(1, "tenantId es obligatorio"),
 });
 
-// Simple in-memory rate limiter (per tenant, 10 req/hour)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-function checkRateLimit(tenantId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(tenantId);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(tenantId, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
-}
+// Nota: el rate limit lo provee applyRateLimit (Upstash distribuido) en
+// L1 del handler. El Map in-memory anterior daba falsa seguridad en
+// Vercel serverless (cada lambda tenía su propio Map).
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "compliance-data-export"); if (_rl) return _rl;
+  // Defense-in-depth: el proxy ya valida CSRF para /api/* pero el export
+  // retorna PII completa (DNI, pedidos, facturas) — agregamos check explícito.
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -72,17 +64,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "No autorizado para este tenant" },
       { status: 403 },
-    );
-  }
-
-  // Rate limit check
-  if (!checkRateLimit(tenantId)) {
-    return NextResponse.json(
-      {
-        error: "Límite de solicitudes excedido",
-        message: "Máximo 10 exportaciones por hora por tenant",
-      },
-      { status: 429 },
     );
   }
 

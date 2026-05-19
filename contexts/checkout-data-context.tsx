@@ -46,10 +46,28 @@ export type CheckoutAddress = {
   districtCode: string;
   districtName: string;
 };
+// "" = sin método seleccionado (Brandon mayo 15 v4: ya no se preselecciona
+// efectivo por defecto — el cliente debe elegir explícitamente).
+export type CheckoutPaymentMethod = "" | "efectivo" | "yape" | "plin" | "transfer";
 export type CheckoutPayment = {
-  method: "efectivo" | "yape" | "plin";
+  method: CheckoutPaymentMethod;
   cashAmount: string;
 };
+/**
+ * Comprobante de pago por tienda (multi-vendor). El cliente elige UN método
+ * global, pero sube un comprobante por cada tienda del carrito. La Order se
+ * crea con `paymentApprovalId` apuntando al PaymentApproval que tendrá
+ * `imageUrl` = proofUrl. El `proofToken` se valida server-side en
+ * /api/marketplace/checkout/payment-proof + endpoint de creación de Order.
+ */
+export type CheckoutStoreProof = {
+  method: "yape" | "plin" | "transfer";
+  proofUrl: string;
+  proofToken: string;
+  reference?: string;
+};
+export type CheckoutPaymentProofs = Record<string, CheckoutStoreProof>;
+
 export type CheckoutCouponEntry = {
   code: string;
   discount: number;
@@ -64,11 +82,13 @@ interface CheckoutDataValue {
   payment: CheckoutPayment;
   coupons: CheckoutCoupons;
   loyalty: CheckoutLoyalty;
+  paymentProofs: CheckoutPaymentProofs;
   setCustomer: (next: Partial<CheckoutCustomer>) => void;
   setAddress: (next: Partial<CheckoutAddress>) => void;
   setPayment: (next: Partial<CheckoutPayment>) => void;
   setCouponForStore: (storeSlug: string, entry: CheckoutCouponEntry | null) => void;
   setLoyalty: (next: Partial<CheckoutLoyalty>) => void;
+  setStoreProof: (storeSlug: string, proof: CheckoutStoreProof | null) => void;
   reset: () => void;
   isCustomerValid: boolean;
   isAddressValid: boolean;
@@ -85,6 +105,7 @@ const KEY_ADDRESS = "marketplace-checkout-address";
 const KEY_PAYMENT = "marketplace-checkout-payment";
 const KEY_COUPONS = "marketplace-checkout-coupons";
 const KEY_LOYALTY = "marketplace-checkout-loyalty";
+const KEY_PROOFS = "marketplace-checkout-proofs";
 
 const DEFAULT_CUSTOMER: CheckoutCustomer = { name: "", phone: "", email: "" };
 const DEFAULT_ADDRESS: CheckoutAddress = {
@@ -98,9 +119,10 @@ const DEFAULT_ADDRESS: CheckoutAddress = {
   districtCode: "",
   districtName: "",
 };
-const DEFAULT_PAYMENT: CheckoutPayment = { method: "efectivo", cashAmount: "" };
+const DEFAULT_PAYMENT: CheckoutPayment = { method: "", cashAmount: "" };
 const DEFAULT_COUPONS: CheckoutCoupons = {};
 const DEFAULT_LOYALTY: CheckoutLoyalty = { redeemPoints: 0 };
+const DEFAULT_PROOFS: CheckoutPaymentProofs = {};
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -131,17 +153,23 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
   const [payment, setPaymentState] = useState<CheckoutPayment>(DEFAULT_PAYMENT);
   const [coupons, setCouponsState] = useState<CheckoutCoupons>(DEFAULT_COUPONS);
   const [loyalty, setLoyaltyState] = useState<CheckoutLoyalty>(DEFAULT_LOYALTY);
+  const [paymentProofs, setPaymentProofsState] =
+    useState<CheckoutPaymentProofs>(DEFAULT_PROOFS);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hidratación inicial — un único pase tras montar.
+  // Hidratación inicial — un único pase tras montar. setState sync acá es
+  // legítimo: SSR arranca con defaults y leemos localStorage al hidratar.
+  /* eslint-disable react-hooks/set-state-in-effect -- hidratación SSR-safe */
   useEffect(() => {
     setCustomerState(read(KEY_CUSTOMER, DEFAULT_CUSTOMER));
     setAddressState(read(KEY_ADDRESS, DEFAULT_ADDRESS));
     setPaymentState(read(KEY_PAYMENT, DEFAULT_PAYMENT));
     setCouponsState(read(KEY_COUPONS, DEFAULT_COUPONS));
     setLoyaltyState(read(KEY_LOYALTY, DEFAULT_LOYALTY));
+    setPaymentProofsState(read(KEY_PROOFS, DEFAULT_PROOFS));
     setHydrated(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Sync entre pestañas
   useEffect(() => {
@@ -151,6 +179,7 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
       else if (e.key === KEY_PAYMENT) setPaymentState(read(KEY_PAYMENT, DEFAULT_PAYMENT));
       else if (e.key === KEY_COUPONS) setCouponsState(read(KEY_COUPONS, DEFAULT_COUPONS));
       else if (e.key === KEY_LOYALTY) setLoyaltyState(read(KEY_LOYALTY, DEFAULT_LOYALTY));
+      else if (e.key === KEY_PROOFS) setPaymentProofsState(read(KEY_PROOFS, DEFAULT_PROOFS));
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
@@ -201,6 +230,19 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setStoreProof = useCallback(
+    (storeSlug: string, proof: CheckoutStoreProof | null) => {
+      setPaymentProofsState((prev) => {
+        const next = { ...prev };
+        if (proof) next[storeSlug] = proof;
+        else delete next[storeSlug];
+        write(KEY_PROOFS, next);
+        return next;
+      });
+    },
+    [],
+  );
+
   const reset = useCallback(() => {
     if (typeof window === "undefined") return;
     try {
@@ -209,6 +251,7 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(KEY_PAYMENT);
       localStorage.removeItem(KEY_COUPONS);
       localStorage.removeItem(KEY_LOYALTY);
+      localStorage.removeItem(KEY_PROOFS);
     } catch {
       /* silent */
     }
@@ -217,6 +260,7 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
     setPaymentState(DEFAULT_PAYMENT);
     setCouponsState(DEFAULT_COUPONS);
     setLoyaltyState(DEFAULT_LOYALTY);
+    setPaymentProofsState(DEFAULT_PROOFS);
   }, []);
 
   const value = useMemo<CheckoutDataValue>(() => {
@@ -224,10 +268,14 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
       customer.name.trim().length >= 2 &&
       customer.phone.trim().replace(/\D/g, "").length >= 6;
     const isAddressValid = address.address.trim().length >= 5;
+    // Método "" (sin elegir) = inválido. Brandon mayo 15 v4: el cliente debe
+    // elegir un método explícitamente. Efectivo con cashAmount truthy debe
+    // ser > 0 para ser válido.
     const isPaymentValid =
-      payment.method !== "efectivo" ||
-      !payment.cashAmount ||
-      Number(payment.cashAmount) > 0;
+      payment.method !== "" &&
+      (payment.method !== "efectivo" ||
+        !payment.cashAmount ||
+        Number(payment.cashAmount) > 0);
     const couponDiscountTotal = Object.values(coupons).reduce(
       (acc, c) => acc + (c.discount || 0),
       0,
@@ -239,11 +287,13 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
       payment,
       coupons,
       loyalty,
+      paymentProofs,
       setCustomer,
       setAddress,
       setPayment,
       setCouponForStore,
       setLoyalty,
+      setStoreProof,
       reset,
       isCustomerValid,
       isAddressValid,
@@ -258,12 +308,14 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
     payment,
     coupons,
     loyalty,
+    paymentProofs,
     hydrated,
     setCustomer,
     setAddress,
     setPayment,
     setCouponForStore,
     setLoyalty,
+    setStoreProof,
     reset,
   ]);
 

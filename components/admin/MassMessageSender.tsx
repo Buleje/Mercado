@@ -134,7 +134,7 @@ export default function MassMessageSender({
           ]);
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[MassMessageSender] customers fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

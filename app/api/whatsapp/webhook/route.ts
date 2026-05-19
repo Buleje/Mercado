@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { redactPhone, truncate } from "@/lib/logger-pii";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
 import { handleIncomingMessage as handleConciergeMessage } from "@/lib/whatsapp/concierge/concierge-router";
 
@@ -158,6 +160,12 @@ export async function GET(req: NextRequest) {
  *  - Verificar firma X-Hub-Signature-256 si WHATSAPP_APP_SECRET está configurado.
  */
 export async function POST(req: NextRequest) {
+  // PENTEST 2026-05-18 Sprint B: rate limit STRICT. Meta nunca envía más
+  // de 1 webhook/sec por número. Sin rate limit, atacante con firmas
+  // inválidas puede agotar CPU en HMAC verify por cada request.
+  const rl = applyRateLimit(req, "STRICT", "whatsapp-webhook");
+  if (rl) return rl as NextResponse;
+
   // Leer el body crudo antes de cualquier operación (firma requiere raw bytes)
   const rawBody = await req.text();
 
@@ -255,7 +263,7 @@ async function handleSingleMessage(
   text = text.trim();
   if (!text) {
     logger.info("[whatsapp/webhook] Mensaje sin texto — ignorado", {
-      from: senderPhone,
+      from: redactPhone(senderPhone),
     });
     return;
   }
@@ -266,7 +274,7 @@ async function handleSingleMessage(
   // sin querer cuando un tenant no tenía config.
   if (!tenantConfig) {
     logger.warn("[whatsapp/webhook] Sin tenantConfig — mensaje descartado", {
-      from: senderPhone,
+      from: redactPhone(senderPhone),
     });
     return;
   }
@@ -288,10 +296,11 @@ async function handleSingleMessage(
     return;
   }
 
+  // PENTEST Sprint D #6: redact phone + truncate text antes de loggear.
   logger.info("[whatsapp/webhook] Procesando mensaje", {
-    from: senderPhone,
+    from: redactPhone(senderPhone),
     tenantId: effectiveTenantId,
-    text: text.slice(0, 80),
+    textPreview: truncate(text, 60),
     aiFirst: isAiFirstEnabled(),
   });
 

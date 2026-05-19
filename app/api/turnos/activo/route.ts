@@ -6,7 +6,10 @@ import { AdminUsersDB } from "@/lib/db/admin-users.db";
 
 // GET /api/turnos/activo — get currently open turno for authenticated admin
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  // Brandon 2026-05-17 (audit C1): lista explícita de roles. El comentario
+  // de seguridad de más abajo asume role admin/owner/manager/cajero — no
+  // permitir que proveedor/repartidor/vendor lleguen acá sin filtro.
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -22,7 +25,6 @@ export async function GET(req: NextRequest) {
     const adminUserId = await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username);
 
     const isManagement = auth.role === "admin" || auth.role === "owner" || auth.role === "manager";
-    // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing turno lookup; refactor a TurnosDB.getActivoForUser pendiente.
     const turno = await prisma.turno.findFirst({
       where: {
         tenantId: auth.tenantId,

@@ -50,6 +50,20 @@ export async function POST(
     if (!result.valid) {
       return NextResponse.json({ error: "Token inválido o expirado" }, { status: 403 });
     }
+  } else if (process.env.DELIVERY_TIP_REQUIRE_TOKEN === "true") {
+    // Audit 2026-05-17 03-P1-2: flag-driven enforcement. Cuando se setee
+    // DELIVERY_TIP_REQUIRE_TOKEN=true en prod, request sin token → 403.
+    // Hasta entonces (rollout gradual de links WhatsApp con token HMAC)
+    // se mantiene backwards-compat con warning. Activar la flag tras
+    // confirmar que todos los clientes activos reciben link con token.
+    logger.warn("[delivery/tip] rejected — token required", {
+      orderId,
+      ip: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown",
+    });
+    return NextResponse.json(
+      { error: "Token requerido", message: "Usa el link enviado por WhatsApp." },
+      { status: 403 },
+    );
   } else {
     // Backwards-compat: permitir sin token pero log para medir uso legacy.
     logger.warn("[delivery/tip] legacy unauthenticated request", {

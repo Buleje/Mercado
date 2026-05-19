@@ -88,7 +88,7 @@ export function MicroList({
                 </span>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate leading-tight">
+                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate leading-tight">
                   {item.name}
                 </p>
                 {item.sublabel && (
@@ -99,7 +99,7 @@ export function MicroList({
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {item.label && (
-                  <span className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums tracking-tight">
+                  <span className="text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums tracking-tight">
                     {item.label}
                   </span>
                 )}

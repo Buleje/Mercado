@@ -133,8 +133,8 @@ export default function RecentPurchases() {
       aria-atomic="true"
       className={cn(
         "fixed bottom-6 left-4 z-40 flex max-w-xs items-center gap-3 rounded-xl",
-        "border border-border bg-card px-4 py-3 shadow-lg",
-        "dark:bg-card dark:border-border",
+        "border border-border bg-[var(--surface-raised)] px-4 py-3 shadow-lg",
+        "dark:bg-[var(--surface-raised)] dark:border-border",
         "transition-all duration-[var(--dur-base)]",
         entering
           ? "translate-y-0 opacity-100"
@@ -160,7 +160,7 @@ export default function RecentPurchases() {
       </div>
 
       {/* texto */}
-      <p className="flex-1 text-xs leading-snug text-foreground dark:text-foreground">
+      <p className="flex-1 text-xs leading-snug text-[var(--text-primary)] dark:text-[var(--text-primary)]">
         {item.text}
       </p>
 
@@ -169,7 +169,7 @@ export default function RecentPurchases() {
         type="button"
         onClick={() => setClosed(true)}
         aria-label="Cerrar notificacion"
-        className="ml-1 flex-shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground dark:text-muted dark:hover:text-foreground transition-colors"
+        className="ml-1 flex-shrink-0 rounded p-0.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-muted dark:hover:text-[var(--text-primary)] transition-colors"
       >
         <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18" />

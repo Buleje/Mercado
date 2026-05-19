@@ -1,0 +1,266 @@
+
+> buleje@0.1.1 build
+> next build
+
+Warning: Custom Cache-Control headers detected for the following routes:
+  - /_next/static/:path*
+
+Setting a custom Cache-Control header can break Next.js development behavior.
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+- Cache Components enabled
+- Experiments (use with caution):
+  ✓ optimizeCss
+  · optimizePackageImports
+  · staleTimes
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 63s
+  Skipping validation of types
+  Finished TypeScript config validation in 18ms ...
+  Collecting page data using 11 workers ...
+⚠ Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 11 workers (0/1567) ...
+{"level":"error","timestamp":"2026-05-19T18:56:15.822Z","message":"[inventory/eoq-suggest] failed","error":"Error: Route /api/admin/inventory/eoq-suggest needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"error","timestamp":"2026-05-19T18:56:15.888Z","message":"[inventory/eoq-suggest] failed","error":"Error: Route /api/admin/inventory/eoq-suggest needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"warn","timestamp":"2026-05-19T18:56:16.068Z","message":"[notifications/stream] requireAdmin threw","err":"Error: Route /api/admin/notifications/stream needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"warn","timestamp":"2026-05-19T18:56:16.215Z","message":"[notifications/stream] requireAdmin threw","err":"Error: Route /api/admin/notifications/stream needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"info","timestamp":"2026-05-19T18:56:17.011Z","message":"AgentRegistry: agent registered","domain":"inventory","actions":["check-stock","fefo-audit","reorder-suggestions","stock-valuation","movement-summary"],"description":"Gestiona inventario: niveles de stock, auditoria FEFO, sugerencias de reorden, valuacion y resumen de movimientos."}
+{"level":"info","timestamp":"2026-05-19T18:56:17.011Z","message":"AgentRegistry: agent registered","domain":"orders","actions":["pending-summary","delivery-schedule","returns-analysis","status-overview","daily-sales-report"],"description":"Gestiona pedidos: resumen de pendientes, programacion de entregas, analisis de devoluciones, estado general y reporte diario de ventas."}
+{"level":"info","timestamp":"2026-05-19T18:56:17.011Z","message":"AgentRegistry: agent registered","domain":"customers","actions":["segmentation","top-customers","churn-risk","birthday-upcoming","customer-360"],"description":"Analisis de clientes: segmentacion, riesgo de churn, perfiles 360"}
+{"level":"info","timestamp":"2026-05-19T18:56:17.011Z","message":"AgentRegistry: agent registered","domain":"analytics","actions":["daily-kpis","product-performance","margin-analysis","sales-trend","category-breakdown"],"description":"KPIs, reportes y analisis de negocio"}
+{"level":"info","timestamp":"2026-05-19T18:56:17.011Z","message":"AgentRegistry: agent registered","domain":"notifications","actions":["send-order-update","send-stock-alert","send-expiry-warning","send-promotion","digest-pending"],"description":"Gestiona notificaciones: actualizaciones de pedidos, alertas de stock, avisos de vencimiento, promociones y resumen de pendientes."}
+{"level":"info","timestamp":"2026-05-19T18:56:17.018Z","message":"AgentRegistry: agent registered","domain":"pricing","actions":["margin-check","competitor-gap","promotion-candidates","bundle-suggestions","price-history"],"description":"Gestiona precios: verificacion de margenes, analisis de competencia, candidatos a promocion, sugerencias de bundles e historial de precios."}
+{"level":"info","timestamp":"2026-05-19T18:56:17.091Z","message":"[agent-persistence] Persistence layer initialized"}
+{"level":"info","timestamp":"2026-05-19T18:56:17.091Z","message":"[agent-hooks] Agent hooks initialized"}
+{"level":"info","timestamp":"2026-05-19T18:56:17.092Z","message":"Agent system initialized","registeredAgents":[{"domain":"inventory","status":"registered","actions":["check-stock","fefo-audit","reorder-suggestions","stock-valuation","movement-summary"]},{"domain":"orders","status":"registered","actions":["pending-summary","delivery-schedule","returns-analysis","status-overview","daily-sales-report"]},{"domain":"customers","status":"registered","actions":["segmentation","top-customers","churn-risk","birthday-upcoming","customer-360"]},{"domain":"analytics","status":"registered","actions":["daily-kpis","product-performance","margin-analysis","sales-trend","category-breakdown"]},{"domain":"notifications","status":"registered","actions":["send-order-update","send-stock-alert","send-expiry-warning","send-promotion","digest-pending"]},{"domain":"pricing","status":"registered","actions":["margin-check","competitor-gap","promotion-candidates","bundle-suggestions","price-history"]}]}
+{"level":"info","timestamp":"2026-05-19T18:56:17.092Z","message":"[agents] GET /api/agents/health","status":"healthy","agentCount":6,"activeTasks":0}
+{"level":"info","timestamp":"2026-05-19T18:56:17.093Z","message":"[agent-hooks] SSE broadcast connected"}
+{"level":"warn","timestamp":"2026-05-19T18:56:17.228Z","message":"[/api/marketplace/subcategories] failed","error":"Error: Route /api/marketplace/subcategories needs to bail out of prerendering at this point because it used request.url."}
+{"level":"info","timestamp":"2026-05-19T18:56:17.231Z","message":"[agents] GET /api/agents/health","status":"healthy","agentCount":6,"activeTasks":0}
+{"level":"error","timestamp":"2026-05-19T18:56:17.247Z","message":"[marketplace/top-today] failed","error":"Route /api/marketplace/top-today needs to bail out of prerendering at this point because it used request.url.","traceId":"mpczulwd-iol8dx"}
+{"level":"error","timestamp":"2026-05-19T18:56:17.263Z","message":"[superadmin/tenants/growth] Error fetching growth data","error":"Route /api/superadmin/tenants/growth needs to bail out of prerendering at this point because it used request.headers.","stack":"Error: Route /api/superadmin/tenants/growth needs to bail out of prerendering at this point because it used request.headers.\n    at ro (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:1:131089)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:32643\n    at r7 (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:32730)\n    at Object.get (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:27239)\n    at m (/home/usuario/proyectos/Mercado/.next/server/chunks/_0amwckk._.js:450:9514)\n    at h (/home/usuario/proyectos/Mercado/.next/server/chunks/_0amwckk._.js:450:9747)\n    at c (/home/usuario/proyectos/Mercado/.next/server/chunks/[root-of-the-server]__0z70n-c._.js:1:13833)\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at rW.do (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:18823)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:27636\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/server/lib/trace/tracer.js:195:36\n    at NoopContextManager.with (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:14:19)\n    at ContextAPI.with (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/api/context.js:51:46)\n    at NoopTracer.startActiveSpan (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:54:31)\n    at ProxyTracer.startActiveSpan (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:27:24)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/server/lib/trace/tracer.js:164:103\n    at NoopContextManager.with (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:14:19)\n    at ContextAPI.with (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/api/context.js:51:46)\n    at NextTracerImpl.trace (/home/usuario/proyectos/Mercado/node_modules/next/dist/server/lib/trace/tracer.js:164:28)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:27525\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:25879\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:25847\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at rW.handle (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:25811)\n    at async exportAppRoute (/home/usuario/proyectos/Mercado/node_modules/next/dist/export/routes/app-route.js:86:26)"}
+{"level":"warn","timestamp":"2026-05-19T18:56:17.304Z","message":"[/api/marketplace/subcategories] failed","error":"Error: Route /api/marketplace/subcategories needs to bail out of prerendering at this point because it used request.url."}
+{"level":"error","timestamp":"2026-05-19T18:56:17.306Z","message":"[marketplace/top-today] failed","error":"Route /api/marketplace/top-today needs to bail out of prerendering at this point because it used request.url.","traceId":"mpczuly2-7o8274"}
+{"level":"error","timestamp":"2026-05-19T18:56:17.320Z","message":"[superadmin/tenants/growth] Error fetching growth data","error":"Route /api/superadmin/tenants/growth needs to bail out of prerendering at this point because it used request.headers.","stack":"Error: Route /api/superadmin/tenants/growth needs to bail out of prerendering at this point because it used request.headers.\n    at ro (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:1:131089)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:32643\n    at r7 (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:32730)\n    at Object.get (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:27239)\n    at m (/home/usuario/proyectos/Mercado/.next/server/chunks/_0amwckk._.js:450:9514)\n    at h (/home/usuario/proyectos/Mercado/.next/server/chunks/_0amwckk._.js:450:9747)\n    at c (/home/usuario/proyectos/Mercado/.next/server/chunks/[root-of-the-server]__0z70n-c._.js:1:13833)\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at Immediate._onImmediate (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:20388)\n    at process.processImmediate (node:internal/timers:484:21)\n    at process.callbackTrampoline (node:internal/async_hooks:130:17)"}
+{"level":"error","timestamp":"2026-05-19T18:56:17.848Z","message":"[tenants/resolve] GET error","err":"Route /api/tenants/resolve needs to bail out of prerendering at this point because it used request.url."}
+  Generating static pages using 11 workers (391/1567) 
+{"level":"error","timestamp":"2026-05-19T18:56:18.201Z","message":"[tenants/resolve] GET error","err":"Route /api/tenants/resolve needs to bail out of prerendering at this point because it used request.url."}
+{"level":"error","timestamp":"2026-05-19T18:56:18.921Z","message":"[marketplace/bestsellers] failed","error":"Route /api/marketplace/bestsellers needs to bail out of prerendering at this point because it used request.url.","traceId":"mpczun6v-cg7sao"}
+{"level":"error","timestamp":"2026-05-19T18:56:18.935Z","message":"[marketplace/bestsellers] failed","error":"Route /api/marketplace/bestsellers needs to bail out of prerendering at this point because it used request.url.","traceId":"mpczun7a-0uaacz"}
+{"level":"error","timestamp":"2026-05-19T18:56:19.383Z","message":"[marketplace/deals] GET error","traceId":"mpczunjq-xx0827","err":"Error: Route /api/marketplace/deals needs to bail out of prerendering at this point because it used request.url."}
+{"level":"error","timestamp":"2026-05-19T18:56:19.385Z","message":"[products/ratings] GET error","err":"Route /api/products/ratings needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"error","timestamp":"2026-05-19T18:56:19.434Z","message":"[products/ratings] GET error","err":"Route /api/products/ratings needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"error","timestamp":"2026-05-19T18:56:19.577Z","message":"[marketplace/deals] GET error","traceId":"mpczunp5-jbc3x3","err":"Error: Route /api/marketplace/deals needs to bail out of prerendering at this point because it used request.url."}
+{"level":"warn","timestamp":"2026-05-19T18:56:20.104Z","message":"[api/socio-buleje/cashback] error","traceId":"mpczuo3s-g6gcuw","error":"Route /api/socio-buleje/cashback needs to bail out of prerendering at this point because it used request.url."}
+{"level":"warn","timestamp":"2026-05-19T18:56:20.122Z","message":"[api/socio-buleje/status] error","traceId":"mpczuo4a-lunv3c","error":"Route /api/socio-buleje/status needs to bail out of prerendering at this point because it used request.url."}
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+{"level":"warn","timestamp":"2026-05-19T18:56:20.168Z","message":"[api/socio-buleje/cashback] error","traceId":"mpczuo5k-trdlb5","error":"Route /api/socio-buleje/cashback needs to bail out of prerendering at this point because it used request.url."}
+{"level":"warn","timestamp":"2026-05-19T18:56:20.170Z","message":"[api/socio-buleje/status] error","traceId":"mpczuo5m-1d0xih","error":"Route /api/socio-buleje/status needs to bail out of prerendering at this point because it used request.url."}
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+{"level":"info","timestamp":"2026-05-19T18:56:20.590Z","message":"[live-stats] ok","ordersToday":1,"shoppersToday":1,"activeStores":6}
+{"level":"info","timestamp":"2026-05-19T18:56:20.590Z","message":"[live-stats] ok","ordersToday":1,"shoppersToday":1,"activeStores":6}
+  Generating static pages using 11 workers (783/1567) 
+{"level":"info","timestamp":"2026-05-19T18:56:23.393Z","message":"[shopping-feed] generating feed","traceId":"mpczuo1k-sn022b","productCount":147}
+{"level":"info","timestamp":"2026-05-19T18:56:23.433Z","message":"[shopping-feed] generating feed","traceId":"mpczuo2a-xm9u2v","productCount":147}
+  Generating static pages using 11 workers (1175/1567) 
+Error: Route "/superadmin/marketplace" used `new Date()` before accessing either uncached data (e.g. `fetch()`) or Request data (e.g. `cookies()`, `headers()`, `connection()`, and `searchParams`). Accessing the current time in a Server Component requires reading one of these data sources first. Alternatively, consider moving this expression into a Client Component or Cache Component. See more info here: https://nextjs.org/docs/messages/next-prerender-current-time
+    at Object.getPlatformOverview (lib/db/marketplace-public.db.ts:1041:17)
+    at t (app/superadmin/marketplace/page.tsx:111:26)
+    at u (app/superadmin/marketplace/page.tsx:144:19)
+    at stringify (<anonymous>)
+  1039 |    */
+  1040 |   async getPlatformOverview() {
+> 1041 |     const now = new Date();
+       |                 ^
+  1042 |     const todayStart    = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  1043 |     const monthStart    = new Date(now.getFullYear(), now.getMonth(), 1);
+  1044 |     const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+To get a more detailed stack trace and pinpoint the issue, try one of the following:
+  - Start the app in development mode by running `next dev`, then open "/superadmin/marketplace" in your browser to investigate the error.
+  - Rerun the production build with `next build --debug-prerender` to generate better stack traces.
+Error occurred prerendering page "/superadmin/marketplace". Read more: https://nextjs.org/docs/messages/prerender-error
+Export encountered an error on /superadmin/marketplace/page: /superadmin/marketplace, exiting the build.
+⨯ Next.js build worker exited with code: 1 and signal: null

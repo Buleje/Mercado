@@ -9,6 +9,8 @@ import {
 import { resolveCategoryImages } from "@/lib/superadmin-category-images";
 import { resolveStoreSlugForTenant } from "@/lib/store-tenant-bridge";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET/PUT /api/admin/marketplace/category-images
@@ -49,6 +51,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "marketplace-category-images-put");
+  if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 

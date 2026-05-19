@@ -90,12 +90,12 @@ export default function PurchasePlanningTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <ListChecks className="h-6 w-6 text-primary" /> Planificación de Compras
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Sugerencia inteligente basada en rotación, demanda y stock de seguridad</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(i => ({ producto: i.product, categoria: i.category, stock: i.stock, demanda_diaria: i.avgDailyDemand, punto_reorden: i.reorderPoint, sugerido: i.suggestedQty, costo_estimado: i.estimatedCost, dias_agotamiento: i.daysToStockout, tendencia: i.trend })), "plan-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(i => ({ producto: i.product, categoria: i.category, stock: i.stock, demanda_diaria: i.avgDailyDemand, punto_reorden: i.reorderPoint, sugerido: i.suggestedQty, costo_estimado: i.estimatedCost, dias_agotamiento: i.daysToStockout, tendencia: i.trend })), "plan-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -122,23 +122,23 @@ export default function PurchasePlanningTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={filterUrgency} onChange={e => setFilterUrgency(e.target.value as Urgency | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterUrgency} onChange={e => setFilterUrgency(e.target.value as Urgency | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las urgencias</option>
           {(Object.keys(URGENCY_META) as Urgency[]).map(u => <option key={u} value={u}>{URGENCY_META[u].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Urgencia</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Producto</th>
@@ -161,10 +161,10 @@ export default function PurchasePlanningTab() {
                   <tr key={i.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", urg.bg, urg.color)}>{urg.label}</span></td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">{i.product}</p>
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs">{i.product}</p>
                       <p className="text-xs text-[var(--text-tertiary)]">{i.category} · {i.unit}</p>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs text-[var(--text-primary)] dark:text-foreground">{num(i.stock)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]">{num(i.stock)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{i.avgDailyDemand}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{i.reorderPoint}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
@@ -172,9 +172,9 @@ export default function PurchasePlanningTab() {
                         {i.suggestedQty > 0 ? `+${num(i.suggestedQty)}` : "—"}
                       </span>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{i.estimatedCost > 0 ? fmt(i.estimatedCost) : "—"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{i.estimatedCost > 0 ? fmt(i.estimatedCost) : "—"}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center"><TrIcon className={cn("h-4 w-4 mx-auto", tr.color)} /></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{i.daysToStockout}d</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{i.daysToStockout}d</td>
                   </tr>
                 );
               })}

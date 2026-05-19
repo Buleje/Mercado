@@ -130,7 +130,8 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "top-proveedores-periodo",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="compras.top-proveedores-periodo"
+          hasData={true}
           kicker="Proveedores · periodo"
           title="Top 10 proveedores por monto y órdenes"
           kpis={[
@@ -182,7 +183,8 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "estado-cuentas",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="compras.estado-cuentas"
+          hasData={true}
           kicker="Cuentas por pagar · estado"
           title="Distribución por estado de cuenta"
           kpis={[
@@ -235,7 +237,8 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "cuentas-por-vencer",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="compras.cuentas-por-vencer"
+          hasData={true}
           kicker="Cuentas · próximos vencimientos"
           title="Días restantes para pagar"
           kpis={[
@@ -281,7 +284,9 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
       id: "top-proveedores-historico",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="compras.top-proveedores-historico"
+          hasData={true}
+          defaultVisible={false}
           kicker="Proveedores · histórico total"
           title="Top 10 proveedores acumulados"
           kpis={[
@@ -309,5 +314,5 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="compras-base-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="compras-base-order" layout="column" gap={4} />;
 }

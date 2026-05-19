@@ -59,14 +59,26 @@ export async function createNextOffer(
   });
   if (assigned) return null;
 
-  // 2. Cargar partners online — pool híbrido:
-  //    - partners del tenant de la tienda (vendor con flota propia)
-  //    - partners del tenant "main" (red global Buleje, compartida)
-  //    Si la tienda tiene flota propia se prefiere; sino usa la red Buleje.
-  //    Cliente final ve un único pool: el que esté online y más cerca.
+  // 2. Cargar partners online — pool depende del flag del tenant:
+  //    - Si `useThirdPartyDelivery=true` (default OFF, opt-in): pool híbrido
+  //      tenant del pedido + red "main" (red global Buleje).
+  //    - Si `useThirdPartyDelivery=false`: SOLO partners del propio tenant.
+  //      El negocio decidió administrar sus pedidos con su flota propia.
+  //
+  // Brandon mayo 2026 v7: este split evita generar offers que el rider
+  // jamás debería ver — antes el comportamiento era "siempre incluir main",
+  // lo que filtraba pedidos privados a la red cross-tenant.
+  // Raw SQL: defensa contra cache del Prisma Client en dev post-migración.
+  const tenantOfOrderRows = await prisma.$queryRaw<Array<{ useThirdPartyDelivery: boolean }>>`
+    SELECT "useThirdPartyDelivery" FROM "Tenant" WHERE id = ${order.tenantId} LIMIT 1
+  `;
+  const includeBulejeNetwork = tenantOfOrderRows[0]?.useThirdPartyDelivery === true;
+  const partnerTenantIds = includeBulejeNetwork
+    ? Array.from(new Set([order.tenantId, "main"]))
+    : [order.tenantId];
   const partners = await prisma.deliveryPartner.findMany({
     where: {
-      tenantId: { in: Array.from(new Set([order.tenantId, "main"])) },
+      tenantId: { in: partnerTenantIds },
       isActive: true,
       isOnline: true,
       currentOrderId: null,
@@ -211,10 +223,12 @@ export async function processCascadeTick(): Promise<{
   const now = new Date();
 
   // 1. Marcar pending vencidas como expired.
+  /* eslint-disable no-restricted-syntax -- cron platform-level: expira ofertas vencidas en TODOS los tenants. cross-tenant intencional. */
   const expired = await prisma.deliveryOffer.updateMany({
     where: { status: "pending", expiresAt: { lt: now } },
     data: { status: "expired" },
   });
+  /* eslint-enable no-restricted-syntax */
 
   // 2. Para cada orderId con offer recién expirada y SIN assignment:
   //    crear próxima offer.

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { FiadosDB } from "@/lib/db/fiados.db";
+import { FiadosDB, FiadoConflictError } from "@/lib/db/fiados.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const PagoSchema = z.object({
   monto: z.number().positive(),
@@ -16,6 +17,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "fiados-X-pagar"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -54,6 +56,15 @@ export async function POST(
 
     return NextResponse.json(updated);
   } catch (e) {
+    // Audit 2026-05-17 P1-3: race-condition de Prisma → 409 Conflict (no 503),
+    // que es la diferencia entre "DB caída, no reintentar" y "alguien escribió
+    // antes, reintentá".
+    if (e instanceof FiadoConflictError) {
+      return NextResponse.json(
+        { error: e.message, code: "FIADO_CONFLICT", retryable: true },
+        { status: 409 },
+      );
+    }
     logger.error("[fiados/id/pagar] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }

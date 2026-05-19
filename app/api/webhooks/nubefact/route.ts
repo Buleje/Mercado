@@ -24,7 +24,7 @@ import { sunatEventBus } from "@/lib/sunat/sale-events";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { withAuditContext } from "@/lib/audit/audit-context";
-import { getClientIp } from "@/lib/rate-limit";
+import { applyRateLimit, getClientIp } from "@/lib/rate-limit";
 
 // ── Validación Zod del body ───────────────────────────────────────────────────
 
@@ -44,6 +44,11 @@ const WebhookBodySchema = z.object({
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // PENTEST 2026-05-18 Sprint B: rate limit STRICT. Defensa DoS contra
+  // floods de firmas inválidas (HMAC compute + DB lookup por request).
+  const rl = applyRateLimit(req, "STRICT", "nubefact-webhook");
+  if (rl) return rl as NextResponse;
+
   // Round 18 M004: webhook externo Nubefact → SunatInvoice updates con
   // userId="nubefact:webhook" para distinguir transitions automáticas SUNAT
   // de las manuales de admin en audit chain.

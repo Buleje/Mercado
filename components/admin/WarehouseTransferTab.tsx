@@ -41,8 +41,8 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Transferencias entre almacenes</p>
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+          <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Transferencias entre almacenes</p>
           <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Registra pedidos de traslado entre un almacen origen y otro destino, con seguimiento por estado.</p>
           <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: pasas 12 gaseosas del Almacen Principal al Punto de Venta y queda trazado quien lo pidio y cuando se recibio.</p>
         </div>
@@ -144,13 +144,13 @@ export default function WarehouseTransferTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             <Truck className="h-6 w-6 text-[var(--data-success-500)]" /> Transferencias entre Almacenes <ModuleTooltip />
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Gestiona movimientos de stock entre ubicaciones con persistencia real</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button onClick={() => exportToCSV(transfers.map((transfer) => ({ Codigo: transfer.code, Desde: transfer.from, Hacia: transfer.to, Estado: transfer.status, Items: transfer.items.map((item) => `${item.product}x${item.qty}`).join("; "), Fecha: transfer.requestDate })), "transferencias")} className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-card dark:hover:bg-accent">
+          <button onClick={() => exportToCSV(transfers.map((transfer) => ({ Codigo: transfer.code, Desde: transfer.from, Hacia: transfer.to, Estado: transfer.status, Items: transfer.items.map((item) => `${item.product}x${item.qty}`).join("; "), Fecha: transfer.requestDate })), "transferencias")} className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)] dark:hover:bg-accent">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm((prev) => !prev)} className="flex flex-wrap items-center gap-2 rounded-lg bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90">
@@ -160,21 +160,21 @@ export default function WarehouseTransferTab() {
       </div>
 
       {showForm && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <select value={form.fromWarehouseId} onChange={(event) => setForm((prev) => ({ ...prev, fromWarehouseId: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
+            <select value={form.fromWarehouseId} onChange={(event) => setForm((prev) => ({ ...prev, fromWarehouseId: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface">
               {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
             </select>
-            <select value={form.toWarehouseId} onChange={(event) => setForm((prev) => ({ ...prev, toWarehouseId: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
+            <select value={form.toWarehouseId} onChange={(event) => setForm((prev) => ({ ...prev, toWarehouseId: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface">
               {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
             </select>
-            <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
+            <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface">
               <option value="">Selecciona producto</option>
               {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
             </select>
-            <input value={form.qty} onChange={(event) => setForm((prev) => ({ ...prev, qty: event.target.value }))} type="number" min={1} placeholder="Cantidad" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-            <input value={form.requestedBy} onChange={(event) => setForm((prev) => ({ ...prev, requestedBy: event.target.value }))} placeholder="Solicitado por" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
-            <input value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Notas" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
+            <input value={form.qty} onChange={(event) => setForm((prev) => ({ ...prev, qty: event.target.value }))} type="number" min={1} placeholder="Cantidad" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface" />
+            <input value={form.requestedBy} onChange={(event) => setForm((prev) => ({ ...prev, requestedBy: event.target.value }))} placeholder="Solicitado por" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface" />
+            <input value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Notas" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface" />
           </div>
           <button onClick={addTransfer} disabled={saving} className="mt-4 rounded-lg bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">{saving ? "Guardando..." : "Registrar transferencia"}</button>
         </div>
@@ -183,16 +183,16 @@ export default function WarehouseTransferTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar codigo o producto..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2.5 pl-10 pr-4 text-sm dark:border-card-border dark:bg-card" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar codigo o producto..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2.5 pl-10 pr-4 text-sm dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]" />
         </div>
         {(["todas", "pendiente", "en-transito", "recibido", "cancelado"] as const).map((status) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] dark:border-card-border dark:bg-card dark:text-muted")}>
+          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)] dark:text-muted")}>
             {status === "todas" ? "Todas" : STATUS_CONFIG[status].label}
           </button>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface">
@@ -210,10 +210,10 @@ export default function WarehouseTransferTab() {
               {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">No hay transferencias registradas.</td></tr>}
               {filtered.map((transfer) => (
                 <tr key={transfer.id} className="hover:bg-gray-50 dark:hover:bg-surface">
-                  <td className="px-5 py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{transfer.code}</td>
+                  <td className="px-5 py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{transfer.code}</td>
                   <td className="px-5 py-3">
                     <div>
-                      <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{transfer.from}</p>
+                      <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{transfer.from}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">hacia {transfer.to}</p>
                     </div>
                   </td>
@@ -225,7 +225,7 @@ export default function WarehouseTransferTab() {
                   <td className="px-5 py-3">
                     <div className="flex flex-wrap items-center gap-2">
                       {(["pendiente", "en-transito", "recibido", "cancelado"] as TransferStatus[]).map((status) => (
-                        <button key={status} onClick={() => updateStatus(transfer.id, status)} className="rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:border-card-border dark:text-muted dark:hover:bg-accent">
+                        <button key={status} onClick={() => updateStatus(transfer.id, status)} className="rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-gray-50 dark:border-[var(--rule-base)] dark:text-muted dark:hover:bg-accent">
                           {STATUS_CONFIG[status].label}
                         </button>
                       ))}

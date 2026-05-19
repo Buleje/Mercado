@@ -2,16 +2,29 @@
 
 import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { useChartRegistration } from "@/lib/admin/charts-visibility";
 
 export interface SectionKPI {
   label: string;
   value: string;
   tone?: "primary" | "warning" | "success" | "neutral";
+  // Brandon 2026-05-16 (audit P1 UI): hint opcional para tooltips/info
+  // explicando por qué un KPI muestra "—" o un asterisco (ej. faltan
+  // datos de costo). Se muestra como title="..." en el wrapper.
+  hint?: string;
 }
 
 interface Props {
   kicker: string;
   title: string;
+  /**
+   * Brandon mayo 2026 v6: bajada en lenguaje plano (1 línea) que explica
+   * para qué sirve el chart, no qué muestra técnicamente. Pensada para que
+   * un bodeguero de 50 años entienda sin jerga. Ej: "Acá ves quién es tu
+   * mejor cliente del mes. Llamalo y agradecele — vuelven más cuando los
+   * tratás como persona."
+   */
+  description?: string;
   kpis?: SectionKPI[];
   /** right-aligned header slot (ej: badge de tendencia, action button) */
   rightSlot?: ReactNode;
@@ -23,6 +36,25 @@ interface Props {
    * de texto descriptivo arriba. KPIs y rightSlot se siguen mostrando.
    */
   hideHeader?: boolean;
+  /**
+   * Brandon mayo 2026: id único del chart en su módulo. Si está presente,
+   * el chart se registra en ChartsVisibilityProvider y puede ser togglado
+   * por el usuario desde el botón "Gráficos".
+   */
+  chartId?: string;
+  /**
+   * Indica si el chart tiene datos suficientes. Si false, se oculta por
+   * default (el user puede mostrarlo manualmente desde el modal). Solo
+   * aplica si `chartId` está presente.
+   */
+  hasData?: boolean;
+  /**
+   * Brandon mayo 2026: si false, el chart está OCULTO por default aunque
+   * tenga datos. Usado para los charts avanzados/especializados (cohort,
+   * waterfall, gauge, funnel, BCG, etc.) que confunden al dueño común.
+   * El user los puede activar desde el modal "Gráficos".
+   */
+  defaultVisible?: boolean;
 }
 
 /**
@@ -37,7 +69,23 @@ interface Props {
  *
  * Se usa en Resumen, Ventas base y Ventas advanced para consistencia total.
  */
-export function DashboardSection({ kicker, title, kpis, rightSlot, children, className, hideHeader }: Props) {
+export function DashboardSection({ kicker, title, description, kpis, rightSlot, children, className, hideHeader, chartId, hasData = true, defaultVisible = true }: Props) {
+  // Si el chart se registró con un id, consultar visibility. Si no tiene
+  // chartId, siempre visible (back-compat con secciones legacy).
+  const { visible } = useChartRegistration(chartId ?? "__none__", {
+    label: title,
+    hasData,
+    defaultVisible,
+  });
+  // Brandon mayo 2026 v6: marker "ghost" para que el wrapper draggable
+  // pueda detectar mediante CSS `:has([data-chart-hidden])` y colapsar
+  // el slot del grid. Retornar `null` directo dejaba el wrapper en DOM
+  // pero vacío → huecos blancos enormes al lado de charts visibles
+  // impares cuando los compañeros estaban ocultos por defaultVisible=false.
+  if (chartId && !visible) {
+    return <div data-chart-hidden="true" style={{ display: "none" }} aria-hidden />;
+  }
+
   return (
     <section
       className={
@@ -55,34 +103,42 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
           </div>
         )
       ) : (
-        <header className="mb-4 flex items-start justify-between gap-3">
+        // Brandon mayo 2026 v2: header agrandado — eyebrow text-xs (era 2xs),
+        // título text-lg sm:text-xl (era base) para que se lea a 1m del monitor.
+        <header className="mb-5 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+            <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
               {kicker}
             </p>
-            <CardTitle className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+            <CardTitle className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
               {title}
             </CardTitle>
+            {description && (
+              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
+                {description}
+              </p>
+            )}
           </div>
           {rightSlot && <div className="flex-shrink-0 pr-10">{rightSlot}</div>}
         </header>
       )}
       {kpis && kpis.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 shrink-0">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 shrink-0">
           {kpis.map((k) => (
             <div
               key={k.label}
-              className="rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5"
+              className="rounded-xl border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5"
+              title={k.hint}
             >
-              <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+              <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
                 {k.label}
               </p>
               <p
                 className={
-                  // 2026-04-24: tone=primary lee la CSS var scoped
-                  // --section-primary (fallback a --text-primary). Asi cada
-                  // seccion diferencia su KPI numerico con su color tema.
-                  "text-sm font-extrabold tabular-nums truncate " +
+                  // tone=primary lee la CSS var scoped --section-primary
+                  // (fallback a --text-primary). Brandon v2: text-base sm:text-lg
+                  // (era text-sm), respiro vertical para que el número resalte.
+                  "text-base sm:text-lg font-extrabold tabular-nums truncate " +
                   (k.tone === "warning"
                     ? "text-[var(--data-warning-500)]"
                     : k.tone === "success"

@@ -7,6 +7,8 @@ import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
+import { assertCsrf } from "@/lib/auth/csrf";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 /**
  * POST /api/superadmin/payment-proofs/[id]/approve
@@ -28,6 +30,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-payment-proofs-X-approve"); if (_rl) return _rl;
+  // P1-4: CSRF double-submit defense-in-depth (financial endpoint).
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   // Defense-in-depth: validar sesion superadmin independiente del middleware
   const _auth = await requirePlatformAPI(req);
   if (_auth instanceof NextResponse) return _auth;
@@ -87,10 +92,34 @@ export async function POST(
     return NextResponse.json({ error: "Error al aprobar" }, { status: 500 });
   }
 
+  // Audit log financial action — quién, qué tenant, qué plan, qué monto.
+  logSuperadminAction(
+    "approve_payment_proof",
+    `Aprobó pago de ${proof.ownerName} (${proof.tenantSlug}) — S/${proof.amountPEN} ${proof.planTier}`,
+    {
+      proofId: id,
+      tenantId,
+      tenantSlug: proof.tenantSlug,
+      planTier: proof.planTier,
+      amountPEN: proof.amountPEN,
+      method: proof.method,
+    },
+    platformUser,
+  ).catch((err) =>
+    logger.error("[payment-proof/approve] audit log failed", { err: String(err) }),
+  );
+
   // 3) WhatsApp de bienvenida — fire-and-forget
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
   const adminUrl = `${baseUrl}/admin/login`;
-  const planLabel = proof.planTier === "basico" ? "Estándar" : proof.planTier;
+  // Labels alineados con lib/billing/plan-tiers.ts (mayo 2026 v2)
+  const PLAN_LABELS: Record<string, string> = {
+    basico: "Free",
+    pro: "Starter",
+    enterprise: "Pro",
+    max: "Business",
+  };
+  const planLabel = PLAN_LABELS[proof.planTier] ?? proof.planTier;
   const defaultMsg = [
     `🎉 ¡Bienvenido a Buleje, ${proof.ownerName}!`,
     "",

@@ -4,16 +4,40 @@ import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
+
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — endpoint
+// destructivo (borra todo y reseeda) con cookies + CSRF + STRICT rate
+// limit + step-up confirm. NO debe cachearse jamás.
 
 /**
  * POST /api/admin/seed-data
  * Seeds realistic simulated data for a Peruvian bodega in Pucallpa.
  * Admin-only. Clears existing data first, then inserts seed data.
+ *
+ * Brandon 2026-05-16 (audit P2 step-up auth): requiere body con
+ * `{ confirm: "SEED" }` para ejecutar — el patrón es similar a clear-data
+ * que pide `confirmUsername === auth.username`. Sin esto un click
+ * accidental o un fetch malicioso desde otra tab autenticada (CSRF ya
+ * cubre pero defensa-en-profundidad) podía borrar todos los datos del
+ * tenant. STRICT rate limit (10 req/15min) reduce ventana de abuso.
  */
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "admin-seed-data"); if (_rl) return _rl;
+  const _rl = await applyRateLimit(req, "STRICT", "admin-seed-data"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+
+  // Step-up auth: requiere body con confirm="SEED" para evitar trigger
+  // accidental (botón Seed se vuelve doble-confirmación deliberada).
+  const body = await req.json().catch(() => ({}));
+  if ((body as { confirm?: string })?.confirm !== "SEED") {
+    return NextResponse.json(
+      { error: "Confirmación requerida. Envía { confirm: \"SEED\" } en el body." },
+      { status: 400 },
+    );
+  }
 
   function rid() {
     return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -38,6 +62,7 @@ export async function POST(req: NextRequest) {
   // Sin where:{tenantId}, deleteMany borra datos de TODOS los tenants (P0 #7).
   const tenantId = auth.tenantId;
 
+  /* eslint-disable no-restricted-syntax -- Modelos indirectos (ADR-101): pageVersion/pageBlock/bundleItem/shoppingListItem/returnItem/saleItem/orderItem/etc usan FK al padre tenant-scoped. El where: { padre: { tenantId } } es correcto y safe; la AST rule no detecta nesting. */
   try {
     // ── Clear all data for THIS tenant only ───────────
     await prisma.aBTestEvent.deleteMany({ where: { tenantId } });
@@ -506,4 +531,5 @@ export async function POST(req: NextRequest) {
     logger.error("[SEED-DATA] error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Error al generar datos de simulación" }, { status: 500 });
   }
+  /* eslint-enable no-restricted-syntax */
 }

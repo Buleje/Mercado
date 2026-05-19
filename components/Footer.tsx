@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { usePathname } from "next/navigation";
 import { useLocale } from "@/contexts/locale-context";
 import {
@@ -13,17 +12,22 @@ import {
   Truck,
   ShieldCheck,
   Star,
-  Mail,
   ArrowRight,
-  CheckCircle2,
   Facebook,
   Instagram,
   CreditCard,
   Wallet,
+  ChevronDown,
+  UserCircle2,
+  Briefcase,
+  LifeBuoy,
+  Leaf,
 } from "lucide-react";
 import { useSettings } from "@/contexts/settings-context";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
+import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 
 
 // ── Columna 1: Marketplace ──────────────────────────────────────────────
@@ -85,122 +89,8 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51916409675";
-
-function getPageContextMessage(pathname: string): string {
-  // Marketplace y rutas corporativas — antes el fallback decía
-  // "consulta sobre la bodega" lo cual era incorrecto en /terminos,
-  // /about, /ayuda, /marketplace, etc. (designer audit P1).
-  if (pathname.startsWith("/tienda/producto/")) return "Hola, quiero consultar sobre un producto que vi en la tienda.";
-  if (pathname.startsWith("/tienda/categoria/")) return "Hola, estoy viendo una categoría y tengo una consulta.";
-  if (pathname.startsWith("/tienda")) return "Hola, estoy viendo la tienda y necesito ayuda.";
-  if (pathname.startsWith("/recetas")) return "Hola, vi una receta y quiero consultar sobre los ingredientes.";
-  if (pathname.startsWith("/cuenta") || pathname.startsWith("/mis-pedidos")) return "Hola, tengo una consulta sobre mi cuenta o pedidos.";
-  if (pathname.startsWith("/puntos")) return "Hola, quiero saber más sobre mis puntos de fidelidad.";
-  if (pathname.startsWith("/marketplace/carrito") || pathname.startsWith("/checkout")) return "Hola, tengo una consulta sobre mi pedido en el marketplace.";
-  if (pathname.startsWith("/marketplace")) return "Hola, tengo una consulta sobre el marketplace de Buleje.";
-  if (pathname.startsWith("/abrir-tienda") || pathname.startsWith("/vender")) return "Hola, quiero saber más sobre cómo abrir mi tienda en Buleje.";
-  if (pathname.startsWith("/repartidores")) return "Hola, quiero saber cómo repartir con Buleje.";
-  if (pathname.startsWith("/terminos") || pathname.startsWith("/privacidad")) return "Hola, tengo una consulta sobre los términos del servicio.";
-  if (pathname.startsWith("/ayuda")) return "Hola, necesito ayuda con Buleje.";
-  if (pathname.startsWith("/about") || pathname === "/") return "Hola, quiero saber más sobre Buleje.";
-  return "Hola, quiero hacer una consulta sobre Buleje.";
-}
-
-function WhatsAppContactSection({
-  deliveryConfig,
-  storeTheme,
-}: {
-  deliveryConfig: { hours: { day: string; open: string; close: string; enabled: boolean }[] };
-  storeTheme: { whatsapp?: string; phone?: string; name?: string } | null;
-  businessName: string;
-}) {
-  const pathname = usePathname();
-  const [showPulse, setShowPulse] = useState(false);
-  // SSR-safe (Next 16 prerender-current-time): se calcula en cliente tras mount.
-  const [todayDow, setTodayDow] = useState<number | null>(null);
-  const [nowMins, setNowMins] = useState<number | null>(null);
-
-  useEffect(() => {
-    const visits = parseInt(sessionStorage.getItem("buleje-wa-visits") ?? "0", 10);
-    if (visits < 3) {
-      setShowPulse(true);
-      sessionStorage.setItem("buleje-wa-visits", String(visits + 1));
-    }
-    const d = new Date();
-    setTodayDow(d.getDay());
-    setNowMins(d.getHours() * 60 + d.getMinutes());
-  }, []);
-
-  const phone = storeTheme?.whatsapp?.replace(/\D/g, "") || storeTheme?.phone?.replace(/\D/g, "") || WHATSAPP_PHONE;
-  const message = encodeURIComponent(getPageContextMessage(pathname));
-  const waUrl = `https://wa.me/${phone}?text=${message}`;
-
-  const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-  const todayName = todayDow !== null ? DAY_NAMES[todayDow] : null;
-  const todayEntry = todayName ? deliveryConfig.hours.find((h) => h.day === todayName) : undefined;
-  const isOpenNow = (() => {
-    if (!todayEntry?.enabled || nowMins === null) return false;
-    const [oh, om] = todayEntry.open.split(":").map(Number);
-    const [ch, cm] = todayEntry.close.split(":").map(Number);
-    return nowMins >= oh * 60 + om && nowMins <= ch * 60 + cm;
-  })();
-
-  const hoursLabel = todayEntry?.enabled
-    ? `Hoy: ${todayEntry.open} – ${todayEntry.close}`
-    : "Hoy: cerrado";
-
-  return (
-    <div className="border-b border-white/10">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div className="text-left">
-            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/50 mb-2">
-              <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-              Atención directa
-            </span>
-            <h3 className="text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] text-white">
-              Chatea con nosotros
-            </h3>
-            <p className="text-white/55 text-sm mt-1 max-w-md leading-relaxed">
-              Escríbenos por WhatsApp y te atendemos al instante.
-            </p>
-            <div className="flex items-center gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-white/45 tabular-nums">
-                <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-                {hoursLabel}
-              </span>
-              {isOpenNow ? (
-                <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-emerald-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Abierto
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
-                  Cerrado
-                </span>
-              )}
-            </div>
-          </div>
-
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-gray-900 transition-all hover:bg-gray-100 active:scale-[0.98]"
-          >
-            {showPulse && (
-              <span className="absolute inset-0 rounded-full animate-ping bg-white/30 pointer-events-none" style={{ animationDuration: "2s" }} />
-            )}
-            <WhatsAppIcon className="h-4 w-4" />
-            Iniciar chat
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
+// (WhatsAppContactSection eliminado en v2 — CTA WhatsApp ahora vive en el
+//  HERO band y los logos sociales del bottom. Reducción de duplicación de UX.)
 
 // ── Detección de modo tienda ────────────────────────────────────────────
 // El footer se simplifica cuando estamos viendo el storefront de un vendor
@@ -253,6 +143,82 @@ const storeModeLinks = [
   { href: "/marketplace/registrar", label: "Crear tienda" },
 ];
 
+// Footer simplificado para /tiendas en modo "Solo Tiendas" (NavegacionTab
+// preset por defecto). Brandon mayo 2026: cuando el superadmin tiene el
+// modo "Solo Tiendas" activo, el footer NO debe mostrar el ecosistema
+// completo de marketplace (Explorar, Recetas, Comparar, Gift Cards, etc.).
+// Al volver al modo "Marketplace completo" se renderea el mega footer.
+const tiendasOnlyLinks = [
+  { href: "/", label: "Inicio" },
+  { href: "/tiendas", label: "Tiendas" },
+  { href: "/marketplace/ofertas", label: "Ofertas" },
+  { href: "/marketplace/como-pagar", label: "Cómo pagar" },
+  { href: "/abrir-tienda", label: "Abre tu tienda" },
+  { href: "/cuenta/pedidos", label: "Mis pedidos" },
+  { href: "/ayuda", label: "Ayuda" },
+  { href: "/terminos", label: "Términos" },
+  { href: "/privacidad", label: "Privacidad" },
+];
+
+// ── LinkGroup ─────────────────────────────────────────────────────────────
+// Grupo de links del footer v2. En mobile funciona como acordeón
+// colapsable (click en el header toggle). En desktop (lg:+) siempre abierto
+// y sin chevron. Esto reduce la altura del footer en mobile drásticamente.
+function LinkGroup({
+  title,
+  icon: Icon,
+  links,
+  accent,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>;
+  links: ReadonlyArray<{ href: string; label: string }>;
+  accent: "amber" | "emerald" | "sky" | "rose";
+}) {
+  const [open, setOpen] = useState(false);
+  const accentColor = {
+    amber: "text-amber-300",
+    emerald: "text-emerald-300",
+    sky: "text-sky-300",
+    rose: "text-rose-300",
+  }[accent];
+
+  return (
+    <div className="border-b border-white/10 lg:border-0 py-1 lg:py-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between py-4 lg:py-0 lg:mb-5 lg:cursor-default lg:pointer-events-none"
+      >
+        <span className="inline-flex items-center gap-2.5">
+          <Icon className={`h-4 w-4 ${accentColor}`} strokeWidth={2.5} aria-hidden />
+          <span className="text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-white">
+            {title}
+          </span>
+        </span>
+        <ChevronDown
+          className={`h-5 w-5 text-white/60 transition-transform duration-200 lg:hidden ${open ? "rotate-180" : ""}`}
+          strokeWidth={2.5}
+          aria-hidden
+        />
+      </button>
+      <ul className={`space-y-3 pb-4 lg:pb-0 ${open ? "block" : "hidden lg:block"}`}>
+        {links.map((link) => (
+          <li key={link.label}>
+            <a
+              href={link.href}
+              className="text-sm font-semibold text-white/75 hover:text-amber-200 transition-colors"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function Footer() {
   const { t } = useLocale();
   // SSR-safe (Next 16 prerender-current-time): hidratación en cliente.
@@ -266,6 +232,17 @@ export default function Footer() {
 
   const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
   const pathname = usePathname();
+
+  // Brandon mayo 15 v4 2026: footer oculto en /marketplace/carrito y /checkout/*.
+  // Razón: en el flujo de compra (carrito → datos → entrega → confirmar), el
+  // footer mete ruido visual y compite con el CTA "Continuar al checkout".
+  // El cliente debe estar 100% enfocado en cerrar la compra, sin links salidos.
+  // (Early return va abajo, tras todos los hooks, para no romper rules-of-hooks.)
+  const isCheckoutFlow =
+    pathname === "/marketplace/carrito" ||
+    pathname?.startsWith("/checkout/") ||
+    pathname === "/checkout";
+
   const isStoreMode = isStoreModePath(pathname);
   // Mayo 2026: footer simplificado en landing pages — antes 5 columnas
   // (Marketplace / Mi Cuenta / Vendé en Buleje / Ayuda / Más) era aspiracional
@@ -275,64 +252,43 @@ export default function Footer() {
     pathname.startsWith("/repartidores") ||
     pathname.startsWith("/abrir-tienda") ||
     pathname.startsWith("/vender");
+
+  // Brandon mayo 2026: si el superadmin tiene activo el modo "Solo Tiendas"
+  // (NavegacionTab) y el visitante está en /tiendas, mostramos un footer
+  // compacto sin links del ecosistema marketplace. Cuando vuelva al modo
+  // "Marketplace completo" se renderea el mega-footer normalmente.
+  const navMode = useMarketplaceNavMode();
+  // Brandon 2026-05-18: pad-bottom dinámico cuando hay items en carrito.
+  // El StickyCartBar (52px pegado al BottomNav) tapa el copyright en
+  // /marketplace/[slug] al hacer scroll abajo. Detectamos items > 0 y
+  // sumamos su altura al padding inferior solo en mobile.
+  const { itemCount } = useMarketplaceCart();
+  const hasCart = itemCount > 0;
+  const isTiendasOnlyMode =
+    pathname.startsWith("/tiendas") && navMode === "tiendas-only";
   // Marca de la plataforma (gestionada en /superadmin/marca).
   // Cuando storeTheme está vacío, la marca de la plataforma se usa como fallback.
   const { brand } = usePlatformBrand();
   const platformName = brand?.identity.name || "Buleje";
-  const platformDesc = brand?.identity.description ?? "";
   const platformPhone = brand?.contact.phone ?? "";
   const platformWa = brand?.contact.whatsapp ?? "";
   const platformCity = brand?.identity.city || "Pucallpa";
   const platformRegion = brand?.identity.country || "Ucayali";
   const fbUrl = brand?.socials.facebook || "";
   const igUrl = brand?.socials.instagram || "";
-  const [nlEmail, setNlEmail] = useState("");
-  const [nlStatus, setNlStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  if (isCheckoutFlow) return null;
 
   const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const todayName = todayDow !== null ? DAY_NAMES[todayDow] : null;
   const todayEntry = todayName ? deliveryConfig.hours.find((h) => h.day === todayName) : undefined;
   const hoursLabel = todayEntry?.enabled ? `Hoy: ${todayEntry.open} – ${todayEntry.close}` : "Hoy: cerrado";
 
-  const perks = [
-    { Icon: Truck, label: "Delivery Gratis" },
-    { Icon: MessageCircle, label: "Pedidos por WhatsApp" },
-    { Icon: Clock, label: hoursLabel },
-    { Icon: ShieldCheck, label: "Pago con Yape o Efectivo" },
-  ];
-
   return (
-    <footer className="bg-[#060a0d] text-white border-t border-white/10">
-      {/* WhatsApp contact + Perks bar son del marketplace (Delivery Gratis,
-          horarios, Pago con Yape). En landing pages SaaS confunden al
-          visitante (¿Buleje es bodega o plataforma?). Ocultos en isLandingMode. */}
-      {!isLandingMode && (
-        <WhatsAppContactSection deliveryConfig={deliveryConfig} storeTheme={storeTheme} businessName={hp.footerWhatsApp} />
-      )}
-
-      {/* Perks */}
-      {!isLandingMode && (
-      <div className="border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {perks.map((perk) => {
-              const PIcon = perk.Icon;
-              return (
-                <div
-                  key={perk.label}
-                  className="flex items-center gap-3"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/5">
-                    <PIcon className="h-3.5 w-3.5 text-white/70" strokeWidth={1.75} aria-hidden />
-                  </div>
-                  <span className="text-xs font-medium text-white/70 tabular-nums">{perk.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      )}
+    <footer className="relative bg-gradient-to-b from-[#0a1a14] via-[#06120d] to-black text-white">
+      {/* Acento ámbar Buleje — hairline superior con identidad amazónica */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-emerald-500/[0.06] to-transparent" />
 
       {/* Modo tienda: footer reducido — links pertinentes a la tienda actual.
           NO muestra Explorar / Recetas / Asistente IA / Buleje en Vivo
@@ -447,151 +403,71 @@ export default function Footer() {
         </div>
       )}
 
-      {/* Main Footer — Mega footer rediseñado (5 columnas ricas) — solo fuera de landing */}
-      {!isStoreMode && !isLandingMode && (
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10">
-          {/* ── Columna 1: Marketplace ── */}
-          <nav aria-label="Marketplace">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              {t("footer.marketplace")}
-            </h3>
-            <ul className="space-y-2.5">
-              {marketplaceLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <h4 className="mt-6 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-3">
-              {t("footer.categories")}
-            </h4>
-            <ul className="space-y-2">
-              {categoryLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/55 hover:text-white transition-colors text-xs"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* ── Columna 2: Mi cuenta ── */}
-          <nav aria-label="Mi cuenta">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              {t("footer.myAccount")}
-            </h3>
-            <ul className="space-y-2.5">
-              {cuentaLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* ── Columna 3: Vendé en Buleje ── */}
-          <nav aria-label="Vendé en Buleje">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              {t("footer.sellOnBuleje")}
-            </h3>
-            <ul className="space-y-2.5">
-              {businessLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <a
-              href="/vender"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
-            >
-              <Store className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-              {t("footer.openYourStore")}
-            </a>
-          </nav>
-
-          {/* ── Columna 4: Ayuda ── */}
-          <nav aria-label="Ayuda">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              {t("footer.help")}
-            </h3>
-            <ul className="space-y-2.5">
-              {helpLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-            {/* Audit P9: antes concatenaba `${whatsapp}?text=...` sin
-                normalizar — si `storeTheme.whatsapp` ya era un wa.me URL
-                completo con ?text=, se generaba ?text=...?text=... mal. */}
-            {(() => {
-              const rawPhone = (storeTheme?.whatsapp || hp.footerWhatsApp || "").replace(/\D/g, "");
-              if (!rawPhone) return null;
-              const text = encodeURIComponent("Hola Buleje, necesito ayuda");
-              return (
+      {/* Footer compacto para /tiendas en modo "Solo Tiendas" — pedido
+          Brandon mayo 2026: ocultar el ecosistema marketplace cuando el
+          superadmin tiene activa la presentación "tiendas only". */}
+      {isTiendasOnlyMode && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
+            <nav aria-label="Enlaces de tiendas" className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              {tiendasOnlyLinks.map((link) => (
                 <a
-                  href={`https://wa.me/${rawPhone}?text=${text}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm font-bold text-white/85 transition-colors hover:text-white"
                 >
-                  <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-                  WhatsApp
+                  {link.label}
                 </a>
-              );
-            })()}
-          </nav>
-
-          {/* ── Columna 5: Identidad ── */}
-          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-            <div className="mb-4 flex items-center gap-2 text-white">
-              <BulejeWordmark
-                size={32}
-                strokeWidth={1.75}
-                textSize={16}
-                className="text-white"
-              />
-            </div>
-            <p className="text-white/50 text-sm leading-relaxed mb-3">
-              {storeTheme?.description || platformDesc || hp.footerDescription}
-            </p>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/70 mb-4">
-              <MapPin className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
-              {platformCity} · {platformRegion}
-            </div>
-            <div className="flex items-center gap-1.5 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-3 w-3 fill-white text-white" strokeWidth={1.5} aria-hidden />
               ))}
-              <span className="text-white/55 text-[length:var(--ts-2xs)] ml-1.5 tabular-nums">{hp.footerRating}</span>
+            </nav>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/70">
+                Modo Solo Tiendas
+              </span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+          </div>
+        </div>
+      )}
+
+      {/* Footer v2 — compacto + identidad amazónica.
+          Una sola banda HERO (logo + tagline + CTA WhatsApp) seguida de
+          4 grupos de links con acordeón mobile. Marca: verde selva + ámbar
+          Buleje como acento. Sin newsletter ni perks duplicados. */}
+      {!isStoreMode && !isLandingMode && !isTiendasOnlyMode && (
+      <>
+        {/* ── HERO BAND v2: 1 banda corta — logo + tagline + CTA WhatsApp ── */}
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-8 sm:pb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 lg:gap-12 items-center">
+            {/* IZQ: marca + tagline amazónico + chips */}
+            <div>
+              <BulejeWordmark
+                size={44}
+                strokeWidth={1.75}
+                textSize={26}
+                className="text-white drop-shadow-[0_0_24px_rgba(252,211,77,0.15)]"
+              />
+              <p className="mt-4 text-base sm:text-lg leading-snug font-medium max-w-xl">
+                <span className="text-amber-300 font-extrabold">Tu mercado desde la selva amazónica.</span>{" "}
+                <span className="text-white/80">Bodegas, restaurantes y emprendedores de {platformCity}, en un solo lugar.</span>
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/35 px-3 py-1.5 text-xs font-extrabold text-emerald-200">
+                  <MapPin className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                  {platformCity}, {platformRegion}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 border border-amber-300/35 px-3 py-1.5 text-xs font-extrabold text-amber-200">
+                  <Star className="h-4 w-4 fill-current" strokeWidth={0} aria-hidden />
+                  <span className="tabular-nums">{hp.footerRating}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/15 px-3 py-1.5 text-xs font-extrabold text-white/85">
+                  <Clock className="h-4 w-4 text-white/70" strokeWidth={2.5} aria-hidden />
+                  <span className="tabular-nums">{hoursLabel}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* DER: CTA WhatsApp + iconos sociales compactos */}
+            <div className="flex flex-col gap-3 lg:items-end">
               {(() => {
                 const rawPhone = (storeTheme?.whatsapp || platformWa || hp.footerWhatsApp || "").replace(/\D/g, "");
                 if (!rawPhone) return null;
@@ -601,149 +477,121 @@ export default function Footer() {
                     href={`https://wa.me/${rawPhone}?text=${text}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-                    aria-label="WhatsApp"
+                    className="group inline-flex items-center justify-center gap-3 h-14 px-6 w-full lg:w-auto rounded-2xl bg-emerald-500 text-white text-base font-extrabold hover:bg-emerald-400 transition-all shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)] hover:shadow-[0_8px_40px_-4px_rgba(16,185,129,0.6)]"
                   >
-                    <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                    WhatsApp
+                    <WhatsAppIcon className="h-6 w-6" />
+                    Hacé tu pedido por WhatsApp
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} aria-hidden />
                   </a>
                 );
               })()}
-              <a
-                href={fbUrl || hp.footerFacebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                Facebook
-              </a>
-              <a
-                href={igUrl || hp.footerInstagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                Instagram
-              </a>
-            </div>
-            <div className="mt-5 space-y-2">
-              <div className="flex items-center gap-2.5 text-xs text-white/55">
-                <Phone className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
+              <div className="flex items-center gap-2.5 justify-center lg:justify-end">
+                <span className="text-sm font-semibold text-white/55">O seguinos</span>
                 <a
-                  href={`tel:${storeTheme?.phone || platformPhone || "+51916409675"}`}
-                  className="tabular-nums hover:text-white/80"
+                  href={fbUrl || hp.footerFacebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors"
                 >
-                  {storeTheme?.phone || platformPhone || "916 409 675"}
+                  <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </a>
+                <a
+                  href={igUrl || hp.footerInstagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors"
+                >
+                  <Instagram className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </a>
+                <a
+                  href={`tel:${(storeTheme?.phone || platformPhone || "+51929340532").replace(/\s/g, "")}`}
+                  aria-label="Llamar"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors"
+                >
+                  <Phone className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
               </div>
-              <div className="flex items-center gap-2.5 text-xs text-white/55">
-                <Clock className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
-                <span className="tabular-nums">{hoursLabel}</span>
-              </div>
             </div>
           </div>
         </div>
-      </div>
-      )}
 
-      {/* Newsletter — solo en modo marketplace global, NO en landing pages. */}
-      {!isStoreMode && !isLandingMode && (
-      <div className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-white/55" strokeWidth={1.75} aria-hidden />
-                Recibe ofertas exclusivas
-              </h3>
-              <p className="text-xs text-white/45 mt-1 leading-relaxed">Promociones, nuevos productos y descuentos directo a tu correo.</p>
-            </div>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!nlEmail.trim() || nlStatus === "loading") return;
-                setNlStatus("loading");
-                try {
-                  const res = await fetch("/api/newsletter", {
-                    method: "POST",
-                    headers: csrfHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({ email: nlEmail.trim() }),
-                  });
-                  setNlStatus(res.ok ? "success" : "error");
-                  if (res.ok) setNlEmail("");
-                } catch { setNlStatus("error"); }
-              }}
-              className="flex items-center gap-2 w-full sm:w-auto"
-            >
-              {nlStatus === "success" ? (
-                <div className="flex items-center gap-2 text-sm text-emerald-300 font-bold">
-                  <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                  <span>Suscrito correctamente.</span>
-                </div>
-              ) : (
-                <>
-                  <input
-                    type="email"
-                    required
-                    value={nlEmail}
-                    onChange={(e) => setNlEmail(e.target.value)}
-                    placeholder="tu@email.com"
-                    className="h-10 px-4 rounded-full bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/40 focus:border-white/40 flex-1 sm:w-60"
-                  />
-                  <button
-                    type="submit"
-                    disabled={nlStatus === "loading"}
-                    className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-white text-gray-900 text-xs font-bold hover:bg-gray-100 transition-colors disabled:opacity-50"
+        {/* Separador con acento verde selva */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="h-px bg-gradient-to-r from-transparent via-emerald-400/25 to-transparent" />
+        </div>
+
+        {/* ── LINKS: 4 grupos con acordeón mobile (cerrados) + abiertos desktop ── */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 pb-6 lg:py-10">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 lg:gap-10">
+            <LinkGroup title={t("footer.marketplace")} icon={Store} links={marketplaceLinks} accent="amber" />
+            <LinkGroup title={t("footer.myAccount")} icon={UserCircle2} links={cuentaLinks} accent="emerald" />
+            <LinkGroup title={t("footer.sellOnBuleje")} icon={Briefcase} links={businessLinks} accent="sky" />
+            <LinkGroup title={t("footer.help")} icon={LifeBuoy} links={helpLinks} accent="rose" />
+          </div>
+          {/* Categorías como chips horizontales debajo de los 4 grupos */}
+          <div className="mt-6 lg:mt-10 pt-6 lg:pt-8 border-t border-white/10">
+            <h4 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60 mb-3 inline-flex items-center gap-2">
+              <Leaf className="h-4 w-4 text-emerald-300" strokeWidth={2.5} aria-hidden />
+              Categorías populares
+            </h4>
+            <ul className="flex flex-wrap gap-2">
+              {categoryLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold text-white/85 hover:bg-amber-300/10 hover:text-amber-200 hover:border-amber-300/40 transition-colors"
                   >
-                    {nlStatus === "loading" ? "..." : <><ArrowRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> Suscribir</>}
-                  </button>
-                </>
-              )}
-            </form>
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-      </div>
+      </>
       )}
 
-      {/* Trust badges + copyright */}
-      <div className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-white/5 border border-white/10">
-                <ShieldCheck className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
-                Sitio Seguro
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-white/5 border border-white/10">
-                <CreditCard className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
+      {/* Bottom band — trust/payment compact + copyright. 2 líneas en mobile, 1 en desktop.
+          pb-mobile evita que la BottomNav fija (72px + safe-area iOS) tape el
+          copyright al hacer scroll hasta el final de la página.
+          Brandon 2026-05-18: cuando hay items en carrito, el StickyCartBar
+          (~52px pegado encima del BottomNav) también tapa contenido — sumamos
+          su altura solo en ese caso. Sin cart: 72px. Con cart: 130px. */}
+      <div className={`border-t border-emerald-400/15 bg-black/50 backdrop-blur-sm ${hasCart ? "pb-[calc(130px+env(safe-area-inset-bottom))]" : "pb-[calc(72px+env(safe-area-inset-bottom))]"} sm:pb-0`}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+            {/* Trust + payment chips — todos en 1 línea */}
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-emerald-200 bg-emerald-500/10 border border-emerald-400/30">
+                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                Sitio seguro
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-sky-200 bg-sky-500/10 border border-sky-400/30">
+                <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                 Yape · Plin
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-white/5 border border-white/10">
-                <Wallet className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
-                Efectivo OK
-              </div>
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-amber-200 bg-amber-400/15 border border-amber-300/35">
+                <Wallet className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                Efectivo
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-rose-200 bg-rose-500/10 border border-rose-400/30">
+                <Truck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                Delivery
+              </span>
             </div>
 
-            {/* Currency + Locale switchers removidos — default: Soles + Español */}
-
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-              <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[length:var(--ts-2xs)] text-white/35 tabular-nums">
-                © {year} {storeTheme?.name || platformName}
-                <span className="mx-0.5">·</span>
-                <span>Hecho en Ciudad Constitución, Perú</span>
-                <span className="mx-0.5">·</span>
-                <span className="text-white/45">Pucallpa próximamente</span>
-                <span className="mx-0.5">·</span>
-                <a href="/privacidad" className="hover:text-white/60 transition-colors">Privacidad</a>
-                <span className="mx-0.5">·</span>
-                <a href="/terminos" className="hover:text-white/60 transition-colors">Términos</a>
-              </p>
-              {/* "v1.0 beta" eliminado en producción pública — proyecta inseguridad. */}
-            </div>
+            {/* Copyright + legal — 1 línea */}
+            <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:text-sm text-white/60 tabular-nums">
+              <span className="font-bold text-white/80">© {year} {storeTheme?.name || platformName}</span>
+              <span aria-hidden className="text-emerald-400/40">·</span>
+              <span className="hidden sm:inline">Hecho con cariño en {platformCity}</span>
+              <span aria-hidden className="hidden sm:inline text-emerald-400/40">·</span>
+              <a href="/privacidad" className="font-semibold hover:text-amber-200 transition-colors">Privacidad</a>
+              <span aria-hidden className="text-emerald-400/40">·</span>
+              <a href="/terminos" className="font-semibold hover:text-amber-200 transition-colors">Términos</a>
+            </p>
           </div>
         </div>
       </div>

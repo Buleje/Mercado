@@ -102,7 +102,7 @@ export default function RegistroSuccess({
           <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
         </Link>
         <a
-          href="https://wa.me/51916409675?text=Hola%20Buleje%2C%20acabo%20de%20registrar%20mi%20negocio"
+          href="https://wa.me/51929340532?text=Hola%20Buleje%2C%20acabo%20de%20registrar%20mi%20negocio"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"

@@ -3,6 +3,10 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
+
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — endpoint
+// nuclear de eliminación con cookies (requireAdmin) + CSRF + step-up auth.
 
 /**
  * POST /api/admin/clear-data
@@ -127,6 +131,8 @@ const CATEGORY_DELETIONS: Record<string, Array<[keyof typeof prisma, string]>> =
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-clear-data"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -165,6 +171,7 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
     // Persistir en ActivityLog del tenant — fire-and-forget pero importante
+    // eslint-disable-next-line no-restricted-properties -- audit del propio clear-data: tenantId obligatorio en data; no hay AuditDB wrapper específico para esta acción nuclear.
     prisma.activityLog
       .create({
         data: {

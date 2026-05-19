@@ -166,7 +166,7 @@ export default function AsistenteChat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] max-h-[720px] rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden shadow-[var(--shadow-md)]">
+    <div className="flex flex-col h-[calc(100dvh-12rem)] max-h-[720px] rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden shadow-[var(--shadow-md)]">
       {/* Header */}
       <header className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
         <div className="flex items-center gap-3">

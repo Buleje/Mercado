@@ -66,6 +66,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
   }
 
+  // Audit 2026-05-17 05-P2-8: log de impersonación AWAITED antes de emitir
+  // token. Ley 29733 Art. 16 exige trazabilidad de accesos a datos personales
+  // — si el log falla post-emisión, el superadmin queda con sesión vigente
+  // sin registro. Bloquear el flow garantiza que toda impersonación queda
+  // registrada antes de poder usarse.
+  try {
+    await logSuperadminAction(
+      "impersonate",
+      `Superadmin "${platformSession.username}" impersonó tenant "${tenant.slug}" (${tenant.name})`,
+      {
+        targetTenantId: tenant.id,
+        targetTenantSlug: tenant.slug,
+        targetTenantName: tenant.name,
+        ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
+        userAgent: req.headers.get("user-agent") || null,
+        timestamp: new Date().toISOString(),
+      },
+      platformSession.username,
+    );
+  } catch (err) {
+    logger.error("[superadmin/impersonate] audit log failed — refusing impersonation", {
+      err: err instanceof Error ? err.message : String(err),
+      superadmin: platformSession.username,
+      targetTenant: tenant.slug,
+    });
+    return NextResponse.json(
+      { error: "audit_log_unavailable", message: "Audit trail no disponible — no se puede impersonar." },
+      { status: 503 },
+    );
+  }
+
   // 4. Generar token de sesión admin para ese tenant
   // username = "superadmin" identifica el origen en logs/audit
   // role = "admin" para acceso completo al panel
@@ -78,25 +109,6 @@ export async function POST(req: NextRequest) {
     tenant.id,
     `SuperAdmin→${tenant.slug}`,
   );
-
-  // ── Audit trail (Ley 29733 Art. 16) ────────────────────────────────────
-  // OBLIGATORIO: la impersonación da acceso completo a datos personales
-  // del tenant. Sin registro, no hay trazabilidad y la plataforma
-  // queda expuesta a multas y demandas. Fire-and-forget para no bloquear
-  // el flujo, pero el error se logea internamente.
-  logSuperadminAction(
-    "impersonate",
-    `Superadmin "${platformSession.username}" impersonó tenant "${tenant.slug}" (${tenant.name})`,
-    {
-      targetTenantId: tenant.id,
-      targetTenantSlug: tenant.slug,
-      targetTenantName: tenant.name,
-      ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
-      userAgent: req.headers.get("user-agent") || null,
-      timestamp: new Date().toISOString(),
-    },
-    platformSession.username,
-  ).catch((err) => logger.warn("[superadmin] op failed", { err: String(err) }));
 
   // 5. Escribir la misma cookie que usa /api/auth/login
   const isProd = process.env.NODE_ENV === "production";

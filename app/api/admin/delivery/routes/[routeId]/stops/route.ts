@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { DeliveryRouteStopsDB, type RouteStopStatus } from "@/lib/db/delivery.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const StopStatusSchema = z.enum(["pending", "arrived", "delivered", "failed", "skipped"]);
 
@@ -37,6 +38,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ routeId: string }> },
 ) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -127,6 +130,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ routeId: string }> },
 ) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero", "delivery"]);
   if (auth instanceof NextResponse) return auth;
 

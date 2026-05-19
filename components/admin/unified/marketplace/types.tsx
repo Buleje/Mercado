@@ -24,6 +24,17 @@ export interface StoreData {
   vacationMode?: boolean;
   vacationMessage?: string;
   hours?: Record<DayKey, StoreHours>;
+  /** Subcategoría dentro de `category` — id del catálogo global o string custom. */
+  subcategory?: string | null;
+  /** Zonas de cobertura (ids del catálogo MARKETPLACE_ZONES o strings libres). */
+  coverageZones?: string[];
+  /** Categorías propias del tenant — solo visibles en su storefront. */
+  customCategories?: Array<{
+    id: string;
+    label: string;
+    imageUrl: string | null;
+    subcategories: Array<{ id: string; label: string; imageUrl: string | null }>;
+  }>;
 }
 
 export interface MarketplaceProduct {

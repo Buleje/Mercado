@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { getOrSet } from "@/lib/cache";
+
+// Brandon 2026-05-16 P1 (audit): force-dynamic obligatorio. Sin esto, Next 16
+// puede inferir el endpoint como estático en build y servir KPIs cacheados
+// en producción (ventas del día congeladas a las 00:00 del build). El
+// endpoint depende de cookies (requireAdmin), `?from`/`?to` query params y
+// queries en tiempo real — siempre debe ser SSR puro.
 
 /**
  * GET /api/admin/overview
@@ -24,9 +31,24 @@ import { requireAdmin } from "@/lib/require-admin";
  *   - insight — heurística IA según el rango + comparativa
  */
 
+/**
+ * Brandon 2026-05-16 (audit P2 timezone): parseDate acepta ISO con offset.
+ * Si el cliente envía `2026-05-01T00:00:00-05:00` (medianoche Pucallpa),
+ * Node lo normaliza a `2026-05-01T05:00:00Z` (UTC) preservando el instante.
+ * Si el cliente solo envía `2026-05-01` (sin offset), Node lo interpreta
+ * como UTC midnight — y los pedidos hechos a las 7-11pm del día anterior
+ * Lima caen DENTRO del rango por error.
+ * Solución: cuando recibimos una fecha sin offset (`YYYY-MM-DD`), asumimos
+ * que el cliente quiere medianoche local de Lima (UTC-5) y agregamos T05:00:00Z.
+ * Esto cubre el caso más común (filtros del UI) sin romper requests que
+ * sí mandan offset explícito.
+ */
 function parseDate(s: string | null): Date | null {
   if (!s) return null;
-  const d = new Date(s);
+  // Detecta "YYYY-MM-DD" sin tiempo ni offset → asume midnight Lima.
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(s);
+  const normalized = dateOnly ? `${s}T00:00:00-05:00` : s;
+  const d = new Date(normalized);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -61,31 +83,43 @@ function previousWindow(from: Date, to: Date): { from: Date; to: Date } {
  * Si span > 14d → buckets (span/14) días.
  * Retorna array [{ label: string, start: Date, end: Date }].
  */
-function buildBuckets(from: Date, to: Date): Array<{ label: string; start: Date; end: Date }> {
+// Brandon mayo 2026 v3: labels "01 May" + iso para tooltip humano.
+const MONTH_LABELS_API = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+function pad2API(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function buildBuckets(from: Date, to: Date): Array<{ label: string; iso: string; start: Date; end: Date }> {
   const msDay = 24 * 60 * 60 * 1000;
   const span = to.getTime() - from.getTime();
   const days = span / msDay;
 
   if (days <= 1) {
     // Intradía: 6 buckets de 4h
-    const buckets: Array<{ label: string; start: Date; end: Date }> = [];
+    const buckets: Array<{ label: string; iso: string; start: Date; end: Date }> = [];
     for (let i = 0; i < 6; i++) {
       const start = new Date(from.getTime() + i * 4 * 60 * 60 * 1000);
       const end = new Date(start.getTime() + 4 * 60 * 60 * 1000 - 1);
-      buckets.push({ label: `${String(start.getHours()).padStart(2, "0")}h`, start, end });
+      buckets.push({
+        label: `${pad2API(start.getHours())}h`,
+        iso: start.toISOString(),
+        start,
+        end,
+      });
     }
     return buckets;
   }
 
-  if (days <= 14) {
-    // Diario
-    const buckets: Array<{ label: string; start: Date; end: Date }> = [];
-    const DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
+  if (days <= 35) {
+    // Diario "01 May" (semanal + mensual)
+    const buckets: Array<{ label: string; iso: string; start: Date; end: Date }> = [];
     let cursor = startOfDay(from);
     while (cursor.getTime() <= to.getTime()) {
       const end = endOfDay(cursor);
       buckets.push({
-        label: DAY_LABELS[cursor.getDay()] ?? `${cursor.getDate()}`,
+        label: `${pad2API(cursor.getDate())} ${MONTH_LABELS_API[cursor.getMonth()]}`,
+        iso: cursor.toISOString(),
         start: new Date(cursor),
         end: new Date(end),
       });
@@ -96,13 +130,14 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: Date;
 
   // Rango largo → máximo 14 buckets uniformes
   const bucketSize = Math.ceil(days / 14);
-  const buckets: Array<{ label: string; start: Date; end: Date }> = [];
+  const buckets: Array<{ label: string; iso: string; start: Date; end: Date }> = [];
   let cursor = startOfDay(from);
   while (cursor.getTime() <= to.getTime()) {
     const bucketEnd = new Date(cursor.getTime() + bucketSize * msDay - 1);
     const end = bucketEnd.getTime() > to.getTime() ? to : bucketEnd;
     buckets.push({
-      label: `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      label: `${pad2API(cursor.getDate())} ${MONTH_LABELS_API[cursor.getMonth()]}`,
+      iso: cursor.toISOString(),
       start: new Date(cursor),
       end: new Date(end),
     });
@@ -111,12 +146,20 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: Date;
   return buckets;
 }
 
+/**
+ * Brandon 2026-05-16 (audit P1 regla 1): las 9 queries del dashboard
+ * vivieron aquí como Prisma directo histórico. Ahora migradas a
+ * `lib/db/overview.db.ts` (OverviewDB.fetchOverview). Este route mantiene
+ * SOLO la lógica de agregación (heatmap, sparkline, insight, alerts) —
+ * los reads pasan por la clase DB con scope tenantId centralizado.
+ */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
 
-  const { prisma } = await import("@/lib/prisma");
+  const { logger } = await import("@/lib/logger");
+  const { OverviewDB } = await import("@/lib/db/overview.db");
 
   // ── Parse query params ─────────────────────────────────────────────────────
   const url = new URL(req.url);
@@ -132,7 +175,13 @@ export async function GET(req: NextRequest) {
   startOf30dAgo.setDate(startOf30dAgo.getDate() - 30);
 
   try {
-    const [
+    // Brandon 2026-05-16 (Fase 3 perf): cache server-side TTL 30s.
+    // Antes solo había browser cache (Cache-Control private, max-age=60).
+    // Ahora si dos tabs/pestañas piden /overview en <30s, la 2da pega cache
+    // server-side y NO ejecuta las 9 queries de OverviewDB. Cache key
+    // incluye tenantId + rango para no mezclar datos.
+    const cacheKey = `admin:overview:${tenantId}:${rangeFrom.getTime()}:${rangeTo.getTime()}`;
+    const {
       rangeOrders,
       prevOrders,
       activeOrders,
@@ -142,81 +191,31 @@ export async function GET(req: NextRequest) {
       overdueCreditCount,
       topProducts,
       newCustomersInRange,
-    ] = await Promise.all([
-      prisma.order
-        .findMany({
-          where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: { not: "cancelado" } },
-          select: { total: true, customerPhone: true, createdAt: true },
-        })
-        .catch(() => [] as Array<{ total: number; customerPhone: string | null; createdAt: Date }>),
-
-      prisma.order
-        .findMany({
-          where: { tenantId, createdAt: { gte: prevFrom, lte: prevTo }, status: { not: "cancelado" } },
-          select: { total: true },
-        })
-        .catch(() => [] as Array<{ total: number }>),
-
-      prisma.order
-        .count({
-          where: {
-            tenantId,
-            status: { in: ["pendiente", "confirmado", "en_camino"] },
-          },
-        })
-        .catch(() => 0),
-
-      prisma.order
-        .findMany({
-          where: { tenantId, createdAt: { gte: startOf30dAgo, lte: rangeTo }, status: { not: "cancelado" } },
-          select: { createdAt: true },
-          take: 5000,
-        })
-        .catch(() => [] as Array<{ createdAt: Date }>),
-
-      prisma.product
-        .count({
-          where: { tenantId, stock: { lte: 5, gt: 0 }, active: true },
-        })
-        .catch(() => 0),
-
-      prisma.product
-        .count({
-          where: {
-            tenantId,
-            expiresAt: {
-              gte: now,
-              lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-            },
-            active: true,
-          },
-        })
-        .catch(() => 0),
-
-      prisma.fiado
-        .count({
-          where: { tenantId, status: "VENCIDO" },
-        })
-        .catch(() => 0),
-
-      prisma.orderItem
-        .groupBy({
-          by: ["productId"],
-          where: {
-            order: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: { not: "cancelado" } },
-          },
-          _sum: { quantity: true },
-          orderBy: { _sum: { quantity: "desc" } },
-          take: 5,
-        })
-        .catch(() => [] as Array<{ productId: number | null; _sum: { quantity: number | null } }>),
-
-      prisma.customer
-        .count({
-          where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo } },
-        })
-        .catch(() => 0),
-    ]);
+    } = await getOrSet(cacheKey, 30, () => OverviewDB.fetchOverview({
+      tenantId,
+      rangeFrom,
+      rangeTo,
+      prevFrom,
+      prevTo,
+      startOf30dAgo,
+      now,
+    })).catch((err): Awaited<ReturnType<typeof OverviewDB.fetchOverview>> => {
+      logger.warn("[admin/overview] fetchOverview failed", {
+        tenantId,
+        err: err instanceof Error ? err.message : String(err),
+      });
+      return {
+        rangeOrders: [],
+        prevOrders: [],
+        activeOrders: 0,
+        last30dOrders: [],
+        criticalStockCount: 0,
+        expiringCount: 0,
+        overdueCreditCount: 0,
+        topProducts: [],
+        newCustomersInRange: 0,
+      };
+    });
 
     // ── Aggregates ─────────────────────────────────────────────────────────
     const totalRange = rangeOrders.reduce((sum: number, o) => sum + Number(o.total ?? 0), 0);
@@ -238,12 +237,21 @@ export async function GET(req: NextRequest) {
       return Math.round(sum);
     });
     const sparklineLabels = buckets.map((b) => b.label);
+    // Brandon mayo 2026 v3: iso del día para tooltip humano ("Domingo 2 de mayo")
+    const sparklineIso = buckets.map((b) => b.iso);
 
     // Heatmap: últimos 30d (no depende del rango — tendencia larga)
+    // Brandon 2026-05-16 (audit P1): fix timezone. Antes `getDay()` y
+    // `getHours()` usaban la hora local del servidor (UTC en Vercel). Los
+    // pedidos hechos a las 8pm Pucallpa caían en el bucket de la 1am del
+    // día siguiente (Pucallpa es UTC-5, sin DST). Ahora aplicamos offset
+    // manual para que el heatmap muestre la hora REAL del bodeguero.
+    const LIMA_OFFSET_MS = -5 * 60 * 60 * 1000;
     const heatmapRaw: Record<string, number> = {};
     for (const o of last30dOrders) {
-      const day = (o.createdAt.getDay() + 6) % 7;
-      const hour = o.createdAt.getHours();
+      const local = new Date(o.createdAt.getTime() + LIMA_OFFSET_MS);
+      const day = (local.getUTCDay() + 6) % 7;
+      const hour = local.getUTCHours();
       const key = `${day}-${hour}`;
       heatmapRaw[key] = (heatmapRaw[key] ?? 0) + 1;
     }
@@ -314,9 +322,12 @@ export async function GET(req: NextRequest) {
         cta: { label: "Crear promo", href: "/admin?tab=productos&action=promo" },
       };
     } else if (deltaVsPrevious > 20) {
+      // Brandon mayo 2026 v5: ya no repetimos "Vas X% arriba" porque ese
+      // dato YA está en el hero (heroDelta). El insight ahora sugiere UNA
+      // acción concreta — pedir reseñas — sin duplicar el dato numérico.
       insight = {
         type: "opportunity",
-        text: `Vas ${deltaVsPrevious.toFixed(0)}% arriba vs ${prevLabel[preset]}. Aprovecha el momentum — pide reseñas a clientes que compraron ${presetLabel[preset]}.`,
+        text: `Estás vendiendo más que ${prevLabel[preset]}. Pide reseñas a los clientes que ya te compraron — cuando otros las leen, compran más rápido.`,
         cta: { label: "Ver clientes", href: "/admin?tab=clientes" },
       };
     } else if (criticalStockCount > 3) {
@@ -340,6 +351,7 @@ export async function GET(req: NextRequest) {
           deltaVsPrevious: Math.round(deltaVsPrevious * 10) / 10,
           sparkline,
           sparklineLabels,
+          sparklineIso,
           // Retrocompat: clientes viejos esperan `totalToday` / `deltaVsYesterday`
           totalToday: Math.round(totalRange * 100) / 100,
           deltaVsYesterday: Math.round(deltaVsPrevious * 10) / 10,
@@ -374,11 +386,16 @@ export async function GET(req: NextRequest) {
       },
     );
   } catch (error) {
+    // Brandon 2026-05-16 (audit P2 info disclosure): antes devolvíamos
+    // `error.message` al cliente — podía exponer nombres de tablas,
+    // estructura de queries Prisma o detalles internos de DB. Ahora
+    // logueamos en server y devolvemos solo un código genérico.
+    logger.error("[admin/overview] unhandled error", {
+      tenantId,
+      err: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
+    });
     return NextResponse.json(
-      {
-        error: "Error generando overview",
-        detail: error instanceof Error ? error.message : "Unknown",
-      },
+      { error: "Error generando overview" },
       { status: 500 },
     );
   }

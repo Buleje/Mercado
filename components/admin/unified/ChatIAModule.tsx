@@ -240,7 +240,7 @@ export default function ChatIAModule() {
         "flex flex-col overflow-hidden bg-[var(--surface-raised)]",
         maximized
           ? "fixed inset-0 z-[9999]"
-          : "rounded-xl border border-[var(--rule-base)] min-h-[600px] h-[calc(100vh-220px)]",
+          : "rounded-xl border border-[var(--rule-base)] min-h-[600px] h-[calc(100dvh-220px)]",
       )}
     >
       {/* Barra superior: progress + toolbar */}

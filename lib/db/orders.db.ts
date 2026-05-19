@@ -131,6 +131,7 @@ export const OrdersDB = {
     since?: string;
     phone?: string;
     tenantId: string;
+    limit?: number;
   }): Promise<DbOrder[]> {
     const where: Record<string, unknown> = {};
     if (opts?.tenantId) where.tenantId = opts.tenantId;
@@ -151,6 +152,7 @@ export const OrdersDB = {
       where,
       include: { items: true },
       orderBy: { createdAt: "desc" },
+      take: opts?.limit ?? 5000,
     })).map(mapOrder);
   },
 
@@ -525,8 +527,14 @@ export const OrdersDB = {
    * Devuelve el último pedido marketplace de un cliente (por teléfono),
    * junto con el storeSlug derivado del tenantId.
    * Cachea 60s por teléfono para evitar queries repetidas en reorders.
+   *
+   * audit P0 Cal #2 (Brandon 2026-05-18): `tenantId` ahora es required.
+   * Antes era opcional con fallback "ANY" cross-tenant — un call site
+   * que olvidara pasar tenantId leía órdenes de cualquier tenant con
+   * ese phone. Único caller `/api/marketplace/reorder/last` ya pasa
+   * `session.tenantId`, sin cambio de comportamiento real.
    */
-  async getLastByCustomer(phone: string, tenantId?: string): Promise<{
+  async getLastByCustomer(tenantId: string, phone: string): Promise<{
     items: Array<{
       productId: number;
       name: string;
@@ -539,7 +547,7 @@ export const OrdersDB = {
     const normalized = normalizePhone(phone);
     // SECURITY 2026-05-06 (audit team H002): cache key incluye tenantId para
     // evitar leak entre tenants (mismo phone podría existir en varios tenants).
-    const cacheKey = `orders:last-by-customer:${tenantId ?? "ANY"}:${normalized}`;
+    const cacheKey = `orders:last-by-customer:${tenantId}:${normalized}`;
 
     return getOrSet(cacheKey, 60, async () => {
       const order = await prisma.order.findFirst({
@@ -547,8 +555,7 @@ export const OrdersDB = {
           customerPhone: normalized,
           source: "marketplace",
           deletedAt: null,
-          // Scope tenant si se proveyó (call sites nuevos lo requieren).
-          ...(tenantId ? { tenantId } : {}),
+          tenantId,
         },
         include: { items: true },
         orderBy: { createdAt: "desc" },
@@ -579,35 +586,92 @@ export const OrdersDB = {
   /**
    * Devuelve un array de 7 elementos con el ingreso (total entregado)
    * por cada uno de los últimos 7 días (del más antiguo al más reciente).
+   *
+   * audit P0 Cal #1 (Brandon 2026-05-18): antes 7 await aggregates
+   * secuenciales en un for-loop (7 RTT). Ahora Promise.all paraleliza
+   * los 7 → 1 RTT efectivo. KPI del dashboard tenant carga 6× más rápido
+   * en tenants con historial alto.
    */
   async getWeeklyRevenueBreakdown(tenantId: string): Promise<Array<{ date: string; total: number }>> {
-    const results: Array<{ date: string; total: number }> = [];
-
+    const days: Array<{ day: Date; nextDay: Date }> = [];
     for (let i = 6; i >= 0; i--) {
       const day = new Date();
       day.setHours(0, 0, 0, 0);
       day.setDate(day.getDate() - i);
-
       const nextDay = new Date(day);
       nextDay.setDate(nextDay.getDate() + 1);
-
-      const agg = await prisma.order.aggregate({
-        where: {
-          tenantId,
-          status: "entregado",
-          createdAt: { gte: day, lt: nextDay },
-          deletedAt: null,
-        },
-        _sum: { total: true },
-      });
-
-      results.push({
-        date: day.toISOString().split("T")[0],
-        total: toNumOrZero(agg._sum.total),
-      });
+      days.push({ day, nextDay });
     }
 
-    return results;
+    const aggs = await Promise.all(
+      days.map(({ day, nextDay }) =>
+        prisma.order.aggregate({
+          where: {
+            tenantId,
+            status: "entregado",
+            createdAt: { gte: day, lt: nextDay },
+            deletedAt: null,
+          },
+          _sum: { total: true },
+        }),
+      ),
+    );
+
+    return days.map(({ day }, idx) => ({
+      date: day.toISOString().split("T")[0],
+      total: toNumOrZero(aggs[idx]._sum.total),
+    }));
+  },
+
+  /**
+   * Audit P0 Cal #3 (2026-05-18): helper para migrar el último
+   * `prisma.orderStatusHistory.create` directo en `[id]/route.ts`.
+   * Fire-and-forget (el caller decide si await o catch).
+   */
+  async addStatusHistory(
+    tenantId: string,
+    payload: {
+      orderId: string;
+      fromStatus: string;
+      toStatus: string;
+      changedBy: string;
+      note?: string | null;
+    },
+  ): Promise<void> {
+    await prisma.orderStatusHistory.create({
+      data: {
+        tenantId,
+        orderId: payload.orderId,
+        fromStatus: payload.fromStatus as never,
+        toStatus: payload.toStatus as never,
+        changedBy: payload.changedBy,
+        note: payload.note ?? null,
+      },
+    });
+  },
+
+  /**
+   * Audit P0 Cal #3: helper para leer items de una orden con categoría
+   * (usado por auto-earn de loyalty). Reemplaza el `prisma.orderItem.findMany`
+   * inline de `[id]/route.ts`. tenantId scoping vía orderId-en-orden-del-tenant.
+   */
+  async getItemsForLoyalty(
+    tenantId: string,
+    orderId: string,
+  ): Promise<Array<{ price: number; quantity: number; category: string | null }>> {
+    const items = await prisma.orderItem.findMany({
+      where: { orderId, order: { tenantId } },
+      select: {
+        price: true,
+        quantity: true,
+        product: { select: { category: true } },
+      },
+    });
+    return items.map((oi) => ({
+      price: toNumOrZero(oi.price),
+      quantity: oi.quantity,
+      category: oi.product?.category ?? null,
+    }));
   },
 };
 

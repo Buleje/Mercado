@@ -18,7 +18,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PrimaryButton, cn } from "@buleje/design-system";
-import { X, MessageCircle, ArrowRight } from "@buleje/design-system/icons";
+import { X, MessageCircle, ArrowRight, Search } from "@buleje/design-system/icons";
 import {
   BulejeMark,
   BulejeWordmark,
@@ -39,12 +39,15 @@ type NavLink = {
 };
 
 // Nav links de la landing — todos dentro del contexto pre-auth.
-// Brandon mayo 2026: reducidos de 6 a 4. Las labels ahora vienen del
-// diccionario i18n para que cambien con el LanguageSwitcher.
+// Brandon mayo 14 2026 v5: navbar simplificado para el flujo B2C tipo Rappi.
+// Quitamos "Registrarse" (formulario) y agregamos "Conocé Buleje" → /vender,
+// que es la página informativa B2B (benefits, steps, calculadora, FAQ) — sirve
+// al negocio que aún no decide registrarse.
 const NAV_LINK_DEFS: ReadonlyArray<{ id: string; tKey: string; href: string }> = [
-  { id: "como-funciona", tKey: "landing.nav.howItWorks", href: "/#como-funciona" },
-  { id: "planes", tKey: "landing.nav.plans", href: "/#planes" },
-  { id: "faq", tKey: "landing.nav.faq", href: "/#faq" },
+  { id: "inicio", tKey: "landing.nav.inicio", href: "/" },
+  { id: "negocios", tKey: "landing.nav.negocios", href: "/negocios" },
+  // /abrir-tienda tiene PlansToggle + BenefitsTabs + LiveSignupTicker
+  // + BodegaScene — info del negocio + planes. Reemplaza al /vender.
   { id: "abrir-tienda", tKey: "landing.nav.openStore", href: "/abrir-tienda" },
 ] as const;
 
@@ -156,19 +159,26 @@ export default function LandingHeader({
         role="banner"
         aria-label="Nav comercial — Buleje"
       >
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          {/* ── Logo + tagline (desktop) ── */}
+        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-8">
+          {/* ── Logo — Brandon mayo 14 v3: compacto en mobile (solo mark
+              circular) para dejar espacio al buscador en el centro. Dark
+              mode: el BrandLogo ya respeta tokens del DS, sin override. ── */}
           <Link
             href="/"
             aria-label="Buleje — Ir al inicio"
             className="flex shrink-0 items-center gap-2 text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
             data-no-translate
           >
-            <BrandLogo
-              variant="wordmark"
-              height={32}
-              fallback={<BulejeWordmark size={32} textSize={18} strokeWidth={1.75} />}
-            />
+            <span className="lg:hidden">
+              <BulejeMark size={32} strokeWidth={1.75} className="text-[var(--text-primary)] dark:text-white" />
+            </span>
+            <span className="hidden lg:inline-flex">
+              <BrandLogo
+                variant="wordmark"
+                height={32}
+                fallback={<BulejeWordmark size={32} textSize={18} strokeWidth={1.75} />}
+              />
+            </span>
             <span
               aria-hidden
               className="hidden lg:inline-flex flex-col leading-none border-l border-[var(--rule-base)] pl-2 ml-1"
@@ -182,10 +192,37 @@ export default function LandingHeader({
             </span>
           </Link>
 
-          {/* ── Pill nav central (desktop ≥ lg) ── */}
+          {/* ── Buscador inline (mobile only, entre logo y CTAs) ────────
+              Brandon mayo 14 v3: en mobile el cliente puede buscar tienda
+              directamente desde el nav sin scrollear al hero. Form GET →
+              /tiendas?q=... sin JS extra. */}
+          <form
+            role="search"
+            action="/tiendas"
+            method="get"
+            className="lg:hidden flex-1 min-w-0"
+          >
+            <label className="relative flex items-center">
+              <Search
+                className="absolute left-3 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
+                aria-hidden
+                strokeWidth={2}
+              />
+              <input
+                type="search"
+                name="q"
+                placeholder="Tu tienda, restaurante…"
+                aria-label="Buscar tienda o producto"
+                autoComplete="off"
+                className="w-full h-10 rounded-full bg-[var(--surface-sunken)] border-2 border-transparent focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] pl-9 pr-3 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all"
+              />
+            </label>
+          </form>
+
+          {/* ── Pill nav central (desktop ≥ lg) — mx-auto centra entre logo y CTAs ── */}
           <nav
             aria-label="Navegación principal"
-            className="hidden lg:inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)]/60 backdrop-blur-md p-1 shadow-sm"
+            className="hidden lg:inline-flex mx-auto items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)]/60 backdrop-blur-md p-1 shadow-sm"
           >
             {visibleLinks.map((link) => {
               const active = isActiveLink(pathname, link.href);

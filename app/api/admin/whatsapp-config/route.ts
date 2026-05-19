@@ -6,6 +6,7 @@ import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
 
@@ -91,6 +92,8 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-whatsapp-config"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -206,6 +209,8 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-whatsapp-config"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 

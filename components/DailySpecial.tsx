@@ -92,7 +92,7 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
     <section ref={ref} className="py-6 sm:py-10 bg-surface overflow-hidden">
       <div className="max-w-7xl mx-auto px-4">
         <div
-          className={`relative rounded-3xl overflow-hidden shadow-[var(--shadow-lg)] transition-all duration-700 ${
+          className={`relative rounded-3xl overflow-hidden shadow-[var(--shadow-lg)] transition-all duration-[var(--dur-slower)] ${
             inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
           style={{
@@ -126,7 +126,7 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
                 <p className="text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1">
                   Oferta especial de hoy
                 </p>
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-tight">
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)] leading-tight">
                   {product.name}
                 </h3>
                 <p className="text-sm text-muted mt-1 capitalize">

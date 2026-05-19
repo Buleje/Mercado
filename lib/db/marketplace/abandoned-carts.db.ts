@@ -64,6 +64,7 @@ export const MarketplaceAbandonedCartsDB = {
    */
   async markConverted(storeSlug: string, customerPhone: string): Promise<void> {
     try {
+      /* eslint-disable no-restricted-syntax -- storeSlug es @unique global del marketplace; el scope efectivo es por store (la abandoned cart pertenece a UN store). */
       await prisma.marketplaceAbandonedCart.updateMany({
         where: {
           storeSlug,
@@ -75,6 +76,7 @@ export const MarketplaceAbandonedCartsDB = {
           convertedAt: new Date(),
         },
       });
+      /* eslint-enable no-restricted-syntax */
     } catch (e) {
       logger.error("markConverted failed", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.markConverted" });
     }

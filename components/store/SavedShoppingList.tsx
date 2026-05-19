@@ -128,12 +128,12 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
+    <div className="rounded-lg border border-border bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <List className="h-4 w-4 text-[var(--accent)]" />
-          <span className="text-sm font-semibold text-foreground dark:text-foreground">
+          <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Mis listas de compra
           </span>
         </div>
@@ -142,7 +142,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
           className={cn(
             "flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
             creating
-              ? "bg-muted dark:bg-muted/50 text-muted-foreground"
+              ? "bg-muted dark:bg-muted/50 text-[var(--text-secondary)]"
               : "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)]"
           )}
         >
@@ -161,7 +161,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
             onChange={(e) => setNewName(e.target.value)}
             className={cn(
               "w-full rounded-md border border-border bg-background dark:bg-background",
-              "text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground",
+              "text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]",
               "px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
             )}
           />
@@ -176,7 +176,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                   onChange={(e) => updateNewItem(idx, "name", e.target.value)}
                   className={cn(
                     "flex-1 rounded-md border border-border bg-background dark:bg-background",
-                    "text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground",
+                    "text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]",
                     "px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                   )}
                 />
@@ -187,14 +187,14 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                   onChange={(e) => updateNewItem(idx, "qty", Number(e.target.value))}
                   className={cn(
                     "w-16 rounded-md border border-border bg-background dark:bg-background",
-                    "text-sm text-foreground dark:text-foreground text-center",
+                    "text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] text-center",
                     "px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                   )}
                 />
                 {newItems.length > 1 && (
                   <button
                     onClick={() => removeNewItem(idx)}
-                    className="text-muted-foreground hover:text-[var(--data-error-500)] transition-colors"
+                    className="text-[var(--text-secondary)] hover:text-[var(--data-error-500)] transition-colors"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -227,7 +227,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
 
       {/* Empty state */}
       {lists.length === 0 && !creating && (
-        <p className="text-sm text-muted-foreground text-center py-4">
+        <p className="text-sm text-[var(--text-secondary)] text-center py-4">
           No tienes listas guardadas. Crea una para agilizar tus pedidos.
         </p>
       )}
@@ -243,9 +243,9 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                 className="flex-1 flex items-center gap-2 min-w-0 text-left"
               >
                 {expandedId === list.id ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <ChevronDown className="h-3.5 w-3.5 text-[var(--text-secondary)] shrink-0" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[var(--text-secondary)] shrink-0" />
                 )}
                 {editingId === list.id ? (
                   <input
@@ -255,17 +255,17 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                     onKeyDown={(e) => e.key === "Enter" && saveEdit(list.id)}
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      "flex-1 rounded border border-[var(--accent)]/40 bg-card dark:bg-card",
-                      "text-sm text-foreground dark:text-foreground px-2 py-0.5 focus:outline-none"
+                      "flex-1 rounded border border-[var(--accent)]/40 bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)]",
+                      "text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] px-2 py-0.5 focus:outline-none"
                     )}
                     autoFocus
                   />
                 ) : (
-                  <span className="text-sm font-medium text-foreground dark:text-foreground truncate">
+                  <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                     {list.name}
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground shrink-0">
+                <span className="text-xs text-[var(--text-secondary)] shrink-0">
                   ({list.items.length} productos)
                 </span>
               </button>
@@ -282,7 +282,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
-                      className="rounded p-1 text-muted-foreground hover:bg-muted transition-colors"
+                      className="rounded p-1 text-[var(--text-secondary)] hover:bg-muted transition-colors"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -308,13 +308,13 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                     </button>
                     <button
                       onClick={() => startEdit(list)}
-                      className="rounded p-1 text-muted-foreground hover:bg-muted dark:hover:bg-muted/50 transition-colors"
+                      className="rounded p-1 text-[var(--text-secondary)] hover:bg-muted dark:hover:bg-muted/50 transition-colors"
                     >
                       <Edit3 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleDelete(list.id)}
-                      className="rounded p-1 text-muted-foreground hover:text-[var(--data-error-500)] hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                      className="rounded p-1 text-[var(--text-secondary)] hover:text-[var(--data-error-500)] hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -331,10 +331,10 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                     key={idx}
                     className="flex items-center justify-between px-4 py-1.5"
                   >
-                    <span className="text-sm text-foreground dark:text-foreground">
+                    <span className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                       {item.name}
                     </span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
+                    <span className="text-xs text-[var(--text-secondary)] tabular-nums">
                       x{item.qty}
                     </span>
                   </li>

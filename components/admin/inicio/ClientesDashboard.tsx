@@ -97,7 +97,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     const totalClientes = customers.length;
 
     // Active = purchased in period
-    const periodOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= from && new Date(o.createdAt) <= to);
+    const periodOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= from && new Date(o.createdAt) <= to);
     const periodSales = sales.filter(s => new Date(s.createdAt) >= from && new Date(s.createdAt) <= to);
     const activePhones = new Set<string>();
     periodOrders.forEach(o => { if (o.customer?.phone) activePhones.add(o.customer.phone); });
@@ -106,7 +106,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
 
     // New vs returning
     const beforePeriodPhones = new Set<string>();
-    orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) < from).forEach(o => { if (o.customer?.phone) beforePeriodPhones.add(o.customer.phone); });
+    orders.filter(o => o.status === "entregado" && new Date(o.createdAt) < from).forEach(o => { if (o.customer?.phone) beforePeriodPhones.add(o.customer.phone); });
     sales.filter(s => new Date(s.createdAt) < from).forEach(s => { if (s.customerPhone) beforePeriodPhones.add(s.customerPhone); });
     let nuevos = 0, recurrentes = 0;
     activePhones.forEach(phone => {
@@ -115,13 +115,13 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     });
 
     // Previous period actives for delta
-    const prevOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= prevFrom && new Date(o.createdAt) <= prevTo);
+    const prevOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= prevFrom && new Date(o.createdAt) <= prevTo);
     const prevSales = sales.filter(s => new Date(s.createdAt) >= prevFrom && new Date(s.createdAt) <= prevTo);
     const prevActivePhones = new Set<string>();
     prevOrders.forEach(o => { if (o.customer?.phone) prevActivePhones.add(o.customer.phone); });
     prevSales.forEach(s => { if (s.customerPhone) prevActivePhones.add(s.customerPhone); });
     const prevBeforePhones = new Set<string>();
-    orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) < prevFrom).forEach(o => { if (o.customer?.phone) prevBeforePhones.add(o.customer.phone); });
+    orders.filter(o => o.status === "entregado" && new Date(o.createdAt) < prevFrom).forEach(o => { if (o.customer?.phone) prevBeforePhones.add(o.customer.phone); });
     sales.filter(s => new Date(s.createdAt) < prevFrom).forEach(s => { if (s.customerPhone) prevBeforePhones.add(s.customerPhone); });
     let prevNuevos = 0;
     prevActivePhones.forEach(phone => { if (!prevBeforePhones.has(phone)) prevNuevos++; });
@@ -156,11 +156,11 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
       const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
       const label = mStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
       const mPhones = new Set<string>();
-      orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= mStart && new Date(o.createdAt) <= mEnd).forEach(o => { if (o.customer?.phone) mPhones.add(o.customer.phone); });
+      orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= mStart && new Date(o.createdAt) <= mEnd).forEach(o => { if (o.customer?.phone) mPhones.add(o.customer.phone); });
       sales.filter(s => new Date(s.createdAt) >= mStart && new Date(s.createdAt) <= mEnd).forEach(s => { if (s.customerPhone) mPhones.add(s.customerPhone); });
 
       const priorPhones = new Set<string>();
-      orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) < mStart).forEach(o => { if (o.customer?.phone) priorPhones.add(o.customer.phone); });
+      orders.filter(o => o.status === "entregado" && new Date(o.createdAt) < mStart).forEach(o => { if (o.customer?.phone) priorPhones.add(o.customer.phone); });
       sales.filter(s => new Date(s.createdAt) < mStart).forEach(s => { if (s.customerPhone) priorPhones.add(s.customerPhone); });
       let mNew = 0, mRet = 0;
       mPhones.forEach(p => { if (priorPhones.has(p)) mRet++; else mNew++; });
@@ -176,9 +176,9 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
       // Phones that first purchased in this month
       const firstPurchase = new Set<string>();
       const allPhonesBefore = new Set<string>();
-      orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) < cStart).forEach(o => { if (o.customer?.phone) allPhonesBefore.add(o.customer.phone); });
+      orders.filter(o => o.status === "entregado" && new Date(o.createdAt) < cStart).forEach(o => { if (o.customer?.phone) allPhonesBefore.add(o.customer.phone); });
       sales.filter(s => new Date(s.createdAt) < cStart).forEach(s => { if (s.customerPhone) allPhonesBefore.add(s.customerPhone); });
-      orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= cStart && new Date(o.createdAt) <= cEnd).forEach(o => {
+      orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= cStart && new Date(o.createdAt) <= cEnd).forEach(o => {
         if (o.customer?.phone && !allPhonesBefore.has(o.customer.phone)) firstPurchase.add(o.customer.phone);
       });
       sales.filter(s => new Date(s.createdAt) >= cStart && new Date(s.createdAt) <= cEnd).forEach(s => {
@@ -194,7 +194,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
         if (mS > now) { mPcts.push(0); continue; }
         let retained = 0;
         firstPurchase.forEach(phone => {
-          const hasPurchase = orders.some(o => o.status !== "cancelado" && o.customer?.phone === phone && new Date(o.createdAt) >= mS && new Date(o.createdAt) <= mE)
+          const hasPurchase = orders.some(o => o.status === "entregado" && o.customer?.phone === phone && new Date(o.createdAt) >= mS && new Date(o.createdAt) <= mE)
             || sales.some(s => s.customerPhone === phone && new Date(s.createdAt) >= mS && new Date(s.createdAt) <= mE);
           if (hasPurchase) retained++;
         });
@@ -308,11 +308,11 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
 
       {/* ── Retention summary bar ── */}
       {data.clientesActivos > 0 && (
-        <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+        <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl px-5 py-3">
           <TrendingUp className="h-4 w-4 text-[var(--text-tertiary)]" />
           <div className="flex-1 flex items-center gap-4 text-sm">
             <span className="text-[var(--text-secondary)] dark:text-muted">Retención:</span>
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               {data.clientesActivos > 0 ? Math.round((data.recurrentes / data.clientesActivos) * 100) : 0}%
             </span>
             <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">|</span>

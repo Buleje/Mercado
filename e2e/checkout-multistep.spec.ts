@@ -56,7 +56,7 @@ test.describe("Checkout multi-step (Amazon-style)", () => {
 
     // 5. Llenar datos personales
     await page.getByLabel(/nombre completo/i).fill("Brandon Buleje");
-    await page.getByLabel(/telefono.*whatsapp/i).fill("916409675");
+    await page.getByLabel(/telefono.*whatsapp/i).fill("929340532");
     await page.getByLabel(/email/i).fill("brandon@buleje.pe");
 
     // CTA habilitado y avanza a /entrega

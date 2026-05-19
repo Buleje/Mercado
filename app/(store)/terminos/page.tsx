@@ -109,7 +109,7 @@ export default function TerminosPage() {
             Para consultas sobre estos términos y condiciones:
           </p>
           <ul className="list-disc pl-5 space-y-1">
-            <li>WhatsApp: 916 409 675</li>
+            <li>WhatsApp: 929 340 532</li>
             <li>Dirección: Jr. Ucayali 450, Ucayali, Perú</li>
           </ul>
         </section>

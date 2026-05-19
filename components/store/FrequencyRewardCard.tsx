@@ -40,7 +40,7 @@ function StepDot({
           <Check className="h-3.5 w-3.5 text-white" />
         )
       ) : isLast ? (
-        <Gift className="h-3.5 w-3.5 text-muted-foreground" />
+        <Gift className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
       ) : (
         <span className="h-2 w-2 rounded-full bg-border" />
       )}
@@ -113,7 +113,7 @@ export default function FrequencyRewardCard({
   return (
     <div
       className={cn(
-        "relative rounded-xl border bg-card dark:bg-card p-4 space-y-3 overflow-hidden transition-all",
+        "relative rounded-xl border bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4 space-y-3 overflow-hidden transition-all",
         completed
           ? "border-[var(--accent)] shadow-md shadow-[var(--accent)]/20"
           : "border-border"
@@ -124,10 +124,10 @@ export default function FrequencyRewardCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+          <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-medium">
             Programa de frecuencia
           </p>
-          <p className="text-sm font-semibold text-foreground dark:text-foreground mt-0.5">
+          <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-0.5">
             {productName}
           </p>
         </div>
@@ -136,7 +136,7 @@ export default function FrequencyRewardCard({
             "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
             completed
               ? "bg-[var(--accent-600,var(--accent))] text-white"
-              : "bg-muted dark:bg-muted/50 text-muted-foreground"
+              : "bg-muted dark:bg-muted/50 text-[var(--text-secondary)]"
           )}
         >
           <Gift className="h-4 w-4" />
@@ -144,7 +144,7 @@ export default function FrequencyRewardCard({
       </div>
 
       {/* Message */}
-      <p className="text-sm text-foreground dark:text-foreground leading-snug">
+      <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-snug">
         {completed ? (
           <span className="font-semibold text-[var(--accent)]">
             Completaste las {targetCount} compras. Tu próxima compra de{" "}
@@ -186,7 +186,7 @@ export default function FrequencyRewardCard({
         />
       </div>
 
-      <p className="text-xs text-muted-foreground text-right tabular-nums">
+      <p className="text-xs text-[var(--text-secondary)] text-right tabular-nums">
         {filled}/{targetCount}
       </p>
     </div>

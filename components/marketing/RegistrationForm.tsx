@@ -144,7 +144,7 @@ function StepDot({ n, current }: { n: number; current: Step }) {
   const active = n === current;
   return (
     <div
-      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-200 ${
+      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-[var(--dur-fast)] ${
         done   ? "bg-[var(--data-success-500)] border-[var(--data-success-500)] text-white" :
         active ? "bg-[var(--accent)] border-[var(--accent)] text-white" :
                  "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-400"
@@ -158,9 +158,9 @@ function StepDot({ n, current }: { n: number; current: Step }) {
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-semibold text-foreground">{label}</label>
+      <label className="block text-sm font-semibold text-[var(--text-primary)]">{label}</label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-xs text-[var(--text-secondary)]">{hint}</p>}
     </div>
   );
 }
@@ -171,7 +171,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { error?: st
     <>
       <input
         {...rest}
-        className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 ${
+        className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-[var(--text-primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 ${
           error
             ? "border-red-400 bg-red-50 dark:bg-red-950/20"
             : "border-gray-200 dark:border-gray-700"
@@ -441,7 +441,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
         <div className="w-10 h-10 rounded-2xl bg-[var(--accent)] flex items-center justify-center">
           <Store className="w-5 h-5 text-white" />
         </div>
-        <span className="text-xl font-extrabold tracking-tight text-foreground">Buleje</span>
+        <span className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">Buleje</span>
       </div>
 
       {/* Step indicators (pasos 1–3) */}
@@ -456,7 +456,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </span>
               </div>
               {i < 2 && (
-                <div className={`w-10 sm:w-16 h-0.5 mb-4 transition-all duration-300 ${step > n ? "bg-emerald-400" : "bg-gray-200 dark:bg-gray-700"}`} />
+                <div className={`w-10 sm:w-16 h-0.5 mb-4 transition-all duration-[var(--dur-base)] ${step > n ? "bg-emerald-400" : "bg-gray-200 dark:bg-gray-700"}`} />
               )}
             </div>
           ))}
@@ -479,8 +479,8 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
               className="p-8 space-y-6"
             >
               <div>
-                <h1 className="text-2xl font-extrabold text-foreground">Registra tu negocio</h1>
-                <p className="text-muted-foreground text-sm mt-1">Elige el perfil que mejor describe tu negocio.</p>
+                <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">Registra tu negocio</h1>
+                <p className="text-[var(--text-secondary)] text-sm mt-1">Elige el perfil que mejor describe tu negocio.</p>
               </div>
 
               <div className="space-y-3">
@@ -509,8 +509,8 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                         {opt.icon}
                       </div>
                       <div>
-                        <p className="font-bold text-base text-foreground">{opt.label}</p>
-                        <p className="text-muted-foreground text-sm mt-0.5">{opt.description}</p>
+                        <p className="font-bold text-base text-[var(--text-primary)]">{opt.label}</p>
+                        <p className="text-[var(--text-secondary)] text-sm mt-0.5">{opt.description}</p>
                       </div>
                       {active && <CheckCircle2 className="w-5 h-5 text-[var(--accent)] ml-auto shrink-0" />}
                     </button>
@@ -533,8 +533,8 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
               className="p-8 space-y-6"
             >
               <div>
-                <h1 className="text-2xl font-extrabold text-foreground">Tu negocio</h1>
-                <p className="text-muted-foreground text-sm mt-1">Solo toma 2 minutos. Sin tarjeta de crédito.</p>
+                <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">Tu negocio</h1>
+                <p className="text-[var(--text-secondary)] text-sm mt-1">Solo toma 2 minutos. Sin tarjeta de crédito.</p>
               </div>
 
               <div className="space-y-4">
@@ -554,7 +554,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 <Field label="Subdominio" hint={`Tu tienda estará en: ${form.slug || "mi-tienda"}.${ROOT_DOMAIN}`}>
                   <div className="space-y-1">
                     <div className="flex items-center border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[var(--accent)]/40 transition-all border-gray-200 dark:border-gray-700">
-                      <span className="px-3 py-2.5 text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 select-none whitespace-nowrap">
+                      <span className="px-3 py-2.5 text-sm text-[var(--text-secondary)] bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 select-none whitespace-nowrap">
                         buleje.pe/
                       </span>
                       <input
@@ -566,7 +566,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                           triggerSlugCheck(v);
                         }}
                         placeholder="mi-tienda"
-                        className="flex-1 px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-foreground focus:outline-none"
+                        className="flex-1 px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-[var(--text-primary)] focus:outline-none"
                       />
                     </div>
                     {errors.slug && <p className="text-xs text-[var(--data-error-500)]">{errors.slug}</p>}
@@ -606,10 +606,10 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 {/* Tipo de negocio / Template (solo para tiendas) */}
                 {accountType === "store" && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-foreground">
-                      Tipo de negocio <span className="text-muted-foreground font-normal">(opcional)</span>
+                    <label className="block text-sm font-semibold text-[var(--text-primary)]">
+                      Tipo de negocio <span className="text-[var(--text-secondary)] font-normal">(opcional)</span>
                     </label>
-                    <p className="text-xs text-muted-foreground -mt-1">Precargamos las categorías para que empieces más rápido.</p>
+                    <p className="text-xs text-[var(--text-secondary)] -mt-1">Precargamos las categorías para que empieces más rápido.</p>
                     <div className="grid grid-cols-2 gap-2">
                       {STORE_TEMPLATES_LIST.map((tmpl) => {
                         const active = form.template === tmpl.id;
@@ -628,8 +628,8 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                               {TEMPLATE_ICONS[tmpl.icon]}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-bold leading-tight truncate text-foreground">{tmpl.name}</p>
-                              <p className="text-muted-foreground" style={{ fontSize: "0.65rem" }}>{tmpl.categories.length} categorías</p>
+                              <p className="text-xs font-bold leading-tight truncate text-[var(--text-primary)]">{tmpl.name}</p>
+                              <p className="text-[var(--text-secondary)]" style={{ fontSize: "0.65rem" }}>{tmpl.categories.length} categorías</p>
                             </div>
                             {active && <CheckCircle2 className="w-4 h-4 text-[var(--accent)] ml-auto shrink-0" />}
                           </button>
@@ -670,8 +670,8 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
               className="p-8 space-y-6"
             >
               <div>
-                <h1 className="text-2xl font-extrabold text-foreground">Tu cuenta</h1>
-                <p className="text-muted-foreground text-sm mt-1">Usarás estas credenciales para entrar al panel.</p>
+                <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">Tu cuenta</h1>
+                <p className="text-[var(--text-secondary)] text-sm mt-1">Usarás estas credenciales para entrar al panel.</p>
               </div>
 
               <div className="space-y-4">
@@ -727,7 +727,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                           {([1, 2, 3, 4] as const).map((bar) => (
                             <div
                               key={bar}
-                              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                              className={`h-1 flex-1 rounded-full transition-all duration-[var(--dur-base)] ${
                                 bar <= passwordStrength.score ? passwordStrength.color : "bg-gray-200 dark:bg-gray-700"
                               }`}
                             />
@@ -753,7 +753,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                   <button
                     type="button"
                     onClick={() => setShowReferral((v) => !v)}
-                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-muted-foreground hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     <span className="flex items-center gap-2">
                       <Ticket className="w-4 h-4" />
@@ -806,8 +806,8 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
               className="p-8 space-y-6"
             >
               <div>
-                <h1 className="text-2xl font-extrabold text-foreground">Elige tu plan</h1>
-                <p className="text-muted-foreground text-sm mt-1">Todos incluyen 14 días de prueba gratis.</p>
+                <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">Elige tu plan</h1>
+                <p className="text-[var(--text-secondary)] text-sm mt-1">Todos incluyen 14 días de prueba gratis.</p>
               </div>
 
               <div className="space-y-3">
@@ -825,23 +825,23 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
                           {(def.id === "business" || def.id === "enterprise") && (
-                            <Crown className={`w-4 h-4 shrink-0 ${def.id === "enterprise" ? "text-[var(--data-warning-500)]" : "text-violet-500"}`} />
+                            <Crown className={`w-4 h-4 shrink-0 ${def.id === "enterprise" ? "text-[var(--data-warning-500)]" : "text-[var(--accent)]"}`} />
                           )}
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-bold text-foreground">{def.name}</p>
+                              <p className="font-bold text-[var(--text-primary)]">{def.name}</p>
                               {def.popular && (
                                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white">Popular</span>
                               )}
                             </div>
-                            <p className="text-muted-foreground text-xs mt-0.5">
+                            <p className="text-[var(--text-secondary)] text-xs mt-0.5">
                               {def.priceMonthly === 0 ? "Gratis para siempre" : `$${def.priceMonthly}/mes tras la prueba`}
                             </p>
                           </div>
                         </div>
                         {active && <CheckCircle2 className="w-5 h-5 text-[var(--accent)] shrink-0 mt-0.5" />}
                       </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-[var(--text-secondary)]">
                         <span className="flex items-center gap-1"><ShoppingBag className="w-3 h-3" /> {formatLimit(l.maxProducts)} productos</span>
                         <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {formatLimit(l.maxUsers)} usuarios</span>
                         <span className="flex items-center gap-1"><ShoppingCart className="w-3 h-3" /> {formatLimit(l.maxOrdersPerMonth)} pedidos/mes</span>
@@ -883,8 +883,8 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
               className="p-8 space-y-6"
             >
               <div>
-                <h1 className="text-2xl font-extrabold text-foreground">Confirmar registro</h1>
-                <p className="text-muted-foreground text-sm mt-1">Revisa los datos antes de crear tu tienda.</p>
+                <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">Confirmar registro</h1>
+                <p className="text-[var(--text-secondary)] text-sm mt-1">Revisa los datos antes de crear tu tienda.</p>
               </div>
 
               {/* Resumen */}
@@ -925,10 +925,10 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </button>
               </div>
 
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-[var(--text-secondary)] text-center">
                 Al crear tu tienda aceptas nuestros{" "}
-                <a href="/terminos" className="underline hover:text-foreground">Términos de servicio</a> y{" "}
-                <a href="/privacidad" className="underline hover:text-foreground">Política de privacidad</a>.
+                <a href="/terminos" className="underline hover:text-[var(--text-primary)]">Términos de servicio</a> y{" "}
+                <a href="/privacidad" className="underline hover:text-[var(--text-primary)]">Política de privacidad</a>.
               </p>
             </motion.div>
           )}
@@ -947,14 +947,14 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
               </div>
 
               <div>
-                <h1 className="text-2xl font-extrabold text-foreground">¡Tienda creada!</h1>
-                <p className="text-muted-foreground text-sm mt-2">
-                  <strong className="text-foreground">{result.storeName}</strong> ya está lista. Tu período de prueba de 14 días ha comenzado.
+                <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">¡Tienda creada!</h1>
+                <p className="text-[var(--text-secondary)] text-sm mt-2">
+                  <strong className="text-[var(--text-primary)]">{result.storeName}</strong> ya está lista. Tu período de prueba de 14 días ha comenzado.
                 </p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 space-y-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Tu tienda</p>
+                <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wide font-semibold">Tu tienda</p>
                 <p className="font-mono font-bold text-[var(--accent)] text-base">{result.tenantSlug}.{ROOT_DOMAIN}</p>
               </div>
 
@@ -987,9 +987,9 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
 
       {/* Footer */}
       {step !== 4 && (
-        <p className="text-xs text-muted-foreground mt-6">
+        <p className="text-xs text-[var(--text-secondary)] mt-6">
           ¿Ya tienes cuenta?{" "}
-          <a href="/admin" className="underline font-medium hover:text-foreground">Inicia sesión</a>
+          <a href="/admin" className="underline font-medium hover:text-[var(--text-primary)]">Inicia sesión</a>
         </p>
       )}
     </div>
@@ -1005,9 +1005,9 @@ function SummaryRow({ icon, label, value, mono = false }: {
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
-      <span className="text-muted-foreground shrink-0">{icon}</span>
-      <span className="text-muted-foreground w-20 shrink-0 text-xs">{label}</span>
-      <span className={`font-medium text-foreground truncate ${mono ? "font-mono text-[var(--accent)]" : ""}`}>{value}</span>
+      <span className="text-[var(--text-secondary)] shrink-0">{icon}</span>
+      <span className="text-[var(--text-secondary)] w-20 shrink-0 text-xs">{label}</span>
+      <span className={`font-medium text-[var(--text-primary)] truncate ${mono ? "font-mono text-[var(--accent)]" : ""}`}>{value}</span>
     </div>
   );
 }

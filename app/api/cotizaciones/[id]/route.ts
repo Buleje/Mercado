@@ -63,6 +63,12 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       tenantId: auth.tenantId,
     });
 
+    // Fase 4 perf (2026-05-16): doc-badges refresca al cambiar status.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterDocument(auth.tenantId);
+    } catch { /* fire-and-forget */ }
+
     return NextResponse.json(updated);
   } catch (e) {
     logger.error("[cotizaciones] PATCH error", { err: e instanceof Error ? e.message : String(e) });
@@ -94,6 +100,12 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
       user: auth.username,
       tenantId: auth.tenantId,
     });
+
+    // Fase 4 perf (2026-05-16): doc-badges refresca al eliminar.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterDocument(auth.tenantId);
+    } catch { /* fire-and-forget */ }
 
     return NextResponse.json({ ok: true });
   } catch (e) {

@@ -78,7 +78,7 @@ export default function Benefits() {
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Nuestras ventajas
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             ¿Por qué{" "}
             <span className="text-primary relative">
               elegirnos
@@ -142,12 +142,12 @@ export default function Benefits() {
                 >
                   <div className="dark:hidden">
                     <div
-                      className="inline-flex items-center justify-center h-13 w-13 rounded-xl mb-5 transition-transform duration-300 group-hover:scale-110"
+                      className="inline-flex items-center justify-center h-13 w-13 rounded-xl mb-5 transition-transform duration-[var(--dur-base)] group-hover:scale-110"
                       style={{ background: benefit.accent + "18", color: benefit.accent }}
                     >
                       <benefit.icon className="h-6 w-6" />
                     </div>
-                    <h3 className="text-base font-bold text-foreground mb-2">{benefit.title}</h3>
+                    <h3 className="text-base font-bold text-[var(--text-primary)] mb-2">{benefit.title}</h3>
                     <p className="text-sm text-muted leading-relaxed">{benefit.description}</p>
                     <p className="text-[length:var(--ts-2xs)] text-muted/60 mt-3 font-medium">Pasa el cursor para ver más →</p>
                   </div>
@@ -159,7 +159,7 @@ export default function Benefits() {
                     >
                       <benefit.icon className="h-6 w-6" />
                     </div>
-                    <h3 className="text-base font-bold text-foreground mb-2">{benefit.title}</h3>
+                    <h3 className="text-base font-bold text-[var(--text-primary)] mb-2">{benefit.title}</h3>
                     <p className="text-sm text-muted leading-relaxed">{benefit.description}</p>
                   </div>
                 </div>
@@ -175,7 +175,7 @@ export default function Benefits() {
                   <benefit.icon className="h-8 w-8 text-white mb-3" />
                   {benefit.stat > 0 && (
                     <div className="mb-3">
-                      <div className="text-4xl font-black text-white leading-none">
+                      <div className="text-4xl font-extrabold text-white leading-none">
                         <AnimatedCounter end={benefit.stat} suffix={benefit.statSuffix} duration={1.6} />
                       </div>
                       <div className="text-xs text-white/70 font-medium mt-1">{benefit.statLabel}</div>
@@ -183,7 +183,7 @@ export default function Benefits() {
                   )}
                   {benefit.stat === 0 && (
                     <div className="mb-3">
-                      <div className="text-3xl font-black text-white">S/ 0</div>
+                      <div className="text-3xl font-extrabold text-white">S/ 0</div>
                       <div className="text-xs text-white/70 font-medium mt-1">{benefit.statLabel}</div>
                     </div>
                   )}
@@ -196,7 +196,7 @@ export default function Benefits() {
         </div>
 
         {/* CTA */}
-        <div className={`text-center mt-12 transition-all duration-700 delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mt-12 transition-all duration-[var(--dur-slower)] delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
             className="group inline-flex items-center gap-2.5 text-primary hover:text-primary-dark font-bold text-base transition-colors"

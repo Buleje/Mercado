@@ -428,7 +428,8 @@ export default function GiftCardsAdminModule() {
               <button
                 type="button"
                 onClick={() => {
-                  navigator.clipboard.writeText(issuedCode).catch(() => {});
+                  // Clipboard best-effort — falla por permisos del browser.
+                  navigator.clipboard.writeText(issuedCode).catch(() => { /* clipboard best-effort */ });
                 }}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
               >

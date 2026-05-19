@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ChatDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 // GET: list all conversations or messages for one customer
 export async function GET(req: NextRequest) {
@@ -21,6 +22,8 @@ export async function GET(req: NextRequest) {
 // POST: admin replies to a customer chat
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-chat"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

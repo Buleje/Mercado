@@ -49,7 +49,13 @@ export async function POST(req: NextRequest) {
       if (balance <= 0) return NextResponse.json({ error: "Gift card sin saldo" }, { status: 400 });
       discount = Math.min(balance, cartTotal);
     } else if (coupon.discountType === "percent") {
-      discount = Math.round(cartTotal * coupon.discountValue / 100 * 100) / 100;
+      // PENTEST 2026-05-18 Sprint A #3: cap percent al 100% incluso si el
+      // dato persistido en DB tiene valor > 100 (cupones legacy creados antes
+      // de la validación Zod en POST). El cliente NUNCA ve un descuento
+      // mayor al cartTotal.
+      const capped = Math.min(coupon.discountValue, 100);
+      discount = Math.round(cartTotal * capped / 100 * 100) / 100;
+      discount = Math.min(discount, cartTotal);
     } else {
       discount = Math.min(coupon.discountValue, cartTotal);
     }

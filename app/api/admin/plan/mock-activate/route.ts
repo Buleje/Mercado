@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/admin/plan/mock-activate
@@ -19,6 +20,8 @@ const BodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-plan-mock-activate"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   // SECURITY 2026-05-06 (pentest billing #2): allow-list explícita en vez
   // de "NODE_ENV !== production". Vercel preview deployments tienen
   // NODE_ENV=production por default, pero un branch preview público con

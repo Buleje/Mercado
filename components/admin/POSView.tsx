@@ -11,6 +11,7 @@ import {
   ChevronDown, ChevronRight, ShoppingCart, Settings,
   Leaf, UtensilsCrossed, Boxes, Droplets, Sparkles,
   Smartphone, CreditCard, HandCoins,
+  Camera, Lightbulb, Timer, ClipboardList, RefreshCcw,
 } from "@buleje/design-system/icons";
 
 // Mapeo de id de categoria → icono Lucide. Reemplaza los emojis originales
@@ -152,7 +153,7 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
 
   if (favIds.length === 0 && !configMode) {
     return (
-      <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+      <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mis Rapidos</span>
           <button onClick={() => setConfigMode(true)} className="text-[length:var(--ts-2xs)] font-bold text-primary hover:underline">Configurar</button>
@@ -163,7 +164,7 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
   }
 
   return (
-    <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+    <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mis Rapidos ({favIds.length}/12)</span>
         <button
@@ -185,14 +186,14 @@ function POSCajeroFavorites({ products, onAddToCart }: { products: Product[]; on
               key={id}
               onClick={() => configMode ? toggleFav(id) : onAddToCart(p)}
               className={cn(
-                "bg-white dark:bg-card border text-left px-1.5 rounded-lg transition-all flex items-center gap-1",
-                configMode ? "border-[var(--data-error-500)] hover:bg-[var(--data-error-50)]" : "border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface"
+                "bg-[var(--surface-raised)] border text-left px-1.5 rounded-lg transition-all flex items-center gap-1",
+                configMode ? "border-[var(--data-error-500)] hover:bg-[var(--data-error-50)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
               )}
               style={{ height: 48 }}
               title={configMode ? `Quitar ${p.name}` : p.name}
             >
               <div className="flex-1 min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] dark:text-foreground truncate leading-tight">{p.name.slice(0, 15)}</p>
+                <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate leading-tight">{p.name.slice(0, 15)}</p>
                 <p className="text-[length:var(--ts-2xs)] font-bold text-primary">{fmt(p.price)}</p>
               </div>
               {configMode && <X className="h-3 w-3 text-[var(--data-error-500)] shrink-0" />}
@@ -214,16 +215,16 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute left-6 top-0 z-50 w-80 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
-          <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm mb-2">🛍️ Punto de Venta (POS)</p>
+        <div className="absolute left-6 top-0 z-50 w-80 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
+          <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-2 inline-flex items-center gap-1.5"><ShoppingCart className="h-4 w-4 text-primary" aria-hidden /> Punto de Venta (POS)</p>
           <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Registra ventas en mostrador: busca productos, agrégalos al carrito, elige cómo cobrar y confirma la venta.</p>
           <div className="space-y-1.5">
-            <p><span className="font-bold text-[var(--text-primary)] dark:text-foreground">Catálogo:</span> <span className="text-[var(--text-secondary)] dark:text-muted">busca por nombre, filtra por categoría o escanea código de barras.</span></p>
-            <p><span className="font-bold text-[var(--text-primary)] dark:text-foreground">Carrito:</span> <span className="text-[var(--text-secondary)] dark:text-muted">ajusta cantidades y aplica descuentos por ítem.</span></p>
-            <p><span className="font-bold text-[var(--text-primary)] dark:text-foreground">Cobro:</span> <span className="text-[var(--text-secondary)] dark:text-muted">efectivo, Yape, Plin, tarjeta o fiado. Pago dividido también.</span></p>
+            <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Catálogo:</span> <span className="text-[var(--text-secondary)] dark:text-muted">busca por nombre, filtra por categoría o escanea código de barras.</span></p>
+            <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Carrito:</span> <span className="text-[var(--text-secondary)] dark:text-muted">ajusta cantidades y aplica descuentos por ítem.</span></p>
+            <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cobro:</span> <span className="text-[var(--text-secondary)] dark:text-muted">efectivo, Yape, Plin, tarjeta o fiado. Pago dividido también.</span></p>
           </div>
           <div className="mt-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-2">
-            <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">💡 Ejemplo</p>
+            <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold inline-flex items-center gap-1.5"><Lightbulb className="h-3.5 w-3.5" aria-hidden /> Ejemplo</p>
             <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Carlos busca “Leche”, agrega 2 unidades al carrito, el cliente paga S/10 en efectivo y el sistema le dice el vuelto.</p>
           </div>
         </div>
@@ -272,14 +273,14 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
   const time = new Date(sale.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
   const itemCount = sale.items.reduce((sum, i) => sum + i.quantity, 0);
   return (
-    <div className="bg-gray-50 dark:bg-surface rounded-lg border border-[var(--rule-soft)] dark:border-card-border hover:border-primary transition-colors">
+    <div className="bg-gray-50 dark:bg-surface rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-primary transition-colors">
       <button onClick={() => setExpanded(!expanded)} className="w-full text-left p-3">
         <div className="flex items-start justify-between mb-1.5">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />
             <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{time}</span>
           </div>
-          <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(sale.total)}</span>
+          <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(sale.total)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{itemCount} {itemCount === 1 ? "articulo" : "articulos"}</span>
@@ -297,7 +298,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
         </div>
       </button>
       {expanded && (
-        <div className="px-3 pb-3 border-t border-[var(--rule-soft)] dark:border-card-border pt-2 space-y-1.5">
+        <div className="px-3 pb-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-2 space-y-1.5">
           {(sale as SaleRecord & { items: { name?: string; quantity: number }[] }).items.map((item, idx) => (
             <div key={idx} className="flex justify-between text-[length:var(--ts-xs)]">
               <span className="text-[var(--text-secondary)] dark:text-muted truncate max-w-[140px]">
@@ -306,7 +307,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
             </div>
           ))}
           <div className="flex gap-1.5 pt-1">
-            <a href={`/venta/${sale.id}/recibo`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+            <a href={`/venta/${sale.id}/recibo`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
               <Printer className="h-3 w-3" /> Reimprimir
             </a>
           </div>
@@ -423,7 +424,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
 
   const quickAmounts = [10, 20, 50].filter(a => a <= fiado.saldo);
   return (
-    <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-3">
+    <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4 space-y-3">
       <p className="text-sm font-semibold text-[var(--data-warning-500)]">
         {customerName || customerPhone} tiene fiado de <span className="font-bold">S/{Number(fiado.saldo).toFixed(2)}</span>. ¿Abonar?
       </p>
@@ -550,7 +551,7 @@ function SaleCompleteModal({
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]">
         {/* Header — success + titulo + total */}
         <div className="px-6 pt-8 pb-6 text-center relative overflow-hidden">
           <SaleConfetti />
@@ -576,7 +577,7 @@ function SaleCompleteModal({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4"
+            className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4"
           >
             ¡Venta completada!
           </m.h3>
@@ -611,13 +612,13 @@ function SaleCompleteModal({
           ) : null}
 
           {lastSaleDetails?.comprobanteNumero ? (
-            <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center gap-3">
+            <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Receipt className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0 text-left">
                 <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Comprobante</p>
-                <p className="text-base font-mono font-bold text-[var(--text-primary)] dark:text-foreground">
+                <p className="text-base font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   {comprobanteLabel(lastSaleDetails.comprobanteTipo)} #{lastSaleDetails.comprobanteNumero}
                 </p>
               </div>
@@ -626,7 +627,7 @@ function SaleCompleteModal({
 
           <QuickAbonoFromSale customerPhone={lastSaleDetails?.customerPhone} customerName={lastSaleDetails?.customerName} />
 
-          <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-4">
+          <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4">
             <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-3">
               Enviar por WhatsApp
             </p>
@@ -649,7 +650,7 @@ function SaleCompleteModal({
                     value={manualPhone}
                     onChange={(e) => setManualPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                     placeholder="Número del cliente"
-                    className="w-full pl-12 pr-3 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-base text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    className="w-full pl-12 pr-3 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
                 {manualPhone.length >= 9 ? (
@@ -677,13 +678,13 @@ function SaleCompleteModal({
         </div>
 
         {/* Footer — acciones principales */}
-        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 space-y-2.5">
+        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 space-y-2.5">
           <div className="grid grid-cols-2 gap-2.5">
             <a
               href={`/venta/${saleComplete.id}/recibo`}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground font-semibold text-base hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
+              className="py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-semibold text-base hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-2"
             >
               <Printer className="h-5 w-5" />
               Imprimir
@@ -764,31 +765,35 @@ function ShiftSummaryWidget() {
     <m.div
       layout
       onClick={() => setExpanded(e => !e)}
-      className="fixed bottom-4 left-4 z-40 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border cursor-pointer select-none transition-all"
+      className="fixed bottom-4 left-4 z-40 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] cursor-pointer select-none transition-all"
       style={{ borderRadius: expanded ? 16 : 9999 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
     >
       <div className="px-4 py-2 flex items-center gap-3 text-xs">
-        <span className="text-[var(--text-secondary)] dark:text-muted">&#9201; {timeStr}</span>
+        <span className="text-[var(--text-secondary)] dark:text-muted inline-flex items-center gap-1.5">
+          <Timer className="h-3.5 w-3.5" aria-hidden /> {timeStr}
+        </span>
         <span className="font-bold text-primary" style={{ color: "var(--accent)" }}>S/{(data.totalVentas ?? 0).toFixed(0)}</span>
-        <span className="text-[var(--text-secondary)] dark:text-muted">&#128203; {data.cantidadVentas ?? 0}</span>
+        <span className="text-[var(--text-secondary)] dark:text-muted inline-flex items-center gap-1.5">
+          <ClipboardList className="h-3.5 w-3.5" aria-hidden /> {data.cantidadVentas ?? 0}
+        </span>
       </div>
       {expanded && (
         <m.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          className="px-4 pb-3 pt-1 border-t border-[var(--rule-soft)] dark:border-card-border space-y-1"
+          className="px-4 pb-3 pt-1 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-1"
         >
           <div className="flex justify-between text-[length:var(--ts-xs)]">
             <span className="text-[var(--text-secondary)] dark:text-muted">Ticket promedio</span>
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">S/{(data.ticketPromedio ?? 0).toFixed(1)}</span>
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{(data.ticketPromedio ?? 0).toFixed(1)}</span>
           </div>
           <div className="flex justify-between text-[length:var(--ts-xs)]">
             <span className="text-[var(--text-secondary)] dark:text-muted">Ventas/hora</span>
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               {(data.turnoMinutos ?? 0) > 0 ? ((data.cantidadVentas ?? 0) / ((data.turnoMinutos ?? 1) / 60)).toFixed(1) : "0"}
             </span>
           </div>
@@ -1363,33 +1368,14 @@ export default function POSView() {
         setLastSaleDetails(saleDetailsForWhatsApp);
         setLastSaleInfo({ total: effectiveTotal, time: new Date(), id: sale.id, minutesAgo: 0 });
 
-        // ── CREAR FIADO automáticamente si el pago fue "fiado" ──
-        if (effectivePayment === "fiado") {
-          const fiadoPhone = phone || customerPhone;
-          if (fiadoPhone) {
-            const itemNames = cart.map(i => `${i.product.name} x${i.quantity}`).join(", ");
-            try {
-              const fiadoRes = await fetch("/api/fiados", {
-                method: "POST",
-                headers: csrfHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({
-                  customerId: fiadoPhone,
-                  total: effectiveTotal,
-                  descripcion: itemNames,
-                }),
-              });
-              if (fiadoRes.ok) {
-                if (process.env.NODE_ENV === "development") console.log("[POS] Fiado registrado correctamente para", fiadoPhone);
-              } else {
-                const err = await fiadoRes.json().catch(() => ({}));
-                console.warn("[POS] Error registrando fiado:", err.error || "Error desconocido");
-              }
-            } catch (fiadoErr) {
-              console.warn("[POS] Error de red al crear fiado:", fiadoErr);
-            }
-          } else {
-            console.warn("[POS] Venta con fiado SIN cliente — no se puede registrar deuda. Selecciona un cliente.");
-          }
+        // Audit 2026-05-17 (POS↔Fiado integration): la creación del Fiado
+        // ahora vive server-side dentro de la misma transacción de Sale
+        // (atómico). Antes este bloque hacía un POST /api/fiados separado
+        // que podía fallar dejando deuda fantasma. Si payment==="fiado" el
+        // backend devuelve `sale.fiadoId` y bloquea la venta con 400 si no
+        // hay phone o si el scoring crediticio rechaza al cliente.
+        if (sale.fiadoId && process.env.NODE_ENV === "development") {
+          console.log("[POS] Fiado creado atómico:", sale.fiadoId);
         }
 
         // Mejora QW-11a: limpiar backup carrito
@@ -1557,12 +1543,12 @@ export default function POSView() {
       <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
         {/* Left: Products */}
         <div className={cn(
-          "flex-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden flex flex-col",
+          "flex-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-hidden flex flex-col",
           expanded ? "min-h-[calc(100vh-12rem)]" : ""
         )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
           {/* Search + Actions + Categories — acciones a la derecha de la search bar
               para compactar verticalmente (antes ocupaban una fila entera). */}
-          <div className="p-3 space-y-2 border-b border-[var(--rule-soft)] dark:border-card-border relative">
+          <div className="p-3 space-y-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] relative">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <div className="flex-1 min-w-[200px]">
                 <POSSearchBar
@@ -1616,7 +1602,7 @@ export default function POSView() {
                 className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors cursor-pointer"
                 title="Escanear producto con camara"
               >
-                <span className="text-primary">&#128247;</span> <span className="hidden sm:inline">Foto</span>
+                <Camera className="h-4 w-4 text-primary" aria-hidden /> <span className="hidden sm:inline">Foto</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1648,7 +1634,7 @@ export default function POSView() {
               <div className="relative">
                 <button
                   onClick={() => setShowMoreTools(v => !v)}
-                  className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
                   title="Opciones del POS"
                 >
                   <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Opciones</span>
@@ -1656,7 +1642,7 @@ export default function POSView() {
                 {showMoreTools && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setShowMoreTools(false)} />
-                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-[var(--shadow-lg)]">
+                    <div className="absolute right-0 top-full mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-[var(--shadow-lg)]">
                       <button
                         onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
                         className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] px-3 py-2 rounded-lg transition-colors"
@@ -1665,7 +1651,7 @@ export default function POSView() {
                       </button>
                       <button
                         onClick={() => { setShowHistory(!showHistory); setShowMoreTools(false); }}
-                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+                        className="w-full flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
                       >
                         <History className="h-4 w-4" /> Historial de ventas
                         <kbd className="ml-auto text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 px-1 rounded">F4</kbd>
@@ -1717,7 +1703,7 @@ export default function POSView() {
                             onClick={() => changeFontSize(size)}
                             className={cn(
                               "flex-1 px-1.5 py-1 rounded-md text-xs font-bold transition-colors",
-                              fontSize === size ? "bg-white dark:bg-card text-primary " : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
+                              fontSize === size ? "bg-[var(--surface-raised)] text-primary " : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)]"
                             )}
                             title={size === "normal" ? "Fuente normal" : size === "large" ? "Fuente grande" : "Fuente extra grande"}
                           >
@@ -1754,7 +1740,16 @@ export default function POSView() {
                 que generaban ruido visual. El selector de categoría es la
                 herramienta principal para filtrar el grid. */}
             <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x pt-1 pb-1">
-              {categories.map(c => {
+              {categories
+                // Brandon mayo 2026 v7: ocultar categorías sin productos
+                // visibles. "todos" siempre se muestra (es el catch-all).
+                // Las demás aparecen solo si tienen al menos un producto
+                // activo en el inventario actual.
+                .filter((c) => {
+                  if (c.id === "todos") return true;
+                  return products.some((p) => p.category === c.id);
+                })
+                .map((c) => {
                 const Icon = CATEGORY_ICONS[c.id] ?? Package;
                 const active = category === c.id;
                 return (
@@ -1766,7 +1761,7 @@ export default function POSView() {
                       "snap-start shrink-0 flex flex-col items-center justify-center gap-1.5 w-[92px] h-[80px] rounded-xl border transition-all duration-[var(--dur-fast)]",
                       active
                         ? "bg-primary text-white border-primary shadow-[var(--shadow-sm)]"
-                        : "bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10"
+                        : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10"
                     )}
                   >
                     <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
@@ -1794,10 +1789,10 @@ export default function POSView() {
               </div>
             ) : (
               <div className={cn(
-                "grid gap-2",
+                "grid gap-1.5",
                 expanded
-                  ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7"
-                  : "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4"
+                  ? "grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8"
+                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-5"
               )}>
                 {filtered.map(p => {
                   const inCart = cart.find(i => i.product.id === p.id);
@@ -1808,38 +1803,38 @@ export default function POSView() {
                       onClick={() => !outOfStock && addToCart(p)}
                       disabled={outOfStock}
                       className={cn(
-                        "bg-white dark:bg-card rounded-xl border p-2 text-left transition-all hover:shadow-[var(--shadow-sm)] relative",
-                        inCart ? "border-primary ring-1 ring-primary/20" : "border-[var(--rule-soft)] hover:border-gray-200 dark:border-card-border",
+                        "bg-[var(--surface-raised)] rounded-lg border p-1.5 text-left transition-all hover:shadow-[var(--shadow-sm)] relative",
+                        inCart ? "border-primary ring-1 ring-primary/20" : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",
                         outOfStock && "opacity-40 cursor-not-allowed"
                       )}
                     >
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 dark:bg-surface mb-1.5 relative">
-                        <Image src={p.image || "/products/placeholder.svg"} alt={p.name} fill sizes="120px" className="object-cover" loading="lazy" />
+                      <div className="aspect-[5/4] rounded-md overflow-hidden bg-gray-50 dark:bg-surface mb-1 relative">
+                        <Image src={p.image || "/products/placeholder.svg"} alt={p.name} fill sizes="(max-width:768px) 25vw, 160px" className="object-cover" loading="lazy" />
                         <span
                           role="button"
                           tabIndex={0}
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
                           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); toggleFavorite(p.id); } }}
-                          className="absolute top-1 left-1 h-6 w-6 rounded-full bg-white/90 dark:bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-white dark:hover:bg-card transition-colors z-10 cursor-pointer"
+                          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white/90 dark:bg-[var(--surface-raised)]/90 backdrop-blur-sm flex items-center justify-center hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-colors z-10 cursor-pointer"
                         >
-                          <Star className={cn("h-3.5 w-3.5", favorites.includes(p.id) ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")} />
+                          <Star className={cn("h-3 w-3", favorites.includes(p.id) ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")} />
                         </span>
                         {inCart && (
-                          <div className="absolute top-1 right-1 h-5 w-5 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
+                          <div className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
                             {inCart.quantity}
                           </div>
                         )}
                         {outOfStock && (
-                          <div className="absolute inset-0 bg-white dark:bg-card/60 flex items-center justify-center">
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-2 py-0.5 rounded-full">Agotado</span>
+                          <div className="absolute inset-0 bg-[var(--surface-raised)]/60 flex items-center justify-center">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded">Agotado</span>
                           </div>
                         )}
                       </div>
-                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
+                      <p className="text-xs font-semibold leading-tight text-[var(--text-primary)] dark:text-[var(--text-primary)] line-clamp-2 min-h-[2.2em]">{p.name}</p>
                       <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-sm font-extrabold text-primary">{fmt(p.price)}</span>
+                        <span className="text-xs font-extrabold text-primary tabular-nums">{fmt(p.price)}</span>
                         {p.stock != null && (
-                          <span className={cn("text-[length:var(--ts-2xs)]", p.stock <= (p.stockMin || 5) ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                          <span className={cn("text-[length:var(--ts-2xs)] tabular-nums", p.stock <= (p.stockMin || 5) ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-tertiary)] dark:text-muted")}>
                             {p.stock}
                           </span>
                         )}
@@ -1852,15 +1847,19 @@ export default function POSView() {
           </div>
         </div>
 
-        {/* Right: Cart */}
+        {/* Right: Cart
+            Brandon mayo 2026 v7: en modo expanded el carrito mantenía
+            `lg:w-96 xl:w-md` (clase inválida) y CRECÍA verticalmente sin
+            límite, comiendo la pantalla. Ahora ancho compacto fijo + altura
+            limitada en ambos modos para que la grilla de productos respire. */}
         <div className={cn(
-          "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  flex flex-col shrink-0 min-h-0",
-          expanded ? "lg:w-96 xl:w-md" : "lg:w-80 xl:w-96"
-        )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
+          "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl flex flex-col shrink-0 min-h-0",
+          "lg:w-80 xl:w-[22rem]"
+        )} style={{ minHeight: "28rem", maxHeight: expanded ? "calc(100vh - 8rem)" : "calc(100vh - 14rem)" }}>
           {/* Cart header */}
-          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <div className="flex items-center justify-between">
-              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2">
+              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm flex flex-wrap items-center gap-2">
                 <ShoppingBasket className="h-4 w-4 text-primary" />
                 Carrito
                 {cartCount > 0 && (
@@ -1886,14 +1885,14 @@ export default function POSView() {
                       Cola: {clientQueues.length}
                     </button>
                     {showQueueDropdown && (
-                      <div className="absolute right-0 top-7 z-50 w-56 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 space-y-1">
+                      <div className="absolute right-0 top-7 z-50 w-56 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 space-y-1">
                         {clientQueues.map((q, idx) => {
                           const qTotal = q.reduce((s, i) => s + i.product.price * i.quantity, 0);
                           const qItems = q.reduce((s, i) => s + i.quantity, 0);
                           return (
                             <div key={idx} className="flex items-center gap-2 text-xs p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-surface">
                               <button onClick={() => loadFromQueue(idx)} className="flex-1 text-left">
-                                <span className="font-bold text-[var(--text-primary)] dark:text-foreground">Cliente {idx + 1}</span>
+                                <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente {idx + 1}</span>
                                 <span className="text-[var(--text-tertiary)] dark:text-muted ml-1">{qItems} items · {fmt(qTotal)}</span>
                               </button>
                               <button onClick={() => removeFromQueue(idx)} className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
@@ -1935,7 +1934,7 @@ export default function POSView() {
                 const discountMultiplier = 1 - (item.discount || 0) / 100;
                 const itemTotal = item.product.price * item.quantity * discountMultiplier;
                 return (
-                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-card-border p-2 hover:bg-gray-50 dark:hover:bg-surface transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
+                  <div key={item.product.id} className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-2 hover:bg-gray-50 dark:hover:bg-surface transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]")}>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.product.image ? (
                         <Image src={item.product.image} alt={item.product.name} width={48} height={48} className="rounded-lg object-cover shrink-0 w-12 h-12" />
@@ -1945,7 +1944,7 @@ export default function POSView() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{item.product.name}</p>
+                        <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{item.product.name}</p>
                         <div className="flex items-center gap-1.5">
                           <p className={cn("text-[length:var(--ts-xs)]", item.discount ? "line-through text-[var(--text-tertiary)] dark:text-muted" : "text-[var(--text-tertiary)] dark:text-muted")}>
                             {fmt(item.product.price)}
@@ -1972,7 +1971,7 @@ export default function POSView() {
                         >
                           <Minus className="h-3 w-3 text-[var(--text-secondary)] dark:text-muted" />
                         </button>
-                        <span className="w-6 text-center text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{item.quantity}</span>
+                        <span className="w-6 text-center text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.product.id, 1)}
                           className="h-6 w-6 rounded-md bg-gray-100 dark:bg-accent flex items-center justify-center hover:bg-gray-200 transition-colors"
@@ -1980,7 +1979,7 @@ export default function POSView() {
                           <Plus className="h-3 w-3 text-[var(--text-secondary)] dark:text-muted" />
                         </button>
                       </div>
-                      <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground shrink-0 w-14 text-right">{fmt(itemTotal)}</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] shrink-0 w-14 text-right">{fmt(itemTotal)}</span>
                       <button
                         onClick={() => setEditingDiscount(editingDiscount === item.product.id ? null : item.product.id)}
                         className={cn(
@@ -1999,7 +1998,7 @@ export default function POSView() {
                       </button>
                     </div>
                     {editingDiscount === item.product.id && (
-                      <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap items-center gap-2">
+                      <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap items-center gap-2">
                         <label className="text-xs text-[var(--text-secondary)] dark:text-muted font-medium">Descuento:</label>
                         <input
                           type="number"
@@ -2008,7 +2007,7 @@ export default function POSView() {
                           step="1"
                           value={item.discount || 0}
                           onChange={e => updateDiscount(item.product.id, Number(e.target.value))}
-                          className="flex-1 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none"
+                          className="flex-1 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                           placeholder="0"
                         />
                         <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">%</span>
@@ -2053,7 +2052,7 @@ export default function POSView() {
 
           {/* Cart total + pay button — sticky bottom */}
           {cart.length > 0 && (
-            <div className="shrink-0 border-t border-[var(--rule-base)] dark:border-card-border p-3 space-y-2 bg-white dark:bg-card rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div className="shrink-0 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 space-y-2 bg-[var(--surface-raised)] rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
               {/* Mejora 5: Expandable cart detail */}
               <div className="flex justify-between items-center">
                 <POSCartDetail
@@ -2065,7 +2064,7 @@ export default function POSView() {
                   }))}
                   count={cartCount}
                 />
-                <span className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(cartTotal)}</span>
+                <span className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(cartTotal)}</span>
               </div>
               {/* Mejora 4R2: Total en palabras */}
               <p className="text-xs text-[var(--text-tertiary)] italic capitalize text-right">{numeroAPalabras(cartTotal)}</p>
@@ -2087,7 +2086,7 @@ export default function POSView() {
                   className="px-4 py-3 rounded-lg border-2 border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold text-sm hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 transition-colors flex items-center gap-1.5"
                   title="Trueque Digital"
                 >
-                  &#128260; Trueque
+                  <RefreshCcw className="h-4 w-4" aria-hidden /> Trueque
                 </button>
               </div>
             </div>
@@ -2103,8 +2102,8 @@ export default function POSView() {
         <div className="fixed bottom-0 left-0 right-0 bg-[var(--surface-raised)] border-t border-[var(--rule-base)] px-4 py-3 z-40 sm:hidden">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground">{cartCount} items</span>
-              <span className="text-lg font-bold font-mono ml-2 text-[var(--text-primary)] dark:text-foreground">S/ {cartTotal.toFixed(2)}</span>
+              <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{cartCount} items</span>
+              <span className="text-lg font-bold font-mono ml-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {cartTotal.toFixed(2)}</span>
             </div>
             <button onClick={() => setShowPayment(true)} className="bg-primary text-white px-6 py-2.5 rounded-lg font-semibold text-sm">
               Cobrar
@@ -2116,11 +2115,11 @@ export default function POSView() {
       {/* IDEA 6: Modal Pedido WhatsApp */}
       {showWhatsAppOrder && (
         <div className="modal-backdrop p-4" onClick={() => setShowWhatsAppOrder(false)}>
-          <div className="bg-white dark:bg-card rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-[var(--data-success-500)]" />
-                <CardTitle className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">Pedido por WhatsApp</CardTitle>
+                <CardTitle className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Pedido por WhatsApp</CardTitle>
               </div>
               <button onClick={() => setShowWhatsAppOrder(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"><X className="h-4 w-4" /></button>
             </div>
@@ -2132,7 +2131,7 @@ export default function POSView() {
               onChange={e => { setWaText(e.target.value); parseWhatsAppOrder(e.target.value); }}
               placeholder={"Ej: 2 arroz, 3 leche gloria, 1 aceite\no: dame 5 huevos y 2 gaseosas"}
               rows={4}
-              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 resize-none font-mono"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 resize-none font-mono"
               autoFocus
             />
 
@@ -2140,12 +2139,12 @@ export default function POSView() {
               <div className="mt-4 space-y-2">
                 <p className="text-xs font-bold text-[var(--text-secondary)]">Productos encontrados</p>
                 {waParsedItems.map((item, idx) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
+                  <div key={idx} className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     {item.selected || item.matches.length === 1 ? (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-[var(--data-success-500)] font-bold text-xs shrink-0">x{item.qty}</span>
-                          <span className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground truncate">{(item.selected || item.matches[0]).name}</span>
+                          <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{(item.selected || item.matches[0]).name}</span>
                         </div>
                         <span className="text-sm font-bold text-primary shrink-0">S/{((item.selected || item.matches[0]).price * item.qty).toFixed(2)}</span>
                       </div>
@@ -2159,7 +2158,7 @@ export default function POSView() {
                               onClick={() => {
                                 setWaParsedItems(prev => prev.map((p, i) => i === idx ? { ...p, selected: m } : p));
                               }}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] hover:border-primary hover:text-primary transition-colors"
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-base)] hover:border-primary hover:text-primary transition-colors"
                             >
                               {m.name} · S/{Number(m.price).toFixed(2)}
                             </button>
@@ -2176,7 +2175,7 @@ export default function POSView() {
                   const resolved = waParsedItems.filter(i => i.selected || i.matches.length === 1);
                   const total = resolved.reduce((s, i) => s + ((i.selected || i.matches[0])?.price ?? 0) * i.qty, 0);
                   return (
-                    <div className="pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
+                    <div className="pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm font-bold text-[var(--text-primary)]">Total estimado: <span className="text-primary">S/{total.toFixed(2)}</span></span>
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{resolved.length}/{waParsedItems.length} items</span>
@@ -2214,12 +2213,12 @@ export default function POSView() {
 
       {/* ── Sales History Sidebar ──────────────────────────────────────────── */}
       {showHistory && (
-        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white dark:bg-card border-l border-[var(--rule-base)] dark:border-card-border flex flex-col">
+        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-[var(--surface-raised)] border-l border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col">
           {/* Header */}
-          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <History className="h-4 w-4 text-primary" />
-              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Historial del Turno</CardTitle>
+              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Historial del Turno</CardTitle>
             </div>
             <button
               onClick={() => setShowHistory(false)}
@@ -2263,10 +2262,10 @@ export default function POSView() {
       {/* ── Idea 12: Trueque Digital ──────────────────────────────────────── */}
       {showTrueque && (
         <div className="modal-backdrop p-4" onClick={() => setShowTrueque(false)}>
-          <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-xl max-w-sm w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">&#128260;</span>
-              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">Trueque Digital</CardTitle>
+              <RefreshCcw className="h-6 w-6 text-[var(--data-warning-500)]" aria-hidden />
+              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Trueque Digital</CardTitle>
             </div>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">El cliente intercambia productos por su compra (comun en zonas rurales de selva).</p>
             <div className="space-y-3">
@@ -2277,7 +2276,7 @@ export default function POSView() {
                   onChange={e => setTruequeDesc(e.target.value)}
                   placeholder="Ej: 5 kg de platano, 2 gallinas..."
                   rows={2}
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </div>
               <div>
@@ -2289,7 +2288,7 @@ export default function POSView() {
                   value={truequeValor}
                   onChange={e => setTruequeValor(e.target.value)}
                   placeholder="0.00"
-                  className="w-32 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               {Number(truequeValor) > 0 && cartTotal > 0 && (
@@ -2322,7 +2321,7 @@ export default function POSView() {
                 >
                   Confirmar trueque
                 </button>
-                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors">
+                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors">
                   Cancelar
                 </button>
               </div>
@@ -2394,18 +2393,18 @@ export default function POSView() {
       {/* ── Mejora 7: Zero Stock Confirmation ────────────────────────────────── */}
       {showZeroStockConfirm && (
         <div className="modal-backdrop p-4">
-          <div className="bg-white dark:bg-card rounded-xl max-w-xs w-full p-4 sm:p-6 text-center">
+          <div className="bg-[var(--surface-raised)] rounded-xl max-w-xs w-full p-4 sm:p-6 text-center">
             <div className="h-10 w-10 rounded-full bg-[var(--data-error-50)] flex items-center justify-center mx-auto mb-3">
               <Package className="h-5 w-5 text-[var(--data-error-500)]" />
             </div>
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-1">Sin stock</CardTitle>
+            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Sin stock</CardTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-4">
               <span className="font-semibold">{showZeroStockConfirm.name}</span> no tiene stock disponible. Agregar de todos modos?
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowZeroStockConfirm(null)}
-                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>

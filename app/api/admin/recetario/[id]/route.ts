@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const IngredienteSchema = z.object({
   nombre: z.string().min(1),
@@ -35,8 +36,15 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
   
   try {
     const { id } = await params;
-    const note = await prisma.note.findUnique({ where: { id } });
-    if (!note || note.title !== "__RECETARIO__" || note.tenantId !== auth.tenantId) {
+    // CRITICAL FIX 2026-05-11 (audit P0-4): findUnique({where:{id}}) + filtro
+    // post-hoc creaba un timing oracle (200ms si id existe en otro tenant vs
+    // 404 si no existe). Si alguien quitaba el guard, IDOR completo. Ahora
+    // findFirst con tenantId en el WHERE elimina ambos riesgos.
+    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio en WHERE.
+    const note = await prisma.note.findFirst({
+      where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
+    });
+    if (!note) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
     const data = JSON.parse(note.content);
@@ -49,13 +57,22 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 // PATCH: update a recetario recipe
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-recetario-X"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   
   try {
     const { id } = await params;
-    const note = await prisma.note.findUnique({ where: { id } });
-    if (!note || note.title !== "__RECETARIO__" || note.tenantId !== auth.tenantId) {
+    // CRITICAL FIX 2026-05-11 (audit P0-4): findUnique({where:{id}}) + filtro
+    // post-hoc creaba un timing oracle (200ms si id existe en otro tenant vs
+    // 404 si no existe). Si alguien quitaba el guard, IDOR completo. Ahora
+    // findFirst con tenantId en el WHERE elimina ambos riesgos.
+    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio en WHERE.
+    const note = await prisma.note.findFirst({
+      where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
+    });
+    if (!note) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 
@@ -88,8 +105,9 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       }));
     }
 
-    await prisma.note.update({
-      where: { id },
+    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio.
+    await prisma.note.updateMany({
+      where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
       data: { content: JSON.stringify(updated) },
     });
 
@@ -105,17 +123,29 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 // DELETE: delete a recetario recipe (marks inactive or hard delete)
 export async function DELETE(_req: NextRequest, { params }: RouteParams) {
   const _rl = await applyRateLimit(_req, "MODERATE", "admin-recetario-X"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(_req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(_req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   
   try {
     const { id } = await params;
-    const note = await prisma.note.findUnique({ where: { id } });
-    if (!note || note.title !== "__RECETARIO__" || note.tenantId !== auth.tenantId) {
+    // CRITICAL FIX 2026-05-11 (audit P0-4): findUnique({where:{id}}) + filtro
+    // post-hoc creaba un timing oracle (200ms si id existe en otro tenant vs
+    // 404 si no existe). Si alguien quitaba el guard, IDOR completo. Ahora
+    // findFirst con tenantId en el WHERE elimina ambos riesgos.
+    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio en WHERE.
+    const note = await prisma.note.findFirst({
+      where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
+    });
+    if (!note) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 
-    await prisma.note.delete({ where: { id } });
+    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio.
+    await prisma.note.deleteMany({
+      where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
+    });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Error al eliminar" }, { status: 500 });

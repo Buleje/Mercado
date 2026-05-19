@@ -65,12 +65,12 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
   return (
     <div className="modal-backdrop flex items-center justify-center" style={{ zIndex: 60 }} onClick={onClose}>
       <div
-        className="bg-white dark:bg-card rounded-xl w-full max-w-lg mx-4 border border-[var(--rule-base)] dark:border-card-border overflow-hidden"
+        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border">
-          <CardTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
             <Monitor className="h-5 w-5 text-primary" />
             Atajos de teclado
           </CardTitle>
@@ -90,7 +90,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
                 {section.shortcuts.map(([key, label]) => (
                   <div key={key} className="flex items-center justify-between py-1">
                     <span className="text-sm text-[var(--text-secondary)] dark:text-muted">{label}</span>
-                    <kbd className="ml-2 bg-[var(--surface-sunken)] dark:bg-surface text-foreground px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--rule-base)] dark:border-card-border  shrink-0">
+                    <kbd className="ml-2 bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--rule-base)] dark:border-[var(--rule-base)]  shrink-0">
                       {key}
                     </kbd>
                   </div>
@@ -101,7 +101,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface">
+        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface">
           <button
             onClick={onClose}
             className="w-full py-2.5 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
@@ -220,7 +220,7 @@ export function ClearDataModal({
 
   return (
     <div className="modal-backdrop flex items-center justify-center" style={{ zIndex: 100 }} onClick={handleCancel}>
-      <div className="bg-white dark:bg-card rounded-xl max-w-lg w-full mx-4 p-6 space-y-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full mx-4 p-6 space-y-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
         {/* Step indicator */}
         <div className="flex items-center gap-2">
@@ -250,7 +250,7 @@ export function ClearDataModal({
                 <Trash2 className="h-6 w-6 text-[var(--data-error-500)]" />
               </div>
               <div>
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Borrar datos</CardTitle>
+                <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Borrar datos</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Selecciona qué datos eliminar</p>
               </div>
             </div>
@@ -273,7 +273,7 @@ export function ClearDataModal({
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-all",
                       selected
                         ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20"
-                        : "border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
                     )}
                   >
                     <input
@@ -284,7 +284,7 @@ export function ClearDataModal({
                     />
                     <CatIcon className={cn("h-5 w-5 shrink-0", selected ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
                     <div className="flex-1 min-w-0">
-                      <p className={cn("text-sm font-semibold", selected ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>{cat.label}</p>
+                      <p className={cn("text-sm font-semibold", selected ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{cat.label}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted truncate">{cat.desc}</p>
                     </div>
                   </label>
@@ -293,7 +293,7 @@ export function ClearDataModal({
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                 Cancelar
               </button>
               <button
@@ -323,7 +323,7 @@ export function ClearDataModal({
               </ul>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setClearConfirmStep(1)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+              <button onClick={() => setClearConfirmStep(1)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                 ← Volver
               </button>
               <button onClick={() => setClearConfirmStep(3)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">
@@ -337,7 +337,7 @@ export function ClearDataModal({
         {clearConfirmStep === 3 && (
           <>
             <div className="space-y-3">
-              <p className="text-sm text-[var(--text-primary)] dark:text-foreground">
+              <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 Para confirmar, escribe <code className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-1.5 py-0.5 rounded font-mono text-xs">BORRAR_TODO</code> en el campo de abajo:
               </p>
               <input
@@ -350,7 +350,7 @@ export function ClearDataModal({
               />
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setClearConfirmStep(2)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+              <button onClick={() => setClearConfirmStep(2)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                 ← Volver
               </button>
               <button

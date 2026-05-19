@@ -22,23 +22,23 @@ function inPeriod(iso: string, p: Period): boolean {
 }
 function Donut({ data, total, size = 96 }: { data: { total: number; color: string }[]; total: number; size?: number }) {
   const segments = data.map((p, i) => { const pcts = data.map(x => total > 0 ? (x.total / total) * 100 : 0); const cum = pcts.reduce<number[]>((acc, pct) => [...acc, (acc[acc.length - 1] ?? 0) + pct], []); return `${p.color} ${cum[i - 1] ?? 0}% ${cum[i]}%`; });
-  return (<div className="relative shrink-0" style={{ width: size, height: size }}><div className="w-full h-full rounded-full" style={{ background: `conic-gradient(${segments.join(", ")})` }} /><div className="absolute rounded-full bg-white dark:bg-card flex items-center justify-center" style={{ inset: size*0.2 }}><span className="text-xs font-bold text-[var(--text-secondary)] dark:text-foreground">{total}</span></div></div>);
+  return (<div className="relative shrink-0" style={{ width: size, height: size }}><div className="w-full h-full rounded-full" style={{ background: `conic-gradient(${segments.join(", ")})` }} /><div className="absolute rounded-full bg-[var(--surface-raised)] flex items-center justify-center" style={{ inset: size*0.2 }}><span className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{total}</span></div></div>);
 }
 
 function Kpi({ label, value, icon: Icon, accent, delta }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null }) {
   const isPositive = delta != null ? delta >= 0 : false;
   const arrowUp = delta != null ? delta >= 0 : false;
-  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+  return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
     {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]")} />}
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
-      <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none">{value}</p>
+      <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-none">{value}</p>
       {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
 }
 function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
-  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}</CardTitle>{action}</div>{children}</div>);
+  return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4"><div className="flex items-center justify-between mb-4"><CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}</CardTitle>{action}</div>{children}</div>);
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">{text}</div>; }
 function _DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
@@ -49,13 +49,13 @@ function _DBadge({ children, color }: { children: React.ReactNode; color: "green
 export default function DashboardClientesSection({ st, expandAll, orders, customers, _products, showCohortRetention, setShowCohortRetention, _showCrossSell, _setShowCrossSell, _selectedProductForCrossSell, _setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews, period }: any) {
   const [selectedClientPhone, setSelectedClientPhone] = useState<string | null>(null);
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4")}>
           {expandAll && (
-            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
                 <Users className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
               </div>
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Clientes</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Clientes</CardTitle>
             </div>
           )}
           {/* Customer CSV export with filters */}
@@ -128,7 +128,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between mb-0.5">
                             <span className="text-xs text-[var(--text-secondary)] truncate">{c.name}</span>
-                            <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground ml-2 shrink-0">{fmt(c.total)} <span className="text-[var(--text-tertiary)] font-normal">({c.orders})</span></span>
+                            <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] ml-2 shrink-0">{fmt(c.total)} <span className="text-[var(--text-tertiary)] font-normal">({c.orders})</span></span>
                           </div>
                           <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
                             <div className="h-full rounded-full" style={{width:`${(c.total/mx)*100}%`,background:"#8b5cf6"}} />
@@ -144,7 +144,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                               : clientOrders.map((o: any) => (
                                 <div key={o.id} className="flex items-center justify-between text-[length:var(--ts-2xs)]">
                                   <span className="text-[var(--text-secondary)]">#{o.id.slice(-6)} · {fmtDate(o.createdAt)}</span>
-                                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(o.total)}</span>
+                                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(o.total)}</span>
                                 </div>
                               ))
                             }
@@ -182,13 +182,13 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--text-primary)] shrink-0" />
                     <span className="text-[var(--text-secondary)] w-24">Nuevos</span>
-                    <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{st.newCust}</span>
+                    <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{st.newCust}</span>
                     <span className="text-[var(--text-tertiary)]">({st.clientesAtendidos > 0 ? ((st.newCust/st.clientesAtendidos)*100).toFixed(0) : 0}%)</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-soft)] shrink-0" />
                     <span className="text-[var(--text-secondary)] w-24">Recurrentes</span>
-                    <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{st.returningCust}</span>
+                    <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{st.returningCust}</span>
                     <span className="text-[var(--text-tertiary)]">({st.clientesAtendidos > 0 ? ((st.returningCust/st.clientesAtendidos)*100).toFixed(0) : 0}%)</span>
                   </div>
                 </div>
@@ -227,7 +227,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                   <div className="overflow-x-auto -mx-2">
                     <table className="w-full min-w-[600px] text-xs">
                       <thead>
-                        <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                        <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                           <th className="text-left px-2 py-2 text-[var(--text-secondary)] dark:text-muted font-semibold">Cohorte</th>
                           <th className="text-center px-2 py-2 text-[var(--text-secondary)] dark:text-muted font-semibold">M0</th>
                           <th className="text-center px-2 py-2 text-[var(--text-secondary)] dark:text-muted font-semibold">M1</th>
@@ -239,8 +239,8 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                       </thead>
                       <tbody>
                         {st.cohortData.map((cohort: any, idx: number) => (
-                          <tr key={idx} className="border-b border-[var(--rule-soft)] dark:border-card-border/50">
-                            <td className="px-2 py-2 font-medium text-[var(--text-primary)] dark:text-foreground">{cohort.cohortMonth}</td>
+                          <tr key={idx} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
+                            <td className="px-2 py-2 font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{cohort.cohortMonth}</td>
                             {[cohort.month0, cohort.month1, cohort.month2, cohort.month3, cohort.month4, cohort.month5plus].map((val, i) => {
                               const color = val >= 50 ? "bg-[var(--accent-soft)]" : val >= 30 ? "bg-[var(--accent-soft)]" : val >= 15 ? "bg-[var(--data-warning-500)]" : val > 0 ? "bg-[var(--data-error-500)]" : "bg-gray-100 dark:bg-accent";
                               const textColor = val >= 15 ? "text-white" : "text-[var(--text-secondary)]";
@@ -288,7 +288,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                       {st.atRiskClients.slice(0, 8).map((c: any) => (
                         <div key={c.phone} className="flex items-center justify-between py-2 px-3 bg-[var(--data-error-50)] dark:bg-red-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</div>
+                            <div className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{c.name}</div>
                             <div className="flex flex-wrap items-center gap-2 mt-0.5">
                               <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Gastó {fmt(c.totalSpent)}</span>
                               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">• {c.orderCount} pedidos</span>
@@ -325,7 +325,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                       {st.decliningClients.slice(0, 5).map((c: any) => (
                         <div key={c.phone} className="flex items-center justify-between py-2 px-3 bg-[var(--data-warning-50)] dark:bg-amber-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</div>
+                            <div className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{c.name}</div>
                             <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{c.orderCount} pedidos totales • Último: hace {c.daysSinceLastOrder} días</span>
                           </div>
                           <a
@@ -358,7 +358,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 {([0,5,4,3,2,1] as const).map(r => (
                   <button key={r} onClick={() => setReviewFilter(r)}
                     className={cn("px-2 py-0.5 rounded text-xs font-semibold transition-all",
-                      reviewFilter === r ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-tertiary)] dark:text-muted"
+                      reviewFilter === r ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-tertiary)] dark:text-muted"
                     )}>
                     {r === 0 ? "Todas" : `${r}★`}
                   </button>
@@ -371,13 +371,13 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
               return (
                 <div className="space-y-2.5 max-h-80 overflow-y-auto">
                   {filtered.map((r: any) => (
-                    <div key={r.id} className="flex flex-wrap items-start gap-3 py-2.5 px-3 rounded-xl bg-gray-50 dark:bg-accent/40 border border-[var(--rule-soft)] dark:border-card-border">
+                    <div key={r.id} className="flex flex-wrap items-start gap-3 py-2.5 px-3 rounded-xl bg-gray-50 dark:bg-accent/40 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                       <div className="w-8 h-8 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center text-xs font-bold text-[var(--data-warning-500)] shrink-0">
                         {r.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{r.name}</span>
+                          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.name}</span>
                           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(r.date)}</span>
                         </div>
                         <div className="flex items-center gap-0.5 my-0.5">

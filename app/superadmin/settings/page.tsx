@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   DollarSign,
@@ -9,7 +9,15 @@ import {
   CheckCircle2,
   Loader2,
   Save,
+  Percent,
+  Package,
+  Users,
+  ShoppingCart,
+  Store,
+  AlertTriangle,
+  Sparkles,
 } from "@buleje/design-system/icons";
+import type { LucideIcon } from "lucide-react";
 import type { PlatformSettings } from "@/lib/superadmin-types";
 import { DEFAULT_SETTINGS } from "@/lib/superadmin-types";
 import {
@@ -35,6 +43,24 @@ const SIDEBAR_ITEMS = [
   { label: "Config",          href: "/superadmin/settings" },
 ];
 
+type PlanKey = "priceFree" | "pricePro" | "priceBusiness" | "priceEnterprise";
+
+interface PlanTier {
+  key: PlanKey;
+  label: string;
+  tagline: string;
+  accent: "neutral" | "primary" | "violet" | "indigo";
+}
+
+// Alineado con plan-tiers.ts mayo 2026 v2 (Free/Starter/Pro/Business).
+// Las keys siguen siendo los PlanId DB legacy (free/pro/business/enterprise).
+const PLAN_TIERS: PlanTier[] = [
+  { key: "priceFree",       label: "Free",     tagline: "Gratis · siempre",           accent: "neutral" },
+  { key: "pricePro",        label: "Starter",  tagline: "Bodega con flujo diario",    accent: "primary" },
+  { key: "priceBusiness",   label: "Pro",      tagline: "Sweet spot · Mas elegido",   accent: "violet" },
+  { key: "priceEnterprise", label: "Business", tagline: "Cadenas y productores",      accent: "indigo" },
+];
+
 /**
  * /superadmin/settings
  *
@@ -47,6 +73,7 @@ const SIDEBAR_ITEMS = [
  */
 export default function SettingsPage() {
   const [settings, setSettings] = useState<PlatformSettings>(DEFAULT_SETTINGS);
+  const [initial, setInitial] = useState<PlatformSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -91,7 +118,13 @@ export default function SettingsPage() {
         assignIfBool("allowNewStores", data.settings["allow-new-stores"]);
         assignIfBool("maintenanceMode", data.settings["maintenance-mode"]);
 
-        if (alive) setSettings((prev) => ({ ...prev, ...flat }));
+        if (alive) {
+          setSettings((prev) => {
+            const next = { ...prev, ...flat };
+            setInitial(next);
+            return next;
+          });
+        }
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : "load_failed");
       } finally {
@@ -105,7 +138,14 @@ export default function SettingsPage() {
 
   const update = <K extends keyof PlatformSettings>(key: K, value: PlatformSettings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
+    setSaved(false);
   };
+
+  const dirty = useMemo(() => {
+    return (Object.keys(settings) as (keyof PlatformSettings)[]).some(
+      (k) => settings[k] !== initial[k],
+    );
+  }, [settings, initial]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -141,6 +181,7 @@ export default function SettingsPage() {
         throw new Error(errBody.error ?? `HTTP ${res.status}`);
       }
       setSaved(true);
+      setInitial(settings);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
       setError(e instanceof Error ? e.message : "save_failed");
@@ -149,177 +190,481 @@ export default function SettingsPage() {
     }
   };
 
-  const labelCls =
-    "block text-xs font-semibold text-[var(--text-tertiary)] mb-1 uppercase tracking-wider";
-
   return (
     <AdminTabShell
       title="Configuración de plataforma"
-      description="Ajusta precios, límites y controles globales. Los precios alimentan el MRR del dashboard."
+      kicker="Control global"
+      description="Ajusta precios, comisiones, límites y controles de toda la plataforma. Los precios alimentan el MRR del dashboard en tiempo real."
       icon={Settings}
+      stats={
+        <>
+          <StatPill
+            label="Plan base"
+            value={`S/${settings.priceFree}`}
+            tone="neutral"
+          />
+          <StatPill
+            label="Comisión"
+            value={`${settings.commissionDefault}%`}
+            tone="primary"
+          />
+          {settings.maintenanceMode && (
+            <StatPill label="Estado" value="Mantenimiento" tone="warning" />
+          )}
+        </>
+      }
       actions={
         <AdminButton
           variant="primary"
           icon={saved ? CheckCircle2 : Save}
           loading={saving}
-          disabled={loading}
+          disabled={loading || !dirty}
           onClick={handleSave}
         >
-          {saving ? "Guardando…" : saved ? "Guardado" : "Guardar cambios"}
+          {saving ? "Guardando…" : saved ? "Guardado" : dirty ? "Guardar cambios" : "Sin cambios"}
         </AdminButton>
       }
     >
       {loading && (
-        <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-2">
-          <Loader2 className="w-3 h-3 animate-spin" aria-hidden /> Cargando desde la base de datos…
-        </p>
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" aria-hidden />
+          Cargando configuración desde la base de datos…
+        </div>
       )}
-      {error && <div className={ADMIN_TOKENS.errorBanner}>Error: {error}</div>}
+      {error && (
+        <div className={`${ADMIN_TOKENS.errorBanner} flex items-center gap-2`}>
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+          Error: {error}
+        </div>
+      )}
+      {dirty && !saving && !saved && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Sparkles className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+            <span className="font-semibold text-[var(--text-primary)]">
+              Tienes cambios sin guardar
+            </span>
+            <span className="text-[var(--text-secondary)]">— recordá presionar Guardar.</span>
+          </div>
+        </div>
+      )}
 
       <SidebarConfigPanel items={SIDEBAR_ITEMS} />
 
-      {/* Precios de planes */}
-      <section className={ADMIN_TOKENS.cardPadded}>
-        <h3 className={`${ADMIN_TOKENS.headingH3} flex items-center gap-2`}>
-          <DollarSign className="w-5 h-5 text-[var(--accent)]" aria-hidden /> Precios de planes (S/ / mes)
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {([
-            { key: "priceFree" as const, label: "Free" },
-            { key: "pricePro" as const, label: "Pro" },
-            { key: "priceBusiness" as const, label: "Business" },
-            { key: "priceEnterprise" as const, label: "Enterprise" },
-          ]).map(({ key, label }) => (
-            <div key={key}>
-              <label className={labelCls}>{label}</label>
-              <input
-                type="number"
-                min={0}
-                disabled={loading}
-                value={settings[key]}
-                onChange={(e) => update(key, Number(e.target.value))}
-                className={ADMIN_TOKENS.input}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ─── Precios de planes ─────────────────────────────────────── */}
+      <SectionHeader
+        eyebrow="Monetización"
+        icon={DollarSign}
+        title="Precios de planes"
+        subtitle="Precio mensual en soles (S/) que se cobra a cada tenant. Estos números alimentan directamente el MRR del dashboard."
+      />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {PLAN_TIERS.map((tier) => (
+          <PlanPriceCard
+            key={tier.key}
+            tier={tier}
+            value={settings[tier.key]}
+            disabled={loading}
+            onChange={(v) => update(tier.key, v)}
+          />
+        ))}
+      </div>
 
-      {/* Comisión y límites */}
-      <section className={ADMIN_TOKENS.cardPadded}>
-        <h3 className={`${ADMIN_TOKENS.headingH3} flex items-center gap-2`}>
-          <BarChart3 className="w-5 h-5 text-[var(--text-secondary)]" aria-hidden /> Comisión y límites
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className={labelCls}>Comisión default (%)</label>
+      {/* ─── Comisión por defecto ────────────────────────────────────── */}
+      <SectionHeader
+        eyebrow="Marketplace"
+        icon={Percent}
+        title="Comisión por defecto"
+        subtitle="Porcentaje que la plataforma retiene de cada venta cross-vendor. Puede sobreescribirse por categoría o por vendor."
+      />
+      <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Comisión global (%)
+            </label>
+            <div className="mt-2 flex items-center gap-3">
+              <div className="relative max-w-xs flex-1">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  disabled={loading}
+                  value={settings.commissionDefault}
+                  onChange={(e) => update("commissionDefault", Number(e.target.value))}
+                  className={`${ADMIN_TOKENS.input} pr-10 text-2xl font-bold h-14`}
+                />
+                <Percent
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]"
+                  aria-hidden
+                />
+              </div>
+              <p className="text-sm text-[var(--text-secondary)]">
+                de cada venta marketplace
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4 sm:min-w-[200px]">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Sobre S/ 100
+            </p>
+            <p className="mt-1 font-display text-2xl font-extrabold text-[var(--accent)]">
+              S/ {((settings.commissionDefault / 100) * 100).toFixed(2)}
+            </p>
+            <p className="text-xs text-[var(--text-secondary)]">retiene la plataforma</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Límites por plan ────────────────────────────────────────── */}
+      <SectionHeader
+        eyebrow="Cuotas"
+        icon={BarChart3}
+        title="Límites por plan"
+        subtitle="Topes que dispara el upsell al siguiente plan. Cuando un tenant los supera, el banner de upgrade aparece automáticamente."
+      />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <PlanLimitsCard
+          plan="Free"
+          tone="neutral"
+          values={{
+            products: settings.limitsFreeProducts,
+            users: settings.limitsFreeUsers,
+            orders: settings.limitsFreeOrders,
+          }}
+          disabled={loading}
+          onChange={(field, v) => {
+            const map = {
+              products: "limitsFreeProducts",
+              users: "limitsFreeUsers",
+              orders: "limitsFreeOrders",
+            } as const;
+            update(map[field], v);
+          }}
+        />
+        <PlanLimitsCard
+          plan="Pro"
+          tone="primary"
+          values={{
+            products: settings.limitsProProducts,
+            users: settings.limitsProUsers,
+            orders: settings.limitsProOrders,
+          }}
+          disabled={loading}
+          onChange={(field, v) => {
+            const map = {
+              products: "limitsProProducts",
+              users: "limitsProUsers",
+              orders: "limitsProOrders",
+            } as const;
+            update(map[field], v);
+          }}
+        />
+      </div>
+
+      {/* ─── Controles ───────────────────────────────────────────────── */}
+      <SectionHeader
+        eyebrow="Operativa"
+        icon={Settings}
+        title="Controles de plataforma"
+        subtitle="Switches globales con efecto inmediato sobre todos los tenants. Usá modo mantenimiento solo durante deploys o incidencias críticas."
+      />
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <ToggleCard
+          icon={Store}
+          title="Permitir nuevas tiendas"
+          desc="Abre o cierra el formulario público de registro de tenants."
+          active={settings.allowNewStores}
+          tone="primary"
+          disabled={loading}
+          onToggle={() => update("allowNewStores", !settings.allowNewStores)}
+        />
+        <ToggleCard
+          icon={AlertTriangle}
+          title="Modo mantenimiento"
+          desc="Bloquea el acceso público con pantalla de mantenimiento. Usar solo durante deploys críticos."
+          active={settings.maintenanceMode}
+          tone="warning"
+          disabled={loading}
+          onToggle={() => update("maintenanceMode", !settings.maintenanceMode)}
+        />
+      </div>
+    </AdminTabShell>
+  );
+}
+
+/* ───────────────────────── shared components ─────────────────────── */
+
+function StatPill({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "neutral" | "primary" | "warning";
+}) {
+  const cls =
+    tone === "primary"
+      ? "border-[var(--accent)]/30 bg-[var(--accent-soft,var(--accent))]/10 text-[var(--accent)]"
+      : tone === "warning"
+        ? "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+        : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]";
+  return (
+    <div className={`rounded-xl border px-3.5 py-2 min-w-[88px] ${cls}`}>
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+        {label}
+      </p>
+      <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SectionHeader({
+  eyebrow,
+  icon: Icon,
+  title,
+  subtitle,
+}: {
+  eyebrow: string;
+  icon: LucideIcon;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 border-b border-[var(--rule-soft)] pb-3 pt-2">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+          {eyebrow}
+        </p>
+        <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+          {title}
+        </h2>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+function PlanPriceCard({
+  tier,
+  value,
+  disabled,
+  onChange,
+}: {
+  tier: PlanTier;
+  value: number;
+  disabled: boolean;
+  onChange: (v: number) => void;
+}) {
+  const accentMap = {
+    neutral: {
+      border: "border-[var(--rule-soft)]",
+      badge: "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)]",
+      ring: "focus-within:ring-[var(--text-secondary)]/30",
+    },
+    primary: {
+      border: "border-[var(--accent)]/30",
+      badge: "bg-[var(--accent-soft)] text-[var(--accent)]",
+      ring: "focus-within:ring-[var(--accent)]/40",
+    },
+    violet: {
+      border: "border-violet-300/40 dark:border-violet-700/40",
+      badge:
+        "bg-violet-100 dark:bg-violet-950/40 text-[var(--accent)] dark:text-[var(--accent)]",
+      ring: "focus-within:ring-violet-400/40",
+    },
+    indigo: {
+      border: "border-indigo-300/40 dark:border-indigo-700/40",
+      badge:
+        "bg-indigo-100 dark:bg-indigo-950/40 text-[var(--accent)] dark:text-[var(--accent)]",
+      ring: "focus-within:ring-indigo-400/40",
+    },
+  }[tier.accent];
+
+  return (
+    <div
+      className={`group rounded-2xl border-2 ${accentMap.border} bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md`}
+    >
+      <div className="flex items-center justify-between">
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${accentMap.badge}`}
+        >
+          {tier.label}
+        </span>
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          {tier.tagline}
+        </span>
+      </div>
+      <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+        Precio mensual
+      </label>
+      <div
+        className={`mt-1.5 flex items-center gap-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 transition focus-within:ring-2 ${accentMap.ring}`}
+      >
+        <span className="font-display text-base font-bold text-[var(--text-tertiary)]">
+          S/
+        </span>
+        <input
+          type="number"
+          min={0}
+          disabled={disabled}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full bg-transparent font-display text-2xl font-extrabold text-[var(--text-primary)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        <span className="text-xs text-[var(--text-tertiary)]">/ mes</span>
+      </div>
+    </div>
+  );
+}
+
+function PlanLimitsCard({
+  plan,
+  tone,
+  values,
+  disabled,
+  onChange,
+}: {
+  plan: string;
+  tone: "neutral" | "primary";
+  values: { products: number; users: number; orders: number };
+  disabled: boolean;
+  onChange: (field: "products" | "users" | "orders", v: number) => void;
+}) {
+  const fields: { key: "products" | "users" | "orders"; label: string; icon: LucideIcon }[] = [
+    { key: "products", label: "Productos", icon: Package },
+    { key: "users", label: "Usuarios", icon: Users },
+    { key: "orders", label: "Pedidos / mes", icon: ShoppingCart },
+  ];
+  const accent =
+    tone === "primary"
+      ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]/30"
+      : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]";
+  const badge =
+    tone === "primary"
+      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+      : "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)]";
+
+  return (
+    <div className={`rounded-2xl border-2 ${accent} p-6`}>
+      <div className="flex items-center justify-between">
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${badge}`}
+        >
+          Plan {plan}
+        </span>
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          Topes mensuales
+        </span>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        {fields.map(({ key, label, icon: Icon }) => (
+          <div key={key}>
+            <label className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <Icon className="h-3.5 w-3.5" aria-hidden />
+              {label}
+            </label>
             <input
               type="number"
               min={0}
-              max={100}
-              step={0.1}
-              disabled={loading}
-              value={settings.commissionDefault}
-              onChange={(e) => update("commissionDefault", Number(e.target.value))}
-              className={ADMIN_TOKENS.input}
+              disabled={disabled}
+              value={values[key]}
+              onChange={(e) => onChange(key, Number(e.target.value))}
+              className={`${ADMIN_TOKENS.input} mt-1 font-display text-lg font-bold`}
             />
           </div>
-        </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-        <h4 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-          Límites plan Free
-        </h4>
-        <div className="grid grid-cols-3 gap-4">
-          {([
-            { key: "limitsFreeProducts" as const, label: "Productos" },
-            { key: "limitsFreeUsers" as const, label: "Usuarios" },
-            { key: "limitsFreeOrders" as const, label: "Pedidos/mes" },
-          ]).map(({ key, label }) => (
-            <div key={key}>
-              <label className={labelCls}>{label}</label>
-              <input
-                type="number"
-                min={0}
-                disabled={loading}
-                value={settings[key]}
-                onChange={(e) => update(key, Number(e.target.value))}
-                className={ADMIN_TOKENS.input}
-              />
-            </div>
-          ))}
-        </div>
+function ToggleCard({
+  icon: Icon,
+  title,
+  desc,
+  active,
+  tone,
+  disabled,
+  onToggle,
+}: {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+  active: boolean;
+  tone: "primary" | "warning";
+  disabled: boolean;
+  onToggle: () => void;
+}) {
+  const activeBorder =
+    tone === "warning"
+      ? "border-amber-400/50 dark:border-amber-600/50"
+      : "border-[var(--accent)]/40";
+  const inactiveBorder = "border-[var(--rule-soft)]";
+  const iconBg =
+    tone === "warning"
+      ? active
+        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+        : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
+      : active
+        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+        : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]";
+  const switchBg =
+    tone === "warning"
+      ? active
+        ? "bg-amber-500"
+        : "bg-[var(--surface-sunken)]"
+      : active
+        ? "bg-[var(--accent)]"
+        : "bg-[var(--surface-sunken)]";
 
-        <h4 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-          Límites plan Pro
-        </h4>
-        <div className="grid grid-cols-3 gap-4">
-          {([
-            { key: "limitsProProducts" as const, label: "Productos" },
-            { key: "limitsProUsers" as const, label: "Usuarios" },
-            { key: "limitsProOrders" as const, label: "Pedidos/mes" },
-          ]).map(({ key, label }) => (
-            <div key={key}>
-              <label className={labelCls}>{label}</label>
-              <input
-                type="number"
-                min={0}
-                disabled={loading}
-                value={settings[key]}
-                onChange={(e) => update(key, Number(e.target.value))}
-                className={ADMIN_TOKENS.input}
-              />
-            </div>
-          ))}
+  return (
+    <div
+      className={`flex items-start gap-4 rounded-2xl border-2 bg-[var(--surface-raised)] p-5 transition ${
+        active ? activeBorder : inactiveBorder
+      }`}
+    >
+      <span
+        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${iconBg}`}
+      >
+        <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display text-base font-bold text-[var(--text-primary)]">
+            {title}
+          </h3>
+          <button
+            type="button"
+            onClick={onToggle}
+            disabled={disabled}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 disabled:opacity-60 ${switchBg}`}
+            role="switch"
+            aria-checked={active}
+            aria-label={title}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
+                active ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
         </div>
-      </section>
-
-      {/* Controles de plataforma */}
-      <section className={ADMIN_TOKENS.cardPadded}>
-        <h3 className={`${ADMIN_TOKENS.headingH3} flex items-center gap-2`}>
-          <Settings className="w-5 h-5 text-[var(--data-warning-500)]" aria-hidden /> Controles de plataforma
-        </h3>
-        <div className="space-y-4">
-          {([
-            {
-              key: "allowNewStores" as const,
-              label: "Permitir registro de nuevas tiendas",
-              desc: "Si está desactivado, el formulario de registro estará cerrado",
-            },
-            {
-              key: "maintenanceMode" as const,
-              label: "Modo mantenimiento",
-              desc: "Muestra una pantalla de mantenimiento a todos los usuarios",
-            },
-          ]).map(({ key, label, desc }) => (
-            <div
-              key={key}
-              className="flex items-center justify-between gap-4 py-3 border-b border-[var(--rule-soft)] last:border-0"
-            >
-              <div>
-                <div className="text-sm font-semibold text-[var(--text-primary)]">{label}</div>
-                <div className="text-xs text-[var(--text-tertiary)] mt-0.5">{desc}</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => update(key, !settings[key])}
-                disabled={loading}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 disabled:opacity-60 ${
-                  settings[key] ? "bg-[var(--accent)]" : "bg-[var(--surface-sunken)]"
-                }`}
-                role="switch"
-                aria-checked={settings[key]}
-                aria-label={label}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
-                    settings[key] ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-    </AdminTabShell>
+        <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{desc}</p>
+        {active && tone === "warning" && (
+          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+            <AlertTriangle className="h-3 w-3" aria-hidden />
+            Activo · público bloqueado
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

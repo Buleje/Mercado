@@ -13,7 +13,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 // Body: { plan: "pro" | "business" }
 // Creates a Stripe Checkout Session and returns { url }
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "billing-checkout"); if (_rl) return _rl;
+  // Audit 2026-05-19: endpoint mueve dinero (Stripe Checkout SaaS) — STRICT bajo el principio
+  // de menor tasa para superficies de pago.
+  const _rl = await applyRateLimit(req, "STRICT", "billing-checkout"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

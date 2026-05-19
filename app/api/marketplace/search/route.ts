@@ -11,6 +11,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { SearchSuggestionsDB } from "@/lib/db/search-suggestions.db";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 
 const QuerySchema = z.object({
   q:        z.string().min(1).max(100).transform((s) => s.replace(/[<>"'&]/g, "").trim()),
@@ -140,7 +141,7 @@ export async function GET(req: NextRequest) {
 
     const topItems = finalResults.slice(0, 50);
     // F1: cross-tenant público — "main" es fallback legítimo para enriquecimiento de imágenes
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    const tenantId = resolveMarketplaceTenant(req, { context: "marketplace/search" });
     const productIds = topItems.map((r) => r.product.id);
 
     // Reutiliza MarketplacePublicDB.batchCatalogEnrichment — elimina duplicado local

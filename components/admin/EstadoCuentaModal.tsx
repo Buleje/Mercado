@@ -164,11 +164,11 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-white dark:bg-card rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
               Estado de Cuenta
             </CardTitle>
@@ -236,14 +236,14 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Fiados table */}
               {data.fiados.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-[var(--data-error-500)]" /> Fiados pendientes
                   </h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                        <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                           <th className="text-left py-2 font-bold text-[var(--text-tertiary)] uppercase">Descripción</th>
                           <th className="text-right py-2 font-bold text-[var(--text-tertiary)] uppercase">Total</th>
                           <th className="text-right py-2 font-bold text-[var(--text-tertiary)] uppercase">Saldo</th>
@@ -253,8 +253,8 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                       </thead>
                       <tbody>
                         {data.fiados.map((f) => (
-                          <tr key={f.id} className="border-t border-gray-50 dark:border-card-border">
-                            <td className="py-2 text-[var(--text-primary)] dark:text-foreground">{f.descripcion || "Sin descripción"}</td>
+                          <tr key={f.id} className="border-t border-[var(--rule-base)]">
+                            <td className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{f.descripcion || "Sin descripción"}</td>
                             <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(f.total)}</td>
                             <td className="py-2 text-right font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(f.saldo)}</td>
                             <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{fmtDate(f.fechaCreacion)}</td>
@@ -263,8 +263,8 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="border-t-2 border-[var(--rule-base)] dark:border-card-border font-bold">
-                          <td className="py-2 text-[var(--text-primary)] dark:text-foreground">Total</td>
+                        <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
+                          <td className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</td>
                           <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(data.fiados.reduce((s, f) => s + f.total, 0))}</td>
                           <td className="py-2 text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.resumen.totalFiados)}</td>
                           <td colSpan={2} />
@@ -277,25 +277,25 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Prestamos table */}
               {data.prestamos.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" /> Préstamos activos
                   </h4>
                   {data.prestamos.map((p) => (
                     <div key={p.id} className="mb-3 last:mb-0">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
+                        <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                           Préstamo {fmt(p.monto)} — Saldo: <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{fmt(p.saldoPendiente)}</span>
                         </span>
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(p.fechaCreacion)}</span>
                       </div>
                       {p.cuotasPendientes.length > 0 && (
-                        <div className="bg-[var(--surface-alt)] dark:bg-card rounded-lg p-2 space-y-1">
+                        <div className="bg-[var(--surface-alt)] dark:bg-[var(--surface-raised)] rounded-lg p-2 space-y-1">
                           {p.cuotasPendientes.map((c) => (
                             <div key={c.id} className="flex justify-between text-xs">
                               <span className="text-[var(--text-secondary)] dark:text-muted">Cuota #{c.número}</span>
                               <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(c.fechaVence)}</span>
-                              <span className={cn("font-bold", c.status === "atrasado" ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                              <span className={cn("font-bold", c.status === "atrasado" ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 {fmt(c.monto)}
                               </span>
                             </div>
@@ -309,13 +309,13 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Últimas compras */}
               {data.ultimasCompras.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex items-center gap-2">
+                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4 text-primary" /> Últimas compras
                   </h4>
                   <div className="space-y-1.5">
                     {data.ultimasCompras.map((c) => (
-                      <div key={c.id} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50 dark:border-card-border last:border-0">
+                      <div key={c.id} className="flex items-center justify-between text-xs py-1.5 border-b border-[var(--rule-base)] last:border-0">
                         <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(c.fecha)}</span>
                         <span className="text-[var(--text-secondary)] dark:text-muted capitalize">{c.metodoPago ?? "efectivo"}</span>
                         <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
@@ -325,7 +325,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         )}>
                           {STATUS_LABELS[c.status] ?? c.status}
                         </span>
-                        <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.total)}</span>
+                        <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.total)}</span>
                       </div>
                     ))}
                   </div>
@@ -336,7 +336,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
         </div>
 
         {/* Footer actions */}
-        <div className="flex gap-2 p-4 border-t border-[var(--rule-soft)] dark:border-card-border shrink-0">
+        <div className="flex gap-2 p-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <button
             onClick={handlePrint}
             disabled={!data}

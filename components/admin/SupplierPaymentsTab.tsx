@@ -72,12 +72,12 @@ export default function SupplierPaymentsTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <HandCoins className="h-6 w-6 text-primary" /> Pagos a Proveedores
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Programación, seguimiento y conciliación de pagos</p>
         </div>
-        <button onClick={() => exportToCSV(PAYMENTS.map(p => ({ factura: p.invoiceRef, proveedor: p.supplier, monto: p.amount, pagado: p.paid, vencimiento: p.dueDate, fecha_pago: p.paidDate || "-", metodo: p.paymentMethod, estado: STATUS_MAP[p.status].label })), "pagos-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(PAYMENTS.map(p => ({ factura: p.invoiceRef, proveedor: p.supplier, monto: p.amount, pagado: p.paid, vencimiento: p.dueDate, fecha_pago: p.paidDate || "-", metodo: p.paymentMethod, estado: STATUS_MAP[p.status].label })), "pagos-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -115,24 +115,24 @@ export default function SupplierPaymentsTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar proveedor o factura..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar proveedor o factura..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as typeof filterStatus)} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as typeof filterStatus)} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos</option>
           {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
       </div>
 
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Factura</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Monto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Pagado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Saldo</th><th className="px-2 sm:px-4 py-2 sm:py-3">Vencimiento</th><th className="px-2 sm:px-4 py-2 sm:py-3">Método</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(p => (
-                <tr key={p.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{p.invoiceRef}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{p.supplier}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(p.amount)}</td>
+                <tr key={p.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent/20">
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.invoiceRef}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.supplier}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(p.amount)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{fmt(p.paid)}</td>
                   <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", p.amount - p.paid > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>{fmt(p.amount - p.paid)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] flex items-center gap-1"><Calendar className="h-3 w-3" />{p.dueDate}</td>
@@ -148,14 +148,14 @@ export default function SupplierPaymentsTab() {
 
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.invoiceRef}</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.invoiceRef}</CardTitle>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[["Proveedor", detail.supplier], ["Monto", fmt(detail.amount)], ["Pagado", fmt(detail.paid)], ["Saldo", fmt(detail.amount - detail.paid)], ["Vencimiento", detail.dueDate], ["Fecha pago", detail.paidDate || "-"], ["Método", detail.paymentMethod], ["Estado", STATUS_MAP[detail.status].label]].map(([k, v]) => (
-                <div key={k as string}><p className="text-xs text-[var(--text-tertiary)]">{k as string}</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{v as string}</p></div>
+                <div key={k as string}><p className="text-xs text-[var(--text-tertiary)]">{k as string}</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{v as string}</p></div>
               ))}
             </div>
             {detail.earlyDiscountPct && detail.status !== "pagado" && (

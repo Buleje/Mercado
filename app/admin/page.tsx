@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -247,6 +247,19 @@ function AdminPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [hasSubSidebar, subSidebarTabs, tab, navigateTab]);
 
+  // Brandon 2026-05-16 (Fase 3 perf): estabilizar props del tabRouter con
+  // useMemo. Antes el objeto inline se recreaba en cada render de AdminPage
+  // (cualquier cambio de state) rompiendo el memo(AdminMainContent) y
+  // disparando re-render fantasma del TabRouter + módulo activo.
+  // Ahora identity-stable: solo cambia cuando alguna dep real cambia.
+  // IMPORTANTE: este hook DEBE ir ANTES del early return `if (!authReady)`
+  // para no violar rules of hooks (los renders pre/post auth ejecutarían
+  // counts distintos de hooks).
+  const tabRouterProps = useMemo(
+    () => ({ storeMode, onModeChange: setStoreModeState, visibleCategories, onSaveCategoryOrder: saveCategoryOrder, onboarding }),
+    [storeMode, setStoreModeState, visibleCategories, saveCategoryOrder, onboarding],
+  );
+
   if (!authReady) {
     return <LoadingState variant="fullscreen" message="" />;
   }
@@ -257,8 +270,9 @@ function AdminPage() {
       {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}
       <TrialCountdownBannerLoader />
 
-      {/* ADR-087: alertas operativas (solicitudes pendientes, pedidos sin partner) */}
-      <AdminAlertsBanner />
+      {/* AdminAlertsBanner se renderiza DENTRO del shell con margin sidebar
+          (más abajo) para que respete el ancho del contenido y no quede
+          tapado por el sidebar fixed de 260px. */}
 
       {/* AdminImpersonationBanner removido — el chip tenant del topbar
           ya indica el negocio administrado. Salir de impersonation se
@@ -313,6 +327,10 @@ function AdminPage() {
           : sidebarConfigMode ? "sm:ml-[660px]"
           : "sm:ml-[260px]",
       )}>
+        {/* ADR-087: alertas operativas — adentro del shell para respetar
+            el margin del sidebar fixed (260px / 60px compact / 660px config). */}
+        <AdminAlertsBanner />
+
         <AdminTopHeader
           presentationMode={presentationMode}
           isSuperAdminImpersonating={isSuperAdminImpersonating}
@@ -377,10 +395,7 @@ function AdminPage() {
           compactMode={compactMode}
           presentationMode={presentationMode}
           swipeHandlers={swipeHandlers}
-          tabRouter={{
-            storeMode, onModeChange: setStoreModeState, visibleCategories,
-            onSaveCategoryOrder: saveCategoryOrder, onboarding,
-          }}
+          tabRouter={tabRouterProps}
         />
 
         <AdminOverlaysLayer

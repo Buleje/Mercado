@@ -918,15 +918,20 @@ export default function AdminSidebar({
   };
 
   // Mejora 19 + Mejora 2: Badges de pendientes para todos los modulos
+  // QW4+QW6 perf (2026-05-16):
+  //  - Las 3 fetches (doc-badges, stats, fiados) ahora en UN Promise.all
+  //    (antes fiados estaba en serial fuera del Promise.all → +1 RTT/mount)
+  //  - Polling se pausa cuando document.hidden → -50% requests background
+  //  - Al volver visible, refetch inmediato para datos frescos
   const [docBadges, setDocBadges] = useState<Record<string, number>>({});
   useEffect(() => {
     let cancelled = false;
     async function fetchDocBadges() {
       try {
-        // Fetch doc-badges + stats in parallel for comprehensive badge data
-        const [docRes, statsRes] = await Promise.all([
+        const [docRes, statsRes, fiadosRes] = await Promise.all([
           fetch("/api/admin/doc-badges", { credentials: "include" }).catch(() => null),
           fetch("/api/admin/stats", { credentials: "include" }).catch(() => null),
+          fetch("/api/fiados?status=ACTIVO", { credentials: "include" }).catch(() => null),
         ]);
         if (cancelled) return;
         const badges: Record<string, number> = {};
@@ -940,24 +945,37 @@ export default function AdminSidebar({
           if (stats?.lowStockProducts > 0) badges["inventario"] = stats.lowStockProducts;
           if (stats?.overduePayables > 0) badges["compras"] = stats.overduePayables;
         }
-        // Fetch fiados vencidos para badge de Fiados
-        try {
-          const fiadosRes = await fetch("/api/fiados?status=ACTIVO", { credentials: "include" });
-          if (fiadosRes?.ok) {
+        if (fiadosRes?.ok) {
+          try {
             const fiadosData = await fiadosRes.json();
             const arr = Array.isArray(fiadosData) ? fiadosData : [];
             const vencidos = arr.filter((f: any) => f.fechaVence && new Date(f.fechaVence) < new Date()).length;
             const activos = arr.length;
             if (vencidos > 0) badges["fiados"] = vencidos;
             else if (activos > 0) badges["fiados"] = activos;
-          }
-        } catch {}
+          } catch { /* parse fail */ }
+        }
         setDocBadges(badges);
       } catch { /* silent -- graceful degradation */ }
     }
     fetchDocBadges();
-    const interval = setInterval(fetchDocBadges, 60_000);
-    return () => { cancelled = true; clearInterval(interval); };
+    let interval: ReturnType<typeof setInterval> | null = setInterval(fetchDocBadges, 60_000);
+
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        if (interval) { clearInterval(interval); interval = null; }
+      } else {
+        // Refetch inmediato + reanudar polling
+        fetchDocBadges();
+        if (!interval) interval = setInterval(fetchDocBadges, 60_000);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   // Filtered modules for search

@@ -75,7 +75,26 @@ function showToast(message: string) {
     "gap:0.5rem",
     "animation:fadeInUp 0.25s ease",
   ].join(";");
-  el.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>${message}`;
+  // SECURITY 2026-05-16 (P0 XSS fix): antes hacía
+  // el.innerHTML = `...<svg>...</svg>${message}` con string concat. Si un
+  // caller pasa `message` con HTML (ej. nombre de cliente "<script>alert(1)
+  // </script>"), se ejecutaba. Ahora construimos el SVG con createElementNS
+  // y el message con textContent para escape automático del navegador.
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("width", "15");
+  svg.setAttribute("height", "15");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2.5");
+  const polyline = document.createElementNS(SVG_NS, "polyline");
+  polyline.setAttribute("points", "20 6 9 17 4 12");
+  svg.appendChild(polyline);
+  const text = document.createElement("span");
+  text.textContent = message;
+  el.appendChild(svg);
+  el.appendChild(text);
   document.body.appendChild(el);
   setTimeout(() => {
     el.style.opacity = "0";
@@ -109,7 +128,7 @@ export async function trackActivity(
     method: "POST",
     headers: csrfHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(entry),
-  }).catch(() => {});
+  }).catch((err) => console.warn("[ActivityTracker] log POST failed:", err));
 
   // 3. Toast notification
   if (!silent) {

@@ -353,7 +353,7 @@ export default function CommissionCalculator() {
       )}
 
       {!loading && !error && summaries.length === 0 && (
-        <div className="py-12 px-4 text-center bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
+        <div className="py-12 px-4 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
           <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
             <Users className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
           </div>

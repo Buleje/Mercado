@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const IngredienteSchema = z.object({
   nombre: z.string().min(1),
@@ -32,8 +33,11 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    // Audit 2026-05-17 X-P0-1: agregado tenantId al where para cerrar
+    // cross-tenant leak. Antes cualquier admin veía recetas de TODOS los
+    // tenants. POST sí pasaba tenantId — solo GET era leak.
     const notes = await prisma.note.findMany({
-      where: { title: "__RECETARIO__" },
+      where: { tenantId: auth.tenantId, title: "__RECETARIO__" },
       orderBy: { createdAt: "desc" },
     });
 
@@ -57,6 +61,8 @@ export async function GET(req: NextRequest) {
 // POST: create a new recetario recipe
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-recetario"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

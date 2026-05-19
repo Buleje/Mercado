@@ -182,12 +182,12 @@ export default function KioskMode() {
       className="relative flex flex-col h-screen bg-[var(--surface-canvas)] overflow-hidden select-none"
     >
       {/* ── Top bar ── */}
-      <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-card border-b border-[var(--rule-base)] dark:border-card-border ">
+      <header className="flex items-center justify-between px-6 py-4 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] ">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
             <Package className="h-4 w-4 text-white" />
           </div>
-          <span className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground">Buleje</span>
+          <span className="text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Buleje</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export default function KioskMode() {
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-muted dark:hover:text-foreground border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
+            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-muted dark:hover:text-[var(--text-primary)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]"
             aria-label="Pantalla completa"
           >
             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
@@ -221,7 +221,7 @@ export default function KioskMode() {
         {/* Product catalog */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Search */}
-          <div className="px-6 py-4 bg-white dark:bg-card border-b border-[var(--rule-soft)] dark:border-card-border">
+          <div className="px-6 py-4 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <div className="relative max-w-2xl mx-auto">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
               <input
@@ -229,7 +229,7 @@ export default function KioskMode() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Busca un producto..."
-                className="w-full pl-12 pr-4 py-4 text-lg rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full pl-12 pr-4 py-4 text-lg rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary transition-colors"
               />
               {search && (
                 <button type="button" onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -258,8 +258,8 @@ export default function KioskMode() {
                       type="button"
                       onClick={() => addToCart(product)}
                       className={cn(
-                        "flex flex-col items-center rounded-xl border-2 p-3 bg-white dark:bg-card text-left transition-all hover:shadow-[var(--shadow-sm)] hover:border-primary active:scale-95 focus:outline-none focus:border-primary",
-                        inCart ? "border-primary" : "border-[var(--rule-soft)] dark:border-card-border"
+                        "flex flex-col items-center rounded-xl border-2 p-3 bg-[var(--surface-raised)] text-left transition-all hover:shadow-[var(--shadow-sm)] hover:border-primary active:scale-95 focus:outline-none focus:border-primary",
+                        inCart ? "border-primary" : "border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
                       )}
                     >
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-[var(--surface-canvas)] mb-2">
@@ -276,7 +276,7 @@ export default function KioskMode() {
                           </div>
                         )}
                       </div>
-                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground text-center leading-tight line-clamp-2 w-full">{product.name}</p>
+                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-center leading-tight line-clamp-2 w-full">{product.name}</p>
                       <p className="text-sm font-bold text-primary mt-1">{fmt(product.price)}</p>
                     </button>
                   );
@@ -287,10 +287,10 @@ export default function KioskMode() {
         </main>
 
         {/* ── Cart sidebar ── */}
-        <aside className="w-80 flex flex-col border-l border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card">
-          <div className="flex items-center gap-2 px-4 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+        <aside className="w-80 flex flex-col border-l border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          <div className="flex items-center gap-2 px-4 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <ShoppingCart className="h-5 w-5 text-primary" />
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">Tu pedido</span>
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tu pedido</span>
             {cartCount > 0 && (
               <span className="ml-auto bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">{cartCount}</span>
             )}
@@ -305,17 +305,17 @@ export default function KioskMode() {
               </div>
             ) : (
               cart.map((item) => (
-                <div key={item.product.id} className="flex items-center gap-2 py-2 border-b border-gray-50 dark:border-card-border last:border-0">
+                <div key={item.product.id} className="flex items-center gap-2 py-2 border-b border-[var(--rule-base)] last:border-0">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground truncate">{item.product.name}</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{item.product.name}</p>
                     <p className="text-xs text-primary font-semibold">{fmt(item.product.price * item.quantity)}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button type="button" onClick={() => updateQty(item.product.id, -1)}
-                      className="w-11 h-11 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] dark:text-foreground hover:bg-[var(--rule-soft)]">
+                      className="w-11 h-11 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--rule-soft)]">
                       <Minus className="h-3 w-3" />
                     </button>
-                    <span className="w-6 text-center text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{item.quantity}</span>
+                    <span className="w-6 text-center text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.quantity}</span>
                     <button type="button" onClick={() => updateQty(item.product.id, 1)}
                       className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20">
                       <Plus className="h-3 w-3" />
@@ -331,9 +331,9 @@ export default function KioskMode() {
 
           {/* Footer */}
           {cart.length > 0 && (
-            <div className="px-4 py-4 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3">
+            <div className="px-4 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-[var(--text-primary)] dark:text-foreground">Total</span>
+                <span className="text-base font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</span>
                 <span className="text-xl font-bold text-primary">{fmt(cartTotal)}</span>
               </div>
 
@@ -346,7 +346,7 @@ export default function KioskMode() {
                     "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                     paymentMethod === "yape"
                       ? "border-primary bg-primary/5 text-primary"
-                      : "border-[var(--rule-soft)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
+                      : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                   )}
                 >
                   <Smartphone className="h-5 w-5" />
@@ -359,7 +359,7 @@ export default function KioskMode() {
                     "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                     paymentMethod === "efectivo"
                       ? "border-primary bg-primary/5 text-primary"
-                      : "border-[var(--rule-soft)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
+                      : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                   )}
                 >
                   <Banknote className="h-5 w-5" />
@@ -388,7 +388,7 @@ export default function KioskMode() {
             <div className="w-24 h-24 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center mx-auto">
               <CheckCircle className="h-12 w-12 text-[var(--data-success-500)]" />
             </div>
-            <SectionTitle className="text-3xl font-bold text-[var(--text-primary)] dark:text-foreground">Pago registrado</SectionTitle>
+            <SectionTitle className="text-3xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Pago registrado</SectionTitle>
             <p className="text-[var(--text-secondary)] dark:text-muted text-lg">Gracias por tu compra</p>
             <p className="text-sm text-[var(--text-tertiary)]">Volviendo en unos segundos...</p>
           </div>

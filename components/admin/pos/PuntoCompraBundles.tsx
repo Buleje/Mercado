@@ -110,7 +110,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
         return (
           <div
             key={bundle.id}
-            className="p-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-white/5 space-y-2"
+            className="p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-white/5 space-y-2"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-2">

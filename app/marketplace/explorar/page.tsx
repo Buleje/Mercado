@@ -35,6 +35,17 @@ export const metadata: Metadata = {
  *
  * Ilustraciones exclusivamente del DS (25+ componentes monoline) — cero
  * fotos stock, cero emojis, cero colores saturados.
+ *
+ * Audit 2026-05-17 02-P2-1 (TD-055): `"use cache"` aquí caché el shell
+ * del page (metadata + JSX) pero el contenido real es <ExplorarClient />
+ * client-side (306 LOC). El cache reduce la latencia inicial del render
+ * pero NO elimina el bundle JS que se hidrata. Para verdadero beneficio
+ * server-cache:
+ *   1. Mover los fetches de datos a server (categorías, deals, banners)
+ *   2. Pasar data como props serializable al client component
+ *   3. ExplorarClient queda como island reducido (solo interactividad)
+ * Refactor pendiente — requiere coordinación con design system (illustration
+ * components ya son client). Defer a sprint dedicado.
  */
 export default async function ExplorarPage() {
   "use cache";

@@ -32,6 +32,12 @@ interface ChartCardProps {
   badge?: ReactNode;
   /** Subtitulo bajo el titulo. */
   subtitle?: string;
+  /**
+   * Brandon mayo 2026 v7: bajada plain-language (Feynman) que explica
+   * para qué sirve el chart, no qué muestra técnicamente. Pensada para
+   * un bodeguero de 50 años sin jerga.
+   */
+  description?: string;
   /** Si true, muestra empty state en lugar de children. */
   isEmpty?: boolean;
   /** Texto del empty state. */
@@ -51,6 +57,7 @@ export function ChartCard({
   height = 280,
   badge,
   subtitle,
+  description,
   isEmpty = false,
   emptyText = "Sin datos",
   EmptyIcon = BarChart3,
@@ -61,7 +68,7 @@ export function ChartCard({
   return (
     <div
       className={cn(
-        "bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-5 flex flex-col",
+        "bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-5 flex flex-col",
         className,
       )}
     >
@@ -71,12 +78,17 @@ export function ChartCard({
             <Icon className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted shrink-0 mt-0.5" />
           )}
           <div className="min-w-0">
-            <CardTitle className="font-display text-lg sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground truncate tracking-tight">
+            <CardTitle className="font-display text-lg sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate tracking-tight">
               {title}
             </CardTitle>
             {subtitle && (
               <p className="text-sm font-medium text-[var(--text-tertiary)] dark:text-muted mt-1 truncate">
                 {subtitle}
+              </p>
+            )}
+            {description && (
+              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
+                {description}
               </p>
             )}
           </div>
@@ -139,9 +151,9 @@ export function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-4 py-3 text-sm shadow-md min-w-[180px]">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-4 py-3 text-sm shadow-md min-w-[180px]">
       {label && (
-        <p className="font-bold text-[var(--text-primary)] dark:text-foreground mb-1.5 text-base">
+        <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1.5 text-base">
           {label}
         </p>
       )}
@@ -163,7 +175,7 @@ export function ChartTooltip({
             <span className="text-[var(--text-secondary)] dark:text-muted font-medium">
               {p.name}:
             </span>
-            <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums ml-auto">
+            <span className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums ml-auto">
               {value}
             </span>
           </div>

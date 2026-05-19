@@ -57,6 +57,12 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { GET } from "@/app/api/marketplace/stores/route";
+// Brandon 2026-05-18 perf P1 #8: el route ahora envuelve el listado público
+// en `getOrSet("marketplace:stores:public:...")`. El cacheStore es singleton
+// del módulo → entre tests un mockResolvedValue de findMany sobrescrito no
+// se "ve" porque la respuesta cacheada del test anterior se devuelve. Cada
+// `beforeEach` debe invalidar el prefix para forzar miss y recomputar.
+import { invalidateByPrefix } from "@/lib/cache";
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
 
@@ -95,6 +101,8 @@ function makeReq(url: string): NextRequest {
 describe("GET /api/marketplace/stores", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // P1 #8 — invalidar cache singleton entre tests (ver comment del import).
+    invalidateByPrefix("marketplace:stores");
   });
 
   // ── Caso feliz ──────────────────────────────────────────────────────────────
@@ -136,7 +144,12 @@ describe("GET /api/marketplace/stores", () => {
 
     // Verificar que Prisma recibió el filtro correcto
     const callArgs = mockStoreFindMany.mock.calls[0][0];
-    expect(callArgs.where).toMatchObject({ isPublished: true, zone: "Centro" });
+    // La ruta usa `{ equals: zone, mode: "insensitive" }` para empatar
+    // variantes de capitalización ("centro" == "Centro").
+    expect(callArgs.where).toMatchObject({
+      isPublished: true,
+      zone: { equals: "Centro", mode: "insensitive" },
+    });
   });
 
   it("filtra por category", async () => {

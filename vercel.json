@@ -6,6 +6,27 @@
   "functions": {
     "app/api/**": {
       "maxDuration": 30
+    },
+    "app/api/cron/churn-score/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/agent-tasks/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/demand-forecast/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/marketplace-stockout-predictions/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/marketplace-anomaly-detection/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/credit-score-recalc/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/vendor-identity-recheck/route.ts": {
+      "maxDuration": 300
     }
   },
   "git": {
@@ -37,7 +58,7 @@
     },
     {
       "path": "/api/birthday-coupons",
-      "schedule": "0 7 * * *"
+      "schedule": "7 7 * * *"
     },
     {
       "path": "/api/daily-digest",
@@ -61,23 +82,35 @@
     },
     {
       "path": "/api/cron/trial-warning",
-      "schedule": "30 14 * * *"
+      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/cron/delivery-offer-cascade",
-      "schedule": "0 9 * * *"
+      "schedule": "7 9 * * *"
     },
     {
       "path": "/api/billing/webhook-replay",
       "schedule": "0 4 * * *"
     },
     {
+      "path": "/api/cron/mp-webhook-replay",
+      "schedule": "13 4 * * *"
+    },
+    {
+      "path": "/api/cron/yape-reconciliation",
+      "schedule": "51 23 * * *"
+    },
+    {
+      "path": "/api/cron/event-dlq-replay",
+      "schedule": "37 6 * * *"
+    },
+    {
       "path": "/api/cron/superadmin-alerts",
-      "schedule": "0 8 * * *"
+      "schedule": "7 8 * * *"
     },
     {
       "path": "/api/cron/marketplace-sla-watchdog",
-      "schedule": "0 8 * * *"
+      "schedule": "13 8 * * *"
     },
     {
       "path": "/api/cron/agent-tasks",
@@ -85,7 +118,7 @@
     },
     {
       "path": "/api/cron/batch-expiry-alerts",
-      "schedule": "0 8 * * *"
+      "schedule": "21 8 * * *"
     },
     {
       "path": "/api/cron/auto-close-register",
@@ -93,19 +126,19 @@
     },
     {
       "path": "/api/cron/daily-summary",
-      "schedule": "0 21 * * *"
+      "schedule": "7 21 * * *"
     },
     {
       "path": "/api/cron/stock-alerts-notify",
-      "schedule": "0 8 * * *"
+      "schedule": "29 8 * * *"
     },
     {
       "path": "/api/cron/auto-reorder-check",
-      "schedule": "0 6 * * *"
+      "schedule": "7 6 * * *"
     },
     {
       "path": "/api/cron/expiry-discounts",
-      "schedule": "0 8 * * *"
+      "schedule": "37 8 * * *"
     },
     {
       "path": "/api/cron/auto-backup",
@@ -117,23 +150,23 @@
     },
     {
       "path": "/api/cron/fiados-mark-vencido",
-      "schedule": "30 0 * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/turnos-zombie-close",
-      "schedule": "15 0 * * *"
+      "schedule": "7 0 * * *"
     },
     {
       "path": "/api/cron/fiados-reminder",
-      "schedule": "0 9 * * *"
+      "schedule": "13 9 * * *"
     },
     {
       "path": "/api/cron/first-purchase-coupon",
-      "schedule": "0 10 * * *"
+      "schedule": "7 10 * * *"
     },
     {
       "path": "/api/cron/abandoned-cart",
-      "schedule": "0 14 * * *"
+      "schedule": "7 14 * * *"
     },
     {
       "path": "/api/prestamos/cron/mora",
@@ -141,7 +174,7 @@
     },
     {
       "path": "/api/prestamos/cron/recordatorios",
-      "schedule": "0 8 * * *"
+      "schedule": "43 8 * * *"
     },
     {
       "path": "/api/cron/settle-commissions",
@@ -153,11 +186,11 @@
     },
     {
       "path": "/api/cron/cleanup-demos",
-      "schedule": "0 4 * * *"
+      "schedule": "7 4 * * *"
     },
     {
       "path": "/api/cron/reorder-reminders",
-      "schedule": "0 10 * * *"
+      "schedule": "13 10 * * *"
     },
     {
       "path": "/api/cron/ai-history-cleanup",
@@ -165,7 +198,7 @@
     },
     {
       "path": "/api/cron/marketplace-daily-summary",
-      "schedule": "0 21 * * *"
+      "schedule": "13 21 * * *"
     },
     {
       "path": "/api/cron/marketplace-abandoned-carts",
@@ -177,7 +210,7 @@
     },
     {
       "path": "/api/cron/daily-deal-bundle",
-      "schedule": "0 7 * * *"
+      "schedule": "13 7 * * *"
     },
     {
       "path": "/api/cron/price-drop-alerts",
@@ -185,7 +218,7 @@
     },
     {
       "path": "/api/cron/category-margins-report",
-      "schedule": "0 8 * * 1"
+      "schedule": "7 8 * * 1"
     },
     {
       "path": "/api/cron/supplier-scoring",
@@ -193,7 +226,7 @@
     },
     {
       "path": "/api/cron/marketplace-weekly-report",
-      "schedule": "0 8 * * 1"
+      "schedule": "13 8 * * 1"
     },
     {
       "path": "/api/cron/zone-offers-push",
@@ -201,7 +234,7 @@
     },
     {
       "path": "/api/cron/inactive-customers",
-      "schedule": "0 11 * * *"
+      "schedule": "7 11 * * *"
     },
     {
       "path": "/api/cron/isolation-monitor",
@@ -209,31 +242,31 @@
     },
     {
       "path": "/api/cron/churn-score",
-      "schedule": "0 2 * * *"
+      "schedule": "7 2 * * *"
     },
     {
       "path": "/api/cron/marketplace-stockout-predictions",
-      "schedule": "0 5 * * *"
+      "schedule": "7 5 * * *"
     },
     {
       "path": "/api/cron/marketplace-anomaly-detection",
-      "schedule": "0 23 * * *"
+      "schedule": "7 23 * * *"
     },
     {
       "path": "/api/cron/marketplace-sponsored-cleanup",
-      "schedule": "0 1 * * *"
+      "schedule": "7 1 * * *"
     },
     {
       "path": "/api/cron/credit-reminders",
-      "schedule": "0 9 * * *"
+      "schedule": "21 9 * * *"
     },
     {
       "path": "/api/cron/credit-weekly-report",
-      "schedule": "0 8 * * 1"
+      "schedule": "21 8 * * 1"
     },
     {
       "path": "/api/cron/credit-score-recalc",
-      "schedule": "0 0 * * 0"
+      "schedule": "7 0 * * 0"
     },
     {
       "path": "/api/cron/weekly-report",
@@ -241,11 +274,55 @@
     },
     {
       "path": "/api/cron/socio/renew-cycles",
-      "schedule": "0 4 * * *"
+      "schedule": "13 4 * * *"
     },
     {
       "path": "/api/cron/smoke-invitations",
-      "schedule": "13 9 * * 1"
+      "schedule": "7 9 * * 1"
+    },
+    {
+      "path": "/api/cron/credit-overdue",
+      "schedule": "29 9 * * *"
+    },
+    {
+      "path": "/api/cron/demand-forecast",
+      "schedule": "21 4 * * *"
+    },
+    {
+      "path": "/api/cron/meter-to-stripe",
+      "schedule": "13 2 * * *"
+    },
+    {
+      "path": "/api/cron/metering-rollup",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/sunat-retry",
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/loyalty-points-reminder",
+      "schedule": "13 11 * * *"
+    },
+    {
+      "path": "/api/cron/birthday-greetings",
+      "schedule": "21 7 * * *"
+    },
+    {
+      "path": "/api/cron/recompra-coupon",
+      "schedule": "21 10 * * *"
+    },
+    {
+      "path": "/api/cron/tier-discount-reconciliation",
+      "schedule": "7 3 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-email-report",
+      "schedule": "29 8 * * 1"
+    },
+    {
+      "path": "/api/cron/vendor-identity-recheck",
+      "schedule": "29 7 * * *"
     }
   ]
 }

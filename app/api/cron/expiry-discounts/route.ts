@@ -107,9 +107,7 @@ export async function GET(req: NextRequest) {
           `${sugerencias.length} lote(s) próximos a vencer (${DIAS_ALERTA} días) — descuento ${DESCUENTO_VENCIMIENTO * 100}% sugerido`,
           undefined,
           "cron"
-        ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
       }
 
       return {

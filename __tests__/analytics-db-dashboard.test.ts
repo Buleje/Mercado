@@ -239,13 +239,11 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
     expect(activeStatuses).not.toContain("en_camino");
     expect(activeStatuses).toHaveLength(2);
 
-    // And the "completed revenue" aggregates DO include entregado, while they
-    // exclude pendiente (the opposite bucket — that's what keeps them disjoint).
+    // COMPLETED_STATUSES = ["entregado"] (v7 2026-05: stricto, solo cuenta
+    // pedidos entregados al cliente final, no los aún en tránsito).
     const todayStatuses: string[] =
       mockPrisma.order.aggregate.mock.calls[0]?.[0]?.where?.status?.in ?? [];
-    expect(todayStatuses).toEqual(
-      expect.arrayContaining(["entregado", "confirmado", "en_camino"]),
-    );
+    expect(todayStatuses).toEqual(expect.arrayContaining(["entregado"]));
     expect(todayStatuses).not.toContain("pendiente");
   });
 

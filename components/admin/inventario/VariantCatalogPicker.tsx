@@ -178,10 +178,10 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
         <Dialog.Overlay className="fixed inset-0 z-[8500] bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
         >
           {/* Header */}
-          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] flex items-center gap-3 bg-white dark:bg-card">
+          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] flex items-center gap-3 bg-[var(--surface-raised)]">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <BookOpen className="h-5 w-5" />
             </div>
@@ -197,7 +197,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
           </div>
 
           {/* Filtros */}
-          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-white dark:bg-card">
+          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)]">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -212,7 +212,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
                     "px-3 py-1.5 rounded-full text-xs font-bold border transition-colors",
                     !activeCategory
                       ? "border-primary bg-primary text-white"
-                      : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40"
                   )}
                 >
                   Todas ({templates.length})
@@ -228,7 +228,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
                         "px-3 py-1.5 rounded-full text-xs font-bold border transition-colors",
                         active
                           ? "border-primary bg-primary text-white"
-                          : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40"
                       )}
                     >
                       {c} ({count})
@@ -281,7 +281,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-white dark:bg-card">
+          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-[var(--surface-raised)]">
             <span className="text-xs text-[var(--text-tertiary)]">
               {totalSelected > 0
                 ? `${totalSelected} opción${totalSelected === 1 ? "" : "es"} seleccionada${totalSelected === 1 ? "" : "s"}`
@@ -321,7 +321,7 @@ function TemplateRow({
   const allSelected = selectedIds.size === template.options.length && template.options.length > 0;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <button onClick={onToggleExpand} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors mt-1">
@@ -410,7 +410,7 @@ function TemplateRow({
                     "text-left rounded-xl border-2 p-2.5 transition-all relative",
                     isChecked
                       ? "border-primary bg-primary/5"
-                      : "border-[var(--rule-soft)] bg-white dark:bg-card hover:border-primary/40"
+                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-primary/40"
                   )}
                 >
                   <div className="flex items-center gap-2.5">

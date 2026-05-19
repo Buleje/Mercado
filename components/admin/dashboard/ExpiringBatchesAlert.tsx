@@ -136,7 +136,7 @@ export default function ExpiringBatchesAlert() {
 
       {/* Lista */}
       {(loading || batches.length > 0) && (
-        <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
+        <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
           <div className="divide-y divide-gray-50 dark:divide-card-border">
             {loading
               ? Array.from({ length: 3 }).map((_, i) => (
@@ -179,7 +179,7 @@ export default function ExpiringBatchesAlert() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
+                        <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                           {batch.product?.name ?? batch.productName}
                         </p>
                         <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
@@ -211,7 +211,7 @@ export default function ExpiringBatchesAlert() {
 
           {/* Pie con botón "Ver todos" */}
           {!loading && batches.length > 0 && (
-            <div className="px-4 py-2.5 border-t border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+            <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
               <a
                 href="/admin?tab=inventario-almacenes"
                 className="flex items-center gap-1 text-xs font-semibold text-primary dark:text-[var(--data-success-500)] hover:underline"
