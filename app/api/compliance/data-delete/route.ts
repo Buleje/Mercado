@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 /**
@@ -38,6 +39,10 @@ const ANONYMIZED_PHONE = "0000000000";
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "compliance-data-delete"); if (_rl) return _rl;
+  // Defense-in-depth: el proxy ya valida CSRF para /api/* pero compliance
+  // mueve PII sensible — agregamos check explícito en el handler.
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   // Round 15 M004: PRIORIDAD MÁX — Ley 29733 art. 21 (derecho de supresión).
@@ -101,113 +106,136 @@ async function deleteHandler(
     const deletedData: string[] = [];
     const retainedData: Array<{ table: string; reason: string }> = [];
 
-    // 1. Anonymize Customer PII fields (soft-delete)
-    await prisma.customer.update({
-      where: { phone: customer.phone },
-      data: {
-        name: ANONYMIZED_PLACEHOLDER,
-        email: null,
-        location: "",
-        reference: "",
-        whatsappSecundario: null,
-        direccion: null,
-        departamento: null,
-        provincia: null,
-        distrito: null,
-        lat: null,
-        lng: null,
-        birthday: null,
-        fechaNacimiento: null,
-        genero: null,
-        comoLlego: null,
-        observaciones: null,
-        privateNotes: null,
-        aiNotes: null,
-        aiNotesDate: null,
-        razonSocial: null,
-        tags: null,
-        referralCode: null,
-        referredBy: null,
-        vendedorAsignado: null,
-        estado: "eliminado",
-      },
-    });
+    // Atomicidad Ley 29733 Art. 21: la supresión debe ser completa o no
+    // realizarse. Sin $transaction, un fallo intermedio dejaría al cliente
+    // anonimizado pero con SavedLocations vivas (estado inconsistente).
+    // Timeout 30s holgado: el flujo toca hasta 8 tablas con tenants grandes.
+    const { deletedLocationsCount, deletedNotifsCount, anonymizedOrdersCount,
+            fiadosCount, prestamosCount, invoicesCount, anonymizedSalesCount } =
+      await prisma.$transaction(async (tx) => {
+        // 1. Anonymize Customer PII fields (soft-delete)
+        await tx.customer.update({
+          where: { phone: customer.phone },
+          data: {
+            name: ANONYMIZED_PLACEHOLDER,
+            email: null,
+            location: "",
+            reference: "",
+            whatsappSecundario: null,
+            direccion: null,
+            departamento: null,
+            provincia: null,
+            distrito: null,
+            lat: null,
+            lng: null,
+            birthday: null,
+            fechaNacimiento: null,
+            genero: null,
+            comoLlego: null,
+            observaciones: null,
+            privateNotes: null,
+            aiNotes: null,
+            aiNotesDate: null,
+            razonSocial: null,
+            tags: null,
+            referralCode: null,
+            referredBy: null,
+            vendedorAsignado: null,
+            estado: "eliminado",
+          },
+        });
+
+        // 2. Delete saved locations
+        /* eslint-disable no-restricted-syntax -- SavedLocation no tiene tenantId (TD-040 phase pending). Customer.phone es @unique global, scope efectivo por phone. TODO: agregar tenantId a SavedLocation y refactor. */
+        const dLocations = await tx.savedLocation.deleteMany({
+          where: { customerPhone: customer.phone },
+        });
+        /* eslint-enable no-restricted-syntax */
+
+        // 3. Delete customer notifications
+        const dNotifs = await tx.customerNotification.deleteMany({
+          where: { tenantId, customerPhone: customer.phone },
+        });
+
+        // 4. Anonymize Order customer data (retain order for accounting)
+        const aOrders = await tx.order.updateMany({
+          where: { tenantId, customerPhone: customer.phone },
+          data: {
+            customerName: ANONYMIZED_PLACEHOLDER,
+            customerLocation: "",
+            customerReference: "",
+            notes: null,
+          },
+        });
+
+        // 5. Fiados — anonymize description but retain financial data
+        const fiadosList = await tx.fiado.findMany({
+          where: { tenantId, customerId: customer.phone },
+        });
+        if (fiadosList.length > 0) {
+          await tx.fiado.updateMany({
+            where: { tenantId, customerId: customer.phone },
+            data: { descripcion: ANONYMIZED_PLACEHOLDER },
+          });
+        }
+
+        // 6. Prestamos — retain financial records (solo conteo)
+        const prestamosList = await tx.prestamo.findMany({
+          where: { tenantId, customerId: customer.phone },
+          select: { id: true },
+        });
+
+        // 7. SunatInvoice — NEVER delete (SUNAT legal requirement)
+        const invoicesList = await tx.sunatInvoice.findMany({
+          where: { tenantId, customerRuc: customer.documento },
+          select: { id: true },
+        });
+
+        // 8. Sales — retain financial records, anonymize customer reference
+        const aSales = await tx.sale.updateMany({
+          where: { tenantId, customerPhone: customer.phone },
+          data: { customerPhone: null },
+        });
+
+        return {
+          deletedLocationsCount: dLocations.count,
+          deletedNotifsCount: dNotifs.count,
+          anonymizedOrdersCount: aOrders.count,
+          fiadosCount: fiadosList.length,
+          prestamosCount: prestamosList.length,
+          invoicesCount: invoicesList.length,
+          anonymizedSalesCount: aSales.count,
+        };
+      }, { timeout: 30_000 });
+
     deletedData.push("Customer: nombre, email, dirección, teléfono secundario, notas, ubicación GPS");
-
-    // 2. Delete saved locations
-    /* eslint-disable no-restricted-syntax -- SavedLocation no tiene tenantId (TD-040 phase pending). Customer.phone es @unique global, así que el scope efectivo es por phone. TODO: agregar tenantId a SavedLocation y refactor. */
-    const deletedLocations = await prisma.savedLocation.deleteMany({
-      where: { customerPhone: customer.phone },
-    });
-    /* eslint-enable no-restricted-syntax */
-    deletedData.push(`SavedLocation: ${deletedLocations.count} ubicaciones guardadas`);
-
-    // 3. Delete customer notifications
-    const deletedNotifs = await prisma.customerNotification.deleteMany({
-      where: { tenantId, customerPhone: customer.phone },
-    });
-    deletedData.push(`CustomerNotification: ${deletedNotifs.count} notificaciones`);
-
-    // 4. Anonymize Order customer data (retain order for accounting)
-    const anonymizedOrders = await prisma.order.updateMany({
-      where: { tenantId, customerPhone: customer.phone },
-      data: {
-        customerName: ANONYMIZED_PLACEHOLDER,
-        customerLocation: "",
-        customerReference: "",
-        notes: null,
-      },
-    });
-    deletedData.push(`Order: datos personales anonimizados en ${anonymizedOrders.count} pedidos`);
-
-    // 5. Fiados — anonymize description but retain financial data
-    const fiados = await prisma.fiado.findMany({
-      where: { tenantId, customerId: customer.phone },
-    });
-    if (fiados.length > 0) {
-      await prisma.fiado.updateMany({
-        where: { tenantId, customerId: customer.phone },
-        data: { descripcion: ANONYMIZED_PLACEHOLDER },
-      });
-      deletedData.push(`Fiado: descripción anonimizada en ${fiados.length} fiados`);
+    deletedData.push(`SavedLocation: ${deletedLocationsCount} ubicaciones guardadas`);
+    deletedData.push(`CustomerNotification: ${deletedNotifsCount} notificaciones`);
+    deletedData.push(`Order: datos personales anonimizados en ${anonymizedOrdersCount} pedidos`);
+    if (fiadosCount > 0) {
+      deletedData.push(`Fiado: descripción anonimizada en ${fiadosCount} fiados`);
       retainedData.push({
         table: "Fiado",
         reason:
           "Montos y saldos retenidos por obligación tributaria SUNAT (Art. 14.6 Ley 29733)",
       });
     }
-
-    // 6. Prestamos — retain financial records
-    const prestamos = await prisma.prestamo.findMany({
-      where: { tenantId, customerId: customer.phone },
-    });
-    if (prestamos.length > 0) {
+    if (prestamosCount > 0) {
       retainedData.push({
         table: "Prestamo",
         reason:
           "Registros de préstamos retenidos por obligación contable (5 años mínimo)",
       });
     }
-
-    // 7. SunatInvoice — NEVER delete (SUNAT legal requirement)
-    const invoices = await prisma.sunatInvoice.findMany({
-      where: { tenantId, customerRuc: customer.documento },
-    });
-    if (invoices.length > 0) {
+    if (invoicesCount > 0) {
       retainedData.push({
         table: "SunatInvoice",
-        reason: `${invoices.length} comprobantes electrónicos retenidos. Obligación SUNAT — conservación 5 años mínimo (Art. 87 Código Tributario)`,
+        reason: `${invoicesCount} comprobantes electrónicos retenidos. Obligación SUNAT — conservación 5 años mínimo (Art. 87 Código Tributario)`,
       });
     }
-
-    // 8. Sales — retain financial records, anonymize customer reference
-    const anonymizedSales = await prisma.sale.updateMany({
-      where: { tenantId, customerPhone: customer.phone },
-      data: { customerPhone: null },
-    });
-    if (anonymizedSales.count > 0) {
+    if (anonymizedSalesCount > 0) {
       deletedData.push(
-        `Sale: referencia de cliente eliminada en ${anonymizedSales.count} ventas`,
+        `Sale: referencia de cliente eliminada en ${anonymizedSalesCount} ventas`,
       );
       retainedData.push({
         table: "Sale",
