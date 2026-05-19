@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Building2, Search, ChevronDown, RefreshCw,
   CheckCircle2, XCircle, LayoutGrid, List, Bomb,
-  Activity, TrendingUp, AlertCircle, DollarSign, Sparkles, Bell, type LucideIcon,
+  Activity, TrendingUp, AlertCircle, DollarSign, Sparkles, Bell,
+  Clock, AlertTriangle, Check, Square, CheckSquare, Download, Mail, X,
+  type LucideIcon,
 } from "lucide-react";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
@@ -189,8 +192,157 @@ export default function TenantsPage() {
   }, [tenants]);
 
   // ── Quick filter chips — atajos comunes ───────────────────────────────
-  type QuickFilter = "all" | "active" | "inactive" | "pro" | "enterprise" | "trial" | "pending";
+  type QuickFilter = "all" | "active" | "inactive" | "pro" | "enterprise" | "trial" | "pending" | "trial-expiring" | "overwhelmed" | "stale";
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
+
+  // ── URL state — persistencia de filtros para URLs compartibles ────────
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [hydratedFromUrl, setHydratedFromUrl] = useState(false);
+
+  // Hidratar desde URL al primer render
+  useEffect(() => {
+    if (hydratedFromUrl) return;
+    const q = searchParams.get("q");
+    const plan = searchParams.get("plan") as "all" | PlanId | null;
+    const status = searchParams.get("status") as "all" | "active" | "inactive" | null;
+    const qf = searchParams.get("qf") as QuickFilter | null;
+    const sort = searchParams.get("sort");
+    if (q) setSearch(q);
+    if (plan) setFilterPlan(plan);
+    if (status) setFilterActive(status);
+    if (qf) setQuickFilter(qf);
+    if (sort) {
+      const [f, d] = sort.split("-");
+      if (f) setSortField(f as SortField);
+      if (d === "asc" || d === "desc") setSortDir(d);
+    }
+    setHydratedFromUrl(true);
+  }, [searchParams, hydratedFromUrl]);
+
+  // Sync filtros → URL (sólo después de hidratar para no pisar la URL inicial)
+  useEffect(() => {
+    if (!hydratedFromUrl) return;
+    const params = new URLSearchParams();
+    if (search) params.set("q", search);
+    if (filterPlan !== "all") params.set("plan", filterPlan);
+    if (filterActive !== "all") params.set("status", filterActive);
+    if (quickFilter !== "all") params.set("qf", quickFilter);
+    if (sortField !== "createdAt" || sortDir !== "desc") {
+      params.set("sort", `${sortField}-${sortDir}`);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "?", { scroll: false });
+  }, [search, filterPlan, filterActive, quickFilter, sortField, sortDir, hydratedFromUrl, router]);
+
+  // ── Health score por tenant ──────────────────────────────────────────
+  // Cálculo simple basado en signals visibles:
+  //   • activo: 25 pts
+  //   • sin trial activo (paga): 25 pts
+  //   • pendientes <5: 25 pts
+  //   • tiene revenue del mes: 25 pts
+  type Health = "healthy" | "warning" | "critical";
+  const getHealth = useCallback((t: TenantRow): Health => {
+    if (!t.active) return "critical";
+    let score = 0;
+    if (t.active) score += 25;
+    const inTrial = t.trialEndsAt && new Date(t.trialEndsAt) > new Date();
+    if (!inTrial && t.plan !== "free") score += 25;
+    if ((t.pendingOrders ?? 0) < 5) score += 25;
+    if ((t.monthRevenue ?? 0) > 0) score += 25;
+    if (score >= 75) return "healthy";
+    if (score >= 50) return "warning";
+    return "critical";
+  }, []);
+
+  // ── Alertas accionables — derivadas de los datos actuales ────────────
+  type AlertItem = {
+    id: string;
+    icon: LucideIcon;
+    tone: "amber" | "rose" | "sky";
+    label: string;
+    count: number;
+    onClick: () => void;
+  };
+  const alerts = useMemo<AlertItem[]>(() => {
+    const list: AlertItem[] = [];
+    // Trial vence en 7 días
+    const trialExpiring = tenants.filter((t) => {
+      if (!t.trialEndsAt) return false;
+      const days = (new Date(t.trialEndsAt).getTime() - Date.now()) / 86_400_000;
+      return days >= 0 && days <= 7;
+    });
+    if (trialExpiring.length > 0) {
+      list.push({
+        id: "trial-expiring",
+        icon: Clock,
+        tone: "amber",
+        label: `${trialExpiring.length} trial${trialExpiring.length === 1 ? "" : "s"} vence${trialExpiring.length === 1 ? "" : "n"} en menos de 7 días`,
+        count: trialExpiring.length,
+        onClick: () => { setQuickFilter("trial-expiring"); setFilterPlan("all"); setFilterActive("all"); },
+      });
+    }
+    // Tenants con >10 pendientes
+    const overwhelmed = tenants.filter((t) => (t.pendingOrders ?? 0) >= 10);
+    if (overwhelmed.length > 0) {
+      list.push({
+        id: "overwhelmed",
+        icon: AlertTriangle,
+        tone: "amber",
+        label: `${overwhelmed.length} tienda${overwhelmed.length === 1 ? "" : "s"} con más de 10 pedidos sin atender`,
+        count: overwhelmed.length,
+        onClick: () => { setQuickFilter("overwhelmed"); setFilterPlan("all"); setFilterActive("all"); },
+      });
+    }
+    // Tenants suspendidos
+    const suspended = tenants.filter((t) => !t.active);
+    if (suspended.length > 0) {
+      list.push({
+        id: "suspended",
+        icon: XCircle,
+        tone: "rose",
+        label: `${suspended.length} tienda${suspended.length === 1 ? "" : "s"} suspendida${suspended.length === 1 ? "" : "s"}`,
+        count: suspended.length,
+        onClick: () => { setQuickFilter("inactive"); setFilterActive("inactive"); setFilterPlan("all"); },
+      });
+    }
+    return list;
+  }, [tenants]);
+
+  // ── Bulk selection — modo selección para acciones masivas ────────────
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+    setBulkMode(false);
+  }, []);
+  const handleBulkExport = useCallback(() => {
+    const selected = tenants.filter((t) => selectedIds.has(t.id));
+    const rows = [
+      ["ID", "Slug", "Nombre", "Plan", "Activo", "Email", "Ventas mes", "Pedidos pendientes"],
+      ...selected.map((t) => [
+        t.id, t.slug, t.name, t.plan, t.active ? "sí" : "no",
+        t.ownerEmail ?? "", String(t.monthRevenue ?? 0), String(t.pendingOrders ?? 0),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tenants-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`${selected.length} tenant${selected.length === 1 ? "" : "s"} exportado${selected.length === 1 ? "" : "s"}`, true);
+  }, [tenants, selectedIds]);
   const applyQuickFilter = (qf: QuickFilter) => {
     setQuickFilter(qf);
     // Reset filtros granulares y aplica preset
@@ -209,15 +361,23 @@ export default function TenantsPage() {
     }
   };
 
-  // El "trial" y "pending" se aplican adicional al filter local
+  // Quick filters virtuales aplican filtros adicionales sobre `sorted`.
   const sortedFinal = useMemo(() => {
     if (quickFilter === "trial") {
-      return sorted.filter(
-        (t) => t.trialEndsAt && new Date(t.trialEndsAt) > new Date(),
-      );
+      return sorted.filter((t) => t.trialEndsAt && new Date(t.trialEndsAt) > new Date());
     }
     if (quickFilter === "pending") {
       return sorted.filter((t) => (t.pendingOrders ?? 0) > 0);
+    }
+    if (quickFilter === "trial-expiring") {
+      return sorted.filter((t) => {
+        if (!t.trialEndsAt) return false;
+        const days = (new Date(t.trialEndsAt).getTime() - Date.now()) / 86_400_000;
+        return days >= 0 && days <= 7;
+      });
+    }
+    if (quickFilter === "overwhelmed") {
+      return sorted.filter((t) => (t.pendingOrders ?? 0) >= 10);
     }
     return sorted;
   }, [sorted, quickFilter]);
@@ -229,6 +389,38 @@ export default function TenantsPage() {
       icon={Building2}
       kicker="Plataforma multi-tenant"
     >
+      {/* ═══════ Alertas accionables — derivadas de los datos ═══════════ */}
+      {alerts.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          {alerts.map((a) => {
+            const Icon = a.icon;
+            const toneCls = {
+              amber: "border-amber-500/40 bg-amber-500/8 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15",
+              rose:  "border-rose-500/40 bg-rose-500/8 text-rose-700 dark:text-rose-300 hover:bg-rose-500/15",
+              sky:   "border-sky-500/40 bg-sky-500/8 text-sky-700 dark:text-sky-300 hover:bg-sky-500/15",
+            }[a.tone];
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={a.onClick}
+                className={`flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${toneCls}`}
+              >
+                <span className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/40 dark:bg-black/20">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="text-sm font-semibold flex-1 min-w-0 truncate">
+                  {a.label}
+                </span>
+                <span className="shrink-0 inline-flex h-6 min-w-[24px] px-1.5 items-center justify-center rounded-full bg-white/60 dark:bg-black/30 text-xs font-bold tabular-nums">
+                  {a.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* ═══════ Stats hero — overview de la base de tenants ════════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <TenantStat
@@ -292,18 +484,33 @@ export default function TenantsPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {pageTab === "tiendas" && (
-            <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1">
-              <button type="button" onClick={() => setViewMode("table")} title="Vista tabla"
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
-                <List className="w-4 h-4" />
+            <>
+              <button
+                type="button"
+                onClick={() => { setBulkMode((m) => !m); if (bulkMode) setSelectedIds(new Set()); }}
+                title={bulkMode ? "Salir del modo selección" : "Activar modo selección (acciones masivas)"}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-bold transition-colors ${
+                  bulkMode
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                }`}
+              >
+                {bulkMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                {bulkMode ? "Seleccionando" : "Seleccionar"}
               </button>
-              <button type="button" onClick={() => setViewMode("cards")} title="Vista tarjetas"
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === "cards" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-            </div>
+              <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1">
+                <button type="button" onClick={() => setViewMode("table")} title="Vista tabla"
+                  className={`p-1.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+                  <List className="w-4 h-4" />
+                </button>
+                <button type="button" onClick={() => setViewMode("cards")} title="Vista tarjetas"
+                  className={`p-1.5 rounded-lg transition-colors ${viewMode === "cards" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+              </div>
+            </>
           )}
           <button type="button" onClick={() => void loadTenants()} disabled={loading}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] text-sm font-bold hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-40">
@@ -434,21 +641,73 @@ export default function TenantsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                {sortedFinal.map((tenant) => (
-                  <TenantCard key={tenant.id} tenant={tenant}
-                    onDetail={(t) => setDetailTarget(t)}
-                    onInvite={(slug, name) => setInviteTarget({ slug, name })}
-                    onToggleActive={(slug, active) => void handleToggleActive(slug, active)}
-                    actionLoading={actionLoading}
-                    onImpersonate={(slug) => void handleImpersonate(slug)}
-                    onToggleMarketplace={(t) => void handleToggleMarketplace(t)}
-                    onLoginAs={(t) => handleLoginAs(t)}
-                    onViewProducts={(t) => setProductsTarget({ slug: t.slug, name: t.name })}
-                    onAddProduct={(t) => setAddProductTarget({ slug: t.slug, name: t.name })}
-                    onDelete={(slug, name) => setDeleteTarget({ slug, name })}
-                    onPurge={(slug, name) => void handlePurgeTenant(slug, name)}
-                  />
-                ))}
+                {sortedFinal.map((tenant) => {
+                  const health = getHealth(tenant);
+                  const isSelected = selectedIds.has(tenant.id);
+                  return (
+                    <div key={tenant.id} className="relative">
+                      {/* Health dot — esquina superior derecha, semántico */}
+                      <span
+                        className={`absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm ring-1 ${
+                          health === "healthy"
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30"
+                            : health === "warning"
+                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-500/30"
+                              : "bg-rose-500/15 text-rose-700 dark:text-rose-300 ring-rose-500/30"
+                        }`}
+                        title={
+                          health === "healthy"
+                            ? "Tenant saludable — activo, sin pendientes excesivos"
+                            : health === "warning"
+                              ? "Atención — alguna métrica está baja"
+                              : "Crítico — suspendido o múltiples problemas"
+                        }
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            health === "healthy" ? "bg-emerald-500 animate-pulse" : health === "warning" ? "bg-amber-500" : "bg-rose-500"
+                          }`}
+                          aria-hidden
+                        />
+                        {health === "healthy" ? "OK" : health === "warning" ? "Aviso" : "Crítico"}
+                      </span>
+
+                      {/* Checkbox flotante cuando bulk mode activo */}
+                      {bulkMode && (
+                        <button
+                          type="button"
+                          onClick={() => toggleSelected(tenant.id)}
+                          className={`absolute top-3 left-3 z-20 inline-flex h-7 w-7 items-center justify-center rounded-lg border-2 transition-colors ${
+                            isSelected
+                              ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-[var(--accent)]"
+                          }`}
+                          aria-label={isSelected ? "Deseleccionar" : "Seleccionar"}
+                          aria-pressed={isSelected}
+                        >
+                          {isSelected ? <Check className="h-4 w-4" /> : null}
+                        </button>
+                      )}
+
+                      <div className={isSelected ? "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)] rounded-2xl" : ""}>
+                        <TenantCard
+                          tenant={tenant}
+                          onDetail={(t) => setDetailTarget(t)}
+                          onInvite={(slug, name) => setInviteTarget({ slug, name })}
+                          onToggleActive={(slug, active) => void handleToggleActive(slug, active)}
+                          actionLoading={actionLoading}
+                          onImpersonate={(slug) => void handleImpersonate(slug)}
+                          onToggleMarketplace={(t) => void handleToggleMarketplace(t)}
+                          onLoginAs={(t) => handleLoginAs(t)}
+                          onViewProducts={(t) => setProductsTarget({ slug: t.slug, name: t.name })}
+                          onAddProduct={(t) => setAddProductTarget({ slug: t.slug, name: t.name })}
+                          onDelete={(slug, name) => setDeleteTarget({ slug, name })}
+                          onPurge={(slug, name) => void handlePurgeTenant(slug, name)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )
           )}
@@ -517,6 +776,61 @@ export default function TenantsPage() {
           tenantCount={tenants.length}
           tenantNames={tenants.slice(0, 5).map((t) => t.name)}
         />
+      )}
+
+      {/* ═══════ Barra flotante de acciones masivas ════════════════════ */}
+      {bulkMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] shadow-2xl shadow-[var(--accent)]/20 px-4 py-2.5">
+          <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)] pr-2 border-r border-[var(--rule-soft)]">
+            <CheckSquare className="h-4 w-4 text-[var(--accent)]" />
+            {selectedIds.size} seleccionado{selectedIds.size === 1 ? "" : "s"}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              // Seleccionar todos los visibles
+              const allIds = new Set(sortedFinal.map((t) => t.id));
+              setSelectedIds(allIds);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          >
+            Seleccionar visibles ({sortedFinal.length})
+          </button>
+          <button
+            type="button"
+            onClick={handleBulkExport}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] hover:brightness-110 transition-all"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Exportar CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const emails = tenants
+                .filter((t) => selectedIds.has(t.id) && t.ownerEmail)
+                .map((t) => t.ownerEmail)
+                .join(",");
+              if (emails) {
+                window.location.href = `mailto:?bcc=${emails}`;
+              } else {
+                showToast("Los tenants seleccionados no tienen email registrado", false);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Email
+          </button>
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+            title="Cerrar selección"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       )}
     </AdminTabShell>
   );
