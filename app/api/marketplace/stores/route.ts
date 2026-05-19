@@ -32,13 +32,13 @@ type TrustLevel = "alta" | "media" | "nueva";
  * may use either value (legacy data used the slug "main").
  */
 async function ensureTenant(tenantId: string): Promise<{ id: string; slug: string; possibleIds: string[] }> {
-  // 1. Try finding by ID (tenantId is already a CUID)
-  const byId = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { id: true, slug: true } });
-  if (byId) return { id: byId.id, slug: byId.slug, possibleIds: [byId.id, byId.slug] };
-
-  // 2. Maybe tenantId is actually a slug
-  const bySlug = await prisma.tenant.findUnique({ where: { slug: tenantId }, select: { id: true, slug: true } });
-  if (bySlug) return { id: bySlug.id, slug: bySlug.slug, possibleIds: [bySlug.id, bySlug.slug] };
+  // 1+2. Try by id OR slug en 1 sola query (perf DB-H5 audit 2026-05-19).
+  // tenantId puede ser CUID (id) o el slug legacy "main".
+  const existing = await prisma.tenant.findFirst({
+    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+    select: { id: true, slug: true },
+  });
+  if (existing) return { id: existing.id, slug: existing.slug, possibleIds: [existing.id, existing.slug] };
 
   // 3. Tenant doesn't exist — auto-create from Settings if available
   const settings = await prisma.settings.findUnique({ where: { tenantId } }).catch((err) => { logger.error("[marketplace/stores] DB query failed", { error: String(err), tenantId }); return null; });
