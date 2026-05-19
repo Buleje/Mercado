@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizePhone } from "@/lib/jsondb";
 import { logger } from "@/lib/logger";
+import { CustomerNotificationsDB } from "@/lib/db/customer-notifications.db";
 
 
 /**
@@ -63,45 +63,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data: [] });
   }
 
-  try {
-    // eslint-disable-next-line no-restricted-properties -- CustomerNotification scoped por tenantId+customerPhone; migracion a lib/db/customer-notifications.db.ts pendiente.
-    const notifs = await prisma.customerNotification.findMany({
-      where: { tenantId, customerPhone: requestedPhone },
-      orderBy: { createdAt: "desc" },
-      take: 30,
-      select: {
-        id: true,
-        type: true,
-        title: true,
-        body: true,
-        link: true,
-        read: true,
-        createdAt: true,
-      },
-    });
+  // Audit project-wide 2026-05-19: migrado a CustomerNotificationsDB
+  // (canonical DB class con tenantId obligatorio + Promise.all paralelo).
+  const { data, unreadCount } = await CustomerNotificationsDB.listByPhone(
+    tenantId,
+    requestedPhone,
+    30,
+  );
 
-    // eslint-disable-next-line no-restricted-properties -- count scoped por mismos campos que el findMany.
-    const unread = await prisma.customerNotification.count({
-      where: { tenantId, customerPhone: requestedPhone, read: false },
-    });
-
-    return NextResponse.json({
-      data: notifs.map((n) => ({
-        id: n.id,
-        type: n.type,
-        title: n.title,
-        body: n.body,
-        link: n.link,
-        read: n.read,
-        createdAt: n.createdAt.toISOString(),
-      })),
-      unreadCount: unread,
-    });
-  } catch (err) {
-    logger.error("[marketplace/notifications] DB error", {
-      tenantId,
-      err: err instanceof Error ? err.message : String(err),
-    });
-    return NextResponse.json({ data: [], error: "db_error" }, { status: 503 });
-  }
+  return NextResponse.json({
+    data: data.map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      body: n.body,
+      link: n.link,
+      read: n.read,
+      createdAt: n.createdAt.toISOString(),
+    })),
+    unreadCount,
+  });
 }

@@ -5,7 +5,7 @@ import {
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
-import { prisma } from "@/lib/prisma";
+import { OrdersDB } from "@/lib/db/orders.db";
 import { logger } from "@/lib/logger";
 import { tierForCount } from "@/app/api/marketplace/customer-tier/route";
 
@@ -100,22 +100,14 @@ export async function GET(req: NextRequest) {
         });
         return { transactions: [], balance: 0, total: 0 };
       }),
-      // eslint-disable-next-line no-restricted-properties -- aggregate scoped por tenantId+phone+source; refactor a OrdersDB.countDeliveredByPhone pendiente.
-      prisma.order
-        .count({
-          where: {
-            customerPhone: phone,
-            source: "marketplace",
-            deletedAt: null,
-            status: "entregado",
-          },
-        })
-        .catch((err) => {
+      OrdersDB.countDeliveredByPhone(tenantId, phone, { source: "marketplace" }).catch(
+        (err) => {
           logger.warn("[loyalty/summary] orderCount fallback", {
             error: String(err),
           });
           return 0;
-        }),
+        },
+      ),
     ]);
 
     const points = loyaltyResult.balance;

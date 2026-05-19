@@ -486,6 +486,32 @@ export const OrdersDB = {
   },
 
   /**
+   * Cuenta pedidos ENTREGADOS de un cliente filtrado por origen.
+   *
+   * Audit project-wide 2026-05-19 (CodeReview P0 #1): migracion del
+   * prisma.order.count directo en /api/marketplace/loyalty/summary
+   * a esta funcion canonica (CLAUDE.md regla #1).
+   *
+   * source: "marketplace" para tier marketplace cross-store, omit para
+   * todos los origenes (ADR-082).
+   */
+  async countDeliveredByPhone(
+    tenantId: string,
+    phone: string,
+    opts: { source?: string } = {},
+  ): Promise<number> {
+    return prisma.order.count({
+      where: {
+        tenantId,
+        customerPhone: phone,
+        status: "entregado",
+        deletedAt: null,
+        ...(opts.source ? { source: opts.source } : {}),
+      },
+    });
+  },
+
+  /**
    * Obtiene los N pedidos pendientes/confirmados más recientes.
    */
   async getPending(tenantId: string, opts: { limit?: number } = {}): Promise<DbOrder[]> {
