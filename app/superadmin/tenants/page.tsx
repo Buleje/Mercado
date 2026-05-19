@@ -389,39 +389,7 @@ export default function TenantsPage() {
       icon={Building2}
       kicker="Plataforma multi-tenant"
     >
-      {/* ═══════ Alertas accionables — derivadas de los datos ═══════════ */}
-      {alerts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {alerts.map((a) => {
-            const Icon = a.icon;
-            const toneCls = {
-              amber: "border-amber-500/40 bg-amber-500/8 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15",
-              rose:  "border-rose-500/40 bg-rose-500/8 text-rose-700 dark:text-rose-300 hover:bg-rose-500/15",
-              sky:   "border-sky-500/40 bg-sky-500/8 text-sky-700 dark:text-sky-300 hover:bg-sky-500/15",
-            }[a.tone];
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={a.onClick}
-                className={`flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${toneCls}`}
-              >
-                <span className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/40 dark:bg-black/20">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="text-sm font-semibold flex-1 min-w-0 truncate">
-                  {a.label}
-                </span>
-                <span className="shrink-0 inline-flex h-6 min-w-[24px] px-1.5 items-center justify-center rounded-full bg-white/60 dark:bg-black/30 text-xs font-bold tabular-nums">
-                  {a.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ═══════ Stats hero — overview de la base de tenants ════════════ */}
+      {/* ═══════ FILA 1 · Stats hero (4 KPI) ════════════════════════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <TenantStat
           icon={Building2}
@@ -453,29 +421,15 @@ export default function TenantsPage() {
         />
       </div>
 
-      {/* ═══════ Plan distribution chips ═══════════════════════════════ */}
-      {stats.total > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-1">
-            Plan:
-          </span>
-          {(["free", "pro", "business", "enterprise"] as const).map((p) => (
-            <span
-              key={p}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-soft)] px-3 py-1 font-semibold text-[var(--text-secondary)]"
-            >
-              <span className="capitalize">{p === "free" ? "Gratis" : p === "business" ? "Enterprise" : p === "enterprise" ? "Max" : "Pro"}</span>
-              <span className="tabular-nums font-bold text-[var(--text-primary)]">
-                {stats.byPlan[p]}
-              </span>
-            </span>
-          ))}
-        </div>
+      {/* ═══════ FILA 2 · Alertas colapsables (1 línea cuando hay) ══════ */}
+      {alerts.length > 0 && (
+        <AlertsBanner alerts={alerts} />
       )}
 
-      {/* ═══════ Toolbar: tab + view mode + acciones ═══════════════════ */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1">
+      {/* ═══════ FILA 3 · Tabs + Toolbar compacta una sola fila ═════════ */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+        {/* Tabs principales — primero, jerarquía alta */}
+        <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1 shrink-0">
           {(["tiendas", "crecimiento"] as const).map((tab) => (
             <button key={tab} type="button" onClick={() => setPageTab(tab)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${pageTab === tab ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
@@ -484,131 +438,105 @@ export default function TenantsPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {pageTab === "tiendas" && (
-            <>
+        {pageTab === "tiendas" && (
+          <>
+            {/* Search wide — flex-1 toma todo el espacio disponible */}
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre, slug o email…"
+                className="w-full h-10 pl-10 pr-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
+              />
+            </div>
+
+            {/* Sort dropdown — compact */}
+            <div className="relative shrink-0">
+              <select
+                value={`${sortField}-${sortDir}`}
+                onChange={(e) => {
+                  const [field, dir] = e.target.value.split("-") as [SortField, SortDir];
+                  setSortField(field); setSortDir(dir);
+                }}
+                className={`${selectCls} h-10 pl-3 text-sm font-semibold`}
+                aria-label="Orden"
+              >
+                <option value="createdAt-desc">Recientes ↓</option>
+                <option value="createdAt-asc">Antiguos ↑</option>
+                <option value="name-asc">Nombre A→Z</option>
+                <option value="name-desc">Nombre Z→A</option>
+                <option value="ordersThisMonth-desc">+ Pedidos</option>
+                <option value="ordersThisMonth-asc">− Pedidos</option>
+                <option value="plan-asc">Por plan</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
+            </div>
+
+            {/* View toggle */}
+            <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1 shrink-0">
+              <button type="button" onClick={() => setViewMode("table")} title="Vista tabla"
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+                <List className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={() => setViewMode("cards")} title="Vista tarjetas"
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === "cards" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Acciones agrupadas — bulk select + actualizar + bomba */}
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => { setBulkMode((m) => !m); if (bulkMode) setSelectedIds(new Set()); }}
-                title={bulkMode ? "Salir del modo selección" : "Activar modo selección (acciones masivas)"}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-bold transition-colors ${
+                title={bulkMode ? "Salir del modo selección" : "Modo selección"}
+                className={`inline-flex items-center justify-center h-10 w-10 rounded-xl border-2 transition-colors ${
                   bulkMode
                     ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                     : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
                 }`}
+                aria-label={bulkMode ? "Salir de selección" : "Activar selección"}
               >
                 {bulkMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                {bulkMode ? "Seleccionando" : "Seleccionar"}
               </button>
-              <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1">
-                <button type="button" onClick={() => setViewMode("table")} title="Vista tabla"
-                  className={`p-1.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
-                  <List className="w-4 h-4" />
-                </button>
-                <button type="button" onClick={() => setViewMode("cards")} title="Vista tarjetas"
-                  className={`p-1.5 rounded-lg transition-colors ${viewMode === "cards" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-              </div>
-            </>
-          )}
-          <button type="button" onClick={() => void loadTenants()} disabled={loading}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] text-sm font-bold hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-40">
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
-          </button>
-          {/* Separador visual antes del botón peligroso */}
-          <div className="hidden sm:block w-px h-6 bg-[var(--rule-base)] mx-1" aria-hidden />
-          <button
-            type="button"
-            onClick={() => setNuclearResetOpen(true)}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-lg border-2 border-[var(--rule-base)] bg-transparent text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
-            title="Mantenimiento — reinicio total del sistema (requiere tipear BORRAR TODO)"
-            aria-label="Reinicio total del sistema (acción destructiva)"
-          >
-            <Bomb className="w-4 h-4" />
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={() => void loadTenants()}
+                disabled={loading}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-40"
+                aria-label="Actualizar"
+                title="Actualizar"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setNuclearResetOpen(true)}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
+                aria-label="Reinicio total del sistema (acción destructiva)"
+                title="Mantenimiento — reinicio total"
+              >
+                <Bomb className="w-4 h-4" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Tab: Tiendas */}
       {pageTab === "tiendas" && (
         <>
-          {/* ═══════ Quick filter chips ═══════════════════════════════ */}
-          <div className="flex flex-wrap items-center gap-2">
-            {([
-              { id: "all",        label: "Todos",         count: stats.total },
-              { id: "active",     label: "Activas",       count: stats.active },
-              { id: "inactive",   label: "Suspendidas",   count: stats.inactive },
-              { id: "pro",        label: "Pro",           count: stats.byPlan.pro },
-              { id: "enterprise", label: "Max",           count: stats.byPlan.enterprise },
-              { id: "trial",      label: "En trial",      count: stats.trial },
-              { id: "pending",    label: "Con pendientes", count: stats.tenantsWithPending },
-            ] as const).map((qf) => {
-              const isActive = quickFilter === qf.id;
-              return (
-                <button
-                  key={qf.id}
-                  type="button"
-                  onClick={() => applyQuickFilter(qf.id)}
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold border-2 transition-colors ${
-                    isActive
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                      : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-                  }`}
-                >
-                  {qf.label}
-                  <span className={`tabular-nums font-bold ${isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}>
-                    {qf.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* ═══════ Search + filtros granulares ═══════════════════════ */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre, slug o email…" className={`w-full ${inputCls} pl-9 h-10`} />
-            </div>
-            <div className="relative">
-              <select value={filterPlan} onChange={(e) => { setFilterPlan(e.target.value as "all" | PlanId); setQuickFilter("all"); }} className={`${selectCls} h-10`}>
-                <option value="all">Todos los planes</option>
-                <option value="free">Básico (gratis)</option>
-                <option value="pro">Pro</option>
-                <option value="business">Enterprise</option>
-                <option value="enterprise">Max</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
-            </div>
-            <div className="relative">
-              <select value={filterActive} onChange={(e) => { setFilterActive(e.target.value as "all" | "active" | "inactive"); setQuickFilter("all"); }} className={`${selectCls} h-10`}>
-                <option value="all">Todos los estados</option>
-                <option value="active">Activas</option><option value="inactive">Suspendidas</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
-            </div>
-            <div className="relative">
-              <select
-                value={`${sortField}-${sortDir}`}
-                onChange={(e) => {
-                  const [field, dir] = e.target.value.split("-") as [SortField, SortDir];
-                  setSortField(field);
-                  setSortDir(dir);
-                }}
-                className={`${selectCls} h-10`}
-              >
-                <option value="createdAt-desc">Más recientes primero</option>
-                <option value="createdAt-asc">Más antiguos primero</option>
-                <option value="name-asc">Nombre A→Z</option>
-                <option value="name-desc">Nombre Z→A</option>
-                <option value="ordersThisMonth-desc">Más pedidos primero</option>
-                <option value="ordersThisMonth-asc">Menos pedidos primero</option>
-                <option value="plan-asc">Plan A→Z</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
-            </div>
-          </div>
+          {/* ═══════ FILA 4 · Quick filter chips (4 principales + Más ▾) ═ */}
+          <QuickFilters
+            quickFilter={quickFilter}
+            applyQuickFilter={applyQuickFilter}
+            stats={stats}
+            filterPlan={filterPlan}
+            setFilterPlan={(v) => { setFilterPlan(v); setQuickFilter("all"); }}
+            filterActive={filterActive}
+            setFilterActive={(v) => { setFilterActive(v); setQuickFilter("all"); }}
+          />
 
           {error && (
             <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-xl px-4 py-3 text-sm flex items-center justify-between">
@@ -844,6 +772,228 @@ const TENANT_STAT_TONES: Record<string, { bg: string; text: string; border: stri
   sky:     { bg: "bg-sky-500/10 dark:bg-sky-500/15",         text: "text-sky-700 dark:text-sky-300",         border: "border-sky-500/30" },
   emerald: { bg: "bg-emerald-500/10 dark:bg-emerald-500/15", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-500/30" },
 };
+
+// ── AlertsBanner — colapsable, 1 línea cuando hay alertas ──────────────
+type AlertItemShape = {
+  id: string;
+  icon: LucideIcon;
+  tone: "amber" | "rose" | "sky";
+  label: string;
+  count: number;
+  onClick: () => void;
+};
+
+function AlertsBanner({ alerts }: { alerts: AlertItemShape[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const totalCount = alerts.reduce((s, a) => s + a.count, 0);
+  const worstTone = alerts.some((a) => a.tone === "rose")
+    ? "rose"
+    : alerts.some((a) => a.tone === "amber")
+      ? "amber"
+      : "sky";
+  const toneCls = {
+    amber: "border-amber-500/40 bg-amber-500/8 text-amber-700 dark:text-amber-300",
+    rose: "border-rose-500/40 bg-rose-500/8 text-rose-700 dark:text-rose-300",
+    sky: "border-sky-500/40 bg-sky-500/8 text-sky-700 dark:text-sky-300",
+  }[worstTone];
+
+  return (
+    <div className={`rounded-xl border-2 ${toneCls}`}>
+      {/* Header colapsable — 1 línea con summary */}
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
+        aria-expanded={expanded}
+      >
+        <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/40 dark:bg-black/20">
+          <AlertTriangle className="h-4 w-4" />
+        </span>
+        <span className="text-sm font-bold flex-1 min-w-0 truncate">
+          {alerts.length === 1
+            ? alerts[0].label
+            : `${alerts.length} problemas detectados · ${totalCount} tienda${totalCount === 1 ? "" : "s"} afectada${totalCount === 1 ? "" : "s"}`}
+        </span>
+        {alerts.length > 1 && (
+          <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        )}
+      </button>
+      {/* Items expandidos — uno por línea cuando hay más de 1 */}
+      {expanded && alerts.length > 1 && (
+        <div className="border-t border-current/20 px-3 py-2 space-y-1">
+          {alerts.map((a) => {
+            const Icon = a.icon;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => { a.onClick(); setExpanded(false); }}
+                className="w-full flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/30 dark:hover:bg-black/20 text-left"
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="text-xs font-semibold flex-1 min-w-0 truncate">{a.label}</span>
+                <span className="shrink-0 inline-flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-white/60 dark:bg-black/30 text-[10px] font-bold tabular-nums">
+                  {a.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── QuickFilters — 4 chips principales + "Más ▾" para Plan/Estado ──────
+function QuickFilters({
+  quickFilter,
+  applyQuickFilter,
+  stats,
+  filterPlan,
+  setFilterPlan,
+  filterActive,
+  setFilterActive,
+}: {
+  quickFilter: string;
+  applyQuickFilter: (v: "all" | "active" | "inactive" | "pro" | "enterprise" | "trial" | "pending") => void;
+  stats: { total: number; active: number; inactive: number; trial: number; tenantsWithPending: number; byPlan: Record<PlanId, number> };
+  filterPlan: "all" | PlanId;
+  setFilterPlan: (v: "all" | PlanId) => void;
+  filterActive: "all" | "active" | "inactive";
+  setFilterActive: (v: "all" | "active" | "inactive") => void;
+}) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const principalChips = [
+    { id: "all" as const,      label: "Todos",          count: stats.total },
+    { id: "active" as const,   label: "Activas",        count: stats.active },
+    { id: "trial" as const,    label: "En trial",       count: stats.trial },
+    { id: "pending" as const,  label: "Con pendientes", count: stats.tenantsWithPending },
+  ];
+  const isMoreActive =
+    filterPlan !== "all" ||
+    filterActive === "inactive" ||
+    quickFilter === "pro" ||
+    quickFilter === "enterprise" ||
+    quickFilter === "inactive";
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {principalChips.map((qf) => {
+        const isActive = quickFilter === qf.id;
+        return (
+          <button
+            key={qf.id}
+            type="button"
+            onClick={() => applyQuickFilter(qf.id)}
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold border-2 transition-colors ${
+              isActive
+                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            }`}
+          >
+            {qf.label}
+            <span className={`tabular-nums font-bold ${isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}>
+              {qf.count}
+            </span>
+          </button>
+        );
+      })}
+
+      {/* "Más ▾" — popover con plan + estado granulares */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setMoreOpen((o) => !o)}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold border-2 transition-colors ${
+            isMoreActive || moreOpen
+              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+              : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+          }`}
+          aria-expanded={moreOpen}
+        >
+          Más filtros
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+        </button>
+        {moreOpen && (
+          <>
+            {/* Backdrop para cerrar al clickear afuera */}
+            <button
+              type="button"
+              aria-label="Cerrar"
+              onClick={() => setMoreOpen(false)}
+              className="fixed inset-0 z-10"
+              tabIndex={-1}
+            />
+            <div className="absolute z-20 mt-2 right-0 sm:left-0 sm:right-auto w-64 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl p-3 space-y-3">
+              {/* Plan */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                  Plan
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(["all", "free", "pro", "business", "enterprise"] as const).map((p) => {
+                    const label = p === "all" ? "Todos" : p === "free" ? "Gratis" : p === "business" ? "Enterprise" : p === "enterprise" ? "Max" : "Pro";
+                    const count = p === "all" ? stats.total : stats.byPlan[p as PlanId] ?? 0;
+                    const isActive = filterPlan === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setFilterPlan(p)}
+                        className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold transition-colors ${
+                          isActive
+                            ? "bg-[var(--accent)] text-white"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
+                        }`}
+                      >
+                        {label}
+                        <span className={`tabular-nums text-[10px] ${isActive ? "text-white/80" : "text-[var(--text-tertiary)]"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Estado */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                  Estado
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {([
+                    { id: "all", label: "Todos", count: stats.total },
+                    { id: "active", label: "Activas", count: stats.active },
+                    { id: "inactive", label: "Suspendidas", count: stats.inactive },
+                  ] as const).map((s) => {
+                    const isActive = filterActive === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setFilterActive(s.id)}
+                        className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold transition-colors ${
+                          isActive
+                            ? "bg-[var(--accent)] text-white"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
+                        }`}
+                      >
+                        {s.label}
+                        <span className={`tabular-nums text-[10px] ${isActive ? "text-white/80" : "text-[var(--text-tertiary)]"}`}>
+                          {s.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function TenantStat({
   icon: Icon,
