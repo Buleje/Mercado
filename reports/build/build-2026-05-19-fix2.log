@@ -1,0 +1,32 @@
+
+> buleje@0.1.1 build
+> next build
+
+Warning: Custom Cache-Control headers detected for the following routes:
+  - /_next/static/:path*
+
+Setting a custom Cache-Control header can break Next.js development behavior.
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+- Cache Components enabled
+- Experiments (use with caution):
+  ✓ optimizeCss
+  · optimizePackageImports
+  · staleTimes
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 55s
+  Skipping validation of types
+  Finished TypeScript config validation in 15ms ...
+  Collecting page data using 11 workers ...
+⚠ Using edge runtime on a page currently disables static generation for that page
+Error: Mock file imported in production: cupones.mock.ts. Mocks are dev-only.
+    at module evaluation (lib/mocks/cupones.mock.ts:13:9)
+    at module evaluation (app/api/cupones/apply/route.ts:3:1)
+    at Object.<anonymous> (.next/server/app/api/cupones/apply/route.js:12:3)
+
+> Build error occurred
+Error: Failed to collect page data for /api/cupones/apply
+    at ignore-listed frames {
+  type: 'Error'
+}

@@ -1,5 +1,8 @@
 import "server-only";
-import { renderToStaticMarkup } from "react-dom/server";
+// react-dom/server import movido a lazy dynamic dentro de renderHtml()
+// porque Next 16 + Turbopack falla en build estático al detectar
+// react-dom/server top-level aunque el archivo sea "server-only"
+// (https://github.com/vercel/next.js/issues — Turbopack false-positive).
 import { createElement } from "react";
 import { Resend } from "resend";
 
@@ -48,11 +51,18 @@ const FROM =
 //  Helper interno: renderiza React → HTML
 // ──────────────────────────────────────────────
 
-function renderHtml<T extends object>(
+// Singleton cache del módulo react-dom/server (cargado on-first-use).
+let _renderToStaticMarkup: typeof import("react-dom/server").renderToStaticMarkup | null = null;
+
+async function renderHtml<T extends object>(
   Component: React.ComponentType<T>,
   props: T,
-): string {
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:16px;background:#f3f4f6;">${renderToStaticMarkup(createElement(Component, props))}</body></html>`;
+): Promise<string> {
+  if (!_renderToStaticMarkup) {
+    const mod = await import("react-dom/server");
+    _renderToStaticMarkup = mod.renderToStaticMarkup;
+  }
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:16px;background:#f3f4f6;">${_renderToStaticMarkup(createElement(Component, props))}</body></html>`;
 }
 
 // ──────────────────────────────────────────────
@@ -78,7 +88,7 @@ export async function sendWelcomeEmail(
       from: FROM,
       to,
       subject: `¡Bienvenido a Buleje, ${props.storeName}!`,
-      html: renderHtml(WelcomeEmail, props),
+      html: await renderHtml(WelcomeEmail, props),
     });
     if (error) return { success: false, error: error.message };
     return { success: true, id: data?.id };
@@ -100,7 +110,7 @@ export async function sendOrderConfirmationEmail(
       from: FROM,
       to,
       subject: `Pedido #${props.orderNumber} confirmado — ${props.storeName}`,
-      html: renderHtml(OrderConfirmationEmail, props),
+      html: await renderHtml(OrderConfirmationEmail, props),
     });
     if (error) return { success: false, error: error.message };
     return { success: true, id: data?.id };
@@ -126,7 +136,7 @@ export async function sendPaymentReceiptEmail(
       from: FROM,
       to,
       subject,
-      html: renderHtml(PaymentReceiptEmail, props),
+      html: await renderHtml(PaymentReceiptEmail, props),
     });
     if (error) return { success: false, error: error.message };
     return { success: true, id: data?.id };
@@ -153,7 +163,7 @@ export async function sendFiadoReminderEmail(
       from: FROM,
       to,
       subject,
-      html: renderHtml(FiadoReminderEmail, props),
+      html: await renderHtml(FiadoReminderEmail, props),
     });
     if (error) return { success: false, error: error.message };
     return { success: true, id: data?.id };
@@ -186,7 +196,7 @@ export async function sendDeliveryUpdateEmail(
       from: FROM,
       to,
       subject,
-      html: renderHtml(DeliveryUpdateEmail, props),
+      html: await renderHtml(DeliveryUpdateEmail, props),
     });
     if (error) return { success: false, error: error.message };
     return { success: true, id: data?.id };
@@ -208,7 +218,7 @@ export async function sendWeeklyReportEmail(
       from: FROM,
       to,
       subject: `Reporte semanal — ${props.storeName} — ${props.weekRange}`,
-      html: renderHtml(WeeklyReportEmail, props),
+      html: await renderHtml(WeeklyReportEmail, props),
     });
     if (error) return { success: false, error: error.message };
     return { success: true, id: data?.id };
@@ -236,7 +246,7 @@ export async function sendVendorIdentityAlertEmail(
       from: FROM,
       to,
       subject: `🛡️ ${ALERT_SUBJECT[props.kind]} — Buleje`,
-      html: renderHtml(VendorIdentityAlertEmail, props),
+      html: await renderHtml(VendorIdentityAlertEmail, props),
     });
     if (error) return { success: false, error: error.message };
     return { success: true, id: data?.id };

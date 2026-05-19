@@ -1,0 +1,42 @@
+BUILD START: 2026-05-19T13:36:27-05:00
+
+> buleje@0.1.1 build
+> next build
+
+Warning: Custom Cache-Control headers detected for the following routes:
+  - /_next/static/:path*
+
+Setting a custom Cache-Control header can break Next.js development behavior.
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+- Cache Components enabled
+- Experiments (use with caution):
+  ✓ optimizeCss
+  · optimizePackageImports
+  · staleTimes
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./lib/email/send.ts:2:1
+You're importing a component that imports react-dom/server. To fix it, render or return the content directly as a Server Component instead for perf and security.
+    Learn more: https://nextjs.org/docs/app/building-your-application/rendering
+  [90m1 |[0m [36mimport[0m [32m"server-only"[0m;
+[31m[1m>[0m [90m2 |[0m [36mimport[0m { renderToStaticMarkup } [36mfrom[0m [32m"react-dom/server"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mimport[0m { createElement } [36mfrom[0m [32m"react"[0m;
+  [90m4 |[0m [36mimport[0m { [33mResend[0m } [36mfrom[0m [32m"resend"[0m;
+  [90m5 |[0m
+
+Ecmascript file had an error
+
+Import trace:
+  App Route:
+    ./lib/email/send.ts
+    ./lib/notifications/vendor-identity-alert.ts
+    ./app/api/cron/vendor-identity-recheck/route.ts
+
+
+    at <unknown> (./lib/email/send.ts:2:1)
+BUILD END: 2026-05-19T13:37:21-05:00 (exit=1, duration=54s)

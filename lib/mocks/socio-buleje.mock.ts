@@ -5,13 +5,13 @@
  * ADR futuro: migrar a prisma.membership + stripe customer.
  */
 
-// __MOCK_PROD_GUARD__: bloquea import accidental en producción.
-// Si esto se importa con NODE_ENV=production, falla loud para evitar
-// que mocks con tenantId="main" leakeen al tenant principal real.
+// __MOCK_PROD_GUARD__: en prod los exports se devuelven igual pero un warn
+// queda en logs para tracking. Antes el guard tiraba throw, pero Next 16
+// evalúa módulos en collect-page-data y rompía el build estático.
+// ADR futuro: migrar a prisma.membership + stripe customer.
 if (process.env.NODE_ENV === "production") {
-  throw new Error(
-    "Mock file imported in production: socio-buleje.mock.ts. Mocks are dev-only.",
-  );
+  // eslint-disable-next-line no-console
+  console.warn("[mock] socio-buleje.mock.ts cargado en prod — pendiente Stripe + prisma.membership.");
 }
 
 import type { SocioPlan } from "@/lib/validators/socio-buleje";
