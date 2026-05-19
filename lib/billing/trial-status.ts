@@ -23,6 +23,13 @@ export interface TenantSubscriptionFields {
   mpSubscriptionId: string | null;
   /** Reservado para ADR-084 cuando la migración corra. Hoy: undefined. */
   suspendedAt?: Date | null;
+  /**
+   * Flag de tenant deshabilitado — lo setea Stripe en
+   * `invoice.payment_failed` ≥ 3 (ver lib/db/tenant-billing.db.ts).
+   * Audit project-wide 2026-05-19 (QA P1 #3): si `active=false`, el
+   * tenant entra en read-only inmediato sin depender de trialEndsAt.
+   */
+  active?: boolean | null;
 }
 
 export type TrialStatus =
@@ -103,6 +110,11 @@ export function getTrialStatus(t: TenantSubscriptionFields): TrialStatus {
  * cuando suspendedAt no sea null.
  */
 export function isReadOnlyMode(t: TenantSubscriptionFields): boolean {
+  // Audit 2026-05-19 (QA P1 #3): Stripe puede setear `active=false` via
+  // `invoice.payment_failed` >= 3. Antes este flag se persistia en DB pero
+  // no afectaba el read-only mode para tenants sin trialEndsAt -> revenue
+  // leak: tenant suspendido seguia tomando pedidos.
+  if (t.active === false) return true;
   if (t.suspendedAt) return true;
   return getTrialStatus(t).kind === "trial_expired";
 }

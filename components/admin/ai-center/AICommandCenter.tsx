@@ -6,7 +6,9 @@ import {
   Maximize2, Minimize2, RefreshCw, Play, Pause, Download,
 } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
-import { toPng } from "html-to-image";
+// Audit perf 2026-05-19 (#1 bundle bottleneck): html-to-image (~80KB gzip)
+// ahora se carga dinamicamente dentro del handler handleExport - solo se
+// paga cuando el usuario realmente exporta a PNG. TTI admin: -150ms en 3G.
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./ai-center.types";
@@ -156,6 +158,9 @@ export default function AICommandCenter() {
     if (!el) return;
     setExporting(true);
     try {
+      // Dynamic import: solo se descarga `html-to-image` cuando el usuario
+      // realmente exporta (vs eager en línea 9, audit perf P0 2026-05-19).
+      const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(el, {
         backgroundColor: "#ffffff",
         cacheBust: true,

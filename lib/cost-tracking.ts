@@ -5,10 +5,14 @@
  * Uses proxy metrics (product count, order volume, AI usage) to approximate
  * real costs. Useful for SaaS margin analysis in the superadmin dashboard.
  *
- * Cost model (simplified estimates):
- *   - Storage: $0.001 per product (DB rows + images)
- *   - Compute: $0.005 per order (API calls + webhooks)
- *   - AI: $0.01 per AI request (LLM calls)
+ * Cost model en PEN (Soles, alineado con plan-tiers.ts):
+ *   - Storage: S/ 0.005 por producto (DB rows + imágenes Supabase)
+ *   - Compute: S/ 0.02  por orden (API + webhooks Vercel Fluid)
+ *   - AI:      S/ 0.04  por request LLM (Gateway + tokens)
+ *
+ * Audit 2026-05-19 — Business P0 #4: precios actualizados de USD 2022
+ * (pro=$29, business=$79) a PEN 2026 (pro=89, business=179, enterprise=349)
+ * para que el dashboard de superadmin muestre MRR/márgenes reales.
  */
 
 import "server-only";
@@ -33,19 +37,22 @@ export interface TenantCostEstimate {
   grossMargin: number;
 }
 
-// ── Cost constants (USD) ────────────────────────────────────────────────────
+// ── Cost constants (PEN — Soles) ────────────────────────────────────────────
 
-const COST_PER_PRODUCT = 0.001; // ~$1 per 1000 products/month
-const COST_PER_ORDER = 0.005;   // ~$5 per 1000 orders/month
-const COST_PER_AI_REQ = 0.01;   // ~$10 per 1000 AI requests
-const BASE_COST = 0.50;         // Fixed per-tenant cost (DNS, cert, etc.)
+const COST_PER_PRODUCT = 0.005; // ~S/5 per 1000 products/month
+const COST_PER_ORDER = 0.02;    // ~S/20 per 1000 orders/month (Vercel + webhooks)
+const COST_PER_AI_REQ = 0.04;   // ~S/40 per 1000 AI requests (Gateway + tokens)
+const BASE_COST = 2.0;          // Fixed per-tenant cost en PEN (DNS, cert, observabilidad)
 
-// Plan revenue (monthly USD)
+// Plan revenue (mensual en PEN — alineado con DEFAULT_PLAN_PRICES en lib/plans.ts)
+// Single source of truth: DEFAULT_PLAN_PRICES.
+// Mantener este map como fallback estático para evitar circular imports y
+// para que el cálculo sea determinístico sin DB hit.
 const PLAN_REVENUE: Record<string, number> = {
   free: 0,
-  pro: 29,
-  business: 79,
-  enterprise: 199,
+  pro: 89,        // Starter
+  business: 179,  // Pro
+  enterprise: 349, // Business
 };
 
 const CACHE_TTL = 600; // 10 min

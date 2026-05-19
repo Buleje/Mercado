@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ReviewVotesDB, type VoteType } from "@/lib/db/reviews.db";
+// Audit project-wide 2026-05-19 (CodeReview P0 #2): se reemplazó el
+// $queryRawUnsafe por findFirst tipado. Cierre del único vector SQLi
+// confirmado en todo el codebase. El reviewId viene del path param
+// y aunque era parametrizado (`$1 $2`), pasar por Prisma ORM elimina
+// la categoría de riesgo y simplifica auditorías futuras.
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
@@ -60,20 +65,17 @@ export async function POST(
     }
 
     // 2. Verificar que la review existe en este tenant (defense in depth).
-    // @prisma-direct excepción documentada: $queryRawUnsafe con $1 $2 + tenantId
-    // — está parametrizado, no hay SQLi. Migrar a ReviewsMarketplaceDB.exists()
-    // cuando esa clase se extienda.
-    const reviewRows = await prisma.$queryRawUnsafe<
-      Array<{ id: string; tenantId: string; deletedAt: Date | null }>
-    >(
-      `SELECT "id","tenantId","deletedAt"
-         FROM "Review"
-        WHERE "id" = $1 AND "tenantId" = $2 AND "status" = 'approved'
-        LIMIT 1`,
-      reviewId,
-      store.tenantId,
-    );
-    if (!reviewRows[0] || reviewRows[0].deletedAt) {
+    // @prisma-direct excepción documentada: solo lectura de existencia para
+    // dedupe del vote. Pendiente migrar a ReviewsMarketplaceDB.exists().
+    const review = await prisma.review.findFirst({
+      where: {
+        id: reviewId,
+        tenantId: store.tenantId,
+        status: "approved",
+      },
+      select: { id: true, deletedAt: true },
+    });
+    if (!review || review.deletedAt) {
       return NextResponse.json({ error: "Review no encontrada" }, { status: 404 });
     }
 
