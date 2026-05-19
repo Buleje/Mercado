@@ -19,6 +19,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # gitleaks-action necesita resolver <base-PR>^..<HEAD> en el scan
+          # diff; con shallow clone default (fetch-depth=1) el parent del
+          # base SHA no existe → "fatal: ambiguous argument" y CI falla.
+          # fetch-depth=0 trae el history completo (clone tarda +5-10s).
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
