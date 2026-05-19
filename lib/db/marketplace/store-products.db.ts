@@ -326,4 +326,63 @@ export const MarketplaceStoreProductsDB = {
 
     return { created, updated, deactivated };
   },
+
+  /**
+   * Actualiza un StoreProduct con guard cross-tenant via relacion store.
+   * Audit project-wide 2026-05-19 — migracion de marketplace/stores/my/products/[id].
+   *
+   * SECURITY P1 IDOR multi-store fix (2026-05-16): validar contra
+   * `store.tenantId` (nested) y NO contra el primer store del tenant —
+   * un tenant con 2+ tiendas no debe poder mutar StoreProduct de la
+   * tienda B desde la sesion de la tienda A.
+   *
+   * @returns null si no existe o cross-tenant, sino el updated row.
+   */
+  async updateOneForTenant(
+    tenantId: string,
+    storeProductId: string,
+    data: { isActive?: boolean; retailPrice?: number; wholesalePrice?: number },
+  ): Promise<{ id: string; isActive: boolean; retailPrice: number; wholesalePrice: number } | null> {
+    const existing = await prisma.storeProduct.findFirst({
+      where: { id: storeProductId },
+      select: { id: true, store: { select: { tenantId: true } } },
+    });
+    if (!existing || existing.store.tenantId !== tenantId) return null;
+
+    const updated = await prisma.storeProduct.update({
+      where: { id: storeProductId },
+      data,
+      select: { id: true, isActive: true, retailPrice: true, wholesalePrice: true },
+    });
+    invalidateByPrefix(`marketplace:store-products`);
+    return {
+      id: updated.id,
+      isActive: updated.isActive,
+      retailPrice: toNumOrZero(updated.retailPrice),
+      wholesalePrice: toNumOrZero(updated.wholesalePrice ?? 0),
+    };
+  },
+
+  /**
+   * Bulk activa/desactiva N StoreProducts con guard cross-tenant
+   * (matchea contra TODAS las tiendas del tenant via relacion).
+   */
+  async bulkSetActiveForTenant(
+    tenantId: string,
+    ids: string[],
+    isActive: boolean,
+  ): Promise<{ updatedCount: number }> {
+    if (ids.length === 0) return { updatedCount: 0 };
+    /* eslint-disable no-restricted-syntax -- tenantId guard anidado via relation store.tenantId (StoreProduct no tiene tenantId directo). ADR-101. */
+    const result = await prisma.storeProduct.updateMany({
+      where: {
+        id: { in: ids },
+        store: { tenantId },
+      },
+      data: { isActive },
+    });
+    /* eslint-enable no-restricted-syntax */
+    invalidateByPrefix(`marketplace:store-products`);
+    return { updatedCount: result.count };
+  },
 };
