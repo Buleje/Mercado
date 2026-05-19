@@ -50,20 +50,29 @@ export default function PromoBannerTop() {
       aria-label="Promoción"
       className="relative w-full bg-gradient-to-r from-[var(--accent)]/10 via-[var(--accent-soft)] to-[var(--accent)]/10 border-b border-[var(--rule-soft)]"
     >
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-center gap-3 overflow-x-auto whitespace-nowrap">
-        <span className="text-sm font-semibold text-[var(--text-primary)] inline-flex items-center gap-2">
-          <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-          <span>
+      {/* Brandon 2026-05-18: rediseño mobile.
+          ANTES: text "Primer mes gratis · Sin tarjeta · Cancelás cuando quieras"
+          + Empezar + X absolute right-2 todo en h-9 con overflow-x-auto. El X
+          SE SOBREPONÍA al texto al scrollear horizontal.
+          AHORA: layout flex 3-col con espacio reservado para el X (pr-9).
+          En mobile texto compacto "Primer mes gratis · Sin tarjeta" (oculta
+          "Cancelás cuando quieras" en xs). Empezar como chip pill en lugar
+          de link inline. */}
+      <div className="mx-auto max-w-[1400px] pl-3 sm:pl-4 pr-9 sm:pr-10 h-9 flex items-center justify-between gap-2 sm:gap-3">
+        <span className="text-[length:var(--ts-xs)] sm:text-sm font-semibold text-[var(--text-primary)] inline-flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+          <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse shrink-0" />
+          <span className="truncate">
             <strong className="font-extrabold">Primer mes gratis</strong>
-            <span className="text-[var(--text-secondary)]"> · Sin tarjeta · Cancelás cuando quieras</span>
+            <span className="text-[var(--text-secondary)]"> · Sin tarjeta</span>
+            <span className="hidden sm:inline text-[var(--text-secondary)]"> · Cancelás cuando quieras</span>
           </span>
         </span>
         <Link
           href="/abrir-tienda#planes"
-          className="inline-flex items-center gap-1 text-sm font-extrabold text-[var(--accent)] hover:gap-1.5 transition-all whitespace-nowrap"
+          className="shrink-0 inline-flex items-center gap-1 h-6 px-2.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold hover:bg-[var(--accent)]/90 active:scale-95 transition-all whitespace-nowrap"
         >
           Empezar
-          <ArrowRight className="h-3 w-3" strokeWidth={2.5} />
+          <ArrowRight className="h-3 w-3" strokeWidth={2.75} />
         </Link>
       </div>
 
@@ -74,7 +83,7 @@ export default function PromoBannerTop() {
           setVisible(false);
         }}
         aria-label="Cerrar banner promocional"
-        className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+        className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
       >
         <X className="h-3 w-3" strokeWidth={2.5} aria-hidden />
       </button>
