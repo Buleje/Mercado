@@ -266,33 +266,49 @@ function FiltersDrawer({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:hidden" role="dialog" aria-modal="true" aria-label="Filtros">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-[var(--text-primary)]/55 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
 
-      {/* Sheet — 60-80% viewport height, scrollable body, sticky action bar */}
-      <div className="relative w-full max-h-[80vh] min-h-[60vh] rounded-t-3xl bg-white dark:bg-gray-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
+      {/* Brandon 2026-05-18 v3: Sheet rediseñado.
+          - rounded-t-[28px] (alineado con el modal cupón bienvenida)
+          - max-h-[88vh] (mejor para pantallas bajas + teclado abierto)
+          - shadow-[var(--shadow-xl)] del DS en lugar de shadow-2xl Tailwind
+          - Header con eyebrow + título + descripción (jerarquía premium)
+          - Botón X 40x40 (WCAG AA) */}
+      <div className="relative w-full max-h-[88vh] min-h-[60vh] rounded-t-[28px] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] motion-safe:animate-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-300 flex flex-col border-t border-[var(--rule-soft)]">
         {/* Drag handle */}
-        <div className="shrink-0 px-5 pt-5 pb-0">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--rule-soft)] dark:bg-gray-700" aria-hidden="true" />
-          {/* Header */}
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Filtros</span>
+        <div className="shrink-0 px-6 pt-3 pb-0">
+          <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--text-tertiary)]/30" aria-hidden="true" />
+          {/* Header premium */}
+          <div className="flex items-start justify-between gap-3 mb-3 pt-1">
+            <div className="min-w-0">
+              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+                <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
+                Refiná tu búsqueda
+              </p>
+              <h2 className="text-xl font-extrabold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+                Filtrá las tiendas
+              </h2>
+              <p className="mt-0.5 text-xs text-[var(--text-secondary)] font-medium">
+                Elegí orden, zona, categoría y precio.
+              </p>
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:bg-gray-800 dark:text-gray-300"
+              className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors border border-[var(--rule-soft)] active:scale-95"
               aria-label="Cerrar filtros"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" strokeWidth={2.5} />
             </button>
           </div>
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
           {/* Sort — usa extraSort cuando el caller lo provee (caso /tiendas con
               StoresSortKey). Si no, el sort interno de MarketplaceFiltersState. */}
           <div>
-            <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-extrabold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
+            <label htmlFor="mobile-sort" className="mb-2 block text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
               Ordenar por
             </label>
             {extraSort ? (
@@ -323,8 +339,10 @@ function FiltersDrawer({
           {/* Zona */}
           {zones && zones.length > 1 && onZoneChange && (
             <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
-                <MapPin className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+              <p className="mb-2.5 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+                <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)]">
+                  <MapPin className="h-3 w-3" strokeWidth={2.5} />
+                </span>
                 Zona
               </p>
               <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por zona">
@@ -377,7 +395,12 @@ function FiltersDrawer({
 
           {/* Categories */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">Categoría</p>
+            <p className="mb-2.5 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+              <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)]">
+                <SlidersHorizontal className="h-3 w-3" strokeWidth={2.5} />
+              </span>
+              Categoría
+            </p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
               {PRODUCT_CATEGORIES.map((cat) => (
                 <button
@@ -404,7 +427,12 @@ function FiltersDrawer({
 
           {/* Price Range */}
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">Precio</p>
+            <p className="mb-3 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+              <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)] font-mono text-[10px]">
+                S/
+              </span>
+              Precio
+            </p>
             <PriceRangePopover
               min={filters.minPrice}
               max={filters.maxPrice}
@@ -434,9 +462,12 @@ function FiltersDrawer({
           </button>
         </div>
 
-        {/* Sticky action bar — onClearAll cuando el caller pasa el reset
-            global (limpia search, chips, sort, etc.). Si no, onReset interno. */}
-        <div className="shrink-0 border-t border-[var(--rule-soft)] dark:border-gray-800 px-5 py-4 flex gap-3">
+        {/* Brandon 2026-05-18 v3: sticky bar con safe-area-inset + jerarquía
+            visual entre "Limpiar" (secundario) y "Aplicar" (primario). */}
+        <div
+          className="shrink-0 border-t border-[var(--rule-soft)] px-6 pt-3 flex gap-3 bg-[var(--surface-raised)]"
+          style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom))" }}
+        >
           <button
             type="button"
             onClick={() => {
@@ -444,16 +475,16 @@ function FiltersDrawer({
               else onReset();
             }}
             aria-label="Limpiar todos los filtros"
-            className="min-h-12 flex-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-extrabold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
+            className="h-12 flex-1 rounded-2xl text-sm font-extrabold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors active:scale-[0.985]"
           >
-            Limpiar todo
+            Limpiar
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="min-h-12 flex-[2] rounded-2xl bg-[var(--accent)] text-sm font-extrabold text-white shadow-md hover:bg-[var(--accent)]/90 transition-colors"
+            className="h-12 flex-[2] rounded-2xl bg-[var(--text-primary)] text-sm font-extrabold text-[var(--surface-raised)] hover:opacity-90 transition-opacity active:scale-[0.985] uppercase tracking-wide"
           >
-            Aplicar
+            Ver tiendas
           </button>
         </div>
       </div>

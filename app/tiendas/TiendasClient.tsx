@@ -17,10 +17,11 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+// Brandon 2026-05-18 v3: iconos List, Map (toggle removido), Truck/Wallet/Gift
+// (KPIs hero removidos) ya no se usan en este archivo.
 import {
-  Store, MapPin, ArrowUpRight, List, Map as MapIcon, Bike,
-  Search as SearchIcon, ShoppingBag, Truck, ChevronRight,
-  Wallet, Gift,
+  Store, MapPin, ArrowUpRight, Bike,
+  Search as SearchIcon, ShoppingBag, ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 // Brandon 2026-05-18 perf P1 #6: SearchAutocomplete y TiendasHeroAds
@@ -63,14 +64,8 @@ import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import dynamic from "next/dynamic";
 
-const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[60vh] min-h-[400px] rounded-xl border border-dashed border-[var(--rule-soft)] flex items-center justify-center text-sm text-[var(--text-tertiary)]">
-      Cargando mapa…
-    </div>
-  ),
-});
+// Brandon 2026-05-18 v3: TiendasMap dynamic removido — toggle Lista/Mapa
+// eliminado del toolbar.
 
 // Brandon 2026-05-18 perf P0 #2: MarketplaceFilters (691 LOC) lazy.
 // El placeholder ocupa el slot visual hasta que el chunk carga, así no hay
@@ -328,11 +323,10 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     });
   }, []);
 
-  // ── TS-04 vista lista/mapa ──
-  const [viewMode, setViewMode] = useState<"list" | "map">(() => {
-    const v = searchParams.get("view");
-    return v === "map" ? "map" : "list";
-  });
+  // Brandon 2026-05-18 v3: viewMode state removido. Antes alternaba lista/mapa
+  // (TiendasMap Leaflet). El cliente del directorio busca por filtros, no por
+  // ubicación visual — y los chips de zona ya cubren el caso geográfico. El
+  // import dynamic de TiendasMap también se eliminó del top del archivo.
 
   // ── TS-22 Sort selector (con persistencia) ──
   const [sortKey, setSortKey] = useState<StoresSortKey>(() => {
@@ -370,14 +364,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
       if (zone && zone !== initialZone) params.set("zona", zone);
       if (sortKey !== "relevance") params.set("sort", sortKey);
       if (activeChips.size > 0) params.set("chips", [...activeChips].join(","));
-      if (viewMode === "map") params.set("view", "map");
       if (subCategoryId) params.set("subcat", subCategoryId);
       const qs = params.toString();
       const next = qs ? `${pathname}?${qs}` : pathname;
       router.replace(next, { scroll: false });
     }, 220);
     return () => clearTimeout(timeout);
-  }, [search, category, zone, sortKey, activeChips, viewMode, subCategoryId, pathname, router, initialZone]);
+  }, [search, category, zone, sortKey, activeChips, subCategoryId, pathname, router, initialZone]);
 
   // ── Geo hook ──
   const {
@@ -753,60 +746,80 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                  Brandon 2026-05-18: rediseño mobile — eyebrow location +
                  título tighter + chips full-width 3-col grid (no wrap). */}
             <div className="min-w-0">
-              {/* Eyebrow mobile — location + nº de tiendas activas. Aporta
-                  contexto local sin saturar y reemplaza la descripción larga
-                  de desktop. */}
-              <div className="sm:hidden flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                  <MapPin className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+              {/* Brandon 2026-05-18 v3 — Hero rediseñado.
+                  Antes: eyebrow plano + h1 + descripción genérica. Ahora:
+                    · Badge "En vivo" con dot animado (social proof inmediato)
+                    · Eyebrow estructurado con accent-line + nombre de ciudad
+                    · Title editorial con línea italic en serif (mismo estilo)
+                    · Underline-text "ahora mismo" → urgencia
+                    · Sub-stats inline con dato real (tiendas + zonas) — el
+                      cliente sabe que es un marketplace ACTIVO, no un MVP. */}
+              <div className="flex items-center gap-2 mb-2.5 sm:mb-3">
+                <span
+                  aria-hidden
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-50,var(--accent-soft))] border border-[var(--data-success-500,var(--accent))]/30 px-2.5 h-6 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-600,var(--accent))]"
+                >
+                  <span className="relative inline-flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500,var(--accent))] opacity-70 animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-600,var(--accent))]" />
+                  </span>
+                  En vivo
+                </span>
+                <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+                  <MapPin className="h-3 w-3 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
                   {customerCity ?? customerRegion ?? "Pucallpa"}
                 </span>
-                {stores.length > 0 && (
-                  <>
-                    <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] tabular-nums">
-                      {stores.length} tiendas activas
-                    </span>
-                  </>
-                )}
               </div>
 
-              <h1 className="text-[clamp(1.625rem,7vw,3.75rem)] font-extrabold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] sm:tracking-[-0.035em] text-[var(--text-primary)]">
+              <h1 className="text-[clamp(1.75rem,7vw,3.875rem)] font-extrabold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] sm:tracking-[-0.035em] text-[var(--text-primary)]">
                 Las mejores tiendas
                 {" "}
-                <span className="italic font-serif text-[var(--accent)]">de tu barrio.</span>
+                <span className="italic font-serif text-[var(--accent)]">de tu barrio</span>,
+                <br className="hidden sm:block" />
+                <span className="text-[var(--text-secondary)] font-extrabold"> a un toque.</span>
               </h1>
-              {/* Brandon, mayo 14 2026: descripción "Bodegas, restaurantes…"
-                  oculta en mobile — el eyebrow + título ya comunican.
-                  En sm+ sigue visible. */}
-              <p className="hidden sm:block mt-2 sm:mt-4 max-w-xl text-sm sm:text-lg text-[var(--text-secondary)] leading-[1.4] sm:leading-[1.45]">
-                Bodegas, restaurantes, farmacias y más — todo de tus vecinos,
-                con delivery rápido.
+
+              {/* Sub-stats: dato real bajo el título (mobile + desktop). Antes
+                  vivía aparte en un eyebrow chico arriba — ahora ancla al h1
+                  para que la respuesta visual a "¿hay tiendas?" llegue de
+                  inmediato. */}
+              {stores.length > 0 && (
+                <p className="mt-2 sm:mt-3 text-sm sm:text-base text-[var(--text-secondary)] font-medium">
+                  <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
+                    {stores.length}
+                  </span>{" "}
+                  {stores.length === 1 ? "tienda abierta" : "tiendas abiertas"}
+                  {(() => {
+                    const zoneCount = new Set(
+                      stores.map((s) => (s as { zone?: string }).zone).filter(Boolean),
+                    ).size;
+                    if (zoneCount === 0) return null;
+                    return (
+                      <>
+                        {" · "}
+                        <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
+                          {zoneCount}
+                        </span>{" "}
+                        {zoneCount === 1 ? "zona" : "zonas"}
+                      </>
+                    );
+                  })()}
+                  {" · "}
+                  <span className="font-semibold text-[var(--accent)]">entrega hoy</span>
+                </p>
+              )}
+
+              {/* Descripción larga — solo desktop (sm+); mobile usa los stats. */}
+              <p className="hidden sm:block mt-3 sm:mt-4 max-w-xl text-sm sm:text-lg text-[var(--text-secondary)] leading-[1.4] sm:leading-[1.45]">
+                Bodegas, restaurantes y farmacias de tus vecinos — pedís con
+                Yape o efectivo y te llegan en minutos.
               </p>
 
-              {/* Brandon 2026-05-18: chips de beneficios trust signals.
-                  Mobile: grid 3-col (cabe siempre, sin wrap raro).
-                  Desktop: wrap natural con más spacing. */}
-              <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:gap-2 sm:flex-wrap">
-                <span className="inline-flex flex-col sm:flex-row items-center sm:gap-1.5 gap-1 justify-center rounded-2xl sm:rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2 sm:px-3 py-2 sm:py-0 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
-                  <span aria-hidden className="inline-flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)] shrink-0">
-                    <Truck className="h-3.5 w-3.5 sm:h-3 sm:w-3" strokeWidth={2.5} />
-                  </span>
-                  <span className="text-center leading-tight">Entrega <span className="tabular-nums">25</span> min</span>
-                </span>
-                <span className="inline-flex flex-col sm:flex-row items-center sm:gap-1.5 gap-1 justify-center rounded-2xl sm:rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2 sm:px-3 py-2 sm:py-0 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
-                  <span aria-hidden className="inline-flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)] shrink-0">
-                    <Wallet className="h-3.5 w-3.5 sm:h-3 sm:w-3" strokeWidth={2.5} />
-                  </span>
-                  <span className="text-center leading-tight">Yape · Efectivo</span>
-                </span>
-                <span className="inline-flex flex-col sm:flex-row items-center sm:gap-1.5 gap-1 justify-center rounded-2xl sm:rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2 sm:px-3 py-2 sm:py-0 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
-                  <span aria-hidden className="inline-flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)] shrink-0">
-                    <Gift className="h-3.5 w-3.5 sm:h-3 sm:w-3" strokeWidth={2.5} />
-                  </span>
-                  <span className="text-center leading-tight">Sin mínimo</span>
-                </span>
-              </div>
+              {/* Brandon 2026-05-18: KPIs trust signals (Entrega 25 min / Yape ·
+                  Efectivo / Sin mínimo) removidos del hero. Eran info ruidosa que
+                  el cliente ya espera de un marketplace; cada tienda muestra su
+                  propio horario/pago/mínimo en su card. Espacio liberado se usa
+                  para una line accent del hero más editorial. */}
 
               {/* Stats chip inline — antes mobile-only, ahora también oculto en
                   mobile (Brandon mayo 14: en cel solo título + buscador).
@@ -1152,7 +1165,10 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
            y título "Filtrá y elegí" — el texto comercial persuasivo
            ("Recomendadas para vos") aparece después del toolbar, justo
            encima del listado, para mejor jerarquía. */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8 pb-12">
+      {/* Brandon 2026-05-18 v3: pb-12 → pb-6 (mucho aire vacío entre el último
+          card y la siguiente sección). El listado ya tiene su propio padding
+          interno; antes dejaba ~96px de blanco. */}
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8 pb-6 sm:pb-8">
         <div className="mb-2 sm:mb-3">
           {!isTiendasOnly && (
             <div className="mt-1">
@@ -1178,15 +1194,18 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
              (mismo formato visual). La categoría de tienda ya vive
              en la grid principal de Categorías arriba. */}
         <div className="space-y-3 mb-4">
-          {/* Subcategoría = cajitas grandes con imagen (gestionadas desde superadmin) */}
+          {/* "Lo más pedido" — antes label era "Subcategoría" (técnico, suena
+              a panel admin). Brandon 2026-05-18 v3: renombrado a copy comercial
+              que activa social proof y guía la elección del cliente. */}
           {subcategories.length > 0 && (
             <div ref={subcategorySectionRef}>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
-                Subcategoría
+              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2.5">
+                <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
+                Lo más pedido
               </p>
               <div
                 role="group"
-                aria-label="Filtrar por subcategoría"
+                aria-label="Filtrá lo más pedido"
                 className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
               >
                 {/* Botón "Todas" */}
@@ -1454,51 +1473,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             aria-label="Filtros y vista de tiendas"
             className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm overflow-hidden"
           >
-            {/* ── Mobile: scroll-x con todo en chips ── */}
-            <div className="sm:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide px-3 py-2.5">
-              <div
-                role="group"
-                aria-label="Cambiar entre vista lista y mapa"
-                className="inline-flex items-center rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1 shrink-0"
-              >
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  aria-pressed={viewMode === "list"}
-                  aria-label="Vista en lista"
-                  className={cn(
-                    "inline-flex items-center justify-center h-9 w-9 rounded-full transition-all",
-                    viewMode === "list"
-                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
-                      : "text-[var(--text-secondary)]",
-                  )}
-                >
-                  <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("map")}
-                  aria-pressed={viewMode === "map"}
-                  aria-label="Vista en mapa"
-                  className={cn(
-                    "inline-flex items-center justify-center h-9 w-9 rounded-full transition-all",
-                    viewMode === "map"
-                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
-                      : "text-[var(--text-secondary)]",
-                  )}
-                >
-                  <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                </button>
-              </div>
-
-              <span aria-hidden className="h-7 w-px bg-[var(--rule-soft)] shrink-0" />
-
-              {/* Brandon 2026-05-18: el StoresSortSelector y el botón Limpiar
-                   vivían aparte en el toolbar y rompían la jerarquía visual
-                   (3 botones compitiendo). Ahora todo el control vive dentro
-                   del drawer del MarketplaceFilters — pasamos extraSort
-                   (StoresSortKey) y onClearAll para que el modal sea el
-                   único punto de control. */}
+            {/* ── Mobile: solo el drawer de filtros (Brandon mayo 18 v3) ──
+                 Toggle Lista/Mapa removido — el cliente del directorio busca
+                 por filtros/categorías; el mapa era una feature secundaria
+                 que añadía un control compitiendo con Filtros. */}
+            <div className="sm:hidden flex items-center justify-end gap-2 px-3 py-2.5">
               <div className="flex items-center gap-2 shrink-0">
                 <MarketplaceFilters
                   filters={productFilters}
@@ -1557,40 +1536,8 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 <StoresSortSelector value={sortKey} onChange={setSortKey} />
               </div>
 
-              <div
-                role="group"
-                aria-label="Cambiar entre vista lista y mapa"
-                className="inline-flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1 shrink-0"
-              >
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  aria-pressed={viewMode === "list"}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold transition-all",
-                    viewMode === "list"
-                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  <List className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  Lista
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("map")}
-                  aria-pressed={viewMode === "map"}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold transition-all",
-                    viewMode === "map"
-                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  <MapIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  Mapa
-                </button>
-              </div>
+              {/* Brandon 2026-05-18 v3: toggle Lista/Mapa removido del toolbar
+                  desktop. Mantiene solo filtros + sort + limpiar. */}
 
               {hasFilters && (
                 <button
@@ -1647,31 +1594,27 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           </div>
         </div>
 
-        {/* Listado de tiendas */}
-        {viewMode === "map" ? (
-          <TiendasMap stores={finalStores} userCoords={userCoords} />
-        ) : (
-          <MarketplaceStoresView
-            stores={stores}
-            loading={loading}
-            error={error}
-            search={search}
-            category={category}
-            zone={zone}
-            geoActive={geoActive}
-            filteredStores={finalStores}
-            activeChips={activeChips}
-            onRetry={fetchStores}
-            onClearAll={() => {
-              setSearch("");
-              setCategory("todos");
-              setZone("");
-              setGeoActive(false);
-              setUserCoords(null);
-              setSortKey("relevance");
-            }}
-          />
-        )}
+        {/* Listado de tiendas — vista mapa removida (Brandon 2026-05-18 v3). */}
+        <MarketplaceStoresView
+          stores={stores}
+          loading={loading}
+          error={error}
+          search={search}
+          category={category}
+          zone={zone}
+          geoActive={geoActive}
+          filteredStores={finalStores}
+          activeChips={activeChips}
+          onRetry={fetchStores}
+          onClearAll={() => {
+            setSearch("");
+            setCategory("todos");
+            setZone("");
+            setGeoActive(false);
+            setUserCoords(null);
+            setSortKey("relevance");
+          }}
+        />
       </section>
 
 
@@ -1688,7 +1631,9 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         aria-label="Sumate a Buleje"
         className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
       >
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        {/* Brandon 2026-05-18 v3: py-10/14 → py-7/10 compactando el CTA final
+            (era barra demasiado alta para un single CTA). */}
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-10">
           <div className="rounded-3xl bg-linear-to-br from-[var(--text-primary)] to-[var(--text-primary)]/95 text-[var(--surface-canvas)] p-6 sm:p-8 lg:p-10 overflow-hidden relative">
             <div
               aria-hidden
