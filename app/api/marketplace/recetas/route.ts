@@ -15,7 +15,7 @@
  * @cross-tenant intentional — agrega StoreProducts de todos los tenants.
  */
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { getOrSet } from "@/lib/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
@@ -392,35 +392,21 @@ export async function GET() {
   try {
     const data = await getOrSet("marketplace:recetas:v1", 300, async () => {
       // 1. Catalogo del marketplace (cross-store)
-      const storeProducts = await prisma.storeProduct.findMany({
-        where: {
-          isActive: true,
-          store: { isPublished: true, vacationMode: { not: true } },
-        },
-        select: {
-          id: true,
-          retailPrice: true,
-          product: {
-            select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
-          },
-          store: { select: { slug: true, name: true } },
-        },
-        take: 5000, // sanidad: mas de 5k es un dataset muy grande para fuzzy match en memoria
-      });
+      // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.getStoreProductsCatalog.
+      const storeProducts = await MarketplaceProductsDB.getStoreProductsCatalog({ take: 5000 });
 
-      const catalog: StoreProductLite[] = storeProducts
-        .filter((sp) => sp.product != null && sp.store?.slug != null)
-        .map((sp) => ({
-          storeProductId: sp.id,
-          productId: sp.product.id,
-          productName: sp.product.name,
-          price: toNumOrZero(sp.retailPrice),
-          stock: sp.product.stock ?? 0,
-          image: sp.product.image,
-          unit: sp.product.unit,
-          category: sp.product.category,
-          store: { slug: sp.store!.slug!, name: sp.store!.name },
-        }));
+      // El helper ya filtra rows con product=null o store?.slug=null.
+      const catalog: StoreProductLite[] = storeProducts.map((sp) => ({
+        storeProductId: sp.id,
+        productId: sp.product.id,
+        productName: sp.product.name,
+        price: toNumOrZero(sp.retailPrice),
+        stock: sp.product.stock ?? 0,
+        image: sp.product.image,
+        unit: sp.product.unit,
+        category: sp.product.category,
+        store: { slug: sp.store.slug, name: sp.store.name },
+      }));
 
       // 2. Resolver cada receta
       const resolved: ResolvedReceta[] = DEMO_RECETAS.map((r) => {

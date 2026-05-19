@@ -142,4 +142,45 @@ export const MarketplaceProductsDB = {
     });
     return result.count > 0;
   },
+  /**
+   * Catalogo cross-store para resolucion de ingredientes de recetas.
+   * Filtra solo tiendas publicadas + sin vacationMode + storeProducts activos.
+   * Cap a 5000 rows para mantener fuzzy match en memoria razonable.
+   *
+   * Filtra rows con product=null o store?.slug=null en el helper (consumer
+   * solo recibe rows con campos no nulos garantizados).
+   *
+   * @cross-tenant intentional — marketplace publico (ADR-082).
+   */
+  async getStoreProductsCatalog(opts: { take?: number } = {}): Promise<
+    Array<{
+      id: string;
+      retailPrice: { toNumber(): number; toFixed(decimals?: number): string; toString(): string } | number | string;
+      product: { id: number; name: string; image: string | null; category: string; unit: string; stock: number | null };
+      store: { slug: string; name: string };
+    }>
+  > {
+    const rows = await prisma.storeProduct.findMany({
+      where: {
+        isActive: true,
+        store: { isPublished: true, vacationMode: { not: true } },
+      },
+      select: {
+        id: true,
+        retailPrice: true,
+        product: {
+          select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
+        },
+        store: { select: { slug: true, name: true } },
+      },
+      take: opts.take ?? 5000,
+    });
+    // Filtro types-safe: product y store.slug deben existir.
+    return rows.flatMap((r) =>
+      r.product != null && r.store?.slug != null
+        ? [{ id: r.id, retailPrice: r.retailPrice, product: r.product, store: { slug: r.store.slug, name: r.store.name } }]
+        : [],
+    );
+  },
+
 };
