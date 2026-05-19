@@ -131,6 +131,7 @@ export const OrdersDB = {
     since?: string;
     phone?: string;
     tenantId: string;
+    limit?: number;
   }): Promise<DbOrder[]> {
     const where: Record<string, unknown> = {};
     if (opts?.tenantId) where.tenantId = opts.tenantId;
@@ -151,6 +152,7 @@ export const OrdersDB = {
       where,
       include: { items: true },
       orderBy: { createdAt: "desc" },
+      take: opts?.limit ?? 5000,
     })).map(mapOrder);
   },
 

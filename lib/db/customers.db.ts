@@ -109,9 +109,9 @@ function computePoints(amount: number): number {
 // ── CustomersDB ───────────────────────────────────────────────────────────────
 
 export const CustomersDB = {
-  async getAll(tenantId: string): Promise<DbCustomer[]> {
+  async getAll(tenantId: string, limit = 2000): Promise<DbCustomer[]> {
     const where: Record<string, unknown> = { tenantId };
-    const rows = await prisma.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" } });
+    const rows = await prisma.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" }, take: limit });
     return rows.map(mapCustomer);
   },
 
