@@ -55,6 +55,20 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Brandon Sprint Final 2026-05-19 — pentest P1-001 fix:
+  // cross-check tenantId del cookie httpOnly vs el header `x-tenant-id` que
+  // setea el middleware tenant. Si no coinciden, el cliente está intentando
+  // acceder a datos desde un Host/path de OTRO tenant con su cookie original.
+  // Defensa en profundidad — improbable que pase (cookies son path-scoped)
+  // pero no cuesta nada y cierra el hallazgo del pentest.
+  const requestTenantId = req.headers.get("x-tenant-id");
+  if (requestTenantId && requestTenantId !== payload.tenantId) {
+    return NextResponse.json(
+      { error: "Tenant mismatch — sesión no válida para este tenant" },
+      { status: 403 },
+    );
+  }
+
   const { customerId, tenantId } = payload;
 
   try {

@@ -86,6 +86,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Brandon Sprint Final 2026-05-19 — pentest P1-001 fix.
+  // Cross-check tenantId del cookie vs header `x-tenant-id`. Misma lógica
+  // que /api/customer/me/export. Mitigación defensa-en-profundidad para
+  // RTBF (operación pesada e irreversible — extra-paranoia justificada).
+  const requestTenantId = req.headers.get("x-tenant-id");
+  if (requestTenantId && requestTenantId !== payload.tenantId) {
+    return NextResponse.json(
+      { error: "Tenant mismatch — sesión no válida para este tenant" },
+      { status: 403 },
+    );
+  }
+
   const body = await req.json().catch(() => null);
   if (!body) {
     return NextResponse.json(
