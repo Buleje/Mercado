@@ -195,3 +195,7 @@ lighthouse.*
 lib/data/marketplace-category-clicks.json
 lib/data/*-runtime.json
 lib/data/store-extras.json
+
+# RLS credentials (passwords reales — nunca commitear)
+docs/security/rls-credentials-*.md
+!docs/security/rls-credentials-TEMPLATE.md
