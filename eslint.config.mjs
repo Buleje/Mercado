@@ -2,6 +2,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import prettierConfig from "eslint-config-prettier";
+import reactHooks from "eslint-plugin-react-hooks";
 import { PRISMA_DIRECT_LEGACY } from "./eslint.legacy-allowlist.mjs";
 
 const eslintConfig = defineConfig([
@@ -15,6 +16,16 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // CI 2026-05-19: registrar eslint-plugin-react-hooks v7.x explícitamente.
+  // eslint-config-next trae una versión más vieja transitivamente que no
+  // expone la regla "set-state-in-effect" (introducida en v5+). Sin este
+  // registro, el lint del CI falla con "could not find plugin react-hooks"
+  // aunque local funcione por dedup de node_modules.
+  {
+    plugins: {
+      "react-hooks": reactHooks,
+    },
+  },
   // Downgrade strict rules to warnings so pre-existing issues don't block commits
   {
     rules: {
