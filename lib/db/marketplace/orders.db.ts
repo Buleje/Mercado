@@ -262,54 +262,68 @@ export const MarketplaceOrdersDB = {
     const orderId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
     const fullOrderId = `MKT-${orderId}`;
 
+    // Brandon perf P0 #1: pre-fetch stocks en batch ANTES de la tx.
+    // Antes: (findFirst + updateMany) × N items = 2xN queries secuenciales dentro de la tx.
+    // Ahora: 1 findMany pre-tx + N updateMany en Promise.all dentro de la tx.
+    // La guard atomica `stock: { gte: quantity }` en updateMany sigue cerrando la race window.
+    const itemsNeedingStock = orderItems
+      .map((item) => {
+        const sp = storeProducts.find(
+          (s) => s.id === params.items.find((pi) => pi.productId === item.productId && pi.name === item.name)?.storeProductId
+        );
+        return sp?.productId ? { item, productId: sp.productId } : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+
+    const productIdsForStock = itemsNeedingStock.map((x) => x.productId);
+
+    // eslint-disable-next-line no-restricted-properties -- aggregate: batch pre-fetch de stocks antes de tx para eliminar N+1 en checkout.
+    const stockSnapshot = productIdsForStock.length > 0
+      ? await prisma.product.findMany({
+          where: { id: { in: productIdsForStock }, tenantId: store.tenantId, deletedAt: null },
+          select: { id: true, stock: true, name: true },
+        })
+      : [];
+    const stockMap = new Map(stockSnapshot.map((p) => [p.id, p]));
+
+    // Validar disponibilidad ANTES de abrir la tx (fail-fast, sin round-trips).
+    for (const { item, productId } of itemsNeedingStock) {
+      const snap = stockMap.get(productId);
+      if (!snap) throw new Error(`Producto no disponible: ${item.name}`);
+      if (snap.stock !== null && snap.stock < item.quantity) {
+        throw new Error(`Stock insuficiente para ${item.name} (quedan ${snap.stock}, pediste ${item.quantity})`);
+      }
+    }
+
     // 4. Transacción atómica: stock + order + commission + cupón + loyalty (F4, F1)
     // eslint-disable-next-line no-restricted-properties -- $transaction legítima: operaciones atómicas multi-tabla en marketplace checkout.
     await prisma.$transaction(async (tx) => {
-      // F4: decrementar stock — SKIP cuando producto no controla stock (null).
-      // Semantica:
-      //   - stock IS NULL → restaurante/servicio sin inventario → permitido, no decrement.
-      //   - stock = 0   → agotado → throw 409 (frontend debe haberlo bloqueado antes).
-      //   - stock > 0   → decrementar con guard atomico (stock >= quantity).
-      for (const item of orderItems) {
-        const storeProduct = storeProducts.find(
-          (sp) => sp.id === params.items.find((pi) => pi.productId === item.productId && pi.name === item.name)?.storeProductId
-        );
-        if (!storeProduct?.productId) continue;
-
-        // Lookup stock actual para distinguir null (no controla) vs 0 (agotado).
-        // eslint-disable-next-line no-restricted-properties -- $transaction interna: lookup scoped a productId+tenantId para stock semantics.
-        const current = await tx.product.findFirst({
-          where: { id: storeProduct.productId, tenantId: store.tenantId, deletedAt: null },
-          select: { stock: true },
-        });
-        if (!current) {
-          throw new Error(`Producto no disponible: ${item.name}`);
-        }
-        if (current.stock == null) {
-          // No controla stock → permitido sin decrement.
-          continue;
-        }
-        if (current.stock < item.quantity) {
-          throw new Error(
-            `Stock insuficiente para ${item.name} (quedan ${current.stock}, pediste ${item.quantity})`,
-          );
-        }
-
-        // eslint-disable-next-line no-restricted-properties -- $transaction interna: decrement con guard atomico para cerrar race window.
-        const upd = await tx.product.updateMany({
-          where: {
-            id:        storeProduct.productId,
-            tenantId:  store.tenantId,
-            stock:     { gte: item.quantity },
-            deletedAt: null,
-          },
-          data: { stock: { decrement: item.quantity } },
-        });
-        if (upd.count === 0) {
-          // Otro pedido tomó el stock entre el lookup y este update.
-          throw new Error(`Stock insuficiente para ${item.name}`);
-        }
-      }
+      // F4: decrementar stock con decrements paralelos (stocks pre-validados arriba).
+      // El guard atomico `stock: { gte: quantity }` en updateMany cierra la race window
+      // entre el snapshot pre-tx y el moment del decrement.
+      await Promise.all(
+        itemsNeedingStock
+          .filter(({ productId }) => {
+            // Solo decrementar si el producto controla stock (snap.stock !== null)
+            const snap = stockMap.get(productId);
+            return snap && snap.stock !== null;
+          })
+          .map(async ({ item, productId }) => {
+            // eslint-disable-next-line no-restricted-properties -- $transaction interna: decrement con guard atomico para cerrar race window.
+            const upd = await tx.product.updateMany({
+              where: {
+                id:        productId,
+                tenantId:  store.tenantId,
+                stock:     { gte: item.quantity },
+                deletedAt: null,
+              },
+              data: { stock: { decrement: item.quantity } },
+            });
+            if (upd.count === 0) {
+              throw new Error(`Stock insuficiente para ${item.name}`);
+            }
+          }),
+      );
 
       // PENTEST 2026-05-18 Sprint A #2: re-verificar dentro de la tx que
       // este cliente no haya usado ya el cupón. Antes el check vivía pre-tx
@@ -917,25 +931,31 @@ export const MarketplaceOrdersDB = {
       },
     });
 
-    // Historial por orden (fire-and-forget).
-    for (const id of updatable) {
-      const prev = existingById.get(id);
-      if (!prev) continue;
+    // Brandon perf P0 #9: batch createMany en vez de N creates individuales.
+    // Antes: 1 query × N ordenes (fire-and-forget secuencial en loop).
+    // Ahora: 1 sola query para todo el lote — misma semántica fire-and-forget.
+    const historyRows = updatable
+      .map((id) => {
+        const prev = existingById.get(id);
+        if (!prev) return null;
+        return {
+          id: crypto.randomUUID(),
+          orderId: id,
+          fromStatus: prev.status,
+          toStatus: newStatus as OrderStatus,
+          changedBy: by,
+          note: cancelReason ?? "bulk",
+          tenantId,
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+
+    if (historyRows.length > 0) {
       prisma.orderStatusHistory
-        .create({
-          data: {
-            id: crypto.randomUUID(),
-            orderId: id,
-            fromStatus: prev.status,
-            toStatus: newStatus as OrderStatus,
-            changedBy: by,
-            note: cancelReason ?? "bulk",
-            tenantId,
-          },
-        })
+        .createMany({ data: historyRows })
         .catch((err) =>
-          logger.warn("[MarketplaceOrdersDB.bulkChangeStatus] history insert failed", {
-            error: String(err), id,
+          logger.warn("[MarketplaceOrdersDB.bulkChangeStatus] history batch failed", {
+            error: String(err),
           }),
         );
     }

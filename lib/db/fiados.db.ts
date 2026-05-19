@@ -463,16 +463,12 @@ export const FiadosDB = {
           const currentSaldo = Number(fiado.saldo);
           const paymentAmount = Math.min(payment.monto, currentSaldo);
 
-          // Decrement atómico: si dos requests pasan el findFirst con el mismo
-          // currentSaldo, el segundo decrement actualiza el saldo ya reducido
-          // por el primero — sin sobrescritura.
-          await tx.fiado.update({
+          // Brandon perf P1 #5: update retorna el registro directamente con select.
+          // Antes: update (void) + findFirst extra = 2 queries por fiado.
+          // Ahora: 1 sola query — el update ya devuelve el saldo actualizado.
+          const updated = await tx.fiado.update({
             where: { id: payment.fiadoId, tenantId },
             data: { saldo: { decrement: paymentAmount } },
-          });
-
-          const updated = await tx.fiado.findFirst({
-            where: { id: payment.fiadoId, tenantId },
             select: { saldo: true, status: true },
           });
           const finalSaldo = updated ? Number(updated.saldo) : 0;
