@@ -11,6 +11,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ShoppingBag, Info, ArrowRight } from "@buleje/design-system/icons";
@@ -63,8 +64,15 @@ export default function TenantTopNav({
             style={{ background: primaryColor }}
           >
             {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="" className="h-full w-full object-cover" />
+              <Image
+                src={logoUrl}
+                alt=""
+                width={36}
+                height={36}
+                priority
+                sizes="36px"
+                className="h-full w-full object-cover"
+              />
             ) : (
               initials
             )}

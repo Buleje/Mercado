@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ShoppingBag, Settings, ExternalLink, MapPin, Phone, Sparkles, Tag,
   MessageCircle, Truck, ShieldCheck, ChevronRight, ArrowRight,
@@ -397,8 +398,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 className="inline-flex w-16 h-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border-2 border-white/25 text-white text-xl font-extrabold shadow-lg overflow-hidden"
               >
                 {tenant.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={tenant.logoUrl} alt="" className="w-full h-full object-cover" />
+                  <Image
+                    src={tenant.logoUrl}
+                    alt=""
+                    width={64}
+                    height={64}
+                    priority
+                    sizes="64px"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   logoText
                 )}
