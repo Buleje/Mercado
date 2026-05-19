@@ -22,7 +22,7 @@
  */
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { logger } from "@/lib/logger";
 
 const MAX_IDS = 100;
@@ -45,29 +45,17 @@ export async function GET(req: NextRequest) {
   const capped = productIds.slice(0, MAX_IDS);
 
   try {
+    // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.
     // Resolver slug → tenantId si vino el param. Sino cross-store.
-    let tenantIdFilter: string | null = null;
+    let tenantIdFilter: string | undefined;
     if (tenantSlugParam) {
-      // eslint-disable-next-line no-restricted-properties -- public lookup; defensa: solo retorna existing IDs, no datos sensibles.
-      const tenant = await prisma.tenant.findFirst({
-        where: { OR: [{ id: tenantSlugParam }, { slug: tenantSlugParam }] },
-        select: { id: true },
-      });
-      tenantIdFilter = tenant?.id ?? "__no-match__"; // no-match → arrays vacíos
+      const resolvedId = await MarketplaceProductsDB.resolveTenantId(tenantSlugParam);
+      tenantIdFilter = resolvedId ?? "__no-match__"; // no-match → arrays vacios
     }
 
-    // Cross-store si no hay tenantSlug; tenant-scoped si lo hay.
-    const found = await prisma.product.findMany({
-      where: {
-        id: { in: capped },
-        active: true,
-        deletedAt: null,
-        ...(tenantIdFilter ? { tenantId: tenantIdFilter } : {}),
-      },
-      select: { id: true },
+    const existingIds = await MarketplaceProductsDB.findExistingIds(capped, {
+      tenantId: tenantIdFilter,
     });
-
-    const existingIds = found.map((p) => p.id);
     const foundSet = new Set(existingIds);
     const missingIds = capped.filter((id) => !foundSet.has(id));
 

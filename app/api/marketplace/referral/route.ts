@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
@@ -38,9 +37,8 @@ export async function GET(req: NextRequest) {
     const code = await CustomersDB.ensureReferralCode(tenantId, phone);
 
     // Count how many people used this code
-    const referredCount = await prisma.customer.count({
-      where: { referredBy: phone },
-    });
+    // Audit project-wide 2026-05-19: migrado a CustomersDB.
+    const referredCount = await CustomersDB.countReferralsByPhone(phone);
 
     // Calculate points earned from referrals (50 per referral)
     const totalEarned = referredCount * 50;

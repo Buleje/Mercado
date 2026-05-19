@@ -49,15 +49,12 @@ export async function GET(
   // SECURITY 2026-05-06 (audit AI): derivar tenantId del producto pedido,
   // no del header. El productId es global, así que la fuente de verdad es
   // su tenantId real. Antes el header podía cruzar y contaminar el cache.
-  const { prisma } = await import("@/lib/prisma");
-  const productOwner = await prisma.product.findFirst({
-    where: { id: pid, deletedAt: null },
-    select: { tenantId: true },
-  });
-  if (!productOwner) {
+  // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.
+  const { MarketplaceProductsDB } = await import("@/lib/db/marketplace-products.db");
+  const tenantId = await MarketplaceProductsDB.getTenantById(pid);
+  if (!tenantId) {
     return NextResponse.json({ products: [] });
   }
-  const tenantId = productOwner.tenantId;
 
   logger.debug("[recommendations/productId] request", {
     tenantId,

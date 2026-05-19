@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connection } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace/stores.db";
 import { SalesAnomaliesDB, type AnomalySeverity } from "@/lib/db/sales-anomalies.db";
 import { logger } from "@/lib/logger";
 
@@ -58,10 +58,11 @@ export async function GET(req: NextRequest) {
       // Graceful: retornamos [] en vez de 400 para no romper widgets admin secundarios
       return NextResponse.json({ data: [] });
     }
-    const store = await prisma.store.findFirst({
-      where: { tenantId: auth.tenantId, slug: parsed.data.storeSlug },
-      select: { id: true },
-    });
+    // Audit project-wide 2026-05-19: migrado a MarketplaceStoresDB.
+    const store = await MarketplaceStoresDB.getIdBySlugAndTenant(
+      auth.tenantId,
+      parsed.data.storeSlug,
+    );
     if (!store) {
       // Graceful: store no encontrado → widget muestra empty state
       return NextResponse.json({ data: [] });

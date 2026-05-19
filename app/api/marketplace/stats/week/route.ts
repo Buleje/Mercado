@@ -17,7 +17,7 @@
  * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
  */
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceStatsDB } from "@/lib/db/marketplace-stats.db";
 import { logger } from "@/lib/logger";
 
 interface WeekStats {
@@ -48,28 +48,10 @@ function revalidateInBackground() {
   revalidateInflight = true;
   void (async () => {
     try {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000);
-      const [deliveredOrders, activeStores] = await Promise.all([
-        prisma.order
-          .count({
-            where: {
-              status: "entregado",
-              createdAt: { gte: sevenDaysAgo },
-              deletedAt: null,
-            },
-          })
-          .catch((e: unknown) => {
-            logger.warn("[stats/week] order count failed", { err: e instanceof Error ? e.message : String(e) });
-            return null;
-          }),
-        prisma.store.count().catch((e: unknown) => {
-          logger.warn("[stats/week] store count failed", { err: e instanceof Error ? e.message : String(e) });
-          return null;
-        }),
-      ]);
-      if (deliveredOrders == null || activeStores == null) return;
-      // Devolvemos los conteos reales tal cual — el fallback ya NO funciona
-      // como floor (ver comentario arriba). Cliente decide presentación.
+      // Audit project-wide 2026-05-19: migrado a MarketplaceStatsDB.
+      // La DB class encapsula los try/catch internos y siempre devuelve
+      // numbers (no null). El cliente decide presentacion.
+      const { deliveredOrders, activeStores } = await MarketplaceStatsDB.getRollingWindow(7);
       cache = {
         value: {
           deliveredOrders,
@@ -78,6 +60,10 @@ function revalidateInBackground() {
         },
         ts: Date.now(),
       };
+    } catch (err) {
+      logger.warn("[stats/week] revalidate failed", {
+        err: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       revalidateInflight = false;
     }

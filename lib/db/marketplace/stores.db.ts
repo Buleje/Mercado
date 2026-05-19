@@ -526,4 +526,48 @@ export const MarketplaceStoresDB = {
     });
     return !!row;
   },
+
+  /**
+   * Resuelve el storeId de una tienda por slug + tenantId.
+   * Audit project-wide 2026-05-19 (CodeReview P0 #1): patron usado en
+   * marketplace/predictions y marketplace/anomalies para resolver el
+   * store antes de delegar a la DB class especifica.
+   *
+   * Retorna null si el store no existe o no pertenece al tenant.
+   */
+  async getIdBySlugAndTenant(
+    tenantId: string,
+    slug: string,
+  ): Promise<{ id: string } | null> {
+    return prisma.store.findFirst({
+      where: { tenantId, slug },
+      select: { id: true },
+    });
+  },
+
+  /**
+   * Devuelve el slug de la tienda del tenant (si tiene). Util para que
+   * el flujo "check-slug" pueda saber si el slug pedido es su propio
+   * slug actual (no debe reportarse como ocupado).
+   */
+  async getMyStoreSlug(tenantId: string): Promise<string | null> {
+    const row = await prisma.store.findFirst({
+      where: { tenantId },
+      select: { slug: true },
+    });
+    return row?.slug ?? null;
+  },
+
+  /**
+   * isSlugTakenCrossStore(slug): true si CUALQUIER tienda (de cualquier
+   * tenant) usa este slug. A diferencia de isSlugTaken arriba, esto NO
+   * permite excluir un id propio — usar el wrapper si se necesita.
+   */
+  async isSlugTakenCrossStore(slug: string): Promise<boolean> {
+    const row = await prisma.store.findFirst({
+      where: { slug },
+      select: { id: true },
+    });
+    return !!row;
+  },
 };

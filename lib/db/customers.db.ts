@@ -261,6 +261,20 @@ export const CustomersDB = {
     await prisma.customer.updateMany({ where: { phone: normalized, tenantId }, data: { referredBy: referrer.phone } });
     return { success: true, message: "Código aplicado correctamente" };
   },
+
+  /**
+   * Cuenta cuantos customers usaron el referral code de un usuario.
+   * Audit project-wide 2026-05-19 (CodeReview P0 #1): migracion de
+   * prisma.customer.count directo en /api/marketplace/referral.
+   *
+   * @cross-tenant intentional — el referredBy phone es global del
+   * ecosistema Buleje (ADR-082). El count es cross-tenant por diseno.
+   */
+  async countReferralsByPhone(phone: string): Promise<number> {
+    return prisma.customer.count({
+      where: { referredBy: phone },
+    });
+  },
 };
 
 // ── LoyaltyDB ─────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace/stores.db";
 
 const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$/;
 
@@ -37,29 +37,23 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Tu propia tienda
-  const myStore = await prisma.store.findFirst({
-    where: { tenantId: auth.tenantId },
-    select: { id: true, slug: true },
-  });
-  if (myStore?.slug === slugRaw) {
+  // Audit project-wide 2026-05-19: migrado a MarketplaceStoresDB.
+  const mySlug = await MarketplaceStoresDB.getMyStoreSlug(auth.tenantId);
+  if (mySlug === slugRaw) {
     return NextResponse.json({ valid: true, available: true, isOwn: true });
   }
 
-  const taken = await prisma.store.findFirst({
-    where: { slug: slugRaw },
-    select: { id: true },
-  });
+  const taken = await MarketplaceStoresDB.isSlugTakenCrossStore(slugRaw);
   if (!taken) {
     return NextResponse.json({ valid: true, available: true, isOwn: false });
   }
 
-  // Sugerencias: probar -2, -3, … -10 hasta hallar libres (máx 3)
+  // Sugerencias: probar -2, -3, … -10 hasta hallar libres (max 3).
   const suggestions: string[] = [];
   for (let i = 2; i <= 12 && suggestions.length < 3; i++) {
     const candidate = `${slugRaw}-${i}`;
     if (!SLUG_REGEX.test(candidate)) continue;
-    const exists = await prisma.store.findFirst({ where: { slug: candidate }, select: { id: true } });
+    const exists = await MarketplaceStoresDB.isSlugTakenCrossStore(candidate);
     if (!exists) suggestions.push(candidate);
   }
 
