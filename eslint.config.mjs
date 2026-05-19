@@ -16,13 +16,23 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
-  // CI 2026-05-19: registrar eslint-plugin-react-hooks v7.x JUNTO con su rule.
-  // eslint-config-next NO incluye este plugin (introducido upstream en v5+).
-  // Los otros plugins (jsx-a11y, @typescript-eslint, @next/next) los carga
-  // eslint-config-next y NO debemos re-registrarlos (ESLint da "Cannot redefine
-  // plugin"). Si CI falla por "could not find plugin jsx-a11y" → bump
-  // eslint-config-next o agregar a devDependencies con caret-pinned version.
+  // CI 2026-05-19: registrar eslint-plugin-react-hooks v7.x + scope `files`.
+  //
+  // Root cause de CI fail: eslint-config-next (v16.1.6) registra sus plugins
+  // (react, react-hooks, import, jsx-a11y, @next/next) DENTRO de un config
+  // object con `files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"]` — el plugin está
+  // SCOPED a esos archivos. Si nuestro config object con rules NO tiene el
+  // mismo `files`, ESLint trata de aplicar la rule a TODOS los archivos pero
+  // el plugin solo existe en el scope de TS/TSX → "could not find plugin".
+  //
+  // En local funcionaba por dedup/orden de plugins residente en memoria,
+  // pero `npm ci` en CI da resultado diferente. Fix: declarar el mismo
+  // `files` matcher para que merge correctamente con el config de next.
+  //
+  // react-hooks adicionalmente requiere registro explícito porque la regla
+  // "set-state-in-effect" (v5+) puede no estar en la versión transitiva.
   {
+    files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
     plugins: {
       "react-hooks": reactHooks,
     },
