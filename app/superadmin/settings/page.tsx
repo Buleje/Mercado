@@ -28,19 +28,47 @@ import {
 import SidebarConfigPanel from "@/components/superadmin/SidebarConfigPanel";
 
 // Items canónicos del sidebar — debe matchear lo que renderiza
-// SuperAdminShell.tsx (NAV_ITEMS).
+// SuperAdminShell.tsx (NAV_ITEMS). Refresh 2026-05-19 — sincronía con los
+// 7 grupos nuevos. Cada item es una ruta que se puede ocultar/reordenar
+// desde SidebarConfigPanel.
 const SIDEBAR_ITEMS = [
-  { label: "Dashboard",       href: "/superadmin/dashboard" },
-  { label: "Centro Control",  href: "/superadmin/control-center" },
-  { label: "Tiendas",         href: "/superadmin/tenants" },
-  { label: "Aplicaciones",    href: "/superadmin/vendor-applications" },
-  { label: "Marketplace",     href: "/superadmin/stores" },
-  { label: "Banners",         href: "/superadmin/banners" },
-  { label: "Analytics",       href: "/superadmin/analytics" },
-  { label: "Salud",           href: "/superadmin/health" },
-  { label: "Actividad",       href: "/superadmin/activity" },
-  { label: "Seguridad",       href: "/superadmin/security" },
-  { label: "Config",          href: "/superadmin/settings" },
+  // Inicio
+  { label: "Dashboard",              href: "/superadmin/dashboard"          },
+  { label: "Centro de control",      href: "/superadmin/control-center"     },
+  { label: "Actividad",              href: "/superadmin/activity"           },
+  // Tiendas
+  { label: "Tenants",                href: "/superadmin/tenants"            },
+  { label: "Pedidos",                href: "/superadmin/orders"             },
+  { label: "Repartidores",           href: "/superadmin/repartidores"       },
+  // Marketplace
+  { label: "Marketplace",            href: "/superadmin/marketplace"        },
+  { label: "Solicitudes vendedores", href: "/superadmin/vendor-applications" },
+  { label: "Salud de vendors",       href: "/superadmin/vendor-health"      },
+  { label: "Tiendas publicadas",     href: "/superadmin/stores"             },
+  // Finanzas
+  { label: "Pagos pendientes",       href: "/superadmin/pagos-pendientes"   },
+  { label: "Pagos Yape (IA)",        href: "/superadmin/pagos-yape"         },
+  { label: "Billing & Stripe",       href: "/superadmin/billing"            },
+  // Diseño
+  { label: "Centro de diseño",       href: "/superadmin/design-system"      },
+  { label: "Plantilla del admin",    href: "/superadmin/plantilla"          },
+  { label: "Marca",                  href: "/superadmin/marca"              },
+  { label: "Banners",                href: "/superadmin/banners"            },
+  { label: "Banco de imágenes",      href: "/superadmin/banco-imagenes"     },
+  { label: "Catálogo de variantes",  href: "/superadmin/variant-catalog"    },
+  { label: "Recetario",              href: "/superadmin/recetario"          },
+  // Operaciones
+  { label: "Analytics",              href: "/superadmin/analytics"          },
+  { label: "Salud sistema",          href: "/superadmin/health"             },
+  { label: "SLO & budgets",          href: "/superadmin/slo"                },
+  { label: "Dead-letter",            href: "/superadmin/dlq"                },
+  { label: "Setup score",            href: "/superadmin/setup"              },
+  // Sistema
+  { label: "Seguridad",              href: "/superadmin/security"           },
+  { label: "Configuración",          href: "/superadmin/configuracion"      },
+  { label: "Settings",               href: "/superadmin/settings"           },
+  { label: "Sitemap",                href: "/superadmin/sitemap"            },
+  { label: "Roadmap",                href: "/superadmin/roadmap"            },
 ];
 
 type PlanKey = "priceFree" | "pricePro" | "priceBusiness" | "priceEnterprise";

@@ -2751,6 +2751,87 @@ body[data-marketplace-explorar] .tabular-nums {
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUPERADMIN — Typography refresh 2026-05-19
+   ═══════════════════════════════════════════════════════════════════════════
+   Brief Brandon: titles se sentían "alargados" / poco cómodos para leer.
+
+   Diagnóstico (auditoría 2026-05-19):
+   - .font-display = Instrument Serif (editorial, narrow, alta x-height)
+   - tracking-tight (-0.025em) + font-extrabold (800) en H1/H2/values →
+     letras apretadas y verticales = sensación "alargada"
+   - uppercase + tracking-[var(--ls-wider)=0.2em] en kickers → 200x spread,
+     mata legibilidad
+   - text-[length:var(--ts-2xs)=10px] en kickers/badges → subliminal
+
+   Estrategia (scope CSS, refactor-free):
+   - Override --font-display-family → var(--font-sans): los 160 usos de
+     .font-display pasan a Geist sans automáticamente
+   - Override --ls-wider (0.2em → 0.05em) y --ls-widest (0.3em → 0.08em):
+     todos los kickers uppercase respiran natural
+   - Override --ts-2xs (10px → 12px): tipografía pequeña pasa el piso legible
+   - Suaviza .tracking-tight, .tracking-widest a niveles cómodos
+   - Baja .font-extrabold (800) a 700: menos peso visual sobrecargado
+
+   IMPORTANTE: scope sólo a [data-area="superadmin"]. NO toca storefront,
+   marketplace, ni admin de tenants. Trigger en SuperAdminShell.tsx.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+[data-area="superadmin"] {
+  /* Display font → sans (Geist) en cascada — fixea los 160 usos */
+  --font-display-family: var(--font-sans);
+
+  /* Letter-spacing tokens — respiración natural en kickers */
+  --ls-wider: 0.05em;
+  --ls-widest: 0.08em;
+
+  /* Tipografía pequeña — piso legible de 12px */
+  --ts-2xs: 0.75rem;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+/* .font-display ahora hereda --font-display-family = sans. Override de
+   peso/spacing para que se vea sólido y limpio en sans (era 400 + -0.015em
+   pensado para Instrument Serif). */
+[data-area="superadmin"] .font-display {
+  letter-spacing: -0.005em;
+  font-weight: 700;
+}
+
+/* Afloja tracking-tight (-0.025em → -0.005em). Los títulos respiran. */
+[data-area="superadmin"] .tracking-tight {
+  letter-spacing: -0.005em;
+}
+
+/* Baja peso extrabold/black para que titles no se sientan "macizos". */
+[data-area="superadmin"] .font-extrabold {
+  font-weight: 700;
+}
+[data-area="superadmin"] .font-black {
+  font-weight: 800;
+}
+
+/* tracking-widest Tailwind (0.1em) — afloja a 0.06em. */
+[data-area="superadmin"] .tracking-widest {
+  letter-spacing: 0.06em;
+}
+
+/* Tablas con números — tabular siempre, mejor lectura de KPIs. */
+[data-area="superadmin"] .tabular-nums {
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* text-[length:var(--ts-2xs,11px)] — Tailwind arbitrary con fallback inline.
+   El override de --ts-2xs arriba no impacta el fallback "11px" embebido.
+   Forzamos 12px también acá. */
+[data-area="superadmin"] [class*="ts-2xs,11px"] {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    SKELETON shimmer — reemplaza el "bloque gris oscuro" por un gradient sutil.
    Aplica a cualquier bloque dentro de `.animate-pulse` que use superficie.

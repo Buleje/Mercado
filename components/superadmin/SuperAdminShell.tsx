@@ -25,7 +25,6 @@ import {
   Clock,
   Gauge,
   HeartPulse,
-  Wrench,
   FileCheck,
   ImageIcon,
   Sparkles,
@@ -36,6 +35,18 @@ import {
   Palette,
   Wallet,
   Server,
+  Home,
+  Store,
+  Truck,
+  Receipt,
+  TrendingUp,
+  ChefHat,
+  Map as MapIcon,
+  ClipboardCheck,
+  Boxes,
+  AlertOctagon,
+  Rocket,
+  FileText,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -47,7 +58,7 @@ interface NavItem {
   href: string;
 }
 
-type NavGroupId = "plataforma" | "negocios" | "catalogo" | "pagos" | "sistema";
+type NavGroupId = "inicio" | "tiendas" | "marketplace" | "finanzas" | "diseno" | "operaciones" | "sistema";
 
 interface NavGroupDef {
   id: NavGroupId;
@@ -72,52 +83,89 @@ interface SuperAdminShellProps {
 //  • Pagos & Riesgo — flujos de dinero y seguridad (¿qué hay que aprobar?)
 //  • Sistema — meta-config (¿cómo lo administro?)
 
+// ─── 7 grupos balanceados — refresh 2026-05-19 ────────────────────────────────
+//
+// Razón: 5 grupos previos eran ambiguos ("Aplicaciones" sin contexto,
+// "Catálogo & Marca" mezclaba 6 cosas distintas) y dejaban 9 rutas FUERA
+// del nav (billing, dlq, slo, setup, sitemap, roadmap, recetario,
+// vendor-health, stores). Brandon: "no se entiende bien".
+//
+// Nueva estructura:
+//   Inicio (3)        — vista rápida
+//   Tiendas (3)       — gestión de tenants
+//   Marketplace (4)   — público multi-vendor
+//   Finanzas (3)      — dinero
+//   Diseño (7)        — catálogo + marca + assets
+//   Operaciones (5)   — analytics + SRE + queues
+//   Sistema (5)       — seguridad + config + meta
+//
+// Total: 30 rutas — todas accesibles, distribuidas en grupos coherentes.
 const NAV_GROUPS: NavGroupDef[] = [
   {
-    id: "plataforma",
-    label: "Plataforma",
-    icon: <Gauge className="w-4 h-4 shrink-0" />,
+    id: "inicio",
+    label: "Inicio",
+    icon: <Home className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Dashboard",      icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"      },
-      { label: "Centro Control", icon: <Gauge          className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
-      { label: "Analytics",      icon: <BarChart3      className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"      },
-      { label: "Salud",          icon: <HeartPulse     className="w-5 h-5 shrink-0" />, href: "/superadmin/health"         },
-      { label: "Actividad",      icon: <Activity       className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"       },
+      { label: "Dashboard",          icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"      },
+      { label: "Centro de control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
+      { label: "Actividad",          icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"       },
     ],
   },
   {
-    id: "negocios",
-    label: "Negocios",
+    id: "tiendas",
+    label: "Tiendas",
     icon: <Building2 className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Tiendas",       icon: <Building2   className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"             },
-      { label: "Pedidos",       icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/orders"              },
-      { label: "Aplicaciones",  icon: <FileCheck   className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
-      { label: "Marketplace",   icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"         },
-      { label: "Repartidores",  icon: <Wrench      className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores"        },
+      { label: "Tenants",            icon: <Building2   className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"      },
+      { label: "Pedidos",            icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/orders"       },
+      { label: "Repartidores",       icon: <Truck       className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores" },
     ],
   },
   {
-    id: "catalogo",
-    label: "Catálogo & Marca",
-    icon: <Palette className="w-4 h-4 shrink-0" />,
+    id: "marketplace",
+    label: "Marketplace",
+    icon: <Store className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Centro de diseño",     icon: <Palette   className="w-5 h-5 shrink-0" />, href: "/superadmin/design-system"   },
-      { label: "Banco de imágenes",    icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banco-imagenes"  },
-      { label: "Catálogo variaciones", icon: <BookOpen  className="w-5 h-5 shrink-0" />, href: "/superadmin/variant-catalog" },
-      { label: "Marca",                icon: <Sparkles  className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
-      { label: "Plantilla panel",      icon: <Layers    className="w-5 h-5 shrink-0" />, href: "/superadmin/plantilla"       },
-      { label: "Banners",              icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
+      { label: "Marketplace",            icon: <Store     className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"         },
+      { label: "Solicitudes vendedores", icon: <FileCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
+      { label: "Salud de vendors",       icon: <HeartPulse className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-health"      },
+      { label: "Tiendas publicadas",     icon: <Boxes     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"              },
     ],
   },
   {
-    id: "pagos",
-    label: "Pagos & Riesgo",
+    id: "finanzas",
+    label: "Finanzas",
     icon: <Wallet className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Pagos pendientes", icon: <CreditCard  className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-pendientes" },
-      { label: "Pagos Yape",       icon: <CreditCard  className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-yape"       },
-      { label: "Seguridad",        icon: <ShieldCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/security"         },
+      { label: "Pagos pendientes",  icon: <CreditCard className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-pendientes" },
+      { label: "Pagos Yape (IA)",   icon: <Sparkles   className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-yape"       },
+      { label: "Billing & Stripe",  icon: <Receipt    className="w-5 h-5 shrink-0" />, href: "/superadmin/billing"          },
+    ],
+  },
+  {
+    id: "diseno",
+    label: "Diseño",
+    icon: <Palette className="w-4 h-4 shrink-0" />,
+    items: [
+      { label: "Centro de diseño",      icon: <Palette   className="w-5 h-5 shrink-0" />, href: "/superadmin/design-system"   },
+      { label: "Plantilla del admin",   icon: <Layers    className="w-5 h-5 shrink-0" />, href: "/superadmin/plantilla"       },
+      { label: "Marca",                 icon: <Sparkles  className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
+      { label: "Banners",               icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
+      { label: "Banco de imágenes",     icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banco-imagenes"  },
+      { label: "Catálogo de variantes", icon: <BookOpen  className="w-5 h-5 shrink-0" />, href: "/superadmin/variant-catalog" },
+      { label: "Recetario",             icon: <ChefHat   className="w-5 h-5 shrink-0" />, href: "/superadmin/recetario"       },
+    ],
+  },
+  {
+    id: "operaciones",
+    label: "Operaciones",
+    icon: <BarChart3 className="w-4 h-4 shrink-0" />,
+    items: [
+      { label: "Analytics",     icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics" },
+      { label: "Salud sistema", icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"    },
+      { label: "SLO & budgets", icon: <TrendingUp      className="w-5 h-5 shrink-0" />, href: "/superadmin/slo"       },
+      { label: "Dead-letter",   icon: <AlertOctagon    className="w-5 h-5 shrink-0" />, href: "/superadmin/dlq"       },
+      { label: "Setup score",   icon: <ClipboardCheck  className="w-5 h-5 shrink-0" />, href: "/superadmin/setup"     },
     ],
   },
   {
@@ -125,8 +173,11 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Sistema",
     icon: <Server className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Configuración", icon: <Sliders  className="w-5 h-5 shrink-0" />, href: "/superadmin/configuracion" },
-      { label: "Sistema",       icon: <Settings className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"      },
+      { label: "Seguridad",      icon: <ShieldCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/security"      },
+      { label: "Configuración",  icon: <Sliders     className="w-5 h-5 shrink-0" />, href: "/superadmin/configuracion" },
+      { label: "Settings",       icon: <Settings    className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"      },
+      { label: "Sitemap",        icon: <MapIcon     className="w-5 h-5 shrink-0" />, href: "/superadmin/sitemap"       },
+      { label: "Roadmap",        icon: <Rocket      className="w-5 h-5 shrink-0" />, href: "/superadmin/roadmap"       },
     ],
   },
 ];
@@ -135,31 +186,49 @@ const NAV_GROUPS: NavGroupDef[] = [
 // se aplican dentro de cada grupo, no se rompen las prefs de Brandon).
 const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
-const PAGE_TITLES: Record<string, string> = {
-  "/superadmin/dashboard":       "Dashboard",
-  "/superadmin/control-center":  "Centro de Control",
-  "/superadmin/tenants":         "Tiendas",
-  "/superadmin/orders":          "Pedidos · Plataforma · Cross-tenant",
-  "/superadmin/vendor-applications": "Aplicaciones de vendedores",
-  "/superadmin/pagos-pendientes": "Pagos pendientes · Yape, Plin, transferencias",
-  "/superadmin/repartidores":    "Repartidores · Aprobación y gestión",
-  "/superadmin/marketplace":     "Marketplace",
-  "/superadmin/marketplace/suppliers": "Marketplace · Proveedores",
-  "/superadmin/marketplace/category-images": "Marketplace · Imágenes de categorías",
-  "/superadmin/pagos-yape":       "Pagos Yape · Aprobación con vision IA",
-  "/superadmin/variant-catalog": "Catálogo de variaciones · Plantillas globales",
-  "/superadmin/banco-imagenes":  "Banco de Imágenes · Recursos globales por rubro",
-  "/superadmin/stores":          "Tiendas publicadas",
-  "/superadmin/marca":           "Marca de la plataforma",
-  "/superadmin/plantilla":       "Plantilla del panel admin",
-  "/superadmin/banners":         "Banners promocionales",
-  "/superadmin/design-system":   "Centro de diseño · Tokens heredables a todos los admin",
-  "/superadmin/analytics":       "Analytics",
-  "/superadmin/health":          "Salud del Sistema",
-  "/superadmin/activity":        "Actividad",
-  "/superadmin/configuracion":   "Configuración · Yape, Plin, marca y contacto",
-  "/superadmin/settings":        "Config del sistema",
-  "/superadmin":                 "Dashboard",
+// Title + section (breadcrumb sutil del topbar ejecutivo). El section se
+// muestra como prefijo gris, el title como heading H1 del topbar.
+type PageMeta = { title: string; section: string };
+const PAGE_META: Record<string, PageMeta> = {
+  "/superadmin":                  { title: "Dashboard",          section: "Inicio" },
+  "/superadmin/dashboard":        { title: "Dashboard",          section: "Inicio" },
+  "/superadmin/control-center":   { title: "Centro de control",  section: "Inicio" },
+  "/superadmin/activity":         { title: "Actividad",          section: "Inicio" },
+
+  "/superadmin/tenants":          { title: "Tenants",            section: "Tiendas" },
+  "/superadmin/orders":           { title: "Pedidos",            section: "Tiendas" },
+  "/superadmin/repartidores":     { title: "Repartidores",       section: "Tiendas" },
+
+  "/superadmin/marketplace":              { title: "Marketplace",            section: "Marketplace" },
+  "/superadmin/marketplace/suppliers":    { title: "Proveedores",            section: "Marketplace" },
+  "/superadmin/marketplace/category-images": { title: "Imágenes de categorías", section: "Marketplace" },
+  "/superadmin/vendor-applications":       { title: "Solicitudes",            section: "Marketplace" },
+  "/superadmin/vendor-health":            { title: "Salud de vendors",       section: "Marketplace" },
+  "/superadmin/stores":                   { title: "Tiendas publicadas",     section: "Marketplace" },
+
+  "/superadmin/pagos-pendientes": { title: "Pagos pendientes",   section: "Finanzas" },
+  "/superadmin/pagos-yape":       { title: "Pagos Yape (IA)",    section: "Finanzas" },
+  "/superadmin/billing":          { title: "Billing & Stripe",   section: "Finanzas" },
+
+  "/superadmin/design-system":    { title: "Centro de diseño",       section: "Diseño" },
+  "/superadmin/plantilla":        { title: "Plantilla del admin",    section: "Diseño" },
+  "/superadmin/marca":            { title: "Marca de la plataforma", section: "Diseño" },
+  "/superadmin/banners":          { title: "Banners",                section: "Diseño" },
+  "/superadmin/banco-imagenes":   { title: "Banco de imágenes",      section: "Diseño" },
+  "/superadmin/variant-catalog":  { title: "Catálogo de variantes",  section: "Diseño" },
+  "/superadmin/recetario":        { title: "Recetario",              section: "Diseño" },
+
+  "/superadmin/analytics":  { title: "Analytics",     section: "Operaciones" },
+  "/superadmin/health":     { title: "Salud sistema", section: "Operaciones" },
+  "/superadmin/slo":        { title: "SLO & budgets", section: "Operaciones" },
+  "/superadmin/dlq":        { title: "Dead-letter queue", section: "Operaciones" },
+  "/superadmin/setup":      { title: "Setup score",   section: "Operaciones" },
+
+  "/superadmin/security":      { title: "Seguridad",     section: "Sistema" },
+  "/superadmin/configuracion": { title: "Configuración", section: "Sistema" },
+  "/superadmin/settings":      { title: "Settings",      section: "Sistema" },
+  "/superadmin/sitemap":       { title: "Sitemap",       section: "Sistema" },
+  "/superadmin/roadmap":       { title: "Roadmap",       section: "Sistema" },
 };
 
 const STORAGE_KEY_HIDDEN = "superadmin-nav-hidden";
@@ -431,13 +500,15 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     }
   };
 
-  // Derive page title from pathname
-  const pageTitle =
-    PAGE_TITLES[pathname] ??
-    (pathname.startsWith("/superadmin/tenants/") ? "Tienda" : "SuperAdmin");
+  // Derive page meta (section + title) for breadcrumb ejecutivo del topbar.
+  const pageMeta: PageMeta =
+    PAGE_META[pathname] ??
+    (pathname.startsWith("/superadmin/tenants/")
+      ? { title: "Tienda", section: "Tiendas" }
+      : { title: "Superadmin", section: "Plataforma" });
 
   return (
-    <div className="superadmin-shell min-h-screen flex bg-[var(--surface-canvas)]">
+    <div data-area="superadmin" className="superadmin-shell min-h-screen flex bg-[var(--surface-canvas)]">
       {/* Global Command Palette (Ctrl+K / Cmd+K) */}
       <CommandPalette
         onToggleTheme={toggle}
@@ -485,11 +556,11 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <div className={["text-sm font-black tracking-tight leading-none", logoLabelClass].join(" ")}>
+              <div className={["text-[15px] font-extrabold leading-none", logoLabelClass].join(" ")}>
                 Buleje
               </div>
-              <div className={["text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mt-1", logoSubLabelClass].join(" ")}>
-                Platform
+              <div className={["text-[11px] font-semibold leading-none mt-1.5", logoSubLabelClass].join(" ")}>
+                Platform admin
               </div>
             </div>
           )}
@@ -590,50 +661,66 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           impersonating ? "pt-8" : "",
         ].join(" ")}
       >
-        {/* Header */}
-        <header className="sticky top-0 z-20 bg-[var(--surface-canvas)] border-b border-[var(--rule-base)] shrink-0">
-          <div className="flex items-center justify-between px-4 sm:px-6 h-14 gap-4">
-            {/* Left: hamburger (mobile) + page title */}
-            <div className="flex items-center gap-3">
+        {/* Header ejecutivo — breadcrumb sutil (sección · página).
+            IMPORTANTE: SIN backdrop-blur. backdrop-filter en un sticky crea un
+            nuevo containing block para position:fixed en descendientes — eso
+            atrapaba el drawer de notificaciones dentro del header. Usamos
+            fondo opaco con sombra inferior para separar visualmente del main. */}
+        <header className="sticky top-0 z-20 bg-[var(--surface-canvas)] border-b border-[var(--rule-base)] shrink-0 shadow-[0_1px_0_var(--rule-soft)]">
+          <div className="flex items-center justify-between px-4 sm:px-6 h-16 gap-3">
+            {/* Izquierda — hamburger mobile + breadcrumb ejecutivo.
+                flex-1 + min-w-0 para que el title pueda crecer todo lo posible
+                antes de truncar (no compite con los buttons de la derecha). */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
                 className="md:hidden p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+                aria-label="Abrir menú"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <h1 className="text-base font-semibold text-[var(--text-primary)] truncate">
-                {pageTitle}
-              </h1>
+              <div className="flex flex-col min-w-0 leading-tight">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)] truncate">
+                  {pageMeta.section}
+                </span>
+                <h1 className="text-base sm:text-lg font-bold text-[var(--text-primary)] truncate -mt-0.5">
+                  {pageMeta.title}
+                </h1>
+              </div>
             </div>
 
-            {/* Right: username + theme toggle + logout */}
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Username badge */}
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-sunken)] text-xs font-medium text-[var(--text-secondary)]">
-                <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-                <span className="truncate max-w-[120px]">{username}</span>
+            {/* Derecha — chip user · notificaciones · theme · salir.
+                shrink-0 para que no se comprima; gap-1 compacto. */}
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Chip de usuario — solo desktop, truncate corto */}
+              <div className="hidden lg:inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)]">
+                <div className="w-5 h-5 rounded-full bg-[var(--accent)] flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-3 h-3 text-white" />
+                </div>
+                <span className="truncate max-w-[110px]">{username}</span>
               </div>
 
-              {/* Notifications drawer */}
+              {/* Divider visual — solo lg+ donde aparece el chip */}
+              <div className="hidden lg:block w-px h-6 bg-[var(--rule-soft)] mx-1.5" />
+
               <NotificationsBell />
 
-              {/* Theme toggle */}
               <button
                 type="button"
                 onClick={toggle}
-                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 title={dark ? "Modo claro" : "Modo oscuro"}
+                aria-label="Cambiar tema"
               >
                 {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
-              {/* Logout — neutral outline; danger semantic solo en hover (Ola 2) */}
               <button
                 type="button"
                 onClick={handleLogout}
                 disabled={loggingOut}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--data-error-500)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
                 title="Cerrar sesión"
               >
                 <LogOut className="h-3.5 w-3.5" />
@@ -788,10 +875,10 @@ function NavGroupsFlyout({
             aria-expanded={isHovered}
             aria-label={`Grupo ${group.label}`}
             className={[
-              "w-full flex items-center gap-3 rounded-lg transition-colors",
+              "group/nav w-full flex items-center gap-2.5 rounded-lg transition-all",
               headerPad,
               sidebarCollapsed ? "justify-center" : "",
-              "text-sm font-bold",
+              "text-[13px] font-semibold",
               hasActive ? headerActiveClass : (isHovered ? headerActiveClass : headerIdleClass),
             ].join(" ")}
             title={sidebarCollapsed ? group.label : undefined}
@@ -800,13 +887,27 @@ function NavGroupsFlyout({
             {!sidebarCollapsed && (
               <>
                 <span className="flex-1 text-left truncate">{group.label}</span>
+                {/* Counter chip — cuántas rutas tiene el grupo. Look ejecutivo,
+                    cifra tabular, semi-transparente para no competir con label. */}
+                <span
+                  className={[
+                    "shrink-0 inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-md text-[10px] font-bold tabular-nums leading-none",
+                    isBuleje
+                      ? "bg-white/[0.08] text-white/55 group-hover/nav:text-white/80"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-hover/nav:text-[var(--text-secondary)]",
+                    hasActive ? (isBuleje ? "bg-[#34d4be]/20 text-[#5eead4]" : "bg-[var(--accent)]/15 text-[var(--accent)]") : "",
+                  ].join(" ")}
+                  aria-hidden
+                >
+                  {groupItems.length}
+                </span>
                 {hasActive && (
                   <span
                     className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")}
                     aria-hidden
                   />
                 )}
-                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-50 transition-transform group-hover/nav:translate-x-0.5" />
               </>
             )}
           </button>
@@ -954,7 +1055,7 @@ function NavGroupsAccordion({
 }: NavGroupsAccordionProps) {
   const activeGroupId = groups.find((g) =>
     g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
-  )?.id ?? "plataforma";
+  )?.id ?? "inicio";
   const [expanded, setExpanded] = useState<Set<NavGroupId>>(() => new Set([activeGroupId]));
 
   // Cuando cambia la ruta, asegurarse que el grupo de la ruta está expandido.
