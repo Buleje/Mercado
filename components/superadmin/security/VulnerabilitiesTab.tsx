@@ -139,7 +139,7 @@ export function VulnerabilitiesTab() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent)] shrink-0" />
-                <span>CTA "Aplicar fix" → abre PR automática con la dependencia actualizada</span>
+                <span>CTA &ldquo;Aplicar fix&rdquo; → abre PR automática con la dependencia actualizada</span>
               </li>
             </ul>
           </div>

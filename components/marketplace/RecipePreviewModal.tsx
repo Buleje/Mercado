@@ -346,6 +346,8 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                         <li
                           key={v.key}
                           className="rounded-lg border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-3 opacity-75"
+                          role="option"
+                          aria-selected={false}
                           aria-disabled="true"
                         >
                           <div className="flex items-center gap-2.5">

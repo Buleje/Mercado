@@ -42,6 +42,13 @@ export async function POST(req: NextRequest) {
     // PRIMERA tienda del tenant con findFirst, lo que permitía mutar
     // StoreProduct de OTRAS tiendas del mismo tenant. Ahora updateMany
     // matchea contra TODAS las tiendas del tenant via `store.tenantId`.
+    //
+    // El rule no-restricted-syntax MULTI-TENANT busca tenantId LITERAL
+    // top-level en el where. Aquí el guard tenantId está ANIDADO via
+    // relation `store.tenantId` (StoreProduct no tiene tenantId directo;
+    // pertenece a un Store que sí lo tiene). Es semánticamente correcto
+    // — eslint-disable block justificado per ADR-101.
+    /* eslint-disable no-restricted-syntax */
     const result = await prisma.storeProduct.updateMany({
       where: {
         id: { in: parsed.data.ids },
@@ -49,6 +56,7 @@ export async function POST(req: NextRequest) {
       },
       data: { isActive: parsed.data.isActive },
     });
+    /* eslint-enable no-restricted-syntax */
 
     invalidateByPrefix(`marketplace:store-products`);
 

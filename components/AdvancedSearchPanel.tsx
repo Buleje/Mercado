@@ -133,6 +133,7 @@ export function AdvancedSearchPanel<T extends Record<string, unknown>>({
         <input
           ref={inputRef}
           type="text"
+          role="combobox"
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => setIsOpen(true)}
