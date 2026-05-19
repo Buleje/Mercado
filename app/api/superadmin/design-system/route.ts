@@ -57,11 +57,14 @@ async function ensureDesignTables() {
       ALTER TABLE "DesignSystemConfig"
         ADD COLUMN IF NOT EXISTS "savedPresetsJson" jsonb NOT NULL DEFAULT '[]'::jsonb;
     `);
-    await prisma.$executeRawUnsafe(`
+    // Tagged template parametriza ${DEFAULT_PRESET_SLUG} (aunque hoy es
+    // constante de código, evita el patrón frágil que un contributor futuro
+    // podría confundir con valor user-input).
+    await prisma.$executeRaw`
       INSERT INTO "DesignSystemConfig" ("id", "activePresetSlug")
-      VALUES ('singleton', '${DEFAULT_PRESET_SLUG}')
-      ON CONFLICT ("id") DO NOTHING;
-    `);
+      VALUES ('singleton', ${DEFAULT_PRESET_SLUG})
+      ON CONFLICT ("id") DO NOTHING
+    `;
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "DesignPresetCustom" (
         "tenantId"   text PRIMARY KEY,
