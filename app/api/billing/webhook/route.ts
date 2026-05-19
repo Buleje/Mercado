@@ -7,6 +7,30 @@ import { logger } from "@/lib/logger";
 import { enqueueWebhookEvent } from "@/lib/stripe-webhook-queue";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+/**
+ * @prisma-direct excepción documentada — este handler usa `prisma.*` directo
+ * en lugar de TenantsDB / OrdersDB por estas razones (auditado 2026-05-19):
+ *
+ *  1. `prisma.stripeWebhookQueue.create/update/deleteMany` — la tabla
+ *     `StripeWebhookQueue` es infra de webhook (no per-tenant); no hay
+ *     clase DB equivalente porque su scope es global por `stripeId`.
+ *  2. `prisma.tenant.findUnique/findFirst/update` — tenant lookup por
+ *     `slug` o `stripeSubscriptionId` para resolver a qué tenant aplicar
+ *     el evento Stripe. Hay tres cross-checks de seguridad sobre el
+ *     resultado: (a) `existingTenant.stripeCustomerId !== customerId`
+ *     bloquea privilege-escalation cross-tenant; (b) `otherClaim` bloquea
+ *     reutilización de customerId; (c) `tenantForUpd.stripeCustomerId !==
+ *     subCustomerId` en updated/deleted bloquea cancelación ajena.
+ *  3. `prisma.activityLog.create` y `prisma.notification.create` — operaciones
+ *     fire-and-forget con `tenantId` derivado del tenant ya validado en (2).
+ *
+ * El input (`event.id`, `tenantSlug` en metadata) se valida via
+ * `stripe.webhooks.constructEvent` con HMAC antes de cualquier acceso a DB,
+ * y el rate-limit STRICT cubre DoS pre-firma.
+ *
+ * Paridad con `app/api/marketplace/payment/mercadopago/webhook/route.ts`.
+ */
+
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/webhook
 //
