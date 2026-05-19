@@ -14,10 +14,17 @@
 
 import { useEffect, useState } from "react";
 
-export function useNavScrollHide(threshold = 80): boolean {
+/**
+ * Brandon 2026-05-18 perf P2 #13: `enabled` opcional para que el callsite
+ * pueda evitar montar el listener cuando no hay sticky bar visible (ej:
+ * /tiendas sin subcategorías). Antes el scroll listener corría siempre y
+ * disparaba rAF por evento aunque el resultado se ignorara.
+ */
+export function useNavScrollHide(threshold = 80, enabled = true): boolean {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    if (!enabled) return;
     let lastY = window.scrollY;
     let ticking = false;
 
@@ -42,7 +49,7 @@ export function useNavScrollHide(threshold = 80): boolean {
 
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [threshold]);
+  }, [threshold, enabled]);
 
   return visible;
 }

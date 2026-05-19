@@ -18,6 +18,7 @@
  */
 
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { CartProvider } from "@/contexts/cart-context";
 import { CustomerProvider } from "@/contexts/customer-context";
 import { ToastProvider } from "@/contexts/toast-context";
@@ -30,7 +31,15 @@ import { SocioBulejeProvider } from "@/contexts/socio-buleje-context";
 import { SubscriptionProvider } from "@/contexts/subscription-context";
 import { LastOrderProvider } from "@/contexts/last-order-context";
 import ThemeInjector from "@/components/store/ThemeInjector";
-import OrderSuccessModal from "@/components/marketplace/order-success/OrderSuccessModal";
+
+// Brandon 2026-05-18 perf P1 #9: OrderSuccessModal solo se muestra tras
+// completar un pedido (latente 99% del tiempo). Antes lo importábamos estático
+// arrastrando su árbol al bundle inicial del marketplace + /tiendas. Lazy
+// ssr:false + envuelto en Suspense → no bloquea hidratación.
+const OrderSuccessModal = dynamic(
+  () => import("@/components/marketplace/order-success/OrderSuccessModal"),
+  { ssr: false, loading: () => null },
+);
 
 export default function MarketplaceStoreProviders({
   children,
@@ -61,8 +70,12 @@ export default function MarketplaceStoreProviders({
                           {children}
                           {/* Modal global de éxito post-pedido. Se monta una
                               sola vez aquí (raíz del marketplace + tiendas +
-                              checkout) para que sobreviva a navegaciones. */}
-                          <OrderSuccessModal />
+                              checkout) para que sobreviva a navegaciones.
+                              Brandon 2026-05-18 perf P1 #9: Suspense fallback
+                              null para no bloquear hidratación inicial. */}
+                          <Suspense fallback={null}>
+                            <OrderSuccessModal />
+                          </Suspense>
                         </LastOrderProvider>
                       </CustomerProvider>
                     </SubscriptionProvider>

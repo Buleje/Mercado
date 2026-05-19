@@ -15,6 +15,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Store, MapPin, ArrowUpRight, List, Map as MapIcon, Bike,
@@ -22,7 +23,9 @@ import {
   Wallet, Gift,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
+// Brandon 2026-05-18 perf P1 #6: SearchAutocomplete y TiendasHeroAds
+// estáticos al mount aunque ambos son hidden en mobile (sm+ only).
+// Movidos a dynamic() abajo (después del `import dynamic from "next/dynamic"`).
 import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
 import { deriveActiveZones } from "@/lib/marketplace-zones";
 import {
@@ -33,9 +36,10 @@ import FeaturedStoresNearby from "@/components/marketplace/FeaturedStoresNearby"
 import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
 import { useCustomer } from "@/contexts/customer-context";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
-import MarketplaceFilters, {
-  type MarketplaceFiltersState,
-} from "@/components/marketplace/MarketplaceFilters";
+// Brandon 2026-05-18 perf P0 #2: MarketplaceFilters es 691 LOC y se monta
+// dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
+// import estático para no romper el tipado de DEFAULT_FILTERS.
+import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
 import { Boxes, Package, Sparkles, Leaf, MoreHorizontal } from "@buleje/design-system/icons";
 // CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
 import { CupSoda } from "lucide-react";
@@ -51,7 +55,7 @@ import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
 import MisTiendasFavoritasStrip from "@/components/marketplace/MisTiendasFavoritasStrip";
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
 import TiendasPromoCards from "@/components/marketplace/TiendasPromoCards";
-import TiendasHeroAds from "@/components/marketplace/TiendasHeroAds";
+// TiendasHeroAds movido a dynamic() abajo (Brandon 2026-05-18 perf P1 #6).
 import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
 import MisPedidosFavoritosStrip from "@/components/marketplace/MisPedidosFavoritosStrip";
 import RepetirUltimoPedido from "@/components/marketplace/RepetirUltimoPedido";
@@ -67,6 +71,59 @@ const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), 
     </div>
   ),
 });
+
+// Brandon 2026-05-18 perf P0 #2: MarketplaceFilters (691 LOC) lazy.
+// El placeholder ocupa el slot visual hasta que el chunk carga, así no hay
+// jump de layout en mobile/desktop. ssr:false porque el componente usa
+// localStorage + window.matchMedia y no aporta SEO.
+const MarketplaceFilters = dynamic(
+  () => import("@/components/marketplace/MarketplaceFilters"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden
+        className="inline-flex h-9 w-28 items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-xs text-[var(--text-tertiary)]"
+      >
+        Filtros…
+      </div>
+    ),
+  },
+);
+
+// Brandon 2026-05-18 perf P1 #6: SearchAutocomplete oculto en mobile (hero
+// sm+ only); el navbar mobile tiene su propio search pill. ssr:false +
+// placeholder con la misma altura/borde para evitar layout shift.
+const SearchAutocomplete = dynamic(
+  () => import("@/components/marketplace/SearchAutocomplete"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden
+        className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]"
+      />
+    ),
+  },
+);
+
+// Brandon 2026-05-18 perf P1 #6: TiendasHeroAds — banner rotante de promos
+// del superadmin. Solo visible en sm+ y cuando no hay query. Lazy con ssr:false
+// y placeholder ancho/alto fijo (no layout shift al hidratar).
+const TiendasHeroAds = dynamic(
+  () => import("@/components/marketplace/TiendasHeroAds"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden
+        className="max-w-[1400px] mx-auto mt-4 px-4 sm:px-6 lg:px-8"
+      >
+        <div className="h-32 w-full rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)]" />
+      </div>
+    ),
+  },
+);
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -157,8 +214,6 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   // como el nav principal, vía useNavScrollHide.
   const subcategorySectionRef = useRef<HTMLDivElement | null>(null);
   const [scrolledPastSubcategories, setScrolledPastSubcategories] = useState(false);
-  const navVisible = useNavScrollHide(80);
-  const showStickySubcategoryBar = scrolledPastSubcategories && navVisible;
 
   // Modal de zonas — Brandon mayo 14 2026: antes mostrábamos las zonas como
   // cajitas inline (10+ items horizontales que saturaban la UI). Ahora se
@@ -181,11 +236,26 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     () => searchParams.get("subcat") ?? null,
   );
 
+  // Brandon 2026-05-18 perf P2 #13: el listener solo se monta cuando hay
+  // subcategorías visibles. Sin chips → no hay sticky bar → no scroll listener.
+  // Declarado DESPUÉS del state `subcategories` (orden léxico de hooks).
+  const hasSubcategoryChips = subcategories.length > 0;
+  const navVisible = useNavScrollHide(80, hasSubcategoryChips);
+  const showStickySubcategoryBar = scrolledPastSubcategories && navVisible;
+
   // Fetch subcategorías cuando cambia la categoría principal.
   // Filtramos para mostrar SOLO las que tienen ≥1 tienda vinculada — un
   // filtro vacío sin acción es ruido visual. Si ninguna tiene tiendas,
   // la sección entera de subcategorías se oculta (controlado por el
   // `subcategories.length > 0` del render).
+  //
+  // Brandon 2026-05-18 perf P0 #3: el effect tenía `subCategoryId` en deps,
+  // disparando un re-fetch del endpoint cada vez que el usuario seleccionaba
+  // un chip de subcategoría. Ahora la lectura va por ref → fetch solo cuando
+  // cambia la categoría principal.
+  const subCategoryIdRef = useRef(subCategoryId);
+  useEffect(() => { subCategoryIdRef.current = subCategoryId; }, [subCategoryId]);
+
   useEffect(() => {
     const ctrl = new AbortController();
     const url =
@@ -202,7 +272,8 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         );
         setSubcategories(subs);
         // Si la subcategoría seleccionada ya no existe en este filtro, limpiarla
-        if (subCategoryId && !subs.some((s) => s.id === subCategoryId)) {
+        const currentSub = subCategoryIdRef.current;
+        if (currentSub && !subs.some((s) => s.id === currentSub)) {
           setSubCategoryId(null);
         }
       })
@@ -210,7 +281,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         if (!ctrl.signal.aborted) setSubcategories([]);
       });
     return () => ctrl.abort();
-  }, [category, subCategoryId]);
+  }, [category]);
 
   const activeSubcategory = subCategoryId
     ? subcategories.find((s) => s.id === subCategoryId) ?? null
@@ -278,23 +349,34 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   }, []);
 
   // ── TS-26 URL sync — escribir back cuando cambia el estado ──
+  //
+  // Brandon 2026-05-18 perf P0 #1: debounce 220ms. Antes cada keystroke
+  // del input "buscar" disparaba `router.replace` inmediato, lo que en
+  // Next 16 fuerza un re-render del segmento y un re-procesamiento de
+  // los URL params (cascada down al MarketplaceStoresView). En mobile
+  // 3G se sentía pegajoso. Ahora el sync espera 220ms tras la última
+  // pulsación — los cambios de chip/zone/cat sí son inmediatos en UI
+  // (state local) y la URL se actualiza tras la pausa natural.
   useEffect(() => {
     if (!initialSyncDone.current) {
       initialSyncDone.current = true;
       return;
     }
-    const params = new URLSearchParams();
-    if (search.trim()) params.set("q", search.trim());
-    if (category !== "todos") params.set("cat", category);
-    // En /tiendas/[zona] no duplicamos zona en la query — viene del path.
-    if (zone && zone !== initialZone) params.set("zona", zone);
-    if (sortKey !== "relevance") params.set("sort", sortKey);
-    if (activeChips.size > 0) params.set("chips", [...activeChips].join(","));
-    if (viewMode === "map") params.set("view", "map");
-    if (subCategoryId) params.set("subcat", subCategoryId);
-    const qs = params.toString();
-    const next = qs ? `${pathname}?${qs}` : pathname;
-    router.replace(next, { scroll: false });
+    const timeout = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("q", search.trim());
+      if (category !== "todos") params.set("cat", category);
+      // En /tiendas/[zona] no duplicamos zona en la query — viene del path.
+      if (zone && zone !== initialZone) params.set("zona", zone);
+      if (sortKey !== "relevance") params.set("sort", sortKey);
+      if (activeChips.size > 0) params.set("chips", [...activeChips].join(","));
+      if (viewMode === "map") params.set("view", "map");
+      if (subCategoryId) params.set("subcat", subCategoryId);
+      const qs = params.toString();
+      const next = qs ? `${pathname}?${qs}` : pathname;
+      router.replace(next, { scroll: false });
+    }, 220);
+    return () => clearTimeout(timeout);
   }, [search, category, zone, sortKey, activeChips, viewMode, subCategoryId, pathname, router, initialZone]);
 
   // ── Geo hook ──
@@ -518,6 +600,14 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     return [...opened, ...closed];
   }, [subcategoryFiltered]);
 
+  // Brandon 2026-05-18 perf P2 #10: antes `stores.some(...)` se evaluaba
+  // inline en JSX (en cada render). Ahora memoizado contra `stores` solo.
+  const hasActiveOffers = useMemo(
+    () =>
+      stores.some((s) => ((s as { activePromos?: number }).activePromos ?? 0) > 0),
+    [stores],
+  );
+
   const hasFilters =
     category !== "todos" ||
     zone ||
@@ -596,10 +686,14 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     )}
                   >
                     {s.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      // Brandon 2026-05-18 perf P2 #12: next/image con sizes
+                      // fijos → lazy decode + serving optimizado.
+                      <Image
                         src={s.imageUrl}
                         alt=""
+                        width={20}
+                        height={20}
+                        sizes="20px"
                         className="h-5 w-5 rounded-md object-cover shrink-0"
                       />
                     ) : (
@@ -930,12 +1024,15 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     className="h-14 w-14 shrink-0 rounded-xl overflow-hidden flex items-center justify-center bg-[var(--accent-soft)]"
                   >
                     {s.logo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      // Brandon 2026-05-18 perf P2 #11: logos "Activas ahora"
+                      // — next/image con sizes 56px, lazy decode automático.
+                      <Image
                         src={s.logo}
                         alt={s.name}
+                        width={56}
+                        height={56}
+                        sizes="56px"
                         className="h-full w-full object-cover"
-                        loading="lazy"
                       />
                     ) : (
                       <Store
@@ -974,7 +1071,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
            En sm+ siguen visibles. */}
       {search.trim().length === 0 && (
         <div className="hidden sm:block">
-          <TiendasPromoCards hasOffers={stores.some((s) => ((s as { activePromos?: number }).activePromos ?? 0) > 0)} />
+          <TiendasPromoCards hasOffers={hasActiveOffers} />
         </div>
       )}
 
@@ -982,13 +1079,24 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           "tus tiendas frecuentes" ocultos en mobile. En cel el cliente
           quiere ver categorías y tiendas directamente, sin ruido de
           historial personal. En sm+ visibles. */}
-      <div className="hidden sm:contents">
-        {/* ── Mis tiendas favoritas — solo activa con 5+ pedidos en 5+ tiendas ── */}
-        <MisTiendasFavoritasStrip />
+      {/* Brandon 2026-05-18 perf P1 #5: gate isLoggedIn — los strips de
+          historial personalizado solo tienen contenido para clientes
+          logueados. Antes se montaban en blanco para anónimos disparando
+          hooks `useCustomerOrders` + (en MisTiendasFavoritas) un fetch
+          duplicado a /api/marketplace/stores que terminaba sin render.
+          Ahora ni siquiera entran al árbol React si no hay login. */}
+      {isLoggedIn && (
+        <div className="hidden sm:contents">
+          {/* ── Mis tiendas favoritas — solo activa con 5+ pedidos en 5+ tiendas ──
+              Brandon 2026-05-18 perf P0 #3: inyectamos el catálogo ya pre-fetched
+              (initialStores via SSR + refresh client) para evitar el segundo
+              round-trip a /api/marketplace/stores. */}
+          <MisTiendasFavoritasStrip stores={stores} />
 
-        {/* ── Tus tiendas frecuentes ──────────────────────────────── */}
-        <TusTiendasStrip />
-      </div>
+          {/* ── Tus tiendas frecuentes ──────────────────────────────── */}
+          <TusTiendasStrip />
+        </div>
+      )}
 
       {/* ── Secciones personalizadas — solo logueados ─────────────────
           Si el cliente no inició sesión, no le mostramos su historial
@@ -1138,10 +1246,14 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                         )}
                       >
                         {s.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          // Brandon 2026-05-18 perf P2 #12: next/image,
+                          // sticky bar mobile (h-11) + desktop (h-9).
+                          <Image
                             src={s.imageUrl}
                             alt={s.label}
+                            width={44}
+                            height={44}
+                            sizes="(min-width: 640px) 36px, 44px"
                             className="h-full w-full object-cover"
                           />
                         ) : (

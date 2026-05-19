@@ -3,9 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
-import { invalidateByPrefix } from "@/lib/cache";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+
+// Brandon 2026-05-18 perf P1 #8: server-side cache para el listado público
+// de tiendas. Antes solo había `Cache-Control` (cliente/CDN); ahora la query
+// + el enriquecimiento (manualStoreZones, $queryRawUnsafe de cover/hoursJson,
+// settings, promo groupby, store-extras, construction map) se cachea 60s en
+// memoria con `getOrSet`. Patrón canónico del repo (lib/cache.ts) — invalida
+// vía `invalidateByPrefix("marketplace:stores")` ya presente en POST/PUT.
+const PUBLIC_STORES_TTL_SEC = 60;
 
 const QuerySchema = z.object({
   zone:     z.string().optional(),
@@ -134,6 +142,15 @@ export async function GET(req: NextRequest) {
     }
 
     // ── Public mode: listado de tiendas ──
+    // Brandon 2026-05-18 perf P1 #8: TODO el listado público se cachea en
+    // memoria con key derivado de los params. Hits subsecuentes a la misma
+    // URL no tocan ni Prisma ni FS. Invalida con `invalidateByPrefix
+    // ("marketplace:stores")` desde POST/PUT.
+    const cacheKey = `marketplace:stores:public:${zone ?? ""}:${category ?? ""}:${search ?? ""}:${limit}`;
+    const cached = await getOrSet<{ data: unknown[]; total: number }>(
+      cacheKey,
+      PUBLIC_STORES_TTL_SEC,
+      async () => {
     // Cargar el archivo de categorías del marketplace para:
     //   1. Sumar tiendas vinculadas manualmente desde superadmin (linkedStoreSlugs).
     //   2. Aplicar override de zona manual si la tienda no la fija.
@@ -615,16 +632,17 @@ export async function GET(req: NextRequest) {
     });
     const ordered = sortStoresByStatus(sortable, NOW).map((x) => x.__ref);
 
-    return NextResponse.json(
-      { data: ordered, total: ordered.length },
-      {
-        headers: {
-          // Cache CDN/proxy 60s + SWR 5min: alivia carga DB para listados
-          // populares. Las queries con `search` también se cachean (URL única).
-          "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
-        },
+    return { data: ordered, total: ordered.length };
       },
     );
+
+    return NextResponse.json(cached, {
+      headers: {
+        // Cache CDN/proxy 60s + SWR 5min: alivia carga DB para listados
+        // populares. Las queries con `search` también se cachean (URL única).
+        "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+      },
+    });
   } catch (err) {
     logger.error("[marketplace/stores GET]", { error: err instanceof Error ? err.message : String(err) });
     const { payload, status } = toErrorPayload(err, traceId);
