@@ -507,56 +507,69 @@ export function AddedToCartDrawerProvider({
                     </div>
                   </m.div>
 
-                  {/* Link ficha completa */}
+                  {/* Link "Ver ficha completa" — Brandon 2026-05-18 v5: oculto
+                      en mobile (xs), solo desktop. En cel el cliente no
+                      necesita salirse del flujo de compra para ver detalles
+                      adicionales — todo lo importante ya está en el card. */}
                   <Link
                     href={productDetailHref}
                     onClick={close}
-                    className="mt-3 inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--accent)] hover:underline"
+                    className="hidden sm:inline-flex mt-3 items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--accent)] hover:underline"
                   >
                     Ver ficha completa
                     <ExternalLink className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                   </Link>
                 </div>
 
-                {/* ───── FOOTER STICKY: resumen + CTA gigante ──────────── */}
-                <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 sm:px-7 pt-3 pb-4 sm:pb-5">
-                  {/* Resumen del carrito en línea con CTA */}
+                {/* ───── FOOTER STICKY ──────────────────────────────────
+                    Brandon 2026-05-18 v5: simplificado a UN solo botón.
+                    Antes había "Pagar ahora" + "Seguir comprando" (2 CTAs)
+                    que desviaban al checkout o cerraban el drawer. Brandon
+                    quiere flujo más comercial: el cliente ya agregó al
+                    carrito (eso dice el header "Listo, va a tu carrito"),
+                    así que el botón solo confirma "Listo" y cierra el
+                    drawer — el cliente sigue comprando naturalmente.
+                    El resumen del pedido (count + subtotal) sigue visible
+                    para context, pero ya no compite con el CTA grande. */}
+                <div
+                  className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 sm:px-7 pt-3"
+                  style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+                >
+                  {/* Resumen del carrito — compacto, sin competir con CTA */}
                   <div className="flex items-center justify-between gap-3 mb-2.5">
                     <div className="inline-flex items-center gap-2.5 min-w-0">
-                      <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--brand-primary)]/12 text-[var(--brand-primary)] shrink-0">
-                        <ShoppingBag className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-[var(--brand-primary)] text-white text-[length:var(--ts-2xs,11px)] font-black tabular-nums ring-2 ring-[var(--surface-raised)]">
+                      <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--brand-primary)]/12 text-[var(--brand-primary)] shrink-0">
+                        <ShoppingBag className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-[var(--brand-primary)] text-white text-[length:var(--ts-2xs,11px)] font-black tabular-nums ring-2 ring-[var(--surface-raised)]">
                           {cartCount}
                         </span>
                       </span>
-                      <div className="min-w-0">
-                        <p className="text-[length:var(--ts-2xs,11px)] font-black uppercase tracking-[0.1em] text-[var(--text-tertiary)] leading-none">
-                          Tu pedido
-                        </p>
-                        <p className="mt-0.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] leading-none">
-                          {cartCount} {cartCount === 1 ? "producto" : "productos"}
-                        </p>
-                      </div>
+                      <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] leading-tight">
+                        {cartCount} {cartCount === 1 ? "producto" : "productos"} en tu pedido
+                      </p>
                     </div>
-                    <p className="text-[length:clamp(1.5rem,4vw,1.875rem)] font-black tabular-nums text-[var(--text-primary)] leading-none">
+                    <p className="text-xl font-black tabular-nums text-[var(--text-primary)] leading-none">
                       {fmt(subtotal)}
                     </p>
                   </div>
 
-                  {/* CTA primario — full width h-14 con halo */}
+                  {/* CTA único — "Listo, seguir agregando" cierra el drawer
+                      y deja al cliente en la tienda. Estilo gradient accent
+                      con halo animado mantenido (alta visibilidad). */}
                   <m.button
                     type="button"
-                    onClick={handleGoToCart}
+                    onClick={close}
                     whileTap={{ scale: 0.97 }}
                     className={cn(
-                      "relative w-full inline-flex items-center justify-center gap-2.5 rounded-2xl px-5 h-14 sm:h-16",
-                      "text-[length:var(--ts-base)] sm:text-[length:var(--ts-lg)] font-black",
+                      "relative w-full inline-flex items-center justify-center gap-2.5 rounded-2xl px-5 h-13",
+                      "text-sm font-extrabold uppercase tracking-wide",
                       "bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-primary)] to-[color-mix(in_oklab,var(--brand-primary)_70%,#0a0a0a_30%)] text-white",
                       "shadow-[0_12px_28px_-8px_color-mix(in_oklab,var(--brand-primary)_60%,transparent)]",
                       "hover:shadow-[0_18px_36px_-8px_color-mix(in_oklab,var(--brand-primary)_70%,transparent)] hover:brightness-110",
                       "transition-all ring-1 ring-inset ring-white/20",
                       "overflow-hidden",
                     )}
+                    style={{ height: "3.25rem" }}
                   >
                     {/* Halo animado */}
                     <m.span
@@ -565,22 +578,19 @@ export function AddedToCartDrawerProvider({
                       animate={{ x: ["0%", "550%"] }}
                       transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
                     />
-                    <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 relative" strokeWidth={2.5} aria-hidden />
-                    <span className="relative">Pagar ahora</span>
-                    <span className="relative inline-flex items-center gap-1 ml-0.5">
-                      <span className="tabular-nums">·</span>
-                      <span className="tabular-nums">{fmt(subtotal)}</span>
-                    </span>
-                    <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 relative" strokeWidth={2.75} aria-hidden />
+                    <Check className="h-5 w-5 relative" strokeWidth={2.75} aria-hidden />
+                    <span className="relative">Listo, seguir comprando</span>
                   </m.button>
 
-                  {/* Secundario — seguir comprando (ghost) */}
+                  {/* Link discreto al carrito — solo para clientes que SÍ
+                      quieren ir a pagar. No es CTA primario. */}
                   <button
                     type="button"
-                    onClick={close}
-                    className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-2xl px-4 h-11 text-[length:var(--ts-sm)] font-extrabold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--brand-primary)] transition-colors"
+                    onClick={handleGoToCart}
+                    className="mt-2 w-full inline-flex items-center justify-center gap-1.5 h-10 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors"
                   >
-                    Seguir comprando
+                    Ver mi carrito
+                    <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </m.div>
