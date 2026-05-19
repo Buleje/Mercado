@@ -330,7 +330,18 @@ export default function UnifiedProductCard({
     >
       {/* ── Zona imagen ──────────────────────────────────────────────────────── */}
       <div className="relative">
-        <Link href={productHref} className="block">
+        {/* Brandon 2026-05-18 v3: en MOBILE el Link a detalles queda inerte
+            (`pointer-events-none`) — el cliente que toca el card ya no se va
+            a /producto/[slug]. La única acción mobile es el botón "Agregar"
+            inline más abajo. En sm+ recupera `pointer-events-auto` y vuelve
+            a comportarse como link normal (hover, tap → detalles).
+            El href se conserva para SEO/crawlers. */}
+        <Link
+          href={productHref}
+          className="block pointer-events-none sm:pointer-events-auto"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
           {/* Aspect 4/3 — landscape, más ancho que alto. Combinado con menos
               columnas (3 max en desktop) hace que la imagen del producto
               tenga MUCHO más espacio horizontal. p-2 para que respire un
@@ -447,62 +458,28 @@ export default function UnifiedProductCard({
           </div>
         )}
 
-        {/* Brandon 2026-05-18: CTA "agregar al carrito" reubicado como overlay
-            de la imagen en MOBILE (estilo Rappi/Glovo). Antes vivía dentro del
-            footer del card compitiendo con el precio — en cards angostas el
-            botón circular comía espacio del precio y el badge "qty" se
-            superponía. Ahora flota sobre la imagen sin afectar la zona del
-            precio. En sm+ se mantiene el layout inline original (más espacio). */}
-        <div className="sm:hidden absolute bottom-2 right-2 z-10">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={isOutOfStock}
-              aria-label={
-                isOutOfStock
-                  ? `${product.name} — agotado`
-                  : inCartQty > 0
-                    ? `Agregar otro ${product.name} (${inCartQty} en carrito)`
-                    : `Agregar ${product.name} al carrito`
-              }
-              className={cn(
-                "inline-flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 shadow-lg ring-2 ring-white/95 dark:ring-[var(--surface-raised)]/95",
-                isOutOfStock
-                  ? "bg-[var(--surface-sunken)] text-gray-400 cursor-not-allowed"
-                  : justAdded
-                    ? "bg-[var(--data-success-500)] text-white scale-90"
-                    : "bg-[var(--accent-600,var(--accent))] text-white active:scale-90",
-              )}
-            >
-              {justAdded ? (
-                <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-              ) : (
-                <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-              )}
-            </button>
-            {inCartQty > 0 && !justAdded && (
-              <motion.span
-                key={inCartQty}
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                aria-hidden
-                className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)] px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--surface-canvas)] shadow-md ring-2 ring-white dark:ring-[var(--surface-raised)]"
-              >
-                {inCartQty > 99 ? "99+" : inCartQty}
-              </motion.span>
-            )}
-          </div>
-        </div>
+        {/* Brandon 2026-05-18 v3: CTA mobile MOVIDO al footer del card como
+            botón full-width (no overlay sobre la imagen). El overlay icon-only
+            de 44px era pequeño y compartía espacio con badges; ahora el CTA
+            ocupa todo el ancho del card debajo del precio, con label "Agregar"
+            + icon + badge de cantidad en cart. Más grande, más visible, más
+            click-friendly en pulgar. Renderizado en el bloque del precio
+            (líneas siguientes). */}
       </div>
 
       {/* ── Contenido ──────────────────────────────────────────────────────────
           Tipografía aumentada (ADR storefront 2026-04): nombre base/lg, descripción sm,
           tienda sm — evita texto diminuto que el usuario no podía leer. */}
       <div className="flex flex-1 flex-col p-4">
-        {/* Nombre — text-base font-bold, 2 lineas, mayor presencia */}
-        <Link href={productHref}>
+        {/* Nombre — text-base font-bold, 2 lineas, mayor presencia.
+            Brandon 2026-05-18 v3: Link inerte en mobile (mismo patrón que la
+            imagen) — el cliente en cel solo interactúa con "Agregar". */}
+        <Link
+          href={productHref}
+          className="pointer-events-none sm:pointer-events-auto"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
           <h3 className="text-base sm:text-lg font-bold leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.75rem] group-hover:text-[var(--accent)] group-focus-within:text-[var(--accent)] transition-colors">
             {product.name}
           </h3>
@@ -639,6 +616,57 @@ export default function UnifiedProductCard({
             </span>
           </div>
         )}
+
+        {/* Brandon 2026-05-18 v3: CTA MOBILE — full-width pill grande con
+            label + icon. Reemplaza el overlay icon-only de 44px sobre la
+            imagen. Solo visible en mobile (sm:hidden); desktop usa el inline
+            circular junto al precio. */}
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={isOutOfStock}
+          aria-label={
+            isOutOfStock
+              ? `${product.name} — agotado`
+              : inCartQty > 0
+                ? `Agregar otro ${product.name} (${inCartQty} en carrito)`
+                : `Agregar ${product.name} al carrito`
+          }
+          className={cn(
+            "sm:hidden mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold transition-all duration-200 shadow-md active:scale-[0.985]",
+            isOutOfStock
+              ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed shadow-none"
+              : justAdded
+                ? "bg-[var(--data-success-500)] text-white"
+                : "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-95",
+          )}
+        >
+          {justAdded ? (
+            <>
+              <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+              Agregado
+            </>
+          ) : isOutOfStock ? (
+            <>Agotado</>
+          ) : (
+            <>
+              <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+              {inCartQty > 0 ? (
+                <>
+                  Agregar otro
+                  <span
+                    aria-hidden
+                    className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-white/20 px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums ring-1 ring-white/30"
+                  >
+                    {inCartQty > 99 ? "99+" : inCartQty}
+                  </span>
+                </>
+              ) : (
+                <>Agregar al carrito</>
+              )}
+            </>
+          )}
+        </button>
 
         {/* Aviso limite comparar */}
         {compareLimitMsg && (

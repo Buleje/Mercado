@@ -1082,7 +1082,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
            Brandon, mayo 14 2026: ocultas en mobile — el cliente en cel
            quiere ir directo a las tiendas, no a promos secundarias.
            En sm+ siguen visibles. */}
-      {search.trim().length === 0 && (
+      {/* Brandon 2026-05-18 v3: ocultar el card de promos si NO hay ofertas
+          activas en ningún tenant (no mostrar un componente vacío que invita
+          a una sección sin contenido). Antes pasábamos `hasOffers={...}` pero
+          TiendasPromoCards igual renderizaba el contenedor. */}
+      {search.trim().length === 0 && hasActiveOffers && (
         <div className="hidden sm:block">
           <TiendasPromoCards hasOffers={hasActiveOffers} />
         </div>

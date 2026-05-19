@@ -35,6 +35,8 @@ import {
   MessageCircle,
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
+import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
+import { useHasActiveOffers } from "@/hooks/use-active-offers";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 
 interface MarketplaceCategory {
@@ -69,6 +71,16 @@ export interface SharedMobileNavDrawerProps {
 
 export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNavDrawerProps) {
   const { customer } = useCustomer();
+  // Brandon 2026-05-18 v3: bug — el drawer mostraba "Iniciar sesión" aunque
+  // el cliente ya estaba autenticado. `useCustomer()` lee localStorage y
+  // puede estar desincronizado con la cookie httpOnly (fuente real de auth).
+  // Ahora gateamos por `useCustomerAuthStatus()` (consulta server-side) y
+  // usamos `useCustomer()` solo para el name/email del greeting.
+  const { authenticated } = useCustomerAuthStatus();
+  // Brandon 2026-05-18 v3: gateamos el link "Ofertas del día" — si no hay
+  // ofertas activas en ningún tenant, el link no aparece (no prometemos
+  // descuentos inexistentes).
+  const hasActiveOffers = useHasActiveOffers();
   const { itemCount } = useMarketplaceCart();
 
   // Brandon 2026-05-18: rubros del marketplace SE FETCHEAN del backend
@@ -119,8 +131,15 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
 
   if (!open) return null;
 
-  const isLoggedIn = !!customer?.email;
-  const greetingName = customer?.name?.split(" ")[0] ?? customer?.email?.split("@")[0] ?? "";
+  // Brandon 2026-05-18 v3: isLoggedIn ahora es la verdad del servidor (cookie
+  // httpOnly), NO localStorage. Mientras `authenticated === null` (cargando)
+  // tratamos como "anónimo en proceso" para no parpadear; el render real se
+  // ajusta apenas la respuesta de /api/customer/me llega.
+  const isLoggedIn = authenticated === true;
+  const greetingName =
+    customer?.name?.split(" ")[0] ??
+    customer?.email?.split("@")[0] ??
+    "vecino";
 
   const SECTIONS: Array<{
     title: string;
@@ -145,7 +164,10 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
       links: [
         { href: "/", label: "Inicio", Icon: HomeIcon },
         { href: "/tiendas", label: "Todas las tiendas", Icon: StoreIcon },
-        { href: "/marketplace/ofertas", label: "Ofertas del día", Icon: Tag },
+        // Brandon 2026-05-18 v3: "Ofertas del día" solo si hay activas.
+        ...(hasActiveOffers === true
+          ? [{ href: "/marketplace/ofertas", label: "Ofertas del día", Icon: Tag }]
+          : []),
       ],
     },
   ];

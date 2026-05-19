@@ -57,6 +57,7 @@ import SharedMobileNavDrawer from "@/components/marketplace/SharedMobileNavDrawe
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
+import { useHasActiveOffers } from "@/hooks/use-active-offers";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import { useLocale } from "@/contexts/locale-context";
@@ -269,10 +270,16 @@ export default function MarketplaceNavbar() {
   const navVisibility = useNavVisibility("marketplace");
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
-  // En modo tiendas-only forzamos siempre visibles "ofertas" y "como-pagar"
-  // — son utilitarios que ayudan a comprar y no deben ocultarse junto al resto.
-  const FORCE_VISIBLE_IN_TIENDAS_ONLY = new Set(["ofertas", "como-pagar"]);
+  // Brandon 2026-05-18 v3: gate "Ofertas" si no hay descuentos activos en
+  // ningún tenant. Antes el link estaba forzado visible en modo tiendas-only,
+  // ahora gatea por dato real (no prometer descuentos inexistentes).
+  const hasActiveOffers = useHasActiveOffers();
+  // En modo tiendas-only forzamos siempre visible "como-pagar" — utilitario
+  // que ayuda a comprar. "Ofertas" ya no se fuerza: respeta hasActiveOffers.
+  const FORCE_VISIBLE_IN_TIENDAS_ONLY = new Set(["como-pagar"]);
   const visibleLinks = PRIMARY_LINKS.filter((l) => {
+    // Ofertas — solo visible si hay ofertas activas (independiente de superadmin).
+    if (l.id === "ofertas" && hasActiveOffers !== true) return false;
     if (isTiendasOnly && FORCE_VISIBLE_IN_TIENDAS_ONLY.has(l.id)) return true;
     return navVisibility[l.id] !== false;
   });
