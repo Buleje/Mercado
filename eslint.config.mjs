@@ -16,18 +16,16 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
-  // CI 2026-05-19: registrar eslint-plugin-react-hooks v7.x explícitamente.
-  // eslint-config-next trae una versión más vieja transitivamente que no
-  // expone la regla "set-state-in-effect" (introducida en v5+). Sin este
-  // registro, el lint del CI falla con "could not find plugin react-hooks"
-  // aunque local funcione por dedup de node_modules.
+  // CI 2026-05-19: registrar eslint-plugin-react-hooks v7.x JUNTO con su rule.
+  // eslint-config-next NO incluye este plugin (introducido upstream en v5+).
+  // Los otros plugins (jsx-a11y, @typescript-eslint, @next/next) los carga
+  // eslint-config-next y NO debemos re-registrarlos (ESLint da "Cannot redefine
+  // plugin"). Si CI falla por "could not find plugin jsx-a11y" → bump
+  // eslint-config-next o agregar a devDependencies con caret-pinned version.
   {
     plugins: {
       "react-hooks": reactHooks,
     },
-  },
-  // Downgrade strict rules to warnings so pre-existing issues don't block commits
-  {
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
