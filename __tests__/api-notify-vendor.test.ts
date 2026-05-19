@@ -2,18 +2,7 @@
  * Tests unitarios — POST /api/marketplace/notify-vendor
  *
  * El endpoint usa queue.enqueue (fire-and-forget) y retorna 202 inmediatamente.
- *
- * BUG #1 (a corregir en endpoint): notify-vendor/route.ts importa `{ queue }` desde "@/lib/queue"
- * pero lib/queue/index.ts NO exporta un objeto `queue` con método `enqueue`.
- * Solo exporta funciones individuales (enqueueNotification, etc.).
- *
- * BUG #2 (a corregir en endpoint): El BodySchema usa `z.record(z.any())` para `context`,
- * pero `z.any()` en Zod v4 crashea con TypeError al llamar safeParse con valor no-vacío.
- * Usar `z.record(z.string(), z.unknown())` en su lugar.
- * Verificado: `z.record(z.any()).safeParse({a:1})` → TypeError en Node v24 + Zod v4.
- *
- * Los tests que llegan al safeParse con context definido están marcados como .todo
- * hasta que el backend corrija el schema de Zod.
+ * Schema usa z.record(z.string(), z.unknown()) (forma válida en Zod v4).
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -33,9 +22,21 @@ vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 const { mockEnqueue } = vi.hoisted(() => ({ mockEnqueue: vi.fn().mockResolvedValue(null) }));
 vi.mock("@/lib/queue", () => ({
   queue: { enqueue: mockEnqueue },
-  // también se exportan las funciones individuales por si acaso
   enqueueNotification: mockEnqueue,
   isQueueEnabled: vi.fn(() => true),
+}));
+
+// ── verifyOwnerPhone — el endpoint exige que el phone pertenezca al tenant ──
+const { mockVerifyOwnerPhone } = vi.hoisted(() => ({
+  mockVerifyOwnerPhone: vi.fn().mockResolvedValue(true),
+}));
+vi.mock("@/lib/db/tenant-billing.db", () => ({
+  TenantBillingDB: { verifyOwnerPhone: mockVerifyOwnerPhone },
+}));
+
+// ── runWithAuditContext — passthrough ────────────────────────────────────────
+vi.mock("@/lib/audit/audit-context", () => ({
+  runWithAuditContext: (_req: unknown, _user: unknown, fn: () => unknown) => fn(),
 }));
 
 import { POST } from "@/app/api/marketplace/notify-vendor/route";
@@ -57,15 +58,37 @@ describe("POST /api/marketplace/notify-vendor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireAdmin.mockResolvedValue(AUTH);
+    mockVerifyOwnerPhone.mockResolvedValue(true);
   });
 
   // 1. Tipo new_order con context válido → 202
-  // TODO: activar cuando backend corrija z.record(z.any()) → z.record(z.string(), z.unknown())
-  it.todo("new_order con context válido → 202 { ok: true } [BLOQUEADO: BUG #2 z.record(z.any())]");
+  it("new_order con context válido → 202 { ok: true }", async () => {
+    const res = await POST(makeReq({
+      vendorPhone: "+51999000111",
+      type: "new_order",
+      context: { vendorName: "Pedro", orderId: "ord-1", total: "120.00" },
+    }));
+    expect(res.status).toBe(202);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+  });
 
   // 2. Tipo low_stock → template correcto
-  // TODO: activar cuando backend corrija z.record(z.any())
-  it.todo("low_stock encola mensaje con stock info [BLOQUEADO: BUG #2 z.record(z.any())]");
+  it("low_stock encola mensaje con stock info", async () => {
+    await POST(makeReq({
+      vendorPhone: "+51999000111",
+      type: "low_stock",
+      context: { productName: "Arroz 5kg", stock: 3 },
+    }));
+    expect(mockEnqueue).toHaveBeenCalledWith(
+      "send-whatsapp",
+      expect.objectContaining({
+        phone: "+51999000111",
+        message: expect.stringContaining("Arroz 5kg"),
+      }),
+    );
+    expect(mockEnqueue.mock.calls[0][1].message).toContain("3 unidades");
+  });
 
   // 3. Type inválido → 400
   it("type inválido → 400", async () => {
@@ -102,12 +125,37 @@ describe("POST /api/marketplace/notify-vendor", () => {
   });
 
   // 6. Encola el job en BullMQ (verifica mock.calls)
-  // TODO: activar cuando backend corrija z.record(z.any())
-  it.todo("encola un job send-whatsapp en la queue [BLOQUEADO: BUG #2 z.record(z.any())]");
+  it("encola un job send-whatsapp en la queue", async () => {
+    await POST(makeReq({
+      vendorPhone: "+51999000111",
+      type: "new_review",
+      context: { rating: 5, customer: "Ana", productName: "Café 250g" },
+    }));
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
+    expect(mockEnqueue).toHaveBeenCalledWith(
+      "send-whatsapp",
+      expect.objectContaining({
+        tenantId: AUTH.tenantId,
+        phone: "+51999000111",
+      }),
+    );
+  });
 
   // 7. Retorna inmediato (202) sin esperar al worker
-  // TODO: activar cuando backend corrija z.record(z.any())
-  it.todo("responde 202 inmediatamente (no espera resolución del job) [BLOQUEADO: BUG #2 z.record(z.any())]");
+  it("responde 202 inmediatamente (no espera resolución del job)", async () => {
+    mockEnqueue.mockImplementationOnce(
+      () => new Promise((r) => setTimeout(() => r(null), 100)),
+    );
+    const start = Date.now();
+    const res = await POST(makeReq({
+      vendorPhone: "+51999000111",
+      type: "price_alert",
+      context: { productName: "Aceite 1L" },
+    }));
+    const elapsed = Date.now() - start;
+    expect(res.status).toBe(202);
+    expect(elapsed).toBeLessThan(50);
+  });
 
   // 8. Sin auth → 401
   it("retorna 401 si requireAdmin falla", async () => {
