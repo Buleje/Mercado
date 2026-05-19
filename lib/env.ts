@@ -257,6 +257,19 @@ export function validateEnv(): void {
     );
   }
 
+  // Pentest 2026-05-19 H2: si Vercel deployea con VERCEL_ENV=production pero
+  // NODE_ENV no fue propagada (preview branch malconfigurado, build mal seteado),
+  // app/api/auth/bypass queda activa porque su guard se basa solo en NODE_ENV.
+  // Hard-fail aquí evita exponer bypass-login en producción real.
+  const vercelEnv = process.env.VERCEL_ENV;
+  if (vercelEnv === "production" && process.env.NODE_ENV !== "production") {
+    throw new Error(
+      `\n🚨 CRITICAL — VERCEL_ENV='production' pero NODE_ENV='${process.env.NODE_ENV ?? "undefined"}'.\n` +
+      "Mismatch peligroso: endpoints DEV-only (auth/bypass) quedan activos en producción.\n" +
+      "Revisar Vercel project settings y framework preset.\n",
+    );
+  }
+
   // ── HARD-FAIL: vars que rompen la seguridad si faltan ──────────────────
   // AUTH_SECRET firma JWTs. Si falta en prod, los tokens se firman con
   // string vacía y CUALQUIERA puede emitir tokens válidos. Hard-fail siempre.
