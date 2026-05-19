@@ -1200,13 +1200,57 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         <div className="space-y-3 mb-4">
           {/* "Lo más pedido" — antes label era "Subcategoría" (técnico, suena
               a panel admin). Brandon 2026-05-18 v3: renombrado a copy comercial
-              que activa social proof y guía la elección del cliente. */}
+              que activa social proof y guía la elección del cliente.
+              v4 (Brandon 2026-05-18): el botón "Filtros" del toolbar se MOVIÓ
+              acá al lado del eyebrow — entrada principal de filtrado, al
+              inicio del flujo de búsqueda de tiendas. Si no hay subcategorías,
+              el botón sigue visible con eyebrow "Refiná tu búsqueda". */}
+          <div className="flex items-center justify-between gap-3 mb-2.5">
+            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+              <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
+              {subcategories.length > 0 ? "Lo más pedido" : "Refiná tu búsqueda"}
+            </p>
+            <MarketplaceFilters
+              filters={productFilters}
+              userCoords={userCoords}
+              geoLoading={geoLoading}
+              onChange={handleFiltersChange}
+              onRequestGeo={handleGeoSort}
+              hideProductCategory
+              zones={zonesForFilter}
+              zone={zone}
+              onZoneChange={setZone}
+              extraSort={{
+                value: sortKey,
+                onChange: (v) => setSortKey(v as StoresSortKey),
+                options: STORES_SORT_OPTIONS,
+              }}
+              onClearAll={() => {
+                setSearch("");
+                setCategory("todos");
+                setZone("");
+                setSubCategoryId(null);
+                setGeoActive(false);
+                setUserCoords(null);
+                setProductFilters(DEFAULT_FILTERS);
+                setActiveChips(new Set());
+                setSortKey("relevance");
+              }}
+              globalActiveCount={
+                (search.trim() ? 1 : 0) +
+                (category !== "todos" ? 1 : 0) +
+                (zone ? 1 : 0) +
+                (subCategoryId ? 1 : 0) +
+                (geoActive ? 1 : 0) +
+                activeChips.size +
+                (sortKey !== "relevance" ? 1 : 0) +
+                (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0)
+              }
+            />
+          </div>
+
           {subcategories.length > 0 && (
             <div ref={subcategorySectionRef}>
-              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2.5">
-                <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
-                Lo más pedido
-              </p>
               <div
                 role="group"
                 aria-label="Filtrá lo más pedido"
@@ -1465,105 +1509,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             </div>
           )}
 
-          {/* ── Toolbar — rediseñado mobile-first (Brandon, mayo 14 2026) ──
-               Mobile: scroll horizontal con todos los controles en chips
-               grandes (vista pill + sort + filtros + limpiar). El flex-wrap
-               anterior se montaba feo en pantallas chicas — ahora la fila
-               siempre cabe via overflow-x scroll.
-               Desktop (sm+): grid de 2 cols con filtros a la izquierda y
-               vista pill alineada a la derecha. */}
-          <div
-            role="toolbar"
-            aria-label="Filtros y vista de tiendas"
-            className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm overflow-hidden"
-          >
-            {/* ── Mobile: solo el drawer de filtros (Brandon mayo 18 v3) ──
-                 Toggle Lista/Mapa removido — el cliente del directorio busca
-                 por filtros/categorías; el mapa era una feature secundaria
-                 que añadía un control compitiendo con Filtros. */}
-            <div className="sm:hidden flex items-center justify-end gap-2 px-3 py-2.5">
-              <div className="flex items-center gap-2 shrink-0">
-                <MarketplaceFilters
-                  filters={productFilters}
-                  userCoords={userCoords}
-                  geoLoading={geoLoading}
-                  onChange={handleFiltersChange}
-                  onRequestGeo={handleGeoSort}
-                  hideProductCategory
-                  zones={zonesForFilter}
-                  zone={zone}
-                  onZoneChange={setZone}
-                  extraSort={{
-                    value: sortKey,
-                    onChange: (v) => setSortKey(v as StoresSortKey),
-                    options: STORES_SORT_OPTIONS,
-                  }}
-                  onClearAll={() => {
-                    setSearch("");
-                    setCategory("todos");
-                    setZone("");
-                    setSubCategoryId(null);
-                    setGeoActive(false);
-                    setUserCoords(null);
-                    setProductFilters(DEFAULT_FILTERS);
-                    setActiveChips(new Set());
-                    setSortKey("relevance");
-                  }}
-                  globalActiveCount={
-                    (search.trim() ? 1 : 0) +
-                    (category !== "todos" ? 1 : 0) +
-                    (zone ? 1 : 0) +
-                    (subCategoryId ? 1 : 0) +
-                    (geoActive ? 1 : 0) +
-                    activeChips.size +
-                    (sortKey !== "relevance" ? 1 : 0) +
-                    (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0)
-                  }
-                />
-              </div>
-            </div>
-
-            {/* ── Desktop (sm+): layout antiguo con filtros izquierda + vista derecha ── */}
-            <div className="hidden sm:flex items-center gap-3 flex-wrap px-5 py-3.5">
-              <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
-                <MarketplaceFilters
-                  filters={productFilters}
-                  userCoords={userCoords}
-                  geoLoading={geoLoading}
-                  onChange={handleFiltersChange}
-                  onRequestGeo={handleGeoSort}
-                  hideProductCategory
-                />
-
-                <span aria-hidden className="hidden sm:inline-block h-7 w-px bg-[var(--rule-soft)]" />
-
-                <StoresSortSelector value={sortKey} onChange={setSortKey} />
-              </div>
-
-              {/* Brandon 2026-05-18 v3: toggle Lista/Mapa removido del toolbar
-                  desktop. Mantiene solo filtros + sort + limpiar. */}
-
-              {hasFilters && (
-                <button
-                  onClick={() => {
-                    setSearch("");
-                    setCategory("todos");
-                    setZone("");
-                    setSubCategoryId(null);
-                    setGeoActive(false);
-                    setUserCoords(null);
-                    setProductFilters(DEFAULT_FILTERS);
-                    setActiveChips(new Set());
-                    setSortKey("relevance");
-                  }}
-                  aria-label="Limpiar todos los filtros activos"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-1.5 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 transition-all shrink-0"
-                >
-                  Limpiar todo
-                </button>
-              )}
-            </div>
-          </div>
+          {/* Brandon 2026-05-18 v4: toolbar de filtros REMOVIDO. El botón de
+              filtros se movió al header "Lo más pedido" arriba (entrada
+              principal del flujo de filtrado). El sort, zone, price y
+              clear-all ya viven dentro del drawer de filtros — no necesitamos
+              un toolbar separado para ellos. */}
         </div>
 
         {/* ── Bloque comercial (Brandon mayo 15 v3) ──
