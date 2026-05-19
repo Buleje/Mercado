@@ -15,12 +15,11 @@ Sentry.init({
   // Capture 1% of all sessions for session replay
   replaysSessionSampleRate: 0.01,
 
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
+  // Replay integration cargada LAZY (post-bundle). Antes estaba en el initial
+  // bundle aunque solo se activara en 1% de sesiones — pesaba ~600 KB.
+  // Audit perf 2026-05-19: ahora solo se descarga cuando hay error
+  // (replaysOnErrorSampleRate=1.0) o si el usuario entra en sample 1%.
+  integrations: [],
 
   /**
    * Attach the x-request-id response header to Sentry client events.
@@ -55,3 +54,31 @@ Sentry.init({
     return event;
   },
 });
+
+// Lazy-load replay integration on-demand (no afecta initial bundle).
+// Se carga cuando el navegador está idle (requestIdleCallback) o después
+// de 3s — momento en el que ya pintó LCP. Si falla la carga (CDN Sentry
+// down), error silencioso — no rompe la app.
+if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+  const loadReplay = async () => {
+    try {
+      const replay = await Sentry.lazyLoadIntegration("replayIntegration");
+      Sentry.addIntegration(
+        replay({
+          maskAllText: true,
+          blockAllMedia: true,
+        }),
+      );
+    } catch {
+      // silent
+    }
+  };
+  const idle = (window as typeof window & {
+    requestIdleCallback?: (cb: () => void) => void;
+  }).requestIdleCallback;
+  if (idle) {
+    idle(loadReplay);
+  } else {
+    setTimeout(loadReplay, 3000);
+  }
+}

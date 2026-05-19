@@ -1,0 +1,1389 @@
+
+> buleje@0.1.1 build
+> next build
+
+Warning: Custom Cache-Control headers detected for the following routes:
+  - /_next/static/:path*
+
+Setting a custom Cache-Control header can break Next.js development behavior.
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+- Cache Components enabled
+- Experiments (use with caution):
+  ✓ optimizeCss
+  · optimizePackageImports
+  · staleTimes
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 67s
+  Skipping validation of types
+  Finished TypeScript config validation in 55ms ...
+  Collecting page data using 11 workers ...
+⚠ Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 11 workers (0/1567) ...
+{"level":"error","timestamp":"2026-05-19T19:29:37.005Z","message":"[inventory/eoq-suggest] failed","error":"Error: Route /api/admin/inventory/eoq-suggest needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"error","timestamp":"2026-05-19T19:29:37.085Z","message":"[inventory/eoq-suggest] failed","error":"Error: Route /api/admin/inventory/eoq-suggest needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"warn","timestamp":"2026-05-19T19:29:37.260Z","message":"[notifications/stream] requireAdmin threw","err":"Error: Route /api/admin/notifications/stream needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"warn","timestamp":"2026-05-19T19:29:37.369Z","message":"[notifications/stream] requireAdmin threw","err":"Error: Route /api/admin/notifications/stream needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"error","timestamp":"2026-05-19T19:29:40.359Z","message":"[superadmin/tenants/growth] Error fetching growth data","error":"Route /api/superadmin/tenants/growth needs to bail out of prerendering at this point because it used request.headers.","stack":"Error: Route /api/superadmin/tenants/growth needs to bail out of prerendering at this point because it used request.headers.\n    at ro (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:1:131089)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:32643\n    at r7 (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:32730)\n    at Object.get (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:27239)\n    at m (/home/usuario/proyectos/Mercado/.next/server/chunks/_0amwckk._.js:450:9514)\n    at h (/home/usuario/proyectos/Mercado/.next/server/chunks/_0amwckk._.js:450:9747)\n    at c (/home/usuario/proyectos/Mercado/.next/server/chunks/[root-of-the-server]__10qbmbs._.js:1:13833)\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at rW.do (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:18823)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:27636\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/server/lib/trace/tracer.js:195:36\n    at NoopContextManager.with (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:14:19)\n    at ContextAPI.with (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/api/context.js:51:46)\n    at NoopTracer.startActiveSpan (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:54:31)\n    at ProxyTracer.startActiveSpan (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:27:24)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/server/lib/trace/tracer.js:164:103\n    at NoopContextManager.with (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:14:19)\n    at ContextAPI.with (/home/usuario/proyectos/Mercado/node_modules/@opentelemetry/api/build/src/api/context.js:51:46)\n    at NextTracerImpl.trace (/home/usuario/proyectos/Mercado/node_modules/next/dist/server/lib/trace/tracer.js:164:28)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:27525\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:25879\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:25847\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at rW.handle (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:25811)\n    at async exportAppRoute (/home/usuario/proyectos/Mercado/node_modules/next/dist/export/routes/app-route.js:86:26)"}
+{"level":"error","timestamp":"2026-05-19T19:29:40.454Z","message":"[superadmin/tenants/growth] Error fetching growth data","error":"Route /api/superadmin/tenants/growth needs to bail out of prerendering at this point because it used request.headers.","stack":"Error: Route /api/superadmin/tenants/growth needs to bail out of prerendering at this point because it used request.headers.\n    at ro (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:1:131089)\n    at /home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:32643\n    at r7 (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:32730)\n    at Object.get (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:27239)\n    at m (/home/usuario/proyectos/Mercado/.next/server/chunks/_0amwckk._.js:450:9514)\n    at h (/home/usuario/proyectos/Mercado/.next/server/chunks/_0amwckk._.js:450:9747)\n    at c (/home/usuario/proyectos/Mercado/.next/server/chunks/[root-of-the-server]__10qbmbs._.js:1:13833)\n    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)\n    at Immediate._onImmediate (/home/usuario/proyectos/Mercado/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js:5:20388)\n    at process.processImmediate (node:internal/timers:484:21)\n    at process.callbackTrampoline (node:internal/async_hooks:130:17)"}
+{"level":"info","timestamp":"2026-05-19T19:29:41.486Z","message":"AgentRegistry: agent registered","domain":"inventory","actions":["check-stock","fefo-audit","reorder-suggestions","stock-valuation","movement-summary"],"description":"Gestiona inventario: niveles de stock, auditoria FEFO, sugerencias de reorden, valuacion y resumen de movimientos."}
+{"level":"info","timestamp":"2026-05-19T19:29:41.486Z","message":"AgentRegistry: agent registered","domain":"orders","actions":["pending-summary","delivery-schedule","returns-analysis","status-overview","daily-sales-report"],"description":"Gestiona pedidos: resumen de pendientes, programacion de entregas, analisis de devoluciones, estado general y reporte diario de ventas."}
+{"level":"info","timestamp":"2026-05-19T19:29:41.486Z","message":"AgentRegistry: agent registered","domain":"customers","actions":["segmentation","top-customers","churn-risk","birthday-upcoming","customer-360"],"description":"Analisis de clientes: segmentacion, riesgo de churn, perfiles 360"}
+{"level":"info","timestamp":"2026-05-19T19:29:41.486Z","message":"AgentRegistry: agent registered","domain":"analytics","actions":["daily-kpis","product-performance","margin-analysis","sales-trend","category-breakdown"],"description":"KPIs, reportes y analisis de negocio"}
+{"level":"info","timestamp":"2026-05-19T19:29:41.486Z","message":"AgentRegistry: agent registered","domain":"notifications","actions":["send-order-update","send-stock-alert","send-expiry-warning","send-promotion","digest-pending"],"description":"Gestiona notificaciones: actualizaciones de pedidos, alertas de stock, avisos de vencimiento, promociones y resumen de pendientes."}
+{"level":"info","timestamp":"2026-05-19T19:29:41.486Z","message":"AgentRegistry: agent registered","domain":"pricing","actions":["margin-check","competitor-gap","promotion-candidates","bundle-suggestions","price-history"],"description":"Gestiona precios: verificacion de margenes, analisis de competencia, candidatos a promocion, sugerencias de bundles e historial de precios."}
+{"level":"info","timestamp":"2026-05-19T19:29:41.495Z","message":"[agent-persistence] Persistence layer initialized"}
+{"level":"info","timestamp":"2026-05-19T19:29:41.496Z","message":"[agent-hooks] Agent hooks initialized"}
+{"level":"info","timestamp":"2026-05-19T19:29:41.496Z","message":"Agent system initialized","registeredAgents":[{"domain":"inventory","status":"registered","actions":["check-stock","fefo-audit","reorder-suggestions","stock-valuation","movement-summary"]},{"domain":"orders","status":"registered","actions":["pending-summary","delivery-schedule","returns-analysis","status-overview","daily-sales-report"]},{"domain":"customers","status":"registered","actions":["segmentation","top-customers","churn-risk","birthday-upcoming","customer-360"]},{"domain":"analytics","status":"registered","actions":["daily-kpis","product-performance","margin-analysis","sales-trend","category-breakdown"]},{"domain":"notifications","status":"registered","actions":["send-order-update","send-stock-alert","send-expiry-warning","send-promotion","digest-pending"]},{"domain":"pricing","status":"registered","actions":["margin-check","competitor-gap","promotion-candidates","bundle-suggestions","price-history"]}]}
+{"level":"info","timestamp":"2026-05-19T19:29:41.496Z","message":"[agents] GET /api/agents/health","status":"healthy","agentCount":6,"activeTasks":0}
+{"level":"info","timestamp":"2026-05-19T19:29:41.497Z","message":"[agent-hooks] SSE broadcast connected"}
+{"level":"info","timestamp":"2026-05-19T19:29:42.893Z","message":"[agents] GET /api/agents/health","status":"healthy","agentCount":6,"activeTasks":0}
+{"level":"warn","timestamp":"2026-05-19T19:29:43.024Z","message":"[/api/marketplace/subcategories] failed","error":"Error: Route /api/marketplace/subcategories needs to bail out of prerendering at this point because it used request.url."}
+{"level":"error","timestamp":"2026-05-19T19:29:43.071Z","message":"[marketplace/top-today] failed","error":"Route /api/marketplace/top-today needs to bail out of prerendering at this point because it used request.url.","traceId":"mpd11llq-qixdkg"}
+{"level":"warn","timestamp":"2026-05-19T19:29:43.175Z","message":"[/api/marketplace/subcategories] failed","error":"Error: Route /api/marketplace/subcategories needs to bail out of prerendering at this point because it used request.url."}
+{"level":"error","timestamp":"2026-05-19T19:29:43.180Z","message":"[marketplace/top-today] failed","error":"Route /api/marketplace/top-today needs to bail out of prerendering at this point because it used request.url.","traceId":"mpd11lop-2r1gb5"}
+{"level":"error","timestamp":"2026-05-19T19:29:43.204Z","message":"[tenants/resolve] GET error","err":"Route /api/tenants/resolve needs to bail out of prerendering at this point because it used request.url."}
+{"level":"error","timestamp":"2026-05-19T19:29:43.288Z","message":"[tenants/resolve] GET error","err":"Route /api/tenants/resolve needs to bail out of prerendering at this point because it used request.url."}
+  Generating static pages using 11 workers (391/1567) 
+{"level":"error","timestamp":"2026-05-19T19:29:44.561Z","message":"[marketplace/bestsellers] failed","error":"Route /api/marketplace/bestsellers needs to bail out of prerendering at this point because it used request.url.","traceId":"mpd11mr3-9kw8y1"}
+{"level":"error","timestamp":"2026-05-19T19:29:44.578Z","message":"[marketplace/bestsellers] failed","error":"Route /api/marketplace/bestsellers needs to bail out of prerendering at this point because it used request.url.","traceId":"mpd11mrm-uqyae5"}
+{"level":"error","timestamp":"2026-05-19T19:29:44.730Z","message":"[marketplace/deals] GET error","traceId":"mpd11mvt-666vgy","err":"Error: Route /api/marketplace/deals needs to bail out of prerendering at this point because it used request.url."}
+{"level":"error","timestamp":"2026-05-19T19:29:44.875Z","message":"[marketplace/deals] GET error","traceId":"mpd11mzv-f500h1","err":"Error: Route /api/marketplace/deals needs to bail out of prerendering at this point because it used request.url."}
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+{"level":"error","timestamp":"2026-05-19T19:29:46.016Z","message":"[products/ratings] GET error","err":"Route /api/products/ratings needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"error","timestamp":"2026-05-19T19:29:46.080Z","message":"[products/ratings] GET error","err":"Route /api/products/ratings needs to bail out of prerendering at this point because it used request.cookies."}
+{"level":"info","timestamp":"2026-05-19T19:29:46.256Z","message":"[live-stats] ok","ordersToday":1,"shoppersToday":1,"activeStores":6}
+{"level":"info","timestamp":"2026-05-19T19:29:46.257Z","message":"[live-stats] ok","ordersToday":1,"shoppersToday":1,"activeStores":6}
+{"level":"warn","timestamp":"2026-05-19T19:29:47.110Z","message":"[api/socio-buleje/cashback] error","traceId":"mpd11opy-207089","error":"Route /api/socio-buleje/cashback needs to bail out of prerendering at this point because it used request.url."}
+{"level":"warn","timestamp":"2026-05-19T19:29:47.196Z","message":"[api/socio-buleje/status] error","traceId":"mpd11osc-g146fy","error":"Route /api/socio-buleje/status needs to bail out of prerendering at this point because it used request.url."}
+{"level":"warn","timestamp":"2026-05-19T19:29:47.243Z","message":"[api/socio-buleje/cashback] error","traceId":"mpd11otn-unyf7o","error":"Route /api/socio-buleje/cashback needs to bail out of prerendering at this point because it used request.url."}
+{"level":"warn","timestamp":"2026-05-19T19:29:47.249Z","message":"[api/socio-buleje/status] error","traceId":"mpd11ott-7zgwx3","error":"Route /api/socio-buleje/status needs to bail out of prerendering at this point because it used request.url."}
+  Generating static pages using 11 workers (783/1567) 
+{"level":"info","timestamp":"2026-05-19T19:29:50.750Z","message":"[shopping-feed] generating feed","traceId":"mpd11oof-pmkxwr","productCount":147}
+{"level":"info","timestamp":"2026-05-19T19:29:50.825Z","message":"[shopping-feed] generating feed","traceId":"mpd11opf-7w0ymx","productCount":147}
+  Generating static pages using 11 workers (1175/1567) 
+✓ Generating static pages using 11 workers (1567/1567) in 23.6s
+  Finalizing page optimization ...
+
+Route (app)                                                 Revalidate  Expire
+┌ ◐ /                                                              30s      5m
+├ ◐ /_not-found                                                     1h      1d
+├ ◐ /about                                                          1h      1d
+├ ◐ /abrir-tienda                                                   1h      1d
+├ ƒ /admin                                                          1h      1d
+├ ƒ /admin/cms                                                      1h      1d
+├ ◐ /admin/cms/pages/[id]
+│ └ /admin/cms/pages/[id]
+├ ƒ /admin/cron-dead-letters                                        1h      1d
+├ ƒ /admin/kiosk                                                    1h      1d
+├ ƒ /admin/login                                                    1h      1d
+├ ƒ /admin/login/2fa                                                1h      1d
+├ ƒ /admin/plan/checkout                                            1h      1d
+├ ƒ /admin/plan/checkout/mock                                       1h      1d
+├ ƒ /admin/pos-mobile                                               1h      1d
+├ ƒ /admin/store-analytics                                          1h      1d
+├ ƒ /admin/store-page                                               1h      1d
+├ ƒ /admin/store-reviews                                            1h      1d
+├ ƒ /admin/webhook-queue                                            1h      1d
+├ ◐ /api-docs                                                       1h      1d
+├ ƒ /api/ab-tests
+├ ƒ /api/ab-tests/[id]/results
+├ ƒ /api/ab-tests/events
+├ ƒ /api/abandoned-cart
+├ ƒ /api/abandoned-cart/mine
+├ ƒ /api/abandoned-cart/stats
+├ ƒ /api/activity-log
+├ ƒ /api/admin-chat
+├ ƒ /api/admin-users
+├ ƒ /api/admin-users/[id]
+├ ƒ /api/admin/2fa/setup
+├ ƒ /api/admin/2fa/verify
+├ ƒ /api/admin/achievements
+├ ƒ /api/admin/agents/history
+├ ƒ /api/admin/ai-costs
+├ ƒ /api/admin/alerts-summary
+├ ƒ /api/admin/alerts/stock-critical
+├ ƒ /api/admin/analytics
+├ ƒ /api/admin/analytics/payment-methods
+├ ƒ /api/admin/backup/export
+├ ƒ /api/admin/chat
+├ ƒ /api/admin/chat/threads
+├ ƒ /api/admin/chat/threads/[threadId]/messages
+├ ƒ /api/admin/clear-data
+├ ƒ /api/admin/compliance-dashboard
+├ ƒ /api/admin/content-calendar
+├ ƒ /api/admin/cron-dead-letters
+├ ƒ /api/admin/cron-health
+├ ƒ /api/admin/dashboard
+├ ƒ /api/admin/dashboard/aggregates
+├ ƒ /api/admin/delivery-zones
+├ ƒ /api/admin/delivery/manual-assign
+├ ƒ /api/admin/delivery/network-toggle
+├ ƒ /api/admin/delivery/partners-live
+├ ƒ /api/admin/delivery/ranking
+├ ƒ /api/admin/delivery/routes
+├ ƒ /api/admin/delivery/routes/[routeId]/stops
+├ ƒ /api/admin/delivery/tracking
+├ ƒ /api/admin/demo-products
+├ ƒ /api/admin/doc-badges
+├ ƒ /api/admin/documents
+├ ƒ /api/admin/documents/[id]
+├ ƒ /api/admin/documents/[id]/audit
+├ ƒ /api/admin/documents/[id]/download
+├ ƒ /api/admin/documents/[id]/share
+├ ƒ /api/admin/documents/[id]/sign
+├ ƒ /api/admin/documents/[id]/versions
+├ ƒ /api/admin/documents/bulk
+├ ƒ /api/admin/documents/folders
+├ ƒ /api/admin/documents/folders/[id]
+├ ƒ /api/admin/documents/ping
+├ ƒ /api/admin/documents/share/[shareId]
+├ ƒ /api/admin/documents/templates
+├ ƒ /api/admin/documents/templates/generate
+├ ƒ /api/admin/driver-applications
+├ ƒ /api/admin/export-all
+├ ƒ /api/admin/gift-cards
+├ ƒ /api/admin/gift-cards/[id]/cancel
+├ ƒ /api/admin/gift-cards/issue-manual
+├ ƒ /api/admin/gift-cards/stats
+├ ƒ /api/admin/health
+├ ƒ /api/admin/image-bank
+├ ƒ /api/admin/import-data
+├ ƒ /api/admin/inventory/eoq-suggest
+├ ƒ /api/admin/inventory/reorder
+├ ƒ /api/admin/invitations
+├ ƒ /api/admin/invitations/[id]/revoke
+├ ƒ /api/admin/leads
+├ ƒ /api/admin/leads/funnel
+├ ƒ /api/admin/lives
+├ ƒ /api/admin/lives/[id]/end
+├ ƒ /api/admin/lives/[id]/products
+├ ƒ /api/admin/lives/[id]/start
+├ ƒ /api/admin/lives/[id]/stats
+├ ƒ /api/admin/log-error
+├ ƒ /api/admin/marketplace/category-images
+├ ƒ /api/admin/marketplace/category-order
+├ ƒ /api/admin/marketplace/product-order
+├ ƒ /api/admin/marketplace/store-construction
+├ ƒ /api/admin/marketplace/store-extras
+├ ƒ /api/admin/modifier-groups/[groupId]/options
+├ ƒ /api/admin/modifier-groups/[groupId]/options/reorder
+├ ƒ /api/admin/modifier-options/[optionId]
+├ ƒ /api/admin/monthly-report
+├ ƒ /api/admin/notifications/stream
+├ ƒ /api/admin/orders/[id]/payment-proof
+├ ƒ /api/admin/overview
+├ ƒ /api/admin/plan/checkout/confirm
+├ ƒ /api/admin/plan/checkout/stripe-session
+├ ƒ /api/admin/plan/mock-activate
+├ ƒ /api/admin/preferences
+├ ƒ /api/admin/products-with-modifiers-summary
+├ ƒ /api/admin/products/[id]/import-from-catalog
+├ ƒ /api/admin/products/[id]/modifier-groups
+├ ƒ /api/admin/products/[id]/modifier-groups/[groupId]
+├ ƒ /api/admin/products/[id]/modifier-groups/reorder
+├ ƒ /api/admin/products/bulk-import
+├ ƒ /api/admin/queues
+├ ƒ /api/admin/recetario
+├ ƒ /api/admin/recetario/[id]
+├ ƒ /api/admin/reviews/[reviewId]
+├ ƒ /api/admin/seed-data
+├ ƒ /api/admin/seed-peru-products
+├ ƒ /api/admin/setup-marketplace-store
+├ ƒ /api/admin/socio/members
+├ ƒ /api/admin/socio/stats
+├ ƒ /api/admin/sse
+├ ƒ /api/admin/stats
+├ ƒ /api/admin/stock-alerts
+├ ƒ /api/admin/store-analytics
+├ ƒ /api/admin/store-reviews
+├ ƒ /api/admin/subscriptions/stats
+├ ƒ /api/admin/sunat/config
+├ ƒ /api/admin/sunat/generate-invoice
+├ ƒ /api/admin/sunat/invoices
+├ ƒ /api/admin/sunat/lookup
+├ ƒ /api/admin/support/inbox
+├ ƒ /api/admin/today-summary
+├ ƒ /api/admin/transactions
+├ ƒ /api/admin/variant-catalog
+├ ƒ /api/admin/warehouse-transfers
+├ ƒ /api/admin/warehouses
+├ ƒ /api/admin/webhook-replay
+├ ƒ /api/admin/whatsapp-config
+├ ƒ /api/agents
+├ ƒ /api/agents/[taskId]
+├ ƒ /api/agents/execute
+├ ƒ /api/agents/health
+├ ƒ /api/ai-assistant
+├ ƒ /api/ai-assistant/ab-tests
+├ ƒ /api/ai-assistant/actions
+├ ƒ /api/ai-assistant/approvals
+├ ƒ /api/ai-assistant/business-calendar
+├ ƒ /api/ai-assistant/coach
+├ ƒ /api/ai-assistant/conversation
+├ ƒ /api/ai-assistant/decision-log
+├ ƒ /api/ai-assistant/feedback
+├ ƒ /api/ai-assistant/goals
+├ ƒ /api/ai-assistant/health
+├ ƒ /api/ai-assistant/history
+├ ƒ /api/ai/chat
+├ ○ /api/ai/status
+├ ƒ /api/ai/test
+├ ƒ /api/analytics/abc
+├ ƒ /api/analytics/anomalias
+├ ƒ /api/analytics/basket-analysis
+├ ƒ /api/analytics/cash-flow
+├ ƒ /api/analytics/clv
+├ ƒ /api/analytics/fiado-analytics
+├ ƒ /api/analytics/heatmap
+├ ƒ /api/analytics/kpis
+├ ƒ /api/analytics/kpis-v2
+├ ƒ /api/analytics/margins
+├ ƒ /api/analytics/peak-hours
+├ ƒ /api/analytics/predictions
+├ ƒ /api/analytics/rentabilidad
+├ ƒ /api/analytics/rfm
+├ ƒ /api/analytics/segments
+├ ƒ /api/analytics/track
+├ ƒ /api/analytics/ventas-heatmap
+├ ƒ /api/analytics/ventas-tendencia
+├ ƒ /api/api-keys
+├ ƒ /api/asistente/chat
+├ ƒ /api/assistant/chat
+├ ƒ /api/audit-trail
+├ ƒ /api/auth/bypass
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/customer-lookup
+├ ƒ /api/auth/customer/me
+├ ƒ /api/auth/customer/test-session
+├ ƒ /api/auth/dni
+├ ƒ /api/auth/facebook
+├ ƒ /api/auth/facebook/callback
+├ ƒ /api/auth/google
+├ ƒ /api/auth/google/callback
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/me
+├ ƒ /api/auth/oauth/callback
+├ ƒ /api/auth/otp/send
+├ ƒ /api/auth/otp/verify
+├ ƒ /api/auth/refresh
+├ ƒ /api/auth/resend-verification
+├ ƒ /api/auth/totp/enroll
+├ ƒ /api/auth/totp/verify
+├ ƒ /api/auth/verify-email
+├ ƒ /api/auto-reorder
+├ ƒ /api/auto-reorder/history
+├ ƒ /api/backup
+├ ƒ /api/backups
+├ ƒ /api/barcode-lookup
+├ ƒ /api/batches
+├ ƒ /api/batches/expired
+├ ƒ /api/batches/expiring
+├ ƒ /api/batches/stats
+├ ƒ /api/beta-feedback
+├ ƒ /api/billing/checkout
+├ ƒ /api/billing/meter
+├ ƒ /api/billing/metering/dashboard
+├ ƒ /api/billing/mp-cancel
+├ ƒ /api/billing/mp-checkout
+├ ƒ /api/billing/mp-subscribe
+├ ƒ /api/billing/mp-subscription-status
+├ ƒ /api/billing/mp-webhook
+├ ƒ /api/billing/portal
+├ ƒ /api/billing/usage
+├ ƒ /api/billing/webhook
+├ ƒ /api/billing/webhook-queue
+├ ƒ /api/billing/webhook-replay
+├ ƒ /api/billing/wire-up/ai-hook
+├ ƒ /api/billing/wire-up/sales-hook
+├ ƒ /api/birthday-coupons
+├ ƒ /api/buleje-assistant
+├ ƒ /api/bundles
+├ ƒ /api/bundles/[id]
+├ ƒ /api/campaigns
+├ ƒ /api/campaigns/audience-count
+├ ƒ /api/campaigns/notify
+├ ƒ /api/cart/[phone]
+├ ƒ /api/cash-registers
+├ ƒ /api/cash-registers/[id]
+├ ƒ /api/cash-registers/close-shift
+├ ƒ /api/cash-registers/movements
+├ ƒ /api/changelog
+├ ƒ /api/chat
+├ ƒ /api/chat/admin
+├ ƒ /api/chat/auto-reply
+├ ƒ /api/chat/conversations
+├ ƒ /api/chat/marketplace
+├ ƒ /api/chat/public
+├ ƒ /api/chat/public/stream
+├ ƒ /api/chef-ia
+├ ƒ /api/cierre-diario
+├ ƒ /api/cierre-diario/history
+├ ƒ /api/cierre-diario/preview
+├ ƒ /api/cms/media
+├ ƒ /api/cms/pages
+├ ƒ /api/cms/pages/[id]
+├ ƒ /api/cms/pages/[id]/blocks
+├ ƒ /api/cms/pages/[id]/publish
+├ ƒ /api/commission-rules
+├ ƒ /api/commissions
+├ ƒ /api/commissions/ledger
+├ ƒ /api/commissions/payouts-pending
+├ ƒ /api/commissions/refund
+├ ƒ /api/commissions/tier
+├ ƒ /api/compliance
+├ ƒ /api/compliance/access-log
+├ ƒ /api/compliance/breach-report
+├ ƒ /api/compliance/consent
+├ ƒ /api/compliance/data-delete
+├ ƒ /api/compliance/data-export
+├ ƒ /api/compliance/verify-chain
+├ ƒ /api/compras/cxp-calendar
+├ ƒ /api/compras/precio-comparativo
+├ ƒ /api/compras/recepciones
+├ ƒ /api/compras/sugerencias
+├ ƒ /api/contact
+├ ƒ /api/contratos
+├ ƒ /api/contratos/[id]
+├ ƒ /api/contratos/export
+├ ƒ /api/cotizaciones
+├ ƒ /api/cotizaciones/[id]
+├ ƒ /api/cotizaciones/[id]/convertir
+├ ƒ /api/coupons
+├ ƒ /api/coupons/[id]
+├ ƒ /api/coupons/active
+├ ƒ /api/coupons/spin
+├ ƒ /api/coupons/validate
+├ ƒ /api/credit/check
+├ ƒ /api/credit/create-plan
+├ ƒ /api/credit/pay
+├ ƒ /api/credit/profile/[customerId]
+├ ƒ /api/credit/score-history/[customerId]
+├ ƒ /api/cron/abandoned-cart
+├ ƒ /api/cron/agent-tasks
+├ ƒ /api/cron/ai-history-cleanup
+├ ƒ /api/cron/auto-backup
+├ ƒ /api/cron/auto-close-register
+├ ƒ /api/cron/auto-reorder-check
+├ ƒ /api/cron/batch-expiry-alerts
+├ ƒ /api/cron/birthday-coupons
+├ ƒ /api/cron/birthday-greetings
+├ ƒ /api/cron/category-margins-report
+├ ƒ /api/cron/churn-score
+├ ƒ /api/cron/cleanup-demos
+├ ƒ /api/cron/credit-overdue
+├ ƒ /api/cron/credit-reminders
+├ ƒ /api/cron/credit-score-recalc
+├ ƒ /api/cron/credit-weekly-report
+├ ƒ /api/cron/daily-deal-bundle
+├ ƒ /api/cron/daily-report
+├ ƒ /api/cron/daily-summary
+├ ƒ /api/cron/dead-stock-report
+├ ƒ /api/cron/delivery-offer-cascade
+├ ƒ /api/cron/demand-forecast
+├ ƒ /api/cron/dlq-retry
+├ ƒ /api/cron/event-dlq-replay
+├ ƒ /api/cron/expiry-discounts
+├ ƒ /api/cron/fiados-mark-vencido
+├ ƒ /api/cron/fiados-reminder
+├ ƒ /api/cron/finops-report
+├ ƒ /api/cron/first-purchase-coupon
+├ ƒ /api/cron/inactive-customers
+├ ƒ /api/cron/isolation-monitor
+├ ƒ /api/cron/loyalty-points-reminder
+├ ƒ /api/cron/market-alerts
+├ ƒ /api/cron/marketplace-abandoned-carts
+├ ƒ /api/cron/marketplace-anomaly-detection
+├ ƒ /api/cron/marketplace-daily-summary
+├ ƒ /api/cron/marketplace-sla-watchdog
+├ ƒ /api/cron/marketplace-sponsored-cleanup
+├ ƒ /api/cron/marketplace-stockout-predictions
+├ ƒ /api/cron/marketplace-weekly-report
+├ ƒ /api/cron/meter-to-stripe
+├ ƒ /api/cron/metering-rollup
+├ ƒ /api/cron/midday-push
+├ ƒ /api/cron/monthly-report
+├ ƒ /api/cron/mp-webhook-replay
+├ ƒ /api/cron/notifications
+├ ƒ /api/cron/price-drop-alerts
+├ ƒ /api/cron/recompra-coupon
+├ ƒ /api/cron/reminders
+├ ƒ /api/cron/reorder-reminders
+├ ƒ /api/cron/settle-commissions
+├ ƒ /api/cron/smoke-invitations
+├ ƒ /api/cron/socio/renew-cycles
+├ ƒ /api/cron/stock-alerts-notify
+├ ƒ /api/cron/sunat-retry
+├ ƒ /api/cron/superadmin-alerts
+├ ƒ /api/cron/supplier-scoring
+├ ƒ /api/cron/tier-discount-reconciliation
+├ ƒ /api/cron/trial-expiry
+├ ƒ /api/cron/trial-warning
+├ ƒ /api/cron/turnos-zombie-close
+├ ƒ /api/cron/vendor-identity-recheck
+├ ƒ /api/cron/weekly-email-report
+├ ƒ /api/cron/weekly-report
+├ ƒ /api/cron/yape-reconciliation
+├ ƒ /api/cron/zone-offers-push
+├ ƒ /api/csp-report
+├ ƒ /api/cupones/apply
+├ ƒ /api/cupones/validate
+├ ƒ /api/custom-kpis
+├ ƒ /api/customer-notifications
+├ ƒ /api/customer-preferences
+├ ƒ /api/customer/consent
+├ ƒ /api/customer/data
+├ ƒ /api/customer/intelligence
+├ ƒ /api/customer/me/delete
+├ ƒ /api/customer/me/export
+├ ƒ /api/customers
+├ ƒ /api/customers/[phone]
+├ ƒ /api/customers/[phone]/ai-analysis
+├ ƒ /api/customers/[phone]/estado-cuenta
+├ ƒ /api/customers/[phone]/favorite-products
+├ ƒ /api/customers/[phone]/fiado-resumen
+├ ƒ /api/customers/[phone]/last-purchase
+├ ƒ /api/customers/[phone]/orders
+├ ƒ /api/customers/[phone]/timeline
+├ ƒ /api/customers/at-risk
+├ ƒ /api/customers/geo
+├ ƒ /api/customers/health-scores
+├ ƒ /api/customers/inactive
+├ ƒ /api/customers/rfm
+├ ƒ /api/daily-digest
+├ ƒ /api/daily-report
+├ ƒ /api/debug-tenant-leak
+├ ƒ /api/delivery-slots
+├ ƒ /api/delivery/assignments
+├ ƒ /api/delivery/assignments/[id]/deliver
+├ ƒ /api/delivery/assignments/[id]/start-route
+├ ƒ /api/delivery/assignments/suggest
+├ ƒ /api/delivery/confirm
+├ ƒ /api/delivery/driver/[partnerId]
+├ ƒ /api/delivery/driver/[partnerId]/earnings
+├ ƒ /api/delivery/hot-zones
+├ ƒ /api/delivery/kpis
+├ ƒ /api/delivery/me/assignments/[id]
+├ ƒ /api/delivery/me/assignments/[id]/proof
+├ ƒ /api/delivery/me/current
+├ ƒ /api/delivery/me/earnings
+├ ƒ /api/delivery/me/login
+├ ƒ /api/delivery/me/me
+├ ƒ /api/delivery/me/nearby-stores
+├ ƒ /api/delivery/me/offers
+├ ƒ /api/delivery/me/online
+├ ƒ /api/delivery/me/password
+├ ƒ /api/delivery/me/ping
+├ ƒ /api/delivery/me/score
+├ ƒ /api/delivery/me/sos
+├ ƒ /api/delivery/me/streaks
+├ ƒ /api/delivery/my-orders
+├ ƒ /api/delivery/notify
+├ ƒ /api/delivery/offers/[id]/accept
+├ ƒ /api/delivery/offers/[id]/reject
+├ ƒ /api/delivery/partners
+├ ƒ /api/delivery/ranking
+├ ƒ /api/delivery/rate
+├ ƒ /api/delivery/tip/[orderId]
+├ ƒ /api/delivery/toggle-online
+├ ƒ /api/delivery/tracking/[orderId]
+├ ƒ /api/delivery/tracking/update
+├ ƒ /api/demand-prediction
+├ ƒ /api/demo/create
+├ ƒ /api/design-system/active
+├ ƒ /api/dev/reset-rate-limit
+├ ƒ /api/discount-rules
+├ ƒ /api/discount-rules/[id]
+├ ○ /api/docs/openapi.json
+├ ƒ /api/documentos-emitidos
+├ ƒ /api/email-automation
+├ ƒ /api/email/send
+├ ƒ /api/expenses
+├ ƒ /api/expenses/[id]
+├ ƒ /api/expenses/from-template/[id]
+├ ƒ /api/expenses/historial
+├ ƒ /api/expenses/summary
+├ ƒ /api/fiados
+├ ƒ /api/fiados/[id]
+├ ƒ /api/fiados/[id]/pagar
+├ ƒ /api/fiados/cobrar
+├ ƒ /api/fiados/cobro-masivo
+├ ƒ /api/finance/cashflow-rolling
+├ ƒ /api/forecasting/auto-reorder
+├ ƒ /api/forecasting/predict
+├ ƒ /api/forecasting/price-suggestions
+├ ƒ /api/forecasting/reorder-suggestions
+├ ƒ /api/fridge-scan
+├ ƒ /api/gift-cards/[id]
+├ ƒ /api/gift-cards/purchase
+├ ƒ /api/gift-cards/redeem
+├ ƒ /api/gift-cards/validate
+├ ƒ /api/goals
+├ ƒ /api/goals/[id]
+├ ƒ /api/guest/orders/create
+├ ƒ /api/guias-remision
+├ ƒ /api/guias-remision/[id]
+├ ƒ /api/guias-remision/exportar
+├ ƒ /api/guias-remision/resumen
+├ ƒ /api/health
+├ ƒ /api/health/deep
+├ ƒ /api/health/secrets
+├ ƒ /api/internal/audit-log
+├ ƒ /api/inventory-movements
+├ ƒ /api/inventory/conteo
+├ ƒ /api/inventory/conteo/[id]/close
+├ ƒ /api/inventory/conteo/[id]/items
+├ ƒ /api/inventory/declaracion
+├ ƒ /api/inventory/expiry
+├ ƒ /api/inventory/forecast
+├ ƒ /api/inventory/import-csv
+├ ƒ /api/inventory/kardex
+├ ƒ /api/inventory/stock-alerts
+├ ƒ /api/inventory/stock-prediction
+├ ƒ /api/invitations/[token]
+├ ƒ /api/invitations/[token]/accept
+├ ƒ /api/invite
+├ ƒ /api/invoices/[orderId]
+├ ƒ /api/invoices/boleta
+├ ƒ /api/invoices/emit
+├ ƒ /api/invoices/sunat
+├ ƒ /api/lead/capture
+├ ƒ /api/lives/[id]
+├ ƒ /api/lives/[id]/chat
+├ ƒ /api/lives/[id]/event
+├ ƒ /api/lives/active
+├ ƒ /api/locations
+├ ƒ /api/loyalty/[phone]
+├ ƒ /api/loyalty/[phone]/history
+├ ƒ /api/loyalty/auto-earn
+├ ƒ /api/loyalty/category-multipliers
+├ ƒ /api/loyalty/metrics
+├ ƒ /api/loyalty/redeem
+├ ƒ /api/loyalty/referral
+├ ƒ /api/loyalty/referral/stats
+├ ƒ /api/marketplace/activity-feed
+├ ƒ /api/marketplace/admin/overview
+├ ƒ /api/marketplace/analytics
+├ ƒ /api/marketplace/analytics/category-click
+├ ƒ /api/marketplace/analytics/track-batch
+├ ƒ /api/marketplace/anomalies
+├ ƒ /api/marketplace/anomalies/[id]/acknowledge
+├ ƒ /api/marketplace/autocomplete
+├ ƒ /api/marketplace/bestsellers
+├ ƒ /api/marketplace/cart/restore
+├ ƒ /api/marketplace/cart/save
+├ ƒ /api/marketplace/catalog
+├ ƒ /api/marketplace/catalog/sections
+├ ƒ /api/marketplace/categories
+├ ƒ /api/marketplace/checkout/payment-proof
+├ ƒ /api/marketplace/compare
+├ ƒ /api/marketplace/coupons
+├ ƒ /api/marketplace/coupons/[id]
+├ ƒ /api/marketplace/coupons/validate
+├ ƒ /api/marketplace/customer-tier
+├ ○ /api/marketplace/dashboard
+├ ƒ /api/marketplace/deals
+├ ƒ /api/marketplace/drivers/apply
+├ ƒ /api/marketplace/featured-near-me
+├ ƒ /api/marketplace/follow/[slug]
+├ ƒ /api/marketplace/kpis
+├ ƒ /api/marketplace/live-stats
+├ ƒ /api/marketplace/loyalty
+├ ƒ /api/marketplace/loyalty/rules
+├ ƒ /api/marketplace/loyalty/summary
+├ ƒ /api/marketplace/mi-cuenta/pedidos
+├ ƒ /api/marketplace/notifications
+├ ƒ /api/marketplace/notify-vendor
+├ ƒ /api/marketplace/orders
+├ ƒ /api/marketplace/orders/[id]
+├ ƒ /api/marketplace/orders/[id]/proof-url
+├ ƒ /api/marketplace/orders/bulk
+├ ƒ /api/marketplace/payment-proof
+├ ƒ /api/marketplace/payment/mercadopago/create-preference
+├ ƒ /api/marketplace/payment/mercadopago/webhook
+├ ƒ /api/marketplace/predictions
+├ ƒ /api/marketplace/predictions/compute
+├ ƒ /api/marketplace/products/[id]
+├ ƒ /api/marketplace/products/[id]/analytics
+├ ƒ /api/marketplace/products/[id]/analytics/track
+├ ƒ /api/marketplace/products/[id]/badges
+├ ƒ /api/marketplace/products/[id]/images
+├ ƒ /api/marketplace/products/[id]/reviews-detailed
+├ ƒ /api/marketplace/products/[id]/seo
+├ ƒ /api/marketplace/products/[id]/variants
+├ ƒ /api/marketplace/products/bulk-edit
+├ ƒ /api/marketplace/products/check-exists
+├ ƒ /api/marketplace/promo-banners
+├ ƒ /api/marketplace/push/subscribe
+├ ƒ /api/marketplace/qa/[productId]
+├ ƒ /api/marketplace/qa/[productId]/answer
+├ ƒ /api/marketplace/recetas
+├ ƒ /api/marketplace/recommendations/[productId]
+├ ƒ /api/marketplace/recommendations/for-me
+├ ƒ /api/marketplace/recommendations/personalized
+├ ƒ /api/marketplace/referral
+├ ƒ /api/marketplace/referral/apply
+├ ƒ /api/marketplace/reorder/last
+├ ƒ /api/marketplace/reverse-geocode
+├ ƒ /api/marketplace/reviews
+├ ƒ /api/marketplace/reviews-enhanced/[productId]
+├ ƒ /api/marketplace/reviews-enhanced/[productId]/helpful
+├ ƒ /api/marketplace/reviews/[reviewId]/vote
+├ ƒ /api/marketplace/reviews/upload
+├ ƒ /api/marketplace/search
+├ ƒ /api/marketplace/search/suggestions
+├ ƒ /api/marketplace/sponsored
+├ ƒ /api/marketplace/sponsored/[id]
+├ ƒ /api/marketplace/sponsored/[id]/click
+├ ○ /api/marketplace/stats/week
+├ ƒ /api/marketplace/storefront/locations
+├ ƒ /api/marketplace/storefront/payment-config
+├ ƒ /api/marketplace/stores
+├ ƒ /api/marketplace/stores/[slug]
+├ ƒ /api/marketplace/stores/[slug]/banners
+├ ƒ /api/marketplace/stores/[slug]/banners/[bannerId]
+├ ƒ /api/marketplace/stores/[slug]/branding
+├ ƒ /api/marketplace/stores/[slug]/live-viewers
+├ ƒ /api/marketplace/stores/[slug]/phone
+├ ƒ /api/marketplace/stores/[slug]/products
+├ ƒ /api/marketplace/stores/[slug]/reviews
+├ ƒ /api/marketplace/stores/[slug]/store-products
+├ ƒ /api/marketplace/stores/apply
+├ ƒ /api/marketplace/stores/check-slug
+├ ƒ /api/marketplace/stores/my/products
+├ ƒ /api/marketplace/stores/my/products/[id]
+├ ƒ /api/marketplace/stores/my/products/bulk
+├ ƒ /api/marketplace/stores/my/sync
+├ ƒ /api/marketplace/stores/register
+├ ƒ /api/marketplace/subcategories
+├ ƒ /api/marketplace/top-today
+├ ƒ /api/marketplace/ubigeo
+├ ƒ /api/marketplace/vendor/dashboard
+├ ƒ /api/me/addresses
+├ ƒ /api/me/credit-score
+├ ƒ /api/me/dashboard
+├ ƒ /api/me/favorites
+├ ƒ /api/me/notifications
+├ ƒ /api/me/order-history
+├ ƒ /api/me/referral-status
+├ ƒ /api/me/reorder/[orderId]
+├ ƒ /api/me/spending-summary
+├ ƒ /api/me/vendor-identity-acknowledge
+├ ƒ /api/mermas
+├ ƒ /api/message-templates
+├ ƒ /api/newsletter
+├ ƒ /api/notas-credito
+├ ƒ /api/notas-credito/[id]
+├ ƒ /api/notes
+├ ƒ /api/notification-center
+├ ƒ /api/notification-center/[id]/read
+├ ƒ /api/notification-center/read-all
+├ ƒ /api/notifications
+├ ƒ /api/notifications/subscribe
+├ ƒ /api/ocr/invoice
+├ ƒ /api/og
+├ ƒ /api/onboarding
+├ ƒ /api/onboarding/check-slug
+├ ƒ /api/onboarding/checkout
+├ ƒ /api/onboarding/complete
+├ ƒ /api/onboarding/import-catalog
+├ ƒ /api/onboarding/industry
+├ ƒ /api/onboarding/signup
+├ ƒ /api/one-click/create
+├ ƒ /api/openapi
+├ ƒ /api/orders
+├ ƒ /api/orders/[id]
+├ ƒ /api/orders/[id]/public
+├ ƒ /api/orders/[id]/tracking
+├ ƒ /api/orders/[id]/tracking/share
+├ ƒ /api/orders/bulk-status
+├ ƒ /api/orders/csv
+├ ƒ /api/orders/reorder
+├ ƒ /api/payables
+├ ƒ /api/payables/[id]
+├ ƒ /api/payables/[id]/payments
+├ ƒ /api/plan
+├ ƒ /api/platform-brand
+├ ƒ /api/platform-config/public
+├ ƒ /api/platform/activity
+├ ƒ /api/platform/admin-template
+├ ƒ /api/platform/stats
+├ ƒ /api/pos/metrics
+├ ƒ /api/pos/voice-interpret
+├ ƒ /api/prestamos
+├ ƒ /api/prestamos/[id]
+├ ƒ /api/prestamos/[id]/documentos
+├ ƒ /api/prestamos/[id]/pagar
+├ ƒ /api/prestamos/[id]/refinanciar
+├ ƒ /api/prestamos/cobros
+├ ƒ /api/prestamos/cron/mora
+├ ƒ /api/prestamos/cron/recordatorios
+├ ƒ /api/prestamos/exportar
+├ ƒ /api/prestamos/resumen
+├ ƒ /api/presupuesto
+├ ƒ /api/price-comparison
+├ ƒ /api/price-history
+├ ƒ /api/pricing/competitive
+├ ƒ /api/product-search
+├ ƒ /api/products
+├ ƒ /api/products/[id]
+├ ƒ /api/products/[id]/generate-image
+├ ƒ /api/products/[id]/modifiers
+├ ƒ /api/products/[id]/notify-restock
+├ ƒ /api/products/[id]/price-history
+├ ƒ /api/products/[id]/qr
+├ ƒ /api/products/bulk
+├ ƒ /api/products/bulk-price
+├ ƒ /api/products/catalog-import
+├ ƒ /api/products/co-purchased
+├ ƒ /api/products/csv
+├ ƒ /api/products/frecuentes
+├ ƒ /api/products/generate-description
+├ ƒ /api/products/import
+├ ƒ /api/products/ratings
+├ ƒ /api/products/search-national
+├ ƒ /api/products/share
+├ ƒ /api/products/stock-check
+├ ƒ /api/promotions
+├ ƒ /api/promotions/[id]
+├ ƒ /api/promotions/active
+├ ƒ /api/promotions/ai-suggest
+├ ƒ /api/proveedores/[id]/scorecard
+├ ƒ /api/public/documents/[token]
+├ ƒ /api/public/tracking/[token]
+├ ƒ /api/purchases
+├ ƒ /api/purchases/[id]
+├ ƒ /api/purchases/frequent-items
+├ ƒ /api/pwa-icon/[size]
+├ ƒ /api/recetas
+├ ƒ /api/recetas/[id]
+├ ƒ /api/recetas/[id]/cost-breakdown
+├ ƒ /api/recetas/[id]/produce
+├ ƒ /api/recetas/[id]/producir
+├ ƒ /api/recetas/produccion
+├ ƒ /api/recetas/publicas
+├ ƒ /api/recipes/[id]/cost
+├ ƒ /api/recommendations
+├ ƒ /api/recommender/hybrid
+├ ƒ /api/referrals
+├ ƒ /api/referrals/complete
+├ ƒ /api/referrals/generate
+├ ƒ /api/referrals/register
+├ ƒ /api/referrals/stores
+├ ƒ /api/referrals/stores/redeem
+├ ƒ /api/reminders
+├ ƒ /api/reniec/dni/[dni]
+├ ƒ /api/reniec/lookup
+├ ƒ /api/reorder-alerts
+├ ƒ /api/returns
+├ ƒ /api/reviews
+├ ƒ /api/reviews/[id]
+├ ƒ /api/sales
+├ ƒ /api/sales/[id]
+├ ƒ /api/sales/devolucion
+├ ƒ /api/sales/export
+├ ƒ /api/saved-filters
+├ ƒ /api/search
+├ ƒ /api/security-logs
+├ ƒ /api/settings
+├ ƒ /api/settings/feature-flags
+├ ƒ /api/shopping-feed
+├ ƒ /api/shopping-lists
+├ ƒ /api/shopping-lists/[id]
+├ ƒ /api/socio-buleje/cancel
+├ ƒ /api/socio-buleje/cashback
+├ ƒ /api/socio-buleje/status
+├ ƒ /api/socio-buleje/subscribe
+├ ƒ /api/squad/status
+├ ƒ /api/stats/live
+├ ƒ /api/stock-alerts
+├ ƒ /api/store-page/analytics
+├ ƒ /api/store-page/catalog
+├ ƒ /api/store-page/combos
+├ ƒ /api/store-page/customization
+├ ƒ /api/store-page/design
+├ ƒ /api/store-page/discounts
+├ ƒ /api/store-page/overrides
+├ ƒ /api/store-page/overrides/[productId]
+├ ƒ /api/store-page/promotions
+├ ƒ /api/store-page/promotions/[id]
+├ ƒ /api/store-page/public-catalog
+├ ƒ /api/store-page/public/[slug]
+├ ƒ /api/store-page/sections
+├ ƒ /api/store-page/visibility
+├ ƒ /api/store-page/visits
+├ ƒ /api/store-permissions
+├ ƒ /api/store-permissions/[id]
+├ ƒ /api/stripe-connect/onboard
+├ ƒ /api/stripe-connect/status
+├ ƒ /api/subscriptions
+├ ƒ /api/subscriptions/[id]
+├ ƒ /api/subscriptions/[id]/skip
+├ ƒ /api/suggestions
+├ ƒ /api/sunat/config
+├ ƒ /api/sunat/emit
+├ ƒ /api/sunat/emit-on-sale
+├ ƒ /api/sunat/invoices
+├ ƒ /api/sunat/invoices/[id]
+├ ƒ /api/sunat/lookup-ruc
+├ ƒ /api/sunat/status/[id]
+├ ƒ /api/sunat/void
+├ ƒ /api/superadmin/activity
+├ ƒ /api/superadmin/analytics
+├ ƒ /api/superadmin/analytics/executive
+├ ƒ /api/superadmin/audit
+├ ƒ /api/superadmin/auth
+├ ƒ /api/superadmin/banners
+├ ƒ /api/superadmin/banners/copy-suggest
+├ ƒ /api/superadmin/brand
+├ ƒ /api/superadmin/churn
+├ ƒ /api/superadmin/churn/[tenantSlug]
+├ ƒ /api/superadmin/churn/playbooks
+├ ƒ /api/superadmin/commissions
+├ ƒ /api/superadmin/compliance/data-export
+├ ƒ /api/superadmin/costs
+├ ƒ /api/superadmin/cron-health
+├ ƒ /api/superadmin/dashboard/tenant-growth
+├ ƒ /api/superadmin/dashboard/widgets
+├ ƒ /api/superadmin/design-system
+├ ƒ /api/superadmin/env-status
+├ ƒ /api/superadmin/health
+├ ƒ /api/superadmin/image-bank
+├ ƒ /api/superadmin/image-bank/[categoryId]
+├ ƒ /api/superadmin/image-bank/[categoryId]/items
+├ ƒ /api/superadmin/image-bank/[categoryId]/items/[itemId]
+├ ƒ /api/superadmin/impersonate
+├ ƒ /api/superadmin/impersonate/exit
+├ ƒ /api/superadmin/marketplace/categories
+├ ƒ /api/superadmin/marketplace/category-images
+├ ƒ /api/superadmin/marketplace/coupons
+├ ƒ /api/superadmin/marketplace/orders
+├ ƒ /api/superadmin/marketplace/suppliers
+├ ƒ /api/superadmin/marketplace/suppliers/[id]/approve
+├ ƒ /api/superadmin/marketplace/suppliers/[id]/reject
+├ ƒ /api/superadmin/notifications
+├ ƒ /api/superadmin/notifications/inbox
+├ ƒ /api/superadmin/orders
+├ ƒ /api/superadmin/page-heroes
+├ ƒ /api/superadmin/page-heroes/[id]
+├ ƒ /api/superadmin/payment-approvals
+├ ƒ /api/superadmin/payment-approvals/[id]/approve
+├ ƒ /api/superadmin/payment-approvals/[id]/reject
+├ ƒ /api/superadmin/payment-proofs
+├ ƒ /api/superadmin/payment-proofs/[id]/approve
+├ ƒ /api/superadmin/payment-proofs/[id]/reject
+├ ƒ /api/superadmin/platform-config
+├ ƒ /api/superadmin/platform-config/upload
+├ ƒ /api/superadmin/purge
+├ ƒ /api/superadmin/recetario
+├ ƒ /api/superadmin/recetario/[id]
+├ ƒ /api/superadmin/repartidores
+├ ƒ /api/superadmin/repartidores/impersonate
+├ ƒ /api/superadmin/roadmap/items
+├ ƒ /api/superadmin/roadmap/items/[itemId]/status
+├ ƒ /api/superadmin/security
+├ ƒ /api/superadmin/security/posture
+├ ƒ /api/superadmin/security/sessions
+├ ƒ /api/superadmin/security/sessions/revoke
+├ ƒ /api/superadmin/settings
+├ ƒ /api/superadmin/slo
+├ ƒ /api/superadmin/stores
+├ ƒ /api/superadmin/stores/[slug]/category-order
+├ ƒ /api/superadmin/stores/health
+├ ƒ /api/superadmin/stores/health-field
+├ ƒ /api/superadmin/stores/health-snapshot
+├ ƒ /api/superadmin/stores/operations
+├ ƒ /api/superadmin/tenants
+├ ƒ /api/superadmin/tenants/[slug]
+├ ƒ /api/superadmin/tenants/[slug]/delete
+├ ƒ /api/superadmin/tenants/[slug]/extend-trial
+├ ƒ /api/superadmin/tenants/[slug]/pending-orders
+├ ƒ /api/superadmin/tenants/[slug]/products
+├ ƒ /api/superadmin/tenants/[slug]/purge
+├ ƒ /api/superadmin/tenants/[slug]/reset-password
+├ ƒ /api/superadmin/tenants/growth
+├ ƒ /api/superadmin/tenants/pending-counts
+├ ƒ /api/superadmin/totp/enroll
+├ ƒ /api/superadmin/totp/verify
+├ ƒ /api/superadmin/upload
+├ ƒ /api/superadmin/variant-catalog
+├ ƒ /api/superadmin/variant-catalog/[id]
+├ ƒ /api/superadmin/variant-catalog/[id]/options
+├ ƒ /api/superadmin/variant-catalog/options/[optionId]
+├ ƒ /api/superadmin/vendor-applications
+├ ƒ /api/superadmin/vendor-applications/[id]
+├ ƒ /api/superadmin/vendor-applications/[id]/review
+├ ƒ /api/superadmin/vendor-applications/stats
+├ ƒ /api/superadmin/vendor-grace
+├ ƒ /api/superadmin/vendor-health
+├ ƒ /api/superadmin/vendor-identity
+├ ƒ /api/supplier-evaluations
+├ ƒ /api/supplier-returns
+├ ƒ /api/supplier-returns/[id]
+├ ƒ /api/supplier/alerts
+├ ƒ /api/supplier/auth
+├ ƒ /api/supplier/catalog
+├ ƒ /api/supplier/dashboard
+├ ƒ /api/supplier/offers
+├ ƒ /api/supplier/orders
+├ ƒ /api/supplier/rating
+├ ƒ /api/supplier/register
+├ ƒ /api/suppliers
+├ ƒ /api/suppliers/[id]
+├ ƒ /api/support/tickets
+├ ƒ /api/surveys
+├ ƒ /api/tags
+├ ƒ /api/tasks
+├ ƒ /api/tasks/[id]
+├ ƒ /api/tenant/custom-domain
+├ ƒ /api/tenant/custom-domain/verify
+├ ƒ /api/tenants/resolve
+├ ƒ /api/track/[orderId]
+├ ƒ /api/transfers
+├ ƒ /api/treasury/cuentas
+├ ƒ /api/treasury/movimientos
+├ ƒ /api/treasury/resumen
+├ ƒ /api/treasury/transferencias
+├ ƒ /api/turnos
+├ ƒ /api/turnos/[id]/cerrar
+├ ƒ /api/turnos/[id]/summary
+├ ƒ /api/turnos/activo
+├ ƒ /api/upload
+├ ƒ /api/v1/products
+├ ƒ /api/v1/products/admin
+├ ƒ /api/vendor/registration
+├ ƒ /api/visitor-welcome
+├ ƒ /api/voice-order
+├ ƒ /api/webhooks/config
+├ ƒ /api/webhooks/nubefact
+├ ƒ /api/webhooks/whatsapp
+├ ƒ /api/whatsapp/concierge
+├ ƒ /api/whatsapp/concierge/test
+├ ƒ /api/whatsapp/voice
+├ ƒ /api/whatsapp/webhook
+├ ƒ /api/whatsapp/yape-capture
+├ ƒ /api/wholesale/catalog
+├ ƒ /api/wholesale/orders
+├ ƒ /api/wholesale/orders/[id]
+├ ƒ /api/wholesale/pricing
+├ ƒ /api/workers/[job]
+├ ◐ /asistente                                                      1h      1d
+├ ◐ /ayuda                                                          1h      1d
+├ ◐ /buscar                                                         1h      1d
+├ ◐ /checkout                                                       1h      1d
+├ ◐ /checkout/auth                                                  1h      1d
+├ ◐ /checkout/confirmar                                             1h      1d
+├ ◐ /checkout/datos                                                 1h      1d
+├ ◐ /checkout/entrega                                               1h      1d
+├ ◐ /cms/[slug]
+│ └ /cms/[slug]
+├ ◐ /comprar-invitado                                               1h      1d
+├ ◐ /cuenta                                                         1h      1d
+├ ◐ /cuenta/cupones                                                 1h      1d
+├ ◐ /cuenta/direcciones                                             1h      1d
+├ ◐ /cuenta/gift-cards                                              1h      1d
+├ ◐ /cuenta/notificaciones                                          1h      1d
+├ ◐ /cuenta/pagos                                                   1h      1d
+├ ◐ /cuenta/pedidos                                                 1h      1d
+├ ◐ /cuenta/pedidos/[id]/confirmacion
+│ └ /cuenta/pedidos/[id]/confirmacion
+├ ◐ /cuenta/pedidos/[id]/seguimiento
+│ └ /cuenta/pedidos/[id]/seguimiento
+├ ◐ /cuenta/preferencias                                            1h      1d
+├ ◐ /cuenta/socio-buleje                                            1h      1d
+├ ◐ /cuenta/suscripciones                                           1h      1d
+├ ◐ /d/[token]
+│ └ /d/[token]
+├ ◐ /delivery                                                       1h      1d
+├ ◐ /delivery-app                                                   1h      1d
+├ ƒ /delivery-app/ganancias                                         1h      1d
+├ ◐ /delivery-app/login                                             1h      1d
+├ ◐ /delivery-app/mapa                                              1h      1d
+├ ◐ /delivery-app/oferta/[offerId]
+│ └ /delivery-app/oferta/[offerId]
+├ ◐ /delivery-app/pedido/[id]
+│ └ /delivery-app/pedido/[id]
+├ ◐ /delivery-app/perfil                                            1h      1d
+├ ◐ /delivery/[partnerId]
+│ └ /delivery/[partnerId]
+├ ƒ /demo                                                           1h      1d
+├ ◐ /descubri                                                       1h      1d
+├ ◐ /design-system                                                  1h      1d
+├ ◐ /design-system/a11y                                             1h      1d
+├ ƒ /design-system/admin                                            1h      1d
+├ ◐ /design-system/charts-v2                                        1h      1d
+├ ◐ /design-system/customer                                         1h      1d
+├ ◐ /design-system/illustrations                                    1h      1d
+├ ƒ /design-system/pucallpa                                         1h      1d
+├ ◐ /favoritos                                                      1h      1d
+├ ◐ /guias                                                          1h      1d
+├ ◐ /guias/[slug]                                                   1h      1d
+│ ├ /guias/[slug]                                                   1h      1d
+│ ├ /guias/armar-despensa-para-el-mes                               1h      1d
+│ ├ /guias/recetas-rapidas-ingredientes-pucallpa                    1h      1d
+│ └ [+13 more paths]
+├ ƒ /icon
+├ ◐ /invitar/[token]
+│ └ /invitar/[token]
+├ ƒ /invite                                                         1h      1d
+├ ƒ /manifest.webmanifest
+├ ◐ /marketplace                                                    1h      1d
+├ ◐ /marketplace/[slug]
+│ └ /marketplace/[slug]
+├ ◐ /marketplace/[slug]/producto/[productId]
+│ └ /marketplace/[slug]/producto/[productId]
+├ ◐ /marketplace/apply                                              1h      1d
+├ ◐ /marketplace/buscar                                             1h      1d
+├ ◐ /marketplace/calificar-entrega                                  1h      1d
+├ ◐ /marketplace/carrito                                            1h      1d
+├ ◐ /marketplace/categoria/[slug]                                   1h      1d
+│ ├ /marketplace/categoria/[slug]                                   1h      1d
+│ ├ /marketplace/categoria/limpieza-hogar                           1h      1d
+│ ├ /marketplace/categoria/abarrotes                                1h      1d
+│ └ [+6 more paths]
+├ ◐ /marketplace/como-pagar                                         1h      1d
+├ ◐ /marketplace/comparar                                           1h      1d
+├ ◐ /marketplace/en-vivo                                            1h      1d
+├ ◐ /marketplace/en-vivo/[liveId]
+│ └ /marketplace/en-vivo/[liveId]
+├ ◐ /marketplace/explorar                                           1m      1h
+├ ◐ /marketplace/favoritos                                          1h      1d
+├ ◐ /marketplace/gift-cards                                         1h      1d
+├ ◐ /marketplace/gift-cards/comprar                                 1h      1d
+├ ◐ /marketplace/gift-cards/confirmacion                            1h      1d
+├ ◐ /marketplace/mi-cuenta                                          1h      1d
+├ ◐ /marketplace/mi-cuenta/cupones                                  1h      1d
+├ ◐ /marketplace/mi-cuenta/direcciones                              1h      1d
+├ ◐ /marketplace/mi-cuenta/favoritos                                1h      1d
+├ ◐ /marketplace/mi-cuenta/historial                                1h      1d
+├ ◐ /marketplace/mi-cuenta/pedidos                                  1h      1d
+├ ◐ /marketplace/mi-cuenta/privacidad                               1h      1d
+├ ◐ /marketplace/negocios                                           1h      1d
+├ ◐ /marketplace/ofertas                                            1h      1d
+├ ◐ /marketplace/para-vos                                           1h      1d
+├ ◐ /marketplace/payment-result                                     1h      1d
+├ ◐ /marketplace/recetas                                            1h      1d
+├ ◐ /marketplace/recetas/[id]
+│ └ /marketplace/recetas/[id]
+├ ◐ /marketplace/registrar                                          1h      1d
+├ ◐ /marketplace/repartidor                                         1h      1d
+├ ◐ /marketplace/repartidor/bienvenida                              1h      1d
+├ ◐ /marketplace/repartidor/ganancias                               1h      1d
+├ ◐ /mi-credito                                                     1h      1d
+├ ◐ /mi-panel                                                       1h      1d
+├ ◐ /mis-pedidos                                                    1h      1d
+├ ◐ /negocios                                                       5m     15m
+├ ◐ /offline                                                        1h      1d
+├ ◐ /onboarding                                                     1h      1d
+├ ◐ /panel                                                          1h      1d
+├ ○ /pedido                                                         1h      1d
+├ ◐ /pedido/[id]
+│ └ /pedido/[id]
+├ ◐ /pedido/[id]/gracias
+│ └ /pedido/[id]/gracias
+├ ◐ /pedido/[id]/recibo
+│ └ /pedido/[id]/recibo
+├ ◐ /planes                                                         1h      1d
+├ ◐ /plataforma                                                     1h      1d
+├ ƒ /plataforma/opengraph-image-qzycbh
+├ ◐ /playground/ronda-4                                             1h      1d
+├ ◐ /precios                                                        1h      1d
+├ ◐ /pricing                                                        1h      1d
+├ ◐ /privacidad                                                     1h      1d
+├ ◐ /puntos                                                         1h      1d
+├ ◐ /recetas                                                        1h      1d
+├ ƒ /registro                                                       1h      1d
+├ ◐ /repartidores                                                   1h      1d
+├ ○ /robots.txt
+├ ◐ /saas                                                           1h      1d
+├ ◐ /setup                                                          1h      1d
+├ ◐ /signup                                                         1h      1d
+├ ƒ /sitemap.xml
+├ ◐ /socio-buleje                                                   1h      1d
+├ ◐ /superadmin                                                     1h      1d
+├ ◐ /superadmin/activity                                            1h      1d
+├ ◐ /superadmin/analytics                                           1h      1d
+├ ◐ /superadmin/banco-imagenes                                      1h      1d
+├ ◐ /superadmin/banners                                             1h      1d
+├ ◐ /superadmin/billing                                             1h      1d
+├ ◐ /superadmin/configuracion                                       1h      1d
+├ ◐ /superadmin/control-center                                      1h      1d
+├ ◐ /superadmin/dashboard                                           1h      1d
+├ ◐ /superadmin/design-system                                       1h      1d
+├ ◐ /superadmin/dlq                                                 1h      1d
+├ ◐ /superadmin/health                                              1h      1d
+├ ◐ /superadmin/login                                               1h      1d
+├ ◐ /superadmin/marca                                               1h      1d
+├ ◐ /superadmin/marketplace                                         1h      1d
+├ ◐ /superadmin/marketplace/category-images                         1h      1d
+├ ◐ /superadmin/marketplace/suppliers                               1h      1d
+├ ◐ /superadmin/orders                                              1h      1d
+├ ◐ /superadmin/pagos-pendientes                                    1h      1d
+├ ◐ /superadmin/pagos-yape                                          1h      1d
+├ ◐ /superadmin/plantilla                                           1h      1d
+├ ◐ /superadmin/recetario                                           1h      1d
+├ ◐ /superadmin/repartidores                                        1h      1d
+├ ◐ /superadmin/roadmap                                             1h      1d
+├ ◐ /superadmin/security                                            1h      1d
+├ ◐ /superadmin/settings                                            1h      1d
+├ ◐ /superadmin/setup                                               1h      1d
+├ ◐ /superadmin/sitemap                                             1h      1d
+├ ◐ /superadmin/slo                                                 1h      1d
+├ ◐ /superadmin/stores                                              1h      1d
+├ ◐ /superadmin/tenants                                             1h      1d
+├ ◐ /superadmin/variant-catalog                                     1h      1d
+├ ◐ /superadmin/vendor-applications                                 1h      1d
+├ ◐ /superadmin/vendor-health                                       1h      1d
+├ ◐ /supplier                                                       1h      1d
+├ ◐ /supplier/catalogo                                              1h      1d
+├ ◐ /supplier/dashboard                                             1h      1d
+├ ◐ /supplier/registrar                                             1h      1d
+├ ◐ /t/[slug]
+│ └ /t/[slug]
+├ ◐ /t/[slug]/admin
+│ └ /t/[slug]/admin
+├ ◐ /t/[slug]/seguimiento/[token]
+│ └ /t/[slug]/seguimiento/[token]
+├ ◐ /t/[slug]/tienda
+│ └ /t/[slug]/tienda
+├ ◐ /terminos                                                       1h      1d
+├ ◐ /tienda                                                        15m      1d
+├ ◐ /tienda/[slug]
+│ └ /tienda/[slug]
+├ ◐ /tienda/categoria/[categoryId]                                  1h      1d
+│ ├ /tienda/categoria/[categoryId]                                  1h      1d
+│ ├ /tienda/categoria/frutas-verduras                               1h      1d
+│ ├ /tienda/categoria/abarrotes                                     1h      1d
+│ └ [+4 more paths]
+├ ◐ /tiendas                                                        1m      1h
+├ ◐ /tiendas/[zona]                                                 1m      1h
+│ ├ /tiendas/[zona]                                                 1m      1h
+│ ├ /tiendas/centro                                                 1m      1h
+│ ├ /tiendas/manantay                                               1m      1h
+│ └ [+8 more paths]
+├ ◐ /tracking                                                       1h      1d
+├ ◐ /tracking/[orderId]
+│ └ /tracking/[orderId]
+├ ƒ /vender                                                         1h      1d
+├ ◐ /vender/mi-tienda                                               1h      1d
+├ ◐ /vender/registro                                                1h      1d
+├ ƒ /vender/registro/completo                                       1h      1d
+├ ◐ /venta/[id]/recibo
+│ └ /venta/[id]/recibo
+├ ◐ /zona/[ciudad]                                                  1h      1d
+│ ├ /zona/[ciudad]                                                  1h      1d
+│ ├ /zona/pucallpa                                                  1h      1d
+│ ├ /zona/iquitos                                                   1h      1d
+│ └ [+13 more paths]
+├ ◐ /zona/[ciudad]/[categoria]                                      1h      1d
+│ ├ /zona/[ciudad]/[categoria]                                      1h      1d
+│ ├ /zona/pucallpa/[categoria]
+│ ├ /zona/pucallpa/frutas-verduras                                  1h      1d
+│ └ [+103 more paths]
+├ ◐ /zona/[ciudad]/distrito/[distrito]                              1h      1d
+│ ├ /zona/[ciudad]/distrito/[distrito]                              1h      1d
+│ ├ /zona/pucallpa/distrito/[distrito]
+│ ├ /zona/pucallpa/distrito/calleria                                1h      1d
+│ └ [+74 more paths]
+├ ◐ /zona/[ciudad]/distrito/[distrito]/[categoria]                  1h      1d
+│ ├ /zona/[ciudad]/distrito/[distrito]/[categoria]                  1h      1d
+│ ├ /zona/pucallpa/distrito/[distrito]/[categoria]
+│ ├ /zona/pucallpa/distrito/calleria/[categoria]
+│ └ [+440 more paths]
+└ ◐ /zona/[ciudad]/producto/[slug]                                  5m     15m
+  ├ /zona/[ciudad]/producto/[slug]                                  5m     15m
+  ├ /zona/pucallpa/producto/[slug]
+  └ /zona/pucallpa/producto/arroz-extra                             5m     15m
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)             prerendered as static content
+◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
+ƒ  (Dynamic)            server-rendered on demand
+

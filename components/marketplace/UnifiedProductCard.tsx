@@ -1,5 +1,10 @@
 "use client";
+"use memo";
 
+// React Compiler annotation (audit perf 2026-05-19): opt-in al auto-memo
+// del compiler. Este componente se renderiza decenas de veces por página
+// de catálogo (UnifiedProductCard es la card principal del marketplace).
+// El compiler auto-memoiza props + hooks, reduce re-renders innecesarios.
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
