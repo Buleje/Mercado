@@ -6,7 +6,7 @@
  * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { getOrSet } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
@@ -18,50 +18,17 @@ type BadgeDetail = {
 };
 
 async function computeBadges(productId: number, tenantId: string, lat?: number, lng?: number) {
-  const [product, storeProduct, topSellers, _avgRating] = await Promise.all([
-    prisma.product.findFirst({
-      where: { id: productId, tenantId, deletedAt: null },
-      select: { id: true, stock: true },
-    }),
-    prisma.storeProduct.findFirst({
-      where: { productId, isActive: true },
-      select: {
-        store: {
-          select: { rating: true, zone: true },
-        },
-      },
-    }),
-    // Top 5 productos por unidades vendidas en últimos 30 días
-    prisma.orderItem.groupBy({
-      by: ["productId"],
-      where: {
-        order: {
-          tenantId,
-          deletedAt: null,
-          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-        },
-      },
-      _sum: { quantity: true },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: 5,
-    }),
-    prisma.review.aggregate({
-      where: { productId, tenantId, status: "approved", deletedAt: null },
-      _avg: { rating: true },
-    }),
-  ]);
+  // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.getBadgeData
+  // (5 queries paralelas encapsuladas + select especifico).
+  const { product, storeRating, storeZone, topSellerIds, maxProductId } =
+    await MarketplaceProductsDB.getBadgeData(tenantId, productId);
 
   const badges: string[] = [];
   const details: BadgeDetail = {};
 
-  // Badge "new": proxy via ID — producto en el top 10% más reciente del tenant
-  // Product no tiene createdAt; el ID autoincremental sirve como proxy de antigüedad
-  const maxProductAgg = await prisma.product.aggregate({
-    where: { tenantId, deletedAt: null },
-    _max: { id: true },
-  });
-  const maxId = maxProductAgg._max.id ?? 0;
-  if (product && maxId > 0 && product.id >= maxId * 0.9) {
+  // Badge "new": proxy via ID — producto en el top 10% mas reciente del tenant.
+  // Product no tiene createdAt; el ID autoincremental sirve como proxy de antiguedad.
+  if (product && maxProductId > 0 && product.id >= maxProductId * 0.9) {
     badges.push("new");
   }
 
@@ -71,18 +38,16 @@ async function computeBadges(productId: number, tenantId: string, lat?: number, 
     details.lowStock = product.stock;
   }
 
-  // Badge "best-seller": está en el top 5 más vendidos del tenant en 30 días
-  const isBestSeller = topSellers.some((row) => row.productId === productId);
-  if (isBestSeller) badges.push("best-seller");
+  // Badge "best-seller": esta en el top 5 mas vendidos del tenant en 30 dias.
+  if (topSellerIds.includes(productId)) badges.push("best-seller");
 
-  // Badge "verified": tienda con rating > 4.5
-  if (storeProduct?.store && storeProduct.store.rating > 4.5) {
+  // Badge "verified": tienda con rating > 4.5.
+  if (storeRating != null && storeRating > 4.5) {
     badges.push("verified");
   }
 
-  // Badge "fast-shipping": solo si el cliente envía coordenadas
-  if (lat !== undefined && lng !== undefined && storeProduct?.store?.zone) {
-    // Heurística simple: si la tienda tiene zona asignada, se asume entrega rápida local
+  // Badge "fast-shipping": solo si el cliente envia coordenadas y store tiene zona.
+  if (lat !== undefined && lng !== undefined && storeZone) {
     badges.push("fast-shipping");
   }
 
@@ -104,7 +69,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // mismo productId existe en distintos tenants. La cache también quedaba
     // cross-contaminada por la key.
     // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.getTenantById.
-    const { MarketplaceProductsDB } = await import("@/lib/db/marketplace-products.db");
     const tenantId = await MarketplaceProductsDB.getTenantById(productId);
     if (!tenantId) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });

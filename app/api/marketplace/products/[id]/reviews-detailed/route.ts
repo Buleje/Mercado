@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
@@ -32,33 +32,10 @@ const PostSchema = z.object({
 
 type RouteParams = { params: Promise<{ id: string }> };
 
+// Audit project-wide 2026-05-19: computeSummary migrado a
+// MarketplaceProductsDB.getReviewsSummary.
 async function computeSummary(productId: number, tenantId: string) {
-  const [agg, distribution] = await Promise.all([
-    prisma.review.aggregate({
-      where: { productId, tenantId, status: "approved", deletedAt: null },
-      _avg: { rating: true, qualityRating: true, priceRating: true, deliveryRating: true },
-      _count: { rating: true },
-    }),
-    prisma.review.groupBy({
-      by: ["rating"],
-      where: { productId, tenantId, status: "approved", deletedAt: null },
-      _count: { rating: true },
-    }),
-  ]);
-
-  const ratingDist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  for (const row of distribution) {
-    ratingDist[row.rating] = row._count.rating;
-  }
-
-  return {
-    avgRating: Math.round((agg._avg.rating ?? 0) * 10) / 10,
-    avgQuality: Math.round((agg._avg.qualityRating ?? 0) * 10) / 10,
-    avgPrice: Math.round((agg._avg.priceRating ?? 0) * 10) / 10,
-    avgDelivery: Math.round((agg._avg.deliveryRating ?? 0) * 10) / 10,
-    totalReviews: agg._count.rating,
-    ratingDistribution: ratingDist,
-  };
+  return MarketplaceProductsDB.getReviewsSummary(tenantId, productId);
 }
 
 export async function GET(req: NextRequest, { params }: RouteParams) {
@@ -74,7 +51,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // para evitar que un cliente con header falsificado lea reseñas de otro
     // tenant. Esto es consistente con el POST de este mismo endpoint.
     // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.getTenantById.
-    const { MarketplaceProductsDB } = await import("@/lib/db/marketplace-products.db");
     const tenantId = await MarketplaceProductsDB.getTenantById(productId);
     if (!tenantId) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
@@ -89,27 +65,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const summaryKey = `marketplace:product:${productId}:reviews-summary:${tenantId}`;
 
     const [reviews, summary] = await Promise.all([
-      prisma.review.findMany({
-        where: { productId, tenantId, status: "approved", deletedAt: null },
-        select: {
-          id: true,
-          name: true,
-          text: true,
-          rating: true,
-          qualityRating: true,
-          priceRating: true,
-          deliveryRating: true,
-          photosJson: true,
-          verified: true,
-          helpfulCount: true,
-          adminReply: true,
-          adminReplyDate: true,
-          date: true,
-        },
-        orderBy: { date: "desc" },
-        take: limit + 1,
-        ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-      }),
+      MarketplaceProductsDB.getApprovedReviewsPage(tenantId, productId, { cursor, limit }),
       getOrSet(summaryKey, 120, () => computeSummary(productId, tenantId)),
     ]);
 
@@ -144,7 +100,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // Un cliente no debe poder dejar review escrita contra un tenant
     // arbitrario forzando el header. El producto define a qué tenant pertenece.
     // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.getTenantById.
-    const { MarketplaceProductsDB } = await import("@/lib/db/marketplace-products.db");
     const tenantId = await MarketplaceProductsDB.getTenantById(productId);
     if (!tenantId) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
@@ -183,40 +138,18 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const customerPhone = sessionPayload.customerId;
     const { customerName, ...reviewFields } = parsed.data;
 
-    // Verificar si el cliente tiene una orden con este producto
-    const existingOrder = await prisma.order.findFirst({
-      where: {
-        tenantId,
-        customerPhone,
-        deletedAt: null,
-        items: { some: { productId } },
-      },
-      select: { id: true },
-    });
-    const verified = !!existingOrder;
-
-    const review = await prisma.review.create({
-      data: {
-        id: crypto.randomUUID(),
-        name: customerName,
-        text: reviewFields.text,
-        rating: reviewFields.rating,
-        qualityRating: reviewFields.qualityRating ?? null,
-        priceRating: reviewFields.priceRating ?? null,
-        deliveryRating: reviewFields.deliveryRating ?? null,
-        photosJson: reviewFields.photosJson ?? null,
-        productId,
-        tenantId,
-        phone: customerPhone,
-        status: "pending",
-        verified,
-        date: new Date(),
-      },
-      select: {
-        id: true, name: true, text: true, rating: true,
-        qualityRating: true, priceRating: true, deliveryRating: true,
-        verified: true, status: true, date: true,
-      },
+    // Audit project-wide 2026-05-19: createPendingReview encapsula la
+    // verificacion de purchase + create con status="pending" + verified.
+    const review = await MarketplaceProductsDB.createPendingReview(tenantId, {
+      productId,
+      customerPhone,
+      customerName,
+      text: reviewFields.text,
+      rating: reviewFields.rating,
+      qualityRating: reviewFields.qualityRating ?? null,
+      priceRating: reviewFields.priceRating ?? null,
+      deliveryRating: reviewFields.deliveryRating ?? null,
+      photosJson: reviewFields.photosJson ?? null,
     });
 
     invalidateByPrefix(`marketplace:product:${productId}:reviews`);
