@@ -353,9 +353,10 @@ export default function UnifiedProductCard({
       onMouseLeave={onMouseLeave}
     >
       {/* ── Zona imagen ────────────────────────────────────────────────────────
-          Mobile (xs): wrapper 96×96 con shrink-0 a la izquierda.
+          Mobile (xs): wrapper 144×144 con shrink-0 a la izquierda — imagen
+          grande y prominente para que el cliente vea bien el producto.
           Desktop (sm+): wrapper full-width aspect-[4/3] como siempre. */}
-      <div className="relative w-28 sm:w-full shrink-0 sm:shrink">
+      <div className="relative w-36 sm:w-full shrink-0 sm:shrink">
         {/* Brandon 2026-05-18 v3: en MOBILE el Link a detalles queda inerte
             (`pointer-events-none`) — el cliente que toca el card ya no se va
             a /producto/[slug]. La única acción mobile es el botón "Agregar"
@@ -368,15 +369,18 @@ export default function UnifiedProductCard({
           tabIndex={-1}
           aria-hidden="true"
         >
-          {/* Mobile: aspect-square (112×112). Desktop: aspect-[4/3] landscape. */}
-          <div className="relative aspect-square sm:aspect-[4/3] h-full sm:h-auto overflow-hidden bg-white dark:bg-gray-900">
+          {/* Mobile: aspect-square 144×144. Desktop: aspect-[4/3] landscape.
+              Brandon 2026-05-18 v4: imagen llena el card (object-cover sin
+              padding) — antes object-contain p-2 dejaba márgenes blancos y
+              hacía ver el producto pequeño. Ahora ocupa el 100% del slot. */}
+          <div className="relative aspect-square sm:aspect-[4/3] h-full sm:h-auto overflow-hidden bg-[var(--surface-sunken)] sm:bg-white dark:sm:bg-gray-900">
             {product.image ? (
               <Image
                 src={product.image}
                 alt={product.name}
                 fill
-                className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.04]"
-                sizes="(max-width: 640px) 112px, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover sm:object-contain sm:p-2 transition-transform duration-500 group-hover:scale-[1.04]"
+                sizes="(max-width: 640px) 144px, (max-width: 1024px) 50vw, 33vw"
               />
             ) : (
               <ProductImageFallback name={product.name} category={product.category} />
@@ -675,7 +679,7 @@ export default function UnifiedProductCard({
               role="group"
               aria-label={`${product.name} — ${inCartQty} en carrito`}
               className={cn(
-                "inline-flex h-14 w-full items-center justify-between rounded-2xl px-1.5 transition-all duration-200 shadow-md shadow-[var(--accent)]/20 ring-1 ring-[var(--accent)]/30",
+                "inline-flex h-12 w-full items-center justify-between rounded-xl px-1 transition-all duration-200 shadow-md shadow-[var(--accent)]/20 ring-1 ring-[var(--accent)]/30",
                 justAdded
                   ? "bg-[var(--data-success-500)]"
                   : "bg-linear-to-r from-[var(--accent-600,var(--accent))] to-[var(--accent)]",
@@ -685,7 +689,7 @@ export default function UnifiedProductCard({
                 type="button"
                 onClick={handleDecrement}
                 aria-label={inCartQty === 1 ? `Quitar ${product.name} del carrito` : `Restar ${product.name}`}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-white hover:bg-white/25 active:scale-90 transition-all"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 text-white hover:bg-white/25 active:scale-90 transition-all"
               >
                 <Minus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
               </button>
@@ -714,7 +718,7 @@ export default function UnifiedProductCard({
                 type="button"
                 onClick={handleAdd}
                 aria-label={`Agregar otro ${product.name}`}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-white hover:bg-white/25 active:scale-90 transition-all"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 text-white hover:bg-white/25 active:scale-90 transition-all"
               >
                 <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
               </button>
@@ -727,34 +731,27 @@ export default function UnifiedProductCard({
               aria-label={
                 isOutOfStock
                   ? `${product.name} — agotado`
-                  : hasModifiers
-                    ? `Elegir opciones de ${product.name}`
-                    : `Agregar ${product.name} al carrito`
+                  : `Agregar ${product.name} al carrito`
               }
               className={cn(
-                "inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold uppercase tracking-wide transition-all duration-200 active:scale-[0.985] ring-1",
+                "inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-extrabold uppercase tracking-wide transition-all duration-200 active:scale-[0.985] ring-1",
                 isOutOfStock
                   ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed ring-[var(--rule-soft)]"
                   : justAdded
                     ? "bg-[var(--data-success-500)] text-white shadow-md shadow-[var(--data-success-500)]/30 ring-[var(--data-success-500)]/40"
-                    : "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 ring-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/35",
+                    : "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30 ring-[var(--accent)]/40 hover:shadow-lg hover:shadow-[var(--accent)]/35",
               )}
             >
               {justAdded ? (
                 <>
-                  <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+                  <Check className="h-4 w-4" strokeWidth={2.75} aria-hidden />
                   Agregado
                 </>
               ) : isOutOfStock ? (
                 <>Agotado</>
-              ) : hasModifiers ? (
-                <>
-                  <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                  Elegir opciones
-                </>
               ) : (
                 <>
-                  <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  <ShoppingCart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                   Agregar al carrito
                 </>
               )}

@@ -173,9 +173,11 @@ export default function ProductModifierModal({
           role="dialog" aria-modal="true"
           aria-label={`Personalizar ${product.name}`}
         >
-          {/* Backdrop con blur fuerte */}
+          {/* Brandon 2026-05-18 v4: backdrop con tokens DS (alineado con
+              FirstVisitCouponModal y MarketplaceFilters drawer) — coherencia
+              visual entre todos los modals del marketplace. */}
           <motion.div
-            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            className="absolute inset-0 bg-[var(--text-primary)]/55 backdrop-blur-md"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
           />
@@ -198,10 +200,13 @@ export default function ProductModifierModal({
                 Desktop: hero más alto + bloque meta debajo + spacer + qty/CTA
                 anclado al fondo. Sticky por flex-col interno. */}
             <div className="shrink-0 lg:flex lg:flex-col lg:w-[420px] lg:border-r lg:border-[var(--rule-soft)] lg:overflow-y-auto">
-              {/* Hero image */}
+              {/* Hero image — Brandon 2026-05-18 v4: imagen MÁS GRANDE en mobile
+                  (h-44 sm:h-52 vs h-32/36 anterior) para que el cliente vea
+                  bien el producto. Gradient sutil solo en la base (no oscurece
+                  el centro de la imagen). */}
               <div className="relative shrink-0">
                 {product.image ? (
-                  <div className="relative h-32 sm:h-36 lg:h-auto lg:aspect-[4/3] w-full overflow-hidden">
+                  <div className="relative h-44 sm:h-52 lg:h-auto lg:aspect-[4/3] w-full overflow-hidden">
                     <Image
                       src={product.image}
                       alt={product.name}
@@ -210,20 +215,14 @@ export default function ProductModifierModal({
                       className="object-cover"
                       priority
                     />
-                    {/* Gradient — solo en mobile/tablet (overlay del título). En lg
-                        el título está ABAJO de la imagen, no encima → sin gradient. */}
-                    <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/45 to-black/15 lg:hidden" />
-                    <div
-                      aria-hidden
-                      className="absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none lg:opacity-15"
-                      style={{
-                        background: "radial-gradient(at 20% 0%, color-mix(in oklab, var(--accent) 50%, transparent) 0px, transparent 55%)",
-                      }}
-                    />
+                    {/* Gradient base — solo donde va el título (bottom 1/3),
+                        deja el centro de la imagen limpio para que el producto
+                        se vea bien. */}
+                    <div className="absolute inset-x-0 bottom-0 h-2/5 bg-linear-to-t from-black/85 via-black/50 to-transparent lg:hidden" />
                   </div>
                 ) : (
-                  <div className="h-24 lg:h-56 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success-500)] flex items-center justify-center">
-                    <Sparkles className="h-8 lg:h-12 w-8 lg:w-12 text-white/90" aria-hidden />
+                  <div className="h-32 sm:h-40 lg:h-56 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success-500)] flex items-center justify-center">
+                    <Sparkles className="h-10 lg:h-12 w-10 lg:w-12 text-white/90" aria-hidden />
                   </div>
                 )}
 
@@ -240,17 +239,17 @@ export default function ProductModifierModal({
                   <X className="h-4 w-4" strokeWidth={2.75} aria-hidden />
                 </button>
 
-                {/* Title overlay — SOLO mobile/tablet (desktop usa meta block separado) */}
+                {/* Title overlay — SOLO mobile/tablet. Brandon 2026-05-18 v4:
+                    diseño más limpio, eyebrow accent en lugar de "Armá tu
+                    pedido" genérico (queda el eyebrow del progreso abajo).
+                    Pricing más prominente. */}
                 <div className="absolute bottom-3 left-4 right-16 lg:hidden">
-                  <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white/90 mb-0.5">
-                    Armá tu pedido
-                  </p>
-                  <h2 className="font-display text-xl sm:text-[22px] font-black tracking-tight text-white drop-shadow-lg leading-tight line-clamp-2">
+                  <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-lg leading-[1.1] line-clamp-2">
                     {product.name}
                   </h2>
-                  <p className="mt-0.5 text-[length:var(--ts-xs)] font-bold text-white/85">
+                  <p className="mt-1.5 text-sm font-extrabold text-white tabular-nums">
                     Desde {fmt(product.price)}
-                    {product.unit && <span className="font-medium text-white/70"> · {product.unit}</span>}
+                    {product.unit && <span className="font-medium text-white/75"> / {product.unit}</span>}
                   </p>
                 </div>
               </div>
@@ -537,52 +536,76 @@ export default function ProductModifierModal({
                 </div>
               )}
 
-              <div className="px-4 sm:px-5 py-3 flex items-center gap-2.5">
-                {/* Quantity stepper */}
-                <div className="flex items-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shrink-0 shadow-sm">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    aria-label="Disminuir cantidad"
-                    disabled={quantity <= 1}
-                    className="inline-flex h-12 w-11 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-                  </button>
-                  <span className="min-w-[2.5rem] text-center text-[length:var(--ts-base)] font-black tabular-nums text-[var(--text-primary)]">
-                    {quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((q) => Math.min(99, q + 1))}
-                    aria-label="Aumentar cantidad"
-                    className="inline-flex h-12 w-11 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:scale-95 transition-all"
-                  >
-                    <Plus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-                  </button>
+              {/* Brandon 2026-05-18 v4: footer mobile rediseñado.
+                  ANTES: stepper rectangular + CTA flex-1 con label "Agregar S/X" — el stepper competía visualmente con el CTA y el botón se veía angosto.
+                  AHORA: stepper compacto pill arriba a la izquierda con label "Cant." + CTA full-width prominente abajo con precio integrado a la derecha. Más respiro, jerarquía clara: cantidad arriba, acción abajo. */}
+              <div
+                className="px-4 sm:px-5 pt-3 space-y-2.5"
+                style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom))" }}
+              >
+                {/* Stepper compacto + breakdown precio en una fila */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="inline-flex items-center gap-2">
+                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      Cant.
+                    </span>
+                    <div className="inline-flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        aria-label="Disminuir cantidad"
+                        disabled={quantity <= 1}
+                        className="inline-flex h-10 w-10 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:scale-95 transition-all disabled:opacity-40"
+                      >
+                        <Minus className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+                      </button>
+                      <span className="min-w-[2rem] text-center text-base font-black tabular-nums text-[var(--text-primary)]">
+                        {quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                        aria-label="Aumentar cantidad"
+                        className="inline-flex h-10 w-10 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:scale-95 transition-all"
+                      >
+                        <Plus className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Total a la derecha — refleja precio + modifiers + qty */}
+                  <div className="text-right">
+                    <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
+                      Total
+                    </p>
+                    <p className="mt-0.5 text-lg font-black tabular-nums text-[var(--text-primary)]">
+                      {fmt(totalPrice)}
+                    </p>
+                  </div>
                 </div>
 
-                {/* CTA principal */}
+                {/* CTA principal full-width prominente */}
                 <motion.button
                   type="button"
                   onClick={handleConfirm}
                   disabled={!isValid}
                   whileTap={isValid ? { scale: 0.98 } : {}}
                   className={cn(
-                    "flex-1 inline-flex items-center justify-center gap-2 rounded-2xl h-12 px-3 text-[length:var(--ts-base)] font-black transition-all",
+                    "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-13 px-4 text-sm font-extrabold uppercase tracking-wide transition-all",
                     isValid
-                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success-500)] text-white shadow-lg shadow-[var(--accent)]/35 hover:shadow-xl hover:shadow-[var(--accent)]/40"
+                      ? "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30 ring-1 ring-[var(--accent)]/40 hover:shadow-lg"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
+                  style={{ height: "3.25rem" }}
                 >
-                  <ShoppingCart className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
                   {isValid ? (
                     <>
-                      <span className="truncate">Agregar</span>
-                      <span className="tabular-nums opacity-95 ml-auto">{fmt(totalPrice)}</span>
+                      <ShoppingCart className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
+                      <span>Agregar al carrito</span>
                     </>
                   ) : (
-                    <span className="truncate">{validation[0]?.message ?? "Elegí las opciones"}</span>
+                    <span className="truncate normal-case tracking-normal font-bold">
+                      {validation[0]?.message ?? "Elegí las opciones"}
+                    </span>
                   )}
                 </motion.button>
               </div>
