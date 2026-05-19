@@ -1,20 +1,17 @@
-// eslint-disable @typescript-eslint/no-restricted-imports
-/* eslint-disable no-restricted-properties */
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
+import { MarketplaceReviewsDB } from "@/lib/db/marketplace/reviews.db";
 import { toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isAllowedImageUrl } from "@/lib/url-allowlist";
 
 /**
- * @prisma-direct excepción documentada — el endpoint POST hace `review.create`
- * + `store.update` con scope explícito (storeId resuelto via getBySlug que
- * ya filtra `isPublished:true`). Migrar a ReviewsMarketplaceDB.create cuando
- * esa clase soporte el incremento de rating de la tienda atómicamente.
+ * Audit project-wide 2026-05-19: migrado a MarketplaceReviewsDB.
+ * El POST usa addVerifiedStoreReview que encapsula el create + recompute
+ * de rating/reviewCount del Store en una transaccion atomica.
  */
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
@@ -47,23 +44,7 @@ export async function GET(
       return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
     }
 
-    const reviews = await prisma.review.findMany({
-      where: {
-        storeId: store.id,
-        deletedAt: null,
-        status: "approved",
-      },
-      select: {
-        id: true,
-        name: true,
-        rating: true,
-        text: true,
-        date: true,
-        photosJson: true,
-      },
-      orderBy: { date: "desc" },
-      take: 20,
-    });
+    const reviews = await MarketplaceReviewsDB.getByStore(store.id, { take: 20 });
 
     const data = reviews.map((r) => {
       let imageUrls: string[] = [];
@@ -118,60 +99,48 @@ export async function POST(
 
     const { reviewerName, rating, comment, customerPhone, orderId, imageUrls } = parsed.data;
 
-    // F1-a: verificar que la orden exista, pertenezca al cliente y esté entregada
-    const verifiedOrder = await prisma.order.findFirst({
-      where: {
-        id: orderId,
-        customerPhone,
-        status: { in: ["entregado", "confirmado"] },
-        tenantId: store.tenantId,
-      },
-      select: { id: true },
-    });
-    if (!verifiedOrder) {
+    // F1-a: verificar que la orden exista, pertenezca al cliente y este entregada
+    const isValid = await MarketplaceReviewsDB.verifyOrderForReview(
+      store.tenantId,
+      orderId,
+      customerPhone,
+    );
+    if (!isValid) {
       return NextResponse.json(
         { error: "Solo clientes con compra entregada pueden reseñar" },
         { status: 403 },
       );
     }
 
-    // F1-b: evitar múltiples reviews por la misma compra
-    const existingByOrder = await prisma.review.findFirst({
-      where: { orderId, phone: customerPhone, tenantId: store.tenantId, deletedAt: null },
-      select: { id: true },
-    });
-    if (existingByOrder) {
+    // F1-b: evitar multiples reviews por la misma compra
+    const alreadyReviewed = await MarketplaceReviewsDB.hasReviewForOrder(
+      store.tenantId,
+      orderId,
+      customerPhone,
+    );
+    if (alreadyReviewed) {
       return NextResponse.json(
         { error: "Ya reseñaste esta compra" },
         { status: 409 },
       );
     }
 
-    // Crear la reseña
-    const review = await prisma.review.create({
-      data: {
-        id: crypto.randomUUID(),
-        name: reviewerName,
-        text: comment,
+    // Audit project-wide 2026-05-19: atomic create + store rating recompute.
+    const { review, storeRating, storeReviewCount } =
+      await MarketplaceReviewsDB.addVerifiedStoreReview({
+        store: {
+          id: store.id,
+          tenantId: store.tenantId,
+          rating: store.rating,
+          reviewCount: store.reviewCount,
+        },
+        reviewerName,
         rating,
-        phone: customerPhone,
+        comment,
+        customerPhone,
         orderId,
-        storeId: store.id,
-        tenantId: store.tenantId,
-        status: "approved",
-        photosJson: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
-      },
-    });
-
-    // Recalcular rating y reviewCount de la tienda (server-side, sin depender del cliente)
-    const newCount = store.reviewCount + 1;
-    const newRating =
-      Math.round(((store.rating * store.reviewCount + rating) / newCount) * 10) / 10;
-
-    await prisma.store.update({
-      where: { id: store.id },
-      data: { rating: newRating, reviewCount: newCount },
-    });
+        imageUrls,
+      });
 
     logger.debug("[STORE-REVIEWS] Created", {
       storeId: store.id,
@@ -189,7 +158,7 @@ export async function POST(
           date: review.date,
           imageUrls,
         },
-        store: { rating: newRating, reviewCount: newCount },
+        store: { rating: storeRating, reviewCount: storeReviewCount },
       },
       { status: 201 },
     );

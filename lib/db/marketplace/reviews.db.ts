@@ -5,17 +5,27 @@ import { prisma } from "@/lib/prisma";
 
 export const MarketplaceReviewsDB = {
   /**
-   * Get approved reviews for a store (public).
+   * Get approved reviews for a store (public). Incluye photosJson para
+   * el render con fotos en el storefront.
+   *
+   * Audit project-wide 2026-05-19: extendido con photosJson para soportar
+   * marketplace/stores/[slug]/reviews que migraba este shape exacto.
    */
-  async getByStore(storeId: string) {
+  async getByStore(storeId: string, opts: { take?: number } = {}) {
     return prisma.review.findMany({
       where: { storeId, status: "approved", deletedAt: null },
       select: {
-        id: true, name: true, text: true, rating: true,
-        date: true, adminReply: true, adminReplyDate: true,
+        id: true,
+        name: true,
+        text: true,
+        rating: true,
+        date: true,
+        adminReply: true,
+        adminReplyDate: true,
+        photosJson: true,
       },
       orderBy: { date: "desc" },
-      take: 50,
+      take: Math.min(50, Math.max(1, opts.take ?? 20)),
     });
   },
 
@@ -70,5 +80,96 @@ export const MarketplaceReviewsDB = {
     });
 
     return review;
+  },
+
+  /**
+   * Verifica que el orderId pertenece al customerPhone y está entregado
+   * o confirmado dentro del tenant del store. Used para garantizar que
+   * solo clientes con compra real puedan reseñar.
+   *
+   * Audit project-wide 2026-05-19 — migracion de marketplace/stores/[slug]/reviews.
+   */
+  async verifyOrderForReview(
+    tenantId: string,
+    orderId: string,
+    customerPhone: string,
+  ): Promise<boolean> {
+    const row = await prisma.order.findFirst({
+      where: {
+        id: orderId,
+        customerPhone,
+        status: { in: ["entregado", "confirmado"] },
+        tenantId,
+      },
+      select: { id: true },
+    });
+    return !!row;
+  },
+
+  /**
+   * Chequea si ya existe review del customer para este orderId (dedup).
+   */
+  async hasReviewForOrder(
+    tenantId: string,
+    orderId: string,
+    customerPhone: string,
+  ): Promise<boolean> {
+    const row = await prisma.review.findFirst({
+      where: { orderId, phone: customerPhone, tenantId, deletedAt: null },
+      select: { id: true },
+    });
+    return !!row;
+  },
+
+  /**
+   * Crea review aprobada de tienda + recalcula rating/reviewCount del Store
+   * en una transaccion atomica. Devuelve la review + nuevos contadores.
+   */
+  async addVerifiedStoreReview(params: {
+    store: { id: string; tenantId: string; rating: number; reviewCount: number };
+    reviewerName: string;
+    rating: number;
+    comment: string;
+    customerPhone: string;
+    orderId: string;
+    imageUrls: string[];
+  }): Promise<{
+    review: {
+      id: string;
+      name: string;
+      text: string | null;
+      rating: number;
+      date: Date;
+    };
+    storeRating: number;
+    storeReviewCount: number;
+  }> {
+    const { store } = params;
+    const newCount = store.reviewCount + 1;
+    const newRating =
+      Math.round(((store.rating * store.reviewCount + params.rating) / newCount) * 10) / 10;
+
+    const [review] = await prisma.$transaction([
+      prisma.review.create({
+        data: {
+          id: crypto.randomUUID(),
+          name: params.reviewerName,
+          text: params.comment,
+          rating: params.rating,
+          phone: params.customerPhone,
+          orderId: params.orderId,
+          storeId: store.id,
+          tenantId: store.tenantId,
+          status: "approved",
+          photosJson: params.imageUrls.length > 0 ? JSON.stringify(params.imageUrls) : null,
+        },
+        select: { id: true, name: true, text: true, rating: true, date: true },
+      }),
+      prisma.store.update({
+        where: { id: store.id },
+        data: { rating: newRating, reviewCount: newCount },
+      }),
+    ]);
+    return { review, storeRating: newRating, storeReviewCount: newCount };
   },
 };
