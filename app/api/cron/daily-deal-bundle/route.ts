@@ -201,9 +201,7 @@ export async function GET(req: NextRequest) {
         `Paquete del Día creado con ${selected.length} productos. Precio: S/ ${bundlePrice.toFixed(2)}`,
         undefined,
         "cron"
-      ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
       logger.info("[cron/daily-deal-bundle] Paquete creado", {
         tenantId,

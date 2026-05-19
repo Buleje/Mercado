@@ -66,7 +66,10 @@ export const GET = withCronHealth("stock-alerts-notify", async (req) => {
             recipient: `admin-${tenant.slug}`,
             createdAt: { gte: today },
           },
-        }).catch(() => null);
+        }).catch((err) => {
+          logger.warn("[cron/stock-alerts-notify] log lookup failed", { error: String(err) });
+          return null;
+        });
 
         // Skip if already notified today with same count (avoid duplicate WhatsApp spam)
         const alreadyNotified = recentLog?.message?.includes(`${alertas.length} producto(s)`);
@@ -87,9 +90,7 @@ export const GET = withCronHealth("stock-alerts-notify", async (req) => {
           recipient: `admin-${tenant.slug}`,
           message: `${alertas.length} producto(s) con stock bajo: ${nombresAlerta}${sufijo}`,
           status: "pending",
-        }, tenant.id).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        }, tenant.id).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
         // Send push + WhatsApp to store owner
         (async () => {
@@ -158,9 +159,7 @@ export const GET = withCronHealth("stock-alerts-notify", async (req) => {
           `[${tenant.name}] ${alertas.length} producto(s) con stock bajo detectados por cron`,
           undefined,
           "cron"
-        ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
       }
 
       logger.info("[cron/stock-alerts-notify] Completado", { tenants: allResults.length });

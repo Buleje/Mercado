@@ -106,9 +106,7 @@ export async function GET(req: NextRequest) {
       `Birthday-greetings: ${birthdayCustomers.length} cumpleaneros, ${greetingsCount} felicitaciones enviadas`,
       undefined,
       "cron",
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
     logger.info("[cron/birthday-greetings]", {
       checked: customersWithBday.length,

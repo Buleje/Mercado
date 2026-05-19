@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendSuperAdminAlert } from "@/lib/mailer-superadmin";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
+import { logger } from "@/lib/logger";
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
         ],
         actionUrl: `${baseUrl}/superadmin`,
         actionLabel: "Ver en SuperAdmin",
-      }).catch(() => { /* don't fail cron */ });
+      }).catch((err) => logger.warn("[cron/superadmin-alerts] alert send failed", { error: String(err) }));
     }
     alerts.push(`${newTenants.length} new signup(s)`);
   }
@@ -80,9 +81,7 @@ export async function GET(req: NextRequest) {
         ],
         actionUrl: `${baseUrl}/superadmin`,
         actionLabel: "Ver en SuperAdmin",
-      }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      }).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
     }
     alerts.push(`${cancellations.length} cancellation(s)/suspension(s)`);
   }
@@ -108,9 +107,7 @@ export async function GET(req: NextRequest) {
       })),
       actionUrl: `${baseUrl}/superadmin`,
       actionLabel: "Contactar tiendas",
-    }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    }).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
     alerts.push(`${expiringTrials.length} trial(s) expiring`);
   }
 

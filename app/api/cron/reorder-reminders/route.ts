@@ -197,9 +197,7 @@ export const GET = withCronAuth("reorder-reminders", async (req) => {
           `[${tenant.name}] ${remindersSent} recordatorios enviados (${customerOrders.size} clientes analizados)`,
           undefined,
           "cron"
-        ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
         allResults.push({ tenant: tenant.name, reminders: remindersSent, analyzed: customerOrders.size });
       }

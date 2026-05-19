@@ -73,7 +73,10 @@ export async function GET(req: NextRequest) {
             type: "inactive_reminder",
             createdAt: { gte: new Date(now - 7 * 24 * 60 * 60 * 1000) },
           },
-        }).catch(() => null);
+        }).catch((err) => {
+          logger.warn("[cron/inactive-customers] notif lookup failed", { error: String(err) });
+          return null;
+        });
 
         if (recentNotif) continue; // Already reminded within 7 days
 
@@ -100,7 +103,10 @@ export async function GET(req: NextRequest) {
         const tenant = await prisma.tenant.findFirst({
           where: { slug: lastOrder.tenantId },
           select: { name: true },
-        }).catch(() => null);
+        }).catch((err) => {
+          logger.warn("[cron/inactive-customers] tenant lookup failed", { error: String(err) });
+          return null;
+        });
 
         const storeName = tenant?.name ?? "tu bodega favorita";
 
@@ -135,16 +141,12 @@ export async function GET(req: NextRequest) {
             message: `Reminder 15d: ${customerName} — ${products}`,
             status: "sent",
           },
-        }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        }).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
         reminded++;
       }
 
-      logActivity("cron", "inactive-customers", `Enviados ${reminded} recordatorios de ${candidates.length} candidatos`).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      logActivity("cron", "inactive-customers", `Enviados ${reminded} recordatorios de ${candidates.length} candidatos`).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
       logger.info(`[cron/inactive-customers] ${reminded}/${candidates.length} recordatorios enviados`);
 
       return { ok: true, reminded, candidates: candidates.length };

@@ -116,9 +116,7 @@ export async function GET(req: NextRequest) {
       `Score-recalc: ${recalculated} profiles, ${snapshots} snapshots, ${significantChanges} significant changes, ${overdueUpdated} overdue updates`,
       undefined,
       "cron",
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
 
     logger.info("[cron/credit-score-recalc]", {
       profiles: profiles.length,
