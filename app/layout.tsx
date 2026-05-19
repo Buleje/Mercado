@@ -290,9 +290,13 @@ export default function RootLayout({
 
         {/* Workaround del bug turbopack RSC en dev: negative time stamp en
             flushComponentPerformance. Patchea performance.measure parse-time,
-            antes de que el runtime turbopack lo invoque. No afecta producción. */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/perf-measure-patch.js" />
+            antes de que el runtime turbopack lo invoque. No afecta producción.
+            Audit 2026-05-19: solo dev — en prod era render-blocking sin razón
+            (Turbopack no corre en prod build). FCP -50ms en 3G. */}
+        {process.env.NODE_ENV !== "production" && (
+          // eslint-disable-next-line @next/next/no-sync-scripts
+          <script src="/perf-measure-patch.js" />
+        )}
 
         {/* Back-nav refresh — script externo, parse-time, antes que React/Next.
             Recarga la página en cualquier back/forward del browser para que
