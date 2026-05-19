@@ -1,5 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -67,6 +68,17 @@ export async function PATCH(
         tenantId: slug,
       },
     }).catch((err) => logger.error("[superadmin/tenants/[slug]] operation failed", { error: String(err) }));
+
+    // Audit P0 #3 (2026-05-19): invalidar el cache de analytics cuando cambia
+    // plan o estado activo. Antes el MRR mostraba datos hasta 30 min stale
+    // tras cambiar el plan de un tenant.
+    // Next 16: revalidateTag firma 2-arg (tag, "max" para invalidar todo).
+    try {
+      revalidateTag("superadmin:analytics", "max");
+      revalidateTag(`superadmin:tenant:${slug}`, "max");
+    } catch (e) {
+      logger.warn("[superadmin/tenants] revalidateTag failed", { error: String(e) });
+    }
 
     logger.info("[SuperAdmin] Tenant updated", { username: session.username, slug, updates });
     return NextResponse.json({ tenant });

@@ -120,9 +120,13 @@ export function NotificationsBell() {
   };
 
   // Initial load + 60s polling. Drawer abierto: refresca al abrir.
+  // Audit QW-1: visibility guard — no gastamos request si el tab está oculto.
   useEffect(() => {
     void load();
-    const id = setInterval(() => void load(), 60_000);
+    const id = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      void load();
+    }, 60_000);
     return () => clearInterval(id);
   }, []);
 

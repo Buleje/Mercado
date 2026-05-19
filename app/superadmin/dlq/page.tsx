@@ -1,7 +1,7 @@
 import "server-only";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
+import { getDeadLetterDashboard } from "@/lib/db/dlq.db";
 
 // Next 16 (CLAUDE.md #4): NO usar `force-dynamic`. Dejamos sin "use cache"
 // para que el RSC re-renderice a cada request (panel ops, datos frescos).
@@ -9,15 +9,10 @@ import { requirePlatformPage } from "@/lib/superadmin-auth";
 /**
  * /superadmin/dlq
  *
- * Brandon 2026-05-18 (audit profundo arquitectura Sprint 2):
- * Dashboard del Dead Letter Queue persistente. Lista eventos de dominio
- * que fallaron y no se reintentaron (EventDeadLetter), crons que fallaron
- * (CronDeadLetter), y webhooks de Mercado Pago que se quedaron pendientes
- * (StripeWebhookQueue con prefix mpmkt_ y processedAt=null).
+ * Dashboard del Dead Letter Queue persistente. Las queries viven en
+ * `lib/db/dlq.db.ts` (audit P0 #5 — antes eran prisma directo aquí).
  *
- * Acciones por entry: ver detalle, marcar como resuelto (resolvedAt=now),
- * o intentar replay manual.
- *
+ * Acciones por entry: ver detalle, marcar como resuelto, o reintentar.
  * Si los items se acumulan sin resolverse = señal de bug sistemático en
  * el handler o servicio externo caído.
  *
@@ -27,34 +22,7 @@ export default async function DLQDashboardPage() {
   // requirePlatformPage lee de cookies en SSR + redirige a /superadmin/login si no auth
   await requirePlatformPage();
 
-  // Cargar las 3 fuentes de DLQ en paralelo (limit 50 c/u — si hay más
-  // significa que es momento de atender el bug raíz, no la UI).
-  // @prisma-direct ok — queries cross-tenant legítimas de superadmin
-  // platform-level. EventDeadLetter tiene tenantId pero el dashboard
-  // muestra TODOS los tenants. CronDeadLetter es system-wide (no tenantId).
-  // StripeWebhookQueue tampoco tiene tenantId (mapeo via payload).
-  const [events, crons, mpWebhooks] = await Promise.all([
-    // eslint-disable-next-line no-restricted-properties
-    prisma.eventDeadLetter.findMany({
-      where: { resolvedAt: null },
-      orderBy: { failedAt: "desc" },
-      take: 50,
-    }).catch(() => []),
-    // eslint-disable-next-line no-restricted-properties
-    prisma.cronDeadLetter.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    }).catch(() => []),
-    // eslint-disable-next-line no-restricted-properties
-    prisma.stripeWebhookQueue.findMany({
-      where: {
-        stripeId: { startsWith: "mpmkt_" },
-        processedAt: null,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    }).catch(() => []),
-  ]);
+  const { events, crons, mpWebhooks } = await getDeadLetterDashboard();
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8">

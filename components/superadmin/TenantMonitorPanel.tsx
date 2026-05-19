@@ -109,8 +109,12 @@ export default function TenantMonitorPanel() {
 
   useEffect(() => {
     void load();
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(() => void load(true), 60_000);
+    // Auto-refresh cada 60s con visibility guard (audit QW-1) — no
+    // refrescamos si el tab no está activo.
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      void load(true);
+    }, 60_000);
     return () => clearInterval(interval);
   }, [load]);
 

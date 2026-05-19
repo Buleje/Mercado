@@ -191,15 +191,24 @@ export default function ActivityPage() {
     void loadActivity(1);
   }, [loadActivity]);
 
-  // Auto-refresh cada 30s
+  // Auto-refresh cada 30s.
+  // Audit P0 #1 (2026-05-19): antes este efecto tenía `pagination.page` en deps,
+  // lo que **reiniciaba el timer en cada cambio de página** → el refresh
+  // automático nunca se disparaba si el usuario paginaba continuamente.
+  // Fix: usar ref para la página actual + skip si `document.hidden` (no gastamos
+  // ciclos cuando el tab está en background).
+  const pagePageRef = useRef(pagination.page);
+  useEffect(() => { pagePageRef.current = pagination.page; }, [pagination.page]);
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      void loadActivity(pagination.page);
+      // Visibility guard — no refrescamos si el tab no está visible.
+      if (typeof document !== "undefined" && document.hidden) return;
+      void loadActivity(pagePageRef.current);
     }, 30_000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [loadActivity, pagination.page]);
+  }, [loadActivity]);
 
   // ── Filtros client-side adicionales (text search) ─────────────────────
   const filteredLogs = useMemo(() => {

@@ -58,10 +58,12 @@ import { KPIHeroCard } from "@/components/superadmin/dashboard/KPIHeroCard";
 // del admin/inicio. Es el mismo patrón que Brandon ya conoce — drag, hide,
 // presentación fullscreen, persistencia en localStorage.
 import { DraggableSections } from "@/components/admin/inicio/DraggableSections";
-import {
-  buildARPUSeries,
-  fmtSoles,
-} from "@/lib/mocks/superadmin-dashboard.mock";
+import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
+// Audit P0 #4 (2026-05-19): `buildARPUSeries` se usaba como fallback cuando el
+// endpoint devolvía vacío — eso filtraba datos sintéticos a producción. Ahora
+// solo importamos `fmtSoles` (puro helper) y devolvemos `[]` cuando no hay datos
+// reales — el chart muestra empty state honesto.
+import { fmtSoles } from "@/lib/mocks/superadmin-dashboard.mock";
 
 interface AnalyticsData {
   overview: {
@@ -121,9 +123,12 @@ export default function DashboardPage() {
     setError("");
     const widgetsRange = range === "custom" || range === "all" ? "30d" : range;
     try {
+      // Audit P0 #2: `fetchSuperadmin` redirige automáticamente a /login si la
+      // sesión expira (401). El anterior `fetch()` directo dejaba al superadmin
+      // viendo "Error" sin saber que su cookie había vencido.
       const [aRes, wRes] = await Promise.all([
-        fetch("/api/superadmin/analytics", { credentials: "include" }),
-        fetch(`/api/superadmin/dashboard/widgets?range=${widgetsRange}`, { credentials: "include" }),
+        fetchSuperadmin("/api/superadmin/analytics"),
+        fetchSuperadmin(`/api/superadmin/dashboard/widgets?range=${widgetsRange}`),
       ]);
       if (!aRes.ok) {
         setError("No se pudo cargar el dashboard. Reintentá.");
@@ -197,14 +202,12 @@ export default function DashboardPage() {
       return iso;
     }
   }, []);
+  // Audit P0 #4 — datos REALES siempre. Si el endpoint no devuelve serie ARPU,
+  // mostramos array vacío en lugar de sintéticos del mock. ARPUMiniChart maneja
+  // el empty state internamente (no renderiza chart, muestra valor actual).
   const arpuSeries = useMemo(
-    () =>
-      widgets?.arpuSeries && widgets.arpuSeries.length > 0
-        ? widgets.arpuSeries
-        : data
-          ? buildARPUSeries(data.overview.arpu)
-          : [],
-    [widgets, data],
+    () => widgets?.arpuSeries ?? [],
+    [widgets],
   );
 
   // ── Series mensual combinada (revenue + signups) ────────────────────────

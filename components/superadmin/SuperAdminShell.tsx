@@ -456,6 +456,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   useEffect(() => {
     let active = true;
     const check = async () => {
+      // Audit QW-1: si el tab está en background, no gastamos request.
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const res = await fetch("/api/superadmin/auth", { method: "GET" });
         if (!res.ok && active) setSessionExpired(true);
