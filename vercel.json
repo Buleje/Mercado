@@ -101,6 +101,10 @@
       "schedule": "51 23 * * *"
     },
     {
+      "path": "/api/cron/event-dlq-replay",
+      "schedule": "37 * * * *"
+    },
+    {
       "path": "/api/cron/superadmin-alerts",
       "schedule": "7 8 * * *"
     },
