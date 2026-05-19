@@ -2752,6 +2752,30 @@ body[data-marketplace-explorar] .tabular-nums {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   Chart presentation mode — forzar altura interna de wrappers Recharts
+   ═══════════════════════════════════════════════════════════════════════════
+   ChartPresentationModal renderiza el chart con data-chart-presentation="true".
+   Los wrappers internos de los charts tienen `style="height: 300px; min-height:
+   220px"` hardcoded — eso los hace verse chicos en un modal grande.
+
+   Override: dentro del scope, cualquier div con altura fija en style se hace
+   65vh para que Recharts ResponsiveContainer ocupe el alto real del modal.
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-chart-presentation="true"] div[style*="height: 300px"],
+[data-chart-presentation="true"] div[style*="height:300px"],
+[data-chart-presentation="true"] div[style*="height: 260px"],
+[data-chart-presentation="true"] div[style*="height:260px"] {
+  height: 65vh !important;
+  min-height: 480px !important;
+}
+[data-chart-presentation="true"] .h-\[320px\],
+[data-chart-presentation="true"] .h-\[360px\],
+[data-chart-presentation="true"] .sm\:h-\[360px\] {
+  height: 65vh !important;
+  min-height: 480px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    SUPERADMIN — Typography refresh 2026-05-19
    ═══════════════════════════════════════════════════════════════════════════
    Brief Brandon: titles se sentían "alargados" / poco cómodos para leer.

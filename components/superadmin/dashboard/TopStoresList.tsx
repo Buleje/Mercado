@@ -7,6 +7,8 @@ import { fmtSoles, type TopStore } from "@/lib/mocks/superadmin-dashboard.mock";
 
 interface Props {
   stores: TopStore[];
+  /** Subtítulo dinámico — viene del filtro de rango activo. */
+  description?: string;
 }
 
 const PLAN_VARIANT: Record<TopStore["plan"], "success" | "info" | "neutral" | "pending"> = {
@@ -22,13 +24,13 @@ const PLAN_VARIANT: Record<TopStore["plan"], "success" | "info" | "neutral" | "p
  * MOCK: lista estática TOP_STORES_MOCK. Reemplazar con
  * /api/superadmin/dashboard/top-stores?by=gmv&limit=5.
  */
-export function TopStoresList({ stores }: Props) {
+export function TopStoresList({ stores, description }: Props) {
   const maxGmv = stores.reduce((max, s) => Math.max(max, s.gmv), 0) || 1;
 
   return (
     <ChartWrapper
       title="Top 5 tiendas por GMV"
-      description="Este mes"
+      description={description ?? "Ranking por revenue"}
       actions={
         <Link
           href="/superadmin/tenants"

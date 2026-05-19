@@ -426,6 +426,7 @@ export default function DashboardPage() {
                       gmv: s.revenue,
                       orders: s.orders,
                     }))}
+                    description={rangeLabel}
                   />
                   <ConversionFunnel
                     steps={widgets.funnel.map((f) => ({
@@ -440,6 +441,7 @@ export default function DashboardPage() {
                       label: f.label,
                       value: f.value,
                     }))}
+                    description={rangeLabel}
                   />
                 </div>
               ),

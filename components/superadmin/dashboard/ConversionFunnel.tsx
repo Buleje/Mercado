@@ -5,6 +5,8 @@ import { fmtNumber, type FunnelStep } from "@/lib/mocks/superadmin-dashboard.moc
 
 interface Props {
   steps: FunnelStep[];
+  /** Subtítulo dinámico — viene del filtro de rango activo. */
+  description?: string;
 }
 
 /**
@@ -13,12 +15,12 @@ interface Props {
  * MOCK: FUNNEL_MOCK estático. Reemplazar con
  * /api/superadmin/dashboard/funnel?window=30d.
  */
-export function ConversionFunnel({ steps }: Props) {
+export function ConversionFunnel({ steps, description }: Props) {
   if (steps.length === 0) return null;
   const top = steps[0]!.value || 1;
 
   return (
-    <ChartWrapper title="Funnel de conversión" description="Últimos 30 días">
+    <ChartWrapper title="Funnel de conversión" description={description ?? "Conversión por etapa"}>
       <ul className="space-y-3">
         {steps.map((step, i) => {
           const pct = (step.value / top) * 100;

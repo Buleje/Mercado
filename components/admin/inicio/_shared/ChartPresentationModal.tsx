@@ -309,19 +309,24 @@ export function ChartPresentationModal({
           <ChevronLeft className="h-6 w-6" />
         </button>
 
-        {/* Chart principal — ref para export/wheel */}
+        {/* Chart principal — ref para export/wheel.
+            data-chart-presentation activa overrides CSS del global para que
+            los wrappers internos de Recharts (altura fija 300px) crezcan a
+            ~65vh y ocupen el espacio real del modal. Sin esto los charts
+            se veían chicos en una superficie grande (Brandon brief). */}
         <div
           ref={chartAreaRef}
-          className="flex-1 flex items-center justify-center px-16 py-8 overflow-auto"
+          data-chart-presentation="true"
+          className="flex-1 flex items-stretch justify-center px-8 sm:px-12 py-6 overflow-auto"
           onMouseEnter={() => {
             // Pausar autoplay al hover para dejar leer
             if (autoplay) setAutoplay(false);
           }}
         >
           <div
-            className="w-full max-w-6xl mx-auto"
+            className="w-full max-w-[1600px] mx-auto flex flex-col justify-center"
             style={{
-              minHeight: "60vh",
+              minHeight: "78vh",
             }}
           >
             {activeItem.render()}

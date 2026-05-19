@@ -23,6 +23,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  LabelList,
 } from "recharts";
 import { TrendingUp, ShoppingBag, Banknote, Loader2 } from "@buleje/design-system/icons";
 
@@ -224,18 +225,47 @@ export function TenantGrowthChart({ range }: Props) {
                   }}
                   labelFormatter={(label) => String(label ?? "")}
                 />
-                {visibleSeries.map((s) => (
-                  <Line
-                    key={s.tenantId}
-                    type="monotone"
-                    dataKey={s.slug}
-                    stroke={s.color}
-                    strokeWidth={2.5}
-                    dot={{ r: 2.5, strokeWidth: 0, fill: s.color }}
-                    activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }}
-                    name={s.slug}
-                  />
-                ))}
+                {visibleSeries.map((s) => {
+                  // Encontrar el valor máximo de esta serie para mostrar
+                  // SOLO ese label sobre la línea (8 tiendas × N puntos
+                  // sería caótico mostrar todos). Brandon brief: "le falta
+                  // los números dentro del gráfico" — esto da el dato sin
+                  // saturar visualmente.
+                  const seriesMax = s.points.reduce(
+                    (m, p) => Math.max(m, p.value),
+                    0,
+                  );
+                  return (
+                    <Line
+                      key={s.tenantId}
+                      type="monotone"
+                      dataKey={s.slug}
+                      stroke={s.color}
+                      strokeWidth={2.5}
+                      dot={{ r: 2.5, strokeWidth: 0, fill: s.color }}
+                      activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }}
+                      name={s.slug}
+                    >
+                      <LabelList
+                        dataKey={s.slug}
+                        position="top"
+                        offset={8}
+                        fontSize={10}
+                        fontWeight={700}
+                        fill={s.color}
+                        formatter={(v: unknown) => {
+                          if (typeof v !== "number") return "";
+                          // Solo etiqueta el pico de la serie (y solo si > 0)
+                          if (v !== seriesMax || v <= 0) return "";
+                          return metric === "revenue"
+                            ? `S/${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : Math.round(v)}`
+                            : String(v);
+                        }}
+                        style={{ fontFamily: "var(--font-sans)" }}
+                      />
+                    </Line>
+                  );
+                })}
               </LineChart>
             </ResponsiveContainer>
           </div>
