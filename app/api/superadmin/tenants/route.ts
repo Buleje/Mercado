@@ -5,7 +5,7 @@ import { z } from "zod";
 import { hash } from "bcryptjs";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
-import { getTenantUsage } from "@/lib/usage";
+import { batchTenantUsage } from "@/lib/usage";
 import { getPlanLimits } from "@/lib/plans";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -134,13 +134,20 @@ async function getTenantsData() {
         .map((r) => [r.tenantId, r.logoUrl as string])
     );
 
-    // Fetch usage for all tenants in parallel (capped at 50 concurrent)
-    const usageList = await Promise.all(
-      tenants.map((t) => getTenantUsage(t.slug))
+    // Audit performance #1 (2026-05-19): convertido de `getTenantUsage(slug)`
+    // fan-out (4 queries × N tenants = 4N queries → 4000 con 1000 tenants)
+    // a `batchTenantUsage(tenants)` con 3 groupBy independientes de N.
+    // Mismo patrón que `health/route.ts` ya usaba para escalar.
+    const usageByKey = await batchTenantUsage(
+      tenants.map((t) => ({ slug: t.slug, id: t.id })),
     );
 
-    const rows = tenants.map((t, i) => {
-      const usage = usageList[i];
+    const rows = tenants.map((t) => {
+      // El batch indexa por ambos slug y cuid — usar slug como key primaria,
+      // con fallback al cuid si por alguna razón no hay match (defensivo).
+      const usage = usageByKey.get(t.slug) ?? usageByKey.get(t.id) ?? {
+        products: 0, users: 0, ordersThisMonth: 0,
+      };
       const limits = getPlanLimits(t.plan);
       // Store.tenantId can be cuid or slug — check both
       const tenantStores = storeMap.get(t.id) ?? storeMap.get(t.slug) ?? [];
