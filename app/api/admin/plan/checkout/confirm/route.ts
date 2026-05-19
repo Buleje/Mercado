@@ -31,7 +31,8 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "admin-plan-checkout-confirm"); if (_rl) return _rl;
+  // Audit 2026-05-19: registra solicitud manual de pago — STRICT.
+  const _rl = await applyRateLimit(req, "STRICT", "admin-plan-checkout-confirm"); if (_rl) return _rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
   // 1. Auth obligatoria — solo el admin del tenant puede solicitar upgrade.

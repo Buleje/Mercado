@@ -32,7 +32,8 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "admin-plan-checkout-stripe-session"); if (_rl) return _rl;
+  // Audit 2026-05-19: endpoint crea sesión Stripe — STRICT.
+  const _rl = await applyRateLimit(req, "STRICT", "admin-plan-checkout-stripe-session"); if (_rl) return _rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
   // Audit 2026-05-17 Q-P0-2: roles explícitos.

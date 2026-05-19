@@ -23,7 +23,8 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "billing-mp-checkout"); if (_rl) return _rl;
+  // Audit 2026-05-19: endpoint mueve dinero (MP Preferences) — STRICT.
+  const _rl = await applyRateLimit(req, "STRICT", "billing-mp-checkout"); if (_rl) return _rl;
   // ── Auth ─────────────────────────────────────────────────
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
