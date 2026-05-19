@@ -11,8 +11,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ProductQADB } from "@/lib/db/product-qa.db";
+import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 
 const Body = z.object({
@@ -47,11 +47,9 @@ export async function POST(
   }
 
   // Resolver tenantId desde el producto (no hardcoded "global")
-  const product = await prisma.product.findUnique({
-    where: { id: productIdNum },
-    select: { tenantId: true },
-  });
-  if (!product) {
+  // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.
+  const tenantIdResolved = await MarketplaceProductsDB.getTenantById(productIdNum);
+  if (!tenantIdResolved) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
   }
 
@@ -73,7 +71,7 @@ export async function POST(
 
   try {
     const answer = await ProductQADB.createAnswer({
-      tenantId: product.tenantId,
+      tenantId: tenantIdResolved,
       questionId: parsed.data.questionId,
       userId,
       userName: parsed.data.userName,

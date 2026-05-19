@@ -103,14 +103,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // `x-tenant-id: tenant-A` podía leer badges agregados del producto si el
     // mismo productId existe en distintos tenants. La cache también quedaba
     // cross-contaminada por la key.
-    const productOwner = await prisma.product.findFirst({
-      where: { id: productId, deletedAt: null },
-      select: { tenantId: true },
-    });
-    if (!productOwner) {
+    // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.getTenantById.
+    const { MarketplaceProductsDB } = await import("@/lib/db/marketplace-products.db");
+    const tenantId = await MarketplaceProductsDB.getTenantById(productId);
+    if (!tenantId) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
-    const tenantId = productOwner.tenantId;
     const { searchParams } = new URL(req.url);
     const lat = searchParams.get("lat") ? Number(searchParams.get("lat")) : undefined;
     const lng = searchParams.get("lng") ? Number(searchParams.get("lng")) : undefined;

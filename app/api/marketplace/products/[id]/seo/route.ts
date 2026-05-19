@@ -6,7 +6,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, tryAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 import { z } from "zod";
@@ -35,10 +35,8 @@ export async function GET(
   const session = await tryAdmin(req);
   const tenantId = session?.tenantId ?? resolveMarketplaceTenant(req, { context: "marketplace/products/seo" });
 
-  const product = await prisma.product.findFirst({
-    where: { id: productId, tenantId, deletedAt: null },
-    select: { metaTitle: true, metaDescription: true, metaKeywordsJson: true, ogImage: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.getSeoMeta.
+  const product = await MarketplaceProductsDB.getSeoMeta(tenantId, productId);
 
   if (!product) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
@@ -78,12 +76,9 @@ export async function PUT(
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const updated = await prisma.product.updateMany({
-    where: { id: productId, tenantId: auth.tenantId, deletedAt: null },
-    data: parsed.data,
-  });
-
-  if (updated.count === 0) {
+  // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.updateSeoMeta.
+  const ok = await MarketplaceProductsDB.updateSeoMeta(auth.tenantId, productId, parsed.data);
+  if (!ok) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
   }
 

@@ -83,4 +83,63 @@ export const MarketplaceProductsDB = {
       return null;
     }
   },
+
+  /**
+   * Asserts that productId pertenece al tenant. Devuelve true/false.
+   * Usado como guard cross-tenant en endpoints admin (images, badges, etc).
+   * Filtra deletedAt para no aceptar productos soft-deleted como validos.
+   */
+  async assertOwnership(tenantId: string, productId: number): Promise<boolean> {
+    const row = await prisma.product.findFirst({
+      where: { id: productId, tenantId, deletedAt: null },
+      select: { id: true },
+    });
+    return !!row;
+  },
+
+  /**
+   * Lee los meta SEO de un producto (scope tenant). Util para el editor
+   * de SEO en admin y el render de meta tags en /producto/[id].
+   */
+  async getSeoMeta(
+    tenantId: string,
+    productId: number,
+  ): Promise<{
+    metaTitle: string | null;
+    metaDescription: string | null;
+    metaKeywordsJson: string | null;
+    ogImage: string | null;
+  } | null> {
+    return prisma.product.findFirst({
+      where: { id: productId, tenantId, deletedAt: null },
+      select: {
+        metaTitle: true,
+        metaDescription: true,
+        metaKeywordsJson: true,
+        ogImage: true,
+      },
+    });
+  },
+
+  /**
+   * Actualiza meta SEO con scope tenant. Devuelve true si actualizo,
+   * false si no se encontro (404). Usa updateMany para que el where
+   * filtre tenant + deletedAt en una sola query.
+   */
+  async updateSeoMeta(
+    tenantId: string,
+    productId: number,
+    data: {
+      metaTitle?: string;
+      metaDescription?: string;
+      metaKeywordsJson?: string;
+      ogImage?: string;
+    },
+  ): Promise<boolean> {
+    const result = await prisma.product.updateMany({
+      where: { id: productId, tenantId, deletedAt: null },
+      data,
+    });
+    return result.count > 0;
+  },
 };

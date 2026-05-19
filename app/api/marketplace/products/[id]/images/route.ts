@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductImagesDB } from "@/lib/db/product-images.db";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
@@ -59,11 +59,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     if (auth instanceof NextResponse) return auth;
 
     // F3: verificar que el producto pertenece al tenant del admin (cross-tenant guard)
-    const productOwner = await prisma.product.findFirst({
-      where: { id: productId, tenantId: auth.tenantId },
-      select: { id: true },
-    });
-    if (!productOwner) {
+    // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.assertOwnership.
+    const isOwner = await MarketplaceProductsDB.assertOwnership(auth.tenantId, productId);
+    if (!isOwner) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
 
@@ -105,11 +103,9 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     if (auth instanceof NextResponse) return auth;
 
     // F3: verificar que el producto pertenece al tenant del admin
-    const productOwner = await prisma.product.findFirst({
-      where: { id: productId, tenantId: auth.tenantId },
-      select: { id: true },
-    });
-    if (!productOwner) {
+    // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.assertOwnership.
+    const isOwner = await MarketplaceProductsDB.assertOwnership(auth.tenantId, productId);
+    if (!isOwner) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
 
