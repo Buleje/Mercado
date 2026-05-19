@@ -39,7 +39,6 @@ import {
   Store,
   ExternalLink,
   Pencil,
-  Sparkles,
   Truck,
   Zap,
 } from "@buleje/design-system/icons";
@@ -228,99 +227,61 @@ export function AddedToCartDrawerProvider({
                 )}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* ───── HERO: banner brand con celebración ──────────── */}
-                <div
-                  className={cn(
-                    "relative px-5 sm:px-7 pt-5 sm:pt-7 pb-7 sm:pb-8 overflow-hidden",
-                    "bg-gradient-to-br from-[var(--brand-primary)] via-[var(--brand-primary)] to-[color-mix(in_oklab,var(--brand-primary)_60%,#0a0a0a_40%)]",
-                  )}
-                >
-                  {/* Confetti orbs — celebración sin emojis */}
-                  <m.span
-                    aria-hidden
-                    initial={{ opacity: 0, scale: 0.4 }}
-                    animate={{ opacity: 0.35, scale: 1 }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
-                    className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-white/15 blur-2xl"
-                  />
-                  <m.span
-                    aria-hidden
-                    initial={{ opacity: 0, scale: 0.4 }}
-                    animate={{ opacity: 0.25, scale: 1 }}
-                    transition={{ duration: 0.6, delay: 0.18 }}
-                    className="absolute -bottom-10 -left-8 h-28 w-28 rounded-full bg-white/12 blur-2xl"
-                  />
+                {/* ───── HEADER COMPACTO ─────────────────────────────────
+                    Brandon 2026-05-18 v6 — rediseño opción A "compacto sin
+                    hero grande". Antes: hero verde gigante con check
+                    celebratorio + "¡LO TENÉS!" + "Listo, va a tu carrito"
+                    (ocupaba ~25% del modal). Ahora: header sutil con drag
+                    handle + check verde inline + título + close.
+                    Resultado: 40% menos alto vertical, más elegante. */}
+                <div className="relative shrink-0 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
                   {/* Drag handle (mobile sheet) */}
-                  <div className="sm:hidden absolute top-2 left-0 right-0 flex justify-center" aria-hidden>
-                    <span className="h-1.5 w-12 rounded-full bg-white/40" />
+                  <div className="sm:hidden absolute top-1.5 left-0 right-0 flex justify-center" aria-hidden>
+                    <span className="h-1 w-10 rounded-full bg-[var(--text-tertiary)]/30" />
                   </div>
 
-                  <button
-                    onClick={close}
-                    aria-label="Cerrar"
-                    className="absolute right-3 sm:right-4 top-3 sm:top-4 h-10 w-10 inline-flex items-center justify-center rounded-full bg-white/15 backdrop-blur-sm text-white hover:bg-white/25 transition-all active:scale-90"
-                  >
-                    <X className="h-5 w-5" strokeWidth={2.5} />
-                  </button>
-
-                  {/* Check celebrante grande con doble pulse */}
-                  <div className="relative inline-flex items-center justify-center">
-                    <span className="relative inline-flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center">
+                  <div className="flex items-center justify-between gap-3 mt-1 sm:mt-0">
+                    <div className="inline-flex items-center gap-2.5 min-w-0">
                       <m.span
-                        aria-hidden
-                        className="absolute inset-0 rounded-full bg-white/40"
-                        initial={{ scale: 0.5, opacity: 0.9 }}
-                        animate={{ scale: 2, opacity: 0 }}
-                        transition={{ duration: 1.1, ease: "easeOut", repeat: 1, repeatDelay: 0.3 }}
-                      />
-                      <m.span
-                        aria-hidden
-                        className="absolute inset-0 rounded-full bg-white/25"
-                        initial={{ scale: 0.5, opacity: 0.7 }}
-                        animate={{ scale: 1.7, opacity: 0 }}
-                        transition={{ duration: 1.0, ease: "easeOut", delay: 0.15 }}
-                      />
-                      <m.span
-                        initial={{ scale: 0, rotate: -45 }}
+                        initial={{ scale: 0, rotate: -25 }}
                         animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring", damping: 14, stiffness: 320, delay: 0.05 }}
-                        className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-white inline-flex items-center justify-center shadow-2xl"
+                        transition={{ type: "spring", damping: 14, stiffness: 380 }}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white shadow-md shadow-[var(--data-success-500)]/30 shrink-0"
+                        aria-hidden
                       >
-                        <Check className="h-8 w-8 sm:h-10 sm:w-10 text-[var(--brand-primary)]" strokeWidth={3.5} aria-hidden />
+                        <Check className="h-5 w-5" strokeWidth={3.25} />
                       </m.span>
-                    </span>
-                  </div>
-
-                  <div className="relative mt-4 sm:mt-5">
-                    <p className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-[length:var(--ts-2xs,11px)] font-black uppercase tracking-[0.14em] text-white">
-                      <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                      ¡Lo tenés!
-                    </p>
-                    <h2
-                      id="added-modal-title"
-                      className="mt-2 text-[length:clamp(1.625rem,5vw,2rem)] font-black text-white leading-[1.05] tracking-tight"
+                      <h2
+                        id="added-modal-title"
+                        className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight"
+                      >
+                        Agregado al carrito
+                      </h2>
+                    </div>
+                    <button
+                      onClick={close}
+                      aria-label="Cerrar"
+                      className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] transition-colors active:scale-95"
                     >
-                      Listo, va a tu carrito
-                    </h2>
+                      <X className="h-4 w-4" strokeWidth={2.75} />
+                    </button>
                   </div>
                 </div>
 
+                {/* Separator sutil */}
+                <div aria-hidden className="mx-5 sm:mx-6 h-px bg-[var(--rule-soft)]" />
+
                 {/* ───── BODY scrollable ──────────────────────────────── */}
-                <div className="flex-1 overflow-y-auto px-5 sm:px-7 pt-5 pb-4 -mt-4 sm:-mt-5">
-                  {/* Card producto — flotando sobre el hero (-mt) */}
+                <div className="flex-1 overflow-y-auto px-5 sm:px-6 pt-3 pb-4">
+                  {/* Card producto — HORIZONTAL compacto (no flotando) */}
                   <m.div
-                    initial={{ y: 20, opacity: 0 }}
+                    initial={{ y: 12, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.1, duration: 0.4 }}
-                    className="relative rounded-3xl bg-[var(--surface-raised)] ring-1 ring-[var(--rule-soft)] shadow-xl shadow-black/5 p-4 sm:p-5 flex gap-4 sm:gap-5"
+                    transition={{ delay: 0.08, duration: 0.3 }}
+                    className="relative rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 flex gap-3 items-stretch"
                   >
-                    {/* Imagen producto — grande y prominente */}
-                    <m.div
-                      initial={{ scale: 0.85, rotate: -4, opacity: 0 }}
-                      animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                      transition={{ delay: 0.15, type: "spring", damping: 16, stiffness: 280 }}
-                      className="relative h-28 w-28 sm:h-32 sm:w-32 shrink-0 rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--brand-primary)]/25 to-[var(--brand-secondary)]/15 ring-2 ring-white shadow-lg"
-                    >
+                    {/* Imagen 80×80 con badge qty inline */}
+                    <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-[var(--brand-primary)]/20 to-[var(--brand-secondary)]/10 ring-1 ring-[var(--rule-soft)]">
                       {product.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -330,68 +291,68 @@ export function AddedToCartDrawerProvider({
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center">
-                          <span className="text-5xl sm:text-6xl font-black text-[var(--brand-primary)]/55 leading-none">
+                          <span className="text-2xl font-black text-[var(--brand-primary)]/55 leading-none">
                             {product.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       )}
-                      {/* Badge "1x" superpuesto al ítem */}
-                      <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full bg-[var(--brand-primary)] text-white text-[length:var(--ts-xs)] font-black tabular-nums shadow-md ring-2 ring-white">
+                      {/* Badge qty top-right */}
+                      <span className="absolute top-1 right-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-[var(--brand-primary)] text-white text-[length:var(--ts-2xs,10px)] font-black tabular-nums shadow-sm ring-1 ring-white/90">
                         ×{qty}
                       </span>
-                    </m.div>
+                    </div>
 
-                    {/* Info producto */}
+                    {/* Info producto inline */}
                     <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                       {product.storeName && (
                         <Link
                           href={`/marketplace/${product.storeSlug}`}
-                          className="inline-flex items-center gap-1.5 self-start max-w-full rounded-full bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-base)] px-2.5 py-1 text-[length:var(--ts-2xs,11px)] font-black uppercase tracking-[0.08em] text-[var(--text-secondary)] hover:ring-[var(--brand-primary)]/40 hover:text-[var(--brand-primary)] transition-colors"
+                          className="inline-flex items-center gap-1 self-start max-w-full text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[0.06em] text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors"
                         >
                           <Store className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
                           <span className="truncate">{product.storeName}</span>
                         </Link>
                       )}
 
-                      <h3 className="mt-1.5 text-[length:var(--ts-lg)] sm:text-[length:var(--ts-xl)] font-black leading-[1.15] text-[var(--text-primary)] line-clamp-2 tracking-tight">
+                      <h3 className="mt-0.5 text-sm sm:text-base font-extrabold leading-[1.2] text-[var(--text-primary)] line-clamp-2">
                         {product.name}
                       </h3>
 
-                      <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
-                        <p className="text-[length:clamp(1.75rem,5.5vw,2.25rem)] font-black text-[var(--brand-primary)] tabular-nums leading-none">
+                      <div className="mt-0.5 flex items-baseline gap-1">
+                        <p className="text-base sm:text-lg font-black text-[var(--brand-primary)] tabular-nums leading-none">
                           {fmt(product.price)}
                         </p>
                         {product.unit && (
-                          <span className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                            / {product.unit}
+                          <span className="text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]">
+                            /{product.unit}
                           </span>
                         )}
                       </div>
                     </div>
                   </m.div>
 
-                  {/* ── Stepper cantidad — táctil enorme ───────────── */}
-                  <div className="mt-4 flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-5 py-3">
+                  {/* ── Stepper cantidad — más compacto inline ───────── */}
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-2.5">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[length:var(--ts-2xs,11px)] font-black uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-                        Cantidad · Subtotal
+                      <p className="text-[length:var(--ts-2xs,10px)] font-extrabold uppercase tracking-[0.08em] text-[var(--text-tertiary)] leading-none">
+                        Subtotal
                       </p>
-                      <p className="mt-0.5 text-[length:var(--ts-xl)] sm:text-[length:var(--ts-2xl)] font-black tabular-nums text-[var(--text-primary)] leading-none">
+                      <p className="mt-1 text-base font-black tabular-nums text-[var(--text-primary)] leading-none">
                         {fmt(product.price * qty)}
                       </p>
                     </div>
-                    <div className="flex items-center rounded-2xl bg-[var(--brand-primary)]/8 ring-2 ring-[var(--brand-primary)]/20 overflow-hidden">
+                    <div className="flex items-center rounded-full bg-[var(--brand-primary)]/8 ring-1 ring-[var(--brand-primary)]/20 overflow-hidden shrink-0">
                       <button
                         type="button"
                         onClick={handleDec}
                         aria-label={qty <= 1 ? "Quitar del carrito" : "Reducir cantidad"}
-                        className="h-12 w-12 sm:h-14 sm:w-14 inline-flex items-center justify-center text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/15 transition-colors active:scale-85"
+                        className="h-10 w-10 inline-flex items-center justify-center text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/15 transition-colors active:scale-85"
                       >
-                        <Minus className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={3} />
+                        <Minus className="h-4 w-4" strokeWidth={2.75} />
                       </button>
                       <span
                         aria-live="polite"
-                        className="min-w-[3.5rem] sm:min-w-[4rem] text-center text-[length:var(--ts-2xl)] font-black tabular-nums text-[var(--text-primary)]"
+                        className="min-w-[2.5rem] text-center text-base font-black tabular-nums text-[var(--text-primary)]"
                       >
                         {qty}
                       </span>
@@ -399,9 +360,9 @@ export function AddedToCartDrawerProvider({
                         type="button"
                         onClick={handleInc}
                         aria-label="Aumentar cantidad"
-                        className="h-12 w-12 sm:h-14 sm:w-14 inline-flex items-center justify-center text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/15 transition-colors active:scale-85"
+                        className="h-10 w-10 inline-flex items-center justify-center text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/15 transition-colors active:scale-85"
                       >
-                        <Plus className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={3} />
+                        <Plus className="h-4 w-4" strokeWidth={2.75} />
                       </button>
                     </div>
                   </div>
@@ -452,60 +413,56 @@ export function AddedToCartDrawerProvider({
                     </div>
                   )}
 
-                  {/* ── Progress bar: faltan S/X para delivery GRATIS ─── */}
-                  <m.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
+                  {/* ── Delivery status — PILL compacto en lugar del banner
+                      grande con progress bar. Brandon 2026-05-18 v6 opción A:
+                      pill inline una sola línea, mucho menos vertical. La
+                      progress bar se mantiene pero más delgada (h-1 vs h-2.5
+                      anterior) y SOLO cuando NO hay delivery free aún. */}
+                  <div
                     className={cn(
-                      "mt-3 rounded-2xl p-3.5 sm:p-4 ring-2",
+                      "mt-3 rounded-xl px-3 py-2 flex items-center gap-2",
                       hasFreeDelivery
-                        ? "bg-[var(--data-success-500)]/10 ring-[var(--data-success-500)]/30"
-                        : "bg-[var(--data-warning-500,#f97316)]/8 ring-[var(--data-warning-500,#f97316)]/25",
+                        ? "bg-[var(--data-success-500)]/10 ring-1 ring-[var(--data-success-500)]/25"
+                        : "bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]",
                     )}
                   >
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <span
-                        className={cn(
-                          "inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0",
-                          hasFreeDelivery
-                            ? "bg-[var(--data-success-500)] text-white"
-                            : "bg-[var(--data-warning-500,#f97316)]/15 text-[var(--data-warning-500,#f97316)]",
-                        )}
-                      >
-                        <Truck className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        {hasFreeDelivery ? (
-                          <p className="text-[length:var(--ts-sm)] sm:text-[length:var(--ts-base)] font-black text-[var(--data-success-500)] leading-tight inline-flex items-center gap-1.5">
-                            <Zap className="h-4 w-4 shrink-0" strokeWidth={2.75} aria-hidden />
-                            ¡Tenés delivery GRATIS!
-                          </p>
-                        ) : (
-                          <p className="text-[length:var(--ts-sm)] sm:text-[length:var(--ts-base)] font-black text-[var(--text-primary)] leading-tight">
+                    <span
+                      className={cn(
+                        "inline-flex h-7 w-7 items-center justify-center rounded-full shrink-0",
+                        hasFreeDelivery
+                          ? "bg-[var(--data-success-500)] text-white"
+                          : "bg-[var(--brand-primary)]/12 text-[var(--brand-primary)]",
+                      )}
+                    >
+                      <Truck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      {hasFreeDelivery ? (
+                        <p className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-500)] leading-tight inline-flex items-center gap-1">
+                          <Zap className="h-3 w-3 shrink-0" strokeWidth={2.75} aria-hidden />
+                          Delivery GRATIS
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] leading-tight">
                             Faltan{" "}
-                            <span className="tabular-nums text-[var(--data-warning-500,#f97316)]">
+                            <span className="tabular-nums font-extrabold text-[var(--brand-primary)]">
                               {fmt(remainingForFree)}
                             </span>{" "}
-                            para delivery <span className="text-[var(--data-success-500)]">GRATIS</span>
+                            para delivery <span className="font-extrabold text-[var(--data-success-500)]">GRATIS</span>
                           </p>
-                        )}
-                      </div>
+                          <div className="relative mt-1.5 h-1 rounded-full bg-[var(--rule-soft)] overflow-hidden">
+                            <m.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressPct}%` }}
+                              transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+                              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[var(--brand-secondary)] to-[var(--brand-primary)]"
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <div className="relative h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-                      <m.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progressPct}%` }}
-                        transition={{ delay: 0.25, duration: 0.7, ease: "easeOut" }}
-                        className={cn(
-                          "absolute inset-y-0 left-0 rounded-full",
-                          hasFreeDelivery
-                            ? "bg-gradient-to-r from-[var(--data-success-500)] to-[var(--brand-primary)]"
-                            : "bg-gradient-to-r from-[var(--data-warning-500,#f97316)] via-[var(--brand-secondary)] to-[var(--brand-primary)]",
-                        )}
-                      />
-                    </div>
-                  </m.div>
+                  </div>
 
                   {/* Link "Ver ficha completa" — Brandon 2026-05-18 v5: oculto
                       en mobile (xs), solo desktop. En cel el cliente no
