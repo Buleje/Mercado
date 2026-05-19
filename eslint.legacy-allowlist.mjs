@@ -16,6 +16,9 @@ export const PRISMA_DIRECT_LEGACY = [
   "app/api/ab-tests/route.ts",
   "app/api/admin/plan/mock-activate/route.ts",
   "app/api/chat/public/stream/route.ts",
+  // Módulo delivery (admin app + driver app /me/**) — pre-existente,
+  // migración a DeliveryDB pendiente.
+  "app/api/delivery/**/*.ts",
   "app/api/abandoned-cart/stats/route.ts",
   "app/api/activity-log/route.ts",
   "app/api/admin-users/route.ts",
