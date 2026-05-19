@@ -80,12 +80,23 @@ export function TenantGrowthChart({ range }: Props) {
   }, [range, metric]);
 
   // Reshape: [{ date, [tenantSlug]: value, ... }]
+  // Brandon 2026-05-19: fechas en formato "23 abr" en lugar de "04-23".
+  // ISO original se guarda en `_iso` para usar en el labelFormatter del tooltip.
   const chartData = useMemo(() => {
     if (!data || data.dates.length === 0) return [];
-    return data.dates.map((date) => {
-      const row: Record<string, number | string> = { date: date.slice(5) }; // MM-DD
+    const fmtMonth = new Intl.DateTimeFormat("es-PE", { month: "short" });
+    const labelOf = (iso: string) => {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const m = fmtMonth.format(d).replace(/\.$/, "");
+      const mCap = m.charAt(0).toUpperCase() + m.slice(1);
+      return `${d.getDate()} ${mCap}`;
+    };
+    return data.dates.map((iso) => {
+      const label = labelOf(iso);
+      const row: Record<string, number | string> = { date: label, _iso: iso };
       for (const s of data.series) {
-        const pt = s.points.find((p) => p.date === date);
+        const pt = s.points.find((p) => p.date === iso);
         row[s.slug] = pt?.value ?? 0;
       }
       return row;
@@ -176,8 +187,11 @@ export function TenantGrowthChart({ range }: Props) {
                 <XAxis
                   dataKey="date"
                   stroke="var(--text-tertiary)"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fontWeight: 600 }}
                   tickMargin={8}
+                  interval="preserveStartEnd"
+                  minTickGap={24}
+                  tickLine={false}
                 />
                 <YAxis
                   stroke="var(--text-tertiary)"
@@ -188,6 +202,8 @@ export function TenantGrowthChart({ range }: Props) {
                       : v.toString()
                   }
                   width={50}
+                  tickLine={false}
+                  axisLine={false}
                 />
                 <Tooltip
                   contentStyle={{
@@ -195,6 +211,7 @@ export function TenantGrowthChart({ range }: Props) {
                     border: "1px solid var(--rule-base)",
                     borderRadius: "8px",
                     fontSize: 12,
+                    boxShadow: "var(--shadow-md)",
                   }}
                   formatter={(value, name) => {
                     const v = typeof value === "number" ? value : Number(value ?? 0);
@@ -205,7 +222,7 @@ export function TenantGrowthChart({ range }: Props) {
                       s?.tenantName ?? n,
                     ];
                   }}
-                  labelFormatter={(label) => `Día ${String(label ?? "")}`}
+                  labelFormatter={(label) => String(label ?? "")}
                 />
                 {visibleSeries.map((s) => (
                   <Line

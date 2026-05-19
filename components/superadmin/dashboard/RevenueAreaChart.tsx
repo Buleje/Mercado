@@ -8,6 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  LabelList,
 } from "recharts";
 import { ChartWrapper, useChartTokens } from "@buleje/design-system";
 import { fmtSoles } from "@/lib/mocks/superadmin-dashboard.mock";
@@ -78,9 +79,11 @@ export function RevenueAreaChart({
             <XAxis
               dataKey="month"
               stroke={tokens.axis}
-              tick={{ fontSize: 13, fill: tokens.axis, fontWeight: 600 }}
+              tick={{ fontSize: 11, fill: tokens.axis, fontWeight: 600 }}
               tickLine={false}
               axisLine={{ stroke: tokens.grid }}
+              interval="preserveStartEnd"
+              minTickGap={28}
             />
             <YAxis
               stroke={tokens.axis}
@@ -100,13 +103,38 @@ export function RevenueAreaChart({
               stroke={teal}
               strokeWidth={2.5}
               fill="url(#mrrGradient)"
+              dot={{
+                r: 3,
+                fill: teal,
+                stroke: "var(--surface-canvas)",
+                strokeWidth: 1.5,
+              }}
               activeDot={{
                 r: 6,
                 fill: teal,
                 stroke: "var(--surface-canvas)",
                 strokeWidth: 2,
               }}
-            />
+            >
+              {/* Etiqueta solo en el primero y último punto (evita ruido) +
+                  el pico máximo. Brandon: "datos dentro de las barras" →
+                  acá ponemos los valores clave directamente sobre la línea. */}
+              <LabelList
+                dataKey="revenue"
+                position="top"
+                offset={10}
+                fontSize={10}
+                fontWeight={700}
+                fill={teal}
+                formatter={(v: unknown) => {
+                  if (typeof v !== "number" || v <= 0) return "";
+                  // Solo mostrar si vale la pena la abreviación
+                  if (v >= 1000) return `S/${(v / 1000).toFixed(1)}k`;
+                  return `S/${Math.round(v)}`;
+                }}
+                style={{ fontFamily: "var(--font-sans)" }}
+              />
+            </Area>
           </AreaChart>
         </ResponsiveContainer>
       </div>

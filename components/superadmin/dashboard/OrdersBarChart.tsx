@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  LabelList,
 } from "recharts";
 import { ChartWrapper, useChartTokens } from "@buleje/design-system";
 import type { OrdersSeriesPoint } from "@/lib/mocks/superadmin-dashboard.mock";
@@ -73,14 +74,15 @@ export function OrdersBarChart({
             <XAxis
               dataKey="day"
               stroke={tokens.axis}
-              tick={{ fontSize: 13, fill: tokens.axis }}
+              tick={{ fontSize: 11, fill: tokens.axis, fontWeight: 600 }}
               tickLine={false}
               axisLine={{ stroke: tokens.grid }}
-              interval={4}
+              interval="preserveStartEnd"
+              minTickGap={20}
             />
             <YAxis
               stroke={tokens.axis}
-              tick={{ fontSize: 13, fill: tokens.axis }}
+              tick={{ fontSize: 12, fill: tokens.axis }}
               tickLine={false}
               axisLine={false}
               width={30}
@@ -97,10 +99,10 @@ export function OrdersBarChart({
               strokeWidth={1.5}
               opacity={0.7}
               label={{
-                value: `Prom. ${avg.toFixed(0)}`,
+                value: `Prom. ${avg.toFixed(1)}`,
                 position: "right",
                 fill: purple,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 700,
               }}
             />
@@ -115,7 +117,23 @@ export function OrdersBarChart({
               fill="url(#ordersBarGrad)"
               radius={[5, 5, 0, 0]}
               maxBarSize={22}
-            />
+            >
+              {/* Labels sobre cada barra — solo si valor > 0 para no
+                  contaminar fines de semana sin pedidos. Tipografía
+                  pequeña pero tabular para alineación perfecta. */}
+              <LabelList
+                dataKey="orders"
+                position="top"
+                offset={4}
+                fontSize={10}
+                fontWeight={700}
+                fill={purple}
+                formatter={(v: unknown) =>
+                  typeof v === "number" && v > 0 ? String(v) : ""
+                }
+                style={{ fontFamily: "var(--font-sans)" }}
+              />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>

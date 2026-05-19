@@ -155,6 +155,27 @@ export default function DashboardPage() {
       [],
     [widgets],
   );
+
+  // ── Formato fecha legible — "2026-04-23" → "23 abr" ────────────────────
+  // Brief Brandon 2026-05-19: "04-23" no se entiende; queremos "2 may" con
+  // abreviación en español. Usa Intl en es-PE (e.g. "23 abr"). Es el formato
+  // que Brandon ya usa mentalmente cuando habla del negocio.
+  const fmtShortDate = useCallback((iso: string) => {
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const day = d.getDate();
+      const monthRaw = new Intl.DateTimeFormat("es-PE", { month: "short" })
+        .format(d)
+        .replace(/\.$/, "");
+      // Capitalizar mes para consistencia entre charts (Intl devuelve
+      // minúsculas en es-PE: "abr" → "Abr")
+      const month = monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1);
+      return `${day} ${month}`;
+    } catch {
+      return iso;
+    }
+  }, []);
   const arpuSeries = useMemo(
     () =>
       widgets?.arpuSeries && widgets.arpuSeries.length > 0
@@ -288,7 +309,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── ChartManager: hide/show + dynamic add ───────────────────────── */}
+      {/* ── ChartManager: hide/show + dynamic add ─────────────────────────
+          NOTA 2026-05-19: section headers eliminadas (Brandon: "los títulos
+          afuera dan mal diseño"). Cada chart card lleva su propio título
+          via ChartWrapper — sin huérfanos flotando. */}
       {data && widgets && (
         <ChartManager
           moduleId="superadmin-dashboard"
@@ -297,7 +321,6 @@ export default function DashboardPage() {
               id: "tenant-growth",
               label: "Crecimiento por tienda",
               description: "Multi-line chart con top 8 tiendas por volumen",
-              section: "Crecimiento",
               component: (
                 <TenantGrowthChart
                   range={
@@ -312,7 +335,6 @@ export default function DashboardPage() {
               id: "monthly-overview",
               label: "Visión mensual",
               description: "Ingresos + nuevas tiendas por mes (composed chart)",
-              section: "Indicadores clave",
               component: monthlyOverview.length > 0 ? (
                 <MonthlyOverviewChart data={monthlyOverview} />
               ) : null,
@@ -321,7 +343,6 @@ export default function DashboardPage() {
               id: "plan-health",
               label: "Distribución y salud",
               description: "Plan donut + radial de salud + ARPU",
-              section: "Indicadores clave",
               component: (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 sm:gap-6">
                   <PlanDistributionDonut
@@ -344,18 +365,18 @@ export default function DashboardPage() {
               id: "revenue-orders",
               label: "Detalle diario",
               description: "Revenue area + orders bar (últimos 30 días)",
-              section: "Indicadores clave",
               component: (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 sm:gap-6">
+                  {/* Pasamos `month` con formato "23 abr" (era "04-23") */}
                   <RevenueAreaChart
                     data={widgets.revenueSeries.map((p) => ({
-                      month: p.date.slice(5),
+                      month: fmtShortDate(p.date),
                       revenue: p.revenue,
                     }))}
                   />
                   <OrdersBarChart
                     data={widgets.ordersSeries.map((p) => ({
-                      day: p.date.slice(5),
+                      day: fmtShortDate(p.date),
                       orders: p.count,
                       label: p.date,
                     }))}
@@ -367,7 +388,6 @@ export default function DashboardPage() {
               id: "top-funnel",
               label: "Top tiendas y funnel",
               description: "Top 5 + conversión por paso",
-              section: "Operación",
               component: (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 sm:gap-6">
                   <TopStoresList
@@ -403,7 +423,6 @@ export default function DashboardPage() {
               id: "latest-active",
               label: "Últimas tiendas activas",
               description: "Tabla ordenada por última actividad",
-              section: "Detalle",
               component: (
                 <LatestActiveTenantsTable
                   tenants={widgets.latestActive.map((t) => ({
