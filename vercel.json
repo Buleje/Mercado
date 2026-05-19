@@ -97,6 +97,10 @@
       "schedule": "13 4 * * *"
     },
     {
+      "path": "/api/cron/yape-reconciliation",
+      "schedule": "51 23 * * *"
+    },
+    {
       "path": "/api/cron/superadmin-alerts",
       "schedule": "7 8 * * *"
     },
