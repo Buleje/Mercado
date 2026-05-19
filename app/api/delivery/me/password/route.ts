@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { compare, hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/delivery/partner-session";
+import { newPasswordSchema } from "@/lib/auth/password-schema";
 import { logger } from "@/lib/logger";
 
 /**
@@ -14,7 +15,7 @@ import { logger } from "@/lib/logger";
  */
 const BodySchema = z.object({
   currentPassword: z.string().min(4).max(100),
-  newPassword: z.string().min(6).max(100),
+  newPassword: newPasswordSchema,
 });
 
 export async function POST(req: NextRequest) {

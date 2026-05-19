@@ -4,6 +4,7 @@ import { prismaForTenant } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { z } from "zod";
+import { newPasswordSchema, newPasswordSchemaOptional } from "@/lib/auth/password-schema";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { enqueueActivityLog } from "@/lib/queue";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -11,7 +12,7 @@ import { logger } from "@/lib/logger";
 
 const CreateSchema = z.object({
   username: z.string().min(3).max(32).regex(/^[a-z0-9_.]+$/i, "Solo letras, números, punto y guión bajo"),
-  password: z.string().min(6),
+  password: newPasswordSchema,
   role: z.enum(["admin", "cajero", "almacenero"]),
   name: z.string().min(1).max(64),
 });
@@ -20,7 +21,7 @@ const UpdateSchema = z.object({
   id: z.string(),
   name: z.string().min(1).max(64).optional(),
   role: z.enum(["admin", "cajero", "almacenero"]).optional(),
-  password: z.string().min(6).optional(),
+  password: newPasswordSchemaOptional,
   active: z.boolean().optional(),
 });
 

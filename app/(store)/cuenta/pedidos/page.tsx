@@ -41,6 +41,7 @@ interface UiOrder {
 
 interface ApiOrder {
   id: string;
+  storeName?: string;
   status: UiStatus;
   total: number;
   paymentMethod: string | null;
@@ -220,12 +221,15 @@ export default function PedidosPage() {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((data: { orders?: ApiOrder[] }) => {
+      .then((data: { orders?: ApiOrder[]; storeName?: string }) => {
         if (cancelled) return;
         const apiOrders = data.orders ?? [];
+        // Audit project-wide 2026-05-19 (QA P1 #1): usar el nombre real
+        // de la tienda. Antes hardcoded "Buleje" — multi-tenant roto.
+        const defaultStore = data.storeName ?? "Tienda";
         const mapped: UiOrder[] = apiOrders.map((o) => ({
           id: o.id,
-          storeName: "Buleje",
+          storeName: o.storeName ?? defaultStore,
           createdAt: o.createdAt,
           total: o.total,
           status: o.status,

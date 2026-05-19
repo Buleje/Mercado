@@ -18,6 +18,15 @@ import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+// Audit project-wide 2026-05-19 (QA P1 #1): devolver storeName real del
+// tenant en lugar del "Buleje" hardcoded en /cuenta/pedidos.
+import { cache } from "react";
+const getTenantNameById = cache(async (tenantId: string) =>
+  prisma.tenant.findFirst({
+    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+    select: { name: true, slug: true },
+  })
+);
 import { logger } from "@/lib/logger";
 
 // Next 16 con cacheComponents: force-dynamic es redundante.
@@ -71,9 +80,15 @@ export async function GET(req: NextRequest) {
 
     const totalPages = Math.ceil(total / limit);
 
+    // QA P1 #1: el cliente ve la tienda real del pedido (multi-tenant correcto).
+    const tenantRow = await getTenantNameById(tenantId);
+    const storeName = tenantRow?.name ?? "Tienda";
+
     return NextResponse.json({
+      storeName,
       orders: orders.map((o) => ({
         id: o.id,
+        storeName,
         status: o.status,
         total: toNumOrZero(o.total),
         paymentMethod: o.paymentMethod,

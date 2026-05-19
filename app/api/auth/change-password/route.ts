@@ -4,12 +4,13 @@ import { getSessionPayload, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
+import { newPasswordSchema, newPasswordSchemaOptional } from "@/lib/auth/password-schema";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const ChangePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(6).max(128),
+  newPassword: newPasswordSchema,
 });
 
 export async function POST(req: NextRequest) {

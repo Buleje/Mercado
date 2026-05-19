@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prismaForTenant } from "@/lib/tenant";
 import { hash } from "bcryptjs";
 import { z } from "zod";
+import { newPasswordSchema, newPasswordSchemaOptional } from "@/lib/auth/password-schema";
 import { enqueueActivityLog } from "@/lib/queue";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -10,7 +11,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 const UpdateSchema = z.object({
   name: z.string().min(1).max(64).optional(),
   role: z.enum(["admin", "cajero", "almacenero"]).optional(),
-  password: z.string().min(6).optional(),
+  password: newPasswordSchemaOptional,
   active: z.boolean().optional(),
 });
 
