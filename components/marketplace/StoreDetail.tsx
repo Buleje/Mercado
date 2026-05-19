@@ -197,7 +197,7 @@ function RelatedProducts({
           También te puede gustar
         </h2>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {related.map((p, i) => (
           <ProductCardWrapper
             key={`rel-${p.id}`}
@@ -1257,7 +1257,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
       )}
 
       {loadingProducts ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
         </div>
       ) : products.length === 0 ? (
@@ -1274,7 +1274,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {products.map((p, i) => (
               <ProductCardWrapper
                 key={p.id}
