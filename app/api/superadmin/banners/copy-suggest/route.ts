@@ -3,6 +3,7 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { chatModel } from "@/lib/ai/provider";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 
 /**
  * POST /api/superadmin/banners/copy-suggest
@@ -35,6 +36,13 @@ const TONE_HINTS: Record<z.infer<typeof Input>["tone"], string> = {
 };
 
 export async function POST(req: NextRequest) {
+  // Audit P1 (2026-05-19): defense-in-depth — verifica sesión EN el handler.
+  // Sin esto, si el guard del proxy se rompe en una regresión, cualquier
+  // visitante drena nuestra cuota de Anthropic/Groq.
+  const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  const session = token ? await getPlatformSession(token) : null;
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-banners-copy-suggest"); if (_rl) return _rl;
   try {
     const body = await req.json();

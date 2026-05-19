@@ -18,27 +18,51 @@ import {
 import { LayoutDashboard } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
 import { DateRangeSelector, type DateRange } from "@/components/superadmin/dashboard/DateRangeSelector";
-import { RevenueAreaChart } from "@/components/superadmin/dashboard/RevenueAreaChart";
-import { OrdersBarChart } from "@/components/superadmin/dashboard/OrdersBarChart";
 import { TopStoresList } from "@/components/superadmin/dashboard/TopStoresList";
 import { ConversionFunnel } from "@/components/superadmin/dashboard/ConversionFunnel";
-import { ARPUMiniChart } from "@/components/superadmin/dashboard/ARPUMiniChart";
 import { LatestActiveTenantsTable } from "@/components/superadmin/dashboard/LatestActiveTenantsTable";
-import { TenantGrowthChart } from "@/components/superadmin/dashboard/TenantGrowthChart";
-import { MonthlyOverviewChart } from "@/components/superadmin/dashboard/MonthlyOverviewChart";
 import dynamic from "next/dynamic";
+
+// Audit P1 (2026-05-19): lazificación masiva de Recharts. Antes los 8 charts
+// se cargaban eager en el bundle inicial del dashboard (~200KB de recharts +
+// SVG paths). Ahora se cargan on-demand cuando el chart se monta.
+// Skeleton h-64 con animate-pulse mantiene el layout estable.
+
+const chartSkeleton = (h = "h-64") => (
+  <div className={`${h} animate-pulse bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)]`} />
+);
+
+const RevenueAreaChart = dynamic(
+  () => import("@/components/superadmin/dashboard/RevenueAreaChart").then((m) => ({ default: m.RevenueAreaChart })),
+  { ssr: false, loading: () => chartSkeleton("h-[300px]") },
+);
+
+const OrdersBarChart = dynamic(
+  () => import("@/components/superadmin/dashboard/OrdersBarChart").then((m) => ({ default: m.OrdersBarChart })),
+  { ssr: false, loading: () => chartSkeleton("h-[300px]") },
+);
+
+const ARPUMiniChart = dynamic(
+  () => import("@/components/superadmin/dashboard/ARPUMiniChart").then((m) => ({ default: m.ARPUMiniChart })),
+  { ssr: false, loading: () => chartSkeleton("h-32") },
+);
+
+const TenantGrowthChart = dynamic(
+  () => import("@/components/superadmin/dashboard/TenantGrowthChart").then((m) => ({ default: m.TenantGrowthChart })),
+  { ssr: false, loading: () => chartSkeleton("h-[360px]") },
+);
+
+const MonthlyOverviewChart = dynamic(
+  () => import("@/components/superadmin/dashboard/MonthlyOverviewChart").then((m) => ({ default: m.MonthlyOverviewChart })),
+  { ssr: false, loading: () => chartSkeleton("h-[300px]") },
+);
 
 const PlanDistributionDonut = dynamic(
   () =>
     import("@/components/superadmin/dashboard/PlanDistributionDonut").then(
       (m) => ({ default: m.PlanDistributionDonut }),
     ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-64 animate-pulse bg-[var(--color-muted)] rounded-xl" />
-    ),
-  },
+  { ssr: false, loading: () => chartSkeleton() },
 );
 
 const BusinessHealthRadial = dynamic(
@@ -46,12 +70,7 @@ const BusinessHealthRadial = dynamic(
     import("@/components/superadmin/dashboard/BusinessHealthRadial").then(
       (m) => ({ default: m.BusinessHealthRadial }),
     ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-64 animate-pulse bg-[var(--color-muted)] rounded-xl" />
-    ),
-  },
+  { ssr: false, loading: () => chartSkeleton() },
 );
 import { KPIHeroCard } from "@/components/superadmin/dashboard/KPIHeroCard";
 // 2026-05-19: Reemplazo ChartManager (estático, sin drag) por DraggableSections

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 
 /**
  * POST /api/superadmin/platform-config/upload  (multipart/form-data)
@@ -32,6 +33,13 @@ const KIND_CONFIG: Record<z.infer<typeof KindSchema>, { width: number; height?: 
 };
 
 export async function POST(req: NextRequest) {
+  // Audit P1 (2026-05-19): defense-in-depth. Sin esto, si el guard del proxy
+  // se rompe, cualquier visitante sube archivos a Supabase storage (drena
+  // cuota + permite hosting arbitrario).
+  const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  const session = token ? await getPlatformSession(token) : null;
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-platform-config-upload"); if (_rl) return _rl;
   let formData: FormData;
   try {
