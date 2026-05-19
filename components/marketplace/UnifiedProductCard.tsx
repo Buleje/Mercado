@@ -11,6 +11,9 @@ import {
   Check,
   Heart,
   Timer,
+  // Brandon 2026-05-18 v3: Minus + Plus para stepper mobile dentro del card.
+  Minus,
+  Plus,
   // Audit P0 UX #2 (2026-05-18): Lucide icons reemplazan los emoji unicode
   // del fallback — los emoji no rinden consistente en todos los browsers
   // (vimos cajitas vacías en Chromium sin emoji-font). Los Lucide siempre
@@ -187,7 +190,7 @@ export default function UnifiedProductCard({
   hideStore = false,
 }: UnifiedProductCardProps) {
   const { addItemWithUndo } = useCartWithUndo();
-  const { items: cartItems } = useMarketplaceCart();
+  const { items: cartItems, updateQuantity, removeItem } = useMarketplaceCart();
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [justAdded, setJustAdded] = useState(false);
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
@@ -257,6 +260,23 @@ export default function UnifiedProductCard({
 
   const hasModifiers =
     Array.isArray(product.modifierGroups) && product.modifierGroups.length > 0;
+
+  // Brandon 2026-05-18 v3: handlers de stepper para el CTA mobile.
+  // - handleIncrement = handleAdd (mismo flujo: +1 con undo drawer)
+  // - handleDecrement = updateQuantity(qty - 1) (o removeItem si llega a 0)
+  // Solo aplica a productos sin modifiers (las variantes con modifiers no
+  // pueden incrementarse blind — cada línea tiene su propio modifierHash).
+  const handleDecrement = useCallback(() => {
+    if (!product.storeId || hasModifiers) return;
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate(20); } catch { /* silent */ }
+    }
+    if (inCartQty <= 1) {
+      removeItem(product.storeId, product.id);
+    } else {
+      updateQuantity(product.storeId, product.id, inCartQty - 1);
+    }
+  }, [product.storeId, product.id, hasModifiers, inCartQty, removeItem, updateQuantity]);
 
   const handleAdd = useCallback(() => {
     if (isOutOfStock) return;
@@ -607,9 +627,11 @@ export default function UnifiedProductCard({
           </div>
         </div>
 
-        {/* Pill "✓ Ya pediste N" — feedback secundario debajo del precio. */}
+        {/* Pill "✓ Ya pediste N" — feedback secundario debajo del precio.
+            Brandon 2026-05-18 v3: oculto en mobile porque el stepper inline
+            de abajo ya muestra la cantidad. Solo sm+. */}
         {inCartQty > 0 && (
-          <div className="mt-2 -mb-1 flex items-center justify-end">
+          <div className="hidden sm:flex mt-2 -mb-1 items-center justify-end">
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
               <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Ya pediste {inCartQty}
@@ -617,56 +639,110 @@ export default function UnifiedProductCard({
           </div>
         )}
 
-        {/* Brandon 2026-05-18 v3: CTA MOBILE — full-width pill grande con
-            label + icon. Reemplaza el overlay icon-only de 44px sobre la
-            imagen. Solo visible en mobile (sm:hidden); desktop usa el inline
-            circular junto al precio. */}
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={isOutOfStock}
-          aria-label={
-            isOutOfStock
-              ? `${product.name} — agotado`
-              : inCartQty > 0
-                ? `Agregar otro ${product.name} (${inCartQty} en carrito)`
-                : `Agregar ${product.name} al carrito`
-          }
-          className={cn(
-            "sm:hidden mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold transition-all duration-200 shadow-md active:scale-[0.985]",
-            isOutOfStock
-              ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed shadow-none"
-              : justAdded
-                ? "bg-[var(--data-success-500)] text-white"
-                : "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-95",
-          )}
-        >
-          {justAdded ? (
-            <>
-              <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-              Agregado
-            </>
-          ) : isOutOfStock ? (
-            <>Agotado</>
+        {/* ── CTA MOBILE estilo Rappi/Glovo ─────────────────────────────
+            Brandon 2026-05-18 v3 rediseño:
+            · Estado 0 → botón pill h-13 full-width con icon + "Agregar al
+              carrito", gradient sutil del accent, sombra accent/30,
+              ring inset, ripple-feel via active:scale.
+            · Estado N (sin modifiers) → stepper Rappi-style:
+              [ − ] [ qty grande tabular ] [ + ]   — toda la fila accent,
+              botones h-12 generosos, qty en el centro con presence visual.
+            · Estado con modifiers → vuelve al botón "Agregar otro" porque
+              cada variante necesita pasar por el modal.
+            · justAdded → flash verde "Agregado ✓" 1.2s.
+            · Agotado → estado disabled con texto explícito. */}
+        <div className="sm:hidden mt-3">
+          {!isOutOfStock && inCartQty > 0 && !hasModifiers ? (
+            <div
+              role="group"
+              aria-label={`${product.name} — ${inCartQty} en carrito`}
+              className={cn(
+                "inline-flex h-14 w-full items-center justify-between rounded-2xl px-1.5 transition-all duration-200 shadow-md shadow-[var(--accent)]/20 ring-1 ring-[var(--accent)]/30",
+                justAdded
+                  ? "bg-[var(--data-success-500)]"
+                  : "bg-linear-to-r from-[var(--accent-600,var(--accent))] to-[var(--accent)]",
+              )}
+            >
+              <button
+                type="button"
+                onClick={handleDecrement}
+                aria-label={inCartQty === 1 ? `Quitar ${product.name} del carrito` : `Restar ${product.name}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-white hover:bg-white/25 active:scale-90 transition-all"
+              >
+                <Minus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+              </button>
+              <motion.span
+                key={inCartQty}
+                initial={{ scale: 0.7, opacity: 0.4 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 540, damping: 22 }}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 text-white"
+              >
+                {justAdded ? (
+                  <>
+                    <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+                    <span className="text-sm font-extrabold uppercase tracking-wide">Agregado</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-lg font-black tabular-nums">{inCartQty}</span>
+                    <span className="text-[length:var(--ts-xs)] font-bold opacity-85">
+                      {inCartQty === 1 ? "unidad" : "unidades"}
+                    </span>
+                  </>
+                )}
+              </motion.span>
+              <button
+                type="button"
+                onClick={handleAdd}
+                aria-label={`Agregar otro ${product.name}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-white hover:bg-white/25 active:scale-90 transition-all"
+              >
+                <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+              </button>
+            </div>
           ) : (
-            <>
-              <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-              {inCartQty > 0 ? (
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={isOutOfStock}
+              aria-label={
+                isOutOfStock
+                  ? `${product.name} — agotado`
+                  : hasModifiers
+                    ? `Elegir opciones de ${product.name}`
+                    : `Agregar ${product.name} al carrito`
+              }
+              className={cn(
+                "inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold uppercase tracking-wide transition-all duration-200 active:scale-[0.985] ring-1",
+                isOutOfStock
+                  ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed ring-[var(--rule-soft)]"
+                  : justAdded
+                    ? "bg-[var(--data-success-500)] text-white shadow-md shadow-[var(--data-success-500)]/30 ring-[var(--data-success-500)]/40"
+                    : "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 ring-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/35",
+              )}
+            >
+              {justAdded ? (
                 <>
-                  Agregar otro
-                  <span
-                    aria-hidden
-                    className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-white/20 px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums ring-1 ring-white/30"
-                  >
-                    {inCartQty > 99 ? "99+" : inCartQty}
-                  </span>
+                  <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+                  Agregado
+                </>
+              ) : isOutOfStock ? (
+                <>Agotado</>
+              ) : hasModifiers ? (
+                <>
+                  <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  Elegir opciones
                 </>
               ) : (
-                <>Agregar al carrito</>
+                <>
+                  <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  Agregar al carrito
+                </>
               )}
-            </>
+            </button>
           )}
-        </button>
+        </div>
 
         {/* Aviso limite comparar */}
         {compareLimitMsg && (
