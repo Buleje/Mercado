@@ -7,7 +7,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, Image as ImageIcon, Save, X,
   Loader2, Upload, Camera, Check, AlertTriangle, Sparkles,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────

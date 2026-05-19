@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Save, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Plus, Save, Loader2, AlertCircle, CheckCircle } from "@buleje/design-system/icons";
 import CategoryImageUploader from "@/components/admin/marketplace/CategoryImageUploader";
 import { csrfHeaders } from "@/lib/csrf-client";
 

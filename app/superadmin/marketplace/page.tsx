@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Store,
   AlertCircle,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
 

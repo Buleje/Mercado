@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import {
   Loader2, X, AlertTriangle, ShoppingBag, Clock, MapPin,
   Phone, Wallet, Truck, ChevronRight,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 interface Item {
   id: string;

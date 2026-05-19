@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   Sparkles,
 } from "@buleje/design-system/icons";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import type { PlatformSettings } from "@/lib/superadmin-types";
 import { DEFAULT_SETTINGS } from "@/lib/superadmin-types";
 import {

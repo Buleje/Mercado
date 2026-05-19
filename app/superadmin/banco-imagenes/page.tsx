@@ -1,4 +1,4 @@
-import { Images } from "lucide-react";
+import { Images } from "@buleje/design-system/icons";
 import ImageBankClient from "./ImageBankClient";
 
 /**

@@ -1,6 +1,6 @@
 import "server-only";
 import type { Metadata } from "next";
-import { Smartphone } from "lucide-react";
+import { Smartphone } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import PagosYapeClient from "./PagosYapeClient";

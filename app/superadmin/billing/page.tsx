@@ -1,6 +1,6 @@
 import "server-only";
 import Link from "next/link";
-import { ExternalLink, CreditCard, Construction } from "lucide-react";
+import { ExternalLink, CreditCard, Construction } from "@buleje/design-system/icons";
 
 export const metadata = {
   title: "Billing Platform — Buleje SaaS",

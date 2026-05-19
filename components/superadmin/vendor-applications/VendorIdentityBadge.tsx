@@ -23,7 +23,7 @@ import {
   ShieldX,
   Loader2,
   RefreshCw,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 

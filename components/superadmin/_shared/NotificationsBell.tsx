@@ -13,7 +13,7 @@ import {
   ChevronRight,
   Loader2,
   Inbox,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 interface InboxItem {
   id: string;

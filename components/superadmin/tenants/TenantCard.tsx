@@ -7,7 +7,7 @@ import {
   Package, Users, Store, ShoppingBag,
   BarChart3, Trash2, Eraser, LogIn,
   Clock, AlertTriangle, Bell,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { ProductBadge, StatCard, WarningAlert, SuccessAlert } from "@buleje/design-system";
 import { PendingOrdersModal } from "./PendingOrdersModal";

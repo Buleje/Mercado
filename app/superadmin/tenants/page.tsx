@@ -8,7 +8,7 @@ import {
   Activity, TrendingUp, AlertCircle, DollarSign, Sparkles, Bell,
   Clock, AlertTriangle, Check, Square, CheckSquare, Download, Mail, X,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { AdminTabShell } from "../_components/_shared";

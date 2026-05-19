@@ -15,7 +15,7 @@ import {
   X,
   Loader2,
   Search,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

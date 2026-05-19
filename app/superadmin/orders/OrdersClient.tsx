@@ -18,7 +18,7 @@ import {
   X,
   CreditCard,
   Sparkles,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 

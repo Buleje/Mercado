@@ -394,6 +394,13 @@ export {
   Video,
   Trees,
 
+  // ── Additional pass 4 (superadmin codemod 2026-05-19) ────────
+  Construction,
+  Eraser,
+  Images,
+  MailOpen,
+  ReceiptText,
+
   // ── Types ────────────────────────────────────────────────────
   type LucideIcon,
   type LucideProps,

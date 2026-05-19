@@ -31,7 +31,7 @@ import {
   Sun,
   LogOut,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 
 // ─── Command definition ─────────────────────────────────────────────────────
 

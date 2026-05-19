@@ -24,7 +24,7 @@ import {
   MessageSquare,
   Loader2,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   ApplicationDetailsDrawer,

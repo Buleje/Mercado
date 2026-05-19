@@ -8,7 +8,7 @@ import {
   Plus, Trash2, Image as ImageIcon,
   Loader2, X, Upload, Check, AlertTriangle, Pencil, Camera,
   ZoomIn, FolderOpen,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface BankItem { id: string; name: string; imageUrl: string }

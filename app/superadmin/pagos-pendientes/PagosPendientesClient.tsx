@@ -33,7 +33,7 @@ import {
   Banknote,
   Eye,
 } from "@buleje/design-system/icons";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 
 interface PaymentProof {
   id: string;

@@ -14,7 +14,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Loader2, ExternalLink, MessageCircle, Mail,
   AlertTriangle, Clock, CheckCircle, XCircle, Users,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // -- Tipos --

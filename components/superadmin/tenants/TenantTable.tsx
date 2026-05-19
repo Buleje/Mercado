@@ -3,7 +3,7 @@
 import {
   Building2, Loader2, ExternalLink, XCircle, CheckCircle2,
   Users, Eraser,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
 import { MiniUsageBar } from "./MiniUsageBar";

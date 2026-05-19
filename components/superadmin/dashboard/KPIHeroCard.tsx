@@ -14,7 +14,7 @@
  */
 
 import { useId, type ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import { ArrowUpRight, ArrowDownRight, Minus } from "@buleje/design-system/icons";
 
 export type KPITone = "teal" | "sky" | "amber" | "purple" | "rose";
