@@ -102,7 +102,7 @@
     },
     {
       "path": "/api/cron/event-dlq-replay",
-      "schedule": "37 * * * *"
+      "schedule": "37 6 * * *"
     },
     {
       "path": "/api/cron/superadmin-alerts",
@@ -294,7 +294,7 @@
     },
     {
       "path": "/api/cron/metering-rollup",
-      "schedule": "0 * * * *"
+      "schedule": "0 5 * * *"
     },
     {
       "path": "/api/cron/sunat-retry",

@@ -199,3 +199,6 @@ lib/data/store-extras.json
 # RLS credentials (passwords reales — nunca commitear)
 docs/security/rls-credentials-*.md
 !docs/security/rls-credentials-TEMPLATE.md
+
+# Vercel env backups (contienen secrets — NUNCA commitear)
+docs/security/vercel-env-backups/
