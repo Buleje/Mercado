@@ -54,7 +54,8 @@ function OrdersTooltip({
 export function OrdersBarChart({
   data,
   title = "Pedidos por día",
-  description = "Últimos 30 días",
+  // Default; el parent pasa el rango activo del filtro.
+  description = "Histórico de pedidos",
 }: Props) {
   const tokens = useChartTokens();
   const purple = "#8b5cf6";

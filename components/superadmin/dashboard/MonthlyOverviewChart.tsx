@@ -29,6 +29,8 @@ interface MonthPoint {
 
 interface Props {
   data: MonthPoint[];
+  /** Subtítulo dinámico — viene del filtro de rango activo. */
+  description?: string;
 }
 
 function MonthlyTooltip({
@@ -70,7 +72,7 @@ function MonthlyTooltip({
   );
 }
 
-export function MonthlyOverviewChart({ data }: Props) {
+export function MonthlyOverviewChart({ data, description }: Props) {
   const tokens = useChartTokens();
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalSign = data.reduce((s, d) => s + d.signups, 0);
@@ -80,7 +82,7 @@ export function MonthlyOverviewChart({ data }: Props) {
   return (
     <ChartWrapper
       title="Visión mensual del negocio"
-      description="Ingresos recurrentes (área) y nuevas tiendas (barras) — 6 meses"
+      description={description ?? "Ingresos recurrentes (área) y nuevas tiendas (barras)"}
       actions={
         <div className="hidden sm:flex items-center gap-3 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
           <span className="inline-flex items-center gap-1.5">

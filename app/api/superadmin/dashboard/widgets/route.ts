@@ -13,16 +13,12 @@ async function requirePlatform(req: NextRequest) {
 }
 
 /**
- * GET /api/superadmin/dashboard/widgets
+ * GET /api/superadmin/dashboard/widgets?range=7d|30d|90d|1y
  *
- * Devuelve datos REALES de la DB para los widgets del dashboard ejecutivo:
- *   - topStores: top 5 tenants por revenue del mes en curso
- *   - funnel: tenants/orders/completed/repeat customers
- *   - latestActive: últimos 8 tenants con actividad reciente
- *   - revenueSeries: ingresos por día últimos 30 días
- *   - ordersSeries: pedidos por día últimos 30 días
- *
- * Reemplaza los mocks de lib/mocks/superadmin-dashboard.mock.ts.
+ * Devuelve datos REALES de la DB para los widgets del dashboard ejecutivo.
+ * El parámetro `range` (default 30d) controla el window de las series
+ * temporales (revenueSeries, ordersSeries). topStores y funnel siguen
+ * basados en el mes en curso por ser KPIs estables.
  */
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, "GENEROUS", "sa-dashboard-widgets");
@@ -31,11 +27,21 @@ export async function GET(req: NextRequest) {
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // F3: cache 30s — evita 22 queries (~2.5s) en cada request
-  const cached = getOrSet("superadmin:dashboard:widgets", 30, async () => {
+  // ── Parse range param — 7d / 30d / 90d / 1y (clamp a valores válidos) ──
+  const rangeParam = req.nextUrl.searchParams.get("range") ?? "30d";
+  const daysWindow =
+    rangeParam === "7d" ? 7
+    : rangeParam === "90d" ? 90
+    : rangeParam === "1y" ? 365
+    : 30; // default
+
+  // F3: cache 30s — evita 22 queries (~2.5s) en cada request.
+  // Key incluye rango para no servir respuestas cruzadas.
+  const cached = getOrSet(`superadmin:dashboard:widgets:${rangeParam}`, 30, async () => {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const last30Start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+  const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysWindow);
+  const last30Start = windowStart; // mantengo el nombre para minimal diff
   const monthFmt = new Intl.DateTimeFormat("es-PE", { month: "short" });
 
   // Pre-compute month windows para ARPU (últimos 6 meses)
@@ -86,7 +92,7 @@ export async function GET(req: NextRequest) {
       select: { tenantId: true, createdAt: true, total: true },
     }),
     prisma.order.findMany({
-      where: { createdAt: { gte: last30Start }, status: { not: "cancelado" } },
+      where: { createdAt: { gte: windowStart }, status: { not: "cancelado" } },
       select: { createdAt: true, total: true },
     }),
     Promise.all(
@@ -167,12 +173,12 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  // Series últimos 30 días
+  // Series últimos N días (N = daysWindow del query param)
   const dayKey = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const revenueByDay = new Map<string, number>();
   const ordersByDay = new Map<string, number>();
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < daysWindow; i++) {
     const d = new Date(last30Start);
     d.setDate(last30Start.getDate() + i);
     revenueByDay.set(dayKey(d), 0);

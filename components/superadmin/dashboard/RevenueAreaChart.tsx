@@ -55,7 +55,8 @@ function RevenueTooltip({
 export function RevenueAreaChart({
   data,
   title = "Ingresos recurrentes (MRR)",
-  description = "Últimos 12 meses",
+  // Default usado en Storybook; en producción el parent pasa el rango activo.
+  description = "Histórico de revenue",
 }: Props) {
   const tokens = useChartTokens();
   const teal = "var(--brand-primary, #00B4A6)";

@@ -54,9 +54,11 @@ const BusinessHealthRadial = dynamic(
   },
 );
 import { KPIHeroCard } from "@/components/superadmin/dashboard/KPIHeroCard";
-import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
+// 2026-05-19: Reemplazo ChartManager (estático, sin drag) por DraggableSections
+// del admin/inicio. Es el mismo patrón que Brandon ya conoce — drag, hide,
+// presentación fullscreen, persistencia en localStorage.
+import { DraggableSections } from "@/components/admin/inicio/DraggableSections";
 import {
-  buildSparkline,
   buildARPUSeries,
   fmtSoles,
 } from "@/lib/mocks/superadmin-dashboard.mock";
@@ -112,13 +114,16 @@ export default function DashboardPage() {
     setRange("custom");
   }, []);
 
+  // Refetcha widgets cuando cambia el rango global del topbar. El endpoint
+  // ya respeta ?range=7d|30d|90d|1y y devuelve series del window correcto.
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
+    const widgetsRange = range === "custom" || range === "all" ? "30d" : range;
     try {
       const [aRes, wRes] = await Promise.all([
         fetch("/api/superadmin/analytics", { credentials: "include" }),
-        fetch("/api/superadmin/dashboard/widgets", { credentials: "include" }),
+        fetch(`/api/superadmin/dashboard/widgets?range=${widgetsRange}`, { credentials: "include" }),
       ]);
       if (!aRes.ok) {
         setError("No se pudo cargar el dashboard. Reintentá.");
@@ -135,11 +140,27 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [range]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  // Label dinámico para los charts según el rango activo. Se inyecta como
+  // `description` a cada ChartWrapper, reemplazando los hardcoded "Últimos
+  // 30 días" / "Últimos 12 meses".
+  const rangeLabel = useMemo(() => {
+    if (range === "7d") return "Últimos 7 días";
+    if (range === "30d") return "Últimos 30 días";
+    if (range === "90d") return "Últimos 90 días";
+    if (range === "1y") return "Últimos 365 días";
+    if (range === "all") return "Toda la historia";
+    if (range === "custom" && customRange) {
+      const fmt = new Intl.DateTimeFormat("es-PE", { day: "numeric", month: "short" });
+      return `${fmt.format(customRange.start)} — ${fmt.format(customRange.end)}`;
+    }
+    return "Últimos 30 días";
+  }, [range, customRange]);
 
   // ── Series con datos REALES del endpoint widgets ────────────────────────
   // Recharts espera [{ date, value }] — adaptamos las shapes locales.
@@ -309,19 +330,21 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── ChartManager: hide/show + dynamic add ─────────────────────────
-          NOTA 2026-05-19: section headers eliminadas (Brandon: "los títulos
-          afuera dan mal diseño"). Cada chart card lleva su propio título
-          via ChartWrapper — sin huérfanos flotando. */}
+      {/* ── DraggableSections: drag + hide + presentación fullscreen ──────
+          Brandon 2026-05-19: misma UX del admin/inicio — botón "Presentar"
+          en cada card (Maximize2), drag handle, persistencia local.
+          Todos los charts comparten `rangeLabel` derivado del filtro arriba. */}
       {data && widgets && (
-        <ChartManager
-          moduleId="superadmin-dashboard"
-          charts={[
+        <DraggableSections
+          storageKey="superadmin-dashboard-order"
+          layout="column"
+          gap={1.25}
+          items={[
             {
               id: "tenant-growth",
-              label: "Crecimiento por tienda",
-              description: "Multi-line chart con top 8 tiendas por volumen",
-              component: (
+              title: "Crecimiento por tienda",
+              span: "full",
+              render: () => (
                 <TenantGrowthChart
                   range={
                     (["7d", "30d", "90d", "1y"] as const).includes(range as "7d" | "30d" | "90d" | "1y")
@@ -333,17 +356,18 @@ export default function DashboardPage() {
             },
             {
               id: "monthly-overview",
-              label: "Visión mensual",
-              description: "Ingresos + nuevas tiendas por mes (composed chart)",
-              component: monthlyOverview.length > 0 ? (
-                <MonthlyOverviewChart data={monthlyOverview} />
-              ) : null,
+              title: "Visión mensual",
+              span: "full",
+              render: () =>
+                monthlyOverview.length > 0 ? (
+                  <MonthlyOverviewChart data={monthlyOverview} description={rangeLabel} />
+                ) : null,
             },
             {
               id: "plan-health",
-              label: "Distribución y salud",
-              description: "Plan donut + radial de salud + ARPU",
-              component: (
+              title: "Distribución y salud",
+              span: "full",
+              render: () => (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 sm:gap-6">
                   <PlanDistributionDonut
                     distribution={
@@ -363,16 +387,16 @@ export default function DashboardPage() {
             },
             {
               id: "revenue-orders",
-              label: "Detalle diario",
-              description: "Revenue area + orders bar (últimos 30 días)",
-              component: (
+              title: "Detalle diario",
+              span: "full",
+              render: () => (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 sm:gap-6">
-                  {/* Pasamos `month` con formato "23 abr" (era "04-23") */}
                   <RevenueAreaChart
                     data={widgets.revenueSeries.map((p) => ({
                       month: fmtShortDate(p.date),
                       revenue: p.revenue,
                     }))}
+                    description={rangeLabel}
                   />
                   <OrdersBarChart
                     data={widgets.ordersSeries.map((p) => ({
@@ -380,15 +404,16 @@ export default function DashboardPage() {
                       orders: p.count,
                       label: p.date,
                     }))}
+                    description={rangeLabel}
                   />
                 </div>
               ),
             },
             {
               id: "top-funnel",
-              label: "Top tiendas y funnel",
-              description: "Top 5 + conversión por paso",
-              component: (
+              title: "Top tiendas y funnel",
+              span: "full",
+              render: () => (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 sm:gap-6">
                   <TopStoresList
                     stores={widgets.topStores.map((s) => ({
@@ -421,9 +446,9 @@ export default function DashboardPage() {
             },
             {
               id: "latest-active",
-              label: "Últimas tiendas activas",
-              description: "Tabla ordenada por última actividad",
-              component: (
+              title: "Últimas tiendas activas",
+              span: "full",
+              render: () => (
                 <LatestActiveTenantsTable
                   tenants={widgets.latestActive.map((t) => ({
                     id: t.id,
