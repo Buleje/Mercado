@@ -104,8 +104,16 @@ self.addEventListener("fetch", (event) => {
     url.protocol === "extension:"
   ) return;
 
-  // Cache product images (Unsplash, OpenFoodFacts)
-  if (url.hostname.includes("unsplash.com") || url.hostname.includes("openfoodfacts.org")) {
+  // Brandon 2026-05-20 v11 audit Bloque E — IMG_CACHE expandido:
+  // antes solo Unsplash + OpenFoodFacts. Ahora también cachea Supabase
+  // Storage (`*.supabase.co/storage/v1/*`) donde viven los logos/banners
+  // de tiendas y categorías. Audit reportó re-downloads en cada visita
+  // a /tiendas y /marketplace/[slug]. Cache-first → instantáneo en repeat.
+  if (
+    url.hostname.includes("unsplash.com") ||
+    url.hostname.includes("openfoodfacts.org") ||
+    (url.hostname.endsWith(".supabase.co") && url.pathname.startsWith("/storage/v1/"))
+  ) {
     event.respondWith(
       caches.open(IMG_CACHE).then(async (cache) => {
         const cached = await cache.match(event.request);
