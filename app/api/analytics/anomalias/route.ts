@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsAnomaliasDB } from "@/lib/db/analytics-anomalias.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -28,7 +28,8 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tenantFilter = { tenantId: auth.tenantId };
+    // Audit project-wide 2026-05-19: migrado a AnalyticsAnomaliasDB.
+    const tid = auth.tenantId;
 
     const anomalias: Anomalia[] = [];
 
@@ -43,15 +44,9 @@ export async function GET(req: NextRequest) {
     }
 
     const [ventasHoyAgg, ...ventasPasadas] = await Promise.allSettled([
-      prisma.sale.aggregate({
-        where: { ...tenantFilter, createdAt: { gte: todayStart } },
-        _sum: { total: true },
-      }),
+      AnalyticsAnomaliasDB.aggregateSalesInRange(tid, todayStart),
       ...sameDayDates.map((dateRange) =>
-        prisma.sale.aggregate({
-          where: { ...tenantFilter, createdAt: dateRange },
-          _sum: { total: true },
-        })
+        AnalyticsAnomaliasDB.aggregateSalesInRange(tid, dateRange.gte, dateRange.lt)
       ),
     ]);
 
@@ -97,38 +92,18 @@ export async function GET(req: NextRequest) {
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
     const [productsWithStock, productsLowMargin] = await Promise.all([
-      prisma.product.findMany({
-        where: {
-          ...tenantFilter,
-          active: true,
-          deletedAt: null,
-          stock: { gt: 0 },
-        },
-        select: { id: true, name: true, stock: true, category: true },
-      }),
-      prisma.product.findMany({
-        where: {
-          ...tenantFilter,
-          active: true,
-          deletedAt: null,
-          costPrice: { not: null, gt: 0 },
-          price: { gt: 0 },
-        },
-        select: { id: true, name: true, price: true, costPrice: true, category: true },
-      }),
+      AnalyticsAnomaliasDB.listProductsWithStock(tid),
+      AnalyticsAnomaliasDB.listProductsWithMargin(tid),
     ]);
 
     if (productsWithStock.length > 0) {
       const productIds = productsWithStock.map((p) => p.id);
 
-      const recentSaleItems = await prisma.saleItem.findMany({
-        where: {
-          productId: { in: productIds },
-          sale: { ...tenantFilter, createdAt: { gte: fifteenDaysAgo } },
-        },
-        select: { productId: true },
-        distinct: ["productId"],
-      });
+      const recentSaleItems = await AnalyticsAnomaliasDB.getRecentlySoldProductIds(
+        tid,
+        productIds,
+        fifteenDaysAgo
+      );
       const soldProductIds = new Set(recentSaleItems.map((si) => si.productId));
 
       const deadStock = productsWithStock
@@ -153,21 +128,7 @@ export async function GET(req: NextRequest) {
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const fiadosVencidos = await prisma.fiado.findMany({
-        where: {
-          ...tenantFilter,
-          status: "ACTIVO",
-          fechaVence: { lt: thirtyDaysAgo },
-        },
-        select: {
-          id: true,
-          saldo: true,
-          fechaVence: true,
-          customer: { select: { name: true, phone: true } },
-        },
-        orderBy: { saldo: "desc" },
-        take: 5,
-      });
+      const fiadosVencidos = await AnalyticsAnomaliasDB.getOverdueFiados(tid, thirtyDaysAgo, 5);
 
       for (const fiado of fiadosVencidos) {
         const diasVencido = Math.floor(

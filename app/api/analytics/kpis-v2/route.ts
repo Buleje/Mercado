@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsKpisV2DB } from "@/lib/db/analytics-kpis-v2.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tenantFilter = { tenantId: auth.tenantId };
 
     // Date ranges
     const thirtyDaysAgo = new Date(now);
@@ -39,76 +38,40 @@ export async function GET(req: NextRequest) {
       sparklineDates.push({ start, end });
     }
 
+    // Audit project-wide 2026-05-19: migrado a AnalyticsKpisV2DB (13 queries).
+    const tid = auth.tenantId;
     const results = await Promise.allSettled([
       // KPI 1: Ingresos hoy + sparkline 7 días
       Promise.all([
-        prisma.sale.aggregate({
-          where: { ...tenantFilter, createdAt: { gte: todayStart } },
-          _sum: { total: true },
-        }),
-        prisma.sale.aggregate({
-          where: { ...tenantFilter, createdAt: { gte: sameDayLastWeek, lt: sameDayLastWeekEnd } },
-          _sum: { total: true },
-        }),
-        ...sparklineDates.map((d) =>
-          prisma.sale.aggregate({
-            where: { ...tenantFilter, createdAt: { gte: d.start, lt: d.end } },
-            _sum: { total: true },
-          })
-        ),
+        AnalyticsKpisV2DB.ingresosForRange(tid, todayStart),
+        AnalyticsKpisV2DB.ingresosForRange(tid, sameDayLastWeek, sameDayLastWeekEnd),
+        ...sparklineDates.map((d) => AnalyticsKpisV2DB.ingresosForRange(tid, d.start, d.end)),
       ]),
 
       // KPI 2: Ticket promedio últimos 30d vs 30d anteriores
       Promise.all([
-        prisma.sale.aggregate({
-          where: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } },
-          _avg: { total: true },
-          _count: { id: true },
-        }),
-        prisma.sale.aggregate({
-          where: { ...tenantFilter, createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
-          _avg: { total: true },
-        }),
+        AnalyticsKpisV2DB.ticketAvg(tid, thirtyDaysAgo),
+        AnalyticsKpisV2DB.ticketAvg(tid, sixtyDaysAgo, thirtyDaysAgo),
       ]),
 
       // KPI 3: Margen operativo (ingresos y costos últimos 30d)
       Promise.all([
-        prisma.sale.aggregate({
-          where: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } },
-          _sum: { total: true },
-        }),
-        prisma.saleItem.findMany({
-          where: { sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
-          select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
-        }),
+        AnalyticsKpisV2DB.ingresosForRange(tid, thirtyDaysAgo),
+        AnalyticsKpisV2DB.saleItemsForCogs(tid, thirtyDaysAgo),
       ]),
 
       // KPI 4: Clientes activos (distinct customerPhone últimos 30d) vs 30d anteriores
       Promise.all([
-        prisma.sale.findMany({
-          where: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo }, customerPhone: { not: null } },
-          select: { customerPhone: true },
-          distinct: ["customerPhone"],
-        }),
-        prisma.sale.findMany({
-          where: { ...tenantFilter, createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }, customerPhone: { not: null } },
-          select: { customerPhone: true },
-          distinct: ["customerPhone"],
-        }),
+        AnalyticsKpisV2DB.distinctCustomersInRange(tid, thirtyDaysAgo),
+        AnalyticsKpisV2DB.distinctCustomersInRange(tid, sixtyDaysAgo, thirtyDaysAgo),
       ]),
 
       // KPI 5: Fiado pendiente
       (async () => {
         try {
           const [pendiente, vencidos] = await Promise.all([
-            prisma.fiado.aggregate({
-              where: { ...tenantFilter, status: "ACTIVO" },
-              _sum: { saldo: true },
-              _count: { id: true },
-            }),
-            prisma.fiado.count({
-              where: { ...tenantFilter, status: "ACTIVO", fechaVence: { lt: now } },
-            }),
+            AnalyticsKpisV2DB.aggregateFiadoActive(tid),
+            AnalyticsKpisV2DB.countFiadoVencidos(tid, now),
           ]);
           return { pendiente, vencidos };
         } catch {
@@ -118,16 +81,8 @@ export async function GET(req: NextRequest) {
 
       // KPI 6: Rotación inventario
       Promise.all([
-        // COGS 30d: sum(SaleItem.quantity * costPrice)
-        prisma.saleItem.findMany({
-          where: { sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
-          select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
-        }),
-        // Avg inventory value: sum(Product.stock * Product.costPrice)
-        prisma.product.findMany({
-          where: { ...tenantFilter, active: true, deletedAt: null, stock: { not: null }, costPrice: { not: null } },
-          select: { stock: true, costPrice: true },
-        }),
+        AnalyticsKpisV2DB.saleItemsForCogs(tid, thirtyDaysAgo),
+        AnalyticsKpisV2DB.productsForInventoryValue(tid),
       ]),
     ]);
 
