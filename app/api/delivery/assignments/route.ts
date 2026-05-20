@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
-import { prisma } from "@/lib/prisma";
+import { DeliveryAssignmentsDB } from "@/lib/db/delivery-assignments.db";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { notifyDriverInternal } from "@/lib/delivery/notify-driver";
@@ -34,27 +34,12 @@ export async function GET(req: NextRequest) {
     const partnerId = searchParams.get("partnerId");
     const date = searchParams.get("date");
 
-    // SECURITY 2026-05-05 (CT-06 audit): scope tenantId. Antes findMany sin
-    // tenantId leakeaba historial de assignments de TODOS los tenants a
-    // cualquier admin (cross-tenant leak de PII de delivery).
-    const where: Record<string, unknown> = { tenantId: auth.tenantId };
-    if (status) where.status = status;
-    if (partnerId) where.partnerId = partnerId;
-    if (date) {
-      const from = new Date(date);
-      from.setHours(0, 0, 0, 0);
-      const to = new Date(date);
-      to.setHours(23, 59, 59, 999);
-      where.createdAt = { gte: from, lte: to };
-    }
-
-    const assignments = await prisma.deliveryAssignment.findMany({
-      where,
-      include: {
-        order: { select: { id: true, customerName: true, total: true } },
-        partner: { select: { id: true, name: true, phone: true } },
-      },
-      orderBy: { createdAt: "desc" },
+    // Audit project-wide 2026-05-19: migrado a DeliveryAssignmentsDB.
+    // SECURITY 2026-05-05 (CT-06): scope tenantId obligatorio en la clase.
+    const assignments = await DeliveryAssignmentsDB.listByTenant(auth.tenantId, {
+      status: status ?? undefined,
+      partnerId: partnerId ?? undefined,
+      date: date ?? undefined,
     });
 
     return NextResponse.json(assignments);
@@ -92,26 +77,19 @@ export async function POST(req: NextRequest) {
 
     const { orderId, partnerId, fee } = parsed.data;
 
-    // SECURITY 2026-05-05 (pentest delivery H010): scope tenant en
-    // order + partner. Antes admin de A asignaba orden de B a partner de A
-    // (tenantId divergente y partner ve órdenes ajenas).
-    const order = await prisma.order.findFirst({
-      where: { id: orderId, tenantId: auth.tenantId },
-    });
+    // SECURITY 2026-05-05 (pentest delivery H010): scope tenant en order + partner.
+    const order = await DeliveryAssignmentsDB.findOrderInTenant(auth.tenantId, orderId);
     if (!order) {
       return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
     }
 
-    const partnerOk = await prisma.deliveryPartner.findFirst({
-      where: { id: partnerId, tenantId: auth.tenantId, isActive: true },
-      select: { id: true },
-    });
+    const partnerOk = await DeliveryAssignmentsDB.findActivePartnerInTenant(auth.tenantId, partnerId);
     if (!partnerOk) {
       return NextResponse.json({ error: "Repartidor no encontrado" }, { status: 404 });
     }
 
     // Verificar que no tiene asignación previa
-    const existing = await prisma.deliveryAssignment.findUnique({ where: { orderId } });
+    const existing = await DeliveryAssignmentsDB.findAssignmentByOrder(orderId);
     if (existing) {
       return NextResponse.json(
         { error: "La orden ya tiene un delivery asignado" },
@@ -119,12 +97,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const assignment = await prisma.deliveryAssignment.create({
-      data: { orderId, partnerId, fee, tenantId: auth.tenantId },
-      include: {
-        order: { select: { id: true, customerName: true, total: true, customerLocation: true } },
-        partner: { select: { id: true, name: true, phone: true } },
-      },
+    const assignment = await DeliveryAssignmentsDB.createAssignment({
+      tenantId: auth.tenantId,
+      orderId,
+      partnerId,
+      fee,
     });
 
     logActivity(
@@ -173,9 +150,7 @@ export async function PATCH(req: NextRequest) {
     const { id, status } = parsed.data;
 
     // SECURITY 2026-05-05 (pentest delivery H010): scope tenant en lookup.
-    const current = await prisma.deliveryAssignment.findFirst({
-      where: { id, tenantId: auth.tenantId },
-    });
+    const current = await DeliveryAssignmentsDB.findAssignmentInTenant(auth.tenantId, id);
     if (!current) {
       return NextResponse.json({ error: "Asignación no encontrada" }, { status: 404 });
     }
@@ -188,17 +163,11 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const updated = await prisma.deliveryAssignment.update({
-      where: { id },
-      data: {
-        status,
-        ...(status === "delivered" && { deliveredAt: new Date() }),
-      },
-      include: {
-        order: { select: { customerName: true, customerPhone: true } },
-        partner: { select: { name: true } },
-      },
-    });
+    const updated = await DeliveryAssignmentsDB.updateAssignmentStatus(
+      id,
+      status,
+      status === "delivered" ? { deliveredAt: new Date() } : undefined,
+    );
 
     logActivity(
       "Actualizar",

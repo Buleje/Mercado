@@ -1,3 +1,8 @@
+// @prisma-direct ok — cron endpoint cross-tenant (Vercel Cron horario).
+// Itera Orders/Customers/SavedCarts de TODOS los tenants por timestamp y crea
+// notificaciones usando el tenantId del registro fuente. Migración fragmentaría
+// la lógica del cron sin aporte de aislamiento (cada notif lleva el tenantId
+// original). Audit 2026-05-06 ya validó timing-safe header + fail-closed.
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";

@@ -1,7 +1,6 @@
-/* eslint-disable no-restricted-properties -- deuda existente: ConteoFisico/Item sin clase lib/db dedicada. Tenant-scoped via auth.tenantId. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { InventoryConteoItemsDB } from "@/lib/db/inventory-conteo-items.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -17,24 +16,17 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const conteo = await prisma.conteoFisico.findFirst({
-      where: { id, tenantId: auth.tenantId },
-    });
+    // Audit project-wide 2026-05-19: migrado a InventoryConteoItemsDB.
+    const conteo = await InventoryConteoItemsDB.findConteoInTenant(auth.tenantId, id);
     if (!conteo) {
       return NextResponse.json({ error: "Conteo no encontrado" }, { status: 404 });
     }
 
-    const items = await prisma.conteoFisicoItem.findMany({
-      where: { conteoId: id },
-      orderBy: { id: "asc" },
-    });
+    const items = await InventoryConteoItemsDB.listItemsByConteo(id);
 
-    // Fetch product details for each item
+    // Fetch product details for each item (tenant-scoped now)
     const productIds = items.map(i => i.productId);
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, name: true, barcode: true, category: true, image: true, stock: true },
-    });
+    const products = await InventoryConteoItemsDB.getProductsForItems(auth.tenantId, productIds);
     const productMap = new Map(products.map(p => [p.id, p]));
 
     const enriched = items.map(item => {
@@ -84,9 +76,7 @@ export async function PATCH(
     const { itemId, stockContado } = parsed.data;
 
     // Verify ownership
-    const conteo = await prisma.conteoFisico.findFirst({
-      where: { id, tenantId: auth.tenantId },
-    });
+    const conteo = await InventoryConteoItemsDB.findConteoInTenant(auth.tenantId, id);
     if (!conteo) {
       return NextResponse.json({ error: "Conteo no encontrado" }, { status: 404 });
     }
@@ -94,30 +84,22 @@ export async function PATCH(
       return NextResponse.json({ error: "El conteo ya está cerrado" }, { status: 400 });
     }
 
-    const item = await prisma.conteoFisicoItem.findFirst({
-      where: { id: itemId, conteoId: id },
-    });
+    const item = await InventoryConteoItemsDB.findItemInConteo(itemId, id);
     if (!item) {
       return NextResponse.json({ error: "Item no encontrado" }, { status: 404 });
     }
 
     const diferencia = stockContado - item.stockSistema;
 
-    const updated = await prisma.conteoFisicoItem.update({
-      where: { id: itemId },
-      data: {
-        stockContado,
-        diferencia,
-        ajustado: diferencia !== 0, // default to adjusting if there's a difference
-      },
+    const updated = await InventoryConteoItemsDB.updateItem(itemId, {
+      stockContado,
+      diferencia,
+      ajustado: diferencia !== 0,
     });
 
     // Update conteo status to EN_PROGRESO if needed
     if (conteo.status === "INICIADO") {
-      await prisma.conteoFisico.update({
-        where: { id },
-        data: { status: "EN_PROGRESO" },
-      });
+      await InventoryConteoItemsDB.markConteoInProgress(id);
     }
 
     return NextResponse.json(updated);
