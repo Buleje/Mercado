@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ABTestDB } from "@/lib/ab-testing";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -59,11 +58,12 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
     
     // Verify tenantId before deletion (IDOR check)
-    const test = await prisma.aBTest.findUnique({ where: { id } });
-    if (!test || test.tenantId !== auth.tenantId) {
+    // Audit project-wide 2026-05-19: migrado a ABTestDB.assertOwnership.
+    const owned = await ABTestDB.assertOwnership(id, auth.tenantId);
+    if (!owned) {
       return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
     }
-    
+
     await ABTestDB.delete(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -83,11 +83,12 @@ export async function PATCH(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
     
     // Verify tenantId before toggle (IDOR check)
-    const test = await prisma.aBTest.findUnique({ where: { id } });
-    if (!test || test.tenantId !== auth.tenantId) {
+    // Audit project-wide 2026-05-19: migrado a ABTestDB.assertOwnership.
+    const owned = await ABTestDB.assertOwnership(id, auth.tenantId);
+    if (!owned) {
       return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
     }
-    
+
     await ABTestDB.toggle(id);
     return NextResponse.json({ ok: true });
   } catch (err) {

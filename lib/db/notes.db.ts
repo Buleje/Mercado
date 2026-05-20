@@ -122,4 +122,43 @@ export const NotesDB = {
       },
     });
   },
+
+  /**
+   * Lookup por titulo exacto + tenantId. Util para singletons como
+   * presupuesto mensual (__PRESUPUESTO_MENSUAL__).
+   * Audit project-wide 2026-05-19 — migracion de /api/presupuesto.
+   */
+  async findFirstByTitle(tenantId: string, title: string) {
+    return prisma.note.findFirst({ where: { tenantId, title } });
+  },
+
+  /**
+   * Upsert manual por tenant + title (Note no tiene unique compuesto
+   * tenantId+title). Si existe → update content, si no → create con
+   * defaults razonables para singletons.
+   */
+  async upsertByTitle(
+    tenantId: string,
+    title: string,
+    content: string,
+    opts: { color?: string; pinned?: boolean } = {},
+  ): Promise<void> {
+    const existing = await prisma.note.findFirst({
+      where: { tenantId, title },
+      select: { id: true },
+    });
+    if (existing) {
+      await prisma.note.update({ where: { id: existing.id }, data: { content } });
+      return;
+    }
+    await prisma.note.create({
+      data: {
+        tenantId,
+        title,
+        content,
+        color: opts.color ?? "blue",
+        pinned: opts.pinned ?? false,
+      },
+    });
+  },
 };

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NotesDB } from "@/lib/db/notes.db";
+import { ExpensesDB } from "@/lib/db/expenses.db";
 import { z } from "zod";
-import { toNumOrZero } from "@/lib/decimal-utils";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const TENANT_ID = "main";
@@ -21,13 +21,9 @@ export async function GET() {
   try {
     const now = new Date();
     const mes = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    // Buscar nota con presupuesto
-    const note = await prisma.note.findFirst({
-      where: { tenantId: TENANT_ID, title: NOTE_TITLE },
-    });
+    // Audit project-wide 2026-05-19: migrado a NotesDB.findFirstByTitle + ExpensesDB.listCurrentMonth.
+    const note = await NotesDB.findFirstByTitle(TENANT_ID, NOTE_TITLE);
 
     if (!note || !note.content) {
       return NextResponse.json({ mes, categorias: [] });
@@ -42,19 +38,13 @@ export async function GET() {
     }
 
     // Para cada categoria, calcular gastado del mes actual
-    const expenses = await prisma.expense.findMany({
-      where: {
-        tenantId: TENANT_ID,
-        date: { gte: startOfMonth, lte: endOfMonth },
-      },
-      select: { category: true, amount: true },
-    });
+    const expenses = await ExpensesDB.listCurrentMonth(TENANT_ID);
 
-    // Agrupar gastos por categoria (TD-018: amount es Decimal)
+    // Agrupar gastos por categoria (TD-018: amount ya viene como number de la DB class)
     const gastosPorCategoria: Record<string, number> = {};
     for (const exp of expenses) {
       const cat = exp.category.toLowerCase();
-      gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + toNumOrZero(exp.amount);
+      gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + exp.amount;
     }
 
     const categoriasConGasto = categorias.map((cat) => {
@@ -91,27 +81,8 @@ export async function POST(req: NextRequest) {
     const { categorias } = parsed.data;
     const content = JSON.stringify(categorias);
 
-    // Upsert: buscar nota existente o crear
-    const existing = await prisma.note.findFirst({
-      where: { tenantId: TENANT_ID, title: NOTE_TITLE },
-    });
-
-    if (existing) {
-      await prisma.note.update({
-        where: { id: existing.id },
-        data: { content },
-      });
-    } else {
-      await prisma.note.create({
-        data: {
-          tenantId: TENANT_ID,
-          title: NOTE_TITLE,
-          content,
-          color: "blue",
-          pinned: true,
-        },
-      });
-    }
+    // Audit project-wide 2026-05-19: migrado a NotesDB.upsertByTitle.
+    await NotesDB.upsertByTitle(TENANT_ID, NOTE_TITLE, content, { color: "blue", pinned: true });
 
     return NextResponse.json({ ok: true, categorias: categorias.length });
   } catch (err) {

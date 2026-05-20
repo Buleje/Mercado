@@ -36,6 +36,18 @@ export const ABTestDB = {
     return { id: row.id, name: row.name, description: row.description, variants: row.variants as Variant[], active: row.active, createdAt: toISO(row.createdAt) };
   },
 
+  /**
+   * Verifica que el test pertenece al tenant (anti-IDOR).
+   * Audit project-wide 2026-05-19 — migracion de /api/ab-tests.
+   */
+  async assertOwnership(testId: string, tenantId: string): Promise<boolean> {
+    const row = await prisma.aBTest.findUnique({
+      where: { id: testId },
+      select: { tenantId: true },
+    });
+    return row?.tenantId === tenantId;
+  },
+
   async toggle(id: string): Promise<void> {
     const row = await prisma.aBTest.findUnique({ where: { id } });
     if (row) await prisma.aBTest.update({ where: { id }, data: { active: !row.active } });
