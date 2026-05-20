@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { NotesDB } from "@/lib/db/notes.db";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -24,11 +24,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const notes = await prisma.note.findMany({
-    where: { tenantId: auth.tenantId },
-    orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
-  });
-
+  const notes = await NotesDB.list(auth.tenantId);
   return NextResponse.json(notes);
 }
 
@@ -46,10 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const note = await prisma.note.create({
-    data: { ...parsed.data, tenantId: auth.tenantId },
-  });
-
+  const note = await NotesDB.create(auth.tenantId, parsed.data);
   return NextResponse.json(note, { status: 201 });
 }
 
@@ -68,11 +61,8 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const existing = await prisma.note.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  const updated = await prisma.note.update({ where: { id }, data: parsed.data });
-
+  const updated = await NotesDB.updateForTenant(auth.tenantId, id, parsed.data);
+  if (!updated) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return NextResponse.json(updated);
 }
 
@@ -87,10 +77,7 @@ export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const existing = await prisma.note.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  await prisma.note.delete({ where: { id } });
-
+  const ok = await NotesDB.deleteForTenant(auth.tenantId, id);
+  if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -19,32 +19,19 @@ interface TagRecord {
 }
 
 // ── Helpers de persistencia ───────────────────────────────────────────────────
-
-async function readFeatureFlags(tenantId: string): Promise<Record<string, unknown>> {
-  const setting = await prisma.settings.findFirst({ where: { tenantId } });
-  if (!setting?.featureFlagsJson) return {};
-  try { return JSON.parse(setting.featureFlagsJson) as Record<string, unknown>; } catch { return {}; }
-}
-
-async function writeFeatureFlags(tenantId: string, flags: Record<string, unknown>): Promise<void> {
-  await prisma.settings.upsert({
-    where: { tenantId },
-    create: { tenantId, featureFlagsJson: JSON.stringify(flags) },
-    update: { featureFlagsJson: JSON.stringify(flags) },
-  });
-}
+// Audit project-wide 2026-05-19: migrado a SettingsDB.getFeatureFlags / setFeatureFlags.
 
 async function loadTags(tenantId: string): Promise<TagRecord[]> {
-  const flags = await readFeatureFlags(tenantId);
+  const flags = await SettingsDB.getFeatureFlags(tenantId);
   const raw = flags["custom_tags"];
   if (!Array.isArray(raw)) return [];
   return raw as TagRecord[];
 }
 
 async function saveTags(tenantId: string, tags: TagRecord[]): Promise<void> {
-  const flags = await readFeatureFlags(tenantId);
+  const flags = await SettingsDB.getFeatureFlags(tenantId);
   flags["custom_tags"] = tags;
-  await writeFeatureFlags(tenantId, flags);
+  await SettingsDB.setFeatureFlags(tenantId, flags);
 }
 
 // ── GET /api/tags?entity=product|customer|order ──────────────────────────────

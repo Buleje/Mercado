@@ -395,4 +395,34 @@ export const SettingsDB = {
     });
     invalidateByPrefix(`settings:${tenantId}`);
   },
+
+  // ── Feature flags JSON (extensiones sin migracion) ──────────────────────
+
+  /**
+   * Lee featureFlagsJson como un objeto Record<string, unknown>.
+   * Util para almacenar tags custom, toggles experimentales, etc.
+   * Audit project-wide 2026-05-19 — migracion de /api/tags.
+   */
+  async getFeatureFlags(tenantId: string): Promise<Record<string, unknown>> {
+    const setting = await prisma.settings.findFirst({ where: { tenantId } });
+    if (!setting?.featureFlagsJson) return {};
+    try {
+      return JSON.parse(setting.featureFlagsJson) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  },
+
+  /**
+   * Setea featureFlagsJson completo (overwrite del JSON). Si el caller
+   * solo necesita updatear una key, debe leer + merger antes.
+   */
+  async setFeatureFlags(tenantId: string, flags: Record<string, unknown>): Promise<void> {
+    await prisma.settings.upsert({
+      where: { tenantId },
+      create: { tenantId, featureFlagsJson: JSON.stringify(flags) },
+      update: { featureFlagsJson: JSON.stringify(flags) },
+    });
+    invalidateByPrefix(`settings:${tenantId}`);
+  },
 };
