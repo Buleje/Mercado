@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsSalesByDateDB } from "@/lib/db/analytics-sales-by-date.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
 // GET /api/analytics/peak-hours — sales grouped by hour of day and day of week
@@ -37,12 +37,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch sales within range
-    const sales = await prisma.sale.findMany({
-      where: {
-        tenantId: auth.tenantId,
-        ...(createdAtClause && { createdAt: createdAtClause }),
-      },
-      select: { total: true, createdAt: true },
+    // Audit project-wide 2026-05-19: migrado a AnalyticsSalesByDateDB.
+    const sales = await AnalyticsSalesByDateDB.listInRange(auth.tenantId, {
+      from: createdAtClause?.gte,
+      to: createdAtClause?.lte,
     });
 
     // Aggregate by hour (0-23)

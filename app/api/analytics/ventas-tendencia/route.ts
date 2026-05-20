@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsSalesByDateDB } from "@/lib/db/analytics-sales-by-date.db";
 import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
@@ -49,13 +49,8 @@ export async function GET(req: NextRequest) {
     const startDate = new Date(todayStart);
     startDate.setDate(startDate.getDate() - totalDays);
 
-    const tenantFilter = { tenantId: auth.tenantId };
-
-    // Get all sales in the extended period
-    const sales = await prisma.sale.findMany({
-      where: { ...tenantFilter, createdAt: { gte: startDate } },
-      select: { total: true, createdAt: true },
-    });
+    // Audit project-wide 2026-05-19: migrado a AnalyticsSalesByDateDB.
+    const sales = await AnalyticsSalesByDateDB.listSince(auth.tenantId, startDate);
 
     // Group sales by day (YYYY-MM-DD)
     const dailyTotals = new Map<string, number>();

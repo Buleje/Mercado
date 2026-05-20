@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsSalesByDateDB } from "@/lib/db/analytics-sales-by-date.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type HeatCell = { hour: number; day: string; value: number; amount: number };
@@ -16,10 +16,8 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   try {
-    const sales = await prisma.sale.findMany({
-      where: { tenantId: auth.tenantId, createdAt: { gte: since } },
-      select: { createdAt: true, total: true },
-    });
+    // Audit project-wide 2026-05-19: migrado a AnalyticsSalesByDateDB.
+    const sales = await AnalyticsSalesByDateDB.listSince(auth.tenantId, since);
 
     // Agrupar por hora y día de la semana
     const map = new Map<string, { count: number; amount: number }>();
