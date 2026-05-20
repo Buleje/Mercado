@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
-import { prisma } from "@/lib/prisma";
+import { StorePermissionsDB } from "@/lib/db/store-permissions.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -62,20 +62,8 @@ async function decorate(rows: RowFromDb[]): Promise<StorePermissionDto[]> {
     .filter((r) => r.userType === "delivery")
     .map((r) => r.userId);
 
-  const [admins, partners] = await Promise.all([
-    adminIds.length
-      ? prisma.adminUser.findMany({
-          where: { id: { in: adminIds } },
-          select: { id: true, username: true, name: true },
-        })
-      : Promise.resolve([]),
-    partnerIds.length
-      ? prisma.deliveryPartner.findMany({
-          where: { id: { in: partnerIds } },
-          select: { id: true, name: true, phone: true },
-        })
-      : Promise.resolve([]),
-  ]);
+  // Audit project-wide 2026-05-19: migrado a StorePermissionsDB.resolveActors.
+  const { admins, partners } = await StorePermissionsDB.resolveActors(adminIds, partnerIds);
 
   const adminMap = new Map(admins.map((a) => [a.id, a]));
   const partnerMap = new Map(partners.map((p) => [p.id, p]));
@@ -117,29 +105,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const storeId = searchParams.get("storeId");
 
-    // SECURITY: scope por tenantId siempre. Si pasan storeId, validamos que
-    // pertenezca al tenant. Si no, listamos los de TODAS las stores del tenant.
-    const where: Record<string, unknown> = {
-      store: { tenantId: auth.tenantId },
-    };
-    if (storeId) {
-      // Validamos que la store sea del tenant antes (evita probing cross-tenant).
-      const store = await prisma.store.findFirst({
-        where: { id: storeId, tenantId: auth.tenantId },
-        select: { id: true },
-      });
-      if (!store) {
-        return NextResponse.json([], { status: 200 });
-      }
-      where.storeId = storeId;
-    }
-
-    const rows = await prisma.storePermission.findMany({
-      where,
-      include: { store: { select: { id: true, name: true, tenantId: true } } },
-      orderBy: { createdAt: "desc" },
+    // SECURITY: scope tenantId + storeId guard dentro de DB class.
+    // Audit project-wide 2026-05-19: migrado a StorePermissionsDB.listForTenant.
+    const rows = await StorePermissionsDB.listForTenant(auth.tenantId, {
+      storeId: storeId ?? undefined,
     });
-
     const decorated = await decorate(rows as RowFromDb[]);
     return NextResponse.json(decorated);
   } catch (err) {
@@ -173,28 +143,18 @@ export async function POST(req: NextRequest) {
     const { storeId, userId, userType, permissions } = parsed.data;
 
     // SECURITY: validar que la store es del tenant del admin
-    const store = await prisma.store.findFirst({
-      where: { id: storeId, tenantId: auth.tenantId },
-      select: { id: true },
-    });
-    if (!store) {
+    // Audit project-wide 2026-05-19: migrado a StorePermissionsDB.
+    const owned = await StorePermissionsDB.storeOwnedBy(auth.tenantId, storeId);
+    if (!owned) {
       return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
     }
 
-    const result = await prisma.storePermission.upsert({
-      where: { storeId_userId_userType: { storeId, userId, userType } },
-      update: {
-        permissions: permissions.join(","),
-        grantedBy: auth.username,
-      },
-      create: {
-        storeId,
-        userId,
-        userType,
-        permissions: permissions.join(","),
-        grantedBy: auth.username,
-      },
-      include: { store: { select: { id: true, name: true, tenantId: true } } },
+    const result = await StorePermissionsDB.upsert({
+      storeId,
+      userId,
+      userType,
+      permissions,
+      grantedBy: auth.username,
     });
 
     logActivity(
@@ -236,15 +196,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // SECURITY 2026-05-05 (audit cross-tenant #high): scope tenant via Store.
-    const existing = await prisma.storePermission.findFirst({
-      where: { id, store: { tenantId: auth.tenantId } },
-    });
+    // SECURITY 2026-05-05: scope tenant via Store nested.
+    // Audit project-wide 2026-05-19: migrado a StorePermissionsDB.deleteForTenant.
+    const existing = await StorePermissionsDB.deleteForTenant(auth.tenantId, id);
     if (!existing) {
       return NextResponse.json({ error: "Permiso no encontrado" }, { status: 404 });
     }
-
-    await prisma.storePermission.delete({ where: { id } });
 
     logActivity(
       "Revocar",
