@@ -16,16 +16,13 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
-import { prisma } from "@/lib/prisma";
+import { MeOrderHistoryDB } from "@/lib/db/me-order-history.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 // Audit project-wide 2026-05-19 (QA P1 #1): devolver storeName real del
 // tenant en lugar del "Buleje" hardcoded en /cuenta/pedidos.
 import { cache } from "react";
-const getTenantNameById = cache(async (tenantId: string) =>
-  prisma.tenant.findFirst({
-    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-    select: { name: true, slug: true },
-  })
+const getTenantNameById = cache((tenantId: string) =>
+  MeOrderHistoryDB.getTenantName(tenantId)
 );
 import { logger } from "@/lib/logger";
 
@@ -50,32 +47,13 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit;
 
   try {
-    const where = {
-      tenantId,
-      customerPhone,
-      ...(statusFilter ? { status: statusFilter as "pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado" } : {}),
-    };
-
     const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
+      MeOrderHistoryDB.list(tenantId, customerPhone, {
         skip,
         take: limit,
-        include: {
-          items: {
-            select: {
-              name: true,
-              price: true,
-              quantity: true,
-              unit: true,
-              image: true,
-              productId: true,
-            },
-          },
-        },
+        statusFilter,
       }),
-      prisma.order.count({ where }),
+      MeOrderHistoryDB.count(tenantId, customerPhone, statusFilter),
     ]);
 
     const totalPages = Math.ceil(total / limit);

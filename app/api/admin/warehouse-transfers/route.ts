@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { AdminWarehouseTransfersDB } from "@/lib/db/admin-warehouse-transfers.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logActivity } from "@/lib/activity-logger";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
 const CreateSchema = z.object({
@@ -17,10 +17,6 @@ const CreateSchema = z.object({
   notes: z.string().max(500).optional().default(""),
 });
 
-function toISO(d: Date) {
-  return d.toISOString();
-}
-
 /** GET /api/admin/warehouse-transfers — list transfers (newest first, limit 50) */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
@@ -31,46 +27,14 @@ export async function GET(req: NextRequest) {
   const fromId = req.nextUrl.searchParams.get("from") ?? undefined;
   const toId = req.nextUrl.searchParams.get("to") ?? undefined;
 
-  const rows = await prisma.transfer.findMany({
-    where: {
-      tenantId: auth.tenantId,
-      ...(fromId && { fromWarehouseId: fromId }),
-      ...(toId && { toWarehouseId: toId }),
-    },
-    include: {
-      fromWarehouse: { select: { name: true } },
-      toWarehouse: { select: { name: true } },
-      product: { select: { name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+  const result = await AdminWarehouseTransfersDB.list(auth.tenantId, {
+    limit,
+    cursor,
+    fromId,
+    toId,
   });
 
-  const hasMore = rows.length > limit;
-  const items = hasMore ? rows.slice(0, limit) : rows;
-
-  return NextResponse.json({
-    items: items.map(r => ({
-      id: r.id,
-      code: r.code,
-      fromId: r.fromWarehouseId,
-      fromName: r.fromWarehouse.name,
-      toId: r.toWarehouseId,
-      toName: r.toWarehouse.name,
-      productId: r.productId,
-      productName: r.product.name,
-      quantity: r.quantity,
-      unit: r.unit,
-      status: r.status,
-      notes: r.notes,
-      requestedBy: r.requestedBy,
-      date: toISO(r.requestDate),
-      createdAt: toISO(r.createdAt),
-    })),
-    hasMore,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
-  });
+  return NextResponse.json(result);
 }
 
 /** POST /api/admin/warehouse-transfers — record a new transfer */
@@ -104,18 +68,18 @@ export async function POST(req: NextRequest) {
   // SECURITY 2026-05-05 (audit cross-tenant #high): scope tenantId.
   // Antes admin de A podía referenciar warehouses de B y mover stock.
   const [from, to] = await Promise.all([
-    prisma.warehouse.findFirst({ where: { id: fromWarehouseId, tenantId: auth.tenantId } }),
-    prisma.warehouse.findFirst({ where: { id: toWarehouseId, tenantId: auth.tenantId } }),
+    AdminWarehouseTransfersDB.findWarehouse(auth.tenantId, fromWarehouseId),
+    AdminWarehouseTransfersDB.findWarehouse(auth.tenantId, toWarehouseId),
   ]);
   if (!from) return NextResponse.json({ error: "Almacén origen no encontrado" }, { status: 404 });
   if (!to) return NextResponse.json({ error: "Almacén destino no encontrado" }, { status: 404 });
 
   // Stock validation: check per-warehouse stock from Location model
-  const locationStock = await prisma.location.aggregate({
-    where: { warehouseId: fromWarehouseId, productId, tenantId: auth.tenantId },
-    _sum: { qty: true },
-  });
-  const availableQty = locationStock._sum.qty ?? 0;
+  const availableQty = await AdminWarehouseTransfersDB.locationStock(
+    auth.tenantId,
+    fromWarehouseId,
+    productId,
+  );
   if (availableQty > 0 && availableQty < quantity) {
     return NextResponse.json(
       { error: `Stock insuficiente en almacén origen. Disponible: ${availableQty}, solicitado: ${quantity}` },
@@ -123,60 +87,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Generate sequential code
-  const count = await prisma.transfer.count({ where: { tenantId: auth.tenantId } });
-  const code = `TRF-${String(count + 1).padStart(4, "0")}`;
-
-  const transfer = await prisma.transfer.create({
-    data: {
-      code,
-      fromWarehouseId,
-      toWarehouseId,
-      productId,
-      quantity,
-      unit: unit ?? "und",
-      notes: notes ?? "",
-      status: "pendiente",
-      requestedBy: auth.username ?? "admin",
-      tenantId: auth.tenantId,
-    },
-    include: {
-      fromWarehouse: { select: { name: true } },
-      toWarehouse: { select: { name: true } },
-      product: { select: { name: true } },
-    },
+  const transfer = await AdminWarehouseTransfersDB.create(auth.tenantId, {
+    fromWarehouseId,
+    toWarehouseId,
+    productId,
+    quantity,
+    unit: unit ?? "und",
+    notes: notes ?? "",
+    requestedBy: auth.username ?? "admin",
   });
 
   // Log to activity log (fire-and-forget)
   logActivity(
     "create",
     "warehouse-transfer",
-    `Transferencia ${code}: ${from.name} → ${to.name} · ${quantity} ${unit} de ${transfer.product.name}`,
-
+    `Transferencia ${transfer.code}: ${from.name} → ${to.name} · ${quantity} ${unit} de ${transfer.productName}`,
     transfer.id,
     auth.username ?? "admin",
-  );
+  ).catch((err) => logger.error("[admin/warehouse-transfers] activity log failed", { error: String(err) }));
 
-  return NextResponse.json(
-    {
-      id: transfer.id,
-      code: transfer.code,
-      fromId: transfer.fromWarehouseId,
-      fromName: transfer.fromWarehouse.name,
-      toId: transfer.toWarehouseId,
-      toName: transfer.toWarehouse.name,
-      productId: transfer.productId,
-      productName: transfer.product.name,
-      quantity: transfer.quantity,
-      unit: transfer.unit,
-      status: transfer.status,
-      notes: transfer.notes,
-      requestedBy: transfer.requestedBy,
-      date: toISO(transfer.requestDate),
-      createdAt: toISO(transfer.createdAt),
-    },
-    { status: 201 },
-  );
+  return NextResponse.json(transfer, { status: 201 });
 }
 
 /** PATCH /api/admin/warehouse-transfers — update transfer status */
@@ -197,83 +127,20 @@ export async function PATCH(req: NextRequest) {
   // When completing, verify origin has enough stock before committing the change
   if (status === "completado") {
     // SECURITY 2026-05-05 (audit cross-tenant #high): scope tenantId.
-    // Antes admin de A podía completar un transfer de B (modificación de stock ajeno).
-    const existing = await prisma.transfer.findFirst({ where: { id, tenantId: auth.tenantId } });
-    if (existing) {
-      const originLoc = await prisma.location.findFirst({
-        where: { warehouseId: existing.fromWarehouseId, productId: existing.productId, tenantId: existing.tenantId },
-      });
-      // Only block if we have a record AND it's insufficient — missing record = stock not tracked yet, allow
-      if (originLoc && originLoc.qty < existing.quantity) {
-        return NextResponse.json(
-          { error: `Stock insuficiente en almacén origen. Disponible: ${originLoc.qty}, requerido: ${existing.quantity}` },
-          { status: 409 },
-        );
-      }
+    const stockCheck = await AdminWarehouseTransfersDB.checkOriginStock(auth.tenantId, id);
+    if ("notFound" in stockCheck) {
+      // Transfer no existe para este tenant — lo manejara updateStatus devolviendo null
+    } else if (!stockCheck.ok) {
+      return NextResponse.json(
+        { error: `Stock insuficiente en almacén origen. Disponible: ${stockCheck.available}, requerido: ${stockCheck.required}` },
+        { status: 409 },
+      );
     }
   }
 
-  // SECURITY 2026-05-05 (audit cross-tenant #high): updateMany con tenantId
-  // bloquea modificación cross-tenant. update directo sin guard permitía a
-  // admin de A cambiar status de transfer de B.
-  const claim = await prisma.transfer.updateMany({
-    where: { id, tenantId: auth.tenantId },
-    data: {
-      status,
-      ...(status === "completado" && { deliveredDate: new Date() }),
-    },
-  });
-  if (claim.count === 0) {
+  const updated = await AdminWarehouseTransfersDB.updateStatus(auth.tenantId, id, status);
+  if (!updated) {
     return NextResponse.json({ error: "Transfer no encontrado" }, { status: 404 });
-  }
-  const updated = await prisma.transfer.findFirstOrThrow({
-    where: { id, tenantId: auth.tenantId },
-    include: {
-      fromWarehouse: { select: { name: true } },
-      toWarehouse: { select: { name: true } },
-    },
-  });
-
-  // When completing a transfer, adjust Location stock: decrement origin, increment destination
-  if (status === "completado") {
-    try {
-      const [fromLoc, toLoc] = await Promise.all([
-        prisma.location.findFirst({ where: { warehouseId: updated.fromWarehouseId, productId: updated.productId, tenantId: updated.tenantId } }),
-        prisma.location.findFirst({ where: { warehouseId: updated.toWarehouseId, productId: updated.productId, tenantId: updated.tenantId } }),
-      ]);
-      await prisma.$transaction([
-        // Decrement origin (don't go below 0)
-        ...(fromLoc
-          ? [prisma.location.update({ where: { id: fromLoc.id }, data: { qty: Math.max(0, fromLoc.qty - updated.quantity) } })]
-          : []),
-        // Increment or create destination location
-        ...(toLoc
-          ? [prisma.location.update({ where: { id: toLoc.id }, data: { qty: toLoc.qty + updated.quantity } })]
-          : [prisma.location.create({
-              data: {
-                code: `LOC-${updated.toWarehouseId.slice(0, 6)}-${updated.productId}`,
-                zone: "General",
-                warehouseId: updated.toWarehouseId,
-                productId: updated.productId,
-                qty: updated.quantity,
-                tenantId: updated.tenantId,
-              },
-            })]),
-      ]);
-      // Recalculate Product.stock as the sum of all Location.qty across all warehouses
-      const aggregate = await prisma.location.aggregate({
-        where: { productId: updated.productId, tenantId: updated.tenantId },
-        _sum: { qty: true },
-      });
-      await prisma.product.update({
-        where: { id: updated.productId },
-        data: { stock: aggregate._sum.qty ?? 0 },
-      }).catch((err) => {
-        logger.warn("[warehouse-transfers] stock recompute failed (best-effort)", { err: String(err), productId: updated.productId });
-      });
-    } catch {
-      // Stock adjustment is best-effort — transfer status is already saved
-    }
   }
 
   logActivity(
@@ -282,13 +149,7 @@ export async function PATCH(req: NextRequest) {
     `Transferencia ${updated.code} marcada como "${status}"`,
     updated.id,
     auth.username ?? "admin",
-  );
+  ).catch((err) => logger.error("[admin/warehouse-transfers] activity log failed", { error: String(err) }));
 
-  return NextResponse.json({
-    id: updated.id,
-    code: updated.code,
-    status: updated.status,
-    fromName: updated.fromWarehouse.name,
-    toName: updated.toWarehouse.name,
-  });
+  return NextResponse.json(updated);
 }

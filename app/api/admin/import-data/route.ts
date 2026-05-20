@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AdminImportDataDB } from "@/lib/db/admin-import-data.db";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod/v4";
@@ -72,7 +72,7 @@ async function importHandler(
       const validProducts: Array<{
         name: string; category: string; price: number; costPrice: number | null;
         unit: string; stock: number | null; stockMin: number | null; active: boolean;
-        barcode: string | null; description: string | null; tenantId: string;
+        barcode: string | null; description: string | null;
       }> = [];
 
       for (let i = 0; i < products.length; i++) {
@@ -93,24 +93,16 @@ async function importHandler(
           active: p.activo,
           barcode: p.codigo ?? null,
           description: p.descripcion ?? null,
-          tenantId: auth.tenantId,
         });
       }
 
-      if (validProducts.length > 0) {
-        const result = await prisma.product.createMany({
-          data: validProducts,
-          skipDuplicates: true,
-        });
-        imported.products = result.count;
-      }
+      imported.products = await AdminImportDataDB.importProducts(auth.tenantId, validProducts);
     }
 
     // ── Importar clientes en batch ────────────────────────────────────────────
     if (customers.length > 0) {
-      // Prisma 7: usar tipo explícito en lugar de Parameters<> para evitar drift de tipos
       const validCustomers: Array<{
-        phone: string; name: string; location: string; tenantId: string;
+        phone: string; name: string; location: string;
       }> = [];
 
       for (let i = 0; i < customers.length; i++) {
@@ -124,17 +116,10 @@ async function importHandler(
           phone: c.telefono,
           name: c.nombre,
           location: c.ubicacion ?? "",
-          tenantId: auth.tenantId,
         });
       }
 
-      if (validCustomers.length > 0) {
-        const result = await prisma.customer.createMany({
-          data: validCustomers,
-          skipDuplicates: true,
-        });
-        imported.customers = result.count;
-      }
+      imported.customers = await AdminImportDataDB.importCustomers(auth.tenantId, validCustomers);
     }
 
     // 4. Fire-and-forget

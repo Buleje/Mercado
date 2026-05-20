@@ -16,7 +16,7 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
-import { prisma } from "@/lib/prisma";
+import { MeDashboardDB } from "@/lib/db/me-dashboard.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -51,63 +51,19 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       // Customer profile — findFirst con tenantId para aislamiento multi-tenant
       // (phone es PK global: findUnique ignora tenantId → cross-tenant leak)
-      prisma.customer.findFirst({
-        where: { phone: customerPhone, tenantId },
-        select: {
-          name: true,
-          phone: true,
-          loyaltyPoints: true,
-          loyaltyTier: true,
-          totalSpent: true,
-          creditBalance: true,
-          creditLimit: true,
-          referralCode: true,
-          createdAt: true,
-        },
-      }),
+      MeDashboardDB.getCustomerProfile(tenantId, customerPhone),
 
       // Last 5 orders with items
-      prisma.order.findMany({
-        where: { tenantId, customerPhone },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: {
-          items: {
-            select: { name: true, quantity: true },
-            take: 3,
-          },
-        },
-      }),
+      MeDashboardDB.getRecentOrders(tenantId, customerPhone, 5),
 
       // This month aggregate
-      prisma.order.aggregate({
-        where: {
-          tenantId,
-          customerPhone,
-          createdAt: { gte: thirtyDaysAgo },
-          status: { not: "cancelado" },
-        },
-        _sum: { total: true },
-        _count: true,
-      }),
+      MeDashboardDB.getMonthlyAggregate(tenantId, customerPhone, thirtyDaysAgo),
 
       // Saved cart
-      prisma.savedCart.findFirst({
-        where: { tenantId, customerPhone },
-        select: { itemsJson: true, updatedAt: true },
-      }),
+      MeDashboardDB.getSavedCart(tenantId, customerPhone),
 
       // Pending deuda orders (fiado not paid)
-      prisma.order.findMany({
-        where: {
-          tenantId,
-          customerPhone,
-          deuda: true,
-        },
-        select: { id: true, total: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      }),
+      MeDashboardDB.getPendingDeuda(tenantId, customerPhone, 5),
     ]);
 
     const monthlySpent = toNumOrZero(monthlyAgg._sum?.total);
