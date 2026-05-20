@@ -373,7 +373,11 @@ export default function MarketplaceNavbar() {
         )}
       >
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center gap-3 lg:gap-4">
+          {/* Brandon 2026-05-20 v6 — navbar mobile minimalista:
+              h-16 (64px) → h-14 (56px) en mobile, h-16 desktop.
+              Reduce el real-estate ocupado above-the-fold y se siente más
+              ligero/comercial. Desktop mantiene h-16 por links + branding. */}
+          <div className="flex h-14 md:h-16 items-center gap-2 sm:gap-3 lg:gap-4">
             {/* ── Logo (desktop+tablet) — Brandon, mayo 14 2026: siempre lleva a /tiendas.
                  En mobile vive dentro del input de búsqueda (mayo 15 2026). ── */}
             <Link
@@ -643,62 +647,67 @@ export default function MarketplaceNavbar() {
                  Layout: [Hamburger] [Search pill: logo + placeholder + lupa] [User] [Cart-with-count-on-top].
                  El logo desktop arriba se oculta — vive dentro del input ahora.
                  OrderTrackerNavBadge se mueve al drawer en mobile (real-estate). */}
-            <div className="flex md:hidden items-center gap-1.5 w-full">
-              {/* Hamburger */}
+            <div className="flex md:hidden items-center gap-1 w-full">
+              {/* Brandon 2026-05-20 v6 — bar mobile compactado:
+                  · botones h-11 (44px) → h-10 (40px): sigue tappable (WCAG
+                    pide ≥44px ideal pero 40px aceptable, mejor ratio visual)
+                  · íconos h-6 (24px) → h-5 (20px): más sutil, menos peso
+                  · search pill h-11 → h-10, border-2 → border (1px): minimalista
+                  · gap 1.5 → 1: agrupa cluster visualmente
+                  · placeholder más corto: "Buscar tienda…" en lugar de
+                    "Categoría, producto o tienda" (3 palabras → 2) */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 aria-label="Abrir menú"
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-drawer"
               >
-                <Menu className="h-6 w-6" aria-hidden="true" strokeWidth={2} />
+                <Menu className="h-5 w-5" aria-hidden="true" strokeWidth={2.25} />
               </button>
 
-              {/* Search pill: logo Buleje (mark) · placeholder · lupa */}
+              {/* Search pill compacto: logo + placeholder + lupa */}
               <form
                 onSubmit={handleSearch}
                 role="search"
                 aria-label={t("nav.search")}
                 className="flex-1 min-w-0"
               >
-                <div className="relative flex items-center h-11 rounded-full bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1.5">
-                  {/* Logo (solo mark, sin texto) al inicio del input */}
+                <div className="relative flex items-center h-10 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1">
                   <Link
                     href="/tiendas"
                     aria-label="Buleje — Inicio"
                     className="shrink-0 inline-flex items-center"
                     onClick={(e) => {
-                      // Si el input tiene foco, evita perderlo al tocar el logo.
                       e.currentTarget.blur();
                     }}
                   >
-                    <BulejeWordmark size={28} showText={false} />
+                    <BulejeWordmark size={24} showText={false} />
                   </Link>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Categoría, producto o tienda"
+                    placeholder="Buscar tienda…"
                     aria-label={t("nav.search")}
-                    className="flex-1 min-w-0 bg-transparent outline-none text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-medium"
+                    className="flex-1 min-w-0 bg-transparent outline-none text-[13px] font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-medium"
                   />
                   <button
                     type="submit"
                     aria-label="Buscar"
-                    className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
+                    className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
                   >
-                    <Search className="h-4 w-4" aria-hidden="true" strokeWidth={2.5} />
+                    <Search className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={2.5} />
                   </button>
                 </div>
               </form>
 
-              {/* User — iniciales si está autenticado, ícono si no */}
+              {/* User — iniciales o ícono. Compactado a h-10. */}
               {customer ? (
                 <Link
                   href="/marketplace/mi-cuenta"
                   aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
-                  className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-[length:var(--ts-sm)] font-black text-white shadow-sm active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)] text-[12px] font-black text-white shadow-sm active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   {getInitials(customer.name)}
                 </Link>
@@ -706,29 +715,29 @@ export default function MarketplaceNavbar() {
                 <button
                   onClick={openAuthModal}
                   aria-label={t("nav.login")}
-                  className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
-                  <UserCircle className="h-6 w-6" aria-hidden="true" strokeWidth={1.75} />
+                  <UserCircle className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
                 </button>
               )}
 
-              {/* Cart — ícono con contador ARRIBA (centrado), no al costado */}
+              {/* Cart — compactado. Badge sigue siendo prominente con ring. */}
               <button
                 data-tour="cart"
                 onClick={handleOpenCart}
                 aria-label={`Carrito — ${cartItemCount} ${cartItemCount === 1 ? "producto" : "productos"}`}
-                className="relative shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                className="relative shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
               >
                 {cartItemCount > 0 && (
                   <span
                     aria-hidden="true"
-                    className="absolute top-0 left-1/2 -translate-x-1/2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white shadow-sm leading-none ring-2 ring-[var(--surface-raised)] tabular-nums"
+                    className="absolute top-0.5 right-0.5 inline-flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white shadow-sm leading-none ring-2 ring-[var(--surface-raised)] tabular-nums"
                   >
                     {cartItemCount > 99 ? "99+" : cartItemCount}
                   </span>
                 )}
                 <ShoppingCart
-                  className="h-6 w-6 mt-1.5"
+                  className="h-5 w-5"
                   aria-hidden="true"
                   strokeWidth={2}
                 />
