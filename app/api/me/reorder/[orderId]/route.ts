@@ -11,7 +11,7 @@
 import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
-import { prisma } from "@/lib/prisma";
+import { MeReorderDB } from "@/lib/db/me-reorder.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { slugify } from "@/data/products";
@@ -35,21 +35,9 @@ export async function POST(req: NextRequest, { params }: Props) {
   }
 
   try {
-    // Fetch original order — verify ownership via customerPhone
-    const order = await prisma.order.findFirst({
-      where: { id: orderId, tenantId, customerPhone },
-      include: {
-        items: {
-          select: {
-            productId: true,
-            name: true,
-            quantity: true,
-            price: true,
-            unit: true,
-          },
-        },
-      },
-    });
+    // Audit project-wide 2026-05-19: migrado a MeReorderDB.findOrderForReorder.
+    // Verify ownership via tenantId + customerPhone within DB class.
+    const order = await MeReorderDB.findOrderForReorder(tenantId, customerPhone, orderId);
 
     if (!order) {
       return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });

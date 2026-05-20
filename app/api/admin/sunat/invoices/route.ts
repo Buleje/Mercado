@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { SunatDB } from "@/lib/db/sunat.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -31,46 +31,31 @@ export async function GET(req: NextRequest) {
     const tipo = url.searchParams.get("tipo"); // boleta | factura
     const status = url.searchParams.get("status"); // pending | accepted | rejected | voided
 
-    const where = {
-      tenantId: auth.tenantId,
+    const { invoices, total } = await SunatDB.listInvoices(auth.tenantId, {
       ...(tipo && { type: tipo }),
-      ...(status && { sunatStatus: status }),
-    };
-
-    const [invoices, total] = await Promise.all([
-      prisma.sunatInvoice.findMany({
-        where,
-        select: {
-          id: true,
-          orderId: true,
-          type: true,
-          series: true,
-          number: true,
-          customerName: true,
-          customerRuc: true,
-          subtotal: true,
-          igv: true,
-          total: true,
-          sunatStatus: true,
-          pdfUrl: true,
-          errorMessage: true,
-          sentAt: true,
-          acceptedAt: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.sunatInvoice.count({ where }),
-    ]);
+      ...(status && { status: status as import("@/lib/db/sunat.db").SunatInvoiceStatus }),
+      limit,
+      offset: (page - 1) * limit,
+    });
 
     const res = NextResponse.json({
       data: invoices.map((inv) => ({
-        ...inv,
-        subtotal: Number(inv.subtotal),
-        igv: Number(inv.igv),
-        total: Number(inv.total),
+        id: inv.id,
+        orderId: inv.orderId,
+        type: inv.type,
+        series: inv.series,
+        number: inv.number,
+        customerName: inv.customerName,
+        customerRuc: inv.customerRuc,
+        subtotal: inv.subtotal,
+        igv: inv.igv,
+        total: inv.total,
+        sunatStatus: inv.sunatStatus,
+        pdfUrl: inv.pdfUrl,
+        errorMessage: inv.errorMessage,
+        sentAt: inv.sentAt,
+        acceptedAt: inv.acceptedAt,
+        createdAt: inv.createdAt,
         numero: `${inv.series}-${String(inv.number).padStart(8, "0")}`,
       })),
     });

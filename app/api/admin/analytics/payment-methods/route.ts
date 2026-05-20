@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { AdminPaymentMethodsDB } from "@/lib/db/admin-payment-methods.db";
 import { requireAdmin } from "@/lib/require-admin";
-import { toNumOrZero } from "@/lib/decimal-utils";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 
@@ -33,34 +32,26 @@ export async function GET(req: NextRequest) {
   // Brandon mayo 2026 v7: solo `entregado` cuenta como venta para métricas
   // de payment methods. Pedidos en confirmado/en_camino pueden cancelarse
   // y distorsionan la atribución por medio de pago.
-  const validStatuses: ["entregado"] = ["entregado"];
+  const validStatuses = ["entregado"];
 
   // 1 query agregada — Postgres hace COUNT + SUM por paymentMethod.
-  // eslint-disable-next-line no-restricted-properties -- analytics scoped por tenantId; agregacion server-side.
-  const grouped = await prisma.order.groupBy({
-    by: ["paymentMethod"],
-    where: {
-      tenantId,
-      status: { in: validStatuses },
-      createdAt: { gte: since },
-    },
-    _count: { _all: true },
-    _sum: { total: true },
-  });
+  const grouped = await AdminPaymentMethodsDB.groupByPaymentMethod(
+    tenantId,
+    since,
+    validStatuses,
+  );
 
-  // Normalizar null -> "sin_especificar" y calcular grand total desde el agregado.
+  // Acumular por método (DB class ya normaliza null → "sin_especificar").
   const byMethod: Record<string, { count: number; total: number }> = {};
   let grandTotal = 0;
   let totalOrders = 0;
   for (const g of grouped) {
-    const method = g.paymentMethod || "sin_especificar";
-    const amount = toNumOrZero(g._sum.total);
-    const count = g._count._all;
+    const method = g.method;
     if (!byMethod[method]) byMethod[method] = { count: 0, total: 0 };
-    byMethod[method].count += count;
-    byMethod[method].total += amount;
-    grandTotal += amount;
-    totalOrders += count;
+    byMethod[method].count += g.count;
+    byMethod[method].total += g.total;
+    grandTotal += g.total;
+    totalOrders += g.count;
   }
 
   // Build sorted result
