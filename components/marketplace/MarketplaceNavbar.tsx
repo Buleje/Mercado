@@ -216,6 +216,88 @@ function useScrolledPastThreshold(px: number = 40): boolean {
   return scrolled;
 }
 
+// Brandon 2026-05-20 v7 — logo dinámico en storefront:
+// Cuando el usuario navega a /marketplace/[slug] (storefront de una tienda
+// específica), el search pill del navbar debe mostrar el logo de ESA tienda
+// en lugar del mark de Buleje. Detectamos el slug del path, fetcheamos el
+// logo a /api/marketplace/stores/[slug]/logo y cacheamos en sessionStorage
+// para evitar re-fetchear al navegar dentro del mismo storefront.
+function useStorefrontLogo(pathname: string | null): {
+  logo: string | null;
+  name: string | null;
+} {
+  const [data, setData] = useState<{ logo: string | null; name: string | null }>(
+    { logo: null, name: null },
+  );
+
+  useEffect(() => {
+    if (!pathname) {
+      setData({ logo: null, name: null });
+      return;
+    }
+    // Solo aplica en /marketplace/[slug] (no en /marketplace, /marketplace/explorar,
+    // /marketplace/mi-cuenta, etc — solo subrutas con slug específico).
+    const match = pathname.match(/^\/marketplace\/([^/]+)$/);
+    const slug = match?.[1];
+    // Excluimos paths reservados que NO son slugs de tienda
+    const RESERVED = new Set([
+      "explorar", "ofertas", "favoritos", "carrito", "mi-cuenta",
+      "como-pagar", "repartidor", "registrar", "buscar", "categoria",
+      "gift-cards", "recetas", "calificar-entrega", "en-vivo",
+      "comparar", "payment-result", "apply",
+    ]);
+    if (!slug || RESERVED.has(slug)) {
+      setData({ logo: null, name: null });
+      return;
+    }
+
+    // Cache key per slug — sessionStorage para que persista al navegar entre
+    // PDPs de la misma tienda sin re-fetch.
+    const cacheKey = `bsm:storefront:logo:${slug}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setData({ logo: parsed.logo ?? null, name: parsed.name ?? null });
+        return;
+      }
+    } catch {
+      /* sessionStorage puede fallar en private browsing */
+    }
+
+    // Fetch al endpoint específico del storefront (single store by slug).
+    // Brandon 2026-05-20 v7: antes usaba /api/marketplace/stores?slug=...
+    // pero ese endpoint NO acepta `slug` como param — devolvía todas las
+    // tiendas. El correcto es /api/marketplace/stores/[slug] que retorna
+    // el detail con logo + name + tenantSlug.
+    const ctrl = new AbortController();
+    fetch(`/api/marketplace/stores/${encodeURIComponent(slug)}`, {
+      signal: ctrl.signal,
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const store = j?.data;
+        if (!store) {
+          setData({ logo: null, name: null });
+          return;
+        }
+        const payload = { logo: store.logo ?? null, name: store.name ?? null };
+        setData(payload);
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(payload));
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch(() => {
+        if (!ctrl.signal.aborted) setData({ logo: null, name: null });
+      });
+    return () => ctrl.abort();
+  }, [pathname]);
+
+  return data;
+}
+
 export default function MarketplaceNavbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -223,6 +305,8 @@ export default function MarketplaceNavbar() {
   const router = useRouter();
   const pathname = usePathname();
   const navSearchParams = useSearchParams();
+  // Logo dinámico cuando estamos dentro de un storefront concreto.
+  const storefront = useStorefrontLogo(pathname);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
   // Cuando volvemos del callback OAuth con `?oauth=complete&name=...`,
@@ -380,17 +464,42 @@ export default function MarketplaceNavbar() {
           <div className="flex h-14 md:h-16 items-center gap-2 sm:gap-3 lg:gap-4">
             {/* ── Logo (desktop+tablet) — Brandon, mayo 14 2026: siempre lleva a /tiendas.
                  En mobile vive dentro del input de búsqueda (mayo 15 2026). ── */}
+            {/* Brandon 2026-05-20 v7: logo dinámico — en storefront muestra
+                el logo del negocio + nombre; en otras rutas el wordmark Buleje. */}
             <Link
               href="/tiendas"
-              aria-label="Buleje — Ir al directorio de tiendas"
-              className="hidden md:flex items-center shrink-0 text-[var(--accent)]"
+              aria-label={
+                storefront.logo
+                  ? `${storefront.name ?? "Tienda"} — Ir al directorio`
+                  : "Buleje — Ir al directorio de tiendas"
+              }
+              className="hidden md:flex items-center gap-2 shrink-0 text-[var(--accent)]"
             >
-              <BulejeWordmark
-                size={36}
-                strokeWidth={1.75}
-                textSize={18}
-                className="text-[var(--accent-600)] dark:text-white"
-              />
+              {storefront.logo ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- avatar simple */}
+                  <img
+                    src={storefront.logo}
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 rounded-full object-cover ring-2 ring-[var(--rule-base)]"
+                    loading="eager"
+                  />
+                  {storefront.name && (
+                    <span className="font-extrabold text-base tracking-tight text-[var(--text-primary)] max-w-[180px] truncate">
+                      {storefront.name}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <BulejeWordmark
+                  size={36}
+                  strokeWidth={1.75}
+                  textSize={18}
+                  className="text-[var(--accent-600)] dark:text-white"
+                />
+              )}
             </Link>
 
             {/* ── Search bar autocomplete (desktop + tablet) ── */}
@@ -676,13 +785,29 @@ export default function MarketplaceNavbar() {
                 <div className="relative flex items-center h-10 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1">
                   <Link
                     href="/tiendas"
-                    aria-label="Buleje — Inicio"
+                    aria-label={storefront.logo ? `${storefront.name ?? "Tienda"} — Ir al directorio` : "Buleje — Inicio"}
                     className="shrink-0 inline-flex items-center"
                     onClick={(e) => {
                       e.currentTarget.blur();
                     }}
                   >
-                    <BulejeWordmark size={24} showText={false} />
+                    {/* Brandon 2026-05-20 v7: logo dinámico — en storefront
+                        (/marketplace/[slug]) muestra el logo del negocio;
+                        en cualquier otra ruta el mark de Buleje. Avatar
+                        circular para que se vea como "estás en esta tienda". */}
+                    {storefront.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- avatar simple, sin next/image overhead
+                      <img
+                        src={storefront.logo}
+                        alt=""
+                        width={24}
+                        height={24}
+                        className="h-6 w-6 rounded-full object-cover ring-1 ring-[var(--rule-base)]"
+                        loading="eager"
+                      />
+                    ) : (
+                      <BulejeWordmark size={24} showText={false} />
+                    )}
                   </Link>
                   <input
                     type="text"

@@ -27,21 +27,21 @@ if (self.location && self.location.hostname === "localhost") {
   self.addEventListener("fetch", () => {});
 } else {
 
-const CACHE_NAME = "buleje-v14";
-const CATALOG_CACHE = "buleje-catalog-v2";
+// Brandon 2026-05-20 v7 FIX FOUC:
+// Bump CACHE_NAME v14→v15 — el activate hook ahora limpia el cache viejo
+// que estaba sirviendo HTML stale con referencias a chunks JS antiguos
+// (causaba el "flash de estilos viejos al cargar/regresar" reportado).
+const CACHE_NAME = "buleje-v15";
+const CATALOG_CACHE = "buleje-catalog-v3";
 // FIX 2026-05-06: removidos /offline (no existe — solo /offline.html) y /admin
-// (redirige 30x → cache.addAll lo rechaza como "illegal path"). cache.addAll
-// es atómico, una sola URL inválida tiraba TODA la operación con
-// "No se puede añadir el sistema de archivos: <illegal path>".
+// (redirige 30x → cache.addAll lo rechaza como "illegal path").
+// Brandon 2026-05-20 v7: REMOVIDOS de aquí "/", "/tiendas", "/negocios",
+// "/tienda" — eran páginas dinámicas con contenido fresco (counter de
+// tiendas, JSON-LD con stores actuales). Cachearlas hacía que el bfcache
+// browser sirviera versiones viejas con shape de UI anterior → FOUC.
+// Mantenemos solo recursos verdaderamente estáticos: offline page + manifest +
+// delivery-app shell (los repartidores SÍ necesitan offline pre-cache).
 const STATIC_URLS = [
-  "/",
-  "/tienda",
-  "/tienda/categoria/frutas-verduras",
-  "/tienda/categoria/abarrotes",
-  "/tienda/categoria/carnes",
-  "/tienda/categoria/lacteos",
-  "/tienda/categoria/bebidas",
-  "/tienda/categoria/limpieza",
   "/manifest.webmanifest",
   "/offline.html",
   // Shell de la delivery app — riders con señal inestable conservan el
@@ -50,8 +50,6 @@ const STATIC_URLS = [
   "/delivery-app",
   "/delivery-app/login",
   "/delivery-manifest.json",
-  "/tiendas",
-  "/negocios",
 ];
 const API_CACHE = "buleje-api-v4";
 const IMG_CACHE = "buleje-img-v4";
@@ -231,19 +229,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages: network first, cache fallback, offline.html as last resort
+  // Pages dinámicas (/, /tiendas, /negocios, /marketplace/[slug], etc):
+  // Brandon 2026-05-20 v7 — antes cacheabamos el HTML completo en CACHE_NAME
+  // y devolvíamos esa version stale al regresar (flash de estilos viejos +
+  // re-paint cuando llegaba la version fresca). Ahora: network-only para
+  // HTML dinámico, sin cache intermedio. offline.html se sirve solo cuando
+  // hay error de network (sin caché previa, no hay nada que servir stale).
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          const cloned = response.clone();
-          caches
-            .open(CACHE_NAME)
-            .then((cache) => cache.put(event.request, cloned));
-        }
-        return response;
-      })
-      .catch(() => 
+      .catch(() =>
         caches.match(event.request).then((cached) => {
           if (cached) return cached;
           // If HTML request and no cache, return offline page

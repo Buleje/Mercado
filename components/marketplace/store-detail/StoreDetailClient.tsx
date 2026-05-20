@@ -214,75 +214,16 @@ export default function StoreDetailClient({
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* ── MOBILE: Top FIJO nav v6 (Brandon 2026-05-18 — rediseño) ─────
-           Cambios vs v5:
-           - bg + backdrop-blur para cohesion con BottomNav (color-mix tokens)
-           - Hamburger + search compact (sin logo dentro: duplica con slim bar) +
-             icono cuenta + cart badge.
-           - Search se reduce: solo icono + texto sutil "Buscar productos".
-             El logo + nombre de la tienda viven en el slim bar de abajo,
-             evitando redundancia que saturaba la barra.
-           - Iconos h-10 (antes h-11) para tighter look premium. */}
-      <div
-        className={cn(
-          "lg:hidden fixed inset-x-0 top-0 z-50",
-          "border-b border-[var(--rule-base)]",
-          "bg-[color-mix(in_oklab,var(--surface-canvas)_88%,transparent)]",
-          "supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--surface-canvas)_70%,transparent)]",
-          "supports-[backdrop-filter]:backdrop-blur-xl",
-          "supports-[backdrop-filter]:backdrop-saturate-150",
-        )}
-      >
-        <div className="flex items-center gap-2 px-3 py-2">
-          {/* Hamburguesa de navegación → drawer global (Inicio, Tiendas, etc) */}
-          <button
-            type="button"
-            onClick={() => setNavDrawerOpen(true)}
-            aria-label="Menú de navegación"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
-          >
-            <Menu className="h-5 w-5" strokeWidth={2.25} />
-          </button>
-
-          {/* Buscar — sin logo dentro (duplicado con slim bar abajo).
-              Compact: icono + texto sutil, tap abre overlay full-screen. */}
-          <button
-            type="button"
-            onClick={() => setMobileSearchOpen(true)}
-            aria-label={`Buscar en ${store.name}`}
-            className="flex-1 inline-flex items-center gap-2 h-10 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)]/80 hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] transition-colors min-w-0 text-left px-3.5"
-          >
-            <Search
-              className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]"
-              strokeWidth={2.25}
-              aria-hidden
-            />
-            <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-tertiary)] truncate">
-              Buscar productos
-            </span>
-          </button>
-
-          {/* Icono cuenta usuario */}
-          <Link
-            href="/marketplace/mi-cuenta"
-            aria-label="Mi cuenta"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] transition-colors shrink-0"
-          >
-            <UserCircle className="h-5 w-5" strokeWidth={1.75} />
-          </Link>
-
-          {/* Carrito compacto — solo cantidad (sin precio) */}
-          <CartBadge
-            compact
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent("marketplace-cart:open"));
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Spacer para compensar el fixed top nav (h-[56px] post-rediseño) */}
-      <div className="lg:hidden h-[56px]" aria-hidden />
+      {/* Brandon 2026-05-20 v7: HEADER FIJO MOBILE custom REMOVIDO del
+          storefront. El MarketplaceNavbar del layout (app/marketplace/
+          layout.tsx) ahora se usa también aquí, con el logo del negocio
+          mostrado dinámicamente en el search pill (useStorefrontLogo()).
+          Cliente reportó "tener 3 navs distintos confunde" — ahora todas
+          las páginas del marketplace comparten el mismo chrome.
+          Botones que vivían en el header custom (search productos,
+          mi cuenta, cart) → ya están en el navbar global. La búsqueda
+          full-screen contextual de productos de esta tienda específica
+          se accede ahora desde la pestaña de categorías abajo. */}
 
       {/* ── Banner cerrado (justo después del spacer — sin gap antes del
            banner image. Brandon mayo 15: antes estaba arriba del nav fijo
