@@ -147,63 +147,99 @@ async function getMarketplaceReviews() {
   }
 }
 
-// ── JSON-LD structured data (consumer marketplace) ──
+// ── JSON-LD structured data (B2B landing) ──
+// Brandon 2026-05-20 v11 audit Bloque C — 3 schemas para /negocios:
+// 1) SoftwareApplication (audit anterior P0: tipo correcto para landing B2B
+//    software, antes era "WebPage" genérico)
+// 2) BreadcrumbList (audit Bloque C P0: ausente)
+// 3) FAQPage (rich results accordion en SERP)
+// AggregateRating sintético eliminado (audit anterior: penalty risk Google).
 async function BulejeJsonLd() {
-  const { avgRating, storeCount } = await getMarketplaceStats();
-  const jsonLd = {
+  const baseUrl = "https://www.buleje.pe";
+
+  const softwareLd = {
     "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: "Buleje para negocios — Abrí tu tienda online",
-    url: "https://www.buleje.pe/negocios",
+    "@type": "SoftwareApplication",
+    "@id": `${baseUrl}/negocios#software`,
+    name: "Buleje — Software para bodega y tienda",
+    url: `${baseUrl}/negocios`,
     description:
-      "Plataforma para que bodegas, minimarkets y comercios del Perú abran su tienda online en 5 minutos. Sin comisión los primeros 90 días.",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: "https://www.buleje.pe/marketplace?buscar={search_term_string}",
-      "query-input": "required name=search_term_string",
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: avgRating.toString(),
-      reviewCount: Math.max(storeCount, 1).toString(),
-      bestRating: "5",
-      worstRating: "1",
-    },
-    provider: {
-      "@type": "Organization",
-      name: "Buleje",
-      url: "https://www.buleje.pe",
-      foundingLocation: {
-        "@type": "Place",
-        name: "Ciudad Constitución, Perú",
+      "Plataforma todo-en-uno para abrir tu tienda online en 5 minutos. POS, inventario, delivery, fiado digital, SUNAT y pagos con Yape/Plin.",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    inLanguage: "es-PE",
+    offers: [
+      { "@type": "Offer", name: "Free", price: "0", priceCurrency: "PEN" },
+      { "@type": "Offer", name: "Starter", price: "89", priceCurrency: "PEN" },
+      { "@type": "Offer", name: "Pro", price: "179", priceCurrency: "PEN" },
+      { "@type": "Offer", name: "Business", price: "349", priceCurrency: "PEN" },
+    ],
+    publisher: { "@id": `${baseUrl}/#organization` },
+  };
+
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: baseUrl },
+      { "@type": "ListItem", position: 2, name: "Para tu negocio", item: `${baseUrl}/negocios` },
+    ],
+  };
+
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "¿Cuánto cuesta abrir tu tienda en Buleje?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Empezás GRATIS con el plan Free (hasta 20 productos, 30 pedidos/mes). Si necesitás más, los planes pagos arrancan en S/89/mes (Starter), con primer mes gratis y sin tarjeta.",
+        },
       },
-      address: [
-        {
-          "@type": "PostalAddress",
-          addressLocality: "Ciudad Constitución",
-          addressRegion: "Pasco",
-          addressCountry: "PE",
+      {
+        "@type": "Question",
+        name: "¿Necesito tarjeta de crédito para registrarme?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No. Te registrás sin tarjeta. Solo pedimos forma de pago si decidís pasar a un plan pago tras el primer mes de prueba gratis.",
         },
-        {
-          "@type": "PostalAddress",
-          addressLocality: "Pucallpa",
-          addressRegion: "Ucayali",
-          addressCountry: "PE",
+      },
+      {
+        "@type": "Question",
+        name: "¿Funciona con SUNAT y facturación electrónica?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Sí. Los planes Pro y Business incluyen facturación electrónica SUNAT, boletas, cotizaciones y guías de remisión, todo integrado.",
         },
-      ],
-      areaServed: [
-        { "@type": "City", name: "Ciudad Constitución" },
-        { "@type": "City", name: "Pucallpa" },
-        { "@type": "Country", name: "Perú" },
-      ],
-    },
+      },
+      {
+        "@type": "Question",
+        name: "¿Qué soporte recibo cuando abro mi tienda?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Setup 1-a-1 por WhatsApp, capacitación de 90 días, sesión de fotos sin costo y acompañamiento personal para los primeros 10 negocios del Plan Fundador.",
+        },
+      },
+    ],
   };
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+      />
+    </>
   );
 }
 
@@ -794,6 +830,15 @@ export default async function Home() {
   return (
     <main id="main-content">
       <BulejeJsonLd />
+      {/* Brandon 2026-05-20 v11 audit Bloque C — h1 SEO sr-only.
+          LandingHero arranca con h2 ("Más clientes. Más pedidos.")
+          → audit detectó heading hierarchy rota sin h1 visible.
+          h1 sr-only mantiene el flow visual del hero intacto pero
+          le da a Googlebot la jerarquía semántica correcta. */}
+      <h1 className="sr-only">
+        Software para bodega y tienda en Perú — Buleje. Abrí tu tienda
+        online en 5 minutos con POS, delivery, fiado, SUNAT y Yape.
+      </h1>
       {/* DiscountBanner (10% nuevos compradores) movido a /marketplace —
           no debe aparecer en la home de vendedores. */}
 

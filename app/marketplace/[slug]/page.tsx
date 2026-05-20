@@ -134,6 +134,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // ── JSON-LD ────────────────────────────────────────────────────────────────────
 
+// Brandon 2026-05-20 v11 audit Bloque C — categorías que activan
+// @type:Restaurant + servesCuisine (rich snippet con horario).
+const RESTAURANT_CATEGORIES_LD = [
+  "restaurante", "polleria", "pizzeria", "pollería", "pizzería", "comida", "snack",
+];
+const SCHEMA_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+interface DayHours { open: number; openMin: number; close: number; closeMin: number; }
+
+function deriveOpeningHoursSpec(hoursJson: unknown) {
+  if (!hoursJson || typeof hoursJson !== "object") return [];
+  const h = hoursJson as Record<string, DayHours | DayHours[] | undefined>;
+  const out: Array<{ "@type": "OpeningHoursSpecification"; dayOfWeek: string; opens: string; closes: string }> = [];
+  for (let i = 0; i < 7; i++) {
+    const raw = h[String(i)] ?? (h as unknown as Array<DayHours | undefined>)[i];
+    const day = Array.isArray(raw) ? raw[0] : raw;
+    if (!day || typeof day !== "object") continue;
+    const opens = `${String(day.open ?? 0).padStart(2, "0")}:${String(day.openMin ?? 0).padStart(2, "0")}`;
+    const closes = `${String(day.close ?? 0).padStart(2, "0")}:${String(day.closeMin ?? 0).padStart(2, "0")}`;
+    if (opens === "00:00" && closes === "00:00") continue;
+    out.push({ "@type": "OpeningHoursSpecification", dayOfWeek: SCHEMA_DAYS[i] ?? "Monday", opens, closes });
+  }
+  return out;
+}
+
 function StoreJsonLd({
   name,
   description,
@@ -143,6 +168,8 @@ function StoreJsonLd({
   category,
   rating,
   reviewCount,
+  hoursJson,
+  phone,
 }: {
   name: string;
   description: string | null;
@@ -152,16 +179,29 @@ function StoreJsonLd({
   category: string;
   rating: number;
   reviewCount: number;
+  hoursJson?: unknown;
+  phone?: string | null;
 }) {
-  const storeUrl = `https://www.buleje.pe/marketplace/${slug}`;
+  const baseUrl = "https://www.buleje.pe";
+  const storeUrl = `${baseUrl}/marketplace/${slug}`;
+  const isRestaurant = RESTAURANT_CATEGORIES_LD.some((c) => (category ?? "").toLowerCase().includes(c));
+  const openingHours = deriveOpeningHoursSpec(hoursJson);
+  const formattedPhone = phone
+    ? phone.startsWith("+") ? phone : `+51${phone.replace(/\D/g, "")}`
+    : null;
 
+  // Brandon 2026-05-20 v11 audit Bloque C — LocalBusiness/Restaurant
+  // enriquecido: @id, parentOrganization, servesCuisine, openingHours,
+  // telephone + contactPoint, priceRange formateado, currenciesAccepted.
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": isRestaurant ? "Restaurant" : "LocalBusiness",
+    "@id": `${storeUrl}#store`,
     name,
     description: description ?? `Tienda ${category} en ${zone ?? "Pucallpa"}, Perú. Delivery rápido.`,
     url: storeUrl,
-    ...(logo && { image: logo }),
+    ...(logo && { image: logo, logo }),
+    ...(formattedPhone && { telephone: formattedPhone }),
     address: {
       "@type": "PostalAddress",
       addressLocality: zone ?? "Pucallpa",
@@ -173,7 +213,7 @@ function StoreJsonLd({
       latitude: -8.3791,
       longitude: -74.5539,
     },
-    ...(rating > 0 && {
+    ...(rating > 0 && reviewCount > 0 && {
       aggregateRating: {
         "@type": "AggregateRating",
         ratingValue: rating,
@@ -182,25 +222,57 @@ function StoreJsonLd({
         worstRating: 1,
       },
     }),
-    priceRange: "S/",
-    paymentAccepted: "Efectivo, Yape",
-    areaServed: { "@type": "City", name: "Pucallpa" },
+    priceRange: "S/ 5 - S/ 100",
+    currenciesAccepted: "PEN",
+    paymentAccepted: "Cash, Yape, Plin",
+    areaServed: { "@type": "City", name: zone ?? "Pucallpa" },
+    ...(isRestaurant && { servesCuisine: ["Peruana", category] }),
+    ...(openingHours.length > 0 && { openingHoursSpecification: openingHours }),
+    ...(formattedPhone && {
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: formattedPhone,
+        contactType: "customer service",
+        areaServed: "PE",
+        availableLanguage: "Spanish",
+      },
+    }),
+    parentOrganization: { "@id": `${baseUrl}/#organization` },
   };
 
     // Brandon mayo 15 v4 (audit Security #2): escape de "<" + separadores
   // Unicode U+2028 / U+2029 que JSON.stringify no escapa pero algunos
   // parsers JS interpretan como newlines, lo que podria romper el
   // <script> JSON-LD y permitir XSS si el admin guarda payload malicioso.
-  const safeJson = JSON.stringify(jsonLd)
-    .replace(/</g, "\\u003c")
-    .replace(/\u2028/g, "\\u2028")
-    .replace(/\u2029/g, "\\u2029");
+  // Brandon 2026-05-20 v11 audit Bloque C \u2014 BreadcrumbList 3 niveles
+  // (antes ausente, audit P0 reported).
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: baseUrl },
+      { "@type": "ListItem", position: 2, name: "Tiendas en Pucallpa", item: `${baseUrl}/tiendas` },
+      { "@type": "ListItem", position: 3, name, item: storeUrl },
+    ],
+  };
+
+  const safe = (obj: object) =>
+    JSON.stringify(obj)
+      .replace(/</g, "\\u003c")
+      .replace(/\u2028/g, "\\u2028")
+      .replace(/\u2029/g, "\\u2029");
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: safeJson }}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safe(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safe(breadcrumbLd) }}
+      />
+    </>
   );
 }
 
@@ -357,6 +429,8 @@ async function StoreDetailContent({ slug }: { slug: string }) {
         category={store.category}
         rating={store.rating ?? 0}
         reviewCount={store.reviewCount}
+        hoursJson={hoursJson}
+        phone={(store as { phone?: string | null }).phone ?? null}
       />
 
       {/* Breadcrumb largo removido — StoreDetailClient muestra solo
