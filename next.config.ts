@@ -205,25 +205,112 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Brandon 2026-05-20 v7 — FIX bfcache stale:
-      // Browser bfcache preservaba snapshots HTML antiguos al volver con
-      // back-nav, mostrando footer + h1 con la versión PREVIA al deploy
-      // por unos ms antes del re-render. Causaba el "queda blanco al
-      // retroceder a /tiendas" + "veo estilos viejos en footer/header".
-      // Cache-Control: no-store impide que el browser meta el HTML en
-      // bfcache → siempre va a network → fresh state al volver.
-      // Aplicamos a rutas dinámicas con auth/state/cliente. Las rutas
-      // estáticas (assets, /images, /fonts) mantienen su cache largo.
-      {
-        source:
-          "/:path((?:(?!api/|_next/|images/|fonts/|brand/|favicon|robots|sitemap|manifest|sw\\.js|offline\\.html).*))",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-store, must-revalidate",
-          },
-        ],
-      },
+      // Brandon 2026-05-20 v11 — CACHE-CONTROL SPLIT (Bloque A audit):
+      // Antes había un `no-store` global para fix de bfcache. Eso mata
+      // el Vercel Edge CDN — TTFB 1.4-1.7s observado en home/tiendas.
+      //
+      // Ahora split en 2 reglas:
+      //
+      // 1) Páginas PÚBLICAS cacheables (mass-traffic SEO routes):
+      //    `public, s-maxage=60, stale-while-revalidate=300`
+      //    Sin max-age → el browser NO cachea (no rompe bfcache) pero
+      //    Vercel Edge SÍ cachea por 60s y sirve stale hasta 300s mientras
+      //    revalida en bg. Resultado: TTFB <200ms en Edge HIT.
+      //
+      // 2) Páginas PRIVADAS/auth (carrito, cuenta, checkout, admin):
+      //    `no-store, must-revalidate` (mantiene fix bfcache para personalizadas)
+      //
+      // 3) Catch-all `/(.*)` con headers de seguridad sigue al final.
+
+      // ── (1) Páginas PÚBLICAS — Vercel Edge cacheable ──
+      // Edge cache 60s + stale-while-revalidate 300s sin browser cache
+      // (sin max-age → browser no cachea, no rompe bfcache; Edge sí).
+      // Helper inline para no repetir el array de headers en cada source.
+      ...(
+        [
+          "/",
+          "/tiendas",
+          "/tiendas/:zona",
+          "/negocios",
+          "/abrir-tienda",
+          "/marketplace",
+          "/marketplace/:slug",
+          "/marketplace/:slug/:path*",
+          "/about",
+          "/ayuda",
+          "/recetas",
+          "/recetas/:path*",
+          "/tienda",
+          "/tienda/:path*",
+          "/privacidad",
+          "/terminos",
+          "/repartidores",
+          "/t/:slug",
+          "/t/:slug/:path*",
+        ].map((source) => ({
+          source,
+          headers: [
+            {
+              key: "Cache-Control",
+              value: "public, s-maxage=60, stale-while-revalidate=300",
+            },
+          ],
+        }))
+      ),
+      // ── (2) Páginas PRIVADAS — no-store estricto ──
+      // Carrito, cuenta, checkout, admin: mantiene fix bfcache.
+      ...(
+        [
+          "/cuenta",
+          "/cuenta/:path*",
+          "/mi-cuenta",
+          "/mi-cuenta/:path*",
+          "/mi-pedido",
+          "/mi-pedido/:path*",
+          "/mis-pedidos",
+          "/mis-pedidos/:path*",
+          "/mi-credito",
+          "/mi-credito/:path*",
+          "/mi-panel",
+          "/mi-panel/:path*",
+          "/mi-puntos",
+          "/mi-puntos/:path*",
+          "/favoritos",
+          "/favoritos/:path*",
+          "/checkout",
+          "/checkout/:path*",
+          "/admin",
+          "/admin/:path*",
+          "/superadmin",
+          "/superadmin/:path*",
+          "/tracking",
+          "/tracking/:path*",
+          "/panel",
+          "/panel/:path*",
+          "/delivery-app",
+          "/delivery-app/:path*",
+          "/supplier",
+          "/supplier/:path*",
+          "/pedido",
+          "/pedido/:path*",
+          "/venta",
+          "/venta/:path*",
+          "/cms",
+          "/cms/:path*",
+          "/onboarding",
+          "/onboarding/:path*",
+          "/pricing",
+          "/registro",
+        ].map((source) => ({
+          source,
+          headers: [
+            {
+              key: "Cache-Control",
+              value: "no-store, must-revalidate",
+            },
+          ],
+        }))
+      ),
       // Security headers for all routes (CSP is handled dynamically by proxy.ts)
       {
         source: "/(.*)",
