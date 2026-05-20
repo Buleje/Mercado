@@ -31,6 +31,13 @@ interface SADataTableProps<T = Record<string, unknown>> {
   pagination?: Pagination;
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
+  /**
+   * Brandon 2026-05-20 v13 audit superadmin responsive — render alternativo
+   * para mobile (<768px). Si presente, la tabla se reemplaza por un stack
+   * de cards. Si NO presente, la tabla queda con `overflow-x-auto` (fallback
+   * actual). Backward-compat total.
+   */
+  renderMobileCard?: (row: T, index: number) => ReactNode;
 }
 
 type SortDir = "asc" | "desc" | null;
@@ -45,6 +52,7 @@ export function SADataTable<T = Record<string, unknown>>({
   pagination,
   emptyMessage = "Sin resultados",
   onRowClick,
+  renderMobileCard,
 }: SADataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
@@ -114,7 +122,44 @@ export function SADataTable<T = Record<string, unknown>>({
 
   return (
     <div className="space-y-3">
-      <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
+      {/* Brandon 2026-05-20 v13 audit superadmin responsive: card view
+          mobile alternativo. Solo se monta si el consumer pasa
+          `renderMobileCard`. Para back-compat, si NO pasa el prop, la
+          tabla queda visible con overflow-x-auto en mobile como antes. */}
+      {renderMobileCard && displayed.length > 0 && (
+        <div className="md:hidden space-y-3">
+          {displayed.map((row, idx) => {
+            const key = rowKey ? rowKey(row) : String(idx);
+            return (
+              <div
+                key={key}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={[
+                  "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-colors",
+                  onRowClick ? "cursor-pointer active:scale-[0.99] active:bg-[var(--surface-sunken)]" : "",
+                ].join(" ")}
+              >
+                {renderMobileCard(row, idx)}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {renderMobileCard && displayed.length === 0 && (
+        <div className="md:hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
+          {emptyMessage}
+        </div>
+      )}
+
+      <div
+        className={[
+          "rounded-xl border border-[var(--rule-base)]",
+          // Cuando hay renderMobileCard, ocultamos la tabla en mobile
+          // (los cards arriba la reemplazan). Sin renderMobileCard,
+          // la tabla queda visible con scroll horizontal (fallback).
+          renderMobileCard ? "hidden md:block overflow-x-auto" : "overflow-x-auto",
+        ].join(" ")}
+      >
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)] bg-[var(--surface-canvas)]/60">
@@ -187,18 +232,22 @@ export function SADataTable<T = Record<string, unknown>>({
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination — Brandon 2026-05-20 v13 audit superadmin responsive:
+          tap targets w-7 h-7 (28px) por debajo del mínimo WCAG (44px).
+          Ahora w-10 h-10 (40px) en mobile, w-9 h-9 (36px) en desktop.
+          Layout stack-on-mobile: info text y botones en columnas separadas. */}
       {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)] px-1">
-          <span>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-xs sm:text-sm text-[var(--text-tertiary)] px-1">
+          <span className="text-center sm:text-left">
             Página {pagination.page} de {totalPages} ({pagination.total} total)
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center sm:justify-end gap-1">
             <button
               type="button"
               disabled={pagination.page <= 1}
               onClick={() => pagination.onPageChange(pagination.page - 1)}
-              className="px-2 py-1 rounded border border-[var(--rule-base)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] transition-colors"
+              aria-label="Página anterior"
+              className="inline-flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded border border-[var(--rule-base)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] active:scale-95 transition-all"
             >
               ‹
             </button>
@@ -209,8 +258,10 @@ export function SADataTable<T = Record<string, unknown>>({
                   key={p}
                   type="button"
                   onClick={() => pagination.onPageChange(p)}
+                  aria-label={`Ir a página ${p}`}
+                  aria-current={p === pagination.page ? "page" : undefined}
                   className={[
-                    "w-7 h-7 rounded border transition-colors",
+                    "h-10 w-10 sm:h-9 sm:w-9 rounded border transition-all active:scale-95",
                     p === pagination.page
                       ? "bg-[var(--accent-dark)] text-white border-[var(--accent-dark)]"
                       : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]",
@@ -224,7 +275,8 @@ export function SADataTable<T = Record<string, unknown>>({
               type="button"
               disabled={pagination.page >= totalPages}
               onClick={() => pagination.onPageChange(pagination.page + 1)}
-              className="px-2 py-1 rounded border border-[var(--rule-base)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] transition-colors"
+              aria-label="Página siguiente"
+              className="inline-flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded border border-[var(--rule-base)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] active:scale-95 transition-all"
             >
               ›
             </button>
