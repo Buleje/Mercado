@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { VisitorWelcomeDB } from "@/lib/db/visitor-welcome.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { verifySessionToken, SESSION } from "@/lib/session";
 
@@ -41,15 +41,12 @@ export async function POST(req: NextRequest) {
   }
   const userAgent = req.headers.get("user-agent") ?? undefined;
 
-  const record = await prisma.visitorWelcome.create({
-    data: {
-      name: parsed.data.name,
-      devices: JSON.stringify(parsed.data.devices),
-      userAgent,
-      tenantId,
-    },
+  // Audit project-wide 2026-05-19: migrado a VisitorWelcomeDB.
+  const record = await VisitorWelcomeDB.create(tenantId, {
+    name: parsed.data.name,
+    devices: parsed.data.devices,
+    userAgent,
   });
-
   return NextResponse.json({ success: true, id: record.id }, { status: 201 });
 }
 
@@ -69,15 +66,8 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? "50")));
   const skip = (page - 1) * limit;
 
-  const [total, rows] = await Promise.all([
-    prisma.visitorWelcome.count({ where: { tenantId } }),
-    prisma.visitorWelcome.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-    }),
-  ]);
+  // Audit project-wide 2026-05-19: migrado a VisitorWelcomeDB.listPaginated.
+  const { rows, total } = await VisitorWelcomeDB.listPaginated(tenantId, { page, limit });
 
   const data = rows.map((r) => {
     let devices: string[] = [];

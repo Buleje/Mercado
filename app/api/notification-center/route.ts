@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -39,30 +39,16 @@ export async function GET(req: NextRequest) {
   const canSeeHigh = HIGH_SEVERITY_ROLES.includes(auth.role);
 
   try {
-    const where: Record<string, unknown> = { tenantId };
-    if (unread) where.readAt = null;
-
-    if (severity && ["HIGH", "MEDIUM", "LOW"].includes(severity)) {
-      // Non-privileged roles cannot request HIGH severity directly
-      if (severity === "HIGH" && !canSeeHigh) {
-        return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
-      }
-      where.severity = severity;
-    } else if (!canSeeHigh) {
-      // Without explicit severity filter, exclude HIGH for non-privileged roles
-      where.severity = { not: "HIGH" };
+    // RBAC explicit: HIGH-severity con severity param requiere role privilegiado.
+    if (severity === "HIGH" && !canSeeHigh) {
+      return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
     }
 
-    const [notifications, unreadCount] = await Promise.all([
-      prisma.notification.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: limit,
-      }),
-      prisma.notification.count({
-        where: { tenantId, readAt: null },
-      }),
-    ]);
+    // Audit project-wide 2026-05-19: migrado a NotificationCenterDB.listForAdmin.
+    const { items: notifications, unreadCount } = await NotificationCenterDB.listForAdmin(
+      tenantId,
+      { unread, severity, canSeeHigh, limit },
+    );
 
     const res = NextResponse.json(notifications);
     res.headers.set("X-Unread-Count", String(unreadCount));

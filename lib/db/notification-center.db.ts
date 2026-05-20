@@ -1,29 +1,27 @@
-/**
- * lib/db/notification-center.db.ts
- *
- * DB class para Notification (in-app notifications del admin del tenant).
- * Modelo distinto a NotificationLog — éste es para alertas que el admin
- * ve en su panel (notification-center bell icon), mientras que
- * NotificationLog rastrea envíos de WhatsApp/email.
- *
- * Patrón idempotent createOrReuse para crons periódicos: si ya existe una
- * notification del mismo (tenantId, type, entityId) sin leer dentro de la
- * ventana, no crear duplicado. Útil para alertas que se repiten cada run
- * del cron mientras el problema sigue activo (ej: RUC NO HABIDO).
- *
- * Audit ref: TD-058 — notification persistent al admin cuando RENIEC/SUNAT
- * detecta degradación de identidad.
- */
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
 
-export type Severity = "HIGH" | "MEDIUM" | "LOW";
+/**
+ * NotificationCenterDB
+ *
+ * Notificaciones in-app del admin (Notification Center) — modelo
+ * `Notification` (diferente de `NotificationLog` que es para WhatsApp
+ * delivery tracking).
+ *
+ * Audit project-wide 2026-05-19 — migracion de /api/notification-center.
+ */
 
-export interface CreateNotificationInput {
+interface ListOpts {
+  unread?: boolean;
+  severity?: string | null;
+  canSeeHigh: boolean;
+  limit?: number;
+}
+
+interface CreateData {
   tenantId: string;
   type: string;
-  severity: Severity;
+  severity: string;
   title: string;
   body: string;
   actionUrl?: string;
@@ -31,99 +29,99 @@ export interface CreateNotificationInput {
   entityId?: string;
 }
 
-export interface CreateOrReuseInput extends CreateNotificationInput {
-  /**
-   * Ventana de idempotencia. Si existe una notification con misma
-   * (tenantId, type, entityId) creada dentro de esta ventana y sin leer,
-   * no crea duplicado.
-   * Default: 24h.
-   */
+interface CreateOrReuseData extends CreateData {
   dedupWindowHours?: number;
 }
 
 export const NotificationCenterDB = {
   /**
-   * Crea una notification simple (NO idempotente — usar createOrReuse para
-   * alerts repetitivas de crons).
+   * Lista notificaciones admin filtradas por severity + unread + role.
+   * El gate de HIGH severity esta dentro del helper: si !canSeeHigh,
+   * excluye HIGH del listado (lectura del role decision del caller).
+   *
+   * Devuelve { items, unreadCount } en single round-trip Promise.all.
    */
-  async create(input: CreateNotificationInput): Promise<{ id: string; created: true }> {
+  async listForAdmin(
+    tenantId: string,
+    opts: ListOpts,
+  ): Promise<{ items: unknown[]; unreadCount: number }> {
+    const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
+    const where: Record<string, unknown> = { tenantId };
+    if (opts.unread) where.readAt = null;
+
+    if (opts.severity && ["HIGH", "MEDIUM", "LOW"].includes(opts.severity)) {
+      where.severity = opts.severity;
+    } else if (!opts.canSeeHigh) {
+      where.severity = { not: "HIGH" };
+    }
+
+    const [items, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      }),
+      prisma.notification.count({
+        where: { tenantId, readAt: null },
+      }),
+    ]);
+    return { items, unreadCount };
+  },
+
+  /**
+   * Crea una notification con campos requeridos + opcionales (actionUrl,
+   * actionLabel, entityId). Devuelve { id, created: true }.
+   *
+   * Audit project-wide 2026-05-19 — unblock cron/vendor-identity-recheck.
+   */
+  async create(data: CreateData): Promise<{ id: string; created: true }> {
+    const payload: Record<string, unknown> = {
+      tenantId: data.tenantId,
+      type: data.type,
+      severity: data.severity,
+      title: data.title,
+      body: data.body,
+    };
+    if (data.actionUrl !== undefined) payload.actionUrl = data.actionUrl;
+    if (data.actionLabel !== undefined) payload.actionLabel = data.actionLabel;
+    if (data.entityId !== undefined) payload.entityId = data.entityId;
+
     const row = await prisma.notification.create({
-      data: {
-        tenantId: input.tenantId,
-        type: input.type,
-        severity: input.severity,
-        title: input.title,
-        body: input.body,
-        ...(input.actionUrl != null && { actionUrl: input.actionUrl }),
-        ...(input.actionLabel != null && { actionLabel: input.actionLabel }),
-        ...(input.entityId != null && { entityId: input.entityId }),
-      },
+      data: payload as never,
       select: { id: true },
-    });
-    logger.info("[NotificationCenter] created", {
-      id: row.id,
-      tenantId: input.tenantId,
-      type: input.type,
-      severity: input.severity,
     });
     return { id: row.id, created: true };
   },
 
   /**
-   * Idempotent: crea la notification SOLO si no existe una equivalente
-   * dentro de la ventana de dedup. Retorna { created: false, existingId }
-   * si reusa una existente.
+   * Crea o reusa una notification existente con el mismo (tenantId, type,
+   * entityId) creada en las ultimas N horas y aun no leida. Patron usado
+   * por crons periodicos que disparan la misma alerta hasta que el problema
+   * se resuelve — evita spam del Notification Center.
+   *
+   * Default dedupWindowHours = 24h.
    */
-  async createOrReuse(
-    input: CreateOrReuseInput,
-  ): Promise<{ id: string; created: boolean }> {
-    const window = input.dedupWindowHours ?? 24;
-    const since = new Date(Date.now() - window * 60 * 60 * 1000);
+  async createOrReuse(data: CreateOrReuseData): Promise<{ id: string; created: boolean }> {
+    const dedupWindowHours = data.dedupWindowHours ?? 24;
+    const since = new Date(Date.now() - dedupWindowHours * 60 * 60 * 1000);
 
     const where: Record<string, unknown> = {
-      tenantId: input.tenantId,
-      type: input.type,
+      tenantId: data.tenantId,
+      type: data.type,
       readAt: null,
       createdAt: { gte: since },
     };
-    if (input.entityId) {
-      where.entityId = input.entityId;
-    }
+    if (data.entityId !== undefined) where.entityId = data.entityId;
 
     const existing = await prisma.notification.findFirst({
       where,
-      orderBy: { createdAt: "desc" },
       select: { id: true },
     });
-
     if (existing) {
-      logger.info("[NotificationCenter] reused existing", {
-        id: existing.id,
-        tenantId: input.tenantId,
-        type: input.type,
-        entityId: input.entityId,
-      });
       return { id: existing.id, created: false };
     }
 
-    const created = await this.create({
-      tenantId: input.tenantId,
-      type: input.type,
-      severity: input.severity,
-      title: input.title,
-      body: input.body,
-      ...(input.actionUrl != null && { actionUrl: input.actionUrl }),
-      ...(input.actionLabel != null && { actionLabel: input.actionLabel }),
-      ...(input.entityId != null && { entityId: input.entityId }),
-    });
-    return { id: created.id, created: true };
-  },
-
-  /** Helper para marcar como leído por id (con scope tenant). */
-  async markAsRead(tenantId: string, id: string): Promise<void> {
-    await prisma.notification.updateMany({
-      where: { id, tenantId, readAt: null },
-      data: { readAt: new Date() },
-    });
+    const { id } = await this.create(data);
+    return { id, created: true };
   },
 };
