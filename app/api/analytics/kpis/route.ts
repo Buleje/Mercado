@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
-import { withDbRetry } from "@/lib/db-retry";
+import { AnalyticsKpisDB } from "@/lib/db/analytics-kpis.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { getOrSet } from "@/lib/cache";
@@ -32,12 +31,8 @@ export async function GET(req: NextRequest) {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(thisMonthStart);
 
-    const tenantFilter = { tenantId: auth.tenantId };
-
-    // Audit 2026-05-17 P-P0-2: stockCritico unificado en el mismo Promise.all.
-    // Antes había 2 round-trips: el count del Promise.all (inútil porque
-    // Prisma no compara campos) + un findMany aislado fuera. Ahora una sola
-    // findMany dentro del Promise.all elimina el round-trip extra (~100-200ms).
+    // Audit project-wide 2026-05-19: migrado a AnalyticsKpisDB.fetchKpisRaw.
+    // 9 queries paralelas con withDbRetry encapsuladas en single call.
     const [
       ventasHoy,
       ventasAyer,
@@ -48,64 +43,14 @@ export async function GET(req: NextRequest) {
       costosMesAnteriorItems,
       fiadosPendientes,
       productsForStockCheck,
-    ] = await withDbRetry(() => Promise.all([
-      // 1. Ventas hoy
-      prisma.sale.aggregate({
-        where: { ...tenantFilter, createdAt: { gte: todayStart } },
-        _sum: { total: true },
-        _count: { id: true },
-      }),
-      // 2. Ventas ayer
-      prisma.sale.aggregate({
-        where: { ...tenantFilter, createdAt: { gte: yesterdayStart, lt: yesterdayEnd } },
-        _sum: { total: true },
-        _count: { id: true },
-      }),
-      // 3. Ventas este mes
-      prisma.sale.aggregate({
-        where: { ...tenantFilter, createdAt: { gte: thisMonthStart } },
-        _sum: { total: true },
-        _count: { id: true },
-      }),
-      // 4. Ventas mes anterior
-      prisma.sale.aggregate({
-        where: { ...tenantFilter, createdAt: { gte: lastMonthStart, lt: lastMonthEnd } },
-        _sum: { total: true },
-        _count: { id: true },
-      }),
-      // 5. Costos hoy (para margen operativo)
-      prisma.saleItem.findMany({
-        where: { sale: { ...tenantFilter, createdAt: { gte: todayStart } } },
-        select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
-      }),
-      // 6. Costos este mes
-      prisma.saleItem.findMany({
-        where: { sale: { ...tenantFilter, createdAt: { gte: thisMonthStart } } },
-        select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
-      }),
-      // 7. Costos mes anterior
-      prisma.saleItem.findMany({
-        where: { sale: { ...tenantFilter, createdAt: { gte: lastMonthStart, lt: lastMonthEnd } } },
-        select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
-      }),
-      // 8. Fiados pendientes
-      prisma.fiado.aggregate({
-        where: { ...tenantFilter, status: "ACTIVO" },
-        _sum: { saldo: true },
-        _count: { id: true },
-      }),
-      // 9. Stock crítico — Prisma no compara campos, traemos stock+stockMin y comparamos JS
-      prisma.product.findMany({
-        where: {
-          ...tenantFilter,
-          active: true,
-          deletedAt: null,
-          stockMin: { not: null },
-          stock: { not: null },
-        },
-        select: { stock: true, stockMin: true },
-      }),
-    ]));
+    ] = await AnalyticsKpisDB.fetchKpisRaw(auth.tenantId, {
+      todayStart,
+      yesterdayStart,
+      yesterdayEnd,
+      thisMonthStart,
+      lastMonthStart,
+      lastMonthEnd,
+    });
 
     const stockCriticoCount = productsForStockCheck.filter(
       (p) => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin
