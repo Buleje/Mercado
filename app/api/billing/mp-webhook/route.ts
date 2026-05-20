@@ -1,3 +1,20 @@
+/**
+ * @prisma-direct excepción documentada — paridad con webhook Stripe (regla #1 CLAUDE.md).
+ * Audit project-wide 2026-05-19: este handler usa `prisma.*` directo
+ * intencionalmente por estas razones:
+ *
+ *  1. `prisma.stripeWebhookQueue.create/findUnique` — idempotency lock
+ *     compartido con Stripe (reutiliza tabla con prefijo "mp_" en stripeId);
+ *     scope global por design.
+ *  2. `prisma.tenant.findFirst/update` — tenant lookup por slug o
+ *     mpSubscriptionId con cross-tenant guards explícitos antes del update.
+ *  3. `prisma.activityLog.create` — audit trail fire-and-forget post-update,
+ *     tenantId derivado del tenant ya validado.
+ *
+ * El payload se valida via `verifyMPWebhookSignature` (HMAC) antes de tocar
+ * la DB. Rate-limit STRICT cubre DoS pre-firma. Migrar a DB classes
+ * destruiría el patrón de defensa-en-profundidad ya auditado.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
