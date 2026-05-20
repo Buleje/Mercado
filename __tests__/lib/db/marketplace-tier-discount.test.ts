@@ -37,6 +37,7 @@ const mockCustomerCreate    = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const mockCouponFindFirst   = vi.hoisted(() => vi.fn().mockResolvedValue(null));
 const mockStoreFindUnique   = vi.hoisted(() => vi.fn());
 const mockStoreProductFind  = vi.hoisted(() => vi.fn());
+const mockProductFindMany   = vi.hoisted(() => vi.fn().mockResolvedValue([{ id: 1, stock: 100, name: "Arroz 1kg" }]));
 const mockTransaction       = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/prisma", () => ({
@@ -47,7 +48,7 @@ vi.mock("@/lib/prisma", () => ({
     customer:      { findFirst: mockCustomerFindFirst, create: mockCustomerCreate },
     coupon:        { findFirst: mockCouponFindFirst },
     loyaltyPoints: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn().mockResolvedValue(null) },
-    product:       { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    product:       { updateMany: vi.fn().mockResolvedValue({ count: 1 }), findMany: mockProductFindMany },
     $transaction:  mockTransaction,
   },
 }));

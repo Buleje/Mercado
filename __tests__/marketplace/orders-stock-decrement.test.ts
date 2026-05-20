@@ -14,6 +14,7 @@ vi.mock("server-only", () => ({}));
 const {
   mockStoreFindUnique,
   mockStoreProductFindMany,
+  mockProductFindMany,
   mockOrderCount,
   mockCustomerFindFirst,
   mockCustomerCreate,
@@ -21,6 +22,7 @@ const {
 } = vi.hoisted(() => ({
   mockStoreFindUnique:     vi.fn(),
   mockStoreProductFindMany: vi.fn(),
+  mockProductFindMany:     vi.fn(),
   mockOrderCount:          vi.fn(),
   mockCustomerFindFirst:   vi.fn(),
   mockCustomerCreate:      vi.fn(),
@@ -34,6 +36,7 @@ vi.mock("@/lib/prisma", () => ({
     order:        { count: mockOrderCount },
     customer:     { findFirst: mockCustomerFindFirst, create: mockCustomerCreate },
     coupon:       { findFirst: vi.fn().mockResolvedValue(null) },
+    product:      { findMany: mockProductFindMany },
     $transaction: mockTransaction,
   },
 }));
@@ -105,6 +108,8 @@ describe("MarketplaceOrdersDB.createFromCart — stock decrement", () => {
     vi.clearAllMocks();
     mockStoreFindUnique.mockResolvedValue(STORE);
     mockStoreProductFindMany.mockResolvedValue([STORE_PRODUCT]);
+    // Pre-tx stockSnapshot batch (2026-05-19 N+1 fix)
+    mockProductFindMany.mockResolvedValue([{ id: 10, stock: 10, name: "Azúcar" }]);
     mockOrderCount.mockResolvedValue(0);
     mockCustomerFindFirst.mockResolvedValue({ phone: "912345678" });
   });

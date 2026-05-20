@@ -14,6 +14,7 @@ vi.mock("server-only", () => ({}));
 const {
   mockStoreFindUnique,
   mockStoreProductFindMany,
+  mockProductFindMany,
   mockOrderCount,
   mockCustomerFindFirst,
   mockCustomerCreate,
@@ -21,6 +22,7 @@ const {
 } = vi.hoisted(() => ({
   mockStoreFindUnique:     vi.fn(),
   mockStoreProductFindMany: vi.fn(),
+  mockProductFindMany:     vi.fn(),
   mockOrderCount:          vi.fn(),
   mockCustomerFindFirst:   vi.fn(),
   mockCustomerCreate:      vi.fn(),
@@ -34,6 +36,7 @@ vi.mock("@/lib/prisma", () => ({
     order:        { count: mockOrderCount },
     customer:     { findFirst: mockCustomerFindFirst, create: mockCustomerCreate },
     coupon:       { findFirst: vi.fn().mockResolvedValue(null) },
+    product:      { findMany: mockProductFindMany },
     $transaction: mockTransaction,
   },
 }));
@@ -126,6 +129,7 @@ describe("tier discount en createFromCart — aislamiento tenantId", () => {
     vi.clearAllMocks();
     mockStoreFindUnique.mockResolvedValue(STORE_A);
     mockStoreProductFindMany.mockResolvedValue([STORE_PRODUCT]);
+    mockProductFindMany.mockResolvedValue([{ id: 1, stock: 100, name: "Leche" }]);
     mockCustomerFindFirst.mockResolvedValue({ phone: "987654321" });
     successTx();
   });

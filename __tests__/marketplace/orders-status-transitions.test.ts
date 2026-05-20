@@ -40,12 +40,14 @@ const {
   mockCommissionLedgerUpdateMany,
   mockCouponCreate,
   mockChangeStatus,
+  mockGetMarketplaceById,
 } = vi.hoisted(() => ({
   mockOrderFindFirst:             vi.fn(),
   mockOrderStatusHistoryCreate:   vi.fn().mockResolvedValue({}),
   mockCommissionLedgerUpdateMany: vi.fn().mockResolvedValue({ count: 1 }),
   mockCouponCreate:               vi.fn().mockResolvedValue({}),
   mockChangeStatus:               vi.fn(),
+  mockGetMarketplaceById:         vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -65,7 +67,8 @@ vi.mock("@/lib/prisma", () => ({
 // aserciones del 2do describe ("reverse de comisiones al cancelar").
 vi.mock("@/lib/db/marketplace.db", () => ({
   MarketplaceOrdersDB: {
-    changeStatus: mockChangeStatus,
+    changeStatus:       mockChangeStatus,
+    getMarketplaceById: mockGetMarketplaceById,
   },
 }));
 
@@ -125,6 +128,8 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
     mockRequireAdmin.mockResolvedValue(AUTH);
     // Pre-check del route (1 sola llamada).
     mockOrderFindFirst.mockResolvedValue(makeOrder("pendiente"));
+    // Audit 2026-05-19: pre-check ahora via MarketplaceOrdersDB.getMarketplaceById.
+    mockGetMarketplaceById.mockResolvedValue(makeOrder("pendiente"));
     // Write atómico del DB-class — devuelve la orden actualizada.
     mockChangeStatus.mockImplementation(
       async (_tenantId: string, _orderId: string, newStatus: string) => {
@@ -160,6 +165,7 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
 
   it("entregado → cancelado es inválido → 422", async () => {
     mockOrderFindFirst.mockReset().mockResolvedValue(makeOrder("entregado"));
+    mockGetMarketplaceById.mockReset().mockResolvedValue(makeOrder("entregado"));
 
     const res = await PATCH(
       makePatchReq("order-1", { status: "cancelado" }),
@@ -173,6 +179,7 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
 
   it("cancelado → confirmado es inválido → 422 (estado final)", async () => {
     mockOrderFindFirst.mockReset().mockResolvedValue(makeOrder("cancelado"));
+    mockGetMarketplaceById.mockReset().mockResolvedValue(makeOrder("cancelado"));
 
     const res = await PATCH(
       makePatchReq("order-1", { status: "confirmado" }),
@@ -184,6 +191,7 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
 
   it("en_camino → entregado es válido", async () => {
     mockOrderFindFirst.mockReset().mockResolvedValue(makeOrder("en_camino"));
+    mockGetMarketplaceById.mockReset().mockResolvedValue(makeOrder("en_camino"));
 
     const res = await PATCH(
       makePatchReq("order-1", { status: "entregado" }),
@@ -204,6 +212,7 @@ describe("PATCH /api/marketplace/orders/[id] — transiciones de estado", () => 
 
   it("pedido no encontrado → 404", async () => {
     mockOrderFindFirst.mockReset().mockResolvedValue(null);
+    mockGetMarketplaceById.mockReset().mockResolvedValue(null);
 
     const res = await PATCH(
       makePatchReq("order-99", { status: "confirmado" }),

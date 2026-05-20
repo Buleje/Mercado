@@ -612,10 +612,12 @@ describe("CT-11 — DELETE /api/customer/data: scope por phone + tenantId", () =
     // Assert: 404, no borra nada
     expect(res.status).toBe(404);
 
-    // CRÍTICO: la búsqueda de guard usa tenantId
-    expect(prismaMocks.customerFindFirst).toHaveBeenCalledWith({
-      where: { phone: "51999000111", tenantId: TENANT_A },
-    });
+    // CRÍTICO: la búsqueda de guard usa tenantId (include:savedCarts permitido).
+    expect(prismaMocks.customerFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { phone: "51999000111", tenantId: TENANT_A },
+      }),
+    );
 
     // deleteMany NO debe haberse llamado
     expect(prismaMocks.customerDeleteMany).not.toHaveBeenCalled();

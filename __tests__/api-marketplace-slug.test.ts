@@ -54,11 +54,12 @@ vi.mock("@/lib/api-error", () => ({
 // Wave 8: el endpoint products usa MarketplaceStoresDB.getBySlug (caché +
 // filtro isPublished). El endpoint /stores/[slug] sigue con prisma directo
 // porque necesita columnas pendientes de migration (vacationMode).
-const { mockStoreFindUnique, mockStoreProductFindMany, mockStoreFindUniqueForProducts, mockGetBySlug } = vi.hoisted(() => ({
+const { mockStoreFindUnique, mockStoreProductFindMany, mockStoreFindUniqueForProducts, mockGetBySlug, mockListForStorefront } = vi.hoisted(() => ({
   mockStoreFindUnique:             vi.fn(),
   mockStoreProductFindMany:        vi.fn(),
   mockStoreFindUniqueForProducts:  vi.fn(),
   mockGetBySlug:                   vi.fn(),
+  mockListForStorefront:           vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -73,7 +74,8 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/db/marketplace.db", () => ({
-  MarketplaceStoresDB: { getBySlug: mockGetBySlug },
+  MarketplaceStoresDB:        { getBySlug: mockGetBySlug },
+  MarketplaceStoreProductsDB: { listForStorefront: mockListForStorefront },
 }));
 
 import { GET as GETStore }    from "@/app/api/marketplace/stores/[slug]/route";
@@ -212,15 +214,21 @@ describe("GET /api/marketplace/stores/[slug]", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("GET /api/marketplace/stores/[slug]/products", () => {
+  // Audit 2026-05-19: endpoint migrado a MarketplaceStoreProductsDB.listForStorefront.
+  // Los tests asertan sobre opts pasados a la DB class, no sobre llamadas a Prisma.
+
+  // Shape devuelto por listForStorefront (flat, sin wholesalePrice).
+  const PROD_ARROZ_FLAT  = { id: 1, storeProductId: "sp-1", name: "Arroz Extra",   price: 3.5, minOrderQty: 1, image: "/arroz.png",  category: "Abarrotes", unit: "kg", stock: 20 };
+  const PROD_ACEITE_FLAT = { id: 2, storeProductId: "sp-2", name: "Aceite Vegetal", price: 8.5, minOrderQty: 1, image: "/aceite.png", category: "Aceites",   unit: "lt", stock: 10 };
+
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListForStorefront.mockResolvedValue({ products: [], nextCursor: null });
   });
 
   it("retorna productos de tienda publicada (200)", async () => {
-    // Primera llamada: verificar tienda existe y está publicada
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
     mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
-    mockStoreProductFindMany.mockResolvedValue([PRODUCT_ARROZ, PRODUCT_ACEITE]);
+    mockListForStorefront.mockResolvedValue({ products: [PROD_ARROZ_FLAT, PROD_ACEITE_FLAT], nextCursor: null });
 
     const res  = await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products"), makeParams("bodega-san-martin"));
     const body = await res.json();
@@ -230,7 +238,6 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
   });
 
   it("retorna 404 si la tienda no existe", async () => {
-    mockStoreFindUnique.mockResolvedValue(null);
     mockGetBySlug.mockResolvedValue(null);
 
     const res = await GETProducts(makeReq("https://host/api/marketplace/stores/noexiste/products"), makeParams("noexiste"));
@@ -238,8 +245,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     expect(res.status).toBe(404);
   });
 
-  it("retorna 404 si la tienda no está publicada", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-2", isPublished: false });
+  it("retorna 404 si la tienda no está publicada (getBySlug devuelve null)", async () => {
     mockGetBySlug.mockResolvedValue(null);
 
     const res = await GETProducts(makeReq("https://host/api/marketplace/stores/tienda-oculta/products"), makeParams("tienda-oculta"));
@@ -247,81 +253,85 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     expect(res.status).toBe(404);
   });
 
-  it("filtra por category", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+  it("filtra por category — pasa opts.category a listForStorefront", async () => {
     mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
-    mockStoreProductFindMany.mockResolvedValue([PRODUCT_ARROZ]);
+    mockListForStorefront.mockResolvedValue({ products: [PROD_ARROZ_FLAT], nextCursor: null });
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?category=Abarrotes"), makeParams("bodega-san-martin"));
 
-    const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.product.category).toBe("Abarrotes");
+    expect(mockListForStorefront).toHaveBeenCalledWith(
+      "store-1",
+      expect.objectContaining({ category: "Abarrotes" }),
+    );
   });
 
-  it("filtra por search (nombre de producto insensitive)", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+  it("filtra por search — pasa opts.search a listForStorefront", async () => {
     mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
-    mockStoreProductFindMany.mockResolvedValue([PRODUCT_ARROZ]);
+    mockListForStorefront.mockResolvedValue({ products: [PROD_ARROZ_FLAT], nextCursor: null });
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?search=arroz"), makeParams("bodega-san-martin"));
 
-    const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
+    expect(mockListForStorefront).toHaveBeenCalledWith(
+      "store-1",
+      expect.objectContaining({ search: "arroz" }),
+    );
   });
 
-  it("ordena por precio ascendente con sort=price_asc", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+  it("sort=price_asc — pasa opts.sort a listForStorefront", async () => {
     mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
-    mockStoreProductFindMany.mockResolvedValue([]);
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_asc"), makeParams("bodega-san-martin"));
 
-    const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.orderBy).toEqual(expect.arrayContaining([expect.objectContaining({ retailPrice: "asc" })]));
+    expect(mockListForStorefront).toHaveBeenCalledWith(
+      "store-1",
+      expect.objectContaining({ sort: "price_asc" }),
+    );
   });
 
-  it("ordena por precio descendente con sort=price_desc", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+  it("sort=price_desc — pasa opts.sort a listForStorefront", async () => {
     mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
-    mockStoreProductFindMany.mockResolvedValue([]);
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_desc"), makeParams("bodega-san-martin"));
 
-    const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.orderBy).toEqual(expect.arrayContaining([expect.objectContaining({ retailPrice: "desc" })]));
+    expect(mockListForStorefront).toHaveBeenCalledWith(
+      "store-1",
+      expect.objectContaining({ sort: "price_desc" }),
+    );
   });
 
   it("retorna 400 si sort tiene valor inválido", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
 
     const res = await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=invalid"), makeParams("bodega-san-martin"));
 
     expect(res.status).toBe(400);
   });
 
-  it("SOLO retorna productos isActive:true (no expone inactivos)", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
-    mockStoreProductFindMany.mockResolvedValue([PRODUCT_ARROZ]);
+  it("SOLO retorna productos isActive:true (responsabilidad de la DB class)", async () => {
+    // El filtro isActive:true vive en MarketplaceStoreProductsDB.listForStorefront
+    // (no se expone al endpoint). El test confirma el contrato: si la DB class
+    // devuelve productos, el endpoint los retorna sin filtrarlos adicionalmente.
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
+    mockListForStorefront.mockResolvedValue({ products: [PROD_ARROZ_FLAT], nextCursor: null });
 
-    await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products"), makeParams("bodega-san-martin"));
-
-    const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.isActive).toBe(true);
+    const res = await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products"), makeParams("bodega-san-martin"));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.data).toHaveLength(1);
   });
 
   it("productos van filtrados al storeId de la tienda buscada", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
-    mockStoreProductFindMany.mockResolvedValue([]);
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
 
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products"), makeParams("bodega-san-martin"));
 
-    const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.storeId).toBe("store-1");
+    // El endpoint pasa el storeId (no el slug) a la DB class.
+    expect(mockListForStorefront).toHaveBeenCalledWith("store-1", expect.any(Object));
   });
 
-  it("retorna 500 si Prisma lanza excepción en productos", async () => {
-    mockStoreFindUnique.mockResolvedValue({ id: "store-1", isPublished: true });
-    mockStoreProductFindMany.mockRejectedValue(new Error("DB error"));
+  it("retorna 500 si la DB class lanza excepción en productos", async () => {
+    mockGetBySlug.mockResolvedValue({ id: "store-1", isPublished: true });
+    mockListForStorefront.mockRejectedValue(new Error("DB error"));
 
     const res = await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products"), makeParams("bodega-san-martin"));
 

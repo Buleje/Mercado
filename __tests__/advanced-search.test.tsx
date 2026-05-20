@@ -510,9 +510,11 @@ describe('AdvancedSearchPanel Component', () => {
     const filterButton = screen.getByLabelText('Mostrar filtros');
     await user.click(filterButton);
 
-    // Select a category
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'Frutas');
+    // Select a category — el primer combobox es el search input (autocomplete),
+    // el segundo es el <select> de categoría.
+    const selects = screen.getAllByRole('combobox');
+    const categorySelect = selects.find(el => el.tagName === 'SELECT') ?? selects[1];
+    await user.selectOptions(categorySelect, 'Frutas');
 
     // Should show filter count badge
     await waitFor(() => {

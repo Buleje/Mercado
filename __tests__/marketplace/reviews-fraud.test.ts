@@ -51,13 +51,28 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-const { mockGetBySlug } = vi.hoisted(() => ({
-  mockGetBySlug: vi.fn(),
+const { mockGetBySlug, mockVerifyOrderForReview, mockHasReviewForOrder, mockAddVerifiedStoreReview, mockGetByStore } = vi.hoisted(() => ({
+  mockGetBySlug:              vi.fn(),
+  mockVerifyOrderForReview:   vi.fn(),
+  mockHasReviewForOrder:      vi.fn(),
+  mockAddVerifiedStoreReview: vi.fn(),
+  mockGetByStore:             vi.fn(),
 }));
 
 vi.mock("@/lib/db/marketplace.db", () => ({
   MarketplaceStoresDB: {
     getBySlug: mockGetBySlug,
+  },
+}));
+
+// Audit 2026-05-19: endpoint migrado a MarketplaceReviewsDB (importado desde
+// path interno, NO desde el aggregator marketplace.db).
+vi.mock("@/lib/db/marketplace/reviews.db", () => ({
+  MarketplaceReviewsDB: {
+    verifyOrderForReview:   mockVerifyOrderForReview,
+    hasReviewForOrder:      mockHasReviewForOrder,
+    addVerifiedStoreReview: mockAddVerifiedStoreReview,
+    getByStore:             mockGetByStore,
   },
 }));
 
@@ -114,6 +129,14 @@ describe("POST /api/marketplace/stores/[slug]/reviews — validación anti-fraud
     mockReviewFindFirst.mockResolvedValue(null);
     mockReviewCreate.mockResolvedValue(REVIEW_CREATED);
     mockStoreUpdate.mockResolvedValue({});
+    // Audit 2026-05-19: defaults para MarketplaceReviewsDB.
+    mockVerifyOrderForReview.mockResolvedValue(true);
+    mockHasReviewForOrder.mockResolvedValue(false);
+    mockAddVerifiedStoreReview.mockResolvedValue({
+      review: REVIEW_CREATED,
+      storeRating: 4.2,
+      storeReviewCount: 11,
+    });
   });
 
   // ── Happy path ────────────────────────────────────────────────────────────
@@ -163,7 +186,7 @@ describe("POST /api/marketplace/stores/[slug]/reviews — validación anti-fraud
   // ── Order verification ────────────────────────────────────────────────────
 
   it("orderId no existe en DB → 403 'Solo clientes con compra'", async () => {
-    mockOrderFindFirst.mockResolvedValue(null);
+    mockVerifyOrderForReview.mockResolvedValue(false);
 
     const res = await POST(makeReq(VALID_BODY), {
       params: Promise.resolve({ slug: "bodega-luis" }),
@@ -175,10 +198,9 @@ describe("POST /api/marketplace/stores/[slug]/reviews — validación anti-fraud
   });
 
   it("orden de otro tenant (tenantId diferente) → 403", async () => {
-    // El mock de getBySlug retorna store con tenantId=tenant-1,
-    // pero order.findFirst busca con tenantId=tenant-1 y no encuentra nada
-    // (simulado retornando null — el where filtra por tenantId del store)
-    mockOrderFindFirst.mockResolvedValue(null);
+    // Audit 2026-05-19: el filtro por tenantId vive en verifyOrderForReview.
+    // Simulamos que devuelve false (orden no pertenece al tenant del store).
+    mockVerifyOrderForReview.mockResolvedValue(false);
 
     const res = await POST(makeReq(VALID_BODY), {
       params: Promise.resolve({ slug: "bodega-luis" }),
@@ -187,24 +209,21 @@ describe("POST /api/marketplace/stores/[slug]/reviews — validación anti-fraud
     expect(res.status).toBe(403);
   });
 
-  it("order.findFirst recibe tenantId del store en el where", async () => {
-    mockOrderFindFirst.mockResolvedValue(VALID_ORDER);
-
+  it("verifyOrderForReview recibe (tenantId, orderId, phone) del store", async () => {
     await POST(makeReq(VALID_BODY), {
       params: Promise.resolve({ slug: "bodega-luis" }),
     });
 
-    const callArg = mockOrderFindFirst.mock.calls[0][0];
-    expect(callArg.where).toMatchObject({
-      tenantId:      "tenant-1",
-      id:            "order-123",
-      customerPhone: "999111222",
-    });
+    expect(mockVerifyOrderForReview).toHaveBeenCalledWith(
+      "tenant-1",
+      "order-123",
+      "999111222",
+    );
   });
 
   it("orden con status 'pendiente' → 403 (no entregada/confirmada)", async () => {
-    // order.findFirst con status:{in:["entregado","confirmado"]} retorna null
-    mockOrderFindFirst.mockResolvedValue(null);
+    // verifyOrderForReview encapsula el filtro status:{in:["entregado","confirmado"]}.
+    mockVerifyOrderForReview.mockResolvedValue(false);
 
     const res = await POST(makeReq(VALID_BODY), {
       params: Promise.resolve({ slug: "bodega-luis" }),
@@ -213,21 +232,20 @@ describe("POST /api/marketplace/stores/[slug]/reviews — validación anti-fraud
     expect(res.status).toBe(403);
   });
 
-  it("order.findFirst filtra status: {in: ['entregado', 'confirmado']}", async () => {
-    mockOrderFindFirst.mockResolvedValue(VALID_ORDER);
-
+  it("verifyOrderForReview es la única gate de validación de orden", async () => {
+    // Audit 2026-05-19: el filtro status:{in:["entregado","confirmado"]} vive
+    // ahora en MarketplaceReviewsDB.verifyOrderForReview, no en el endpoint.
     await POST(makeReq(VALID_BODY), {
       params: Promise.resolve({ slug: "bodega-luis" }),
     });
 
-    const callArg = mockOrderFindFirst.mock.calls[0][0];
-    expect(callArg.where.status).toEqual({ in: ["entregado", "confirmado"] });
+    expect(mockVerifyOrderForReview).toHaveBeenCalledTimes(1);
   });
 
   // ── Duplicate check ───────────────────────────────────────────────────────
 
   it("review duplicada (mismo orderId+phone) → 409", async () => {
-    mockReviewFindFirst.mockResolvedValue({ id: "existing-review" });
+    mockHasReviewForOrder.mockResolvedValue(true);
 
     const res = await POST(makeReq(VALID_BODY), {
       params: Promise.resolve({ slug: "bodega-luis" }),
@@ -252,18 +270,24 @@ describe("POST /api/marketplace/stores/[slug]/reviews — validación anti-fraud
 
   // ── Rating calculation (server-side) ─────────────────────────────────────
 
-  it("review válida → store.update recalcula rating y reviewCount server-side", async () => {
+  it("review válida → addVerifiedStoreReview recalcula rating y reviewCount server-side", async () => {
+    // Audit 2026-05-19: el recompute de rating/reviewCount vive ahora dentro de
+    // MarketplaceReviewsDB.addVerifiedStoreReview (atomic create + store update).
     await POST(makeReq(VALID_BODY), {
       params: Promise.resolve({ slug: "bodega-luis" }),
     });
 
-    expect(mockStoreUpdate).toHaveBeenCalledWith(
+    expect(mockAddVerifiedStoreReview).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "store-1" },
-        data:  expect.objectContaining({
-          reviewCount: 11, // 10 + 1
-          rating:      expect.any(Number),
+        store: expect.objectContaining({
+          id:          "store-1",
+          tenantId:    "tenant-1",
+          rating:      4.0,
+          reviewCount: 10,
         }),
+        rating:        5,
+        customerPhone: "999111222",
+        orderId:       "order-123",
       })
     );
   });

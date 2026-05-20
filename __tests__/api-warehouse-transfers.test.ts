@@ -12,7 +12,7 @@ const { mockRequireAdmin } = vi.hoisted(() => ({
   mockRequireAdmin: vi.fn(),
 }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
-vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn() }));
+vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn().mockResolvedValue(undefined) }));
 
 const {
   mockTransferFindMany, mockTransferCreate, mockTransferUpdateMany, mockTransferCount,
