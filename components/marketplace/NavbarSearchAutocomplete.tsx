@@ -36,6 +36,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useMarketplaceStores } from "@/hooks/useMarketplaceStores";
 import {
   CATEGORIAS,
   type CategoriaDef,
@@ -80,24 +81,15 @@ function popularCategoriesAsSuggestions(): Suggestion[] {
 }
 
 // ── Hook · top stores precargadas ──────────────────────────────────────────
+// Brandon 2026-05-20 v12 audit F3: migrado a useMarketplaceStores con
+// singleton dedupe. Antes este fetch corría en CADA mount del navbar
+// (todas las páginas públicas) sin coordinación con otros consumers de
+// stores. Ahora si TopStoresSection ya pidió limit=10 o initial-stores
+// trajo limit=30, este hook hace slice client-side sin fetch nuevo
+// (subset hint del hook). En el peor caso (sin cache previo), 1 fetch.
 function useTopStores(): Suggestion[] {
-  const [stores, setStores] = useState<StoreLite[]>([]);
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/marketplace/stores?limit=5", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { data: [] }))
-      .then((j) => {
-        if (cancelled) return;
-        setStores(((j.data ?? []) as StoreLite[]).slice(0, 5));
-      })
-      .catch(() => {
-        if (!cancelled) setStores([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return stores.map((s) => ({
+  const { stores } = useMarketplaceStores({ limit: 5 });
+  return stores.slice(0, 5).map((s) => ({
     id: `ts:${s.id}`,
     type: "store",
     label: s.name,
