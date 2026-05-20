@@ -9,7 +9,7 @@
  *
  * Uso en componentes admin:
  *   import { m, AnimatePresence } from "@/components/admin/providers";
- *   // En lugar de: import { motion } from "framer-motion"
+ *   // En lugar de: import { m as motion } from "framer-motion"
  *
  *   // Reemplazar motion.div por m.div:
  *   <m.div animate={{ opacity: 1 }} />

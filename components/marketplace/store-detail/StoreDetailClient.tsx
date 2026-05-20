@@ -34,7 +34,13 @@ import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import SharedMobileNavDrawer from "@/components/marketplace/SharedMobileNavDrawer";
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
-import StorePromoBannersStrip from "./StorePromoBannersStrip";
+// Brandon 2026-05-20 v11 audit P2: StorePromoBannersStrip below-fold +
+// hace fetch propio en mount → dynamic ssr:false ahorra ~5KB initial.
+import dynamic from "next/dynamic";
+const StorePromoBannersStrip = dynamic(
+  () => import("./StorePromoBannersStrip"),
+  { ssr: false, loading: () => null },
+);
 import { type StoreCategoryChip } from "./StoreCategories";
 import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
 import StoreCatalog, { slugifyCat } from "./StoreCatalog";

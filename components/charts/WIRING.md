@@ -168,7 +168,7 @@ Luego en cada componente admin que use `motion.div`:
 
 ```tsx
 // Antes:
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 <motion.div animate={...} />
 
 // Después:

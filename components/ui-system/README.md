@@ -202,7 +202,7 @@ import { Canasta, Olla, MapaUcayali, BilleteSoles } from "@/components/ui-system
 
 ```tsx
 import { Kicker, SectionHeader, Card, Button } from "@/components/ui-system";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { revealOnView, fadeUp } from "@/components/ui-system";
 
 export default function MiPage() {
