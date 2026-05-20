@@ -9,6 +9,8 @@
  *     ahora actualiza `isActive=true` en el partner existente creado por el form
  *     de inscripción y persiste `applicationStatus: "aprobada"` en notes.
  *   - Compatibilidad: si por alguna razón no existe el partner, fallback a crear.
+ *
+ * Audit project-wide 2026-05-19: queries prisma migradas a AdminDriverApplicationsDB.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -17,6 +19,7 @@ import { logger } from "@/lib/logger";
 import { parseKycNotes } from "@/lib/schemas/driver-apply";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { AdminDriverApplicationsDB } from "@/lib/db/admin-driver-applications.db";
 
 const ActionSchema = z.object({
   action: z.enum(["approve", "reject"]),
@@ -39,26 +42,15 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const { prisma } = await import("@/lib/prisma");
-
   try {
-    const applications = await prisma.notification.findMany({
-      where: { tenantId: auth.tenantId, type: "DRIVER_APPLICATION" },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
+    const applications = await AdminDriverApplicationsDB.listApplications(auth.tenantId);
 
     // Match cada notif con su DeliveryPartner (por phone) para extraer KYC.
     const phones = applications
       .map((a) => extractPhoneFromBody(a.body ?? ""))
       .filter((p): p is string => !!p);
 
-    const partners = phones.length
-      ? await prisma.deliveryPartner.findMany({
-          where: { tenantId: auth.tenantId, phone: { in: phones } },
-          select: { id: true, phone: true, isActive: true, notes: true, vehicleType: true, zone: true },
-        })
-      : [];
+    const partners = await AdminDriverApplicationsDB.getPartnersByPhones(auth.tenantId, phones);
 
     const partnerByPhone = new Map(partners.map((p) => [p.phone, p]));
 
@@ -119,13 +111,11 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const { prisma } = await import("@/lib/prisma");
-
   try {
-    const notification = await prisma.notification.update({
-      where: { id: parsed.data.notificationId, tenantId: auth.tenantId },
-      data: { readAt: new Date() },
-    });
+    const notification = await AdminDriverApplicationsDB.markNotificationRead(
+      auth.tenantId,
+      parsed.data.notificationId,
+    );
 
     const bodyStr = notification.body ?? "";
     const phone = extractPhoneFromBody(bodyStr);
@@ -136,10 +126,7 @@ export async function PATCH(req: NextRequest) {
 
     // Buscar el partner existente (creado por el form de inscripción).
     const partner = phone
-      ? await prisma.deliveryPartner.findFirst({
-          where: { tenantId: auth.tenantId, phone },
-          select: { id: true, notes: true, name: true },
-        })
+      ? await AdminDriverApplicationsDB.findPartnerByPhone(auth.tenantId, phone)
       : null;
 
     if (parsed.data.action === "approve") {
@@ -182,7 +169,7 @@ export async function PATCH(req: NextRequest) {
           }
         }
 
-        // Activar + actualizar status en notes.
+        // Activar + actualizar status en notes (reutiliza existingKyc ya declarado).
         const updatedNotes = existingKyc
           ? {
               ...existingKyc,
@@ -193,29 +180,17 @@ export async function PATCH(req: NextRequest) {
             }
           : null;
 
-        await prisma.deliveryPartner.update({
-          where: { id: partner.id },
-          data: {
-            isActive: true,
-            ...(updatedNotes ? { notes: JSON.stringify(updatedNotes) } : {}),
-          },
-        });
+        await AdminDriverApplicationsDB.approvePartner(
+          partner.id,
+          updatedNotes ? JSON.stringify(updatedNotes) : null,
+        );
       } else if (phone) {
         // Fallback legacy: crear partner si no existe (no debería pasar con el form nuevo).
-        const created = await prisma.deliveryPartner.create({
-          data: {
-            name,
-            phone,
-            zone: "Sin zona",
-            vehicleType: "moto",
-            tenantId: auth.tenantId,
-            isActive: true,
-          },
-          select: { id: true },
-        }).catch((err) => {
-          logger.error("[admin/driver-applications] fallback create failed", { error: String(err) });
-          return null;
-        });
+        const created = await AdminDriverApplicationsDB.createPartnerFallback(
+          auth.tenantId,
+          name,
+          phone,
+        );
         partnerId = created?.id ?? null;
       }
 
@@ -252,10 +227,7 @@ export async function PATCH(req: NextRequest) {
             }
           : null;
         if (updatedNotes) {
-          await prisma.deliveryPartner.update({
-            where: { id: partner.id },
-            data: { isActive: false, notes: JSON.stringify(updatedNotes) },
-          });
+          await AdminDriverApplicationsDB.rejectPartner(partner.id, JSON.stringify(updatedNotes));
         }
       }
 

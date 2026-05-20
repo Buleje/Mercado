@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BackupsDB } from "@/lib/db/backups.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -26,26 +27,7 @@ export async function GET(req: NextRequest) {
   // El sistema de backup real usa el endpoint /api/backup (descarga JSON).
   // Este endpoint devuelve el historial de backups registrados en actividad.
   try {
-    const { prisma } = await import("@/lib/prisma");
-    const rows = await prisma.activityLog.findMany({
-      where: { tenantId: auth.tenantId, entity: "configuracion", action: "Backup" },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
-
-    if (rows.length === 0) throw new Error("empty");
-
-    const entries: BackupEntry[] = rows.map((r, i) => ({
-      id: r.id,
-      name: r.detail.includes("manual") ? "Backup manual" : "Backup automático",
-      type: r.detail.includes("manual") ? "manual" : "auto",
-      size: "~4 MB", sizeBytes: 4000000,
-      modules: ["Productos", "Pedidos", "Clientes", "Ventas"],
-      createdAt: r.createdAt.toISOString(),
-      status: "completado" as const,
-      retention: i === 0 ? "30 días" : "30 días",
-    }));
-
+    const entries = await BackupsDB.listFromActivityLog(auth.tenantId);
     const totalSizeBytes = entries.reduce((s, b) => s + b.sizeBytes, 0);
     return NextResponse.json({ backups: entries, totalSizeBytes });
   } catch {

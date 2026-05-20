@@ -1,14 +1,21 @@
+import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import {
+  listCronDeadLetters,
+  deleteCronDeadLettersByIds,
+  deleteCronDeadLettersByJobName,
+} from "@/lib/db/admin-cron-dead-letters.db";
 
 /**
  * GET /api/admin/cron-dead-letters
  *
  * Lists cron dead-letter entries — jobs that failed after all retry attempts.
+ *
+ * Audit project-wide 2026-05-19: migrado de prisma.* directo a AdminCronDeadLettersDB.
  *
  * SUPERADMIN-ONLY (BUG-FIX audit 2026-05-05): el modelo CronDeadLetter no tiene
  * `tenantId` por design — son logs globales del sistema. Permitir acceso a
@@ -30,31 +37,11 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
 
   try {
-    const entries = await prisma.cronDeadLetter.findMany({
-      where: {
-        ...(jobName ? { jobName } : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    });
+    const result = await listCronDeadLetters(jobName, limit);
 
-    // Also get summary counts per job
-    const summary = await prisma.cronDeadLetter.groupBy({
-      by: ["jobName"],
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
-    });
+    logger.info("[admin/cron-dead-letters] Listed", { tenantId, count: result.total });
 
-    logger.info("[admin/cron-dead-letters] Listed", { tenantId, count: entries.length });
-
-    return NextResponse.json({
-      entries,
-      summary: summary.map((s) => ({
-        jobName: s.jobName,
-        failureCount: s._count.id,
-      })),
-      total: entries.length,
-    });
+    return NextResponse.json(result);
   } catch (err) {
     logger.error("[admin/cron-dead-letters] Error", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -84,19 +71,9 @@ export async function DELETE(req: NextRequest) {
     let deleted = 0;
 
     if (Array.isArray(body.ids) && body.ids.length > 0) {
-      /* eslint-disable no-restricted-syntax -- CronDeadLetter es modelo GLOBAL sin tenantId (sistema, no tenant data). Admin de cualquier tenant puede limpiar dead-letters propios via id allowlist desde su UI. */
-      const result = await prisma.cronDeadLetter.deleteMany({
-        where: { id: { in: body.ids } },
-      });
-      /* eslint-enable no-restricted-syntax */
-      deleted = result.count;
+      deleted = await deleteCronDeadLettersByIds(body.ids);
     } else if (typeof body.jobName === "string") {
-      /* eslint-disable no-restricted-syntax -- CronDeadLetter es modelo GLOBAL sin tenantId. jobName scope es por sistema, no por tenant. */
-      const result = await prisma.cronDeadLetter.deleteMany({
-        where: { jobName: body.jobName },
-      });
-      /* eslint-enable no-restricted-syntax */
-      deleted = result.count;
+      deleted = await deleteCronDeadLettersByJobName(body.jobName);
     } else {
       return NextResponse.json({ error: "Provide ids[] or jobName" }, { status: 400 });
     }

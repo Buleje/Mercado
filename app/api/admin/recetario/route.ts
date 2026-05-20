@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { AdminRecetarioDB } from "@/lib/db/admin-recetario.db";
 
 const IngredienteSchema = z.object({
   nombre: z.string().min(1),
@@ -33,25 +33,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Audit 2026-05-17 X-P0-1: agregado tenantId al where para cerrar
-    // cross-tenant leak. Antes cualquier admin veía recetas de TODOS los
-    // tenants. POST sí pasaba tenantId — solo GET era leak.
-    const notes = await prisma.note.findMany({
-      where: { tenantId: auth.tenantId, title: "__RECETARIO__" },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const recetas = notes
-      .map(n => {
-        try {
-          const data = JSON.parse(n.content);
-          return { ...data, _noteId: n.id, createdAt: n.createdAt, updatedAt: n.updatedAt };
-        } catch {
-          return null;
-        }
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
-
+    const recetas = await AdminRecetarioDB.list(auth.tenantId);
     return NextResponse.json(recetas);
   } catch {
     return NextResponse.json([]);
@@ -107,17 +89,12 @@ export async function POST(req: NextRequest) {
       activa: data.activa,
     };
 
-    const note = await prisma.note.create({
-      data: {
-        tenantId: auth.tenantId,
-        title: "__RECETARIO__",
-        content: JSON.stringify(recetaData),
-        color: "green",
-        pinned: false,
-      },
-    });
+    const { noteId, createdAt, updatedAt } = await AdminRecetarioDB.create(auth.tenantId, recetaData);
 
-    return NextResponse.json({ ...recetaData, _noteId: note.id }, { status: 201 });
+    return NextResponse.json(
+      { ...recetaData, _noteId: noteId, createdAt, updatedAt },
+      { status: 201 }
+    );
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error al crear receta" },

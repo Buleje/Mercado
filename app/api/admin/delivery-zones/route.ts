@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { AdminDeliveryZonesDB } from "@/lib/db/admin-delivery-zones.db";
 
 const ZoneSchema = z.object({
   id: z.string().min(1),
@@ -13,30 +13,13 @@ const ZoneSchema = z.object({
   neighborhoods: z.array(z.string()).default([]),
 });
 
-const DEFAULT_ZONES = [
-  { id: "z-1", name: "Zona Centro", color: "bg-[var(--data-success-500)]", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Jr. Ucayali", "Av. Centenario"] },
-  { id: "z-2", name: "Zona Norte", color: "bg-green-500", deliveryFee: 4, estimatedMin: 30, neighborhoods: ["Manantay", "San Fernando", "9 de Octubre"] },
-  { id: "z-3", name: "Zona Sur", color: "bg-[var(--data-warning-500)]", deliveryFee: 5, estimatedMin: 35, neighborhoods: ["Yarinacocha", "Puerto Callao", "San José"] },
-  { id: "z-4", name: "Zona Este", color: "bg-[var(--data-error-500)]", deliveryFee: 5, estimatedMin: 40, neighborhoods: ["Campo Verde", "Nueva Requena"] },
-];
-
 // GET /api/admin/delivery-zones
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const settings = await prisma.settings.findFirst({ where: { tenantId: auth.tenantId }, select: { deliveryZone: true } });
-
-  if (settings?.deliveryZone) {
-    try {
-      const zones = JSON.parse(settings.deliveryZone);
-      return NextResponse.json(zones);
-    } catch {
-      // Corrupted JSON — return defaults
-    }
-  }
-
-  return NextResponse.json(DEFAULT_ZONES);
+  const zones = await AdminDeliveryZonesDB.getZones(auth.tenantId);
+  return NextResponse.json(zones);
 }
 
 // POST /api/admin/delivery-zones — save all zones
@@ -56,13 +39,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await prisma.settings.upsert({
-      where: { tenantId: auth.tenantId },
-      update: { deliveryZone: JSON.stringify(parsed.data) },
-      create: { tenantId: auth.tenantId, deliveryZone: JSON.stringify(parsed.data) },
-    });
-
-    return NextResponse.json(parsed.data);
+    const zones = await AdminDeliveryZonesDB.saveZones(auth.tenantId, parsed.data);
+    return NextResponse.json(zones);
   } catch {
     return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
   }
