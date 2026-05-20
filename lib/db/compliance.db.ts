@@ -1,65 +1,83 @@
-/**
- * lib/db/compliance.db.ts
- *
- * DB wrapper para queries del compliance dashboard (Ley 29733 PE).
- * Centraliza counts y aggregates con tenantId 1er param (regla #1 CLAUDE.md).
- *
- * Reemplaza el uso directo de `prisma.*` en
- * `app/api/admin/compliance-dashboard/route.ts` (audit Code Reviewer P0).
- */
-
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
 
-export interface ComplianceCounts {
-  auditLog30d: number;
-  auditLogTotal: number;
-  auditLogOldestDate: Date | null;
-  customersTotal: number;
+/**
+ * ComplianceDB
+ *
+ * Audit project-wide 2026-05-19 — migracion de /api/compliance.
+ * Items de cumplimiento legal (SUNAT, municipal, sanitario, etc.)
+ * con scope por tenantId.
+ */
+
+interface UpdateData {
+  status: string;
+  nextDue?: string;
+  lastFiled?: string;
 }
 
 export const ComplianceDB = {
+  async listForTenant(tenantId: string) {
+    return prisma.complianceItem.findMany({
+      where: { tenantId },
+      orderBy: { nextDue: "asc" },
+    });
+  },
+
   /**
-   * Devuelve KPIs base del compliance dashboard para un tenant.
-   * Hace 4 queries en paralelo (zero N+1). Todas scoped por tenantId.
+   * Actualiza el item por id + tenantId (defense in depth contra IDOR
+   * cross-tenant). El where compuesto evita updateAny por id solo.
    */
-  async getKpis(tenantId: string): Promise<ComplianceCounts> {
-    if (!tenantId) {
-      logger.error("[ComplianceDB.getKpis] tenantId vacio");
-      throw new Error("tenantId requerido");
-    }
-
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
+  async updateForTenant(tenantId: string, id: string, data: UpdateData): Promise<boolean> {
     try {
-      const [auditLog30d, auditLogTotal, oldestEntry, customersTotal] = await Promise.all([
-        prisma.activityLog.count({
-          where: { tenantId, createdAt: { gte: thirtyDaysAgo } },
-        }),
-        prisma.activityLog.count({
-          where: { tenantId },
-        }),
-        prisma.activityLog.findFirst({
-          where: { tenantId },
-          orderBy: { createdAt: "asc" },
-          select: { createdAt: true },
-        }),
-        prisma.customer.count({ where: { tenantId } }),
-      ]);
-
-      return {
-        auditLog30d,
-        auditLogTotal,
-        auditLogOldestDate: oldestEntry?.createdAt ?? null,
-        customersTotal,
-      };
-    } catch (err) {
-      logger.error("[ComplianceDB.getKpis] query failed", {
-        tenantId: tenantId.slice(-8),
-        err: String(err).slice(0, 200),
+      await prisma.complianceItem.update({
+        where: { id, tenantId },
+        data: {
+          status: data.status,
+          ...(data.nextDue ? { nextDue: new Date(data.nextDue) } : {}),
+          ...(data.lastFiled ? { lastFiled: new Date(data.lastFiled) } : {}),
+        },
       });
-      throw err;
+      return true;
+    } catch {
+      return false;
     }
+  },
+
+  /**
+   * KPIs de compliance para el dashboard admin tenant (ADR-107).
+   * Devuelve audit log activity + customer count.
+   *
+   * Audit project-wide 2026-05-19: ya consumido por
+   * /api/admin/compliance-dashboard (P0 #1 CodeReview).
+   */
+  async getKpis(tenantId: string): Promise<{
+    auditLog30d: number;
+    auditLogTotal: number;
+    auditLogOldestDate: Date | null;
+    customersTotal: number;
+  }> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
+    const [auditLog30d, auditLogTotal, oldestAudit, customersTotal] = await Promise.all([
+      prisma.activityLog.count({
+        where: { tenantId, createdAt: { gte: thirtyDaysAgo } },
+      }).catch(() => 0),
+      prisma.activityLog.count({
+        where: { tenantId },
+      }).catch(() => 0),
+      prisma.activityLog.findFirst({
+        where: { tenantId },
+        orderBy: { createdAt: "asc" },
+        select: { createdAt: true },
+      }).catch(() => null),
+      prisma.customer.count({
+        where: { tenantId },
+      }).catch(() => 0),
+    ]);
+    return {
+      auditLog30d,
+      auditLogTotal,
+      auditLogOldestDate: oldestAudit?.createdAt ?? null,
+      customersTotal,
+    };
   },
 };

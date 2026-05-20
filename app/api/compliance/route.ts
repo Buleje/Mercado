@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { ComplianceDB } from "@/lib/db/compliance.db";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -34,10 +34,8 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const rows = await prisma.complianceItem.findMany({
-      where: { tenantId: auth.tenantId },
-      orderBy: { nextDue: "asc" },
-    });
+    // Audit project-wide 2026-05-19: migrado a ComplianceDB.
+    const rows = await ComplianceDB.listForTenant(auth.tenantId);
     if (rows.length === 0) throw new Error("empty");
     const items: ComplianceItem[] = rows.map((r) => ({
       id: r.id, title: r.title, entity: r.entity,
@@ -62,17 +60,11 @@ export async function PATCH(req: NextRequest) {
   const parsed = PatchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  try {
-    await prisma.complianceItem.update({
-      where: { id: parsed.data.id, tenantId: auth.tenantId },
-      data: {
-        status: parsed.data.status,
-        ...(parsed.data.nextDue && { nextDue: new Date(parsed.data.nextDue) }),
-        ...(parsed.data.lastFiled && { lastFiled: new Date(parsed.data.lastFiled) }),
-      },
-    });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: true, demo: true });
-  }
+  // Audit project-wide 2026-05-19: migrado a ComplianceDB.updateForTenant.
+  const ok = await ComplianceDB.updateForTenant(auth.tenantId, parsed.data.id, {
+    status: parsed.data.status,
+    nextDue: parsed.data.nextDue,
+    lastFiled: parsed.data.lastFiled,
+  });
+  return NextResponse.json({ ok: true, ...(ok ? {} : { demo: true }) });
 }
