@@ -612,6 +612,10 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         <aside
           className={[
             "fixed top-0 left-0 h-full z-40 flex flex-col w-60 md:hidden",
+            // Brandon 2026-05-20 v13 audit superadmin responsive: safe-area
+            // padding-bottom para iOS notch — el footer del drawer (collapse
+            // toggle o user info) no queda cortado por la barra del sistema.
+            "pb-[env(safe-area-inset-bottom)]",
             sidebarBgClass,
             impersonating ? "pt-8" : "",
           ].join(" ")}

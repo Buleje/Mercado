@@ -17,10 +17,13 @@ export const metadata = {
  * while the auth gate resolves in the Suspense boundary.
  */
 function SuperAdminSkeleton() {
+  // Brandon 2026-05-20 v13 audit superadmin responsive: skeleton ahora
+  // responsive — grid 3 cols hardcoded rompía mobile (3 cards de 28px alto
+  // squeezadas en 360px → 80px c/u sin padding). Ahora 1/2/3 cols progresivo.
   return (
     <div className="flex h-screen bg-[var(--surface-canvas)] text-[var(--text-primary)]">
-      {/* Sidebar skeleton */}
-      <aside className="hidden lg:flex w-56 flex-col border-r border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 gap-3">
+      {/* Sidebar skeleton — solo desktop, mobile usa drawer */}
+      <aside className="hidden md:flex w-56 flex-col border-r border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 gap-3">
         <div className="h-8 w-28 rounded-lg bg-[var(--surface-sunken)] animate-pulse mb-4" />
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="h-8 w-full rounded-lg bg-[var(--surface-sunken)] animate-pulse" />
@@ -29,9 +32,9 @@ function SuperAdminSkeleton() {
       {/* Content skeleton */}
       <div className="flex-1 flex flex-col">
         <div className="h-14 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]" />
-        <div className="flex-1 p-6 space-y-4">
+        <div className="flex-1 p-4 sm:p-6 space-y-4">
           <div className="h-8 w-48 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-28 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
             ))}
