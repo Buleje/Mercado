@@ -15,7 +15,7 @@
 
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { CustomerDataDB } from "@/lib/db/customer-data.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -35,42 +35,14 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Audit project-wide 2026-05-19: migrado a CustomerDataDB.
   // SECURITY 2026-05-05 (CT-12 IDOR Ley 29733 PE): scope tenantId.
-  // Customer.phone es @id global; antes admin de tenant A podía exportar
-  // PII completo (orders, location, ...) del cliente con mismo phone en B.
-  const customer = await prisma.customer.findFirst({
-    where: { phone, tenantId: auth.tenantId },
-    include: {
-      savedCarts: true,
-    },
-  });
-
-  // Orders + locations: separate fetches porque Customer ya no tiene relations
-  const orders = customer ? await prisma.order.findMany({
-    where: { customerPhone: customer.phone, tenantId: auth.tenantId },
-    select: {
-      id: true,
-      createdAt: true,
-      total: true,
-      status: true,
-      paymentMethod: true,
-      customerLocation: true,
-      customerReference: true,
-      items: { select: { name: true, quantity: true, price: true } },
-    },
-  }) : [];
-
+  const customer = await CustomerDataDB.findCustomerWithCarts(auth.tenantId, phone);
   if (!customer) {
     return NextResponse.json({ error: "Customer not found" }, { status: 404 });
   }
-
-  // Reviews linked by phone (not a FK relation, just a loose reference)
-  // SECURITY: tenantId scope — antes leakeaba reviews de mismo phone en otros tenants.
-  const reviews = await prisma.review.findMany({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    where: { phone, tenantId: auth.tenantId, deletedAt: null } as any,
-    select: { id: true, date: true, rating: true, text: true },
-  });
+  const orders = await CustomerDataDB.listOrdersByCustomer(auth.tenantId, customer.phone);
+  const reviews = await CustomerDataDB.listReviewsByPhone(auth.tenantId, phone);
 
   let savedCartItems: unknown = null;
   const firstSavedCart = customer.savedCarts?.[0];
@@ -145,26 +117,19 @@ async function deleteHandler(
 
   const { phone } = parsed.data;
 
-  // SECURITY 2026-05-06 (pentest H009): scope por tenant. Antes admin de
-  // tenant A podía borrar customer del tenant B con mismo phone (Customer.phone
-  // es @id global, así que el `delete({where:{phone}})` no validaba tenant).
-  const existing = await prisma.customer.findFirst({
-    where: { phone, tenantId: auth.tenantId },
-  });
+  // SECURITY 2026-05-06 (pentest H009): scope por tenant.
+  const existing = await CustomerDataDB.findCustomerWithCarts(auth.tenantId, phone);
   if (!existing) {
     return NextResponse.json({ error: "Customer not found" }, { status: 404 });
   }
 
   // 1. Anonymise reviews (remove PII name + phone, keep analytics data)
-  await prisma.review.updateMany({
-    where: { phone, tenantId: auth.tenantId },
-    data: { name: "[deleted]", phone: null },
-  });
+  await CustomerDataDB.anonymizeReviews(auth.tenantId, phone);
 
   // 2. Delete the customer record (con guard por tenant).
   //    Cascade: SavedCart, SavedLocation, CustomerNotification (onDelete: Cascade).
   //    Orders: customerPhone set to NULL (onDelete: SetNull).
-  await prisma.customer.deleteMany({ where: { phone, tenantId: auth.tenantId } });
+  await CustomerDataDB.deleteCustomer(auth.tenantId, phone);
 
   // COMPLIANCE 2026-05-06: máscara de PII en logs. Antes el phone completo
   // iba a Sentry/Vercel Logs (PII no debe persistir en logs operacionales).

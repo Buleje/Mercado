@@ -1,7 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { TenantCustomDomainDB } from "@/lib/db/tenant-custom-domain.db";
 import { getPlanLimits } from "@/lib/plans";
 import { invalidateCustomDomainCache } from "@/lib/resolve-tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -17,10 +17,8 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
-    select: { customDomain: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a TenantCustomDomainDB.
+  const tenant = await TenantCustomDomainDB.findCurrentDomain(auth.tenantId);
 
   return NextResponse.json({ customDomain: tenant?.customDomain ?? null });
 }
@@ -31,10 +29,7 @@ export async function PUT(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
-    select: { id: true, plan: true, customDomain: true },
-  });
+  const tenant = await TenantCustomDomainDB.findTenantForUpdate(auth.tenantId);
   if (!tenant) return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
 
   const limits = getPlanLimits(tenant.plan);
@@ -64,10 +59,7 @@ export async function PUT(req: NextRequest) {
   }
 
   // Check uniqueness
-  const taken = await prisma.tenant.findFirst({
-    where: { customDomain: domain, NOT: { id: auth.tenantId } },
-    select: { slug: true },
-  });
+  const taken = await TenantCustomDomainDB.findDomainTakenBy(domain, auth.tenantId);
   if (taken) {
     return NextResponse.json({ error: "Este dominio ya está en uso por otra tienda" }, { status: 409 });
   }
@@ -77,10 +69,7 @@ export async function PUT(req: NextRequest) {
     invalidateCustomDomainCache(tenant.customDomain);
   }
 
-  await prisma.tenant.update({
-    where: { id: auth.tenantId },
-    data: { customDomain: domain },
-  });
+  await TenantCustomDomainDB.setCustomDomain(auth.tenantId, domain);
 
   return NextResponse.json({ customDomain: domain });
 }
@@ -91,19 +80,13 @@ export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
-    select: { customDomain: true },
-  });
+  const tenant = await TenantCustomDomainDB.findCurrentDomain(auth.tenantId);
 
   if (tenant?.customDomain) {
     invalidateCustomDomainCache(tenant.customDomain);
   }
 
-  await prisma.tenant.update({
-    where: { id: auth.tenantId },
-    data: { customDomain: null },
-  });
+  await TenantCustomDomainDB.setCustomDomain(auth.tenantId, null);
 
   return NextResponse.json({ ok: true });
 }
