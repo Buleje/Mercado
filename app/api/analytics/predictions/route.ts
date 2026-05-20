@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsPredictionsDB } from "@/lib/db/analytics-predictions.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -30,42 +30,12 @@ export async function GET(req: NextRequest) {
     cutoff30.setDate(cutoff30.getDate() - 30);
 
     // ── Fetch paralelo de los datos necesarios ────────────────────────────────
+    // Audit project-wide 2026-05-19: migrado a AnalyticsPredictionsDB.
     const [sales28, sales7, products, churnable] = await Promise.all([
-      // Ventas de los últimos 28 días
-      prisma.sale.findMany({
-        where: { tenantId, createdAt: { gte: cutoff28 } },
-        select: { total: true, createdAt: true, items: { select: { productId: true, quantity: true } } },
-      }),
-
-      // Ventas de la última semana (para tendencia)
-      prisma.sale.aggregate({
-        where: { tenantId, createdAt: { gte: cutoff7 } },
-        _sum: { total: true },
-        _count: true,
-      }),
-
-      // Productos con stock bajo para riesgo de agotamiento
-      prisma.product.findMany({
-        where: { tenantId, active: true, stock: { gt: 0 } },
-        select: { id: true, name: true, stock: true, image: true },
-        orderBy: { stock: "asc" },
-        take: 20,
-      }),
-
-      // Clientes que no compran hace 30+ días — usando la última orden relacionada
-      // Customer.phone es la PK; lastOrderAt no existe en el modelo.
-      // Obtenemos clientes activos con órdenes previas al cutoff30.
-      prisma.customer.findMany({
-        where: {
-          tenantId,
-          orders: {
-            some: { createdAt: { lt: cutoff30 }, deletedAt: null },
-            none: { createdAt: { gte: cutoff30 }, deletedAt: null },
-          },
-        },
-        select: { name: true, phone: true, orders: { select: { createdAt: true }, orderBy: { createdAt: "desc" }, take: 1 } },
-        take: 10,
-      }),
+      AnalyticsPredictionsDB.getSalesWithItems(tenantId, cutoff28),
+      AnalyticsPredictionsDB.aggregateSales(tenantId, cutoff7),
+      AnalyticsPredictionsDB.getProductsLowStock(tenantId, 20),
+      AnalyticsPredictionsDB.getChurnableCustomers(tenantId, cutoff30, 10),
     ]);
 
     // ── 1. Proyección de ventas próxima semana ────────────────────────────────

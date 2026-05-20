@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { ReorderAlertsDB } from "@/lib/db/reorder-alerts.db";
 import { broadcastPush } from "@/lib/push-sender";
 import nodemailer from "nodemailer";
 import { timingSafeCompare } from "@/lib/timing-safe";
@@ -24,11 +24,8 @@ type LowStockItem = {
 };
 
 async function checkAndAlert() {
-  // Find products at or below stockMin
-  const products = await prisma.product.findMany({
-    where: { active: true, stock: { not: null }, stockMin: { not: null } },
-    select: { id: true, name: true, stock: true, stockMin: true, stockMax: true, category: true, unit: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a ReorderAlertsDB.
+  const products = await ReorderAlertsDB.listProductsWithMinStock();
 
   const lowStock = products.filter(
     (p) => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin
@@ -40,11 +37,7 @@ async function checkAndAlert() {
 
   // Try to find last supplier for each product from purchase order history
   const productIds = lowStock.map(p => p.id);
-  const recentPurchaseItems = await prisma.purchaseItem.findMany({
-    where: { productId: { in: productIds } },
-    include: { purchaseOrder: { select: { supplierName: true } } },
-    orderBy: { purchaseOrder: { createdAt: "desc" } },
-  });
+  const recentPurchaseItems = await ReorderAlertsDB.getRecentSuppliersForProducts(productIds);
 
   const supplierMap = new Map<number, string>();
   for (const item of recentPurchaseItems) {
@@ -164,35 +157,27 @@ export async function GET(req: NextRequest) {
         for (const [supplierName, items] of Object.entries(alertResult.bySupplier) as [string, LowStockItem[]][]) {
           if (supplierName === "Sin proveedor asignado") continue;
 
-          // Find the supplier
-          const supplier = await prisma.supplier.findFirst({
-            where: { name: supplierName },
-            select: { id: true, tenantId: true },
-          });
+          // Audit project-wide 2026-05-19: migrado a ReorderAlertsDB.
+          const supplier = await ReorderAlertsDB.findSupplierByName(supplierName);
           if (!supplier) continue;
 
           const poId = `auto-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const total = items.reduce((s, i) => s + i.suggestedQty * (i.stockMin || 1), 0); // rough estimate
+          const total = items.reduce((s, i) => s + i.suggestedQty * (i.stockMin || 1), 0);
 
-          await prisma.purchaseOrder.create({
-            data: {
-              id: poId,
-              tenantId: supplier.tenantId,
-              supplierId: supplier.id,
-              supplierName,
-              total,
-              status: "pendiente",
-              notes: `Auto-generado por sistema de reabastecimiento. ${items.length} productos bajo stock mínimo.`,
-              items: {
-                create: items.map(i => ({
-                  productId: i.id,
-                  name: i.name,
-                  quantity: i.suggestedQty,
-                  unitCost: 0,
-                  unit: i.unit,
-                })),
-              },
-            },
+          await ReorderAlertsDB.createDraftPurchaseOrder({
+            poId,
+            tenantId: supplier.tenantId,
+            supplierId: supplier.id,
+            supplierName,
+            total,
+            notes: `Auto-generado por sistema de reabastecimiento. ${items.length} productos bajo stock mínimo.`,
+            items: items.map((i) => ({
+              productId: i.id,
+              name: i.name,
+              quantity: i.suggestedQty,
+              unitCost: 0,
+              unit: i.unit,
+            })),
           });
         }
       }

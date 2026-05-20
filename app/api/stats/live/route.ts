@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { StatsLiveDB } from "@/lib/db/stats-live.db";
 
 /**
  * GET /api/stats/live
@@ -12,36 +13,13 @@ import { NextResponse } from "next/server";
  *   - Caso contrario → show=false (escondemos el banner)
  *
  * Cache: public 5 min + SWR 60s.
+ *
+ * Audit project-wide 2026-05-19: migrado a StatsLiveDB.getLiveStats.
  */
 export async function GET() {
   try {
-    const { prisma } = await import("@/lib/prisma");
-
-    // Paralelizar queries
-    const now = Date.now();
-    const since24h = new Date(now - 24 * 60 * 60 * 1000);
-    const since1h = new Date(now - 60 * 60 * 1000);
-
-    const [activeStores, ordersLast24h, ordersLastHour, activeShoppers] = await Promise.all([
-      prisma.store.count({
-        where: { isPublished: true },
-      }).catch(() => 0),
-      prisma.order.count({
-        where: { createdAt: { gte: since24h } },
-      }).catch(() => 0),
-      prisma.order.count({
-        where: { createdAt: { gte: since1h } },
-      }).catch(() => 0),
-      // Clientes únicos que ordenaron en las ultimas 24h (social proof fuerte)
-      prisma.order
-        .findMany({
-          where: { createdAt: { gte: since24h } },
-          select: { customerPhone: true },
-          distinct: ["customerPhone"],
-        })
-        .then((rows) => rows.filter((r) => r.customerPhone).length)
-        .catch(() => 0),
-    ]);
+    const { activeStores, ordersLast24h, ordersLastHour, activeShoppers } =
+      await StatsLiveDB.getLiveStats();
 
     // Umbrales de autenticidad
     const show =

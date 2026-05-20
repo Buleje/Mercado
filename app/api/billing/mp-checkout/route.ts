@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { BillingMpCheckoutDB } from "@/lib/db/billing-mp-checkout.db";
 import { createMercadoPagoPreference } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
@@ -44,16 +44,8 @@ export async function POST(req: NextRequest) {
   const { plan } = parsed.data;
 
   // ── Tenant ───────────────────────────────────────────────
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      plan: true,
-      ownerEmail: true,
-    },
-  });
+  // Audit project-wide 2026-05-19: migrado a BillingMpCheckoutDB.
+  const tenant = await BillingMpCheckoutDB.findTenantForCheckout(tenantId);
   if (!tenant) {
     return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
   }
@@ -96,13 +88,11 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Persistir plan pendiente para resolución confiable en webhook ──
-  await prisma.mpPendingPlan.create({
-    data: {
-      tenantSlug: tenant.slug,
-      plan,
-      preferenceId: result.id,
-      externalRef: tenant.slug,
-    },
+  await BillingMpCheckoutDB.createPendingPlan({
+    tenantSlug: tenant.slug,
+    plan,
+    preferenceId: result.id,
+    externalRef: tenant.slug,
   }).catch((err) => {
     logger.error("[MP Checkout] Error guardando MpPendingPlan", { err: String(err) });
     reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
