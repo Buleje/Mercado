@@ -16,6 +16,9 @@ import { getOrSet } from "@/lib/cache";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+// Next 16 Cache Components (ADR-019): cacheLife + cacheTag para
+// MarketplaceStatsDB queries (revalidate + tag-invalidation).
+import { cacheLife, cacheTag } from "next/cache";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1269,6 +1272,115 @@ export const MarketplaceAdminDB = {
 
       return { featuredRaw, flashDealRaw, sortedTopSellers, lowStockRaw };
     });
+  },
+};
+
+// ── MarketplaceStatsDB ─────────────────────────────────────────────────────────
+//
+// Brandon 2026-05-20 audit-sprint: queries de estadísticas públicas cross-tenant
+// (home, /negocios, JSON-LD). Antes vivían como `prisma.*` directo en
+// `app/(store)/page.tsx` y `app/(store)/negocios/page.tsx` con eslint-disable.
+// Movido aquí para cumplir regla #1 CLAUDE.md (solo `lib/db/*` accede a prisma)
+// y centralizar cache: cacheLife + cacheTag homogéneo.
+//
+// @cross-tenant intentional — agrega TODA la plataforma. No requiere tenantId.
+
+export const MarketplaceStatsDB = {
+  /**
+   * Estadísticas globales del marketplace: tiendas, productos y rating promedio.
+   * Cache: 5 min revalidate, 1 min stale, 15 min expire.
+   */
+  async getPublicMarketplaceStats(): Promise<{
+    storeCount: number;
+    productCount: number;
+    avgRating: number;
+  }> {
+    "use cache";
+    cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+    cacheTag("marketplace-stats");
+
+    const [storeCount, productCount, avgRatingRaw] = await Promise.all([
+      // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
+      prisma.store.count({ where: { isPublished: true } }).catch(() => 0),
+      // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
+      prisma.product.count({ where: { active: true } }).catch(() => 0),
+      // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
+      prisma.review
+        .aggregate({ _avg: { rating: true }, where: { status: "approved" } })
+        .then((r) => r._avg.rating ?? 4.8)
+        .catch(() => 4.8),
+    ]);
+
+    return {
+      storeCount,
+      productCount,
+      avgRating: Number(Number(avgRatingRaw).toFixed(1)),
+    };
+  },
+
+  /**
+   * Top tiendas publicadas ordenadas por rating + reviewCount.
+   * Cache: 10 min revalidate, 2 min stale, 30 min expire.
+   */
+  async getTopMarketplaceStores(limit: number = 6): Promise<
+    Array<{
+      id: string;
+      slug: string;
+      name: string;
+      logo: string | null;
+      category: string;
+      zone: string | null;
+      rating: number;
+      reviewCount: number;
+    }>
+  > {
+    "use cache";
+    cacheLife({ revalidate: 600, stale: 120, expire: 1800 });
+    cacheTag("marketplace-top-stores");
+    try {
+      // eslint-disable-next-line no-restricted-properties -- top stores publico marketplace cross-tenant.
+      const stores = await prisma.store.findMany({
+        where: { isPublished: true },
+        orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          logo: true,
+          category: true,
+          zone: true,
+          rating: true,
+          reviewCount: true,
+        },
+      });
+      return stores;
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Reviews publicas aprobadas con rating alto (4+) para social proof.
+   * Cache: 10 min revalidate, 2 min stale, 30 min expire.
+   */
+  async getMarketplaceReviews(limit: number = 6): Promise<
+    Array<{ id: string; name: string; text: string; rating: number; date: Date }>
+  > {
+    "use cache";
+    cacheLife({ revalidate: 600, stale: 120, expire: 1800 });
+    cacheTag("marketplace-reviews");
+    try {
+      // eslint-disable-next-line no-restricted-properties -- reviews publicas marketplace cross-tenant.
+      return await prisma.review.findMany({
+        where: { status: "approved", rating: { gte: 4 }, storeId: { not: null } },
+        orderBy: { date: "desc" },
+        take: limit,
+        select: { id: true, name: true, text: true, rating: true, date: true },
+      });
+    } catch {
+      return [];
+    }
   },
 };
 

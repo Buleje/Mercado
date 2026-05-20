@@ -119,22 +119,18 @@ async function getSuperadminCategories(): Promise<SuperadminCategory[]> {
   }
 }
 
-// ── Cached marketplace stats from DB ─────────────────────────────────────────
+// ── Cached marketplace stats + top stores via lib/db (regla #1 CLAUDE.md)
+// Brandon 2026-05-20 audit-sprint: las queries antes hacían `prisma.*` directo
+// con eslint-disable como excusa cross-tenant. Ahora vive en
+// `lib/db/marketplace-public.db.ts` (MarketplaceStatsDB) — único punto que
+// accede a prisma, con `use cache` + cacheLife + cacheTag homogéneos.
+import { MarketplaceStatsDB } from "@/lib/db/marketplace-public.db";
+
 async function getMarketplaceStats() {
-  "use cache";
-  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
-  cacheTag("marketplace-stats");
-  const { prisma } = await import("@/lib/prisma");
-  const [storeCount, productCount] = await Promise.all([
-    // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
-    prisma.store.count({ where: { isPublished: true } }).catch(() => 0),
-    // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
-    prisma.product.count({ where: { active: true } }).catch(() => 0),
-  ]);
+  const { storeCount, productCount } = await MarketplaceStatsDB.getPublicMarketplaceStats();
   return { storeCount, productCount };
 }
 
-// ── Top stores: por rating + reviewCount (similar a "10 más elegidos" Rappi) ──
 interface TopStore {
   id: string;
   slug: string;
@@ -143,27 +139,8 @@ interface TopStore {
 }
 
 async function getTopStores(): Promise<TopStore[]> {
-  "use cache";
-  cacheLife({ revalidate: 600, stale: 120, expire: 1800 });
-  cacheTag("home-top-stores");
-  const { prisma } = await import("@/lib/prisma");
-  try {
-    // eslint-disable-next-line no-restricted-properties -- top stores publico marketplace cross-tenant.
-    const stores = await prisma.store.findMany({
-      where: { isPublished: true },
-      orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-      take: 10,
-      select: { id: true, slug: true, name: true, logo: true },
-    });
-    return stores.map((s) => ({
-      id: s.id,
-      slug: s.slug,
-      name: s.name,
-      logo: s.logo,
-    }));
-  } catch {
-    return [];
-  }
+  const stores = await MarketplaceStatsDB.getTopMarketplaceStores(10);
+  return stores.map((s) => ({ id: s.id, slug: s.slug, name: s.name, logo: s.logo }));
 }
 
 // ── JSON-LD B2C marketplace ──────────────────────────────────────────────────
