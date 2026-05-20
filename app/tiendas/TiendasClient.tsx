@@ -24,10 +24,10 @@ import {
   Search as SearchIcon, ShoppingBag, ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-// Brandon 2026-05-18 perf P1 #6: SearchAutocomplete y TiendasHeroAds
-// estáticos al mount aunque ambos son hidden en mobile (sm+ only).
-// Movidos a dynamic() abajo (después del `import dynamic from "next/dynamic"`).
-import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
+// Brandon 2026-05-18 + audit-sprint 2026-05-20:
+// SearchAutocomplete + MarketplaceStoresView declarados como dynamic() abajo
+// (después del `import dynamic from "next/dynamic"`) para reducir initial
+// bundle y permitir streaming del listing.
 import { deriveActiveZones } from "@/lib/marketplace-zones";
 import {
   useMarketplaceGeo,
@@ -147,6 +147,19 @@ const MisPedidosFavoritosStrip = dynamic(
 const FeaturedStoresNearby = dynamic(
   () => import("@/components/marketplace/FeaturedStoresNearby"),
   { ssr: false, loading: () => null },
+);
+// Brandon 2026-05-20 audit-sprint: el grid de tiendas es el cuerpo del listing
+// y es siempre visible — pero su bundle (framer-motion + StoreCardCanonical +
+// observers) pesa ~25-35KB. Lazy con SSR:false + skeleton fullheight evita
+// bloquear el initial bundle y permite streaming del shell + filtros.
+const MarketplaceStoresView = dynamic(
+  () => import("@/components/marketplace/MarketplaceStoresView"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[600px] rounded-xl bg-[var(--surface-sunken)] animate-pulse" aria-hidden />
+    ),
+  },
 );
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */

@@ -66,8 +66,8 @@ export default function LandingHero() {
         className="pointer-events-none absolute inset-0"
         aria-hidden
       >
-        <div className="absolute -top-32 -right-40 h-[520px] w-[520px] rounded-full bg-[var(--accent)]/[0.08] blur-3xl" />
-        <div className="absolute top-1/3 -left-32 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl" />
+        <div className="hidden sm:absolute sm:block -top-32 -right-40 h-[520px] w-[520px] rounded-full bg-[var(--accent)]/[0.08] blur-3xl" />
+        <div className="hidden sm:absolute sm:block top-1/3 -left-32 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl" />
       </m.div>
 
       <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 lg:pt-28 pb-14 sm:pb-20">
@@ -270,15 +270,21 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
     if (ev.delta > 0) setSales((s) => s + ev.delta);
   }, [eventIdx, reducedMotion]);
 
-  // Tracker progress 0→100% loop
+  // Tracker progress 0→100% loop — rAF en vez de setInterval 50ms para no
+  // bloquear el hilo principal en mobile Android de gama baja. El timestamp
+  // de rAF es de alta resolución (performance.now); usamos módulo 3400ms para
+  // sincronizar con el ciclo de eventos del phone mockup.
   useEffect(() => {
     if (reducedMotion) { setProgress(75); return; }
-    const start = Date.now();
-    const id = setInterval(() => {
-      const elapsed = (Date.now() - start) % 3400;
+    let rafId: number;
+    const start = performance.now();
+    const loop = (now: number) => {
+      const elapsed = (now - start) % 3400;
       setProgress(Math.min(100, (elapsed / 3400) * 100));
-    }, 50);
-    return () => clearInterval(id);
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
   }, [reducedMotion]);
 
   // Auto-typing search
@@ -297,7 +303,8 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
         setSearchText(target.slice(0, charIdx));
         if (charIdx >= target.length) {
           typing = false;
-          setTimeout(() => {}, 800);
+          // Pausa antes de borrar: el interval sigue corriendo pero con
+          // typing=false el siguiente tick empieza a borrar — no hay noop aquí.
         }
       } else {
         charIdx--;
@@ -319,8 +326,8 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
       className="relative h-[520px] sm:h-[580px] lg:h-[640px] flex items-center justify-center select-none [perspective:1200px]"
     >
       {/* Glow accent multicapa */}
-      <div className="absolute inset-x-4 top-8 bottom-4 rounded-[3.5rem] bg-linear-to-br from-[var(--accent)]/[0.22] via-fuchsia-500/[0.08] to-amber-400/[0.12] blur-3xl" />
-      <div className="absolute inset-x-12 top-16 bottom-12 rounded-[3rem] bg-linear-to-tr from-[var(--accent)]/[0.18] to-transparent blur-2xl" />
+      <div className="hidden sm:absolute sm:block inset-x-4 top-8 bottom-4 rounded-[3.5rem] bg-linear-to-br from-[var(--accent)]/[0.22] via-fuchsia-500/[0.08] to-amber-400/[0.12] blur-3xl" />
+      <div className="hidden sm:absolute sm:block inset-x-12 top-16 bottom-12 rounded-[3rem] bg-linear-to-tr from-[var(--accent)]/[0.18] to-transparent blur-2xl" />
 
       {/* Pulso expansivo al entrar evento */}
       {!reducedMotion && (
@@ -363,7 +370,7 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
               </div>
               <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/15 px-2 py-1">
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75" />
+                  <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
                 </span>
                 <span className="text-xs font-black text-[var(--data-success-500)]">LIVE</span>
@@ -433,7 +440,7 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
                   </p>
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)]">
                     <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75" />
+                      <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75" />
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
                     </span>
                   </span>
@@ -667,7 +674,7 @@ function Sparkline({
           cy={lastY}
           r="2"
           fill="var(--accent)"
-          className="animate-ping origin-center"
+          className="motion-safe:animate-ping origin-center"
           style={{ transformOrigin: `${lastX}px ${lastY}px` }}
         />
       )}

@@ -50,6 +50,8 @@ const STATIC_URLS = [
   "/delivery-app",
   "/delivery-app/login",
   "/delivery-manifest.json",
+  "/tiendas",
+  "/negocios",
 ];
 const API_CACHE = "buleje-api-v4";
 const IMG_CACHE = "buleje-img-v4";

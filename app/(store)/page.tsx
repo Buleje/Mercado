@@ -1,9 +1,37 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";
 import LandingHeader from "@/components/landing/LandingHeader";
+
+// ── Dynamic imports — Brandon 2026-05-20 audit-sprint perf:
+// reducen initial bundle (Framer Motion + setInterval del hero, carousel cliente,
+// scroll listeners del CTA mobile) y paralelizan compile. SSR se mantiene en
+// los que aportan SEO above-the-fold (LandingHero, PopularCategoriesTiles,
+// ComoFuncionaSection); below-fold (ReviewsCarousel) y mobile-only
+// (StickyMobileCTA) van con ssr:false.
+const LandingHero = dynamic(() => import("@/components/landing/LandingHero"), {
+  ssr: true,
+  loading: () => <div className="min-h-[600px] bg-[var(--surface-canvas)]" aria-hidden />,
+});
+const ReviewsCarousel = dynamic(
+  () => import("@/components/landing/LandingClientSections").then((m) => ({ default: m.ReviewsCarousel })),
+  { ssr: false, loading: () => <div className="min-h-[300px]" aria-hidden /> },
+);
+const PopularCategoriesTiles = dynamic(
+  () => import("@/components/landing/PopularCategoriesTiles"),
+  { ssr: true, loading: () => <div className="min-h-[400px] bg-[var(--surface-sunken)]" aria-hidden /> },
+);
+const ComoFuncionaSection = dynamic(
+  () => import("@/components/landing/sections/ComoFuncionaSection"),
+  { ssr: true, loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
+);
+const StickyMobileCTA = dynamic(
+  () => import("@/components/landing/StickyMobileCTA"),
+  { ssr: false },
+);
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import {
@@ -410,7 +438,10 @@ async function CategoriesGrid() {
               >
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[var(--accent)]/15 blur-2xl group-hover:bg-[var(--accent)]/25 transition-colors"
+                  // Brandon 2026-05-20: blur orb decorativo solo en sm+ (paint
+                  // costoso en mobile). blur-2xl + color fijo accent vs el
+                  // gradiente b.tone original — más ligero y consistente.
+                  className="hidden sm:block pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[var(--accent)]/15 blur-2xl group-hover:bg-[var(--accent)]/25 transition-colors"
                 />
                 {/* Imagen superadmin si existe, sino emoji fallback */}
                 <span
@@ -650,11 +681,11 @@ function JoinUsSection() {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 right-1/4 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
+        className="hidden sm:block pointer-events-none absolute -top-32 right-1/4 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-32 left-1/4 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
+        className="hidden sm:block pointer-events-none absolute -bottom-32 left-1/4 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
       />
 
       <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
