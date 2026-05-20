@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { NotasCreditoDB } from "@/lib/db";
+import { SalesDB } from "@/lib/db/sales.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
@@ -55,26 +56,15 @@ export async function POST(req: NextRequest) {
     // un atacante podía emitir N notas por S/99999 contra la misma venta de
     // S/100 → fraude tributario directo SUNAT.
     if (data.saleId) {
-      const { prisma } = await import("@/lib/prisma");
-      const sale = await prisma.sale.findFirst({
-        where: { id: data.saleId, tenantId: auth.tenantId },
-        select: { id: true, total: true },
-      });
+      // Audit project-wide 2026-05-19: migrado a SalesDB.getById + NotasCreditoDB.sumActiveForSale.
+      const sale = await SalesDB.getById(auth.tenantId, data.saleId);
       if (!sale) {
         return NextResponse.json(
           { error: "Venta no encontrada en este tenant" },
           { status: 404 }
         );
       }
-      const acum = await prisma.notaCredito.aggregate({
-        _sum: { monto: true },
-        where: {
-          saleId: data.saleId,
-          tenantId: auth.tenantId,
-          status: { not: "ANULADA" as never },
-        },
-      });
-      const yaEmitido = Number(acum._sum.monto ?? 0);
+      const yaEmitido = await NotasCreditoDB.sumActiveForSale(auth.tenantId, data.saleId);
       const saleTotal = Number(sale.total);
       if (yaEmitido + data.monto > saleTotal) {
         return NextResponse.json(

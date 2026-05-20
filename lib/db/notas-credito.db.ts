@@ -161,6 +161,25 @@ export const NotasCreditoDB = {
     return mapNotaCredito(row);
   },
 
+  /**
+   * Suma de montos de notas de credito ACTIVAS (no anuladas) emitidas
+   * contra una venta. Util para validar que la suma + el monto pedido
+   * no exceda el total de la venta (anti-fraude SUNAT).
+   *
+   * Audit project-wide 2026-05-19 — migracion de /api/notas-credito.
+   */
+  async sumActiveForSale(tenantId: string, saleId: string): Promise<number> {
+    const acum = await prisma.notaCredito.aggregate({
+      _sum: { monto: true },
+      where: {
+        saleId,
+        tenantId,
+        status: { not: "ANULADA" as never },
+      },
+    });
+    return Number(acum._sum.monto ?? 0);
+  },
+
   async updateStatus(
     id: string,
     tenantId: string,
