@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { StockAlertsDB } from "@/lib/db/stock-alerts.db";
+import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { broadcastPush } from "@/lib/push-sender";
 import { sendStockAlertEmail } from "@/lib/mailer-stock";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -12,14 +13,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
  */
 
 async function checkAndAlert() {
-  const lowStock = await prisma.product.findMany({
-    where: {
-      active: true,
-      stock: { not: null },
-      stockMin: { not: null },
-    },
-    select: { id: true, name: true, stock: true, stockMin: true, category: true, unit: true, tenantId: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a StockAlertsDB.
+  const lowStock = await StockAlertsDB.listActiveWithMinStock();
 
   const alerts = lowStock.filter(
     (p) => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin,
@@ -27,22 +22,10 @@ async function checkAndAlert() {
 
   // ── Velocity-based stock-out prediction ──────────────────────────
   // Calculate average daily sales over the last 14 days for all active products
-  const twoWeeksAgo = new Date(Date.now() - 14 * 86400000);
-  const recentMoves = await prisma.inventoryMovement.groupBy({
-    by: ["productId"],
-    where: { type: "venta", createdAt: { gte: twoWeeksAgo } },
-    _sum: { quantity: true },
-  });
-  const velocityMap = new Map<number, number>();
-  for (const m of recentMoves) {
-    velocityMap.set(m.productId, (m._sum.quantity ?? 0) / 14);
-  }
+  const velocityMap = await StockAlertsDB.getRecentSalesVelocity(14);
 
   // Find products that will run out within 7 days based on velocity
-  const allActive = await prisma.product.findMany({
-    where: { active: true, stock: { not: null, gt: 0 } },
-    select: { id: true, name: true, stock: true, stockMin: true, category: true, unit: true },
-  });
+  const allActive = await StockAlertsDB.listActiveWithStock();
   const velocityAlerts = allActive
     .map(p => {
       const dailyRate = velocityMap.get(p.id) ?? 0;
@@ -98,15 +81,13 @@ async function checkAndAlert() {
       const logParts: string[] = [];
       if (tenantAlerts.length > 0) logParts.push(`${tenantAlerts.length} con stock bajo: ${tenantAlerts.map(p => p.name).join(", ")}`);
       if (velocityAlerts.length > 0) logParts.push(`${velocityAlerts.length} se agotan pronto: ${velocityAlerts.map(p => `${p.name} (~${p.daysLeft}d)`).join(", ")}`);
-      await prisma.notificationLog.create({
-        data: {
-          tenantId,
-          type: "low_stock",
-          recipient: "admin",
-          message: logParts.join(" | "),
-          status: "sent",
-        },
-      });
+      // Audit project-wide 2026-05-19: migrado a NotificationLogsDB.add.
+      await NotificationLogsDB.add({
+        type: "low_stock",
+        recipient: "admin",
+        message: logParts.join(" | "),
+        status: "sent",
+      }, tenantId);
     }
   } catch { /* logging optional */ }
 
