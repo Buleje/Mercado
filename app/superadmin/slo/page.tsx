@@ -231,8 +231,11 @@ export default function SLODashboardPage() {
         </button>
       </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI row — Brandon 2026-05-20 v13 audit superadmin responsive:
+          antes grid-cols-2 lg:grid-cols-4 saltaba de 2→4 sin breakpoint
+          intermedio. En sm (640-1024px) seguía 2 cols con cards estrujadas.
+          Ahora 1/2/2/4 cols progresivo. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <SloCard
           title="Ultimo deploy"
           value={data.deploy?.state === "READY" ? "OK" : data.deploy?.state ?? "—"}

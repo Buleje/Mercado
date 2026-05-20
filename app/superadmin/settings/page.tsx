@@ -592,7 +592,10 @@ function PlanLimitsCard({
           Topes mensuales
         </span>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-3">
+      {/* Brandon 2026-05-20 v13 audit superadmin responsive: grid-cols-3
+          forzaba 3 inputs en 320px (mobile) → ~95px c/u, casi inusable.
+          Stack 1 col mobile, 3 cols desktop. */}
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
         {fields.map(({ key, label, icon: Icon }) => (
           <div key={key}>
             <label className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">

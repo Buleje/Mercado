@@ -619,8 +619,11 @@ export default function SuperAdminRecetarioPage() {
                 </div>
               </div>
 
-              {/* Row: Tiempo + Porciones + Emoji */}
-              <div className="grid grid-cols-3 gap-3">
+              {/* Row: Tiempo + Porciones + Emoji — Brandon 2026-05-20 v13
+                  audit responsive: grid-cols-3 forzaba 3 inputs en 360px →
+                  ~110px c/u (input number con label nada legible). Ahora
+                  3 cols solo desde sm+ (640px+). */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className={labelCls}>Tiempo (min)</label>
                   <input
