@@ -311,13 +311,19 @@ async function RappiStyleHero() {
         <h1 className="text-[clamp(2rem,8vw,5rem)] font-extrabold leading-[1.02] sm:leading-[0.96] tracking-[-0.03em] sm:tracking-[-0.04em] text-[var(--text-primary)] max-w-4xl mx-auto">
           ¿Qué se te <span className="italic font-serif text-[var(--accent)]">antoja hoy?</span>
         </h1>
-        {/* Q1 2026-05-20: subtítulo VISIBLE en mobile (era hidden sm:block).
-            Mobile-first: 1 línea corta con el value-prop. Desktop expande. */}
+        {/* Brandon 2026-05-20 v12 audit F2 SEO: inyectadas keywords
+            "marketplace", "Pucallpa", "Ucayali", "Amazonía peruana" en
+            copy visible (audit reportó count=0 en hero text). Útil para
+            Googlebot que da más peso al texto visible que a metadata.
+            Q1 2026-05-20: subtítulo VISIBLE en mobile (era hidden sm:block). */}
         <p className="mt-3 sm:mt-5 max-w-2xl mx-auto text-sm sm:text-xl text-[var(--text-secondary)] leading-snug sm:leading-[1.4]">
-          <span className="sm:hidden">Pedí en 2 minutos. Pagás cuando llega.</span>
+          <span className="sm:hidden">
+            El marketplace de Pucallpa, Ucayali — delivery rápido en 2 minutos.
+          </span>
           <span className="hidden sm:inline">
-            Bodegas, restaurantes, farmacias y más — todo de tus vecinos, con
-            delivery rápido. Pagás con Yape, Plin o efectivo.
+            El marketplace #1 de Pucallpa, Ucayali. Bodegas, restaurantes y
+            farmacias de tus vecinos en la Amazonía peruana, con delivery
+            rápido y pagos en Yape, Plin o efectivo.
           </span>
         </p>
 

@@ -229,6 +229,8 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
   const [progress, setProgress] = useState(45);
   const [toastStack, setToastStack] = useState<number[]>([]); // últimos 2 event indexes
   const [searchText, setSearchText] = useState("");
+  // Brandon 2026-05-20 v12 audit F2: ref para IntersectionObserver del rAF.
+  const mockupRef = useRef<HTMLDivElement>(null);
 
   // Mouse tilt 3D
   const tiltX = useSpring(useMotionValue(0), { stiffness: 120, damping: 18 });
@@ -274,17 +276,42 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
   // bloquear el hilo principal en mobile Android de gama baja. El timestamp
   // de rAF es de alta resolución (performance.now); usamos módulo 3400ms para
   // sincronizar con el ciclo de eventos del phone mockup.
+  //
+  // Brandon 2026-05-20 v12 audit F2: IntersectionObserver guard — pausa el
+  // rAF loop cuando el hero está fuera del viewport. Antes corría 60fps
+  // continuo aunque el usuario hubiera scrolleado a footer → CPU + battery
+  // drain en mobile.
   useEffect(() => {
     if (reducedMotion) { setProgress(75); return; }
-    let rafId: number;
+    const node = mockupRef.current;
+    if (!node) return;
+    let rafId: number | null = null;
     const start = performance.now();
     const loop = (now: number) => {
       const elapsed = (now - start) % 3400;
       setProgress(Math.min(100, (elapsed / 3400) * 100));
       rafId = requestAnimationFrame(loop);
     };
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          // Hero visible → arrancar rAF (si no está)
+          if (rafId === null) rafId = requestAnimationFrame(loop);
+        } else {
+          // Hero fuera del viewport → pausar rAF
+          if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+          }
+        }
+      },
+      { threshold: 0.01 },
+    );
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, [reducedMotion]);
 
   // Auto-typing search
@@ -320,6 +347,7 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
 
   return (
     <div
+      ref={mockupRef}
       aria-hidden
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
