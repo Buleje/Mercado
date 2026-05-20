@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { BirthdayCouponsDB } from "@/lib/db/birthday-coupons.db";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -9,11 +9,9 @@ async function checkAndCreateBirthdayCoupons() {
   const day = now.getDate();
   const year = now.getFullYear();
 
-  // Find customers whose birthday month/day matches today
-  const allCustomers = await prisma.customer.findMany({
-    where: { birthday: { not: null } },
-    select: { phone: true, name: true, birthday: true, notifPromotions: true, tenantId: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a BirthdayCouponsDB.
+  // Cross-tenant intencional — cron de plataforma (ADR-082).
+  const allCustomers = await BirthdayCouponsDB.listBirthdayCandidates();
 
   const birthdayCustomers = allCustomers.filter((c) => {
     if (!c.birthday) return false;
@@ -26,36 +24,29 @@ async function checkAndCreateBirthdayCoupons() {
   for (const customer of birthdayCustomers) {
     const code = `CUMPLE-${customer.phone.slice(-4)}-${year}`;
 
-    // Skip if coupon already exists for this customer this year
-    const existing = await prisma.coupon.findFirst({ where: { code } });
-    if (existing) continue;
+    // Skip si el coupon ya existe para este customer este año
+    if (await BirthdayCouponsDB.couponExists(code)) continue;
 
-    // Create 10% birthday discount coupon, valid for 7 days
+    // Crear 10% birthday discount coupon, valido por 7 dias
     const expiresAt = new Date(now);
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    await prisma.coupon.create({
-      data: {
-        code,
-        description: `🎂 Feliz cumpleaños ${customer.name}! 10% de descuento`,
-        discountType: "percent",
-        discountValue: 10,
-        maxUses: 1,
-        active: true,
-        expiresAt,
-        tenantId: customer.tenantId,
-      },
+    await BirthdayCouponsDB.createBirthdayCoupon({
+      tenantId: customer.tenantId,
+      code,
+      customerName: customer.name,
+      expiresAt,
     });
 
-    // Send push notification (if customer opted in to promotions)
+    // Push notification si opted-in
     if (customer.notifPromotions !== false) {
       sendPushToPhone(customer.phone, {
         title: "🎂 ¡Feliz cumpleaños!",
         body: `${customer.name}, tienes un cupón de 10% con código ${code}. ¡Válido por 7 días!`,
         url: "/cuenta",
       }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        /* fire-and-forget per CLAUDE.md rule #7 */
+      });
     }
 
     created++;
