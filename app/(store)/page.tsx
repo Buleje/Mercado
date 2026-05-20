@@ -16,21 +16,24 @@ const LandingHero = dynamic(() => import("@/components/landing/LandingHero"), {
   ssr: true,
   loading: () => <div className="min-h-[600px] bg-[var(--surface-canvas)]" aria-hidden />,
 });
+// Brandon 2026-05-20: en Server Components Next 16 NO se permite `ssr: false`.
+// Mantenemos `ssr: true` (default) — dynamic igual aporta code-splitting del
+// chunk y permite paralelizar el compile. Los componentes pesados client-side
+// se hidratarán post-LCP de todos modos por React Server Components streaming.
 const ReviewsCarousel = dynamic(
   () => import("@/components/landing/LandingClientSections").then((m) => ({ default: m.ReviewsCarousel })),
-  { ssr: false, loading: () => <div className="min-h-[300px]" aria-hidden /> },
+  { loading: () => <div className="min-h-[300px]" aria-hidden /> },
 );
 const PopularCategoriesTiles = dynamic(
   () => import("@/components/landing/PopularCategoriesTiles"),
-  { ssr: true, loading: () => <div className="min-h-[400px] bg-[var(--surface-sunken)]" aria-hidden /> },
+  { loading: () => <div className="min-h-[400px] bg-[var(--surface-sunken)]" aria-hidden /> },
 );
 const ComoFuncionaSection = dynamic(
   () => import("@/components/landing/sections/ComoFuncionaSection"),
-  { ssr: true, loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
+  { loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
 );
 const StickyMobileCTA = dynamic(
   () => import("@/components/landing/StickyMobileCTA"),
-  { ssr: false },
 );
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
