@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { getTenantUsageSnapshot } from "@/lib/usage";
-import { prisma } from "@/lib/prisma";
+import { BillingUsageDB } from "@/lib/db/billing-usage.db";
 
 /**
  * GET /api/billing/usage
@@ -13,10 +13,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const tenant = await prisma.tenant.findFirst({
-      where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
-      select: { plan: true, trialEndsAt: true, slug: true },
-    });
+    const tenant = await BillingUsageDB.getTenantPlanFields(auth.tenantId);
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });

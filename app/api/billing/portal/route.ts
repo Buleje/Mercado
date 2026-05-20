@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { BillingPortalDB } from "@/lib/db/billing-portal.db";
 import { createBillingPortalSession } from "@/lib/stripe";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   const { tenantId } = auth;
 
-  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] } });
+  const tenant = await BillingPortalDB.getTenantStripeFields(tenantId);
   if (!tenant) return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
 
   if (!tenant.stripeCustomerId) {

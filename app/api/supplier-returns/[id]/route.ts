@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import {
+  ESTADOS,
+  getSupplierReturnById,
+  updateSupplierReturnEstado,
+  deleteSupplierReturn,
+  getSupplierPhone,
+} from "@/lib/db/supplier-returns-by-id.db";
 
 // Round 21 P0 (Security): const TENANT="main" hardcoded reemplazado por
 // auth.tenantId. PATCH/DELETE ahora respetan multi-tenant correctamente.
-const ESTADOS = ["PENDIENTE", "ENVIADA", "RESUELTA"] as const;
 
 /** Fire-and-forget WhatsApp al proveedor cuando se marca ENVIADA */
 function notifySupplierWhatsApp(
@@ -20,11 +25,11 @@ function notifySupplierWhatsApp(
   const apiToken = process.env.WHATSAPP_API_TOKEN;
   if (!apiUrl || !apiToken) return;
 
-  prisma.supplier.findUnique({ where: { id: proveedorId }, select: { phone: true } })
-    .then((supplier) => {
-      if (!supplier?.phone) return;
-      const phone = supplier.phone.replace(/\D/g, "");
-      const formattedPhone = phone.length === 9 ? `51${phone}` : phone;
+  getSupplierPhone(proveedorId)
+    .then((phone) => {
+      if (!phone) return;
+      const digits = phone.replace(/\D/g, "");
+      const formattedPhone = digits.length === 9 ? `51${digits}` : digits;
       const message =
         `🔄 *Buleje — Devolución enviada*\n\n` +
         `Estimado proveedor *${proveedorNombre}*,\n` +
@@ -37,9 +42,7 @@ function notifySupplierWhatsApp(
         body: JSON.stringify({ phone: formattedPhone, message }),
       }).catch((e) => logger.error("[supplier-returns] WhatsApp send error", { err: String(e) }));
     })
-    .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    .catch((err: unknown) => logger.warn("[supplier-returns] notifySupplierWhatsApp lookup failed", { err: String(err) }));
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -51,27 +54,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const body = await req.json();
 
-    const record = await prisma.supplierReturn.findFirst({
-      where: { id, tenantId: auth.tenantId },
-      include: { items: true },
-    });
+    const record = await getSupplierReturnById(auth.tenantId, id);
     if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     if (body.estado && !ESTADOS.includes(body.estado)) {
       return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
     }
 
-    const updateResult = await prisma.supplierReturn.updateMany({
-      where: { id, tenantId: auth.tenantId },
-      data: { ...(body.estado ? { estado: body.estado } : {}) },
-    });
-    if (updateResult.count === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!body.estado) {
+      return NextResponse.json({ error: "Estado requerido" }, { status: 400 });
     }
-    const updated = await prisma.supplierReturn.findFirst({
-      where: { id, tenantId: auth.tenantId },
-      include: { items: true },
-    });
+
+    const updated = await updateSupplierReturnEstado(auth.tenantId, id, body.estado);
     if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // Notificar al proveedor por WhatsApp cuando se marca como ENVIADA
@@ -98,10 +92,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
-    const result = await prisma.supplierReturn.deleteMany({
-      where: { id, tenantId: auth.tenantId },
-    });
-    if (result.count === 0) {
+    const deleted = await deleteSupplierReturn(auth.tenantId, id);
+    if (!deleted) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     return NextResponse.json({ ok: true });

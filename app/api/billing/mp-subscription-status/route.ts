@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { BillingMpSubscriptionStatusDB } from "@/lib/db/billing-mp-subscription-status.db";
 import { getMPSubscriptionStatus } from "@/lib/mercadopago";
 import { getPlanDef } from "@/lib/plans";
 import { logger } from "@/lib/logger";
@@ -31,18 +31,7 @@ export async function GET(req: NextRequest) {
   const { tenantId } = auth;
 
   // ── Tenant ───────────────────────────────────────────────
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-    select: {
-      id: true,
-      slug: true,
-      plan: true,
-      mpSubscriptionId: true,
-      mpPaymentMethod: true,
-      cancelAtPeriodEnd: true,
-      stripeCurrentPeriodEnd: true,
-    },
-  });
+  const tenant = await BillingMpSubscriptionStatusDB.getTenantMpFields(tenantId);
   if (!tenant) {
     return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
   }

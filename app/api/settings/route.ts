@@ -6,9 +6,15 @@ import { resolveTenantIdForRoute } from "@/lib/resolve-tenant";
 import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
-import { prisma } from "@/lib/prisma";
 import { invalidateByPrefix } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import {
+  resolveTenantSlugToId,
+  syncBrandingToTenant,
+  syncBrandingToStore,
+  syncStoreCover,
+  upsertStoreThemeJson,
+} from "@/lib/db/settings-tenant-sync.db";
 
 // [SECURITY] Defense-in-depth: validar formato slug antes de findUnique.
 const TENANT_SLUG_RE = /^[a-z0-9-]{2,40}$/i;
@@ -90,13 +96,8 @@ export async function PUT(req: NextRequest) {
       if (!TENANT_SLUG_RE.test(rawTenantId)) {
         return NextResponse.json({ error: "Invalid tenant identifier" }, { status: 400 });
       }
-      const t = await prisma.tenant
-        .findUnique({ where: { slug: rawTenantId }, select: { id: true } })
-        .catch((err) => {
-          logger.warn("[settings] tenant slug resolution failed", { slug: rawTenantId, error: String(err) });
-          return null;
-        });
-      if (t?.id) tenantId = t.id;
+      const resolvedId = await resolveTenantSlugToId(rawTenantId);
+      if (resolvedId) tenantId = resolvedId;
     }
 
     const body = await req.json() as Partial<DbSettings>;
@@ -113,11 +114,7 @@ export async function PUT(req: NextRequest) {
     if (body.storeTheme && Object.keys(body).length === 1) {
       try {
         const merged = { ...(current.storeTheme ?? {}), ...body.storeTheme };
-        await prisma.settings.upsert({
-          where: { tenantId },
-          create: { tenantId, storeThemeJson: JSON.stringify(merged) },
-          update: { storeThemeJson: JSON.stringify(merged) },
-        });
+        await upsertStoreThemeJson(tenantId, merged as Record<string, unknown>);
         // CRÍTICO: invalidar cache de SettingsDB (TTL 60s) — sino la storefront
         // sirve datos viejos hasta que expire. Bug detectado al testear que los
         // colores del customizer no se aplicaban en /t/[slug]/tienda.
@@ -267,14 +264,11 @@ export async function PUT(req: NextRequest) {
       body.primaryColor !== undefined ||
       body.secondaryColor !== undefined
     ) {
-      prisma.tenant.update({
-        where: { id: tenantId },
-        data: {
-          ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl || null }),
-          ...(body.businessName !== undefined && body.businessName && { name: body.businessName }),
-          ...(body.primaryColor !== undefined && body.primaryColor && { primaryColor: body.primaryColor }),
-          ...(body.secondaryColor !== undefined && body.secondaryColor && { secondaryColor: body.secondaryColor }),
-        },
+      syncBrandingToTenant(tenantId, {
+        logoUrl: body.logoUrl,
+        businessName: body.businessName,
+        primaryColor: body.primaryColor,
+        secondaryColor: body.secondaryColor,
       }).catch((err: unknown) => logger.warn("[settings] tenant sync skipped", { error: String(err) }));
     }
 
@@ -286,21 +280,18 @@ export async function PUT(req: NextRequest) {
       body.businessName !== undefined
     ) {
       // Update Store row (si existe) — el marketplace lee de aquí.
-      prisma.store.updateMany({
-        where: { tenantId },
-        data: {
-          ...(body.logoUrl !== undefined && { logo: body.logoUrl || null }),
-          ...(body.bannerUrl !== undefined && { banner: body.bannerUrl || null }),
-          ...(body.description !== undefined && { description: body.description || null }),
-          ...(body.businessName !== undefined && body.businessName && { name: body.businessName }),
-        },
+      syncBrandingToStore(tenantId, {
+        logoUrl: body.logoUrl,
+        bannerUrl: body.bannerUrl,
+        description: body.description,
+        businessName: body.businessName,
       }).catch((err: unknown) => logger.warn("[settings] store sync skipped", { error: String(err) }));
 
       // Store.cover via raw SQL — el campo existe en DB (ALTER TABLE) pero el
       // schema.prisma no se regenera (zona peligrosa). Patrón expand seguro:
       // columnas nullable nuevas no rompen clientes viejos.
       if (body.coverUrl !== undefined) {
-        prisma.$executeRaw`UPDATE "Store" SET "cover" = ${body.coverUrl || null} WHERE "tenantId" = ${tenantId}`
+        syncStoreCover(tenantId, body.coverUrl)
           .catch((err: unknown) => logger.warn("[settings] store cover sync skipped", { error: String(err) }));
       }
     }

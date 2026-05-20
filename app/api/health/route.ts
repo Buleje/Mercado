@@ -7,7 +7,7 @@
  * Returns 200 when all checks pass, 503 when any check is degraded.
  */
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { HealthDB } from "@/lib/db/health.db";
 import { withCircuitBreaker, getCircuitStatus } from "@/lib/circuit-breaker";
 import { logger } from "@/lib/logger";
 import * as Sentry from "@sentry/nextjs";
@@ -34,7 +34,7 @@ export async function GET() {
 
   try {
     const t = Date.now();
-    await withCircuitBreaker("prisma", () => prisma.$queryRaw`SELECT 1`);
+    await withCircuitBreaker("prisma", () => HealthDB.ping());
     dbLatencyMs = Date.now() - t;
   } catch (e) {
     dbStatus = "error";
