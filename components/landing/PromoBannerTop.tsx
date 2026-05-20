@@ -31,18 +31,20 @@ function dismiss(): void {
 }
 
 export default function PromoBannerTop() {
-  // SSR-safe: arrancamos visible, en mount verificamos cookie.
-  const [visible, setVisible] = useState(true);
+  // Q1 perf 2026-05-20: arrancamos OCULTO (mounted=false) y mostramos solo
+  // post-mount si NO hay cookie dismissed. Evita CLS −0.05-0.12 cuando el
+  // usuario que ya cerró el banner ve el flash de aparición/desaparición.
+  // Trade-off: usuarios first-time tienen ~10ms de "flash" del banner
+  // entrando — aceptable porque elimina layout shift visible.
+  const [mounted, setMounted] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (!cancelled && hasDismissed()) setVisible(false);
-    });
-    return () => { cancelled = true; };
+    setDismissed(hasDismissed());
+    setMounted(true);
   }, []);
 
-  if (!visible) return null;
+  if (!mounted || dismissed) return null;
 
   return (
     <div
@@ -80,7 +82,7 @@ export default function PromoBannerTop() {
         type="button"
         onClick={() => {
           dismiss();
-          setVisible(false);
+          setDismissed(true);
         }}
         aria-label="Cerrar banner promocional"
         className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"

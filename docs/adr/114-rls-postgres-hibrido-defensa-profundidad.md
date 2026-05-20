@@ -1,8 +1,33 @@
 # ADR-114 · RLS Postgres híbrido — defensa en profundidad multi-tenant
 
 **Fecha:** 2026-05-18
-**Estado:** Propuesto · pendiente implementación
+**Estado:** ✅ Aplicado a DB (2026-05-20) · ⏳ Pendiente integración app-level
 **Autores:** Brandon Buleje + audit profundo arquitectura (Sprint 2)
+
+## Estado actual (2026-05-20)
+
+Aplicado en Supabase prod (`sofkgguriggocouiuamx`) vía MCP:
+- 4 tablas con `ENABLE` + `FORCE ROW LEVEL SECURITY`: `Order`, `Customer`, `Sale`, `ActivityLog`
+- 4 policies `tenant_isolation_*` instaladas
+- Payment excluida (sin columna `tenantId` — TD-115)
+- Roles verificados: `app_user` (NO BYPASSRLS), `prisma_migrator` (BYPASSRLS)
+
+Tests funcionales (desde `app_user`):
+
+| Escenario | Order | Customer | Sale | ActivityLog |
+|---|---|---|---|---|
+| sin `app.tenant_id` | 0 | 0 | 0 | 0 |
+| tenant=`main` | 19 | 4 | 7 | 1158 |
+| tenant=`fake` | 0 | — | — | — |
+| `__system__` bypass | 61 | 19 | 19 | 1315 |
+
+⚠️ **Riesgo activo:** la app actualmente conecta con `DATABASE_URL=postgres` (BYPASSRLS).
+RLS funciona como red de seguridad latente. **NO cambiar a `app_user` en Vercel hasta**
+que todas las rutas estén migradas a `withRlsTenant(auth.tenantId)` — de lo contrario,
+todas las queries a las 4 tablas retornarán 0 rows en producción.
+
+Pendiente: sprint propio para migrar 880 endpoints a `withRlsTenant()` (TD-116).
+
 
 ## Contexto
 

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";
@@ -18,8 +17,11 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
-// ── Lazy below-fold ───────────────────────────────────────────────────────────
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
+// ── Footer: import directo. Audit Q1 2026-05-20 detectó que
+// `dynamic(..., { ssr: true })` no aporta lazy real (SSR igual incluye el bundle)
+// y `ssr: false` no es válido en Server Components (Next 16). Import estático
+// es más simple y mismo costo bundle.
+import Footer from "@/components/Footer";
 
 // ── Brandon mayo 14 2026 v2: home rediseñada B2C tipo Rappi ──────────────────
 // v2 cambios:
@@ -187,7 +189,12 @@ async function BulejeJsonLd() {
 }
 
 // ── 1. Hero Rappi-style — buscador centrado + tagline corto ──────────────────
-function RappiStyleHero() {
+// Q1 2026-05-20: async para consumir getMarketplaceStats (cached "use cache").
+// Renderiza stats reales debajo del search + trust-pill Yape/efectivo +
+// subtítulo VISIBLE en mobile (antes hidden sm:block — invisible al usuario
+// Pucallpa que no sabía que Buleje hace delivery con Yape).
+async function RappiStyleHero() {
+  const { storeCount, productCount } = await getMarketplaceStats();
   return (
     <section
       aria-label="Inicio"
@@ -231,9 +238,14 @@ function RappiStyleHero() {
         <h1 className="text-[clamp(2rem,8vw,5rem)] font-extrabold leading-[1.02] sm:leading-[0.96] tracking-[-0.03em] sm:tracking-[-0.04em] text-[var(--text-primary)] max-w-4xl mx-auto">
           ¿Qué se te <span className="italic font-serif text-[var(--accent)]">antoja hoy?</span>
         </h1>
-        <p className="hidden sm:block mt-4 sm:mt-5 max-w-2xl mx-auto text-base sm:text-xl text-[var(--text-secondary)] leading-[1.4]">
-          Bodegas, restaurantes, farmacias y más — todo de tus vecinos, con
-          delivery rápido. Pagás con Yape, Plin o efectivo.
+        {/* Q1 2026-05-20: subtítulo VISIBLE en mobile (era hidden sm:block).
+            Mobile-first: 1 línea corta con el value-prop. Desktop expande. */}
+        <p className="mt-3 sm:mt-5 max-w-2xl mx-auto text-sm sm:text-xl text-[var(--text-secondary)] leading-snug sm:leading-[1.4]">
+          <span className="sm:hidden">Pedí en 2 minutos. Pagás cuando llega.</span>
+          <span className="hidden sm:inline">
+            Bodegas, restaurantes, farmacias y más — todo de tus vecinos, con
+            delivery rápido. Pagás con Yape, Plin o efectivo.
+          </span>
         </p>
 
         {/* Form GET → /tiendas?q=... — sin JS, navegación nativa */}
@@ -268,11 +280,39 @@ function RappiStyleHero() {
           </div>
         </form>
 
+        {/* Q1 2026-05-20: Trust signals — stats reales + Yape pill.
+            UX audit detectó: el vecino nuevo no sabe que Buleje funciona
+            (sin reviews visibles ni números). storeCount/productCount
+            ya vienen cacheados de getMarketplaceStats. */}
+        {(storeCount > 0 || productCount > 0) && (
+          <div className="mt-4 sm:mt-5 flex items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
+            {storeCount > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="relative inline-flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-60 animate-ping" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                </span>
+                <span>{storeCount} tiendas activas</span>
+              </span>
+            )}
+            {productCount > 0 && (
+              <>
+                <span aria-hidden className="text-[var(--rule-base)]">·</span>
+                <span>{productCount.toLocaleString("es-PE")}+ productos</span>
+              </>
+            )}
+            <span aria-hidden className="text-[var(--rule-base)]">·</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[var(--accent)]">
+              Yape · Plin · efectivo
+            </span>
+          </div>
+        )}
+
         {/* Chips sub-CTA — atajos */}
         <div className="mt-5 sm:mt-7 flex items-center justify-center gap-2 flex-wrap">
           <Link
             href="/tiendas"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]/40 px-4 h-10 sm:h-11 text-sm font-extrabold text-[var(--text-primary)] transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white border-2 border-transparent hover:bg-[var(--accent)] hover:shadow-md px-5 h-10 sm:h-11 text-sm font-extrabold transition-all shadow-sm"
           >
             <Store className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Ver todas las tiendas
@@ -375,12 +415,11 @@ async function CategoriesGrid() {
                 {/* Imagen superadmin si existe, sino emoji fallback */}
                 <span
                   className="relative inline-flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-[var(--surface-canvas)] shrink-0 shadow-md ring-4 ring-[var(--accent)]/10 group-hover:scale-110 transition-transform overflow-hidden"
-                  aria-hidden
                 >
                   {c.imageUrl ? (
                     <Image
                       src={c.imageUrl}
-                      alt=""
+                      alt={`${c.label} en Pucallpa con delivery rápido`}
                       fill
                       sizes="(min-width: 640px) 112px, 80px"
                       className="object-cover"
@@ -424,12 +463,11 @@ async function CategoriesGrid() {
               >
                 <span
                   className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--accent-soft)]/60 overflow-hidden group-hover:scale-110 transition-transform shrink-0"
-                  aria-hidden
                 >
                   {c.imageUrl ? (
                     <Image
                       src={c.imageUrl}
-                      alt=""
+                      alt={`${c.label} con delivery en Pucallpa`}
                       width={64}
                       height={64}
                       className="object-cover w-full h-full"

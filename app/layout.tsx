@@ -305,8 +305,7 @@ export default function RootLayout({
             - pageshow persisted=true (bfcache restoration de Safari/iOS/FF)
             - navType=back_forward al mount (back-nav que cargó este documento)
             Externo porque el CSP bloquea inline scripts. */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/back-nav-refresh.js" />
+        <script src="/back-nav-refresh.js" defer />
       </head>
       <body className={`antialiased ${GeistSans.className}`}>
         {/* Skip-link WCAG 2.4.1 — primer tabulable del body (ADR-075 tokens DS). */}

@@ -153,6 +153,33 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 - Mayoría: reglas nuevas del React Compiler annotation mode + `ds-no-decorative-color-admin` (ADR-075) + `ds-no-direct-lucide-import`.
 - Esfuerzo estimado: 4-8h sprint dedicado. Probable estrategia: codemods + reglas selectivas.
 
+## Aplicadas 2026-05-20
+
+### [applied] 2026-05-20 — RLS Postgres híbrido (ADR-114)
+- Aplicado via Supabase MCP: Order, Customer, Sale, ActivityLog con FORCE ROW LEVEL SECURITY + 4 policies tenant_isolation_*.
+- Payment excluido (sin tenantId → TD-115).
+- Tests funcionales 4/4 OK (sin tenant → 0 rows · main → datos propios · __system__ → bypass).
+- ⚠️ DATABASE_URL Vercel SIGUE en postgres (BYPASSRLS). NO cambiar a app_user hasta migrar 880 endpoints a withRlsTenant() (TD-116).
+
+### [applied] 2026-05-20 — Suite tests verde (60→0 fallos)
+- Mocks marketplace + warehouse-transfers actualizados vs evolución de DB classes.
+- Commit 0639a39b · 332 files passed · 4426 tests passed.
+
+### [applied] 2026-05-20 — Q1 perf+SEO+UX (8/8 hechos)
+- defer en back-nav-refresh (LCP -20-40ms)
+- PromoBanner CLS fix (CLS -0.05-0.12)
+- Footer dynamic → import estático (next 16 incompat con ssr:false en server components)
+- alt="" reemplazado con descripciones SEO en 2 imágenes featured
+- _source.png 884KB movido fuera de public/
+- Stats reales debajo del search (X tiendas · Y+ productos · Yape Plin efectivo)
+- Subtítulo VISIBLE en mobile con copy "Pedí en 2 min. Pagás cuando llega"
+- CTA "Ver todas las tiendas" promovido a botón primario filled verde
+
+### [pending] TD-116 — migrar 880 endpoints a withRlsTenant()
+- Esfuerzo estimado: 5-8h sprint dedicado.
+- Bloqueante para cambiar DATABASE_URL a app_user en Vercel.
+- Sin este sprint, RLS es defensa latente (no activa).
+
 ## Deuda detectada 2026-05-20 (post Ola 1/2/3 deps upgrade)
 
 ### [pending] 60/4491 tests fallando — sprint dedicado de mocks
