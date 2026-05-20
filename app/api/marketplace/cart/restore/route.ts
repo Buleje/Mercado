@@ -1,12 +1,12 @@
 /**
- * @prisma-direct ok — operación con scope explícito por `auth.tenantId` o
- * por `tenantId` resuelto desde slug del URL antes de la query. Aislamiento
- * cross-tenant verificado manualmente. Migrar a clase `lib/db/*.db.ts`
- * dedicada cuando se centralice el patrón.
+ * Audit project-wide 2026-05-19: migrado a DB classes canonicas.
+ * - MarketplaceAbandonedCartsDB.findActiveByPhone para el lookup del cart
+ * - MarketplaceStoresDB.getIdBySlugAndTenant para el cross-tenant guard
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceAbandonedCartsDB } from "@/lib/db/marketplace/abandoned-carts.db";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace/stores.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -63,36 +63,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ items: [] });
     }
 
-    // Find the most recent non-recovered cart for this phone (max 24h old).
+    // Audit project-wide 2026-05-19: migrado a MarketplaceAbandonedCartsDB.findActiveByPhone.
     // MarketplaceAbandonedCart no tiene FK a Store; validamos post-fetch
-    // que el storeSlug pertenece al tenant del request.
-    const cart = await prisma.marketplaceAbandonedCart.findFirst({
-      where: {
-        customerPhone: phone,
-        recovered: false,
-        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-      },
-      orderBy: { updatedAt: "desc" },
-      select: {
-        storeSlug: true,
-        customerName: true,
-        itemsJson: true,
-        total: true,
-      },
-    });
-
-    if (cart) {
-      const owningStore = await prisma.store.findFirst({
-        where: { slug: cart.storeSlug, tenantId },
-        select: { id: true },
-      });
-      if (!owningStore) {
-        // Carrito pertenece a OTRO tenant → no devolver nada.
-        return NextResponse.json({ items: [] });
-      }
-    }
+    // que el storeSlug pertenece al tenant del request via MarketplaceStoresDB.
+    const cart = await MarketplaceAbandonedCartsDB.findActiveByPhone(phone, { maxAgeHours: 24 });
 
     if (!cart) {
+      return NextResponse.json({ items: [] });
+    }
+
+    const owningStore = await MarketplaceStoresDB.getIdBySlugAndTenant(tenantId, cart.storeSlug);
+    if (!owningStore) {
+      // Carrito pertenece a OTRO tenant → no devolver nada.
       return NextResponse.json({ items: [] });
     }
 

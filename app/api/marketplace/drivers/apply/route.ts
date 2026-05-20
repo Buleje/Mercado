@@ -1,12 +1,12 @@
 /**
- * @prisma-direct ok — operación con scope explícito por `tenantId` "main"
- * (single-tenant marketplace). Migrar a `lib/db/delivery.db.ts` cuando se
- * centralice el patrón.
+ * Audit project-wide 2026-05-19 — migrado a DB classes:
+ *   - DeliveryPartnersDB.upsertApplication para el KYC idempotente
+ *   - AdminNotificationsDB.create para la alerta al admin
  *
  * Cumplimiento legal:
- *   - Ley 29733 — recoge consentimiento explícito de tratamiento de datos.
- *   - DS 017-2009-MTC — valida licencia/SOAT vigentes para vehículos motorizados.
- *   - Edad mínima 18 años (Ley 27261 / Código del Niño y Adolescente).
+ *   - Ley 29733 — recoge consentimiento explicito de tratamiento de datos.
+ *   - DS 017-2009-MTC — valida licencia/SOAT vigentes para vehiculos motorizados.
+ *   - Edad minima 18 años (Ley 27261 / Codigo del Niño y Adolescente).
  *
  * Persistencia: KYC estructurado en `DeliveryPartner.notes` como JSON.
  * Idempotente por (phone, tenantId): re-aplicar actualiza datos.
@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { DeliveryPartnersDB, AdminNotificationsDB } from "@/lib/db/delivery-partners.db";
 import {
   DriverApplySchema,
   buildKycNotes,
@@ -42,69 +43,36 @@ export async function POST(req: NextRequest) {
     }
 
     const data = parsed.data;
-    const { prisma } = await import("@/lib/prisma");
 
     const phoneDigits = data.phone.replace(/\D/g, "");
     const kycNotes = buildKycNotes(data);
     const isMotor = MOTORIZED.includes(data.vehicleType);
 
-    // Idempotente por phone — re-aplicar refresca datos del KYC.
-    const existing = await prisma.deliveryPartner.findFirst({
-      where: { phone: phoneDigits, tenantId: "main" },
-      select: { id: true, isActive: true },
+    // Audit project-wide 2026-05-19: idempotente upsert via DB class.
+    const { partnerId } = await DeliveryPartnersDB.upsertApplication("main", phoneDigits, {
+      name: data.name,
+      email: data.email || null,
+      zone: data.zone,
+      vehicleType: data.vehicleType,
+      kycNotesJson: JSON.stringify(kycNotes),
     });
 
-    let partnerId: string;
-    if (existing) {
-      // No reactivar si ya estaba aprobado: actualizar datos pero conservar isActive.
-      await prisma.deliveryPartner.update({
-        where: { id: existing.id },
-        data: {
-          name: data.name,
-          email: data.email || null,
-          zone: data.zone,
-          vehicleType: data.vehicleType,
-          notes: JSON.stringify(kycNotes),
-        },
-      });
-      partnerId = existing.id;
-    } else {
-      const created = await prisma.deliveryPartner.create({
-        data: {
-          name: data.name,
-          phone: phoneDigits,
-          email: data.email || null,
-          zone: data.zone,
-          vehicleType: data.vehicleType,
-          isActive: false, // Pendiente de aprobación
-          rating: 5.0,
-          fee: 5.0,
-          tenantId: "main",
-          notes: JSON.stringify(kycNotes),
-        },
-        select: { id: true },
-      });
-      partnerId = created.id;
-    }
-
-    // Notification al admin (incluye campos KYC clave para revisión rápida).
+    // Notification al admin (incluye campos KYC clave para revision rapida).
     const summaryLines = [
       `${data.name} · DNI ${data.dni}`,
       `Tel ${phoneDigits} · ${data.zone}`,
-      `Vehículo: ${data.vehicleType}${isMotor ? ` · Placa ${data.vehiclePlate}` : ""}`,
+      `Vehiculo: ${data.vehicleType}${isMotor ? ` · Placa ${data.vehiclePlate}` : ""}`,
       isMotor ? `Licencia ${data.licenseCategory} ${data.licenseNumber} (vence ${data.licenseExpiresAt})` : "",
       isMotor ? `SOAT ${data.soatNumber} (vence ${data.soatExpiresAt})` : "",
       `Horario: ${data.availability}`,
     ].filter(Boolean);
 
-    await prisma.notification.create({
-      data: {
-        tenantId: "main",
-        title: "Nueva solicitud de repartidor",
-        body: summaryLines.join(" | "),
-        type: "DRIVER_APPLICATION",
-        severity: "MEDIUM",
-      },
+    await AdminNotificationsDB.create({
+      tenantId: "main",
+      title: "Nueva solicitud de repartidor",
+      body: summaryLines.join(" | "),
+      type: "DRIVER_APPLICATION",
+      severity: "MEDIUM",
     });
 
     // Audit log: por ahora persistimos consentimientos dentro del JSON `notes`

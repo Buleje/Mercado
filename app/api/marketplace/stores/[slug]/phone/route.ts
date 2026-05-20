@@ -1,7 +1,6 @@
-/* eslint-disable no-restricted-properties */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
+import { TenantStorePageDB } from "@/lib/db/tenant-store-page.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -35,15 +34,9 @@ export async function GET(
       return NextResponse.json({ phone: null });
     }
 
-    // tenantStorePage es un único modelo de configuración (1-1 con tenant).
-    // No requiere clase lib/db propia — query directo aceptable porque
-    // siempre va con scope `tenantId` (PK).
-    const page = await prisma.tenantStorePage.findUnique({
-      where: { tenantId: store.tenantId },
-      select: { whatsappPhone: true },
-    });
-
-    return NextResponse.json({ phone: page?.whatsappPhone ?? null });
+    // Audit project-wide 2026-05-19: migrado a TenantStorePageDB.
+    const phone = await TenantStorePageDB.getWhatsAppPhone(store.tenantId);
+    return NextResponse.json({ phone });
   } catch (err) {
     logger.warn("[marketplace/stores/phone] soft-fail", {
       slug,

@@ -120,4 +120,38 @@ export const MarketplaceAbandonedCartsDB = {
       logger.error("markReminderSent failed", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.markReminderSent" });
     }
   },
+  /**
+   * Lookup del cart abandonado no recuperado mas reciente para un phone
+   * (max N horas atras). Audit project-wide 2026-05-19 — migracion de
+   * marketplace/cart/restore. Retorna null si no hay cart vigente.
+   */
+  async findActiveByPhone(
+    customerPhone: string,
+    opts: { maxAgeHours?: number } = {},
+  ): Promise<{
+    storeSlug: string;
+    customerName: string;
+    itemsJson: string;
+    total: number;
+  } | null> {
+    const hours = opts.maxAgeHours ?? 24;
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+    const row = await prisma.marketplaceAbandonedCart.findFirst({
+      where: {
+        customerPhone,
+        recovered: false,
+        createdAt: { gte: since },
+      },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        storeSlug: true,
+        customerName: true,
+        itemsJson: true,
+        total: true,
+      },
+    });
+    if (!row) return null;
+    return { ...row, total: Number(row.total) };
+  },
+
 };
