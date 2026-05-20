@@ -153,6 +153,26 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 - Mayoría: reglas nuevas del React Compiler annotation mode + `ds-no-decorative-color-admin` (ADR-075) + `ds-no-direct-lucide-import`.
 - Esfuerzo estimado: 4-8h sprint dedicado. Probable estrategia: codemods + reglas selectivas.
 
+## Deuda detectada 2026-05-20 (post Ola 1/2/3 deps upgrade)
+
+### [pending] 60/4491 tests fallando — sprint dedicado de mocks
+- `npx vitest run` reporta 60 tests fallando (1.3% del total).
+- **NO causados por upgrade de deps**: `prisma.product.findMany` se llama desde `lib/db/marketplace/orders.db.ts:282` pero el mock del test (`__tests__/lib/db/marketplace-tier-discount.test.ts`) NO incluye `product.findMany`. Fue agregado en `lib/db/marketplace/orders.db.ts` (commit 7eeeb1d0 batch 5) sin actualizar el mock.
+- **Distribución de fallas:**
+  - 17× `Cannot read properties of undefined (reading '0')` — mock devuelve undefined
+  - 14× `Cannot read properties of undefined (reading 'findMany')` — modelo prisma faltante en mock
+  - 8× `MarketplaceOrdersDB.getMarketplaceById is not a function` — método renombrado, tests con nombre stale
+  - 8× `Cannot read properties of undefined (reading 'catch')` — promise chaining en mock undefined
+  - 4× `prisma.product.findMany is not a function` — mismo patrón
+  - ~9× misc assertions (cupones, stock, status codes)
+- **Tests afectados (sample):** `marketplace-tier-discount.test.ts`, `api-marketplace-products.test.ts`, `api-marketplace-slug.test.ts`, `notification-center.test.ts`, `advanced-search.test.tsx`.
+- **Estrategia sugerida:**
+  1. Crear helper `__tests__/helpers/prismaMock.ts` con TODOS los modelos × métodos comunes (findMany/findFirst/findUnique/create/update/updateMany/delete/count) devolviendo defaults razonables.
+  2. Reemplazar mocks ad-hoc por el helper.
+  3. Renombrar `getMarketplaceById` callsites en tests.
+- Esfuerzo estimado: 3-5h sprint dedicado.
+- **Bypass actual:** `SKIP_VITEST_GATE=1` documentado en commit b26becff.
+
 ---
 
 ## Skills sugeridos por compound-learning (auto, 2026-05-03)
