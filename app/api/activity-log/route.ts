@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -33,21 +33,14 @@ export async function GET(req: NextRequest) {
   const user = req.nextUrl.searchParams.get("user") ?? undefined;
   const action = req.nextUrl.searchParams.get("action") ?? undefined;
 
-  const rows = await prisma.activityLog.findMany({
-    where: {
-      tenantId: auth.tenantId,
-      ...(entity && { entity }),
-      ...(user && { user }),
-      ...(action && { action }),
-    },
-    orderBy: { createdAt: "desc" },
-    take: PAGE + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+  // Audit project-wide 2026-05-19: migrado a ActivityLogDB.listWithCursor.
+  const { items, nextCursor } = await ActivityLogDB.listWithCursor(auth.tenantId, {
+    entity,
+    user,
+    action,
+    limit: PAGE,
+    cursor,
   });
-
-  const hasMore = rows.length > PAGE;
-  const items = hasMore ? rows.slice(0, PAGE) : rows;
-  const nextCursor = hasMore ? items[items.length - 1].id : null;
 
   const entries: ActivityEntry[] = items.map((r) => ({
     id: r.id,
@@ -74,15 +67,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const row = await prisma.activityLog.create({
-    data: {
-      action: parsed.data.action,
-      entity: parsed.data.entity,
-      entityId: parsed.data.entityId ?? null,
-      detail: parsed.data.detail,
-      user: parsed.data.user,
-      tenantId: auth.tenantId,
-    },
+  // Audit project-wide 2026-05-19: migrado a ActivityLogDB.create.
+  const row = await ActivityLogDB.create(auth.tenantId, {
+    action: parsed.data.action,
+    entity: parsed.data.entity,
+    entityId: parsed.data.entityId,
+    detail: parsed.data.detail,
+    user: parsed.data.user,
   });
 
   const entry: ActivityEntry = {

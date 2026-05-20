@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { CustomersDB } from "@/lib/db/customers.db";
 import { normalizePhone } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-session";
@@ -53,17 +53,11 @@ export async function GET(req: NextRequest) {
   const auth = await authorizePhoneAccess(req, phone);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  // CRITICAL FIX 2026-05-11 (audit P0-1): Customer.phone es @unique GLOBAL
-  // (TD-040 fase 3 pendiente). findUnique({where:{phone}}) leía el primer
-  // customer con ese phone en cualquier tenant — leak de preferencias cross-tenant.
-  // Ahora findFirst con tenantId del autorizador (admin tenant o customer session).
-  const customer = await prisma.customer.findFirst({
-    where: { phone, tenantId: auth.tenantId },
-    select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
-  });
-
+  // CRITICAL FIX 2026-05-11 (audit P0-1): Customer.phone es @unique GLOBAL.
+  // El guard tenantId + phone vive dentro de CustomersDB.getPreferences.
+  // Audit project-wide 2026-05-19: migrado.
+  const customer = await CustomersDB.getPreferences(auth.tenantId, phone);
   if (!customer) return NextResponse.json({ error: "not found" }, { status: 404 });
-
   return NextResponse.json(customer);
 }
 
@@ -96,23 +90,13 @@ export async function PATCH(req: NextRequest) {
 
   // Round 15 M004: audit log de Customer prefs update con phone como actor.
   return runWithAuditContext(req, phone, async () => {
-    try {
-      // CRITICAL FIX 2026-05-11 (audit P0-1): updateMany con tenantId
-      // double-filter para evitar escritura cross-tenant via phone @unique.
-      const result = await prisma.customer.updateMany({
-        where: { phone, tenantId: auth.tenantId },
-        data,
-      });
-      if (result.count === 0) {
-        return NextResponse.json({ error: "customer not found" }, { status: 404 });
-      }
-      const updated = await prisma.customer.findFirst({
-        where: { phone, tenantId: auth.tenantId },
-        select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
-      });
-      return NextResponse.json(updated);
-    } catch {
+    // CRITICAL FIX 2026-05-11 (audit P0-1): el doble-filtro phone+tenantId
+    // vive dentro de CustomersDB.updatePreferences.
+    // Audit project-wide 2026-05-19: migrado.
+    const updated = await CustomersDB.updatePreferences(auth.tenantId, phone, data);
+    if (!updated) {
       return NextResponse.json({ error: "customer not found" }, { status: 404 });
     }
+    return NextResponse.json(updated);
   });
 }

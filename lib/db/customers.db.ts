@@ -208,6 +208,46 @@ export const CustomersDB = {
     if (!row) return null;
     return { name: row.name, totalSpent: Number(row.totalSpent) };
   },
+
+  /**
+   * Lee las preferencias de notificacion del customer (Ley 29733 consent).
+   * Audit project-wide 2026-05-19 — migracion de /api/customer-preferences.
+   */
+  async getPreferences(
+    tenantId: string,
+    phone: string,
+  ): Promise<{ notifOrderUpdates: boolean; notifPromotions: boolean; notifRestock: boolean } | null> {
+    if (!tenantId) throw new Error("CustomersDB.getPreferences: tenantId requerido");
+    const normalized = normalizePhone(phone);
+    return prisma.customer.findFirst({
+      where: { phone: normalized, tenantId },
+      select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
+    });
+  },
+
+  /**
+   * Actualiza preferencias de notif. updateMany con doble filtro (phone +
+   * tenantId) para evitar cross-tenant write (Customer.phone es @unique
+   * global, TD-040 fase 3 pendiente — CRITICAL FIX 2026-05-11 P0-1).
+   * Retorna las prefs actualizadas o null si no existia.
+   */
+  async updatePreferences(
+    tenantId: string,
+    phone: string,
+    data: Partial<{ notifOrderUpdates: boolean; notifPromotions: boolean; notifRestock: boolean }>,
+  ): Promise<{ notifOrderUpdates: boolean; notifPromotions: boolean; notifRestock: boolean } | null> {
+    if (!tenantId) throw new Error("CustomersDB.updatePreferences: tenantId requerido");
+    const normalized = normalizePhone(phone);
+    const result = await prisma.customer.updateMany({
+      where: { phone: normalized, tenantId },
+      data,
+    });
+    if (result.count === 0) return null;
+    return prisma.customer.findFirst({
+      where: { phone: normalized, tenantId },
+      select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
+    });
+  },
   async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
     const locs = (data.locations ?? []).map((l) => ({ id: l.id, location: l.location, reference: l.reference }));
     const row = await prisma.customer.upsert({

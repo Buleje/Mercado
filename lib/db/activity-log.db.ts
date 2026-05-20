@@ -107,4 +107,89 @@ export const ActivityLogDB = {
     ]);
     return { logs, total };
   },
+
+  /**
+   * Paginacion cursor-based (id) + filtros amplios. Devuelve hasta limit
+   * entradas + nextCursor para el siguiente fetch. Mas eficiente que
+   * offset cuando hay mucho audit log.
+   *
+   * Audit project-wide 2026-05-19 — migracion de /api/activity-log.
+   */
+  async listWithCursor(
+    tenantId: string,
+    opts: {
+      entity?: string;
+      user?: string;
+      action?: string;
+      limit?: number;
+      cursor?: string;
+    } = {},
+  ): Promise<{ items: ActivityLogPageEntry[]; nextCursor: string | null }> {
+    const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
+    const where: Record<string, unknown> = { tenantId };
+    if (opts.entity) where.entity = opts.entity;
+    if (opts.user) where.user = opts.user;
+    if (opts.action) where.action = opts.action;
+
+    const rows = await prisma.activityLog.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: limit + 1,
+      ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+      select: {
+        id: true,
+        action: true,
+        entity: true,
+        entityId: true,
+        detail: true,
+        user: true,
+        ipAddress: true,
+        userAgent: true,
+        tenantId: true,
+        createdAt: true,
+      },
+    });
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+    return { items, nextCursor };
+  },
+
+  /**
+   * Crea una entrada de audit log directamente (no via queue). Usado
+   * por endpoints que deben confirmar el insert antes de responder.
+   */
+  async create(
+    tenantId: string,
+    data: {
+      action: string;
+      entity: string;
+      entityId?: string | null;
+      detail: string;
+      user: string;
+    },
+  ): Promise<ActivityLogPageEntry> {
+    return prisma.activityLog.create({
+      data: {
+        action: data.action,
+        entity: data.entity,
+        entityId: data.entityId ?? null,
+        detail: data.detail,
+        user: data.user,
+        tenantId,
+      },
+      select: {
+        id: true,
+        action: true,
+        entity: true,
+        entityId: true,
+        detail: true,
+        user: true,
+        ipAddress: true,
+        userAgent: true,
+        tenantId: true,
+        createdAt: true,
+      },
+    });
+  },
 };
