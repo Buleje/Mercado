@@ -364,6 +364,91 @@ export const MarketplaceStoreProductsDB = {
   },
 
   /**
+   * List public storefront products for a store (paginated, cursor-based).
+   * Filtra solo isActive=true + scope storeId pre-resuelto del slug.
+   * Audit project-wide 2026-05-19 — migracion de marketplace/stores/[slug]/products.
+   */
+  async listForStorefront(
+    storeId: string,
+    opts: {
+      category?: string;
+      search?: string;
+      sort?: "price_asc" | "price_desc";
+      limit?: number;
+      cursor?: string;
+    } = {},
+  ): Promise<{
+    products: Array<{
+      id: number;
+      storeProductId: string;
+      name: string;
+      price: { toString(): string; toNumber?(): number };
+      minOrderQty: number | null;
+      image: string | null;
+      category: string;
+      unit: string;
+      stock: number | null;
+    }>;
+    nextCursor: string | null;
+  }> {
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 50));
+    const sortDir = opts.sort === "price_desc" ? ("desc" as const) : ("asc" as const);
+
+    const productFilter = {
+      ...(opts.category && { category: opts.category }),
+      ...(opts.search && { name: { contains: opts.search, mode: "insensitive" as const } }),
+    };
+
+    /* eslint-disable no-restricted-syntax -- query publica del marketplace,
+       scope por storeId pre-resuelto desde el slug (que ya filtra
+       isPublished:true en MarketplaceStoresDB.getBySlug). */
+    const raw = await prisma.storeProduct.findMany({
+      where: {
+        storeId,
+        isActive: true,
+        ...(Object.keys(productFilter).length > 0 && { product: productFilter }),
+      },
+      select: {
+        id: true,
+        retailPrice: true,
+        minOrderQty: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            category: true,
+            unit: true,
+            stock: true,
+          },
+        },
+      },
+      orderBy: [{ retailPrice: sortDir }, { id: "asc" }],
+      take: limit + 1,
+      ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+    });
+    /* eslint-enable no-restricted-syntax */
+
+    const hasMore = raw.length > limit;
+    const items = hasMore ? raw.slice(0, limit) : raw;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    const products = items.map((sp) => ({
+      id: sp.product.id,
+      storeProductId: sp.id,
+      name: sp.product.name,
+      price: sp.retailPrice,
+      minOrderQty: sp.minOrderQty,
+      image: sp.product.image,
+      category: sp.product.category,
+      unit: sp.product.unit,
+      stock: sp.product.stock,
+    }));
+
+    return { products, nextCursor };
+  },
+
+  /**
    * Bulk activa/desactiva N StoreProducts con guard cross-tenant
    * (matchea contra TODAS las tiendas del tenant via relacion).
    */
