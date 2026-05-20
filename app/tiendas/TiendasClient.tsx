@@ -945,32 +945,50 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           a deslogueados. */}
 
       {/* ── Filtros + Grid — directo, sin hero pesado.
-           Brandon, mayo 15 v3 2026: removidos eyebrow "Todas las tiendas"
-           y título "Filtrá y elegí" — el texto comercial persuasivo
-           ("Recomendadas para vos") aparece después del toolbar, justo
-           encima del listado, para mejor jerarquía. */}
-      {/* Brandon 2026-05-18 v3: pb-12 → pb-6 (mucho aire vacío entre el último
-          card y la siguiente sección). El listado ya tiene su propio padding
-          interno; antes dejaba ~96px de blanco. */}
+           Brandon 2026-05-20 v7: agregamos h1 SEO sutil al header de la
+           sección (audit detectó que post-remoción del hero la página
+           quedó sin h1, malo para Google). h1 + count dinámico + filtros
+           inline en una sola fila para que sea compacto y comercial. */}
       <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8 pb-6 sm:pb-8">
-        <div className="mb-2 sm:mb-3">
-          {!isTiendasOnly && (
-            <div className="mt-1">
-              <QuickFilterChips
-                activeChips={activeChips}
-                onToggle={handleChipToggle}
-                stores={stores as unknown as ReadonlyArray<{
-                  rating?: number;
-                  isOpenNow?: boolean;
-                  freeDelivery?: boolean;
-                  paymentMethods?: string[] | null;
-                  minimumOrder?: number | null;
-                  hours24h?: boolean;
-                  createdAt?: string | Date | null;
-                  hasOffers?: boolean;
-                }>}
-              />
+        {/* Header de la sección — h1 SEO + contador + chips de quick filter */}
+        <div className="mb-3 sm:mb-4">
+          <div className="flex items-end justify-between gap-3 flex-wrap mb-3">
+            <div className="min-w-0">
+              <h1 className="text-[clamp(1.5rem,5vw,2rem)] font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+                Tiendas en{" "}
+                <span className="text-[var(--accent)]">
+                  {customerCity ?? customerRegion ?? "Pucallpa"}
+                </span>
+              </h1>
+              {finalStores.length > 0 && (
+                <p className="mt-1 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)]">
+                  <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
+                    {finalStores.length}
+                  </span>{" "}
+                  {finalStores.length === 1 ? "tienda abierta" : "tiendas abiertas"}{" "}
+                  <span className="text-[var(--text-tertiary)]">·</span>{" "}
+                  <span className="font-semibold text-[var(--accent)]">
+                    entrega hoy
+                  </span>
+                </p>
+              )}
             </div>
+          </div>
+          {!isTiendasOnly && (
+            <QuickFilterChips
+              activeChips={activeChips}
+              onToggle={handleChipToggle}
+              stores={stores as unknown as ReadonlyArray<{
+                rating?: number;
+                isOpenNow?: boolean;
+                freeDelivery?: boolean;
+                paymentMethods?: string[] | null;
+                minimumOrder?: number | null;
+                hours24h?: boolean;
+                createdAt?: string | Date | null;
+                hasOffers?: boolean;
+              }>}
+            />
           )}
         </div>
 
@@ -985,11 +1003,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               acá al lado del eyebrow — entrada principal de filtrado, al
               inicio del flujo de búsqueda de tiendas. Si no hay subcategorías,
               el botón sigue visible con eyebrow "Refiná tu búsqueda". */}
-          <div className="flex items-center justify-between gap-3 mb-2.5">
-            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-              <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
-              {subcategories.length > 0 ? "Lo más pedido" : "Refiná tu búsqueda"}
-            </p>
+          {/* Brandon 2026-05-20 v7: eyebrow "LO MÁS PEDIDO / REFINÁ TU BÚSQUEDA"
+              eliminado — redundaba con el h1 + chips de subcategoría justo
+              debajo. El botón de filtros queda alineado a la derecha en el
+              mismo bloque que las chips. */}
+          <div className="flex items-center justify-end gap-3 mb-2.5">
             <MarketplaceFilters
               filters={productFilters}
               userCoords={userCoords}
@@ -1296,37 +1314,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               un toolbar separado para ellos. */}
         </div>
 
-        {/* ── Bloque comercial (Brandon mayo 15 v3) ──
-             Persuasivo, no técnico. Aparece entre el toolbar y el listado
-             para guiar al usuario y bajar la ansiedad de elección.
-             Conteo dinámico = social proof barato pero efectivo.
-             Brandon mayo 18 v2: titulos mas compactos en mobile para
-             priorizar las cards sobre el header. */}
-        <div className="mt-4 sm:mt-5 mb-3 sm:mb-4 flex items-end justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-              <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
-              recomendaciones
-            </p>
-            <h2 className="text-xl sm:text-3xl font-extrabold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
-              Recomendadas para vos
-            </h2>
-            <p className="mt-1 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
-              {finalStores.length > 0 ? (
-                <>
-                  <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
-                    {finalStores.length}
-                  </span>{" "}
-                  {finalStores.length === 1 ? "tienda" : "tiendas"} del barrio{" "}
-                  <span className="text-[var(--text-tertiary)]">·</span>{" "}
-                  <span className="font-semibold text-[var(--accent)]">entrega hoy</span>
-                </>
-              ) : (
-                <>Tiendas del barrio · entrega hoy</>
-              )}
-            </p>
-          </div>
-        </div>
+        {/* Brandon 2026-05-20 v7: el bloque "RECOMENDACIONES — Recomendadas
+            para vos · N tiendas del barrio · entrega hoy" se eliminó —
+            redundaba con el h1 + contador agregado al header de la sección
+            arriba. Pasar directo del subcategory chip + filtros al listado
+            mejora el time-to-product (menos scroll, menos lectura). */}
 
         {/* Listado de tiendas — vista mapa removida (Brandon 2026-05-18 v3). */}
         <MarketplaceStoresView
@@ -1352,64 +1344,12 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
       </section>
 
 
-      {/* ── Sumate a Buleje — slim banner (v3, mayo 2026).
-          v2 tenia 2 cards XL con stats que duplicaban /abrir-tienda y
-          /marketplace/repartidor. Comprimido a 1 banner horizontal con 2
-          CTAs lado a lado. La info detallada vive en sus paginas dedicadas.
-
-          Brandon mayo 2026: solo aparece cuando el superadmin selecciona
-          "Marketplace completo" en /superadmin/stores tab Navegación. En
-          modo "Solo Tiendas" (default) se oculta por completo. */}
-      {!isTiendasOnly && (
-      <section
-        aria-label="Sumate a Buleje"
-        className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
-      >
-        {/* Brandon 2026-05-18 v3: py-10/14 → py-7/10 compactando el CTA final
-            (era barra demasiado alta para un single CTA). */}
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-10">
-          <div className="rounded-3xl bg-linear-to-br from-[var(--text-primary)] to-[var(--text-primary)]/95 text-[var(--surface-canvas)] p-6 sm:p-8 lg:p-10 overflow-hidden relative">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[var(--accent)]/30 blur-3xl"
-            />
-            <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-10 items-center">
-              <div className="min-w-0">
-                <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
-                  <span aria-hidden className="inline-flex h-[3px] w-8 rounded-full bg-[var(--accent)]" />
-                  Sumate a Buleje
-                </p>
-                <h2 className="font-display text-2xl sm:text-3xl lg:text-[2.25rem] font-extrabold leading-tight tracking-tight">
-                  ¿Tenes una tienda o moto?{" "}
-                  <span className="text-[var(--accent)]">Trabaja con nosotros.</span>
-                </h2>
-                <p className="mt-2 text-sm sm:text-base text-white/70 max-w-xl leading-relaxed">
-                  Bodegueros: 0% comisión los primeros meses · Repartidores: cobras por pedido + 100% propinas.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                <Link
-                  href="/abrir-tienda"
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 h-12 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-lg shadow-[var(--accent)]/30"
-                >
-                  <Store className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                  Abrir mi tienda
-                  <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                </Link>
-                <Link
-                  href="/marketplace/repartidor"
-                  className="inline-flex items-center gap-2 rounded-full border-2 border-white/25 px-5 h-12 text-sm font-extrabold text-white hover:bg-white/10 transition-colors"
-                >
-                  <Bike className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                  Ser repartidor
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      )}
+      {/* Brandon 2026-05-20 v7: SECCIÓN "Sumate a Buleje" REMOVIDA de /tiendas.
+          Era una intrusión B2B (bodegueros/repartidores) en una página B2C
+          de compra — distraía al cliente del flujo "ver tienda → comprar".
+          Esos CTAs viven naturalmente en home (/), /negocios y /abrir-tienda.
+          El footer (BottomNav + Footer del chrome unificado) ya tiene links
+          a "Abre tu tienda" y "Para repartidores" para quien los necesite. */}
 
       {/* Footer vive en el layout `/tiendas/layout.tsx` (persistente). */}
     </div>
