@@ -60,16 +60,20 @@ import {
 //   - JoinUsSection rediseñada con paleta del proyecto (solo --accent + neutros)
 // ──────────────────────────────────────────────────────────────────────────────
 
+// Brandon 2026-05-20 v9 audit P1: home SEO con description 155c + og:site_name
+// explícito ("Buleje") + twitter card. Antes faltaba siteName → Facebook/
+// LinkedIn no podían armar el snippet con el sitio.
 export const metadata: Metadata = {
   title: "Pide lo que quieras, te lo llevamos",
   description:
-    "Compra en bodegas, restaurantes, farmacias y tiendas de tu zona con delivery rápido. Paga con Yape o efectivo. Miles de productos al alcance de tu mano en Buleje.",
+    "Bodegas, restaurantes y farmacias de Pucallpa con delivery rápido. Paga con Yape, Plin o efectivo. Tu marketplace local en la Amazonía peruana.",
   alternates: { canonical: "https://www.buleje.pe" },
   openGraph: {
     title: "Pide lo que quieras, te lo llevamos | Buleje",
     description:
       "Bodegas, restaurantes y farmacias con delivery rápido. Yape y efectivo.",
     url: "https://www.buleje.pe",
+    siteName: "Buleje",
     type: "website",
     locale: "es_PE",
     images: [
@@ -80,6 +84,13 @@ export const metadata: Metadata = {
         alt: "Buleje — Marketplace de Bodegas y Tiendas del Perú",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pide lo que quieras, te lo llevamos | Buleje",
+    description:
+      "Bodegas, restaurantes y farmacias con delivery rápido en Pucallpa. Yape y efectivo.",
+    images: ["/api/og"],
   },
 };
 

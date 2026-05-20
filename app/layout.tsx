@@ -151,8 +151,14 @@ export const metadata: Metadata = {
   },
 };
 
+// Brandon 2026-05-20 v9 audit P0: theme-color NO acepta `var(--accent)` —
+// los browsers no resuelven CSS vars en meta tags. La barra del browser
+// mobile quedaba sin color de marca. Hex literal del DS (light/dark mode).
 export const viewport: Viewport = {
-  themeColor: "var(--accent)",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#00B4A6" },
+    { media: "(prefers-color-scheme: dark)", color: "#34d4be" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

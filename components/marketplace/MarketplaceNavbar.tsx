@@ -466,12 +466,15 @@ export default function MarketplaceNavbar() {
                  En mobile vive dentro del input de búsqueda (mayo 15 2026). ── */}
             {/* Brandon 2026-05-20 v7: logo dinámico — en storefront muestra
                 el logo del negocio + nombre; en otras rutas el wordmark Buleje. */}
+            {/* Brandon 2026-05-20 v9 audit P1: logo va a "/" (home) — convención
+                UX universal. En storefront sigue siendo "/" pero también ofrecemos
+                volver al directorio /tiendas via breadcrumb interno. */}
             <Link
-              href="/tiendas"
+              href={storefront.logo ? "/tiendas" : "/"}
               aria-label={
                 storefront.logo
-                  ? `${storefront.name ?? "Tienda"} — Ir al directorio`
-                  : "Buleje — Ir al directorio de tiendas"
+                  ? `${storefront.name ?? "Tienda"} — Ver directorio`
+                  : "Buleje — Ir al inicio"
               }
               className="hidden md:flex items-center gap-2 shrink-0 text-[var(--accent)]"
             >
@@ -784,8 +787,8 @@ export default function MarketplaceNavbar() {
               >
                 <div className="relative flex items-center h-10 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1">
                   <Link
-                    href="/tiendas"
-                    aria-label={storefront.logo ? `${storefront.name ?? "Tienda"} — Ir al directorio` : "Buleje — Inicio"}
+                    href={storefront.logo ? "/tiendas" : "/"}
+                    aria-label={storefront.logo ? `${storefront.name ?? "Tienda"} — Ver directorio` : "Buleje — Inicio"}
                     className="shrink-0 inline-flex items-center"
                     onClick={(e) => {
                       e.currentTarget.blur();

@@ -8,8 +8,11 @@ import { SettingsDB } from "@/lib/db/settings.db";
 import { headers } from "next/headers";
 
 export default async function LocalBusinessJsonLd() {
-  let name = "Mi Tienda";
-  let description = "Tienda online con delivery a domicilio.";
+  // Brandon 2026-05-20 v9 audit P0: fallback "Mi Tienda" → "Buleje".
+  // Si SettingsDB falla en marketplace publico, mostrabamos "Mi Tienda"
+  // generico — perjudica branding en Google Knowledge Graph.
+  let name = "Buleje";
+  let description = "Marketplace de bodegas, restaurantes y tiendas con delivery en Pucallpa.";
   let phone = "";
   let address = "";
   let logo = "/brand/buleje-logo.png";

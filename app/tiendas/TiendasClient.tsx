@@ -965,12 +965,23 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         <div className="mb-3 sm:mb-4">
           <div className="flex items-end justify-between gap-3 flex-wrap mb-3">
             <div className="min-w-0">
+              {/* Brandon 2026-05-20 v9 audit P1 SEO: h1 SSR-estable siempre
+                  con "Pucallpa" (ciudad objetivo de SEO). La personalización
+                  por ciudad del cliente (Constitución/Yarinacocha/etc.) se
+                  muestra en un sub-texto con `client-only` para no afectar
+                  el crawl de Googlebot. */}
               <h1 className="text-[clamp(1.5rem,5vw,2rem)] font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
                 Tiendas en{" "}
-                <span className="text-[var(--accent)]">
-                  {customerCity ?? customerRegion ?? "Pucallpa"}
-                </span>
+                <span className="text-[var(--accent)]">Pucallpa</span>
               </h1>
+              {hasLocation && (customerCity || customerRegion) && (
+                <p className="mt-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  cerca de{" "}
+                  <span className="text-[var(--accent)]">
+                    {customerCity ?? customerRegion}
+                  </span>
+                </p>
+              )}
               {finalStores.length > 0 && (
                 <p className="mt-1 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)]">
                   <span className="font-extrabold text-[var(--text-primary)] tabular-nums">

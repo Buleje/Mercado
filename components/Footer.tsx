@@ -331,8 +331,12 @@ export default function Footer() {
               </h3>
               <ul className="space-y-2.5">
                 <li><a href="/about" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Nosotros</a></li>
-                <li><a href="/abrir-tienda" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Abrir mi tienda</a></li>
-                <li><a href="/repartidores" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Para repartidores</a></li>
+                {/* Brandon 2026-05-20 v9 audit P0: unifica URLs con el body
+                    (antes footer apuntaba a /abrir-tienda + /repartidores
+                    mientras body usaba /negocios + /marketplace/repartidor —
+                    2 rutas distintas para la misma intención). */}
+                <li><a href="/negocios" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Abrir mi tienda</a></li>
+                <li><a href="/marketplace/repartidor" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Para repartidores</a></li>
                 <li><a href="/terminos" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Términos</a></li>
                 <li><a href="/privacidad" className="text-white/75 hover:text-white text-sm font-semibold transition-colors">Privacidad</a></li>
               </ul>
@@ -584,7 +588,12 @@ export default function Footer() {
 
             {/* Copyright + legal — 1 línea */}
             <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:text-sm text-white/60 tabular-nums">
-              <span className="font-bold text-white/80">© {year} {storeTheme?.name || platformName}</span>
+              {/* Brandon 2026-05-20 v9 audit P0: storeTheme.name venía como
+                  "Bodega Buleje Test" del tenant resuelto por fallback en
+                  rutas marketplace publicas (/, /tiendas, /negocios,
+                  /marketplace/[slug]). Forzamos "Buleje" para que el
+                  copyright nunca filtre el nombre del tenant interno. */}
+              <span className="font-bold text-white/80">© {year} Buleje</span>
               <span aria-hidden className="text-emerald-400/40">·</span>
               <span className="hidden sm:inline">Hecho con cariño en {platformCity}</span>
               <span aria-hidden className="hidden sm:inline text-emerald-400/40">·</span>
