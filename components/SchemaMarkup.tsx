@@ -185,22 +185,13 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     },
   };
 
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "Buleje",
-    alternateName: "Tienda Virtual de Abarrotes",
-    url: "https://www.buleje.pe",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate:
-          "https://www.buleje.pe/buscar?q={search_term_string}",
-      },
-      "query-input": "required name=search_term_string",
-    },
-  };
+  // Brandon 2026-05-20 v10 audit P0: websiteSchema removido.
+  // El audit detecto que home tenia DOS WebSite JSON-LD identicos:
+  // uno aqui (target /buscar?q=) y otro en app/(store)/page.tsx
+  // (BulejeJsonLd, target /tiendas?q=). Google ignora uno o produce
+  // sitelinks searchbox indefinido. Mantenemos solo el de page.tsx
+  // (mas rico — incluye description). Este wrapper sigue inyectando
+  // LocalBusiness + Organization + BreadcrumbList + Navigation.
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -215,24 +206,28 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     ],
   };
 
+  // Brandon 2026-05-20 v10 audit P2: URLs reales del navbar — antes
+  // tenia "/tienda" (sin 's', no existe), "/#ofertas" (anchor a sección
+  // inexistente), "/#preguntas" (idem). Reemplazadas por las rutas
+  // realmente navegables del menu principal.
   const navigationSchema = {
     "@context": "https://schema.org",
     "@type": "SiteNavigationElement",
     name: [
       "Inicio",
-      "Tienda",
-      "Categorías",
-      "Ofertas del día",
-      "Preguntas frecuentes",
-      "Contacto",
+      "Tiendas",
+      "Negocios",
+      "Abrir tu tienda",
+      "Ofertas",
+      "Ayuda",
     ],
     url: [
       "https://www.buleje.pe",
-      "https://www.buleje.pe/tienda",
-      "https://www.buleje.pe/tienda#categorias",
-      "https://www.buleje.pe/#ofertas",
-      "https://www.buleje.pe/#preguntas",
-      "https://www.buleje.pe/#contacto",
+      "https://www.buleje.pe/tiendas",
+      "https://www.buleje.pe/negocios",
+      "https://www.buleje.pe/abrir-tienda",
+      "https://www.buleje.pe/marketplace/ofertas",
+      "https://www.buleje.pe/ayuda",
     ],
   };
 
@@ -248,12 +243,6 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(organizationSchema),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(websiteSchema),
         }}
       />
       <script

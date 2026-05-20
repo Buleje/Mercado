@@ -264,7 +264,12 @@ export default function RootLayout({
         <Suspense>
           <BrandRuntimeOverrides />
         </Suspense>
-        <Suspense fallback={<SchemaMarkup />}>
+        {/* Brandon 2026-05-20 v10 audit P0: fallback era <SchemaMarkup />
+            (sin stats); cuando llegaba el async <CachedSchemaMarkup />,
+            ambos se incluían en el HTML stream — DUPLICACIÓN de JSON-LD
+            (WebSite, BreadcrumbList, SiteNavigationElement aparecían 2x).
+            Ahora fallback=null: el slot queda vacío hasta que el real llegue. */}
+        <Suspense fallback={null}>
           <CachedSchemaMarkup />
         </Suspense>
         
