@@ -262,7 +262,20 @@ const COLOR_PRESETS: Array<{ id: string; label: string; from: string; to: string
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Brandon 2026-05-20 v13 audit superadmin responsive: el editor canvas
+// (3090 LOC, herramientas tipo Photoshop) no es viable en mobile/tablet.
+// DesktopOnlyGate detecta viewport <1024px y muestra warning UX claro.
+import DesktopOnlyGate from "@/components/superadmin/banners/DesktopOnlyGate";
+
 export default function SuperadminBannersPage() {
+  return (
+    <DesktopOnlyGate>
+      <SuperadminBannersPageInner />
+    </DesktopOnlyGate>
+  );
+}
+
+function SuperadminBannersPageInner() {
   const [data, setData] = useState<Record<Slot, Banner[]> | null>(null);
   const [activeSlot, setActiveSlot] = useState<Slot>("explorar");
   const [loading, setLoading] = useState(true);
