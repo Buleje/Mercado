@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { RecetasDB } from "@/lib/db/recetas.db";
+import { ProductsDB } from "@/lib/db/products.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const IngredienteSchema = z.object({
@@ -56,12 +56,10 @@ export async function POST(req: NextRequest) {
     // productoId de ingredientes (y el productoId final si existe) pertenecen
     // al tenant. Sin esto, un admin de tenant A creaba receta con productoId
     // de tenant B, y al producir leakaba/decrementaba stock ajeno.
+    // Audit project-wide 2026-05-19: migrado a ProductsDB.countOwnedByIds.
     const productIds = parsed.data.ingredientes.map((i) => i.productoId);
     if (parsed.data.productoId) productIds.push(parsed.data.productoId);
-    // eslint-disable-next-line no-restricted-properties -- ownership check scoped por tenantId obligatorio. Refactor a ProductsDB.countOwned pendiente.
-    const ownedCount = await prisma.product.count({
-      where: { id: { in: productIds }, tenantId: auth.tenantId, deletedAt: null },
-    });
+    const ownedCount = await ProductsDB.countOwnedByIds(auth.tenantId, productIds);
     if (ownedCount !== new Set(productIds).size) {
       return NextResponse.json(
         { error: "Uno o más productos no fueron encontrados en tu inventario" },

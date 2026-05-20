@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prismaForTenant } from "@/lib/tenant";
-import { prisma } from "@/lib/prisma";
+import { prismaForTenant, findTenantByIdOrSlug } from "@/lib/tenant";
 import { getPlanDef, getPlanLimits } from "@/lib/plans";
 
 // GET /api/plan — returns current tenant plan + usage stats
@@ -12,8 +11,8 @@ export async function GET(req: NextRequest) {
   const { tenantId } = auth;
   const db = prismaForTenant(tenantId);
 
-  // Fetch tenant metadata
-  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] } });
+  // Fetch tenant metadata — audit 2026-05-19: migrado a findTenantByIdOrSlug (cacheado).
+  const tenant = await findTenantByIdOrSlug(tenantId);
   const plan = tenant?.plan ?? "free";
   const planDef = getPlanDef(plan);
   const limits = getPlanLimits(plan);

@@ -155,6 +155,19 @@ export const ProductsDB = {
     const p = await prisma.product.findFirst({ where: { id, tenantId } });
     return p ? mapProduct(p) : null;
   },
+  /**
+   * Cuenta cuantos de los productIds dados pertenecen al tenant
+   * (active + deletedAt:null). Util para ownership checks bulk
+   * (ej. recetas que referencian multiples productos).
+   *
+   * Audit project-wide 2026-05-19 — migracion de /api/recetas.
+   */
+  async countOwnedByIds(tenantId: string, ids: number[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    return prisma.product.count({
+      where: { id: { in: ids }, tenantId, deletedAt: null },
+    });
+  },
   async upsert(product: DbProduct): Promise<DbProduct> {
     const d = {
       name: product.name, category: product.category, price: product.price,

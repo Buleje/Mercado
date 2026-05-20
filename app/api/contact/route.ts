@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { SupportTicketsDB } from "@/lib/db/support-tickets.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const ContactSchema = z.object({
@@ -21,18 +22,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { prisma } = await import("@/lib/prisma");
-
-    // Store as a support ticket for the platform
-    await prisma.supportTicket.create({
-      data: {
-        tenantId: "main",
-        subject: `Contacto web: ${parsed.data.name}`,
-        message: `Nombre: ${parsed.data.name}\nTelefono: ${parsed.data.phone}\nEmail: ${parsed.data.email || "No proporcionado"}\n\nMensaje:\n${parsed.data.message}`,
-        status: "open",
-        priority: "medium",
-        createdBy: parsed.data.phone,
-      },
+    // Audit project-wide 2026-05-19: migrado a SupportTicketsDB.
+    await SupportTicketsDB.create({
+      tenantId: "main",
+      subject: `Contacto web: ${parsed.data.name}`,
+      message: `Nombre: ${parsed.data.name}\nTelefono: ${parsed.data.phone}\nEmail: ${parsed.data.email || "No proporcionado"}\n\nMensaje:\n${parsed.data.message}`,
+      createdBy: parsed.data.phone,
     });
 
     return NextResponse.json({ success: true, message: "Mensaje recibido" });
