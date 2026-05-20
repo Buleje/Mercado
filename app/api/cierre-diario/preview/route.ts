@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { CierreDiarioPreviewDB } from "@/lib/db/cierre-diario-preview.db";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
 
     const fecha = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, "0")}-${String(localNow.getDate()).padStart(2, "0")}`;
 
+    // Audit project-wide 2026-05-19: migrado a CierreDiarioPreviewDB.
     // Run all queries in parallel — use allSettled so one failure doesn't block others
     const [
       ventasResult,
@@ -30,64 +31,17 @@ export async function GET(req: NextRequest) {
       fiadosVencidosResult,
       stockAlertasResult,
     ] = await Promise.allSettled([
-      // Query 1: Ventas del día (aggregate)
-      prisma.sale.aggregate({
-        where: { tenantId, createdAt: { gte: startOfDay, lt: endOfDay } },
-        _sum: { total: true },
-        _count: true,
-        _avg: { total: true },
-      }),
-
-      // Query 2: Ventas detalle para mejor hora y efectivo
-      prisma.sale.findMany({
-        where: { tenantId, createdAt: { gte: startOfDay, lt: endOfDay } },
-        select: { createdAt: true, total: true, payment: true },
-      }),
-
-      // Query 3: Producto más vendido
-      prisma.saleItem.groupBy({
-        by: ["productId"],
-        where: { sale: { tenantId, createdAt: { gte: startOfDay, lt: endOfDay } } },
-        _sum: { quantity: true },
-        orderBy: { _sum: { quantity: "desc" } },
-        take: 1,
-      }),
-
-      // Query 4: Fiados cobrados hoy
-      prisma.fiadoCuota.aggregate({
-        where: {
-          fiado: { tenantId },
-          pagadoEn: { gte: startOfDay, lt: endOfDay },
-        },
-        _sum: { monto: true },
-      }).catch(() => ({ _sum: { monto: null } })),
-
-      // Query 5: Fiados nuevos hoy
-      prisma.fiado.aggregate({
-        where: { tenantId, createdAt: { gte: startOfDay, lt: endOfDay } },
-        _sum: { total: true },
-      }).catch(() => ({ _sum: { total: null } })),
-
-      // Query 6: Fiados vencidos
-      prisma.fiado.count({
-        where: { tenantId, status: "VENCIDO" },
-      }).catch(() => 0),
-
-      // Query 7: Stock bajo (stock <= stockMin, or stock <= 5 if no stockMin)
-      prisma.product.findMany({
-        where: {
-          tenantId,
-          active: true,
-          deletedAt: null,
-          stock: { not: null },
-          OR: [
-            { stockMin: { not: null }, stock: { lte: 5 } },
-            { stockMin: null, stock: { lte: 5 } },
-          ],
-        },
-        select: { name: true, stock: true, stockMin: true },
-        take: 20,
-      }),
+      CierreDiarioPreviewDB.aggregateSalesInRange(tenantId, startOfDay, endOfDay),
+      CierreDiarioPreviewDB.listSalesInRange(tenantId, startOfDay, endOfDay),
+      CierreDiarioPreviewDB.topProductInRange(tenantId, startOfDay, endOfDay),
+      CierreDiarioPreviewDB.aggregateFiadoCuotasPaid(tenantId, startOfDay, endOfDay).catch(
+        () => ({ _sum: { monto: null } }),
+      ),
+      CierreDiarioPreviewDB.aggregateNewFiados(tenantId, startOfDay, endOfDay).catch(
+        () => ({ _sum: { total: null } }),
+      ),
+      CierreDiarioPreviewDB.countOverdueFiados(tenantId).catch(() => 0),
+      CierreDiarioPreviewDB.listLowStockProducts(tenantId, 20),
     ]);
 
     // Extract results safely
@@ -147,10 +101,7 @@ export async function GET(req: NextRequest) {
     if (productoTopRaw.length > 0) {
       const topProductId = productoTopRaw[0].productId;
       // SECURITY 2026-05-05 (audit cross-tenant): defensive tenantId scope.
-      const topProduct = await prisma.product.findFirst({
-        where: { id: topProductId, tenantId },
-        select: { name: true },
-      });
+      const topProduct = await CierreDiarioPreviewDB.findProductName(tenantId, topProductId);
       const qty = productoTopRaw[0]._sum?.quantity ?? 0;
       productoTop = topProduct ? `${topProduct.name} (${qty} und)` : null;
     }

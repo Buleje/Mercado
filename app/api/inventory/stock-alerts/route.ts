@@ -1,7 +1,6 @@
-/* eslint-disable no-restricted-properties -- deuda existente: agregaciones cross-table de Product/SaleItem/Batch. Tenant-scoped via auth.tenantId. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { InventoryStockAlertsDB } from "@/lib/db/inventory-stock-alerts.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -18,51 +17,18 @@ export async function GET(req: NextRequest) {
     sevenDaysAhead.setDate(sevenDaysAhead.getDate() + 7);
     const today = new Date();
 
+    // Audit project-wide 2026-05-19: migrado a InventoryStockAlertsDB.
     // 1+2+4 run in parallel — they share no input dependency.
     // 3 (sinMovimiento) depends on allActiveProducts so stays sequential after.
     const [sinStockProducts, allActiveProducts, porVencerBatches] = await Promise.all([
-      // 1. SIN STOCK: products with stock = 0
-      prisma.product.findMany({
-        where: { tenantId, active: true, deletedAt: null, stock: 0 },
-        select: { id: true, name: true, category: true },
-        orderBy: { name: "asc" },
-        take: 100,
-      }),
-      // 2. STOCK CRÍTICO + base para sinMovimiento
-      prisma.product.findMany({
-        where: { tenantId, active: true, deletedAt: null, stock: { gt: 0 } },
-        select: { id: true, name: true, stock: true, stockMin: true, category: true },
-        orderBy: { name: "asc" },
-      }),
-      // 4. POR VENCER — independent of 1 and 2
-      prisma.batch.findMany({
-        where: {
-          tenantId,
-          expiryDate: { lte: sevenDaysAhead, gte: today },
-          quantity: { gt: 0 },
-        },
-        select: {
-          id: true,
-          productName: true,
-          lote: true,
-          expiryDate: true,
-          quantity: true,
-          productId: true,
-        },
-        orderBy: { expiryDate: "asc" },
-        take: 100,
-      }),
+      InventoryStockAlertsDB.listOutOfStockProducts(tenantId, 100),
+      InventoryStockAlertsDB.listActiveProductsWithStock(tenantId),
+      InventoryStockAlertsDB.listExpiringBatches(tenantId, today, sevenDaysAhead, 100),
     ]);
 
     // Get last sale date for each sin-stock product
     const sinStockIds = sinStockProducts.map(p => p.id);
-    const lastSales = sinStockIds.length > 0
-      ? await prisma.saleItem.findMany({
-          where: { productId: { in: sinStockIds } },
-          select: { productId: true, sale: { select: { createdAt: true } } },
-          orderBy: { sale: { createdAt: "desc" } },
-        })
-      : [];
+    const lastSales = await InventoryStockAlertsDB.lastSalesForProducts(tenantId, sinStockIds);
 
     const lastSaleMap = new Map<number, Date>();
     for (const s of lastSales) {
@@ -93,16 +59,11 @@ export async function GET(req: NextRequest) {
     const productsWithStock = allActiveProducts.filter(p => (p.stock ?? 0) > 0);
     const productIdsWithStock = productsWithStock.map(p => p.id);
 
-    const recentSaleItems = productIdsWithStock.length > 0
-      ? await prisma.saleItem.findMany({
-          where: {
-            productId: { in: productIdsWithStock },
-            sale: { createdAt: { gte: thirtyDaysAgo }, tenantId },
-          },
-          select: { productId: true },
-          distinct: ["productId"],
-        })
-      : [];
+    const recentSaleItems = await InventoryStockAlertsDB.recentSoldProductIds(
+      tenantId,
+      productIdsWithStock,
+      thirtyDaysAgo,
+    );
 
     const recentSoldIds = new Set(recentSaleItems.map(s => s.productId));
 
@@ -111,21 +72,10 @@ export async function GET(req: NextRequest) {
       .filter(p => !recentSoldIds.has(p.id))
       .map(p => p.id);
 
-    const staleProducts = staleProductIds.length > 0
-      ? await prisma.product.findMany({
-          where: { id: { in: staleProductIds } },
-          select: { id: true, name: true, stock: true, costPrice: true, category: true },
-        })
-      : [];
+    const staleProducts = await InventoryStockAlertsDB.productsWithCost(tenantId, staleProductIds);
 
     // Get last sale dates for stale products
-    const staleSaleItems = staleProductIds.length > 0
-      ? await prisma.saleItem.findMany({
-          where: { productId: { in: staleProductIds } },
-          select: { productId: true, sale: { select: { createdAt: true } } },
-          orderBy: { sale: { createdAt: "desc" } },
-        })
-      : [];
+    const staleSaleItems = await InventoryStockAlertsDB.lastSalesForProducts(tenantId, staleProductIds);
 
     const staleLastSaleMap = new Map<number, Date>();
     for (const s of staleSaleItems) {

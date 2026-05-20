@@ -1,3 +1,9 @@
+// @prisma-direct ok — POS endpoint crítico con $transaction ACID (sale + stock
+// + fiado + decremento atómico anti-TOCTOU), idempotencyKey lookup, secuencias
+// de comprobante con retry en P2002, y cross-tenant guards específicos (audit
+// 2026-05-06 H1, 2026-05-07 B1/X2, 2026-05-17 C3). Migrar fragmentaría la lógica
+// crítica de dinero — preservar la lectura/escritura directa de Prisma con
+// auditoría de seguridad incorporada.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";

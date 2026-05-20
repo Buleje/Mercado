@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { LoyaltyMetricsDB } from "@/lib/db/loyalty-metrics.db";
 
 /**
  * GET /api/loyalty/metrics
@@ -17,72 +17,32 @@ export async function GET(req: NextRequest) {
 
   try {
     const tenantId = auth.tenantId;
+    // Audit project-wide 2026-05-19: migrado a LoyaltyMetricsDB.
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    // Tier distribution
-    const tierGroups = await prisma.customer.groupBy({
-      by: ["loyaltyTier"],
-      where: { tenantId },
-      _count: { phone: true },
-      _sum: { loyaltyPoints: true },
-    });
+    const [
+      tierGroups,
+      activeMembers,
+      totalCustomers,
+      earned,
+      redeemed,
+      topCustomers,
+      totalPointsAgg,
+    ] = await Promise.all([
+      LoyaltyMetricsDB.tierDistribution(tenantId),
+      LoyaltyMetricsDB.countActiveMembers(tenantId),
+      LoyaltyMetricsDB.countTotalCustomers(tenantId),
+      LoyaltyMetricsDB.aggregateEarnedSince(tenantId, thirtyDaysAgo),
+      LoyaltyMetricsDB.aggregateRedeemedSince(tenantId, thirtyDaysAgo),
+      LoyaltyMetricsDB.topCustomers(tenantId, 10),
+      LoyaltyMetricsDB.totalPointsAggregate(tenantId),
+    ]);
 
     const tierDistribution = tierGroups.map((g) => ({
       tier: g.loyaltyTier ?? "bronce",
       customers: g._count.phone,
       totalPoints: g._sum.loyaltyPoints ?? 0,
     }));
-
-    // Total customers with points > 0
-    const activeMembers = await prisma.customer.count({
-      where: { tenantId, loyaltyPoints: { gt: 0 } },
-    });
-
-    const totalCustomers = await prisma.customer.count({
-      where: { tenantId },
-    });
-
-    // Points issued vs redeemed (from LoyaltyTransaction)
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-    const earned = await prisma.loyaltyTransaction.aggregate({
-      where: {
-        tenantId,
-        amount: { gt: 0 },
-        createdAt: { gte: thirtyDaysAgo },
-      },
-      _sum: { amount: true },
-      _count: true,
-    });
-
-    const redeemed = await prisma.loyaltyTransaction.aggregate({
-      where: {
-        tenantId,
-        amount: { lt: 0 },
-        createdAt: { gte: thirtyDaysAgo },
-      },
-      _sum: { amount: true },
-      _count: true,
-    });
-
-    // Top 10 customers by loyalty points
-    const topCustomers = await prisma.customer.findMany({
-      where: { tenantId, loyaltyPoints: { gt: 0 } },
-      select: {
-        phone: true,
-        name: true,
-        loyaltyPoints: true,
-        loyaltyTier: true,
-        totalSpent: true,
-      },
-      orderBy: { loyaltyPoints: "desc" },
-      take: 10,
-    });
-
-    // Total points in the system
-    const totalPointsAgg = await prisma.customer.aggregate({
-      where: { tenantId },
-      _sum: { loyaltyPoints: true },
-    });
 
     return NextResponse.json({
       summary: {
