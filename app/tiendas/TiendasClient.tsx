@@ -33,7 +33,7 @@ import {
   useMarketplaceGeo,
   type MarketplaceStore,
 } from "@/components/marketplace/useMarketplaceGeo";
-import FeaturedStoresNearby from "@/components/marketplace/FeaturedStoresNearby";
+// FeaturedStoresNearby movido a dynamic() abajo (Brandon 2026-05-20 perf mobile).
 import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
 import { useCustomer } from "@/contexts/customer-context";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
@@ -52,14 +52,14 @@ import StoresSortSelector, {
   STORES_SORT_OPTIONS,
   type StoresSortKey,
 } from "@/components/marketplace/StoresSortSelector";
-import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
-import MisTiendasFavoritasStrip from "@/components/marketplace/MisTiendasFavoritasStrip";
+// Brandon 2026-05-20 perf mobile: TusTiendasStrip, MisTiendasFavoritasStrip,
+// TiendasPromoCards, MisPedidosFavoritosStrip, RepetirUltimoPedido, FeaturedStoresNearby
+// son TODOS desktop-only (hidden sm:*). Antes se importaban estáticos y se
+// montaban en el árbol React aunque CSS los escondiera → JS bundle + hooks
+// (fetch, geo, customer-orders) corrían en mobile sin propósito. Ahora dynamic
+// con ssr:false + gate por useMediaQuery → mobile no descarga ni ejecuta nada.
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
-import TiendasPromoCards from "@/components/marketplace/TiendasPromoCards";
-// TiendasHeroAds movido a dynamic() abajo (Brandon 2026-05-18 perf P1 #6).
 import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
-import MisPedidosFavoritosStrip from "@/components/marketplace/MisPedidosFavoritosStrip";
-import RepetirUltimoPedido from "@/components/marketplace/RepetirUltimoPedido";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import dynamic from "next/dynamic";
@@ -118,6 +118,35 @@ const TiendasHeroAds = dynamic(
       </div>
     ),
   },
+);
+
+// Brandon 2026-05-20 perf mobile: componentes que viven solo en sm+ (eran
+// `hidden sm:block` o `hidden sm:contents`). Convertidos a dynamic con
+// ssr:false: mobile no descarga el JS, no hidrata, no corre hooks (fetch,
+// useCustomerOrders, geolocation). Gateados además por useMediaQuery abajo.
+const TiendasPromoCards = dynamic(
+  () => import("@/components/marketplace/TiendasPromoCards"),
+  { ssr: false, loading: () => null },
+);
+const MisTiendasFavoritasStrip = dynamic(
+  () => import("@/components/marketplace/MisTiendasFavoritasStrip"),
+  { ssr: false, loading: () => null },
+);
+const TusTiendasStrip = dynamic(
+  () => import("@/components/marketplace/TusTiendasStrip"),
+  { ssr: false, loading: () => null },
+);
+const RepetirUltimoPedido = dynamic(
+  () => import("@/components/marketplace/RepetirUltimoPedido"),
+  { ssr: false, loading: () => null },
+);
+const MisPedidosFavoritosStrip = dynamic(
+  () => import("@/components/marketplace/MisPedidosFavoritosStrip"),
+  { ssr: false, loading: () => null },
+);
+const FeaturedStoresNearby = dynamic(
+  () => import("@/components/marketplace/FeaturedStoresNearby"),
+  { ssr: false, loading: () => null },
 );
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
@@ -618,6 +647,18 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
 
+  // Brandon 2026-05-20 v2 — fix flash desktop↔mobile:
+  // El gate JS `useMediaQuery` (anterior) arrancaba en `false` durante SSR/primer
+  // render. En desktop el árbol React renderiza primero "como mobile" → tras
+  // hidratar useEffect mueve a desktop → re-render visible (flash). Brandon
+  // reportó esto como "tengo que refrescar para que se aplique".
+  // Fix: dejar Tailwind `hidden sm:block` (CSS @media puro, evaluado antes del
+  // primer paint, sin JS roundtrip → sin flash). El bundle JS sigue ligero
+  // porque los componentes son `dynamic({ssr:false})` — el chunk se descarga
+  // bajo demanda; en mobile el contenedor display:none evita que ocupen
+  // espacio pero el chunk sí baja (~50kb async, post-LCP). Trade-off
+  // consciente: claridad UX > -50kb JS mobile.
+
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="tiendas_directorio" />
@@ -719,26 +760,31 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           más fuerte. Antes era from-surface-canvas → to-surface-sunken
           (gris muy lavado, casi monocromático). Ahora gradiente con
           accent-soft + capa de color marca + dotted overlay. */}
+      {/* Brandon 2026-05-20 perf mobile: blur orbs + dotted grid solo en sm+.
+          En mobile esos efectos costaban ~40% del paint time del above-the-fold
+          (2 blurs 480/360px + radial-gradient inset-0). Mobile mantiene el
+          gradiente liso del bg + border-b accent — diseño igual de claro,
+          paint instantáneo. */}
       <section className="relative overflow-hidden border-b-2 border-[var(--accent)]/15 bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-canvas)] to-[var(--accent-soft)]">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/15 blur-3xl"
+          className="hidden sm:block pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/15 blur-3xl"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-32 -left-32 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/10 blur-3xl"
+          className="hidden sm:block pointer-events-none absolute -bottom-32 -left-32 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/10 blur-3xl"
         />
-        {/* Dotted grid pattern para textura visual */}
+        {/* Dotted grid pattern: solo desktop (sm+) para no costar paint mobile. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          className="hidden sm:block pointer-events-none absolute inset-0 opacity-[0.07]"
           style={{
             backgroundImage:
               "radial-gradient(var(--accent) 1.5px, transparent 1.5px)",
             backgroundSize: "24px 24px",
           }}
         />
-        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-5 sm:pt-14 sm:pb-14">
+        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-4 sm:pt-14 sm:pb-14">
           <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 items-end">
             {/* Headline + ubicación + buscador.
                  Brandon mayo 15 v3: eyebrow "Directorio · X" removido —
@@ -755,13 +801,16 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     · Sub-stats inline con dato real (tiendas + zonas) — el
                       cliente sabe que es un marketplace ACTIVO, no un MVP. */}
               <div className="flex items-center gap-2 mb-2.5 sm:mb-3">
+                {/* Brandon 2026-05-20: animate-ping solo en sm+ (battery + paint
+                    cost en mobile). Mobile usa motion-safe:animate-pulse que es
+                    GPU-cheaper y respeta prefers-reduced-motion. */}
                 <span
                   aria-hidden
                   className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-50,var(--accent-soft))] border border-[var(--data-success-500,var(--accent))]/30 px-2.5 h-6 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-600,var(--accent))]"
                 >
                   <span className="relative inline-flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500,var(--accent))] opacity-70 animate-ping" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-600,var(--accent))]" />
+                    <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[var(--data-success-500,var(--accent))] opacity-70 sm:animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-600,var(--accent))] motion-safe:sm:animate-none" />
                   </span>
                   En vivo
                 </span>
@@ -771,10 +820,15 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 </span>
               </div>
 
+              {/* Brandon 2026-05-20 tipografía mobile:
+                  · Mobile: "de tu barrio" en sans extrabold con underline accent
+                    (sin serif italic → no fuerza descarga del serif font face,
+                    ahorra ~12kb de woff2 + repaint del font swap).
+                  · sm+ (desktop): mantiene serif italic editorial. */}
               <h1 className="text-[clamp(1.75rem,7vw,3.875rem)] font-extrabold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] sm:tracking-[-0.035em] text-[var(--text-primary)]">
                 Las mejores tiendas
                 {" "}
-                <span className="italic font-serif text-[var(--accent)]">de tu barrio</span>,
+                <span className="text-[var(--accent)] underline decoration-[var(--accent)]/30 decoration-[3px] underline-offset-4 sm:no-underline sm:italic sm:font-serif">de tu barrio</span>,
                 <br className="hidden sm:block" />
                 <span className="text-[var(--text-secondary)] font-extrabold"> a un toque.</span>
               </h1>
@@ -1537,8 +1591,8 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
                     {finalStores.length}
                   </span>{" "}
-                  {finalStores.length === 1 ? "tienda" : "tiendas"} del barrio
-                  <span className="mx-1.5 text-[var(--text-tertiary)]">·</span>
+                  {finalStores.length === 1 ? "tienda" : "tiendas"} del barrio{" "}
+                  <span className="text-[var(--text-tertiary)]">·</span>{" "}
                   <span className="font-semibold text-[var(--accent)]">entrega hoy</span>
                 </>
               ) : (

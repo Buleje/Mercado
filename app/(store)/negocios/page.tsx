@@ -47,28 +47,48 @@ const HomePlansToggle = dynamic(
 // + OG para reflejar la nueva URL. La versión anterior de /negocios
 // (ERP-focused con POS, SUNAT, inventario) fue reemplazada — ese
 // posicionamiento ahora vive en /abrir-tienda.
+// Brandon 2026-05-20 SEO audit fixes:
+// · Title 40 chars → 56 chars con keywords B2B alta intención
+//   ("software bodega", "POS bodega Perú")
+// · Description 177 chars → 148 (dentro de 70-155, prioriza hook urgencia)
+// · Twitter card agregada explícita (antes ausente)
+// · El template del root "%s | Buleje" agrega sufijo automáticamente
 export const metadata: Metadata = {
-  title: "Para negocios — Abrí tu tienda en Buleje",
+  title: "Software para bodega y tienda en Perú | POS, ventas y delivery",
   description:
-    "Vendé sin comisión los primeros 90 días. Tu bodega online en 5 minutos. Yape, efectivo, delivery propio. Soporte WhatsApp 24/7. Sé de los primeros 10 negocios del Plan Fundador.",
+    "Vendé sin comisión 90 días. Tu bodega online en 5 minutos con Yape, POS y delivery. Sé de los primeros 10 del Plan Fundador en Pucallpa.",
   alternates: {
     canonical: "https://www.buleje.pe/negocios",
   },
+  robots: {
+    index: true,
+    follow: true,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+  },
   openGraph: {
-    title: "Para negocios — Abrí tu tienda en Buleje",
+    title: "Software para bodega y tienda en Perú",
     description:
-      "Vendé sin comisión los primeros 90 días. Tu bodega online en 5 minutos.",
+      "Vendé sin comisión 90 días. Tu bodega online en 5 minutos.",
     url: "https://www.buleje.pe/negocios",
     type: "website",
     locale: "es_PE",
+    siteName: "Buleje",
     images: [
       {
         url: "/api/og",
         width: 1200,
         height: 630,
-        alt: "Buleje para Negocios — Marketplace para Bodegas y Tiendas",
+        alt: "Buleje para Negocios — Software para bodegas y tiendas en Perú",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Software para bodega y tienda en Perú",
+    description:
+      "Vendé sin comisión 90 días. Tu bodega online en 5 minutos con Yape, POS y delivery.",
+    images: ["/api/og"],
   },
 };
 

@@ -81,7 +81,7 @@ const nextConfig: NextConfig = {
     // eliminating /_next/image 404s caused by dev server not being able to reach external hosts
     unoptimized: process.env.NODE_ENV === "development",
     formats: ["image/avif", "image/webp"],
-    qualities: [70, 75, 92],
+    qualities: [65, 70, 75, 92],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "http", hostname: "images.unsplash.com" },

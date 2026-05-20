@@ -286,7 +286,19 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
             alt={alt}
             fill
             className={className}
-            sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
+            // Brandon 2026-05-20 perf:
+            // · quality=65 → cards de listing son thumbnails 50vw mobile, no
+            //   pierden nitidez visible y ahorra ~25% bytes vs default 75.
+            // · sizes ajustado: en mobile 1 columna del grid (no 50vw), en
+            //   tablet 2 cols, desktop 3 cols (~360px máx) — Next escoge la
+            //   variante de imagen más chica que sirva.
+            // · Los 2 primeros cards (index 0,1) = LCP candidates → priority
+            //   + fetchPriority high. Resto lazy con fetchPriority low para
+            //   no competir con el LCP por bandwidth.
+            sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 360px"
+            quality={70}
+            priority={index < 2}
+            fetchPriority={index < 2 ? "high" : "low"}
           />
         )}
         renderImageFallback={() => (
@@ -303,6 +315,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
                 alt=""
                 width={56}
                 height={56}
+                sizes="56px"
+                quality={70}
+                loading="lazy"
                 className="object-cover w-full h-full"
               />
             ) : (

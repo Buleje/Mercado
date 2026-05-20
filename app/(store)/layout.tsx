@@ -47,16 +47,25 @@ export async function generateMetadata(): Promise<Metadata> {
     // `%s | Buleje` del root layout no se concatene. Para sub-páginas que
     // usen este layout sin definir su propio title, `default: { absolute }`
     // hace que muestren solo el nombre del comercio sin sufijo Buleje.
+    //
+    // Brandon 2026-05-20 SEO fix: cuando NO es tenant context (rutas comunes
+    // como /, /tiendas, /negocios servidas desde el dominio principal), el
+    // template tenía `%s | ${name}` donde `name` era el primer tenant ("Bodega
+    // Buleje Test"). Eso causaba títulos en home y /negocios tipo
+    // "Foo | Bodega Buleje Test" en lugar del marketing "Foo | Buleje".
+    // Ahora forzamos el suffix "Buleje" para no-tenants — la marca pública.
     const titleStr = `${name} | ${slogan}`;
     return {
       title: ctx.isTenant
         ? { absolute: titleStr }
-        : { default: titleStr, template: `%s | ${name}` },
+        : { default: titleStr, template: `%s | Buleje` },
       description: desc,
       openGraph: {
         type:        "website",
         locale:      "es_PE",
-        siteName:    name,
+        // SEO fix 2026-05-20: en rutas no-tenant el siteName debe ser "Buleje"
+        // (marca pública), no el nombre del primer tenant resuelto por fallback.
+        siteName:    ctx.isTenant ? name : "Buleje",
         title:       titleStr,
         description: desc,
         ...(logo && { images: [{ url: logo, width: 1200, height: 630, alt: name }] }),
