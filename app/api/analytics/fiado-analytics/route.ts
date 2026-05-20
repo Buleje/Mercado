@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsFiadoDB } from "@/lib/db/analytics-fiado.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -14,47 +14,17 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const tenantFilter = { tenantId: auth.tenantId };
+    // Audit project-wide 2026-05-19: migrado a AnalyticsFiadoDB.
+    const twelveMonthsAgo = new Date(now);
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-    // Fetch all fiado data
     const [activeFiados, cobradoEsteMes, allFiadosForTrend] = await Promise.allSettled([
-      // Active fiados with customer info
-      prisma.fiado.findMany({
-        where: { ...tenantFilter, status: "ACTIVO" },
-        select: {
-          id: true,
-          saldo: true,
-          total: true,
-          fechaVence: true,
-          createdAt: true,
-          customer: { select: { name: true, phone: true } },
-        },
-      }),
-      // Fiado cuotas pagadas este mes
-      prisma.fiadoCuota.aggregate({
-        where: {
-          pagadoEn: { gte: thisMonthStart },
-          fiado: { ...tenantFilter },
-        },
-        _sum: { monto: true },
-      }),
-      // All fiados for 12-month trend (created or updated in last 12 months)
+      AnalyticsFiadoDB.getActiveFiadosWithCustomer(auth.tenantId),
+      AnalyticsFiadoDB.aggregateCuotasPaidSince(auth.tenantId, thisMonthStart),
       (async () => {
-        const twelveMonthsAgo = new Date(now);
-        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
         const [newFiados, paidCuotas] = await Promise.all([
-          prisma.fiado.findMany({
-            where: { ...tenantFilter, createdAt: { gte: twelveMonthsAgo } },
-            select: { total: true, createdAt: true },
-          }),
-          prisma.fiadoCuota.findMany({
-            where: {
-              pagadoEn: { not: null, gte: twelveMonthsAgo },
-              fiado: { ...tenantFilter },
-            },
-            select: { monto: true, pagadoEn: true },
-          }),
+          AnalyticsFiadoDB.getNewFiadosInRange(auth.tenantId, twelveMonthsAgo),
+          AnalyticsFiadoDB.getPaidCuotasInRange(auth.tenantId, twelveMonthsAgo),
         ]);
         return { newFiados, paidCuotas };
       })(),
