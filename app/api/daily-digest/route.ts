@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { OrdersDB } from "@/lib/db/orders.db";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { sendDailyDigestEmail, sendDailyDigestWhatsApp } from "@/lib/mailer-digest";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { toNumOrZero } from "@/lib/decimal-utils";
@@ -43,10 +44,8 @@ async function buildDigestData(): Promise<DigestData> {
     day: "numeric",
   });
 
-  const orders = await prisma.order.findMany({
-    where: { createdAt: { gte: startUTC, lt: endUTC } },
-    include: { items: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a OrdersDB.listAllInDateRange (cross-tenant).
+  const orders = await OrdersDB.listAllInDateRange(startUTC, endUTC);
 
   const delivered = orders.filter(o => o.status === "entregado").length;
   const cancelled = orders.filter(o => o.status === "cancelado").length;
@@ -148,10 +147,9 @@ async function sendDigest() {
   let tenantsBriefed = 0;
   let tenantsTotal = 0;
   try {
-    const activeTenants = await prisma.tenant.findMany({
-      where: { active: true },
-      select: { id: true },
-    });
+    // Audit project-wide 2026-05-19: migrado a TenantsDB.listActiveIds.
+    const activeTenantIds = await TenantsDB.listActiveIds();
+    const activeTenants = activeTenantIds.map((id) => ({ id }));
     tenantsTotal = activeTenants.length;
 
     if (tenantsTotal > 0) {

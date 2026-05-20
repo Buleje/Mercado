@@ -701,6 +701,25 @@ export const OrdersDB = {
   },
 
   /**
+   * Lista ordenes (con items) de un rango de fechas. Variante CROSS-TENANT
+   * para crons de plataforma (daily-digest). Caller debe filtrar por
+   * tenantId si necesita scope.
+   *
+   * @cross-tenant intentional — cron platform-wide (ADR-082).
+   * Audit project-wide 2026-05-19 — migracion de /api/daily-digest.
+   */
+  async listAllInDateRange(
+    from: Date,
+    to: Date,
+  ): Promise<Array<DbOrder>> {
+    const rows = await prisma.order.findMany({
+      where: { createdAt: { gte: from, lt: to } },
+      include: { items: true },
+    });
+    return rows.map(mapOrder);
+  },
+
+  /**
    * Items para guia de remision (name, quantity, unit, productId).
    * Guard cross-tenant via order.tenantId nested.
    *
