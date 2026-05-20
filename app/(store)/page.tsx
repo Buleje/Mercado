@@ -205,17 +205,22 @@ async function RappiStyleHero() {
       aria-label="Inicio"
       className="relative overflow-hidden border-b-2 border-[var(--accent)]/15 bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-canvas)] to-[var(--accent-soft)]"
     >
+      {/* Brandon 2026-05-20 v8: orbs decorativos y dotted grid solo en sm+
+          (mobile pintaba 2 blurs grandes + radial-gradient inset-0 = ~40%
+          del paint time del above-the-fold). Mobile mantiene el gradiente
+          liso del bg + border-b accent — diseño igual de claro, paint
+          instantáneo. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/15 blur-3xl"
+        className="hidden sm:block pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/15 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-32 -left-32 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/10 blur-3xl"
+        className="hidden sm:block pointer-events-none absolute -bottom-32 -left-32 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/10 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        className="hidden sm:block pointer-events-none absolute inset-0 opacity-[0.07]"
         style={{
           backgroundImage:
             "radial-gradient(var(--accent) 1.5px, transparent 1.5px)",
@@ -223,14 +228,18 @@ async function RappiStyleHero() {
         }}
       />
 
-      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-10 sm:pb-16 text-center">
+      {/* Brandon 2026-05-20 v8: hero mobile mas profesional —
+          · padding pt-12→pt-8 sm:pt-20 (mas compacto, igual sentido aire desktop)
+          · animate-ping gated a sm+ (mobile evita re-paint GPU)
+          · `pointer-events-none` en blur overlays para no bloquear scroll */}
+      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-20 pb-8 sm:pb-16 text-center">
         <p className="inline-flex items-center gap-2 mb-3 sm:mb-5 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
           <span
             aria-hidden
             className="inline-block h-[3px] w-8 sm:w-10 rounded-full bg-[var(--accent)]"
           />
           <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
+            <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 sm:animate-ping" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
           </span>
           Pedí online en Pucallpa
@@ -253,12 +262,16 @@ async function RappiStyleHero() {
           </span>
         </p>
 
-        {/* Form GET → /tiendas?q=... — sin JS, navegación nativa */}
+        {/* Form GET → /tiendas?q=... — sin JS, navegación nativa.
+            Brandon 2026-05-20 v8: oculto en mobile (md:block). El cliente
+            ya tiene un search pill en el navbar arriba — duplicarlo aquí en
+            mobile saturaba el viewport y el hero no se sentía profesional.
+            En desktop sí se muestra porque el hero es protagonista visual. */}
         <form
           role="search"
           action="/tiendas"
           method="get"
-          className="mt-6 sm:mt-8 max-w-2xl mx-auto"
+          className="hidden md:block mt-6 sm:mt-8 max-w-2xl mx-auto"
         >
           <div className="group relative">
             <Search

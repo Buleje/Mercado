@@ -157,13 +157,17 @@ export default function BulejeAssistantChat() {
 
   return (
     <>
-      {/* FAB — botón flotante */}
+      {/* FAB — botón flotante.
+          Brandon 2026-05-20 v8: `hidden md:inline-flex` — en mobile compite
+          con el BottomNav fijo + sticky cart bar. En mobile el cliente ya
+          tiene chat por WhatsApp en el menú, no necesita un 3er botón
+          flotante encima. Desktop sí lo mantiene (más real-estate). */}
       {!open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Abrir asistente Buleje"
-          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-3 shadow-lg hover:bg-[var(--accent)] transition-colors active:scale-[0.98]"
+          className="hidden md:inline-flex fixed bottom-6 right-6 z-40 items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-3 shadow-lg hover:bg-[var(--accent)] transition-colors active:scale-[0.98]"
         >
           <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />
           <span className="text-sm font-bold">Buleje IA</span>
