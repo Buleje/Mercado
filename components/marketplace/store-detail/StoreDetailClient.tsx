@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -284,12 +285,18 @@ export default function StoreDetailClient({
           >
             <span className="h-9 w-9 shrink-0 rounded-full overflow-hidden bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center ring-2 ring-white/10">
               {store.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                // Brandon 2026-05-20 v8 audit P0 CLS: <img> raw + loading=lazy
+                // arriba del slim sticky bar (above-fold mobile) generaba CLS
+                // al cargar tarde sobre el banner. Ahora next/image con eager
+                // + dimensions explícitas → reserva el espacio + carga prioritaria.
+                <Image
                   src={store.logo}
                   alt=""
+                  width={36}
+                  height={36}
+                  sizes="36px"
                   className="h-full w-full object-cover"
-                  loading="lazy"
+                  priority
                 />
               ) : (
                 <span className="text-sm font-black text-white">

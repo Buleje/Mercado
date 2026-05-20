@@ -79,7 +79,10 @@ export function MetaPixel() {
 
   return (
     <>
-      <Script id="meta-pixel" strategy="afterInteractive">
+      {/* Brandon 2026-05-20 v8 audit perf P1: afterInteractive → lazyOnload.
+          fbevents.js pesa ~90KB y competía con LCP en mobile. lazyOnload
+          espera al evento `load` del browser → no bloquea recursos críticos. */}
+      <Script id="meta-pixel" strategy="lazyOnload">
         {`
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?

@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 // SearchAutocomplete + MarketplaceStoresView declarados como dynamic() abajo
 // (después del `import dynamic from "next/dynamic"`) para reducir initial
 // bundle y permitir streaming del listing.
+import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
 import { deriveActiveZones } from "@/lib/marketplace-zones";
 import {
   useMarketplaceGeo,
@@ -148,19 +149,11 @@ const FeaturedStoresNearby = dynamic(
   () => import("@/components/marketplace/FeaturedStoresNearby"),
   { ssr: false, loading: () => null },
 );
-// Brandon 2026-05-20 audit-sprint: el grid de tiendas es el cuerpo del listing
-// y es siempre visible — pero su bundle (framer-motion + StoreCardCanonical +
-// observers) pesa ~25-35KB. Lazy con SSR:false + skeleton fullheight evita
-// bloquear el initial bundle y permite streaming del shell + filtros.
-const MarketplaceStoresView = dynamic(
-  () => import("@/components/marketplace/MarketplaceStoresView"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="min-h-[600px] rounded-xl bg-[var(--surface-sunken)] animate-pulse" aria-hidden />
-    ),
-  },
-);
+// Brandon 2026-05-20 v8: MarketplaceStoresView ESTÁTICO (revertido).
+// Antes era `dynamic({ssr:false})` pero el chunk quedaba colgado tras
+// back-nav (skeleton perpetuo, no resolvía el dynamic loader). Trade-off
+// aceptado: +25-35KB initial bundle a cambio de back-nav que funciona.
+// Ver `import MarketplaceStoresView ...` arriba.
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 

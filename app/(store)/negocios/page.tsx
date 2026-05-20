@@ -3,12 +3,28 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
-import { ReviewsCarousel } from "@/components/landing/LandingClientSections";
-import LandingHero from "@/components/landing/LandingHero";
-import PopularCategoriesTiles from "@/components/landing/PopularCategoriesTiles";
-import ComoFuncionaSection from "@/components/landing/sections/ComoFuncionaSection";
+// Brandon 2026-05-20 v8 — audit perf P0: secciones below-the-fold convertidas
+// a dynamic() para reducir bundle inicial de /negocios (~40-60KB ahorro).
+// LandingHero queda con SSR true (es above-fold para SEO + LCP).
+const LandingHero = dynamic(() => import("@/components/landing/LandingHero"), {
+  loading: () => <div className="min-h-[600px] bg-[var(--surface-canvas)]" aria-hidden />,
+});
+const ReviewsCarousel = dynamic(
+  () => import("@/components/landing/LandingClientSections").then((m) => ({ default: m.ReviewsCarousel })),
+  { loading: () => <div className="min-h-[300px]" aria-hidden /> },
+);
+const PopularCategoriesTiles = dynamic(
+  () => import("@/components/landing/PopularCategoriesTiles"),
+  { loading: () => <div className="min-h-[400px] bg-[var(--surface-sunken)]" aria-hidden /> },
+);
+const ComoFuncionaSection = dynamic(
+  () => import("@/components/landing/sections/ComoFuncionaSection"),
+  { loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
+);
 // LandingHeader removido — chrome unificado vive en app/(store)/layout.tsx (v5).
-import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
+const StickyMobileCTA = dynamic(
+  () => import("@/components/landing/StickyMobileCTA"),
+);
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import T from "@/components/T";
