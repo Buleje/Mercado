@@ -16,15 +16,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Audit project-wide 2026-05-19: migrado a SettingsDB.getStoreThemeJson.
     // Try to read price comparison data from DB settings (stored in storeThemeJson)
-    const { prisma } = await import("@/lib/prisma");
-    const settings = await prisma.settings.findFirst({
-      where: { tenantId: "main" },
-      select: { storeThemeJson: true },
-    });
-
-    const themeData = settings?.storeThemeJson ? JSON.parse(settings.storeThemeJson) : null;
-    const priceCompData = themeData?.priceComparisonData;
+    const { SettingsDB } = await import("@/lib/db/settings.db");
+    const themeData = await SettingsDB.getStoreThemeJson("main");
+    const priceCompData = themeData?.priceComparisonData as unknown;
 
     if (!priceCompData) {
       return NextResponse.json({ comparison: null });

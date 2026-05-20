@@ -425,4 +425,25 @@ export const SettingsDB = {
     });
     invalidateByPrefix(`settings:${tenantId}`);
   },
+
+  // ── storeThemeJson (config visual del storefront) ─────────────────────────
+
+  /**
+   * Lee `storeThemeJson` parseado como objeto. Devuelve null si vacio
+   * o malformed (caller debe tolerar).
+   *
+   * Audit project-wide 2026-05-19 — migracion de /api/price-comparison.
+   */
+  async getStoreThemeJson(tenantId: string): Promise<Record<string, unknown> | null> {
+    const setting = await prisma.settings.findFirst({
+      where: { tenantId },
+      select: { storeThemeJson: true },
+    });
+    if (!setting?.storeThemeJson) return null;
+    try {
+      return JSON.parse(setting.storeThemeJson) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  },
 };
