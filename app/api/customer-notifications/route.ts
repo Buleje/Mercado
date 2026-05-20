@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { CustomerNotificationsDB } from "@/lib/db/customer-notifications.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireAdmin, tryAdmin } from "@/lib/require-admin";
 import { getTenantIdFromRequest } from "@/lib/tenant";
@@ -55,16 +55,12 @@ export async function GET(req: NextRequest) {
   }
   const { tenantId } = auth;
 
-  const notifications = await prisma.customerNotification.findMany({
-    where: { tenantId, customerPhone: phone },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
-
-  const unreadCount = await prisma.customerNotification.count({
-    where: { tenantId, customerPhone: phone, read: false },
-  });
-
+  // Audit project-wide 2026-05-19: migrado a CustomerNotificationsDB.listByPhone.
+  const { data: notifications, unreadCount } = await CustomerNotificationsDB.listByPhone(
+    tenantId,
+    phone,
+    50,
+  );
   return NextResponse.json({ notifications, unreadCount });
 }
 
@@ -84,26 +80,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "customerPhone, title, body required" }, { status: 400 });
     }
 
-    // Verify customer exists
-    const customer = await prisma.customer.findFirst({
-      where: { tenantId: auth.tenantId, phone: body.customerPhone },
+    // Audit project-wide 2026-05-19: migrado a CustomerNotificationsDB.createForCustomer.
+    const result = await CustomerNotificationsDB.createForCustomer(auth.tenantId, {
+      customerPhone: body.customerPhone,
+      type: body.type,
+      title: body.title,
+      body: body.body,
+      link: body.link,
     });
-    if (!customer) {
+    if (!result.ok) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
-
-    const notification = await prisma.customerNotification.create({
-      data: {
-        tenantId: auth.tenantId,
-        customerPhone: body.customerPhone,
-        type: body.type || "general",
-        title: body.title,
-        body: body.body,
-        link: body.link,
-      },
-    });
-
-    return NextResponse.json(notification, { status: 201 });
+    return NextResponse.json(result.row, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
@@ -118,12 +106,8 @@ export async function PATCH(req: NextRequest) {
   const all = req.nextUrl.searchParams.get("all");
 
   if (id) {
-    // Para mark-by-id necesitamos saber el phone del notification. Lo
-    // miramos primero y luego autorizamos.
-    const notif = await prisma.customerNotification.findUnique({
-      where: { id },
-      select: { tenantId: true, customerPhone: true },
-    });
+    // Audit project-wide 2026-05-19: migrado a CustomerNotificationsDB.
+    const notif = await CustomerNotificationsDB.getOwnership(id);
     if (!notif) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
@@ -131,10 +115,7 @@ export async function PATCH(req: NextRequest) {
     if ("error" in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    await prisma.customerNotification.updateMany({
-      where: { id, tenantId: notif.tenantId },
-      data: { read: true },
-    });
+    await CustomerNotificationsDB.markRead(notif.tenantId, notif.customerPhone, id);
     return NextResponse.json({ ok: true });
   }
 
@@ -143,11 +124,7 @@ export async function PATCH(req: NextRequest) {
     if ("error" in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    const { tenantId } = auth;
-    await prisma.customerNotification.updateMany({
-      where: { tenantId, customerPhone: phone, read: false },
-      data: { read: true },
-    });
+    await CustomerNotificationsDB.markAllReadByPhone(auth.tenantId, phone);
     return NextResponse.json({ ok: true });
   }
 

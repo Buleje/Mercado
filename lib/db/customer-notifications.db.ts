@@ -101,4 +101,62 @@ export const CustomerNotificationsDB = {
       return false;
     }
   },
+
+  /**
+   * Lookup por id (resuelve tenantId + customerPhone). Util para que el
+   * caller pueda autorizar la accion ANTES de mutar (defense in depth).
+   * Audit project-wide 2026-05-19 — migracion de /api/customer-notifications.
+   */
+  async getOwnership(
+    notificationId: string,
+  ): Promise<{ tenantId: string; customerPhone: string } | null> {
+    return prisma.customerNotification.findUnique({
+      where: { id: notificationId },
+      select: { tenantId: true, customerPhone: true },
+    });
+  },
+
+  /**
+   * Marca como leídas TODAS las notifs no leídas de un customer en el tenant.
+   */
+  async markAllReadByPhone(tenantId: string, phone: string): Promise<number> {
+    const result = await prisma.customerNotification.updateMany({
+      where: { tenantId, customerPhone: phone, read: false },
+      data: { read: true },
+    });
+    return result.count;
+  },
+
+  /**
+   * Crea una notificacion para un customer. Verifica existencia del
+   * customer en el tenant antes de crear (anti-spam cross-tenant).
+   */
+  async createForCustomer(
+    tenantId: string,
+    data: {
+      customerPhone: string;
+      type: string;
+      title: string;
+      body: string;
+      link?: string;
+    },
+  ): Promise<{ ok: false; reason: "customer_not_found" } | { ok: true; row: { id: string; createdAt: Date } }> {
+    const customer = await prisma.customer.findFirst({
+      where: { tenantId, phone: data.customerPhone },
+      select: { phone: true },
+    });
+    if (!customer) return { ok: false, reason: "customer_not_found" };
+    const row = await prisma.customerNotification.create({
+      data: {
+        tenantId,
+        customerPhone: data.customerPhone,
+        type: data.type || "general",
+        title: data.title,
+        body: data.body,
+        link: data.link,
+      },
+      select: { id: true, createdAt: true },
+    });
+    return { ok: true, row };
+  },
 };

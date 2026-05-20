@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -28,32 +28,14 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 200);
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    const where: Record<string, unknown> = { tenantId: auth.tenantId };
-    if (entity) where.entity = entity;
-    if (action) where.action = action;
-    if (user) where.user = { contains: user, mode: "insensitive" };
-
-    const [logs, total] = await Promise.all([
-      prisma.activityLog.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        skip: offset,
-        select: {
-          id: true,
-          action: true,
-          entity: true,
-          entityId: true,
-          detail: true,
-          user: true,
-          ipAddress: true,
-          userAgent: true,
-          tenantId: true,
-          createdAt: true,
-        },
-      }),
-      prisma.activityLog.count({ where }),
-    ]);
+    // Audit project-wide 2026-05-19: migrado a ActivityLogDB.listPaginated.
+    const { logs, total } = await ActivityLogDB.listPaginated(auth.tenantId, {
+      entity: entity ?? undefined,
+      action: action ?? undefined,
+      user: user ?? undefined,
+      limit,
+      offset,
+    });
 
     return NextResponse.json({
       logs: logs.map((r) => ({
