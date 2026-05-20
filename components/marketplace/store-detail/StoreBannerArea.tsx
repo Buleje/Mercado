@@ -65,7 +65,10 @@ export default function StoreBannerArea({
         {hasBanner ? (
           <Image
             src={banner!}
-            alt=""
+            // Brandon 2026-05-20 v12 audit F1: banner es LCP candidate del
+            // storefront. alt descriptivo (no vacío) ayuda a Google Images
+            // + accesibilidad. Incluye nombre + categoría + zona.
+            alt={`${name}${category ? ` — ${category}` : ""}${zone ? ` en ${zone}` : ""}`}
             fill
             priority
             sizes="100vw"

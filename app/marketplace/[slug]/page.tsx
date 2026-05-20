@@ -67,14 +67,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const storeUrl = `https://www.buleje.pe/marketplace/${slug}`;
-  const zone = store.zone ?? "Perú";
-  const desc = getStoreTagline({
+  const baseUrl = "https://www.buleje.pe";
+  const storeUrl = `${baseUrl}/marketplace/${slug}`;
+  const zone = store.zone ?? "Pucallpa";
+  const baseDesc = getStoreTagline({
     slug,
     name: store.name,
     category: store.category,
     existing: store.description,
   });
+
+  // Brandon 2026-05-20 v12 audit F1: description enriquecida con rating +
+  // tiempo entrega (rich snippet en SERP, formato pedido por audit). Solo
+  // agrega métricas cuando hay datos reales — fallback al tagline base.
+  const rating = store.rating ?? 0;
+  const reviewCount = store.reviewCount ?? 0;
+  const metricsLine =
+    rating > 0 && reviewCount > 0
+      ? ` ${store.name} · ${rating.toFixed(1)}★ · ${reviewCount} reseñas.`
+      : "";
+  const desc =
+    `Pedí ${formatCategoryLabel(store.category).toLowerCase()} en ${zone} con delivery rápido. Pagá con Yape, Plin o efectivo.${metricsLine}`.slice(
+      0,
+      155,
+    );
+  // Si el tagline base es más rico que el genérico, lo concatenamos como
+  // segunda oración (manteniendo description ≤ 155c).
+  const finalDesc =
+    baseDesc && baseDesc !== store.description ? desc : `${desc} ${baseDesc ?? ""}`.trim().slice(0, 155);
 
   // Brandon 2026-05-20 v11 audit P2 SEO: og:type semántico segun categoria.
   // Next Metadata.openGraph.type solo acepta enum estricto — usamos `other`
@@ -86,29 +106,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   );
   const ogTypeCustom = isRestaurant ? "restaurant" : "business.business";
 
+  // Brandon 2026-05-20 v12 audit F1: og:image dinámica via /api/og
+  // (Edge runtime con rate-limit). Pasa title + subtitle como query params
+  // para generar imagen 1200×630 con texto contextual del store.
+  // El logo plano 400×400 quedaba mal en WhatsApp/Twitter previews.
+  const ogImageUrl = `${baseUrl}/api/og?title=${encodeURIComponent(
+    store.name,
+  )}&subtitle=${encodeURIComponent(
+    `${formatCategoryLabel(store.category)} en ${zone}`,
+  )}`;
+
   return {
     title: `${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
-    description: desc,
+    description: finalDesc,
     alternates: { canonical: storeUrl },
     openGraph: {
       title: `${store.name} — Compra con delivery en ${zone}`,
-      description: desc,
+      description: finalDesc,
       url: storeUrl,
       siteName: "Buleje",
       locale: "es_PE",
       type: "website",
-      ...(store.logo
-        ? {
-            images: [
-              {
-                url: store.logo,
-                width: 400,
-                height: 400,
-                alt: `Logo de ${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
-              },
-            ],
-          }
-        : {}),
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${store.name} — ${formatCategoryLabel(store.category)} en ${zone} · Buleje`,
+        },
+      ],
     },
     // OG type custom via `other` — sobrescribe el "website" del bloque
     // openGraph anterior porque Next emite ambos meta tags.
@@ -118,16 +144,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: `${store.name} | Marketplace`,
-      description: desc,
-      ...(store.logo
-        ? {
-            // Brandon 2026-05-20 v11 audit P2: twitter:image con alt explícito.
-            images: [{
-              url: store.logo,
-              alt: `${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
-            }],
-          }
-        : {}),
+      description: finalDesc,
+      images: [{
+        url: ogImageUrl,
+        alt: `${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
+      }],
     },
   };
 }
