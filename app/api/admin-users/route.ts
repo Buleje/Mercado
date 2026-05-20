@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prismaForTenant } from "@/lib/tenant";
-import { prisma } from "@/lib/prisma";
+import { prismaForTenant, findTenantByIdOrSlug } from "@/lib/tenant";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { newPasswordSchema, newPasswordSchemaOptional } from "@/lib/auth/password-schema";
@@ -58,7 +57,8 @@ export async function POST(req: NextRequest) {
 
   try {
     // Plan limit check
-    const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] } });
+    // Audit project-wide 2026-05-19: migrado a findTenantByIdOrSlug (cacheado).
+    const tenant = await findTenantByIdOrSlug(auth.tenantId);
     const limits = getPlanLimits(tenant?.plan ?? "free");
     // H5 audit: contar TODOS los usuarios (incl. inactivos) para evitar bypass
     // desactivar → crear → reactivar que eluda el límite del plan.

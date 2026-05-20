@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { BillingMpSubscribeDB } from "@/lib/db/billing-mp-subscribe.db";
 import { createMPSubscription } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
@@ -44,17 +44,8 @@ export async function POST(req: NextRequest) {
   const { plan } = parsed.data;
 
   // ── Tenant ───────────────────────────────────────────────
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      plan: true,
-      ownerEmail: true,
-      mpSubscriptionId: true,
-    },
-  });
+  // Audit project-wide 2026-05-19: migrado a BillingMpSubscribeDB.
+  const tenant = await BillingMpSubscribeDB.findTenantForSubscribe(tenantId);
   if (!tenant) {
     return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
   }
@@ -115,10 +106,7 @@ export async function POST(req: NextRequest) {
   // preferir ese campo aquí y solo mover a mpSubscriptionId desde el webhook
   // (eliminando la posibilidad de que un preapprovalId huérfano quede en DB).
   // Tarea: crear migration + actualizar handleSubscriptionNotification.
-  await prisma.tenant.update({
-    where: { id: tenant.id },
-    data: { mpSubscriptionId: result.preapprovalId },
-  });
+  await BillingMpSubscribeDB.savePreapprovalId(tenant.id, result.preapprovalId);
 
   logger.info("[MP Subscribe] Suscripción Preapproval creada", {
     tenantId,
@@ -127,18 +115,11 @@ export async function POST(req: NextRequest) {
   });
 
   // Log de actividad (fire-and-forget)
-  prisma.activityLog
-    .create({
-      data: {
-        action: "subscription_initiated",
-        entity: "tenant",
-        entityId: tenant.slug,
-        detail: `Suscripción MP Preapproval iniciada para plan ${plan} (id: ${result.preapprovalId})`,
-        user: "admin",
-        tenantId: tenant.slug,
-      },
-    })
-    .catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
+  BillingMpSubscribeDB.logSubscriptionInitiated({
+    tenantSlug: tenant.slug,
+    plan,
+    preapprovalId: result.preapprovalId,
+  }).catch((err) => logger.warn("[billing] op failed", { err: String(err) }));
 
   return NextResponse.json({
     init_point: result.init_point,

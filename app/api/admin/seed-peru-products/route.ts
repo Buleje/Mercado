@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AdminSeedPeruProductsDB } from "@/lib/db/admin-seed-peru-products.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -771,43 +771,22 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Verificar cuántos productos ya existen en "main"
-    const existingCount = await prisma.product.count({
-      where: { tenantId: "main", deletedAt: null },
-    });
+    // Audit project-wide 2026-05-19: migrado a AdminSeedPeruProductsDB.
+    const existingCount = await AdminSeedPeruProductsDB.countExisting("main");
 
     let created = 0;
     let skipped = 0;
 
     for (const p of PRODUCTOS_PERU) {
       // Evitar duplicados por nombre + tenant
-      const exists = await prisma.product.findFirst({
-        where: { tenantId: "main", name: p.name, deletedAt: null },
-      });
+      const exists = await AdminSeedPeruProductsDB.findByName("main", p.name);
 
       if (exists) {
         skipped++;
         continue;
       }
 
-      await prisma.product.create({
-        data: {
-          tenantId: "main",
-          name: p.name,
-          category: p.category,
-          price: p.price,
-          costPrice: p.costPrice,
-          unit: p.unit,
-          stock: p.stock,
-          stockMin: p.stockMin,
-          stockMax: p.stockMax,
-          description: p.description,
-          image: p.image,
-          barcode: p.barcode,
-          badge: p.badge ?? null,
-          active: true,
-        },
-      });
+      await AdminSeedPeruProductsDB.create("main", p);
       created++;
     }
 

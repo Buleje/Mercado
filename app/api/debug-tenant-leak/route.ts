@@ -1,3 +1,8 @@
+/**
+ * @prisma-direct ok — endpoint de DIAGNOSTIC que usa `prisma.$extends`
+ * intencionalmente para probar el sistema de cross-tenant leak detection.
+ * Migrar a DB class destruiría el propósito del endpoint. Audit 2026-05-19.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
