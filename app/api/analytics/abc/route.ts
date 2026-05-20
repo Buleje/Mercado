@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
-import { toNumOrZero } from "@/lib/decimal-utils";
+import { AnalyticsABCDB } from "@/lib/db/analytics-abc.db";
 import { logger } from "@/lib/logger";
 
 export type ABCProduct = {
@@ -17,49 +16,41 @@ export type ABCProduct = {
 /**
  * GET /api/analytics/abc
  * Returns ABC classification of all products based on revenue.
- * A = cumulative 0–70%, B = 70–90%, C = 90–100%
+ * A = cumulative 0-70%, B = 70-90%, C = 90-100%
+ *
+ * SECURITY FIX (audit 2026-05-19): el endpoint original no filtraba saleItem
+ * ni orderItem por tenantId — cross-tenant data leak. Ahora ambas queries
+ * filtran por tenantId via relacion con Sale/Order en la DB class.
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
+    const tenantId = auth.tenantId;
+
     const [saleItems, orderItems] = await Promise.all([
-      // POS sales
-      prisma.saleItem.groupBy({
-        by: ["productId"],
-        _sum: { quantity: true },
-        _count: { id: true },
-      }),
-      // Online orders (non-cancelled)
-      prisma.orderItem.findMany({
-        where: { productId: { not: null }, order: { status: { not: "cancelado" } } },
-        select: { productId: true, price: true, quantity: true },
-      }),
+      AnalyticsABCDB.getSaleItemsForABC(tenantId),
+      AnalyticsABCDB.getOrderItemsForABC(tenantId),
     ]);
 
     // Aggregate revenue by productId
     const map = new Map<number, { units: number; revenue: number }>();
 
-    // Sum from sales using current product prices (we have qty, compute revenue from SaleItem price)
-    const saleItemDetails = await prisma.saleItem.findMany({
-      select: { productId: true, price: true, quantity: true },
-    });
-    for (const item of saleItemDetails) {
+    for (const item of saleItems) {
       const existing = map.get(item.productId) ?? { units: 0, revenue: 0 };
       existing.units += item.quantity;
-      // TD-018: item.price es Decimal
-      existing.revenue += toNumOrZero(item.price) * item.quantity;
+      // DB class ya convirtio Decimal -> number
+      existing.revenue += item.price * item.quantity;
       map.set(item.productId, existing);
     }
-    void saleItems; // already aggregated via detailed query
 
     for (const item of orderItems) {
       if (!item.productId) continue;
       const existing = map.get(item.productId) ?? { units: 0, revenue: 0 };
       existing.units += item.quantity;
-      // TD-018: item.price es Decimal
-      existing.revenue += toNumOrZero(item.price) * item.quantity;
+      // DB class ya convirtio Decimal -> number
+      existing.revenue += item.price * item.quantity;
       map.set(item.productId, existing);
     }
 
@@ -67,12 +58,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Load product metadata
+    // Load product metadata (con tenantId para aislamiento multi-tenant)
     const productIds = Array.from(map.keys());
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, name: true, category: true },
-    });
+    const products = await AnalyticsABCDB.getProductMetaForABC(tenantId, productIds);
     const productMeta = new Map(products.map(p => [p.id, p]));
 
     // Sort by revenue descending

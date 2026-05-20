@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { CashRegistersMovementsDB } from "@/lib/db/cash-registers-movements.db";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
     const { cashRegisterId, type, amount, motivo, descripcion } = parsed.data;
 
     // Verify the cash register exists and belongs to tenant
-    const register = await withDbRetry(() => prisma.cashRegister.findFirst({
-      where: { id: cashRegisterId, tenantId: auth.tenantId, status: "abierta" },
-    }));
+    const register = await withDbRetry(() =>
+      CashRegistersMovementsDB.findOpenRegisterById(cashRegisterId, auth.tenantId)
+    );
 
     if (!register) {
       return NextResponse.json(
@@ -47,15 +47,15 @@ export async function POST(req: NextRequest) {
 
     const description = [motivo, descripcion].filter(Boolean).join(" — ") || (type === "ingreso" ? "Ingreso manual" : "Egreso manual");
 
-    const movement = await withDbRetry(() => prisma.cashMovement.create({
-      data: {
+    const movement = await withDbRetry(() =>
+      CashRegistersMovementsDB.createMovement({
         cashRegisterId,
         type,
         amount,
         method: "efectivo",
         description,
-      },
-    }));
+      })
+    );
 
     logActivity(
       "Crear", "movimiento_caja",
@@ -79,37 +79,34 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const cashRegisterId = searchParams.get("cashRegisterId");
 
-    const where: Record<string, unknown> = {};
+    let resolvedRegisterId: string;
 
     if (cashRegisterId) {
       // SECURITY 2026-05-07 (X1): validar ownership antes de exponer movimientos.
       // Sin este check, cualquier admin autenticado podía leer movimientos de
       // una caja de OTRO tenant pasando su cashRegisterId en el query param.
       // HTTP 404 (no 403) para evitar oracle de existencia cross-tenant.
-      const ownedRegister = await withDbRetry(() => prisma.cashRegister.findFirst({
-        where: { id: cashRegisterId, tenantId: auth.tenantId },
-        select: { id: true },
-      }));
-      if (!ownedRegister) {
+      const owned = await withDbRetry(() =>
+        CashRegistersMovementsDB.verifyOwnership(cashRegisterId, auth.tenantId)
+      );
+      if (!owned) {
         return NextResponse.json({ error: "Caja no encontrada" }, { status: 404 });
       }
-      where.cashRegisterId = cashRegisterId;
+      resolvedRegisterId = cashRegisterId;
     } else {
       // Find current open register
-      const openRegister = await withDbRetry(() => prisma.cashRegister.findFirst({
-        where: { tenantId: auth.tenantId, status: "abierta" },
-      }));
+      const openRegister = await withDbRetry(() =>
+        CashRegistersMovementsDB.findCurrentOpenRegister(auth.tenantId)
+      );
       if (!openRegister) {
         return NextResponse.json([]);
       }
-      where.cashRegisterId = openRegister.id;
+      resolvedRegisterId = openRegister.id;
     }
 
-    const movements = await withDbRetry(() => prisma.cashMovement.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }));
+    const movements = await withDbRetry(() =>
+      CashRegistersMovementsDB.listByCashRegister(resolvedRegisterId)
+    );
 
     return NextResponse.json(movements);
   } catch (e) {

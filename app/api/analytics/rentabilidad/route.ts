@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
-import { toNumOrZero } from "@/lib/decimal-utils";
+import { AnalyticsRentabilidadDB } from "@/lib/db/analytics-rentabilidad.db";
 import { logger } from "@/lib/logger";
 
 type DiaRentabilidad = {
@@ -24,29 +23,19 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
-    const tenantFilter = { tenantId: auth.tenantId };
+    const tenantId = auth.tenantId;
 
-    // Fetch all sales and their items for the period in two parallel queries
+    // Fetch all sales and their cost items for the period in two parallel queries
     const [sales, saleItems] = await Promise.all([
-      prisma.sale.findMany({
-        where: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } },
-        select: { id: true, total: true, createdAt: true },
-      }),
-      prisma.saleItem.findMany({
-        where: { sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
-        select: {
-          saleId: true,
-          costPrice: true,
-          quantity: true,
-          product: { select: { costPrice: true } },
-        },
-      }),
+      AnalyticsRentabilidadDB.getSalesInRange(tenantId, thirtyDaysAgo),
+      AnalyticsRentabilidadDB.getSaleItemCostsInRange(tenantId, thirtyDaysAgo),
     ]);
 
-    // Index sale items by saleId for cost lookup (TD-018: costPrice es Decimal)
+    // Index sale items by saleId for cost lookup
+    // DB class ya convirtió Decimal → number; costPrice puede ser null → usar productCostPrice
     const costBySale = new Map<string, number>();
     for (const item of saleItems) {
-      const cost = toNumOrZero(item.costPrice) || toNumOrZero(item.product.costPrice);
+      const cost = item.costPrice ?? item.productCostPrice ?? 0;
       costBySale.set(item.saleId, (costBySale.get(item.saleId) ?? 0) + cost * item.quantity);
     }
 
@@ -65,8 +54,8 @@ export async function GET(req: NextRequest) {
       const key = new Date(sale.createdAt).toISOString().slice(0, 10);
       const day = dayMap.get(key);
       if (day) {
-        // TD-018: sale.total es Decimal
-        day.ingresos += toNumOrZero(sale.total);
+        // DB class ya convirtió Decimal → number
+        day.ingresos += sale.total;
         day.costos += costBySale.get(sale.id) ?? 0;
         day.transacciones++;
       }

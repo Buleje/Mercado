@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { ChatPublicDB } from "@/lib/db/chat-public.db";
 import { ChatThreadsDB, ChatMessagesDB } from "@/lib/db/chat.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
@@ -22,6 +22,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
  *   - Rate limit por IP ya lo maneja el middleware proxy.ts (60/min)
  *   - Los body son validados con Zod safeParse
  *   - El endpoint nunca expone unreadForSeller o datos internos del vendor
+ *
+ * Audit project-wide 2026-05-19: migrado de prisma.* directo a ChatPublicDB.
  */
 
 const OpenThreadBody = z.object({
@@ -95,10 +97,7 @@ async function handleOpen(body: unknown) {
 
   try {
     // Cargar tienda por slug + verificar publicación
-    const store = await prisma.store.findUnique({
-      where: { slug: parsed.data.storeSlug },
-      select: { id: true, tenantId: true, isPublished: true, name: true },
-    });
+    const store = await ChatPublicDB.findStoreBySlug(parsed.data.storeSlug);
     if (!store || !store.isPublished) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
     }
@@ -176,32 +175,24 @@ async function handleSend(body: unknown) {
   try {
     // Validar ownership: el buyer sólo puede enviar a hilos donde
     // su customerPhone coincida con el del thread
-    const store = await prisma.store.findUnique({
-      where: { slug: parsed.data.storeSlug },
-      select: { id: true, tenantId: true, isPublished: true },
-    });
+    const store = await ChatPublicDB.findStoreBySlug(parsed.data.storeSlug);
     if (!store || !store.isPublished) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
     }
 
     // Verificar que el thread pertenece al buyer
-    const threadCheck = await prisma.$queryRawUnsafe<
-      Array<{ customerPhone: string; storeId: string; status: string }>
-    >(
-      `SELECT "customerPhone","storeId","status"
-         FROM "ConversationThread"
-        WHERE "id" = $1 AND "tenantId" = $2 LIMIT 1`,
+    const threadCheck = await ChatPublicDB.findThreadForOwnershipCheck(
       parsed.data.threadId,
       store.tenantId,
     );
     if (
-      !threadCheck[0] ||
-      threadCheck[0].customerPhone !== parsed.data.customerPhone ||
-      threadCheck[0].storeId !== store.id
+      !threadCheck ||
+      threadCheck.customerPhone !== parsed.data.customerPhone ||
+      threadCheck.storeId !== store.id
     ) {
       return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
     }
-    if (threadCheck[0].status !== "open") {
+    if (threadCheck.status !== "open") {
       return NextResponse.json({ error: "Conversación cerrada" }, { status: 409 });
     }
 
@@ -269,28 +260,20 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const store = await prisma.store.findUnique({
-      where: { slug: parsed.data.storeSlug },
-      select: { id: true, tenantId: true, isPublished: true },
-    });
+    const store = await ChatPublicDB.findStoreBySlug(parsed.data.storeSlug);
     if (!store || !store.isPublished) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
     }
 
     // Validar ownership del thread
-    const threadCheck = await prisma.$queryRawUnsafe<
-      Array<{ customerPhone: string; storeId: string }>
-    >(
-      `SELECT "customerPhone","storeId"
-         FROM "ConversationThread"
-        WHERE "id" = $1 AND "tenantId" = $2 LIMIT 1`,
+    const threadCheck = await ChatPublicDB.findThreadForOwnershipCheck(
       parsed.data.threadId,
       store.tenantId,
     );
     if (
-      !threadCheck[0] ||
-      threadCheck[0].customerPhone !== parsed.data.customerPhone ||
-      threadCheck[0].storeId !== store.id
+      !threadCheck ||
+      threadCheck.customerPhone !== parsed.data.customerPhone ||
+      threadCheck.storeId !== store.id
     ) {
       return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
     }

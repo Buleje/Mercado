@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { TrackOrderDB } from "@/lib/db/track-order.db";
 import { DeliveryTrackingDB } from "@/lib/db/delivery.db";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
@@ -23,6 +23,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
  *   - Cache 15s para evitar hammering del endpoint público
  *   - Se podría agregar `?code=xxx` adicional en una iteración futura
  *     si el dueño quiere más seguridad (por ahora YAGNI)
+ *
+ * Audit project-wide 2026-05-19: migrado de prisma.* directo a TrackOrderDB.
  */
 
 type PublicTrackingEvent = {
@@ -82,49 +84,16 @@ export async function GET(
     const data = await getOrSet<PublicTrackingResponse | null>(cacheKey, 15, async () => {
       // Leer el order con raw SQL porque los 8 campos nuevos de D1.4 todavía
       // no están en schema.prisma (el SQL fue aplicado manualmente)
-      const rows = await prisma.$queryRawUnsafe<
-        Array<{
-          id: string;
-          tenantId: string;
-          customerName: string;
-          deliveryStatus: string | null;
-          driverId: string | null;
-          deliveredAt: Date | null;
-          estimatedDeliveryAt: Date | null;
-          dropoffLat: number | null;
-          dropoffLng: number | null;
-        }>
-      >(
-        `SELECT "id","tenantId","customerName","deliveryStatus","driverId",
-                "deliveredAt","estimatedDeliveryAt","dropoffLat","dropoffLng"
-           FROM "Order"
-          WHERE "id" = $1 AND "deletedAt" IS NULL
-          LIMIT 1`,
-        orderId,
-      );
-      const order = rows[0];
+      const order = await TrackOrderDB.findOrderForTracking(orderId);
       if (!order) return null;
 
       // Buscar el nombre de la tienda (Store) asociada al tenantId
-      const store = await prisma.store.findFirst({
-        where: { tenantId: order.tenantId },
-        select: { name: true },
-      });
+      const storeName = await TrackOrderDB.findStoreNameByTenantId(order.tenantId);
 
       // Buscar el nombre del driver si hay alguno
       let driverName: string | null = null;
       if (order.driverId) {
-        const routeRows = await prisma.$queryRawUnsafe<
-          Array<{ driverName: string }>
-        >(
-          `SELECT "driverName" FROM "DeliveryRoute"
-            WHERE "driverId" = $1 AND "tenantId" = $2
-            ORDER BY "createdAt" DESC
-            LIMIT 1`,
-          order.driverId,
-          order.tenantId,
-        );
-        driverName = routeRows[0]?.driverName ?? null;
+        driverName = await TrackOrderDB.findDriverNameByRoute(order.driverId, order.tenantId);
       }
 
       // Historial de tracking (público — campos seguros)
@@ -133,7 +102,7 @@ export async function GET(
       return {
         orderId:             order.id,
         customerFirstName:   firstName(order.customerName),
-        storeName:           store?.name ?? "Tienda",
+        storeName:           storeName ?? "Tienda",
         currentStatus:       order.deliveryStatus ?? "preparing",
         deliveredAt:         order.deliveredAt ? order.deliveredAt.toISOString() : null,
         estimatedDeliveryAt: order.estimatedDeliveryAt

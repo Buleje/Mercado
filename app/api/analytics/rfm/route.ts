@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
-import { toNumOrZero } from "@/lib/decimal-utils";
+import { AnalyticsRFMDB } from "@/lib/db/analytics-rfm.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 
@@ -34,7 +33,7 @@ const SEGMENT_CONFIG: Record<string, { color: string; action: string }> = {
   Champions: { color: "var(--accent)", action: "Recompensar lealtad, ofrecer exclusividades" },
   Loyal: { color: "color-mix(in oklab, var(--accent) 70%, white)", action: "Upselling, programa de referidos" },
   New: { color: "#74c0fc", action: "Onboarding, primera experiencia memorable" },
-  AtRisk: { color: "#f97316", action: "Campaña de reactivación urgente" },
+  AtRisk: { color: "#f97316", action: "Campana de reactivacion urgente" },
   Lost: { color: "#e76f51", action: "Descuento agresivo o descarte" },
   Regular: { color: "#adb5bd", action: "Incentivar frecuencia con promociones" },
 };
@@ -57,34 +56,20 @@ export async function GET(req: NextRequest) {
     const cutoffDate = new Date(now);
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
-    const tenantFilter = { tenantId: auth.tenantId };
+    const tenantId = auth.tenantId;
 
-    // Fetch sales and non-cancelled orders with customerPhone
-    const [sales, orders] = await Promise.allSettled([
-      prisma.sale.findMany({
-        where: { ...tenantFilter, createdAt: { gte: cutoffDate }, customerPhone: { not: null } },
-        select: { customerPhone: true, total: true, createdAt: true },
-      }),
-      prisma.order.findMany({
-        where: {
-          ...tenantFilter,
-          createdAt: { gte: cutoffDate },
-          customerPhone: { not: null },
-          status: { not: "cancelado" },
-        },
-        select: { customerPhone: true, total: true, createdAt: true },
-      }),
+    // Fetch sales and non-cancelled orders with customerPhone via DB class
+    const [salesData, ordersData] = await Promise.all([
+      AnalyticsRFMDB.getSalesWithPhone(tenantId, cutoffDate),
+      AnalyticsRFMDB.getOrdersWithPhone(tenantId, cutoffDate),
     ]);
-
-    const salesData = sales.status === "fulfilled" ? sales.value : [];
-    const ordersData = orders.status === "fulfilled" ? orders.value : [];
 
     if (salesData.length === 0 && ordersData.length === 0) {
       return NextResponse.json({
         customers: [],
         segments: [],
         total: 0,
-        message: "No hay ventas con cliente identificado en el período seleccionado",
+        message: "No hay ventas con cliente identificado en el periodo seleccionado",
       });
     }
 
@@ -93,15 +78,14 @@ export async function GET(req: NextRequest) {
     const customerMap = new Map<string, CustomerData>();
 
     for (const sale of salesData) {
-      if (!sale.customerPhone) continue;
       const existing = customerMap.get(sale.customerPhone) ?? {
         lastPurchase: new Date(0),
         frequency: 0,
         monetary: 0,
       };
       existing.frequency++;
-      // TD-018: sale.total es Decimal
-      existing.monetary += toNumOrZero(sale.total);
+      // DB class ya convirtio Decimal -> number
+      existing.monetary += sale.total;
       if (sale.createdAt > existing.lastPurchase) {
         existing.lastPurchase = sale.createdAt;
       }
@@ -109,15 +93,14 @@ export async function GET(req: NextRequest) {
     }
 
     for (const order of ordersData) {
-      if (!order.customerPhone) continue;
       const existing = customerMap.get(order.customerPhone) ?? {
         lastPurchase: new Date(0),
         frequency: 0,
         monetary: 0,
       };
       existing.frequency++;
-      // TD-018: order.total es Decimal
-      existing.monetary += toNumOrZero(order.total);
+      // DB class ya convirtio Decimal -> number
+      existing.monetary += order.total;
       if (order.createdAt > existing.lastPurchase) {
         existing.lastPurchase = order.createdAt;
       }
@@ -129,17 +112,14 @@ export async function GET(req: NextRequest) {
         customers: [],
         segments: [],
         total: 0,
-        message: "No hay clientes identificados con compras en el período",
+        message: "No hay clientes identificados con compras en el periodo",
       });
     }
 
     // Load customer names
     const phones = Array.from(customerMap.keys());
-    const customers = await prisma.customer.findMany({
-      where: { phone: { in: phones }, ...tenantFilter },
-      select: { phone: true, name: true },
-    });
-    const nameMap = new Map(customers.map((c) => [c.phone, c.name]));
+    const customerNames = await AnalyticsRFMDB.getCustomerNamesByPhone(tenantId, phones);
+    const nameMap = new Map(customerNames.map((c) => [c.phone, c.name]));
 
     // Build raw RFM data
     type RawRFM = { phone: string; recencyDays: number; frequency: number; monetary: number };
@@ -156,7 +136,7 @@ export async function GET(req: NextRequest) {
       return sortedValues[index];
     }
 
-    // Recency: lower is better → score 3 for low recency
+    // Recency: lower is better -> score 3 for low recency
     const recencyValues = rawData.map((d) => d.recencyDays).sort((a, b) => a - b);
     const rP33 = getPercentileValue(recencyValues, 33);
     const rP66 = getPercentileValue(recencyValues, 66);
@@ -172,7 +152,6 @@ export async function GET(req: NextRequest) {
     const mP66 = getPercentileValue(monValues, 66);
 
     function scoreRecency(val: number): number {
-      // Lower recency = better = higher score
       if (val <= rP33) return 3;
       if (val <= rP66) return 2;
       return 1;
@@ -190,7 +169,6 @@ export async function GET(req: NextRequest) {
       return 1;
     }
 
-    // Segment classification
     function getSegment(r: number, f: number): string {
       if (r === 3 && f === 3) return "Champions";
       if (f === 3) return "Loyal";

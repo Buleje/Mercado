@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
-import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import {
+  getProductosConStockMin,
+  getVentasPor30Dias,
+  getUltimaCompraPorProducto,
+} from "@/lib/db/compras-sugerencias.db";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
@@ -15,10 +18,7 @@ export async function GET(req: NextRequest) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // 1. Get all active products with stockMin > 0
-    const products = await prisma.product.findMany({
-      where: { tenantId, active: true, deletedAt: null, stockMin: { gt: 0 } },
-      select: { id: true, name: true, category: true, stock: true, stockMin: true },
-    });
+    const products = await getProductosConStockMin(tenantId);
 
     if (products.length === 0) {
       return NextResponse.json({ sugerencias: [] });
@@ -27,49 +27,10 @@ export async function GET(req: NextRequest) {
     const productIds = products.map((p) => p.id);
 
     // 2. Get daily average sales for each product (last 30 days)
-    const salesAgg = await prisma.saleItem.groupBy({
-      by: ["productId"],
-      _sum: { quantity: true },
-      where: {
-        productId: { in: productIds },
-        sale: { tenantId, createdAt: { gte: thirtyDaysAgo } },
-      },
-    });
-
-    const salesMap = new Map<number, number>();
-    for (const row of salesAgg) {
-      salesMap.set(row.productId, (row._sum.quantity ?? 0) / 30);
-    }
+    const salesMap = await getVentasPor30Dias(tenantId, productIds, thirtyDaysAgo);
 
     // 3. Get last purchase info for each product (graceful — tolera schema drift)
-    const lastPurchaseMap = new Map<
-      number,
-      { supplierId: string; supplierName: string; lastPrice: number }
-    >();
-    try {
-      const lastPurchases = await prisma.purchaseItem.findMany({
-        where: { productId: { in: productIds }, purchaseOrder: { tenantId } },
-        include: { purchaseOrder: { include: { supplier: true } } },
-        orderBy: { purchaseOrder: { createdAt: "desc" } },
-      });
-
-      for (const pi of lastPurchases) {
-        if (!lastPurchaseMap.has(pi.productId)) {
-          lastPurchaseMap.set(pi.productId, {
-            supplierId: pi.purchaseOrder.supplierId,
-            supplierName: pi.purchaseOrder.supplier?.name ?? pi.purchaseOrder.supplierName,
-            // TD-018: unitCost es Decimal
-            lastPrice: toNumOrZero(pi.unitCost),
-          });
-        }
-      }
-    } catch (e) {
-      // Schema drift en PurchaseItem (CLAUDE.md regla 14) — degrada graceful:
-      // calcula sugerencias sin info de proveedor anterior. Mejor que 500.
-      logger.warn("[compras/sugerencias] purchaseItem query failed (schema drift)", {
-        err: e instanceof Error ? e.message : String(e),
-      });
-    }
+    const lastPurchaseMap = await getUltimaCompraPorProducto(tenantId, productIds);
 
     // 4. Calculate suggestions
     type Urgency = "CRITICO" | "URGENTE" | "PLANIFICAR";

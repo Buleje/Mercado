@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsCLVDB } from "@/lib/db/analytics-clv.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type CLVCustomer = {
@@ -45,51 +45,37 @@ export async function GET(req: NextRequest) {
   const tenantId = auth.tenantId;
 
   // Aggregate orders by customerPhone (non-cancelled) — scope por tenantId
-  const rows = await prisma.order.groupBy({
-    by: ["customerPhone"],
-    where: { tenantId, status: { not: "cancelado" }, customerPhone: { not: null } },
-    _sum: { total: true },
-    _count: { id: true },
-  });
+  const rows = await AnalyticsCLVDB.getOrderAggregatesByPhone(tenantId);
 
   if (!rows.length) {
     return NextResponse.json({ customers: [], cohorts: [], summary: { totalCustomers: 0, avgLTV: 0, avgOrderCount: 0, avgDaysBetweenOrders: 0 } } satisfies CLVResponse);
   }
 
-  const phones = rows.map(r => r.customerPhone as string);
+  const phones = rows.map(r => r.customerPhone);
 
-  // Get first + last order dates per customer — TODOS con tenantId scope
-  const [firstOrders, lastOrders, customers] = await Promise.all([
-    prisma.order.groupBy({
-      by: ["customerPhone"],
-      where: { tenantId, status: { not: "cancelado" }, customerPhone: { in: phones } },
-      _min: { createdAt: true },
-    }),
-    prisma.order.groupBy({
-      by: ["customerPhone"],
-      where: { tenantId, status: { not: "cancelado" }, customerPhone: { in: phones } },
-      _max: { createdAt: true },
-    }),
-    prisma.customer.findMany({ where: { tenantId, phone: { in: phones } }, select: { phone: true, name: true } }),
+  // Get first + last order dates per customer + customer names — todos con tenantId scope
+  const [{ firstOrders, lastOrders }, customers] = await Promise.all([
+    AnalyticsCLVDB.getOrderDateRangesByPhone(tenantId, phones),
+    AnalyticsCLVDB.getCustomerNamesByPhone(tenantId, phones),
   ]);
 
-  const firstMap = new Map(firstOrders.map(r => [r.customerPhone, r._min.createdAt as Date]));
-  const lastMap  = new Map(lastOrders.map(r  => [r.customerPhone, r._max.createdAt as Date]));
+  const firstMap = new Map(firstOrders.map(r => [r.customerPhone, r.minDate as Date]));
+  const lastMap  = new Map(lastOrders.map(r  => [r.customerPhone, r.maxDate as Date]));
   const nameMap  = new Map(customers.map(c => [c.phone, c.name]));
 
   const now = new Date();
 
   const clvCustomers: CLVCustomer[] = rows
-    .filter(r => firstMap.has(r.customerPhone!))
+    .filter(r => firstMap.has(r.customerPhone))
     .map(r => {
-      const phone = r.customerPhone as string;
+      const phone = r.customerPhone;
       const first = firstMap.get(phone)!;
       const last  = lastMap.get(phone)!;
       const daysSinceFirst = Math.floor((now.getTime() - first.getTime()) / 86400000);
       const daysSinceLast  = Math.floor((now.getTime() - last.getTime())  / 86400000);
-      const orderCount = r._count.id;
-      // TD-018: r._sum.total es Decimal | null
-      const totalSpent = toNumOrZero(r._sum.total);
+      const orderCount = r.orderCount;
+      // TD-018: r.totalSpent puede ser null
+      const totalSpent = toNumOrZero(r.totalSpent);
       return {
         phone,
         name: nameMap.get(phone) ?? phone,
