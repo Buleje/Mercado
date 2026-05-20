@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod/v4";
 
@@ -46,18 +46,8 @@ export async function GET(req: NextRequest) {
 
     const { entity, entityId, limit } = parsed.data;
 
-    // 3. Consultar ActivityLog existente — nunca Prisma directo en route normal,
-    //    pero ActivityLog no tiene DB class propio; se accede vía Prisma aquí igual
-    //    que en app/api/activity-log/route.ts (patrón establecido en el proyecto).
-    const entries = await prisma.activityLog.findMany({
-      where: {
-        tenantId: auth.tenantId,
-        ...(entity ? { entity } : {}),
-        ...(entityId ? { entityId } : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    });
+    // Audit project-wide 2026-05-19: migrado a ActivityLogDB.list.
+    const entries = await ActivityLogDB.list(auth.tenantId, { entity, entityId, limit });
 
     const items = entries.map((e) => ({
       id: e.id,

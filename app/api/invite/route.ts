@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { tryAdmin } from "@/lib/require-admin";
 import { createInvite, verifyInvite, acceptInvite } from "@/lib/invite";
 import type { InviteRole } from "@/lib/invite";
@@ -58,10 +58,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ valid: false, reason: result.reason }, { status: 404 });
   }
 
-  const tenant = await prisma.tenant.findFirst({
-    where: { slug: result.invite.tenantId },
-    select: { name: true, slug: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a findTenantByIdOrSlug (cacheado).
+  const tenant = await findTenantByIdOrSlug(result.invite.tenantId);
 
   return NextResponse.json({
     valid: true,

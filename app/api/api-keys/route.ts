@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { findTenantBillingByIdOrSlug } from "@/lib/tenant";
 import { tryAdmin } from "@/lib/require-admin";
 import { createApiKey, revokeApiKey, listApiKeys } from "@/lib/api-keys";
 import { getPlanLimits } from "@/lib/plans";
@@ -19,10 +19,8 @@ async function authAdmin(req: NextRequest): Promise<{ tenantId: string } | null>
 // ─── Plan guard ───────────────────────────────────────────────────────────────
 
 async function requireApiAccess(tenantId: string): Promise<boolean> {
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-    select: { plan: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a findTenantBillingByIdOrSlug (cacheado).
+  const tenant = await findTenantBillingByIdOrSlug(tenantId);
   const limits = getPlanLimits(tenant?.plan ?? "free");
   return limits.apiAccess;
 }
