@@ -5,7 +5,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { TurnosDB } from "@/lib/db/turnos.db";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
-import { prisma } from "@/lib/prisma";
+import { CashShiftSalesDB } from "@/lib/db/cash-shift-sales.db";
 
 /**
  * POST /api/cash-registers/close-shift
@@ -64,16 +64,12 @@ export async function POST(req: NextRequest) {
       if (adminUserId) {
         const activo = await TurnosDB.getActivo(auth.tenantId, adminUserId);
         if (activo) {
-          // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por tenantId+cashierId; refactor a SalesDB.aggregateByCashierShift pendiente.
-          const ventasAgg = await prisma.sale.aggregate({
-            where: {
-              tenantId: auth.tenantId,
-              cashierId: adminUserId,
-              createdAt: { gte: new Date(activo.abrioEn) },
-            },
-            _sum: { total: true },
-          });
-          const ventasTotal = ventasAgg._sum.total ? Number(ventasAgg._sum.total) : 0;
+          // Audit project-wide 2026-05-19: migrado a CashShiftSalesDB.
+          const ventasTotal = await CashShiftSalesDB.aggregateByCashierShift(
+            auth.tenantId,
+            adminUserId,
+            new Date(activo.abrioEn),
+          );
           const updated = await TurnosDB.cerrar(activo.id, auth.tenantId, {
             cierreEfectivo: closingAmount,
             ventasTotal,

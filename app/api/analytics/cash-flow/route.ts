@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsCashFlowDB } from "@/lib/db/analytics-cash-flow.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -17,54 +17,12 @@ export async function GET(req: NextRequest) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thirtyDaysAgo = new Date(todayStart);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const tenantFilter = { tenantId: auth.tenantId };
-
-    // Fetch all data in parallel
+    // Audit project-wide 2026-05-19: migrado a AnalyticsCashFlowDB (4 fuentes paralelas).
     const [sales, fiadoCuotas, expenses, payments] = await Promise.allSettled([
-      // Ingresos: ventas directas
-      prisma.sale.findMany({
-        where: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } },
-        select: { total: true, createdAt: true },
-      }),
-      // Ingresos: cobros de fiados
-      (async () => {
-        try {
-          return await prisma.fiadoCuota.findMany({
-            where: {
-              pagadoEn: { not: null, gte: thirtyDaysAgo },
-              fiado: { ...tenantFilter },
-            },
-            select: { monto: true, pagadoEn: true },
-          });
-        } catch {
-          return [];
-        }
-      })(),
-      // Egresos: gastos operativos
-      (async () => {
-        try {
-          return await prisma.expense.findMany({
-            where: { ...tenantFilter, date: { gte: thirtyDaysAgo } },
-            select: { amount: true, date: true },
-          });
-        } catch {
-          return [];
-        }
-      })(),
-      // Egresos: pagos a proveedores
-      (async () => {
-        try {
-          return await prisma.payment.findMany({
-            where: {
-              date: { gte: thirtyDaysAgo },
-              payable: { ...tenantFilter },
-            },
-            select: { amount: true, date: true },
-          });
-        } catch {
-          return [];
-        }
-      })(),
+      AnalyticsCashFlowDB.getSalesInRange(auth.tenantId, thirtyDaysAgo),
+      AnalyticsCashFlowDB.getFiadoCuotasPaid(auth.tenantId, thirtyDaysAgo).catch(() => []),
+      AnalyticsCashFlowDB.getExpensesInRange(auth.tenantId, thirtyDaysAgo).catch(() => []),
+      AnalyticsCashFlowDB.getSupplierPaymentsInRange(auth.tenantId, thirtyDaysAgo).catch(() => []),
     ]);
 
     // Build daily map

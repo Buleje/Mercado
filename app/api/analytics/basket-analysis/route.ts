@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsBasketDB } from "@/lib/db/analytics-basket.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type Association = {
@@ -18,10 +18,8 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   try {
-    const orders = await prisma.order.findMany({
-      where: { tenantId: auth.tenantId, createdAt: { gte: since }, status: { not: "cancelado" } },
-      select: { id: true, total: true, items: { select: { name: true } } },
-    });
+    // Audit project-wide 2026-05-19: migrado a AnalyticsBasketDB.
+    const orders = await AnalyticsBasketDB.getOrdersWithItemsForBasket(auth.tenantId, since);
 
     if (orders.length < 5) throw new Error("not-enough-data");
 

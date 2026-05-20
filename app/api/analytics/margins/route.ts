@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AnalyticsMarginsDB } from "@/lib/db/analytics-margins.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type MarginProduct = {
@@ -39,11 +39,10 @@ export async function GET(req: NextRequest) {
   const authErr = await requireAdmin(req);
   if (authErr instanceof NextResponse) return authErr;
 
-  // Aggregate SaleItems that have costPrice
-  const saleItems = await prisma.saleItem.findMany({
-    select: { productId: true, name: true, price: true, costPrice: true, quantity: true,
-      product: { select: { category: true } } },
-  });
+  // Audit project-wide 2026-05-19: migrado a AnalyticsMarginsDB.
+  // SECURITY FIX: el endpoint original NO filtraba por tenantId → data leak
+  // cross-tenant. Ahora el filtro vive en la DB class via sale.tenantId nested.
+  const saleItems = await AnalyticsMarginsDB.getSaleItemsForMargins(authErr.tenantId);
 
   const productMap = new Map<number, { name: string; category: string; revenue: number; cost: number | null; hasCost: boolean; units: number }>();
 
