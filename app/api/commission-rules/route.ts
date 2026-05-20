@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { CommissionRulesDB } from "@/lib/db/commission-rules.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { enqueueActivityLog } from "@/lib/queue";
 import { toErrorPayload } from "@/lib/api-error";
@@ -32,11 +32,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const rules = await prisma.commissionRule.findMany({
-      where: { tenantId: auth.tenantId },
-      orderBy: [{ cashierId: "asc" }, { minSales: "asc" }],
-    });
-
+    const rules = await CommissionRulesDB.list(auth.tenantId);
     return NextResponse.json(rules);
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
@@ -59,9 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const rule = await prisma.commissionRule.create({
-      data: { ...parsed.data, tenantId: auth.tenantId },
-    });
+    const rule = await CommissionRulesDB.create(auth.tenantId, parsed.data);
 
     enqueueActivityLog({ action: "commission_rule_created", resource: "commission", resourceId: rule.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión creada para ${parsed.data.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
@@ -86,16 +80,15 @@ export async function PATCH(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    const existing = await prisma.commissionRule.findFirst({ where: { id, tenantId: auth.tenantId } });
-    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
     const body = await req.json();
     const parsed = UpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const updated = await prisma.commissionRule.update({ where: { id }, data: parsed.data });
+    const result = await CommissionRulesDB.updateForTenant(auth.tenantId, id, parsed.data);
+    if (!result) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const { previous: existing, updated } = result;
 
     enqueueActivityLog({ action: "commission_rule_updated", resource: "commission", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión actualizada para ${existing.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
@@ -120,10 +113,8 @@ export async function DELETE(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    const existing = await prisma.commissionRule.findFirst({ where: { id, tenantId: auth.tenantId } });
+    const existing = await CommissionRulesDB.deleteForTenant(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-    await prisma.commissionRule.delete({ where: { id } });
 
     enqueueActivityLog({ action: "commission_rule_deleted", resource: "commission", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión eliminada para ${existing.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */

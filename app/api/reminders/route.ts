@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { RemindersDB } from "@/lib/db/reminders.db";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
@@ -47,20 +47,9 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   // Auto-mark overdue on every GET
-  await prisma.reminder.updateMany({
-    where: {
-      tenantId: auth.tenantId,
-      status: "pendiente",
-      dueDate: { lt: new Date() },
-    },
-    data: { status: "vencido" },
-  });
+  await RemindersDB.markOverdue(auth.tenantId);
 
-  const rows = await prisma.reminder.findMany({
-    where: { tenantId: auth.tenantId },
-    orderBy: [{ status: "asc" }, { dueDate: "asc" }],
-  });
-
+  const rows = await RemindersDB.list(auth.tenantId);
   return NextResponse.json(rows.map(mapReminder));
 }
 
@@ -78,14 +67,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const row = await prisma.reminder.create({
-      data: {
-        ...parsed.data,
-        dueDate: new Date(parsed.data.dueDate),
-        tenantId: auth.tenantId,
-      },
-    });
-
+    const row = await RemindersDB.create(auth.tenantId, parsed.data);
     return NextResponse.json(mapReminder(row), { status: 201 });
   });
 }
@@ -105,15 +87,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const existing = await prisma.reminder.findFirst({ where: { id, tenantId: auth.tenantId } });
-    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-    const { dueDate, ...rest } = parsed.data;
-    const row = await prisma.reminder.update({
-      where: { id },
-      data: { ...rest, ...(dueDate && { dueDate: new Date(dueDate) }) },
-    });
-
+    const row = await RemindersDB.updateForTenant(auth.tenantId, id, parsed.data);
+    if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
     return NextResponse.json(mapReminder(row));
   });
 }
@@ -129,11 +104,8 @@ export async function DELETE(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    const existing = await prisma.reminder.findFirst({ where: { id, tenantId: auth.tenantId } });
-    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-    await prisma.reminder.delete({ where: { id } });
-
+    const ok = await RemindersDB.deleteForTenant(auth.tenantId, id);
+    if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
     return NextResponse.json({ ok: true });
   });
 }
