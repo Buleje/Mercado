@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { GuiasRemisionDB } from "@/lib/db";
+import { OrdersDB } from "@/lib/db/orders.db";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -79,21 +79,17 @@ export async function POST(req: NextRequest) {
     let items = data.items ?? [];
     if (data.orderId && items.length === 0) {
       // SECURITY 2026-05-06 (pentest H8): validar que la orden pertenezca al
-      // tenant que crea la guía. Antes `findMany({where:{orderId}})` leía
-      // items de OTRO tenant si el atacante conocía un orderId ajeno.
-      const order = await prisma.order.findFirst({
-        where: { id: data.orderId, tenantId: auth.tenantId, deletedAt: null },
-        select: { id: true },
-      });
+      // tenant que crea la guía. El findMany scoped por order.tenantId nested
+      // garantiza cross-tenant isolation.
+      // Audit project-wide 2026-05-19: migrado a OrdersDB.getItemsForGuiaRemision.
+      const order = await OrdersDB.getById(auth.tenantId, data.orderId);
       if (!order) {
         return NextResponse.json(
           { error: "Orden no encontrada en este tenant" },
           { status: 404 }
         );
       }
-      const orderItems = await prisma.orderItem.findMany({
-        where: { orderId: data.orderId },
-      });
+      const orderItems = await OrdersDB.getItemsForGuiaRemision(auth.tenantId, data.orderId);
       items = orderItems.map((oi) => ({
         descripcion: oi.name,
         cantidad: oi.quantity,

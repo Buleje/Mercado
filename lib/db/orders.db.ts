@@ -699,6 +699,22 @@ export const OrdersDB = {
       category: oi.product?.category ?? null,
     }));
   },
+
+  /**
+   * Items para guia de remision (name, quantity, unit, productId).
+   * Guard cross-tenant via order.tenantId nested.
+   *
+   * Audit project-wide 2026-05-19 — migracion de /api/guias-remision.
+   */
+  async getItemsForGuiaRemision(
+    tenantId: string,
+    orderId: string,
+  ): Promise<Array<{ name: string; quantity: number; unit: string | null; productId: number | null }>> {
+    return prisma.orderItem.findMany({
+      where: { orderId, order: { tenantId } },
+      select: { name: true, quantity: true, unit: true, productId: true },
+    });
+  },
 };
 
 // ── Delivery Slots DB ─────────────────────────────────────────────────────────
