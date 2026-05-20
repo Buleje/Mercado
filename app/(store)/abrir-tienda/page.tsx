@@ -3,11 +3,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Store, ChevronDown, ArrowUpRight } from "@buleje/design-system/icons";
 
-const LandingHeader = dynamic(
-  () => import("@/components/landing/LandingHeader"),
-  { ssr: true },
-);
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
+// LandingHeader + Footer removidos — chrome unificado vive en
+// app/(store)/layout.tsx (mismo nav que /tiendas y /marketplace).
 // RoiCalculator REMOVIDO (Brandon mayo 2026): prometía cifras que no
 // se pueden garantizar. Reemplazado por HowItChanges — comparación
 // concreta del día a día sin uplifts mágicos.
@@ -80,10 +77,11 @@ function SectionSkeleton({ h = "400px" }: { h?: string }) {
   );
 }
 
+// Brandon 2026-05-20 v5: LandingHeader + Footer removidos. Chrome unificado
+// heredado del layout app/(store)/layout.tsx (mismo nav que /tiendas).
 export default function AbrirTiendaPage() {
   return (
     <>
-      <LandingHeader minimal />
       <main id="main-content">
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)]">
@@ -269,7 +267,6 @@ export default function AbrirTiendaPage() {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   );
 }

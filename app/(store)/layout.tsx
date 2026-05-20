@@ -7,6 +7,20 @@ import MaintenancePage from "@/components/MaintenancePage";
 import StoreClientShell from "@/components/StoreClientShell";
 import StoreProviders from "@/components/StoreProviders";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
+// Brandon 2026-05-20 v5 — UNIFICACIÓN DE CHROME:
+// el usuario reportó que /, /negocios, /abrir-tienda usaban LandingHeader
+// propio mientras /tiendas y /marketplace usaban MarketplaceNavbar. 3 navs
+// distintos = cliente confundido. Ahora todas las páginas del route group
+// (store) heredan el mismo chrome (navbar + promo + secondary nav + bottom
+// nav + footer + cart drawer) del layout — único punto de mantenimiento.
+import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
+import ConditionalPromoBar from "@/components/marketplace/ConditionalPromoBar";
+import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
+import QuickAddDrawer from "@/components/marketplace/QuickAddDrawer";
+import BottomNav from "@/components/marketplace/BottomNav";
+import Footer from "@/components/Footer";
+import { AddedToCartDrawerProvider } from "@/components/marketplace/AddedToCartDrawer";
+import NavModeToast from "@/components/marketplace/NavModeToast";
 
 // Modal centrado de "agregar al carrito" — reemplaza la página de detalle
 // de producto en la tienda individual. El cliente NO sale del catálogo: el
@@ -128,12 +142,38 @@ async function StoreLayoutContent({
     <StoreProviders tenantSlug={tenantId}>
       <MotionProvider>
         {/* QuickAddProvider envuelve toda la tienda — al click en producto
-            se abre el drawer en lugar de navegar a una PDP. */}
+            se abre el drawer en lugar de navegar a una PDP.
+            AddedToCartDrawerProvider: drawer "agregado al carrito" del
+            marketplace, ahora compartido con (store) para que la home y
+            /negocios tengan la misma UX que /tiendas. */}
         <QuickAddProvider>
-          {children}
-          <StoreClientShell />
-          <StoreFloatingWidgets />
-          <QuickAddModal />
+          <AddedToCartDrawerProvider>
+            {/* ── Chrome unificado (Brandon 2026-05-20 v5) ──
+                Mismos navbar/bottomnav/footer que /tiendas y /marketplace
+                para evitar el "3 navs distintos = cliente confundido"
+                que reportó el usuario. ConditionalPromoBar y
+                ConditionalSecondaryNav internamente deciden si renderizar
+                según la ruta (no muestran en checkout, etc). */}
+            <ConditionalPromoBar />
+            <Suspense fallback={null}>
+              <MarketplaceNavbar />
+            </Suspense>
+            <Suspense fallback={null}>
+              <ConditionalSecondaryNav />
+            </Suspense>
+            {children}
+            <Footer />
+            <Suspense fallback={null}>
+              <QuickAddDrawer />
+            </Suspense>
+            <BottomNav />
+            <NavModeToast />
+            {/* Widgets legacy de single-tenant — mantenidos por compat con
+                rutas de tienda específica (/cuenta, /mis-pedidos, etc). */}
+            <StoreClientShell />
+            <StoreFloatingWidgets />
+            <QuickAddModal />
+          </AddedToCartDrawerProvider>
         </QuickAddProvider>
       </MotionProvider>
     </StoreProviders>

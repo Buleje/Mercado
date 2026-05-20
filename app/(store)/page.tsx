@@ -4,7 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";
-import LandingHeader from "@/components/landing/LandingHeader";
+// Brandon 2026-05-20 v5: LandingHeader removido — chrome unificado vive
+// en app/(store)/layout.tsx (mismo que /tiendas y /marketplace).
 
 // ── Dynamic imports — Brandon 2026-05-20 audit-sprint perf:
 // reducen initial bundle (Framer Motion + setInterval del hero, carousel cliente,
@@ -48,11 +49,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
-// ── Footer: import directo. Audit Q1 2026-05-20 detectó que
-// `dynamic(..., { ssr: true })` no aporta lazy real (SSR igual incluye el bundle)
-// y `ssr: false` no es válido en Server Components (Next 16). Import estático
-// es más simple y mismo costo bundle.
-import Footer from "@/components/Footer";
+// Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
 
 // ── Brandon mayo 14 2026 v2: home rediseñada B2C tipo Rappi ──────────────────
 // v2 cambios:
@@ -739,11 +736,14 @@ function JoinUsSection() {
 }
 
 // ── Main Home ────────────────────────────────────────────────────────────────
+// Brandon 2026-05-20 v5: LandingHeader y Footer REMOVIDOS de la página.
+// El chrome unificado (MarketplaceNavbar + ConditionalPromoBar +
+// ConditionalSecondaryNav + BottomNav + Footer) vive ahora en
+// app/(store)/layout.tsx — único punto compartido con /tiendas y /marketplace.
 export default async function Home() {
   return (
     <main id="main-content">
       <BulejeJsonLd />
-      <LandingHeader />
 
       {/* 1. Hero compacto con buscador */}
       <RappiStyleHero />
@@ -766,11 +766,6 @@ export default async function Home() {
       <Reveal>
         <JoinUsSection />
       </Reveal>
-
-      <Footer />
-      {/* StickyMobileCTA quitada (Brandon mayo 14 2026 v2): el botón
-          flotante "Explorar marketplace" en mobile saturaba el viewport
-          y competía con el navbar que ya tiene buscador inline. */}
     </main>
   );
 }

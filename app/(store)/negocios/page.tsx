@@ -7,7 +7,7 @@ import { ReviewsCarousel } from "@/components/landing/LandingClientSections";
 import LandingHero from "@/components/landing/LandingHero";
 import PopularCategoriesTiles from "@/components/landing/PopularCategoriesTiles";
 import ComoFuncionaSection from "@/components/landing/sections/ComoFuncionaSection";
-import LandingHeader from "@/components/landing/LandingHeader";
+// LandingHeader removido — chrome unificado vive en app/(store)/layout.tsx (v5).
 import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
@@ -33,7 +33,7 @@ const FAQSection = dynamic(
   () => import("@/components/landing/sections/FAQSection"),
   { ssr: true, loading: () => <SectionSkeleton /> },
 );
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
+// Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
 // Brandon mayo 2026: home y /abrir-tienda muestran los 4 planes
 // idénticos (Estándar/Pro/Enterprise/Max) — fuente única plan-tiers.
 const HomePlansToggle = dynamic(
@@ -771,11 +771,13 @@ function FinalCTA() {
 // → formas de pago → CTA.
 // Removido: RecommendationsEngine, SocioPromoBanner, FeaturedStoresSection.
 // (La landing debe informar, no vender productos individuales — eso es /marketplace/explorar).
+// Brandon 2026-05-20 v5: LandingHeader y Footer removidos. Chrome unificado
+// (MarketplaceNavbar + ConditionalPromoBar + ConditionalSecondaryNav +
+// BottomNav + Footer) heredado del layout app/(store)/layout.tsx.
 export default async function Home() {
   return (
     <main id="main-content">
       <BulejeJsonLd />
-      <LandingHeader />
       {/* DiscountBanner (10% nuevos compradores) movido a /marketplace —
           no debe aparecer en la home de vendedores. */}
 
@@ -836,7 +838,6 @@ export default async function Home() {
         <FinalCTA />
       </Reveal>
 
-      <Footer />
       <StickyMobileCTA />
     </main>
   );
