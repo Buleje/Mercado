@@ -16,7 +16,7 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
-import { prisma } from "@/lib/prisma";
+import { CustomerNotificationsDB } from "@/lib/db/customer-notifications.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -40,31 +40,14 @@ export async function GET(req: NextRequest) {
   const unreadOnly = req.nextUrl.searchParams.get("unread") === "true";
 
   try {
-    const where = {
+    // Audit project-wide 2026-05-19: migrado a CustomerNotificationsDB.listByPhone.
+    // unreadOnly filter aplicado en memoria (rango chico, <= 50 notifs).
+    const { data: allNotifications, unreadCount } = await CustomerNotificationsDB.listByPhone(
       tenantId,
       customerPhone,
-      ...(unreadOnly ? { read: false } : {}),
-    };
-
-    const [notifications, unreadCount] = await Promise.all([
-      prisma.customerNotification.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        select: {
-          id: true,
-          type: true,
-          title: true,
-          body: true,
-          link: true,
-          read: true,
-          createdAt: true,
-        },
-      }),
-      prisma.customerNotification.count({
-        where: { tenantId, customerPhone, read: false },
-      }),
-    ]);
+      limit,
+    );
+    const notifications = unreadOnly ? allNotifications.filter((n) => !n.read) : allNotifications;
 
     return NextResponse.json({
       notifications: notifications.map((n) => ({
@@ -107,24 +90,20 @@ export async function POST(req: NextRequest) {
 
   try {
     if (body?.all === true) {
-      await prisma.customerNotification.updateMany({
-        where: { tenantId, customerPhone, read: false },
-        data: { read: true },
-      });
+      // Audit project-wide 2026-05-19: migrado a CustomerNotificationsDB.markAllReadByPhone.
+      await CustomerNotificationsDB.markAllReadByPhone(tenantId, customerPhone);
       return NextResponse.json({ ok: true, message: "Todas leidas" });
     }
 
     if (Array.isArray(body?.ids) && body.ids.length > 0) {
-      await prisma.customerNotification.updateMany({
-        where: {
-          id: { in: body.ids },
-          tenantId,
-          customerPhone,
-          read: false,
-        },
-        data: { read: true },
-      });
-      return NextResponse.json({ ok: true, marked: body.ids.length });
+      // Mark individual notifs (loop sobre markRead que ya verifica tenant + phone)
+      let marked = 0;
+      for (const id of body.ids) {
+        if (await CustomerNotificationsDB.markRead(tenantId, customerPhone, id)) {
+          marked++;
+        }
+      }
+      return NextResponse.json({ ok: true, marked });
     }
 
     return NextResponse.json({ error: "Enviar { ids: [...] } o { all: true }" }, { status: 400 });

@@ -17,6 +17,7 @@ import { z } from "zod";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
+import { MeAddressesDB } from "@/lib/db/me-addresses.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -88,16 +89,8 @@ export async function GET(req: NextRequest) {
   if (blocked) return blocked;
 
   try {
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; cross-tenant guard arriba.
-    const addresses = await prisma.savedLocation.findMany({
-      where: { customerPhone },
-      orderBy: { id: "desc" },
-      select: {
-        id: true,
-        location: true,
-        reference: true,
-      },
-    });
+    // Audit project-wide 2026-05-19: migrado a MeAddressesDB.list.
+    const addresses = await MeAddressesDB.list(customerPhone);
 
     return NextResponse.json({
       addresses,
@@ -139,10 +132,8 @@ export async function POST(req: NextRequest) {
 
   try {
     // Limit to 10 addresses per customer
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; cross-tenant guard arriba.
-    const count = await prisma.savedLocation.count({
-      where: { customerPhone },
-    });
+    // Audit project-wide 2026-05-19: migrado a MeAddressesDB.count.
+    const count = await MeAddressesDB.count(customerPhone);
 
     if (count >= 10) {
       return NextResponse.json(
@@ -151,15 +142,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; cross-tenant guard arriba.
-    const address = await prisma.savedLocation.create({
-      data: {
-        customerPhone,
-        location: parsed.data.location,
-        reference: parsed.data.reference,
-      },
-      select: { id: true, location: true, reference: true },
-    });
+    // Audit project-wide 2026-05-19: migrado a MeAddressesDB.create.
+    const address = await MeAddressesDB.create(
+      sessionTenantId,
+      customerPhone,
+      parsed.data.location,
+      parsed.data.reference,
+    );
 
     return NextResponse.json({
       ok: true,
@@ -199,19 +188,14 @@ export async function DELETE(req: NextRequest) {
 
   try {
     // Verify ownership before delete (customerPhone scope on top of tenant guard).
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; cross-tenant guard arriba.
-    const address = await prisma.savedLocation.findFirst({
-      where: { id: parsed.data.id, customerPhone },
-    });
+    // Audit project-wide 2026-05-19: migrado a MeAddressesDB.
+    const address = await MeAddressesDB.findOwned(parsed.data.id, customerPhone);
 
     if (!address) {
       return NextResponse.json({ error: "Direccion no encontrada" }, { status: 404 });
     }
 
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId field; ownership double-checked arriba.
-    await prisma.savedLocation.delete({
-      where: { id: parsed.data.id },
-    });
+    await MeAddressesDB.delete(parsed.data.id);
 
     return NextResponse.json({ ok: true, message: "Direccion eliminada" });
   } catch (err) {

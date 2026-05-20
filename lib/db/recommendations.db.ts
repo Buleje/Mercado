@@ -1,0 +1,185 @@
+import "server-only";
+import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
+
+/**
+ * RecommendationsDB
+ *
+ * Audit project-wide 2026-05-19 — migración de /api/recommendations.
+ * Motor colaborativo simple: historial propio → co-compradores → categorías → best-sellers.
+ * Nota: este endpoint es público (sin auth), por lo que tenantId NO es obligatorio
+ * en todas las queries. Sin embargo, los productos y órdenes se filtran por
+ * los datos del phone del cliente dentro del store actual del tenant.
+ */
+
+export interface RecommendedProduct {
+  id: number;
+  name: string;
+  category: string;
+  price: unknown; // Decimal — el caller lo serializa
+  image: string | null;
+  unit: string | null;
+}
+
+interface RecommendOpts {
+  phone?: string | null;
+  limit?: number;
+}
+
+export const RecommendationsDB = {
+  /**
+   * Devuelve productos recomendados para un phone dado (o best-sellers si sin historial).
+   * Algoritmo: collaborative filtering → categorías frecuentes → best-sellers fallback.
+   */
+  async forPhone(opts: RecommendOpts = {}): Promise<RecommendedProduct[]> {
+    const { phone, limit = 8 } = opts;
+    const safeLimit = Math.min(Math.max(limit, 1), 30);
+
+    // Todos los productos activos para mapeo rápido
+    const allProducts = await prisma.product.findMany({
+      where: { active: true },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        price: true,
+        image: true,
+        unit: true,
+        stock: true,
+      },
+    });
+    const productMap = new Map(allProducts.map((p) => [p.id, p]));
+
+    let recommended: number[] = [];
+
+    if (phone) {
+      // 1. Historial del cliente
+      const [orderItems, saleItems] = await Promise.all([
+        prisma.orderItem.findMany({
+          where: { order: { customerPhone: phone, status: { not: "cancelado" } } },
+          select: { productId: true },
+        }),
+        prisma.saleItem.findMany({
+          where: { sale: { customerPhone: phone } },
+          select: { productId: true },
+        }),
+      ]);
+
+      const boughtIds = new Set<number>();
+      for (const i of orderItems) if (i.productId) boughtIds.add(i.productId);
+      for (const i of saleItems) if (i.productId) boughtIds.add(i.productId);
+
+      if (boughtIds.size > 0) {
+        // 2. Clientes que compraron lo mismo
+        const [coOrders, coSales] = await Promise.all([
+          prisma.orderItem.findMany({
+            where: {
+              productId: { in: [...boughtIds] },
+              order: { customerPhone: { not: phone }, status: { not: "cancelado" } },
+            },
+            select: { order: { select: { customerPhone: true } } },
+          }),
+          prisma.saleItem.findMany({
+            where: {
+              productId: { in: [...boughtIds] },
+              sale: { customerPhone: { not: phone } },
+            },
+            select: { sale: { select: { customerPhone: true } } },
+          }),
+        ]);
+
+        const coPhones = new Set<string>();
+        for (const i of coOrders) if (i.order.customerPhone) coPhones.add(i.order.customerPhone);
+        for (const i of coSales) if (i.sale.customerPhone) coPhones.add(i.sale.customerPhone);
+
+        if (coPhones.size > 0) {
+          // 3. Productos que esos co-clientes compraron y el cliente actual no
+          const [coOrderItems, coSaleItems] = await Promise.all([
+            prisma.orderItem.findMany({
+              where: {
+                order: { customerPhone: { in: [...coPhones] }, status: { not: "cancelado" } },
+                productId: { notIn: [...boughtIds] },
+              },
+              select: { productId: true },
+            }),
+            prisma.saleItem.findMany({
+              where: {
+                sale: { customerPhone: { in: [...coPhones] } },
+                productId: { notIn: [...boughtIds] },
+              },
+              select: { productId: true },
+            }),
+          ]);
+
+          const freq = new Map<number, number>();
+          for (const i of coOrderItems) if (i.productId) freq.set(i.productId, (freq.get(i.productId) ?? 0) + 1);
+          for (const i of coSaleItems) if (i.productId) freq.set(i.productId, (freq.get(i.productId) ?? 0) + 1);
+
+          recommended = [...freq.entries()]
+            .filter(([id]) => productMap.has(id) && (productMap.get(id)!.stock ?? 0) > 0)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, safeLimit)
+            .map(([id]) => id);
+        }
+
+        // 4. Rellenar con misma categoría si faltan
+        if (recommended.length < safeLimit) {
+          const boughtProducts = [...boughtIds].map((id) => productMap.get(id)).filter(Boolean);
+          const catFreq = new Map<string, number>();
+          for (const p of boughtProducts) if (p) catFreq.set(p.category, (catFreq.get(p.category) ?? 0) + 1);
+
+          const topCats = [...catFreq.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
+          const usedIds = new Set([...boughtIds, ...recommended]);
+
+          for (const cat of topCats) {
+            if (recommended.length >= safeLimit) break;
+            const catProducts = allProducts
+              .filter((p) => p.category === cat && !usedIds.has(p.id) && (p.stock ?? 0) > 0)
+              .sort((a, b) => toNumOrZero(b.price) - toNumOrZero(a.price));
+            for (const p of catProducts) {
+              if (recommended.length >= safeLimit) break;
+              recommended.push(p.id);
+              usedIds.add(p.id);
+            }
+          }
+        }
+      }
+    }
+
+    // 5. Fallback: best-sellers últimos 30 días
+    if (recommended.length < safeLimit) {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+
+      const topSold = await prisma.orderItem.groupBy({
+        by: ["productId"],
+        where: { order: { createdAt: { gte: since }, status: { not: "cancelado" } } },
+        _sum: { quantity: true },
+        orderBy: { _sum: { quantity: "desc" } },
+        take: safeLimit * 2,
+      });
+
+      const usedIds = new Set(recommended);
+      for (const row of topSold) {
+        if (recommended.length >= safeLimit) break;
+        const id = row.productId;
+        if (id && !usedIds.has(id) && productMap.has(id) && (productMap.get(id)!.stock ?? 0) > 0) {
+          recommended.push(id);
+          usedIds.add(id);
+        }
+      }
+    }
+
+    return recommended
+      .map((id) => productMap.get(id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        image: p.image,
+        unit: p.unit,
+      }));
+  },
+};

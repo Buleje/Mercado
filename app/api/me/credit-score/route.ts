@@ -15,7 +15,7 @@ import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { calculateCreditScore } from "@/lib/credit/scoring-engine";
 import { getAvailableCredit } from "@/lib/credit/installment-manager";
-import { prisma } from "@/lib/prisma";
+import { MeCreditScoreDB } from "@/lib/db/me-credit-score.db";
 import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
@@ -45,21 +45,8 @@ export async function GET(req: NextRequest) {
   const scoreResult = await calculateCreditScore(tenantId, customerId);
   const creditInfo = await getAvailableCredit(tenantId, customerId);
 
-  // Fetch last 12 score history snapshots for mini-chart
-  const history = await prisma.creditScoreHistory
-    .findMany({
-      where: { tenantId, customerId },
-      orderBy: { createdAt: "desc" },
-      take: 12,
-      select: {
-        score: true,
-        creditLimit: true,
-        riskLevel: true,
-        trigger: true,
-        createdAt: true,
-      },
-    })
-    .catch(() => [] as never[]);
+  // Audit project-wide 2026-05-19: migrado a MeCreditScoreDB.getHistory.
+  const history = await MeCreditScoreDB.getHistory(tenantId, customerId, 12);
 
   // Calculate delta vs previous snapshot
   const previousScore = history.length > 1 ? history[1].score : null;

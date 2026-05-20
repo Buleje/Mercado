@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { SecurityLogsDB } from "@/lib/db/security-logs.db";
 
 export type SecurityLogEntry = {
   id: string; timestamp: string; actor: string; action: string;
@@ -35,28 +35,18 @@ export async function GET(req: NextRequest) {
   const to = req.nextUrl.searchParams.get("to") ?? undefined;
 
   try {
-    const rows = await prisma.activityLog.findMany({
-      where: {
-        tenantId: auth.tenantId,
-        ...(category && { entity: category }),
-        ...(from && { createdAt: { gte: new Date(from) } }),
-        ...(to && { createdAt: { lte: new Date(to) } }),
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
+    // Audit project-wide 2026-05-19: migrado a SecurityLogsDB.list.
+    const entries = await SecurityLogsDB.list(auth.tenantId, {
+      limit,
+      category,
+      severity,
+      from,
+      to,
     });
 
-    if (rows.length === 0) throw new Error("empty");
+    if (entries.length === 0) throw new Error("empty");
 
-    const entries: SecurityLogEntry[] = rows.map((r) => ({
-      id: r.id, timestamp: r.createdAt.toISOString(), actor: r.user,
-      action: r.action, category: (r.entity as SecurityLogEntry["category"]) ?? "auth",
-      severity: "info", ip: "—", details: r.detail, success: true,
-    }));
-
-    // Filtro severidad en memoria si viene del log de actividad
-    const filtered = severity ? entries.filter((e) => e.severity === severity) : entries;
-    return NextResponse.json({ logs: filtered, total: filtered.length });
+    return NextResponse.json({ logs: entries, total: entries.length });
   } catch {
     let demo = DEMO_LOGS;
     if (category) demo = demo.filter((l) => l.category === category);

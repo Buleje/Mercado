@@ -13,7 +13,7 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
-import { prisma } from "@/lib/prisma";
+import { MeSpendingDB } from "@/lib/db/me-spending.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -39,41 +39,11 @@ export async function GET(req: NextRequest) {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
+    // Audit project-wide 2026-05-19: migrado a MeSpendingDB.
     const [currentOrders, previousOrders, customerData] = await Promise.all([
-      prisma.order.findMany({
-        where: {
-          tenantId,
-          customerPhone,
-          createdAt: { gte: thirtyDaysAgo },
-          status: { not: "cancelado" },
-        },
-        include: {
-          items: {
-            select: { name: true, price: true, quantity: true, productId: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.order.findMany({
-        where: {
-          tenantId,
-          customerPhone,
-          createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
-          status: { not: "cancelado" },
-        },
-        select: { total: true },
-      }),
-      // findFirst con tenantId para aislamiento multi-tenant
-      // TODO(P1 #15): migrar a CustomersDB
-      prisma.customer.findFirst({
-        where: { phone: customerPhone, tenantId },
-        select: {
-          loyaltyPoints: true,
-          loyaltyTier: true,
-          totalSpent: true,
-          creditBalance: true,
-        },
-      }),
+      MeSpendingDB.getOrdersWithItems(tenantId, customerPhone, thirtyDaysAgo),
+      MeSpendingDB.getOrderTotals(tenantId, customerPhone, sixtyDaysAgo, thirtyDaysAgo),
+      MeSpendingDB.getLoyaltyData(tenantId, customerPhone),
     ]);
 
     // Current period totals

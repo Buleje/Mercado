@@ -14,7 +14,7 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
-import { prisma } from "@/lib/prisma";
+import { MeReferralStatusDB } from "@/lib/db/me-referral-status.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -33,16 +33,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // findFirst con tenantId para aislamiento multi-tenant
-    // TODO(P1 #15): migrar a CustomersDB
-    const me = await prisma.customer.findFirst({
-      where: { phone: customerPhone, tenantId },
-      select: {
-        referralCode: true,
-        loyaltyPoints: true,
-        name: true,
-      },
-    });
+    // Audit project-wide 2026-05-19: migrado a MeReferralStatusDB.
+    const me = await MeReferralStatusDB.getSelf(tenantId, customerPhone);
 
     if (!me?.referralCode) {
       return NextResponse.json({
@@ -55,19 +47,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Find all customers who used my referral code
-    const referrals = await prisma.customer.findMany({
-      where: {
-        referredBy: me.referralCode,
-        tenantId,
-      },
-      select: {
-        name: true,
-        createdAt: true,
-        totalSpent: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
+    const referrals = await MeReferralStatusDB.getReferredCustomers(tenantId, me.referralCode, 20);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
     const shareUrl = `${baseUrl}/registro?ref=${me.referralCode}`;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AdminStoreReviewsDB } from "@/lib/db/admin-store-reviews.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -17,6 +17,8 @@ import { assertCsrf } from "@/lib/auth/csrf";
  *     action="reject"  → status="rejected"
  *     action="hide"    → status="hidden"
  *     action="reply"   → adminReply (requiere body.reply)
+ *
+ * Audit project-wide 2026-05-19: migrado a AdminStoreReviewsDB.
  */
 
 const GetQuery = z.object({
@@ -42,57 +44,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const where: Record<string, unknown> = {
-      tenantId: auth.tenantId,
-      deletedAt: null,
-      storeId: { not: null }, // solo reviews de stores marketplace
-    };
-    if (parsed.data.status !== "all") where.status = parsed.data.status;
-
-    const reviews = await prisma.review.findMany({
-      where,
-      orderBy: { date: "desc" },
-      take: parsed.data.limit,
-      select: {
-        id: true,
-        name: true,
-        location: true,
-        text: true,
-        rating: true,
-        phone: true,
-        status: true,
-        date: true,
-        adminReply: true,
-        adminReplyDate: true,
-        storeId: true,
-      },
-    });
-
-    // Counts por status
-    const counts = await prisma.review.groupBy({
-      by: ["status"],
-      where: { tenantId: auth.tenantId, deletedAt: null, storeId: { not: null } },
-      _count: { _all: true },
-    });
-    const countByStatus: Record<string, number> = {};
-    for (const c of counts) countByStatus[c.status] = c._count._all;
-
-    return NextResponse.json({
-      data: reviews.map((r) => ({
-        id: r.id,
-        name: r.name,
-        location: r.location,
-        text: r.text,
-        rating: r.rating,
-        phone: r.phone,
-        status: r.status,
-        date: r.date.toISOString(),
-        adminReply: r.adminReply,
-        adminReplyDate: r.adminReplyDate?.toISOString() ?? null,
-        storeId: r.storeId,
-      })),
-      counts: countByStatus,
-    });
+    const result = await AdminStoreReviewsDB.listForTenant(
+      auth.tenantId,
+      parsed.data.status,
+      parsed.data.limit,
+    );
+    return NextResponse.json(result);
   } catch (err) {
     logger.error("[admin/store-reviews GET] error", { error: String(err) });
     return NextResponse.json({ error: "Error al listar reseñas" }, { status: 500 });
@@ -122,11 +79,8 @@ export async function PATCH(req: NextRequest) {
 
   try {
     // Verificar tenant ownership antes de mutar
-    const existing = await prisma.review.findUnique({
-      where: { id: parsed.data.id },
-      select: { id: true, tenantId: true, status: true },
-    });
-    if (!existing || existing.tenantId !== auth.tenantId) {
+    const existing = await AdminStoreReviewsDB.findOwnedById(auth.tenantId, parsed.data.id);
+    if (!existing) {
       return NextResponse.json({ error: "Reseña no encontrada" }, { status: 404 });
     }
 
@@ -143,13 +97,11 @@ export async function PATCH(req: NextRequest) {
         break;
     }
 
-    const updated = await prisma.review.update({
-      where: { id: parsed.data.id },
-      data: updateData,
-      select: {
-        id: true, status: true, adminReply: true, adminReplyDate: true,
-      },
-    });
+    const updated = await AdminStoreReviewsDB.updateStatus(
+      auth.tenantId,
+      parsed.data.id,
+      updateData,
+    );
 
     logger.info("[admin/store-reviews PATCH]", { tenantId: auth.tenantId, action: parsed.data.action, reviewId: parsed.data.id });
 
