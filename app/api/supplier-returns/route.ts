@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { SupplierReturnsDB } from "@/lib/db/supplier-returns.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -26,12 +26,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req, ["admin", "almacenero"]);
     if (auth instanceof NextResponse) return auth;
 
-    const returns = await prisma.supplierReturn.findMany({
-      where:   { tenantId: TENANT },
-      include: { items: true },
-      orderBy: { createdAt: "desc" },
-    });
-
+    const returns = await SupplierReturnsDB.listWithItems(TENANT);
     return NextResponse.json(returns);
   } catch (e) {
     logger.error("[supplier-returns] GET error", { err: e instanceof Error ? e.message : String(e) });
@@ -49,26 +44,7 @@ export async function POST(req: NextRequest) {
     const parsed = ReturnSchema.safeParse(raw);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
 
-    const d = parsed.data;
-    const record = await prisma.supplierReturn.create({
-      data: {
-        proveedorId:     d.proveedorId,
-        proveedorNombre: d.proveedorNombre,
-        motivo:          d.motivo,
-        notas:           d.notas,
-        estado:          "PENDIENTE",
-        tenantId:        TENANT,
-        items: {
-          create: d.items.map(i => ({
-            nombre:   i.nombre,
-            cantidad: i.cantidad,
-            unidad:   i.unidad,
-          })),
-        },
-      },
-      include: { items: true },
-    });
-
+    const record = await SupplierReturnsDB.createWithItems(TENANT, parsed.data);
     return NextResponse.json(record, { status: 201 });
   } catch (e) {
     logger.error("[supplier-returns] POST error", { err: e instanceof Error ? e.message : String(e) });
