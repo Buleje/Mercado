@@ -1,7 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { prisma } from "@/lib/prisma";
+import { SuperadminStoresHealthDB } from "@/lib/db/superadmin-stores-health.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -42,11 +42,8 @@ export async function PATCH(req: NextRequest) {
   }
   const { tenantId, checkId, value } = parsed.data;
 
-  // Resolver tenant
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-    select: { id: true, slug: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a SuperadminStoresHealthDB.
+  const tenant = await SuperadminStoresHealthDB.findTenant(tenantId);
   if (!tenant) {
     return NextResponse.json({ error: "tenant_not_found" }, { status: 404 });
   }
@@ -55,38 +52,23 @@ export async function PATCH(req: NextRequest) {
     switch (checkId) {
       // ── Tenant fields ────────────────────────────────────
       case "logo": {
-        await prisma.tenant.update({
-          where: { id: tenantId },
-          data: { logoUrl: value || null },
-        });
+        await SuperadminStoresHealthDB.updateTenantLogo(tenantId, value || null);
         // Mirror también en el Store si existe
-        const store = await prisma.store.findFirst({
-          where: { tenantId },
-          select: { id: true },
-        });
+        const store = await SuperadminStoresHealthDB.findStoreByTenant(tenantId);
         if (store) {
-          await prisma.store.update({
-            where: { id: store.id },
-            data: { logo: value || null },
-          });
+          await SuperadminStoresHealthDB.updateStore(store.id, { logo: value || null });
         }
         break;
       }
       case "ownerPhone":
-        await prisma.tenant.update({
-          where: { id: tenantId },
-          data: { ownerPhone: value || null },
-        });
+        await SuperadminStoresHealthDB.updateTenantOwnerPhone(tenantId, value || null);
         break;
 
       // ── Store fields ─────────────────────────────────────
       case "banner":
       case "description":
       case "published": {
-        const store = await prisma.store.findFirst({
-          where: { tenantId },
-          select: { id: true },
-        });
+        const store = await SuperadminStoresHealthDB.findStoreByTenant(tenantId);
         if (!store) {
           return NextResponse.json({ error: "store_not_found" }, { status: 404 });
         }
@@ -94,7 +76,7 @@ export async function PATCH(req: NextRequest) {
         if (checkId === "banner") data.banner = value || null;
         if (checkId === "description") data.description = value || null;
         if (checkId === "published") data.isPublished = value === "true" || value === "1";
-        await prisma.store.update({ where: { id: store.id }, data });
+        await SuperadminStoresHealthDB.updateStore(store.id, data);
         break;
       }
 
@@ -132,12 +114,7 @@ export async function PATCH(req: NextRequest) {
           }
         }
 
-        // Upsert por tenantId
-        await prisma.settings.upsert({
-          where: { tenantId },
-          create: { tenantId, mode: "checkout", ...data },
-          update: data,
-        });
+        await SuperadminStoresHealthDB.upsertSettings(tenantId, data);
         break;
       }
 

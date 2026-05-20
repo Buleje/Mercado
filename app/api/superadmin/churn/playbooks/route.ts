@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
-import { prisma } from "@/lib/prisma";
+import { SuperadminChurnPlaybooksDB } from "@/lib/db/superadmin-churn-playbooks.db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -56,10 +56,8 @@ export async function GET(req: NextRequest) {
 
   logger.info("[superadmin/churn/playbooks] GET", { user: auth.username, isActiveFilter });
 
-  const playbooks = await prisma.churnPlaybook.findMany({
-    where: isActiveFilter !== undefined ? { isActive: isActiveFilter } : undefined,
-    orderBy: { createdAt: "asc" },
-  });
+  // Audit project-wide 2026-05-19: migrado a SuperadminChurnPlaybooksDB.
+  const playbooks = await SuperadminChurnPlaybooksDB.list(isActiveFilter);
 
   return NextResponse.json({ playbooks });
 }
@@ -81,9 +79,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verificar que el nombre no exista
-  const existing = await prisma.churnPlaybook.findUnique({
-    where: { name: parsed.data.name },
-  });
+  const existing = await SuperadminChurnPlaybooksDB.findByName(parsed.data.name);
   if (existing) {
     return NextResponse.json(
       { error: `Ya existe un playbook con el nombre "${parsed.data.name}"` },
@@ -91,17 +87,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const playbook = await prisma.churnPlaybook.create({
-    data: {
-      name: parsed.data.name,
-      triggerSignal: parsed.data.triggerSignal,
-      triggerSeverity: parsed.data.triggerSeverity,
-      action: parsed.data.action,
-      templateId: parsed.data.templateId ?? null,
-      discountPercent: parsed.data.discountPercent ?? null,
-      discountDays: parsed.data.discountDays ?? null,
-      isActive: parsed.data.isActive,
-    },
+  const playbook = await SuperadminChurnPlaybooksDB.create({
+    name: parsed.data.name,
+    triggerSignal: parsed.data.triggerSignal,
+    triggerSeverity: parsed.data.triggerSeverity,
+    action: parsed.data.action,
+    templateId: parsed.data.templateId ?? null,
+    discountPercent: parsed.data.discountPercent ?? null,
+    discountDays: parsed.data.discountDays ?? null,
+    isActive: parsed.data.isActive,
   });
 
   logger.info("[superadmin/churn/playbooks] Playbook creado", {
@@ -133,16 +127,14 @@ export async function PATCH(req: NextRequest) {
 
   const { id, ...updateData } = parsed.data;
 
-  const existing = await prisma.churnPlaybook.findUnique({ where: { id } });
+  const existing = await SuperadminChurnPlaybooksDB.findById(id);
   if (!existing) {
     return NextResponse.json({ error: "Playbook no encontrado" }, { status: 404 });
   }
 
   // Si se cambia el nombre, verificar unicidad
   if (updateData.name && updateData.name !== existing.name) {
-    const nameConflict = await prisma.churnPlaybook.findUnique({
-      where: { name: updateData.name },
-    });
+    const nameConflict = await SuperadminChurnPlaybooksDB.findByName(updateData.name);
     if (nameConflict) {
       return NextResponse.json(
         { error: `Ya existe un playbook con el nombre "${updateData.name}"` },
@@ -151,10 +143,7 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  const updated = await prisma.churnPlaybook.update({
-    where: { id },
-    data: updateData,
-  });
+  const updated = await SuperadminChurnPlaybooksDB.update(id, updateData);
 
   logger.info("[superadmin/churn/playbooks] Playbook actualizado", {
     user: auth.username,
@@ -188,16 +177,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Falta el parámetro id" }, { status: 400 });
   }
 
-  const existing = await prisma.churnPlaybook.findUnique({ where: { id } });
+  const existing = await SuperadminChurnPlaybooksDB.findById(id);
   if (!existing) {
     return NextResponse.json({ error: "Playbook no encontrado" }, { status: 404 });
   }
 
   // Soft delete: desactivar en lugar de eliminar
-  const updated = await prisma.churnPlaybook.update({
-    where: { id },
-    data: { isActive: false },
-  });
+  const updated = await SuperadminChurnPlaybooksDB.deactivate(id);
 
   logger.info("[superadmin/churn/playbooks] Playbook desactivado", {
     user: auth.username,
