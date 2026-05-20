@@ -58,7 +58,11 @@ function loadAvg() {
 
 function countProcs(name) {
   try {
-    const out = execSync(`pgrep -c -f "${name}" || true`, { encoding: "utf8", timeout: 2000 });
+    // Fix 2026-05-20: pgrep -f auto-matches its own shell wrapper because the
+    // regex pattern lives in the command line — inflating counts by +1 or +2.
+    // Use ps + awk filtering instead, which doesn't self-match.
+    const cmd = `ps -eo pid,cmd --no-headers | awk -v pat='${name}' 'BEGIN{c=0} $0 ~ pat && !/awk|pgrep|bash -c/ {c++} END{print c}'`;
+    const out = execSync(cmd, { encoding: "utf8", timeout: 2000, shell: "/bin/bash" });
     return parseInt(out.trim() || "0", 10);
   } catch { return 0; }
 }

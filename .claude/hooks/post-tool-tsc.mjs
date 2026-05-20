@@ -104,6 +104,17 @@ if (currentTs !== myTs) {
   process.exit(0);
 }
 
+// Pre-flight: mata tsc previos del MISMO proyecto que sigan vivos.
+// Cierra el ciclo "3+ tsc apilados → mem-guard bloquea Edit/Bash" que se daba
+// cuando varios edits llegaban con >3s de separación y los tsc previos no
+// terminaban. Match estricto por tsBuildInfo para no tocar tsc de otros proyectos.
+try {
+  execSync(
+    `pgrep -af "tsc --noEmit.*${tsBuildInfo.replace(/[.*+?^${}()|[\]\\]/g, "\\\\$&")}" | awk '{print $1}' | xargs -r kill -9 2>/dev/null || true`,
+    { shell: "/bin/bash", timeout: 2000, stdio: "ignore" },
+  );
+} catch {}
+
 // ── Run tsc ─────────────────────────────────────────────────────
 try {
   execSync(
