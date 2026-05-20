@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { WholesaleOrdersDB } from "@/lib/db/wholesale-orders.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -41,19 +41,8 @@ export async function GET(req: NextRequest) {
 
   const traceId = newTraceId();
   try {
-    const orders = await prisma.wholesaleOrder.findMany({
-      where: {
-        OR: [
-          { buyerTenantId:  auth.tenantId },
-          { sellerTenantId: auth.tenantId },
-        ],
-      },
-      include: {
-        items: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take:    100,
-    });
+    // Audit project-wide 2026-05-19: migrado a WholesaleOrdersDB.
+    const orders = await WholesaleOrdersDB.listForTenant(auth.tenantId, 100);
 
     return NextResponse.json({ data: orders, total: orders.length });
   } catch (err) {
@@ -95,23 +84,15 @@ export async function POST(req: NextRequest) {
 
     // Obtener nombres de productos y tiers de precio por volumen del vendedor
     const productIds = items.map((i) => i.productId);
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, name: true },
-    });
+    // FIX: scoped to sellerTenantId (antes findMany cross-tenant leak posible)
+    const products = await WholesaleOrdersDB.getProductNamesForSeller(sellerTenantId, productIds);
     const productMap = new Map(products.map((p) => [p.id, p.name]));
 
     // Buscar tienda del vendedor para leer sus volumePricingTiers
-    const sellerStore = await prisma.store.findFirst({
-      where:  { tenantId: sellerTenantId },
-      select: { id: true },
-    });
+    const sellerStore = await WholesaleOrdersDB.findSellerStore(sellerTenantId);
 
     const sellerStoreProducts = sellerStore
-      ? await prisma.storeProduct.findMany({
-          where:  { storeId: sellerStore.id, productId: { in: productIds } },
-          select: { productId: true, volumePricingTiers: true },
-        })
+      ? await WholesaleOrdersDB.getStoreProductsWithTiers(sellerStore.id, productIds)
       : [];
 
     const tiersMap = new Map(
@@ -141,17 +122,13 @@ export async function POST(req: NextRequest) {
     const total      = resolvedItems.reduce((acc, item) => acc + item.total, 0);
     const commission = Math.round(total * COMMISSION_RATE * 100) / 100;
 
-    const order = await prisma.wholesaleOrder.create({
-      data: {
-        buyerTenantId:  auth.tenantId,
-        sellerTenantId,
-        status:         "pending",
-        total,
-        commission,
-        notes,
-        items: { create: resolvedItems },
-      },
-      include: { items: true },
+    const order = await WholesaleOrdersDB.createOrder({
+      buyerTenantId: auth.tenantId,
+      sellerTenantId,
+      total,
+      commission,
+      notes,
+      items: resolvedItems,
     });
 
     logger.info("[wholesale/orders] POST created", {

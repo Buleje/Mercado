@@ -9,7 +9,7 @@
  *   5. Mobile (viewport 375px)
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { RecipeCardCanonical } from "./recipe-card";
 
 const meta = {
@@ -147,9 +147,6 @@ export const Mobile: Story = {
     badges: <BadgesExample />,
     footer: <FooterExample />,
   },
-  parameters: {
-    viewport: { defaultViewport: "mobile1" },
-  },
   decorators: [
     (Story) => (
       <div className="w-full">
@@ -157,4 +154,10 @@ export const Mobile: Story = {
       </div>
     ),
   ],
+  globals: {
+    viewport: {
+      value: "mobile1",
+      isRotated: false
+    }
+  },
 };

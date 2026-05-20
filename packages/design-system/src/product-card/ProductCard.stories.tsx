@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ProductCardCompact } from "./ProductCardCompact";
 import { ProductCardGrid } from "./ProductCardGrid";
 import { ProductCardHero } from "./ProductCardHero";

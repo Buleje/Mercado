@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ShoppingBag, TrendingUp, Users } from "lucide-react";
 import { StatCard, ChartWrapper, DataTable, BadgeStatus } from "./data-display";
 

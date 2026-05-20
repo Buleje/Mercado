@@ -10,7 +10,7 @@
  * tiene que mantenerse en sync si cambia `METERED_EVENTS` en lib/billing.
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { MeteringCardClient } from "./MeteringCard.client";
 import type { MeteringSnapshot } from "./types";
 

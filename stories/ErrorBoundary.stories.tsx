@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import ErrorBoundary, { SimpleErrorFallback } from "../components/ErrorBoundary";
 
 const meta: Meta<typeof ErrorBoundary> = {
@@ -65,7 +65,7 @@ export const ConMensajePersonalizado: Story = {
 export const ConFallbackPersonalizado: Story = {
   args: {
     children: <ComponenteConError />,
-    fallbackRender: (error, reset) => (
+    fallbackRender: (error: Error, reset: () => void) => (
       <SimpleErrorFallback error={error} reset={reset} />
     ),
   },

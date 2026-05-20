@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Package, ShoppingCart } from "lucide-react";
 import { ResponsiveTable } from "../components/ui/ResponsiveTable";
 
@@ -41,7 +41,7 @@ export const Default: Story = {
   args: {
     columns: columnas,
     data: datos,
-    keyExtractor: (item) => item.id,
+    keyExtractor: (item: Producto) => item.id,
   },
 };
 
@@ -49,8 +49,8 @@ export const ConClickEnFila: Story = {
   args: {
     columns: columnas,
     data: datos,
-    keyExtractor: (item) => item.id,
-    onRowClick: (item) => alert(`Seleccionado: ${item.nombre}`),
+    keyExtractor: (item: Producto) => item.id,
+    onRowClick: (item: Producto) => alert(`Seleccionado: ${item.nombre}`),
   },
 };
 
@@ -58,7 +58,7 @@ export const Cargando: Story = {
   args: {
     columns: columnas,
     data: [],
-    keyExtractor: (item) => item.id,
+    keyExtractor: (item: Producto) => item.id,
     loading: true,
     loadingRows: 5,
   },
@@ -68,7 +68,7 @@ export const SinDatos: Story = {
   args: {
     columns: columnas,
     data: [],
-    keyExtractor: (item) => item.id,
+    keyExtractor: (item: Producto) => item.id,
     emptyIcon: Package,
     emptyMessage: "No hay productos registrados",
     emptySubMessage: "Agrega tu primer producto para comenzar",
@@ -79,7 +79,7 @@ export const SinDatosConIcono: Story = {
   args: {
     columns: columnas,
     data: [],
-    keyExtractor: (item) => item.id,
+    keyExtractor: (item: Producto) => item.id,
     emptyIcon: ShoppingCart,
     emptyMessage: "Carrito vacío",
     emptySubMessage: "Agrega productos desde el catálogo",

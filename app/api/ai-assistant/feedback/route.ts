@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { AiAssistantFeedbackDB } from "@/lib/db/ai-assistant-feedback.db";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -26,22 +26,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
   }
 
-  // Verify message exists and belongs to user's tenant
-  const message = await prisma.aIMessage.findFirst({
-    where: { id: parsed.data.messageId },
-    include: { conversation: { select: { tenantId: true, user: true } } },
-  });
+  // Audit project-wide 2026-05-19: migrado a AiAssistantFeedbackDB.
+  const message = await AiAssistantFeedbackDB.findMessageWithConversation(parsed.data.messageId);
 
   if (!message || message.conversation.tenantId !== auth.tenantId) {
     return NextResponse.json({ error: "Mensaje no encontrado" }, { status: 404 });
   }
 
-  const updated = await prisma.aIMessage.update({
-    where: { id: parsed.data.messageId },
-    data: {
-      feedback: parsed.data.feedback,
-      feedbackNote: parsed.data.note ?? null,
-    },
+  const updated = await AiAssistantFeedbackDB.updateMessageFeedback(parsed.data.messageId, {
+    feedback: parsed.data.feedback,
+    feedbackNote: parsed.data.note ?? null,
   });
 
   logActivity(
@@ -66,42 +60,10 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const [total, thumbsUp, thumbsDown, recentBad] = await Promise.all([
-    prisma.aIMessage.count({
-      where: {
-        conversation: { tenantId: auth.tenantId },
-        role: "assistant",
-        feedback: { not: null },
-      },
-    }),
-    prisma.aIMessage.count({
-      where: {
-        conversation: { tenantId: auth.tenantId },
-        role: "assistant",
-        feedback: "up",
-      },
-    }),
-    prisma.aIMessage.count({
-      where: {
-        conversation: { tenantId: auth.tenantId },
-        role: "assistant",
-        feedback: "down",
-      },
-    }),
-    prisma.aIMessage.findMany({
-      where: {
-        conversation: { tenantId: auth.tenantId },
-        role: "assistant",
-        feedback: "down",
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        content: true,
-        feedbackNote: true,
-        createdAt: true,
-      },
-    }),
+    AiAssistantFeedbackDB.countFeedback(auth.tenantId, "any"),
+    AiAssistantFeedbackDB.countFeedback(auth.tenantId, "up"),
+    AiAssistantFeedbackDB.countFeedback(auth.tenantId, "down"),
+    AiAssistantFeedbackDB.listRecentNegative(auth.tenantId, 10),
   ]);
 
   return NextResponse.json({

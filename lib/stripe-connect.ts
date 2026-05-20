@@ -114,7 +114,7 @@ export async function createSplitPayment(params: {
  * Útil para mostrar en el panel de la tienda cuánto tiene disponible.
  */
 export async function getConnectedAccountBalance(accountId: string) {
-  return stripe.balance.retrieve({ stripeAccount: accountId });
+  return stripe.balance.retrieve({}, { stripeAccount: accountId });
 }
 
 /**

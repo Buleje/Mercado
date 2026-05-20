@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { StoreCardCanonical } from "./store-card";
 import { StoreImagePlaceholder } from "./store-image-placeholder";
 
@@ -163,9 +163,6 @@ export const WithBadges: Story = {
 
 export const Mobile: Story = {
   name: "Mobile — viewport 375px",
-  parameters: {
-    viewport: { defaultViewport: "mobile" },
-  },
   render: () => (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
       {[
@@ -185,15 +182,18 @@ export const Mobile: Story = {
       ))}
     </div>
   ),
+  globals: {
+    viewport: {
+      value: "mobile",
+      isRotated: false
+    }
+  },
 };
 
 // ── 6. DarkMode — dark theme ─────────────────────────────────────────────────
 
 export const DarkMode: Story = {
   name: "DarkMode — tema oscuro",
-  parameters: {
-    backgrounds: { default: "dark" },
-  },
   decorators: [
     (Story) => {
       if (typeof document !== "undefined") {
@@ -233,6 +233,11 @@ export const DarkMode: Story = {
       />
     </div>
   ),
+  globals: {
+    backgrounds: {
+      value: "dark"
+    }
+  },
 };
 
 // ── StoreImagePlaceholder solo ────────────────────────────────────────────────

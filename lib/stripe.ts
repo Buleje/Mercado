@@ -10,7 +10,7 @@ import { PLANS, type PlanId } from "@/lib/plans";
 // crítico. En dev (sin var) seguimos con string vacío → Stripe lanza error
 // claro al primer call y el dev lo ve de inmediato.
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2026-02-25.clover",
+  apiVersion: "2026-04-22.dahlia",
   typescript: true,
 });
 

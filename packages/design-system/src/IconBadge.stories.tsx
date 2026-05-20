@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Check, Crown, Shield, ShoppingBag } from "lucide-react";
 import { IconBadge } from "./IconBadge";
 

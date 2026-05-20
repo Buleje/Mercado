@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
+import { ReferralsStoresDB } from "@/lib/db/referrals-stores.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -15,26 +15,9 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Tiendas referidas por este tenant (referredBy = mi slug)
-    const referred = await prisma.tenant.findMany({
-      where: { referredBy: auth.tenantId },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        plan: true,
-        active: true,
-        trialEndsAt: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    // Mi propio tenant para ver mi código de referido
-    const me = await prisma.tenant.findFirst({
-      where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
-      select: { referralCode: true, slug: true, name: true },
-    });
+    // Audit project-wide 2026-05-19: migrado a ReferralsStoresDB.
+    const referred = await ReferralsStoresDB.listReferredBy(auth.tenantId);
+    const me = await ReferralsStoresDB.findOwnTenant(auth.tenantId);
 
     return NextResponse.json({
       referralCode: me?.referralCode ?? null,
@@ -73,10 +56,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Verificar si ya tiene código
-    const me = await prisma.tenant.findFirst({
-      where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
-      select: { referralCode: true },
-    });
+    const me = await ReferralsStoresDB.findReferralCode(auth.tenantId);
 
     if (me?.referralCode) {
       // Ya tiene código — devolver el existente sin generar uno nuevo
@@ -89,21 +69,15 @@ export async function POST(req: NextRequest) {
     const referralCode = `BLJ-${slugPart}-${randomPart}`;
 
     // Verificar unicidad (muy improbable colisión, pero por seguridad)
-    const existing = await prisma.tenant.findUnique({ where: { referralCode } });
+    const existing = await ReferralsStoresDB.findByReferralCode(referralCode);
     if (existing) {
       // Si hay colisión (extremadamente raro), agregar un char más
       const fallback = `BLJ-${slugPart}-${randomPart}X`;
-      await prisma.tenant.update({
-        where: { id: auth.tenantId },
-        data: { referralCode: fallback },
-      });
+      await ReferralsStoresDB.setReferralCode(auth.tenantId, fallback);
       return NextResponse.json({ referralCode: fallback, created: true });
     }
 
-    await prisma.tenant.update({
-      where: { id: auth.tenantId },
-      data: { referralCode },
-    });
+    await ReferralsStoresDB.setReferralCode(auth.tenantId, referralCode);
 
     logActivity(
       "Generar",
