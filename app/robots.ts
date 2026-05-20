@@ -3,15 +3,28 @@ import type { MetadataRoute } from "next";
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = "https://www.buleje.pe";
 
-  // In non-production environments (Vercel previews, staging, local),
-  // block ALL crawlers to avoid polluting search indexes.
+  // Brandon 2026-05-20 v10 audit P0: lógica de detección reescrita.
+  // El bug previo era precedencia de operadores: `A || B && C` se evalúa
+  // como `A || (B && C)` — si NEXT_PUBLIC_BASE_URL no estaba seteado en
+  // Vercel, NODE_ENV=production sin VERCEL_ENV=preview era SUFICIENTE,
+  // pero NEXT_PUBLIC_BASE_URL=undefined seguía siendo el primer chequeo.
+  // Resultado: en algunos deploys de Vercel devolvía "Disallow: /" en
+  // producción y Google no indexaba NADA.
+  //
+  // Nueva lógica más estricta y robusta:
+  //   prod si NEXT_PUBLIC_BASE_URL === www.buleje.pe (canonical)
+  //   prod si VERCEL_ENV === "production" (production deploy de Vercel)
+  //   En cualquier otro caso (dev, preview, branch deploys) → noindex
   const isProduction =
     process.env.NEXT_PUBLIC_BASE_URL === baseUrl ||
-    process.env.NODE_ENV === "production" && !process.env.VERCEL_ENV?.startsWith("preview");
+    process.env.VERCEL_ENV === "production";
 
   if (!isProduction) {
     return {
       rules: [{ userAgent: "*", disallow: "/" }],
+      // Aún en non-prod declaramos el sitemap (no afecta noindex pero
+      // ayuda a herramientas como Search Console preview).
+      sitemap: `${baseUrl}/sitemap.xml`,
     };
   }
 

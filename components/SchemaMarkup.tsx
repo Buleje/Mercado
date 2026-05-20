@@ -99,29 +99,11 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
           },
         }
       : {}),
-    review: [
-      {
-        "@type": "Review",
-        author: { "@type": "Person", name: "María López" },
-        datePublished: "2025-09-15",
-        reviewBody: "Excelente servicio, los productos llegan frescos y a buen precio. Ya no necesito ir al mercado.",
-        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
-      },
-      {
-        "@type": "Review",
-        author: { "@type": "Person", name: "Carlos Ramírez" },
-        datePublished: "2025-10-02",
-        reviewBody: "Pedir por WhatsApp es súper fácil. En menos de una hora ya tenía todo en mi casa. ¡Recomendado!",
-        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
-      },
-      {
-        "@type": "Review",
-        author: { "@type": "Person", name: "Ana Gutiérrez" },
-        datePublished: "2025-11-20",
-        reviewBody: "La calidad de las frutas y verduras es increíble. Se nota que seleccionan lo mejor. Cliente fija.",
-        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
-      },
-    ],
+    // Brandon 2026-05-20 v10 audit P0: bloque `review` FAKE removido.
+    // Google penaliza structured data inventado (review spam). Cuando
+    // tengamos reviews reales del marketplace, reintroducimos via prop
+    // o desde DB. Mientras tanto, aggregateRating sigue gated por
+    // `hasRealRating` arriba — emisión 100% basada en datos reales.
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: "Productos de Buleje",
@@ -153,11 +135,19 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
       availableLanguage: "Spanish",
       contactOption: "TollFree",
     },
+    // Brandon 2026-05-20 v10 audit P1: parentOrganization conecta el
+    // OnlineStore con la entidad Organization (Knowledge Graph linking).
+    parentOrganization: { "@id": "https://www.buleje.pe/#organization" },
   };
 
+  // Brandon 2026-05-20 v10 audit P1: @id agregado para que Google
+  // pueda conectar Organization con OnlineStore (Knowledge Graph).
+  // OnlineStore tiene `parentOrganization: { @id: ... }` apuntando
+  // aquí (ver arriba si lo agregamos también).
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": "https://www.buleje.pe/#organization",
     name: "Buleje",
     url: "https://www.buleje.pe",
     logo: "https://www.buleje.pe/og-image.jpg",
@@ -193,18 +183,13 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
   // (mas rico — incluye description). Este wrapper sigue inyectando
   // LocalBusiness + Organization + BreadcrumbList + Navigation.
 
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Inicio",
-        item: "https://www.buleje.pe",
-      },
-    ],
-  };
+  // Brandon 2026-05-20 v10 audit P0: breadcrumbSchema GLOBAL removido.
+  // Antes inyectaba un BreadcrumbList con solo "Inicio" en TODAS las
+  // páginas → duplicaba con los BreadcrumbList completos de cada page
+  // (home, /tiendas via TiendasBreadcrumb, /marketplace/[slug] etc).
+  // GSC marca como error el 2do dupe. Ahora cada página emite el
+  // SUYO completo con el path real.
+
 
   // Brandon 2026-05-20 v10 audit P2: URLs reales del navbar — antes
   // tenia "/tienda" (sin 's', no existe), "/#ofertas" (anchor a sección
@@ -243,12 +228,6 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(organizationSchema),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbSchema),
         }}
       />
       <script

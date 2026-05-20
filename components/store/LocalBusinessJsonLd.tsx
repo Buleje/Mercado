@@ -47,9 +47,12 @@ export default async function LocalBusinessJsonLd() {
     priceRange: "S/1 - S/200",
     currenciesAccepted: "PEN",
     paymentAccepted: "Efectivo, Yape, Plin",
+    // Brandon 2026-05-20 v10 audit P0: streetAddress vacio es invalido
+    // y Google puede rechazar el schema completo. Solo lo emitimos si
+    // existe direccion real (settings.businessAddress no vacio).
     address: {
       "@type": "PostalAddress",
-      streetAddress: address,
+      ...(address ? { streetAddress: address } : {}),
       addressLocality: "Pucallpa",
       addressRegion: "Ucayali",
       postalCode: "25001",

@@ -147,13 +147,14 @@ export default async function TiendasPage() {
     },
   };
 
+  // Brandon 2026-05-20 v10: BreadcrumbList ya lo emite TiendasBreadcrumb
+  // dentro del TiendasClient (con item URL siempre presente — audit P0).
+  // No emitimos otro aquí para evitar duplicación.
+
   return (
     <>
       <script
         type="application/ld+json"
-        // Next 16: usamos dangerouslySetInnerHTML porque el JSON-LD debe ir
-        // literal (sin escapado React). El contenido es seguro (server-side
-        // build de objeto controlado, no input de usuario).
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
       <TiendasClient initialStores={initialStores} />

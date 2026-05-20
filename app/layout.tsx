@@ -149,6 +149,15 @@ export const metadata: Metadata = {
       "x-default": "https://www.buleje.pe",
     },
   },
+  // Brandon 2026-05-20 v10 audit P2 SEO local: geo meta tags ayudan a
+  // Google Maps / Local Pack a posicionarnos por busquedas "[query]
+  // Pucallpa". Coords del centro de Pucallpa (Jr. Ucayali zona comercial).
+  other: {
+    "geo.region": "PE-UCA",
+    "geo.placename": "Pucallpa, Ucayali, Perú",
+    "geo.position": "-8.3791;-74.5539",
+    "ICBM": "-8.3791, -74.5539",
+  },
 };
 
 // Brandon 2026-05-20 v9 audit P0: theme-color NO acepta `var(--accent)` —

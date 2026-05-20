@@ -2,10 +2,14 @@ import type { Metadata } from "next";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
+// Brandon 2026-05-20 v10 audit P1 SEO: /registro es formulario privado de
+// registro, no debe indexar. Excluida del sitemap (commit anterior) +
+// noindex aqui.
 export const metadata: Metadata = {
   title: "Crear tu Tienda — Registro | Buleje",
   description:
     "Registra tu bodega online en minutos. Elige un plan, configura tu tienda y empieza a vender con 14 días de prueba gratis.",
+  robots: { index: false, follow: false },
   alternates: { canonical: `${BASE_URL}/registro` },
   openGraph: {
     title: "Crear tu Tienda — Registro | Buleje",

@@ -2,10 +2,16 @@ import type { Metadata } from "next";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
+// Brandon 2026-05-20 v10 audit P1 SEO: /pricing es transaccional (selector
+// de plan + form). NO indexar — /negocios es la pagina publica con info
+// de planes que SI indexa. Excluida del sitemap (commit anterior) +
+// noindex/nofollow aqui para garantizar que Google no la indexe via
+// otros backlinks.
 export const metadata: Metadata = {
   title: "Planes y Precios — Buleje | Tienda Online para Bodegas",
   description:
     "Elige el plan perfecto para tu bodega. Desde gratis hasta Enterprise con dominio propio, analytics avanzado, soporte prioritario y más. Prueba gratis 14 días.",
+  robots: { index: false, follow: false },
   keywords: [
     "software para bodegas", "ERP tienda peru", "planes precios bodega",
     "sistema inventario tienda", "Buleje ERP", "SaaS bodegas peru",

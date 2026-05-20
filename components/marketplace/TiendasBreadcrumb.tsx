@@ -22,9 +22,13 @@ interface Props {
 const BASE_URL = "https://www.buleje.pe";
 
 export default function TiendasBreadcrumb({ zonaLabel }: Props) {
+  // Brandon 2026-05-20 v10 audit P0: el item de "Tiendas" siempre tiene
+  // href (audit reporto BreadcrumbList con solo 1 item porque la pagina
+  // actual omitia el href cuando no habia zonaLabel). Ahora siempre 2+
+  // items con item URL — GSC valida correctamente.
   const crumbs: Crumb[] = [
-    { label: "Inicio",  href: "/" },
-    { label: "Tiendas", href: zonaLabel ? "/tiendas" : undefined },
+    { label: "Inicio", href: "/" },
+    { label: zonaLabel ? "Tiendas" : "Tiendas en Pucallpa", href: "/tiendas" },
   ];
   if (zonaLabel) {
     crumbs.push({ label: zonaLabel });
@@ -37,6 +41,8 @@ export default function TiendasBreadcrumb({ zonaLabel }: Props) {
       "@type": "ListItem",
       position: i + 1,
       name: c.label,
+      // Siempre emitir `item` cuando tenemos href (es el caso de Inicio
+      // y Tiendas; solo el último crumb de zona puede no tenerlo).
       ...(c.href && { item: `${BASE_URL}${c.href}` }),
     })),
   };

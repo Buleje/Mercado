@@ -83,18 +83,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
       alternates: { languages: { "es-PE": `${baseUrl}/marketplace/como-pagar` } },
     },
-    {
-      url: `${baseUrl}/pricing`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/registro`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
+    // Brandon 2026-05-20 v10 audit P1 SEO: /pricing y /registro REMOVIDOS
+    // del sitemap — son paginas internas/transaccionales que no aportan
+    // valor SEO y diluyen la calidad del index. Si necesitan estar
+    // indexadas en el futuro, restaurar + agregar metadata.robots noindex
+    // donde corresponda.
     {
       url: `${baseUrl}/about`,
       lastModified,
@@ -165,15 +158,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Task #13: Marketplace stores + store products + recipes
   // ────────────────────────────────────────────────────────────────────────
 
-  // Marketplace stores + store products — dynamic from DB
+  // Marketplace stores + store products — dynamic from DB.
+  // Brandon 2026-05-20 v10 audit P0: filtramos tiendas de prueba/test
+  // (slug contiene "test", "prueba", "demo" o exactos "buleje"/"main"/
+  // "tienda-3") — Google indexaba 13+ urls de "Tienda 3 Pruebas" con
+  // contenido vacío, dañando la calidad del sitio.
+  const TEST_SLUG_BLOCKLIST = new Set(["tienda-3", "buleje", "main", "demo"]);
+  const TEST_SLUG_PATTERN = /(test|prueba|demo|sandbox)/i;
   const marketplacePages: MetadataRoute.Sitemap = [];
   try {
     // Fetch all published stores
-    const stores = await prisma.store.findMany({
+    const stores = (await prisma.store.findMany({
       where: { isPublished: true },
-      select: { id: true, slug: true, updatedAt: true },
+      select: { id: true, slug: true, updatedAt: true, name: true },
       orderBy: { rating: "desc" },
-    });
+    })).filter(
+      (s) =>
+        !TEST_SLUG_BLOCKLIST.has(s.slug.toLowerCase()) &&
+        !TEST_SLUG_PATTERN.test(s.slug) &&
+        !TEST_SLUG_PATTERN.test(s.name ?? ""),
+    );
 
     // Add marketplace hub
     marketplacePages.push({
@@ -334,22 +338,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // TS-43: Tiendas directorio + rutas por zona (long-tail SEO)
+  // TS-43: Tiendas directorio + rutas por zona (long-tail SEO).
+  // Brandon 2026-05-20 v10 audit P0: la URL /tiendas YA está en staticPages
+  // arriba (línea ~60) — duplicarla aquí causaba que Google la flagee como
+  // mala calidad técnica. Mantenemos solo las rutas por zona long-tail.
   const TIENDAS_ZONES = ["centro", "manantay", "calleria", "yarinacocha", "campo_verde"] as const;
-  const tiendasPages: MetadataRoute.Sitemap = [
-    {
-      url: `${baseUrl}/tiendas`,
-      lastModified,
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    ...TIENDAS_ZONES.map((z) => ({
-      url: `${baseUrl}/tiendas/${z}`,
-      lastModified,
-      changeFrequency: "daily" as const,
-      priority: 0.85,
-    })),
-  ];
+  const tiendasPages: MetadataRoute.Sitemap = TIENDAS_ZONES.map((z) => ({
+    url: `${baseUrl}/tiendas/${z}`,
+    lastModified,
+    changeFrequency: "daily" as const,
+    priority: 0.85,
+  }));
 
   return [
     ...staticPages,

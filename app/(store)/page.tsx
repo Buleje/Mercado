@@ -196,11 +196,59 @@ async function BulejeJsonLd() {
     },
   };
 
+  // Brandon 2026-05-20 v10 audit P1: FAQPage schema para Rich Results
+  // (accordeon de preguntas directo en SERP). Las respuestas son del
+  // copy real del marketplace, no inventadas.
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "¿Cómo hago un pedido en Buleje?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Elegís tu tienda en /tiendas, seleccionás los productos y pagás con Yape, Plin o efectivo. Tu pedido llega en 25–35 minutos.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Buleje hace delivery en Pucallpa?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Sí. Hacemos delivery en Pucallpa y zonas cercanas de Ucayali. Tenemos bodegas, restaurantes, farmacias y más.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Puedo pagar con Yape o Plin en Buleje?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Sí, aceptamos Yape, Plin y efectivo contra entrega en todos los pedidos del marketplace.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Cuánto tarda el delivery de Buleje?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "El tiempo estimado es de 25 a 35 minutos según tu ubicación y la tienda elegida. Las tiendas con horario abierto entregan el mismo día.",
+        },
+      },
+    ],
+  };
+
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+    </>
   );
 }
 
