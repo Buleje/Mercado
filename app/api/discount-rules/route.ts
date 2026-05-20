@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { DiscountRulesDB } from "@/lib/db/discount-rules.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
@@ -35,11 +35,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req, ["admin", "cajero"]);
     if (auth instanceof NextResponse) return auth;
 
-    const rules = await prisma.discountRule.findMany({
-      where: { tenantId: TENANT },
-      orderBy: { createdAt: "desc" },
-    });
-
+    const rules = await DiscountRulesDB.list(TENANT);
     return NextResponse.json(rules.map(mapRule));
   } catch (e) {
     logger.error("[discount-rules] GET error", { err: e instanceof Error ? e.message : String(e) });
@@ -58,18 +54,15 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
 
     const d = parsed.data;
-    const rule = await prisma.discountRule.create({
-      data: {
-        nombre:      d.nombre,
-        tipo:        d.tipo,
-        valor:       d.valor,
-        categorias:  JSON.stringify(d.categorias),
-        condicion:   d.condicion,
-        fechaInicio: new Date(d.fechaInicio),
-        fechaFin:    new Date(d.fechaFin),
-        activa:      d.activa,
-        tenantId:    TENANT,
-      },
+    const rule = await DiscountRulesDB.create(TENANT, {
+      nombre: d.nombre,
+      tipo: d.tipo,
+      valor: d.valor,
+      categorias: JSON.stringify(d.categorias),
+      condicion: d.condicion,
+      fechaInicio: new Date(d.fechaInicio),
+      fechaFin: new Date(d.fechaFin),
+      activa: d.activa,
     });
 
     return NextResponse.json(mapRule(rule), { status: 201 });
