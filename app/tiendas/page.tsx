@@ -72,7 +72,12 @@ export const metadata: Metadata = {
     title: "Tiendas y bodegas en Pucallpa | Buleje",
     description:
       "Bodegas, farmacias y restaurantes de Pucallpa. Delivery rápido · Yape, Plin o efectivo.",
-    images: [`${BASE_URL}/brand/buleje-logo.png`],
+    // Brandon 2026-05-20 v11 audit P2: twitter:image:alt requerido por
+    // X/Twitter para accesibilidad de la preview cuando se comparte.
+    images: [{
+      url: `${BASE_URL}/brand/buleje-logo.png`,
+      alt: "Buleje — tiendas y bodegas con delivery rápido en Pucallpa, Ucayali",
+    }],
   },
 };
 

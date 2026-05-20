@@ -76,6 +76,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     existing: store.description,
   });
 
+  // Brandon 2026-05-20 v11 audit P2 SEO: og:type semántico segun categoria.
+  // Next Metadata.openGraph.type solo acepta enum estricto — usamos `other`
+  // para emitir el meta tag custom "restaurant"/"business.business" que
+  // Facebook/Instagram reconocen para rich preview.
+  const RESTAURANT_CATEGORIES = ["restaurante", "polleria", "pizzeria", "pollería", "pizzería", "comida", "snack"];
+  const isRestaurant = RESTAURANT_CATEGORIES.some((c) =>
+    (store.category ?? "").toLowerCase().includes(c),
+  );
+  const ogTypeCustom = isRestaurant ? "restaurant" : "business.business";
+
   return {
     title: `${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
     description: desc,
@@ -88,14 +98,36 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       locale: "es_PE",
       type: "website",
       ...(store.logo
-        ? { images: [{ url: store.logo, width: 400, height: 400, alt: `Logo de ${store.name}` }] }
+        ? {
+            images: [
+              {
+                url: store.logo,
+                width: 400,
+                height: 400,
+                alt: `Logo de ${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
+              },
+            ],
+          }
         : {}),
+    },
+    // OG type custom via `other` — sobrescribe el "website" del bloque
+    // openGraph anterior porque Next emite ambos meta tags.
+    other: {
+      "og:type": ogTypeCustom,
     },
     twitter: {
       card: "summary_large_image",
       title: `${store.name} | Marketplace`,
       description: desc,
-      ...(store.logo ? { images: [store.logo] } : {}),
+      ...(store.logo
+        ? {
+            // Brandon 2026-05-20 v11 audit P2: twitter:image con alt explícito.
+            images: [{
+              url: store.logo,
+              alt: `${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
+            }],
+          }
+        : {}),
     },
   };
 }

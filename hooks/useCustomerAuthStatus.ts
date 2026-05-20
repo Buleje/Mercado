@@ -54,6 +54,51 @@ function writeCache(authenticated: boolean): void {
   }
 }
 
+// Brandon 2026-05-20 v11 audit P1: in-flight promise singleton para deduplicar
+// fetches simultáneos. Antes: 5 componentes montaban al mismo tiempo, cada
+// uno disparaba SU PROPIO fetch antes que el cache se escribiera → 5 hits a
+// /api/auth/customer/me (audit reportó 4 calls en home, mismo bug). Ahora
+// todos los consumers que monten en la misma "ventana de fetch" comparten
+// la misma Promise. Cuando resuelve, todos se setean al mismo valor.
+let inFlightAuthCheck: Promise<boolean> | null = null;
+
+async function checkAuthStatusDeduped(): Promise<boolean> {
+  // Cache HIT — devuelve inmediato sin fetch
+  const cached = readCache();
+  if (cached) return cached.authenticated;
+
+  // Si ya hay una request en vuelo, esperar esa misma (no crear otra)
+  if (inFlightAuthCheck) return inFlightAuthCheck;
+
+  inFlightAuthCheck = (async () => {
+    try {
+      const res = await fetch("/api/auth/customer/me", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        writeCache(false);
+        return false;
+      }
+      const data = (await res.json()) as { authenticated?: boolean };
+      const authed = Boolean(data.authenticated);
+      writeCache(authed);
+      return authed;
+    } catch {
+      writeCache(false);
+      return false;
+    } finally {
+      // Liberar el singleton tras un microtask para que el siguiente burst
+      // pueda intentar de nuevo si el cache no quedó persistido.
+      setTimeout(() => {
+        inFlightAuthCheck = null;
+      }, 0);
+    }
+  })();
+
+  return inFlightAuthCheck;
+}
+
 export function useCustomerAuthStatus(): AuthStatus {
   const [authenticated, setAuthenticated] = useState<boolean | null>(() => {
     const cached = readCache();
@@ -62,33 +107,9 @@ export function useCustomerAuthStatus(): AuthStatus {
 
   useEffect(() => {
     let cancelled = false;
-
-    const check = async () => {
-      try {
-        const res = await fetch("/api/auth/customer/me", {
-          credentials: "include",
-          cache: "no-store",
-        });
-        if (cancelled) return;
-        if (!res.ok) {
-          setAuthenticated(false);
-          writeCache(false);
-          return;
-        }
-        const data = (await res.json()) as { authenticated?: boolean };
-        const authed = Boolean(data.authenticated);
-        setAuthenticated(authed);
-        writeCache(authed);
-      } catch {
-        if (!cancelled) {
-          setAuthenticated(false);
-          writeCache(false);
-        }
-      }
-    };
-
-    void check();
-
+    void checkAuthStatusDeduped().then((authed) => {
+      if (!cancelled) setAuthenticated(authed);
+    });
     return () => {
       cancelled = true;
     };
