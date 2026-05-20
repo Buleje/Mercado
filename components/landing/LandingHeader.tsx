@@ -18,12 +18,21 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PrimaryButton, cn } from "@buleje/design-system";
-import { X, MessageCircle, ArrowRight, Search } from "@buleje/design-system/icons";
 import {
-  BulejeMark,
-  BulejeWordmark,
-} from "@/components/ui-system/illustrations";
-import BrandLogo from "@/components/branding/BrandLogo";
+  X,
+  MessageCircle,
+  ArrowRight,
+  Search,
+  Store,
+  Tag,
+  HelpCircle,
+  Bike,
+  Home,
+  Building2,
+} from "@buleje/design-system/icons";
+import { BulejeMark } from "@/components/ui-system/illustrations";
+// Brandon 2026-05-20 v4: BrandLogo + BulejeWordmark removidos del header
+// landing — el nuevo navbar usa BulejeMark + texto "Buleje" inline.
 import PromoBannerTop from "@/components/landing/PromoBannerTop";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
@@ -79,11 +88,9 @@ export default function LandingHeader({
   // alwaysOpaque seeds initial state so we don't trigger a cascading render.
   const [scrolled, setScrolled] = useState<boolean>(alwaysOpaque);
   const [mobileOpen, setMobileOpen] = useState(false);
-  // Año de copyright: SSR-safe (Next 16 prerender-current-time). Se hidrata en cliente.
-  const [currentYear, setCurrentYear] = useState(2026);
-  useEffect(() => {
-    setCurrentYear(new Date().getFullYear());
-  }, []);
+  // Brandon 2026-05-20 v4: `currentYear` state era dead code (no se usaba en
+  // el JSX del padre — solo lo usaba el MobileSheet antes del rediseño, que
+  // ahora ya no lo necesita). Audit Q1 lo flageó como P1.
 
   // Visibilidad controlada desde superadmin. Durante SSR muestra todos;
   // el hook sincroniza con localStorage tras mount.
@@ -160,64 +167,44 @@ export default function LandingHeader({
         aria-label="Nav comercial — Buleje"
       >
         <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-8">
-          {/* ── Logo — Brandon mayo 14 v3: compacto en mobile (solo mark
-              circular) para dejar espacio al buscador en el centro. Dark
-              mode: el BrandLogo ya respeta tokens del DS, sin override. ── */}
+          {/* ── Logo — Brandon 2026-05-20 v4: el buscador del navbar mobile
+              era REDUNDANTE con el del hero (a 1 scroll de distancia, ambos
+              van a /tiendas?q=). Lo quitamos para liberar espacio al logo
+              completo con wordmark + microcopy comercial, igual que desktop
+              pero compacto. Mobile gana identidad de marca y deja al hero
+              ser el único buscador (anti-dupe). Dark mode: BrandLogo respeta
+              tokens del DS. ── */}
           <Link
             href="/"
             aria-label="Buleje — Ir al inicio"
-            className="flex shrink-0 items-center gap-2 text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
+            className="flex shrink-0 items-center gap-2 sm:gap-2.5 text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
             data-no-translate
           >
-            <span className="lg:hidden">
-              <BulejeMark size={32} strokeWidth={1.75} className="text-[var(--text-primary)] dark:text-white" />
-            </span>
-            <span className="hidden lg:inline-flex">
-              <BrandLogo
-                variant="wordmark"
-                height={32}
-                fallback={<BulejeWordmark size={32} textSize={18} strokeWidth={1.75} />}
-              />
-            </span>
-            <span
-              aria-hidden
-              className="hidden lg:inline-flex flex-col leading-none border-l border-[var(--rule-base)] pl-2 ml-1"
-            >
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-                Tienda online
+            <BulejeMark
+              size={32}
+              strokeWidth={1.75}
+              className="text-[var(--text-primary)] dark:text-white shrink-0"
+            />
+            {/* Wordmark + microcopy visible desde el primer pixel mobile.
+                Brandon 2026-05-20 v4: antes `hidden sm:inline-flex` ocultaba
+                el nombre "Buleje" en celular — viewport <640px solo mostraba
+                la marca circular sin contexto. Ahora visible siempre con
+                tamaños responsivos. */}
+            <span className="inline-flex flex-col leading-none">
+              <span className="text-[15px] sm:text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                Buleje
               </span>
-              <span className="text-[10px] font-medium tracking-tight text-[var(--text-tertiary)]">
-                en 5 minutos
+              <span
+                aria-hidden
+                className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-tertiary)]"
+              >
+                Pucallpa · delivery
               </span>
             </span>
           </Link>
 
-          {/* ── Buscador inline (mobile only, entre logo y CTAs) ────────
-              Brandon mayo 14 v3: en mobile el cliente puede buscar tienda
-              directamente desde el nav sin scrollear al hero. Form GET →
-              /tiendas?q=... sin JS extra. */}
-          <form
-            role="search"
-            action="/tiendas"
-            method="get"
-            className="lg:hidden flex-1 min-w-0"
-          >
-            <label className="relative flex items-center">
-              <Search
-                className="absolute left-3 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
-                aria-hidden
-                strokeWidth={2}
-              />
-              <input
-                type="search"
-                name="q"
-                placeholder="Tu tienda, restaurante…"
-                aria-label="Buscar tienda o producto"
-                autoComplete="off"
-                className="w-full h-10 rounded-full bg-[var(--surface-sunken)] border-2 border-transparent focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] pl-9 pr-3 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all"
-              />
-            </label>
-          </form>
+          {/* spacer que empuja acciones hacia la derecha en mobile */}
+          <div className="flex-1 lg:hidden" aria-hidden />
 
           {/* ── Pill nav central (desktop ≥ lg) — mx-auto centra entre logo y CTAs ── */}
           <nav
@@ -281,44 +268,70 @@ export default function LandingHeader({
             </button>
           </div>
 
-          {/* ── Theme + Hamburger (mobile) — language switcher oculto, ver desktop ── */}
-          <div className="flex items-center gap-1 lg:hidden">
+          {/* ── Acciones mobile — Brandon 2026-05-20 v4 ─────────────────
+              Antes: solo theme toggle + hamburger sueltos.
+              Ahora: pill "Tiendas" (acceso 1-tap al catálogo, alta intención)
+              + theme + hamburger, todos h-10 alineados en un cluster visual.
+              El pill usa color accent suave para destacar como acción comercial
+              sin competir con el CTA primario del hero. ── */}
+          <div className="flex items-center gap-1.5 lg:hidden">
+            {/* Pill "Tiendas" visible siempre en mobile (alta intención B2C).
+                En viewport muy chico (<360px) podría apretar; el responsive
+                `px-2.5 sm:px-3` lo mantiene tappable. */}
+            <Link
+              href="/tiendas"
+              aria-label="Ver tiendas"
+              className={cn(
+                "inline-flex h-10 items-center gap-1.5 rounded-full",
+                "border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)] px-2.5 sm:px-3",
+                "text-[13px] sm:text-sm font-extrabold text-[var(--accent)] transition-all",
+                "hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/80",
+                "active:scale-[0.97]",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+              )}
+            >
+              <Store className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+              Tiendas
+            </Link>
             <ThemeToggle className="!h-10 !w-10" />
+            <button
+              type="button"
+              className={cn(
+                "inline-flex h-11 w-11 items-center justify-center rounded-xl",
+                "text-[var(--text-primary)] transition-all duration-200",
+                "border-2",
+                mobileOpen
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] scale-95"
+                  : "border-transparent hover:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+              )}
+              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={mobileOpen}
+              aria-controls="landing-mobile-sheet"
+              onClick={() => setMobileOpen((prev) => !prev)}
+            >
+              <span aria-hidden className="relative flex h-[14px] w-5 flex-col justify-between">
+                <span
+                  className={cn(
+                    "block h-[2.5px] w-full rounded-full bg-current transition-all duration-200 origin-center",
+                    mobileOpen ? "translate-y-[6px] rotate-45" : "",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "block h-[2.5px] w-full rounded-full bg-current transition-opacity duration-150",
+                    mobileOpen ? "opacity-0" : "opacity-100",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "block h-[2.5px] w-3.5 rounded-full bg-current transition-all duration-200 origin-center ml-auto",
+                    mobileOpen ? "-translate-y-[6px] -rotate-45 w-full" : "",
+                  )}
+                />
+              </span>
+            </button>
           </div>
-          <button
-            type="button"
-            className={cn(
-              "inline-flex h-11 w-11 items-center justify-center rounded-lg lg:hidden",
-              "text-[var(--text-primary)] transition-colors",
-              "hover:bg-[var(--surface-sunken)]",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-            )}
-            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={mobileOpen}
-            aria-controls="landing-mobile-sheet"
-            onClick={() => setMobileOpen((prev) => !prev)}
-          >
-            <span aria-hidden className="relative flex h-4 w-5 flex-col justify-between">
-              <span
-                className={cn(
-                  "block h-[2px] w-full rounded-full bg-current transition-all duration-200 origin-center",
-                  mobileOpen ? "translate-y-[7px] rotate-45" : "",
-                )}
-              />
-              <span
-                className={cn(
-                  "block h-[2px] w-full rounded-full bg-current transition-opacity duration-150",
-                  mobileOpen ? "opacity-0" : "opacity-100",
-                )}
-              />
-              <span
-                className={cn(
-                  "block h-[2px] w-full rounded-full bg-current transition-all duration-200 origin-center",
-                  mobileOpen ? "-translate-y-[7px] -rotate-45" : "",
-                )}
-              />
-            </span>
-          </button>
         </div>
       </header>
 
@@ -360,6 +373,30 @@ function useVisibleLinks() {
   return links.filter((l) => visibility[l.id] !== false);
 }
 
+// Brandon 2026-05-20 v4 — links extra en el MobileSheet.
+// El sheet de mobile ahora muestra acciones B2C de alta intención que NO
+// están en el nav principal desktop (Tiendas, Ofertas, Cómo pagar, Ayuda)
+// porque ahí compiten visualmente con la jerarquía landing→conversion.
+// En mobile el espacio vertical es generoso, los podemos incluir.
+const MOBILE_EXTRA_LINKS: ReadonlyArray<{
+  href: string;
+  label: string;
+  description: string;
+  Icon: typeof Store;
+}> = [
+  { href: "/tiendas", label: "Tiendas", description: "Catálogo de bodegas", Icon: Store },
+  { href: "/marketplace/ofertas", label: "Ofertas", description: "Promociones del día", Icon: Tag },
+  { href: "/marketplace/como-pagar", label: "Cómo pagar", description: "Yape · Plin · efectivo", Icon: HelpCircle },
+  { href: "/marketplace/repartidor", label: "Ser repartidor", description: "Generá ingresos extra", Icon: Bike },
+];
+
+// Iconos para los links principales del sheet (sincronizados con NAV_LINK_DEFS)
+const MOBILE_NAV_ICONS: Record<string, typeof Store> = {
+  inicio: Home,
+  negocios: Building2,
+  "abrir-tienda": Store,
+};
+
 function MobileSheet({
   open,
   onClose,
@@ -368,11 +405,15 @@ function MobileSheet({
   onSignup,
 }: MobileSheetProps) {
   const visibleLinks = useVisibleLinks();
-  // SSR-safe (Next 16 prerender-current-time): hidratación en cliente.
-  const [currentYear, setCurrentYear] = useState(2026);
+  // Escape key cierra el modal (a11y — WCAG 2.1.2 No Keyboard Trap).
   useEffect(() => {
-    setCurrentYear(new Date().getFullYear());
-  }, []);
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
   if (!open) return null;
 
   return (
@@ -387,140 +428,197 @@ function MobileSheet({
       <button
         type="button"
         aria-label="Cerrar menú"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      {/* Panel */}
+      {/* Panel — Brandon 2026-05-20 v4 rediseñado:
+          · header compacto (logo + close) sin el bloque decorativo gigante
+            del mark 72px que desperdiciaba 200px de altura
+          · nav con íconos en pills cuadrados — más jerarquía visual
+          · sección "Para clientes" con accesos B2C que no caben en navbar
+          · CTAs primario + secundario con ring de énfasis
+          · footer WhatsApp solo (sin copyright, ruido removido) */}
       <aside
         className={cn(
-          "absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-[var(--surface-canvas)]",
-          "border-l border-[var(--rule-base)] shadow-xl",
-          "animate-in slide-in-from-right duration-200",
+          "absolute inset-y-0 right-0 flex w-[min(92vw,360px)] flex-col bg-[var(--surface-canvas)]",
+          "border-l-2 border-[var(--rule-base)] shadow-2xl",
+          "animate-in slide-in-from-right duration-250",
         )}
       >
-        {/* Header of sheet — logo + close */}
-        <div className="flex items-center justify-between border-b border-[var(--rule-base)] px-5 py-4">
+        {/* Header sheet — más compacto */}
+        <div className="flex items-center justify-between border-b border-[var(--rule-base)] px-4 py-3 shrink-0">
           <Link
             href="/"
             onClick={onClose}
             aria-label="Buleje — Ir al inicio"
             className="flex items-center gap-2 text-[var(--text-primary)]"
           >
-            <BrandLogo
-              variant="wordmark"
-              height={32}
-              fallback={
-                <>
-                  <BulejeMark size={32} strokeWidth={1.75} />
-                  <span
-                    id="landing-mobile-sheet-title"
-                    className="text-base font-bold tracking-tight"
-                  >
-                    Buleje
-                  </span>
-                </>
-              }
-            />
+            <BulejeMark size={28} strokeWidth={1.75} className="text-[var(--accent)]" />
+            <span
+              id="landing-mobile-sheet-title"
+              className="text-base font-extrabold tracking-tight"
+            >
+              Buleje
+            </span>
           </Link>
           <button
             type="button"
             className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-lg",
+              "inline-flex h-10 w-10 items-center justify-center rounded-xl",
               "text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
             )}
             aria-label="Cerrar menú"
             onClick={onClose}
           >
-            <X className="h-5 w-5" aria-hidden />
+            <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
 
-        {/* Header decorativo del sheet — gradient sutil con identidad */}
-        <div className="flex items-center justify-center border-b border-[var(--rule-base)] bg-gradient-to-b from-[var(--accent-soft)] to-[var(--surface-sunken)] py-6">
-          <BulejeMark
-            size={72}
-            strokeWidth={1.4}
-            className="text-[var(--accent)]"
-          />
-        </div>
+        {/* Body scrollable: nav principal + acciones B2C */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Nav principal con íconos */}
+          <nav aria-label="Navegación principal mobile" className="px-3 pt-4 pb-2">
+            <p className="px-3 mb-2 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+              Explorar
+            </p>
+            <ul className="flex flex-col gap-1">
+              {visibleLinks.map((link) => {
+                const active = isActiveLink(pathname, link.href);
+                const Icon = MOBILE_NAV_ICONS[link.id] ?? Home;
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={onClose}
+                      className={cn(
+                        "flex h-12 items-center gap-3 rounded-xl px-3 text-[15px] font-bold transition-all",
+                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+                        active
+                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                          : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+                      )}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      <span
+                        className={cn(
+                          "inline-flex h-9 w-9 items-center justify-center rounded-lg shrink-0",
+                          active
+                            ? "bg-[var(--accent)] text-white"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                        )}
+                      >
+                        <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                      </span>
+                      <span>{link.label}</span>
+                      {active && (
+                        <span
+                          aria-hidden
+                          className="ml-auto inline-block h-2 w-2 rounded-full bg-[var(--accent)]"
+                        />
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-        {/* Nav column */}
-        <nav
-          aria-label="Navegación principal mobile"
-          className="flex-1 overflow-y-auto px-4 py-4"
-        >
-          <ul className="flex flex-col gap-1">
-            {visibleLinks.map((link) => {
-              const active = isActiveLink(pathname, link.href);
-              return (
-                <li key={link.href}>
+          {/* Acciones B2C — no están en navbar landing pero tienen alta intención
+              en mobile. Cada item es un row tipo lista con descripción corta */}
+          <div className="px-3 pt-2 pb-4">
+            <p className="px-3 mt-3 mb-2 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+              Para clientes
+            </p>
+            <ul className="flex flex-col gap-1">
+              {MOBILE_EXTRA_LINKS.map(({ href, label, description, Icon }) => (
+                <li key={href}>
                   <Link
-                    href={link.href}
+                    href={href}
                     onClick={onClose}
                     className={cn(
-                      "flex h-12 items-center rounded-xl px-3.5 text-lg font-semibold transition-colors",
+                      "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all",
+                      "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
                       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-                      active
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                     )}
-                    aria-current={active ? "page" : undefined}
                   >
-                    {link.label}
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+                      <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1 flex flex-col leading-tight">
+                      <span className="text-[15px] font-bold">{label}</span>
+                      <span className="text-[12px] text-[var(--text-tertiary)] font-medium">
+                        {description}
+                      </span>
+                    </span>
+                    <ArrowRight
+                      className="h-4 w-4 text-[var(--text-tertiary)] shrink-0"
+                      strokeWidth={2.25}
+                      aria-hidden
+                    />
                   </Link>
                 </li>
-              );
-            })}
-          </ul>
-        </nav>
+              ))}
+            </ul>
+          </div>
+        </div>
 
-        {/* Separator + CTAs */}
-        <div className="border-t border-[var(--rule-base)] px-4 py-4">
-          <div className="flex flex-col gap-2">
-            <PrimaryButton
-              variant="secondary"
-              size="lg"
-              className="w-full"
+        {/* CTAs sticky bottom + WhatsApp */}
+        <div className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-3 py-3 shrink-0 space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onSignup();
+            }}
+            className={cn(
+              "group inline-flex w-full items-center justify-center gap-2 h-12 rounded-xl",
+              "bg-[var(--accent-600,var(--accent))] text-white text-[15px] font-extrabold",
+              "shadow-md shadow-[var(--accent)]/30",
+              "active:scale-[0.98] transition-all",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+            )}
+          >
+            <Store className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            Empezar mi tienda
+            <ArrowRight
+              className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+              strokeWidth={2.75}
+              aria-hidden
+            />
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
               onClick={() => {
                 onClose();
                 onLogin();
               }}
+              className={cn(
+                "flex-1 inline-flex items-center justify-center h-11 rounded-xl",
+                "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]",
+                "text-[14px] font-bold text-[var(--text-primary)]",
+                "hover:border-[var(--accent)]/40 active:scale-[0.98] transition-all",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+              )}
             >
               Ingresar
-            </PrimaryButton>
-            <PrimaryButton
-              variant="primary"
-              size="lg"
-              className="w-full"
-              onClick={() => {
-                onClose();
-                onSignup();
-              }}
-            >
-              Empezar mi tienda
-            </PrimaryButton>
-          </div>
-        </div>
-
-        {/* Footer sutil con copyright + WhatsApp */}
-        <div className="border-t border-[var(--rule-base)] px-5 py-4">
-          <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
-            <span>© Buleje {currentYear}</span>
+            </button>
             <a
               href="https://wa.me/51999999999"
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-medium",
-                "text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]",
+                "inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0",
+                "border-2 border-[var(--data-success-500,var(--accent))]/30 bg-[var(--data-success-50,var(--accent-soft))]",
+                "text-[var(--data-success-600,var(--accent))] hover:bg-[var(--data-success-100,var(--accent-soft))]/80",
+                "active:scale-[0.97] transition-all",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               )}
               aria-label="Contáctanos por WhatsApp"
             >
-              <MessageCircle className="h-3.5 w-3.5" aria-hidden />
-              WhatsApp
+              <MessageCircle className="h-5 w-5" strokeWidth={2} aria-hidden />
             </a>
           </div>
         </div>
