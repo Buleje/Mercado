@@ -497,36 +497,54 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
   const fetchStores = useCallback(() => setRetryKey((k) => k + 1), []);
 
-  // Back-nav recovery — cuando el usuario navega a una tienda (/t/[slug]) y
-  // vuelve atrás, Next.js puede restaurar el árbol cliente con state stale
-  // (stores=[] y loading=false porque la fetch fue abortada por el unmount
-  // anterior). Cubrimos 3 caminos:
-  //  1. popstate: back/forward del browser dentro de la SPA
-  //  2. pageshow persisted=true: bfcache del browser (mobile Safari/Firefox)
-  //  3. visibilitychange: usuario vuelve a la pestaña tras dormir el equipo
-  // En todos los casos: si stores está vacío, forzamos refresh + retry.
+  // Back-nav recovery — Brandon 2026-05-20 v7 fix duro:
+  // El usuario reportó "al volver de /marketplace/[slug] a /tiendas la
+  // página queda en blanco". Root cause: el bfcache del browser preserva
+  // el snapshot del DOM frozen (sin React montado realmente), y los
+  // hooks de pageshow/popstate intentan re-fetchear pero el árbol React
+  // ya está dead — `setRetryKey` no dispara re-render porque el componente
+  // está en estado bfcache (no committed).
+  //
+  // Solución: cuando `e.persisted === true` (signal explícito de bfcache),
+  // hacemos `window.location.reload()` con guard anti-loop usando
+  // sessionStorage (si ya recargamos hace <3s, NO recargamos de nuevo).
+  // Para popstate (back dentro SPA) y visibilitychange, mantenemos retry
+  // suave (no full reload).
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const retry = () => {
+    const softRetry = () => {
       setLoading(false);
       setRetryKey((k) => k + 1);
-      // router.refresh limpia el cache del segment del App Router, lo que
-      // garantiza que cualquier dato cacheado server-side también se renueve.
       try { router.refresh(); } catch {}
     };
     const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) retry();
+      if (!e.persisted) return;
+      // bfcache detectado — reload duro con guard anti-loop
+      const RELOAD_KEY = "bsm:tiendas:bfcache-reload";
+      try {
+        const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? "0");
+        const now = Date.now();
+        if (now - last < 3000) {
+          // Ya recargamos hace <3s — usar soft retry para no entrar en loop
+          softRetry();
+          return;
+        }
+        sessionStorage.setItem(RELOAD_KEY, String(now));
+        window.location.reload();
+      } catch {
+        softRetry();
+      }
     };
     const onVisible = () => {
       if (document.visibilityState === "visible" && stores.length === 0 && !loading) {
-        retry();
+        softRetry();
       }
     };
-    window.addEventListener("popstate", retry);
+    window.addEventListener("popstate", softRetry);
     window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
-      window.removeEventListener("popstate", retry);
+      window.removeEventListener("popstate", softRetry);
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisible);
     };

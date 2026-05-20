@@ -205,6 +205,25 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Brandon 2026-05-20 v7 — FIX bfcache stale:
+      // Browser bfcache preservaba snapshots HTML antiguos al volver con
+      // back-nav, mostrando footer + h1 con la versión PREVIA al deploy
+      // por unos ms antes del re-render. Causaba el "queda blanco al
+      // retroceder a /tiendas" + "veo estilos viejos en footer/header".
+      // Cache-Control: no-store impide que el browser meta el HTML en
+      // bfcache → siempre va a network → fresh state al volver.
+      // Aplicamos a rutas dinámicas con auth/state/cliente. Las rutas
+      // estáticas (assets, /images, /fonts) mantienen su cache largo.
+      {
+        source:
+          "/:path((?:(?!api/|_next/|images/|fonts/|brand/|favicon|robots|sitemap|manifest|sw\\.js|offline\\.html).*))",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, must-revalidate",
+          },
+        ],
+      },
       // Security headers for all routes (CSP is handled dynamically by proxy.ts)
       {
         source: "/(.*)",
