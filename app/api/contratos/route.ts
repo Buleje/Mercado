@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { NotesDB } from "@/lib/db/notes.db";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -142,24 +142,13 @@ function generarResumen(data: z.infer<typeof CreateContratoSchema>, numero: stri
 async function generarNumeroCorrelativo(tenantId: string): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `CONT-${year}-`;
-
-  // Count existing contracts for this year
-  const count = await prisma.note.count({
-    where: {
-      tenantId,
-      title: { startsWith: `CONTRATO:` },
-      content: { contains: `"numero":"${prefix}` },
-    },
-  });
-
-  // Also check the general count as fallback for sequential numbering
-  const totalCount = await prisma.note.count({
-    where: {
-      tenantId,
-      title: { startsWith: "CONTRATO:" },
-    },
-  });
-
+  // Audit project-wide 2026-05-19: migrado a NotesDB.count + countWithBothFilters.
+  const count = await NotesDB.countWithBothFilters(
+    tenantId,
+    "CONTRATO:",
+    `"numero":"${prefix}`,
+  );
+  const totalCount = await NotesDB.count(tenantId, { titleStartsWith: "CONTRATO:" });
   const nextNum = Math.max(count, totalCount) + 1;
   return `${prefix}${String(nextNum).padStart(4, "0")}`;
 }
@@ -184,31 +173,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ plantillas: PLANTILLAS_CONTRATO });
     }
 
-    // Build query conditions
-    const whereConditions: Record<string, unknown> = {
-      tenantId: auth.tenantId,
-      title: { startsWith: "CONTRATO:" },
-    };
-
-    // Date filters on the Note model's createdAt
-    if (from || to) {
-      const dateFilter: Record<string, Date> = {};
-      if (from) dateFilter.gte = new Date(`${from}T00:00:00Z`);
-      if (to) dateFilter.lte = new Date(`${to}T23:59:59Z`);
-      whereConditions.createdAt = dateFilter;
-    }
-
-    // Search filter: title includes the search term
-    if (search?.trim()) {
-      whereConditions.title = {
-        startsWith: "CONTRATO:",
-        contains: search.trim(),
-      };
-    }
-
-    const notas = await prisma.note.findMany({
-      where: whereConditions,
-      orderBy: { createdAt: "desc" },
+    // Audit project-wide 2026-05-19: migrado a NotesDB.listByTitlePrefix.
+    const notas = await NotesDB.listByTitlePrefix(auth.tenantId, "CONTRATO:", {
+      search: search ?? undefined,
+      from: from ? new Date(`${from}T00:00:00Z`) : undefined,
+      to: to ? new Date(`${to}T23:59:59Z`) : undefined,
     });
 
     let contratos = notas
@@ -321,14 +290,11 @@ export async function POST(req: NextRequest) {
       creadoPor: auth.username,
     };
 
-    const nota = await prisma.note.create({
-      data: {
-        tenantId: auth.tenantId,
-        title: `CONTRATO: ${numero} — ${data.tipo} — ${data.clienteNombre}`,
-        content: JSON.stringify(contratoData),
-        color: "blue",
-        pinned: false,
-      },
+    const nota = await NotesDB.create(auth.tenantId, {
+      title: `CONTRATO: ${numero} — ${data.tipo} — ${data.clienteNombre}`,
+      content: JSON.stringify(contratoData),
+      color: "blue",
+      pinned: false,
     });
 
     logAudit({

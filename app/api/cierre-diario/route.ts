@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { DailySummaryDB } from "@/lib/db/daily-summary.db";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -43,25 +43,9 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    const summary = await prisma.dailySummary.create({
-      data: {
-        tenantId: auth.tenantId,
-        fecha: new Date(data.fecha),
-        totalVentas: data.totalVentas,
-        cantidadVentas: data.cantidadVentas,
-        ticketPromedio: data.ticketPromedio,
-        efectivoContado: data.efectivoContado ?? null,
-        efectivoEsperado: data.efectivoEsperado,
-        diferenciaCaja: data.diferenciaCaja,
-        fiadosCobrados: data.fiadosCobrados,
-        fiadosNuevos: data.fiadosNuevos,
-        fiadosVencidos: data.fiadosVencidos,
-        mejorHora: data.mejorHora ?? null,
-        productoTop: data.productoTop ?? null,
-        stockAlertas: data.stockAlertas ?? null,
-        notas: data.notas ?? null,
-        creadoPor: auth.username,
-      },
+    const summary = await DailySummaryDB.create(auth.tenantId, {
+      ...data,
+      creadoPor: auth.username,
     });
 
     logActivity(
@@ -85,12 +69,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const summaries = await prisma.dailySummary.findMany({
-      where: { tenantId: auth.tenantId },
-      orderBy: { fecha: "desc" },
-      take: 30,
-    });
-
+    const summaries = await DailySummaryDB.listRecent(auth.tenantId, { take: 30 });
     return NextResponse.json(summaries);
   } catch (e) {
     logger.error("[cierre-diario] GET error", { err: e instanceof Error ? e.message : String(e) });
