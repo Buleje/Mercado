@@ -531,7 +531,16 @@ export function HealthTab() {
                   }}
                   className="w-full text-left transition hover:bg-[var(--surface-sunken)]/30 cursor-pointer"
                 >
-                  <div className="flex items-center gap-4 p-4">
+                  {/* Brandon 2026-05-21 fix mobile: layout stack en <md.
+                      Antes [donut | identidad | acciones] horizontal en
+                      390px squeezeaba el centro hasta 80px → "T12 / pro
+                      / ductos" verticales y "Buls..." cortado. Ahora:
+                      · mobile: donut+identidad arriba en row / acciones
+                        abajo full-width
+                      · desktop: row horizontal intacto */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4">
+                    {/* Top sub-row mobile: donut + identidad */}
+                    <div className="flex items-start gap-4 min-w-0 flex-1">
                     {/* Radial ring */}
                     <div className="shrink-0">
                       <HealthRing
@@ -613,9 +622,14 @@ export function HealthTab() {
                         </span>
                       </div>
                     </div>
+                    </div>
 
-                    {/* Quick actions */}
-                    <div className="shrink-0 flex items-center gap-1.5">
+                    {/* Quick actions — Brandon 2026-05-21 fix mobile:
+                        full-width abajo en stack, inline desktop.
+                        · Rellenar: flex-1 mobile (CTA primario expandido)
+                        · WA: flex-1 cuando existe
+                        · Atendido + chevron: shrink-0 íconos cuadrados */}
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto sm:shrink-0">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -626,7 +640,7 @@ export function HealthTab() {
                             tenantName: item.tenantName,
                           });
                         }}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20 transition hover:brightness-110"
+                        className="flex-1 sm:flex-none inline-flex h-10 sm:h-9 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20 transition hover:brightness-110"
                         title="Rellenar todos los datos faltantes"
                       >
                         <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -638,7 +652,7 @@ export function HealthTab() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--data-success-500)] transition hover:bg-[var(--data-success-500)]/10"
+                          className="flex-1 sm:flex-none inline-flex h-10 sm:h-9 items-center justify-center gap-1.5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--data-success-500)] transition hover:bg-[var(--data-success-500)]/10"
                           title="WhatsApp al dueño"
                         >
                           <MessageCircle className="h-3.5 w-3.5" strokeWidth={2.25} />
@@ -653,7 +667,7 @@ export function HealthTab() {
                         }}
                         aria-pressed={isAttended}
                         title={isAttended ? "Marcar como pendiente" : "Marcar como atendido"}
-                        className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition ${
+                        className={`shrink-0 inline-flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded-xl transition ${
                           isAttended
                             ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
                             : "border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
@@ -662,7 +676,7 @@ export function HealthTab() {
                         <CheckCircle2 className="h-4 w-4" strokeWidth={2.25} />
                       </button>
                       <ChevronDown
-                        className={`h-5 w-5 text-[var(--text-tertiary)] transition-transform ${
+                        className={`shrink-0 h-5 w-5 text-[var(--text-tertiary)] transition-transform ${
                           isExpanded ? "rotate-180" : ""
                         }`}
                         strokeWidth={2}
