@@ -127,6 +127,54 @@ export function CouponsTab() {
           data={coupons}
           rowKey={(row) => row.id}
           emptyMessage="Sin cupones"
+          renderMobileCard={(row) => {
+            // Brandon 2026-05-21 fix mobile: card en lugar de tabla
+            // squeezeada. Antes 3 cols (Código/Tienda/Descuento) en
+            // 390px → "Pòlleria / El / Dorado" texto vertical roto.
+            const discountText = row.discountType === "percent"
+              ? `${row.discountValue}%`
+              : fmt(row.discountValue);
+            return (
+              <div className="space-y-2.5">
+                {/* Header: código + descuento prominente */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-mono font-bold text-[var(--text-primary)] break-all">
+                      {row.code}
+                    </div>
+                    <div className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
+                      {row.storeName}
+                    </div>
+                  </div>
+                  <div className="shrink-0 inline-flex items-center justify-center rounded-lg bg-[var(--data-success-500)]/10 px-3 py-1.5">
+                    <span className="text-base font-extrabold text-[var(--data-success-500)] tabular-nums">
+                      {discountText}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Stats row: uso + estado + expira */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--rule-soft)] text-xs">
+                  <span className="inline-flex items-center gap-1 text-[var(--text-secondary)] tabular-nums">
+                    <span className="font-bold text-[var(--text-primary)]">{row.usedCount}</span>
+                    <span className="text-[var(--text-tertiary)]">/ {row.maxUses}</span>
+                    <span className="text-[var(--text-tertiary)]">usos</span>
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 font-semibold ${
+                      row.active ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]"
+                    }`}
+                  >
+                    {row.active ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+                    {row.active ? "Activo" : "Inactivo"}
+                  </span>
+                  <span className="text-[var(--text-tertiary)] tabular-nums shrink-0">
+                    {row.expiresAt ? fmtDate(row.expiresAt) : "Sin fecha"}
+                  </span>
+                </div>
+              </div>
+            );
+          }}
         />
       )}
     </div>
