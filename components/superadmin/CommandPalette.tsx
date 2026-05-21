@@ -57,7 +57,7 @@ const NAV_COMMANDS: Command[] = [
   { id: "nav-stores",          label: "Tiendas publicadas", icon: ShoppingBag,     category: "navegación", href: "/superadmin/stores",         keywords: ["tiendas", "mercado"] },
   { id: "nav-analytics",       label: "Analytics",          icon: BarChart3,       category: "navegación", href: "/superadmin/analytics",      keywords: ["reportes", "metricas", "kpi"] },
   { id: "nav-health",          label: "Salud del Sistema",  icon: HeartPulse,      category: "navegación", href: "/superadmin/health",         keywords: ["estado", "monitoreo"] },
-  { id: "nav-setup",           label: "Setup Pendiente",    icon: Wrench,          category: "navegación", href: "/superadmin/setup",          keywords: ["pendientes", "tokens", "configurar"] },
+  // Brandon 2026-05-21 audit fix #4: "Setup Pendiente" eliminado (redirect a dashboard).
   { id: "nav-activity",        label: "Actividad",          icon: Activity,        category: "navegación", href: "/superadmin/activity",       keywords: ["log", "historial"] },
   { id: "nav-settings",        label: "Config",             icon: Settings,        category: "navegación", href: "/superadmin/settings",       keywords: ["ajustes", "preferencias"] },
 ];

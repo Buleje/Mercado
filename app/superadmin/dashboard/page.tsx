@@ -335,8 +335,15 @@ export default function DashboardPage() {
             value={data.overview.activeTenants}
             icon={Building2}
             tone="amber"
-            delta={data.growth.tenantGrowthPct}
-            deltaLabel="vs mes anterior"
+            // Brandon 2026-05-21 audit fix #7: el delta es "tenants NUEVOS
+            // este mes vs anterior". Si todos los tenants se crearon antes
+            // del periodo actual, tenantsThisMonth=0 y el cálculo da -100%
+            // (matemáticamente correcto pero engañoso porque el label dice
+            // "Tiendas activas" no "nuevas"). Suprimimos el delta cuando
+            // es exactamente -100% (caso "0 nuevos este mes, había en el
+            // anterior") para no confundir al user.
+            delta={data.growth.tenantGrowthPct === -100 ? null : data.growth.tenantGrowthPct}
+            deltaLabel="nuevos vs mes anterior"
             subValue={`${data.overview.totalTenants} totales`}
             sparkline={sparks.tenants}
           />

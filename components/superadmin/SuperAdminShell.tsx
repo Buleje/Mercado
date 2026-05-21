@@ -165,7 +165,9 @@ const NAV_GROUPS: NavGroupDef[] = [
       { label: "Salud sistema", icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"    },
       { label: "SLO & budgets", icon: <TrendingUp      className="w-5 h-5 shrink-0" />, href: "/superadmin/slo"       },
       { label: "Dead-letter",   icon: <AlertOctagon    className="w-5 h-5 shrink-0" />, href: "/superadmin/dlq"       },
-      { label: "Setup score",   icon: <ClipboardCheck  className="w-5 h-5 shrink-0" />, href: "/superadmin/setup"     },
+      // Brandon 2026-05-21 audit fix #4: "Setup score" eliminado del nav.
+      // El page hace redirect("/superadmin/dashboard") (módulo eliminado por
+      // decisión de producto), así que enlazarlo confunde al user.
     ],
   },
   {
@@ -176,8 +178,8 @@ const NAV_GROUPS: NavGroupDef[] = [
       { label: "Seguridad",      icon: <ShieldCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/security"      },
       { label: "Configuración",  icon: <Sliders     className="w-5 h-5 shrink-0" />, href: "/superadmin/configuracion" },
       { label: "Settings",       icon: <Settings    className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"      },
-      { label: "Sitemap",        icon: <MapIcon     className="w-5 h-5 shrink-0" />, href: "/superadmin/sitemap"       },
-      { label: "Roadmap",        icon: <Rocket      className="w-5 h-5 shrink-0" />, href: "/superadmin/roadmap"       },
+      // Brandon 2026-05-21 audit fix #4: "Sitemap" y "Roadmap" eliminados del nav.
+      // Ambos hacen redirect("/superadmin/dashboard") (módulos eliminados).
     ],
   },
 ];

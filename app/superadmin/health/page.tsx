@@ -481,7 +481,15 @@ export default function SystemHealthPage() {
                     <XCircle className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
                     <span className="font-semibold flex-1">{inc.message}</span>
                     <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]/80 dark:text-[var(--accent)]/80 shrink-0">
-                      desde {new Date(inc.since).toLocaleTimeString("es-PE")}
+                      {(() => {
+                        // Brandon 2026-05-21 audit fix #9: guard contra
+                        // "Invalid Date" cuando inc.since es null/undefined
+                        // o no parseable. Antes mostraba "DESDE INVALID DATE".
+                        if (!inc.since) return "ahora";
+                        const d = new Date(inc.since);
+                        if (isNaN(d.getTime())) return "ahora";
+                        return `desde ${d.toLocaleTimeString("es-PE")}`;
+                      })()}
                     </span>
                   </li>
                 ))}

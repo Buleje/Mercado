@@ -414,34 +414,38 @@ export default function TenantsPage() {
       icon={Building2}
       kicker="Plataforma multi-tenant"
     >
-      {/* ═══════ FILA 1 · Stats hero (4 KPI) ════════════════════════════ */}
+      {/* ═══════ FILA 1 · Stats hero (4 KPI) ════════════════════════════
+            Brandon 2026-05-21 audit fix #3: durante loading inicial, en vez
+            de mostrar "0 / S/0 / 0 / 0" (que confunde al user haciéndole
+            creer que no hay tenants), mostramos "—" placeholder. Cuando el
+            fetch termina, el valor real se renderea. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <SAStatChip
           icon={Building2}
           label="Total tenants"
-          value={String(stats.total)}
-          hint={`${stats.active} activos · ${stats.inactive} suspendidos`}
+          value={loading ? "—" : String(stats.total)}
+          hint={loading ? "Cargando…" : `${stats.active} activos · ${stats.inactive} suspendidos`}
           tone="teal"
         />
         <SAStatChip
           icon={DollarSign}
           label="MRR consolidado"
-          value={`S/ ${stats.mrr.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
-          hint="Suma de revenue del mes"
+          value={loading ? "—" : `S/ ${stats.mrr.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
+          hint={loading ? "Cargando…" : "Suma de revenue del mes"}
           tone="emerald"
         />
         <SAStatChip
           icon={Sparkles}
           label="En trial"
-          value={String(stats.trial)}
-          hint={stats.trial > 0 ? "Vencen pronto" : "Sin trials activos"}
+          value={loading ? "—" : String(stats.trial)}
+          hint={loading ? "Cargando…" : stats.trial > 0 ? "Vencen pronto" : "Sin trials activos"}
           tone="violet"
         />
         <SAStatChip
           icon={Bell}
           label="Pedidos pendientes"
-          value={String(stats.pendingTotal)}
-          hint={`En ${stats.tenantsWithPending} tienda${stats.tenantsWithPending === 1 ? "" : "s"}`}
+          value={loading ? "—" : String(stats.pendingTotal)}
+          hint={loading ? "Cargando…" : `En ${stats.tenantsWithPending} tienda${stats.tenantsWithPending === 1 ? "" : "s"}`}
           tone={stats.pendingTotal > 0 ? "amber" : "sky"}
         />
       </div>

@@ -156,7 +156,13 @@ function DeployBadge({ state }: { state: string }) {
 export default function SLODashboardPage() {
   const [data, setData] = useState<SloData>(MOCK_DATA);
   const [loading, setLoading] = useState(false);
-  const [usingMock, _setUsingMock] = useState(true);
+  // Brandon 2026-05-21 audit fix #10: ocultar mock banner en producción.
+  // Antes siempre `true` → banner amarillo "Datos de ejemplo activos"
+  // visible incluso al cliente final del deploy. Ahora: solo si NEXT_PUBLIC
+  // env flag explícita (default false en cualquier deploy).
+  const [usingMock, _setUsingMock] = useState(
+    process.env.NEXT_PUBLIC_SLO_DASHBOARD_MOCKS === "1",
+  );
 
   const reload = useCallback(async () => {
     setLoading(true);
