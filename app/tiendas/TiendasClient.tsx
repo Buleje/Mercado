@@ -1032,9 +1032,14 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               Brandon 2026-05-21: agregamos chips inline en la fila (Sort
               dropdown + ⭐ 4+ toggle) para que no quede vacía y dar acción
               rápida sin abrir el drawer pesado. Modelo Doordash/Yelp. */}
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 mb-2.5">
-            {/* Sort dropdown inline — siempre visible */}
-            <StoresSortSelector value={sortKey} onChange={setSortKey} />
+          {/* Brandon 2026-05-21: 1 sola fila scroll-x mobile (no wrap)
+              para que los 3 controles queden alineados. Sort más compacto.
+              Desktop sigue con flex-wrap por si hay más controles. */}
+          <div className="flex sm:flex-wrap items-center justify-end gap-2 sm:gap-3 mb-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
+            {/* Sort dropdown inline — siempre visible, compacto mobile */}
+            <div className="shrink-0 [scroll-snap-align:start]">
+              <StoresSortSelector value={sortKey} onChange={setSortKey} />
+            </div>
 
             {/* Toggle ⭐ 4+ — usa el chip "top_rated" del state activeChips */}
             {(() => {
@@ -1052,7 +1057,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   }}
                   aria-pressed={isActive}
                   className={cn(
-                    "inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
+                    "shrink-0 [scroll-snap-align:start] inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
                     isActive
                       ? "bg-[var(--accent)] text-white border-2 border-[var(--accent)]"
                       : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-2 border-[var(--rule-base)] hover:border-[var(--accent)]/50",
@@ -1065,6 +1070,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               );
             })()}
 
+            <div className="shrink-0 [scroll-snap-align:start]">
             <MarketplaceFilters
               filters={productFilters}
               userCoords={userCoords}
@@ -1102,6 +1108,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0)
               }
             />
+            </div>
           </div>
 
           {subcategories.length > 0 && (
