@@ -366,7 +366,7 @@ export function NavegacionTab() {
 
       {/* ── Live preview interactivo ─────────────────────────── */}
       <section className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--surface-raised)] overflow-hidden shadow-md shadow-[var(--accent)]/5">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
+        <header className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-5 py-3 sm:py-3.5">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
               <Eye className="h-4 w-4" strokeWidth={1.75} aria-hidden />
@@ -435,8 +435,10 @@ export function NavegacionTab() {
           </div>
         </header>
 
-        {/* Mockup */}
-        <div className="bg-linear-to-b from-[var(--surface-sunken)] to-transparent p-6">
+        {/* Mockup — Brandon 2026-05-21 fix mobile: p-3 sm:p-6 (16px lateral
+            ahorro mobile, deja el mockup browser respirar en 390px viewport
+            sin pegarse a los bordes pero sin desperdiciar espacio). */}
+        <div className="bg-linear-to-b from-[var(--surface-sunken)] to-transparent p-3 sm:p-6">
           <div
             className={`mx-auto transition-all ${
               previewDevice === "mobile" ? "max-w-[380px]" : "max-w-full"
