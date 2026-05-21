@@ -322,6 +322,107 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
           data={filtered}
           rowKey={(row) => row.id}
           emptyMessage="Sin resultados"
+          renderMobileCard={(row) => {
+            // Brandon 2026-05-21 fix mobile: card view en lugar de tabla
+            // squeezada. Antes 3 cols (TIENDA/STORE/PLAN) en 390px → texto
+            // vertical roto "Pizzeria / Daily / Fresh" + columnas duplicadas
+            // (TIENDA y STORE casi mismo contenido).
+            const busy = togglingId === row.id;
+            return (
+              <div className="space-y-3">
+                {/* Header card: nombre + plan badge */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-extrabold text-[var(--text-primary)] truncate">
+                      {row.tenant.name}
+                    </div>
+                    <div className="text-xs text-[var(--text-tertiary)] font-mono truncate">
+                      {row.tenant.slug}
+                    </div>
+                    {row.name !== row.tenant.name && (
+                      <div className="text-xs text-[var(--text-secondary)] mt-1">
+                        Store: <span className="font-medium">{row.name}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0 flex flex-col items-end gap-1.5">
+                    <PlanBadge plan={row.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
+                    <span
+                      className={[
+                        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",
+                        row.isPublished
+                          ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
+                      ].join(" ")}
+                    >
+                      <span className={`h-1 w-1 rounded-full ${row.isPublished ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]"}`} />
+                      {row.isPublished ? "Publicado" : "Borrador"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Mini-stats 3 cols: rating, productos, comisión */}
+                <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-[var(--rule-soft)]">
+                  <div>
+                    <div className="inline-flex items-center gap-1 text-sm font-bold text-[var(--data-warning-500)]">
+                      <Star className="w-3 h-3 fill-current" />
+                      {Number(row.rating).toFixed(1)}
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
+                      Rating
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[var(--text-primary)]">
+                      {row._count.products}
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
+                      Productos
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[var(--accent)] tabular-nums">
+                      {row.commission}%
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
+                      Comisión
+                    </div>
+                  </div>
+                </div>
+
+                {/* Categoría + fecha */}
+                <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
+                  <span className="capitalize">{row.category}</span>
+                  <span className="tabular-nums">{fmtDate(row.createdAt)}</span>
+                </div>
+
+                {/* CTA principal: publish/unpublish */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!busy) handleTogglePublish(row);
+                  }}
+                  disabled={busy}
+                  className={[
+                    "w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
+                    row.isPublished
+                      ? "border-rose-200 bg-rose-50 text-[var(--data-error-500)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30"
+                      : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
+                  ].join(" ")}
+                  aria-label={row.isPublished ? `Ocultar ${row.name} del marketplace` : `Publicar ${row.name} en marketplace`}
+                >
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : row.isPublished ? (
+                    <><EyeOff className="h-4 w-4" /> Ocultar del marketplace</>
+                  ) : (
+                    <><Eye className="h-4 w-4" /> Publicar en marketplace</>
+                  )}
+                </button>
+              </div>
+            );
+          }}
         />
       )}
     </div>
