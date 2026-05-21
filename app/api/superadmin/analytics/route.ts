@@ -334,5 +334,18 @@ export async function GET(req: NextRequest) {
   const from = req.nextUrl.searchParams.get("from") ?? undefined;
   const to = req.nextUrl.searchParams.get("to") ?? undefined;
   const data = await getAnalyticsData(from, to);
-  return NextResponse.json(data);
+  // Brandon 2026-05-21 audit blindaje batch 3 perf:
+  // Cache-Control private + max-age 60s + stale-while-revalidate 300s.
+  // - private: solo browser superadmin del usuario actual lo cachea
+  //   (NO CDN/proxy intermedio — datos sensibles)
+  // - max-age 60s: refresh suave cada minuto
+  // - stale-while-revalidate 300s: si el cache expiró pero el server
+  //   tarda, devuelve stale instantáneo y revalida en background
+  // Impact: refresh frecuente del dashboard pega cache (analytics es
+  // query pesada: findMany tenants + 3 counts + 6 monthly aggregates).
+  return NextResponse.json(data, {
+    headers: {
+      "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+    },
+  });
 }

@@ -197,7 +197,14 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
     const rows = await getTenantsData();
-    return NextResponse.json({ tenants: rows });
+    // Brandon 2026-05-21 audit blindaje batch 3 perf: cache private 60s
+    // + SWR 300s. getTenantsData es query pesada (findMany tenants con
+    // joins de orders/products/users); cachear evita re-ejecutar en cada
+    // refresh del page o cada keystroke de filtros client-side.
+    return NextResponse.json(
+      { tenants: rows },
+      { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=300" } },
+    );
   } catch (error) {
     logger.error("[superadmin/tenants] Error fetching tenants", {
       error: error instanceof Error ? error.message : String(error),
