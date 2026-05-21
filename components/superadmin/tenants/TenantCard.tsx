@@ -156,7 +156,9 @@ export function TenantCard({
 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-sm)] hover:border-[var(--rule-strong)] transition-colors overflow-hidden">
-      <div className="p-5 space-y-4">
+      {/* Brandon 2026-05-21 fix mobile: p-4 sm:p-5 — 16px lateral en mobile
+          (de 20px) gana ~8px de ancho interno para los KPIs 4-col. */}
+      <div className="p-4 sm:p-5 space-y-4">
         {/* Kicker: plan label + status pill, sin gradient */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] font-semibold">
@@ -277,17 +279,20 @@ export function TenantCard({
           </div>
         </div>
 
-        {/* Financial KPIs — uniformes via StatCard density=compact, sin icon
-            para no comprimir el label en grid 4-col estrecho. */}
-        <div className="grid grid-cols-4 gap-2">
+        {/* Financial KPIs — Brandon 2026-05-21 fix mobile: 2x2 en mobile
+            (4 cols en sm+). antes 4 cols forzaba ~70px por celda en 360px
+            mobile → label "Ganancia" truncado + valor "S/14r" raro (S/140k
+            cortado). Ahora 2 cols mobile = ~160px por celda, legible. */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <StatCard density="compact" label="Ventas" value={fmtMoney(revenue)} />
           <StatCard density="compact" label="Gastos" value={fmtMoney(expenses)} />
           <StatCard density="compact" label="Ganancia" value={fmtMoney(profit)} />
           <StatCard density="compact" label="Pedidos" value={String(t.monthOrders ?? 0)} />
         </div>
 
-        {/* Resources — chips neutros uniformes */}
-        <div className="grid grid-cols-3 gap-2">
+        {/* Resources — chips neutros uniformes (3 cols ya cabe en mobile
+            con gap-1.5, los labels usan text-xs centered). */}
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {[
             { val: t.usage?.products ?? 0, lbl: "Productos", icon: Package, max: t.limits?.maxProducts ?? -1, clickable: true },
             { val: t._count.AdminUser, lbl: "Usuarios", icon: Users, max: t.limits?.maxUsers ?? -1, clickable: false },
@@ -444,53 +449,68 @@ export function TenantCard({
           </button>
         </div>
 
-        {/* Row 3: Invite + Suspend + Purge + Delete + Detail — neutros */}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onInvite(t.slug, t.name)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            <Mail className="w-3.5 h-3.5" /> Invitar
-          </button>
-          <button
-            type="button"
-            onClick={() => onToggleActive(t.slug, t.active)}
-            disabled={actionLoading === `${t.slug}-active`}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
-          >
-            {actionLoading === `${t.slug}-active`
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              : t.active
-              ? <><XCircle className="w-3.5 h-3.5" /> Suspender</>
-              : <><CheckCircle2 className="w-3.5 h-3.5" /> Activar</>
-            }
-          </button>
-          <button
-            type="button"
-            onClick={() => onPurge(t.slug, t.name)}
-            disabled={actionLoading === `${t.slug}-purge`}
-            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
-            title="Limpiar datos de esta tienda (productos, pedidos, movimientos)"
-          >
-            {actionLoading === `${t.slug}-purge` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eraser className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(t.slug, t.name)}
-            disabled={actionLoading === `${t.slug}-delete` || t.slug === "main"}
-            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title={t.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
-          >
-            {actionLoading === `${t.slug}-delete` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => onDetail(t)}
-            className="flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-          </button>
+        {/* Row 3 — Brandon 2026-05-21 fix mobile: separamos botones con
+            label (Invitar/Suspender) de los icon-only (Purge/Delete/Detail).
+            Mobile: 2+3 stack (2 botones full text arriba, 3 icons compactos
+            abajo). Desktop: 5 en 1 fila como antes. Tap targets h-10 mobile. */}
+        <div className="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+          {/* Sub-fila 1: botones con label (full text) */}
+          <div className="grid grid-cols-2 sm:flex-1 sm:flex sm:gap-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onInvite(t.slug, t.name)}
+              className="sm:flex-1 inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+              aria-label="Invitar usuario"
+            >
+              <Mail className="w-3.5 h-3.5" /> Invitar
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleActive(t.slug, t.active)}
+              disabled={actionLoading === `${t.slug}-active`}
+              className="sm:flex-1 inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
+              aria-label={t.active ? "Suspender tienda" : "Activar tienda"}
+            >
+              {actionLoading === `${t.slug}-active`
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : t.active
+                ? <><XCircle className="w-3.5 h-3.5" /> Suspender</>
+                : <><CheckCircle2 className="w-3.5 h-3.5" /> Activar</>
+              }
+            </button>
+          </div>
+          {/* Sub-fila 2: 3 icon-only botones — tap targets h-10 mobile */}
+          <div className="grid grid-cols-3 sm:flex gap-2">
+            <button
+              type="button"
+              onClick={() => onPurge(t.slug, t.name)}
+              disabled={actionLoading === `${t.slug}-purge`}
+              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
+              title="Limpiar datos de esta tienda (productos, pedidos, movimientos)"
+              aria-label="Limpiar datos"
+            >
+              {actionLoading === `${t.slug}-purge` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eraser className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(t.slug, t.name)}
+              disabled={actionLoading === `${t.slug}-delete` || t.slug === "main"}
+              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              title={t.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
+              aria-label="Eliminar tienda"
+            >
+              {actionLoading === `${t.slug}-delete` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDetail(t)}
+              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+              title="Ver detalle / analytics"
+              aria-label="Ver detalle"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
