@@ -599,7 +599,17 @@ function PartnerRow({
 
   return (
     <li className="group hover:bg-[var(--surface-sunken)]/50 transition-colors">
-      <div className="px-4 py-3.5 flex items-center gap-4">
+      {/* Brandon 2026-05-21 fix mobile: layout responsive. Antes en 390px
+          el `flex items-center gap-4` apretaba la columna de identidad
+          (~150px) hasta que el nombre + chips quedaban verticales con
+          texto roto ("Campo Verde Moto hace 19d" en column). Ahora:
+          · mobile: stack 2 rows — [avatar + identidad] / [acciones full-width]
+          · desktop: row horizontal como antes
+          padding p-4 sm:py-3.5 sm:px-4 (más vertical en mobile para
+          separar las 2 sub-rows). */}
+      <div className="p-4 sm:py-3.5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        {/* Top sub-row mobile: avatar + identidad. Desktop sigue inline. */}
+        <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
         {/* Avatar */}
         <button
           type="button"
@@ -653,15 +663,18 @@ function PartnerRow({
             <span className="text-[var(--text-tertiary)]">{timeSince(partner.createdAt)}</span>
           </div>
         </button>
+        </div>
 
-        {/* Acciones */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Acciones — Brandon 2026-05-21 fix mobile: full-width row con
+            grid cuando hay 2 botones (Rechazar/Aprobar pending), 1 col
+            cuando 1 (Acceder activo). Desktop: shrink-0 inline como antes. */}
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           {isPending && (
             <>
               <button
                 type="button"
                 onClick={onReject}
-                className="h-9 px-3 rounded-lg border border-[var(--brand-danger)]/30 bg-transparent text-xs font-bold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 transition-colors"
+                className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-lg border border-[var(--brand-danger)]/30 bg-transparent text-xs font-bold text-[var(--brand-danger)] hover:bg-[var(--brand-danger)]/10 transition-colors"
               >
                 Rechazar
               </button>
@@ -670,7 +683,7 @@ function PartnerRow({
                 onClick={onApprove}
                 disabled={!kycCheck.ok}
                 title={kycCheck.ok ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                className="h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-lg bg-[var(--data-success-500)] text-xs font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
               >
                 Aprobar
               </button>
@@ -681,14 +694,14 @@ function PartnerRow({
               type="button"
               onClick={onImpersonate}
               title="Acceder a su cuenta"
-              className="h-9 px-3 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors inline-flex items-center gap-1.5"
+              className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors inline-flex items-center justify-center gap-1.5"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Acceder
             </button>
           )}
           {isRejected && (
-            <span className="text-xs font-bold text-[var(--text-tertiary)] px-2">
+            <span className="flex-1 sm:flex-none text-xs font-bold text-[var(--text-tertiary)] px-2 inline-flex items-center justify-center">
               Rechazado
             </span>
           )}
@@ -696,7 +709,7 @@ function PartnerRow({
             type="button"
             onClick={onView}
             aria-label="Ver detalle"
-            className="h-9 w-9 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center"
+            className="h-10 w-10 sm:h-9 sm:w-9 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center shrink-0"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
