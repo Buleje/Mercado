@@ -96,7 +96,18 @@ export default function AdminTabShell({
           </div>
         </div>
         {(stats || actions) && (
-          <div className="flex items-stretch gap-2 flex-wrap shrink-0">
+          // Brandon 2026-05-21 FIX bug "pedazo blanco al swipe mobile":
+          // antes `shrink-0 flex-wrap` no comprimia y empujaba contenido
+          // fuera del viewport. En mobile 390px, los chips de fecha (657px
+          // combined) overflowearan silenciosamente — el body.scrollWidth
+          // se mantenia 390 pero los hijos quedaban renderizados por
+          // afuera. Al swipe-left aparecia el "pedazo blanco" reveal.
+          //
+          // Fix: en mobile (<sm) el wrapper es full-width abajo del
+          // titulo (stack), permitiendo a sus hijos hacer su propio
+          // overflow-x-auto o wrap. shrink-0 solo desde sm+ donde hay
+          // espacio horizontal.
+          <div className="flex items-stretch gap-2 flex-wrap w-full sm:w-auto sm:shrink-0 max-w-full overflow-x-auto">
             {stats}
             {actions}
           </div>

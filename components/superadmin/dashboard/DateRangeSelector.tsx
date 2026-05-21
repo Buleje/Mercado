@@ -36,20 +36,33 @@ export function DateRangeSelector({
   const ranges: DateRange[] = ["7d", "30d", "90d", "1y", "all"];
   const showCustom = typeof onCustomRangeChange === "function";
 
+  // Brandon 2026-05-21 FIX bug overflow mobile:
+  // antes `flex flex-wrap` con 6 chips (~641px combined) NO wrappeaba
+  // porque el parent AdminTabShell aún tenía `shrink-0`, dejando los
+  // chips fuera del viewport mobile. Ahora:
+  //   · mobile (<sm): scroll horizontal contenido con scroll-snap
+  //     (UX clara: el user ve un edge gradiente que indica "swipe para
+  //     más"). `-mx-*` + `px-*` para extender al edge del padre y dar
+  //     padding interno consistente con safe-area.
+  //   · desktop (sm+): wrap normal como antes
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="-mx-1 px-1 sm:mx-0 sm:px-0 flex sm:flex-wrap items-center gap-1.5 overflow-x-auto sm:overflow-visible scrollbar-thin [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
       {ranges.map((r) => (
-        <Chip key={r} size="sm" active={value === r} onClick={() => onChange(r)}>
-          {DATE_RANGE_LABELS[r]}
-        </Chip>
+        <div key={r} className="shrink-0 [scroll-snap-align:start]">
+          <Chip size="sm" active={value === r} onClick={() => onChange(r)}>
+            {DATE_RANGE_LABELS[r]}
+          </Chip>
+        </div>
       ))}
       {showCustom && (
-        <CustomDateRangePicker
-          active={value === "custom"}
-          value={customRange ?? null}
-          onActivate={() => onChange("custom")}
-          onChange={onCustomRangeChange}
-        />
+        <div className="shrink-0 [scroll-snap-align:start]">
+          <CustomDateRangePicker
+            active={value === "custom"}
+            value={customRange ?? null}
+            onActivate={() => onChange("custom")}
+            onChange={onCustomRangeChange}
+          />
+        </div>
       )}
     </div>
   );
