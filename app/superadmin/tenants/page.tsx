@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Building2, Search, ChevronDown, RefreshCw,
@@ -80,6 +80,30 @@ export default function TenantsPage() {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3000);
   };
+
+  // Brandon 2026-05-21 high-impact: keyboard shortcut "/" focusea search
+  // (Linear/Notion/GitHub pattern). Power-user UX: el superadmin trabaja
+  // sobre N tenants y necesita filtrar rápido sin tocar el mouse.
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/") return;
+      const target = e.target as HTMLElement | null;
+      // Ignorar si ya está tipeando en un input/textarea/contenteditable
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const loadTenants = useCallback(async () => {
     setLoading(true); setError("");
@@ -427,8 +451,12 @@ export default function TenantsPage() {
         <AlertsBanner alerts={alerts} />
       )}
 
-      {/* ═══════ FILA 3 · Tabs + Toolbar compacta una sola fila ═════════ */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+      {/* ═══════ FILA 3 · Sticky toolbar — Brandon 2026-05-21 high-impact:
+            con 6+ tenants el user scrollea mucho y pierde de vista search
+            + filters. Sticky top con backdrop-blur preserva visibilidad sin
+            perder espacio visual. `-mx-4 sm:-mx-6 px-4 sm:px-6` extiende
+            al edge para que el blur cubra todo el ancho del main content. */}
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-[var(--surface-canvas)]/85 backdrop-blur-md border-b border-[var(--rule-soft)] flex flex-col lg:flex-row lg:items-center gap-3">
         {/* Tabs principales — primero, jerarquía alta */}
         <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1 shrink-0">
           {(["tiendas", "crecimiento"] as const).map((tab) => (
@@ -441,15 +469,25 @@ export default function TenantsPage() {
 
         {pageTab === "tiendas" && (
           <>
-            {/* Search wide — flex-1 toma todo el espacio disponible */}
+            {/* Search wide — flex-1 toma todo el espacio disponible.
+                Brandon 2026-05-21 high-impact: ref para "/" shortcut +
+                hint badge en desktop indicando el atajo (UX power-user). */}
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
               <input
+                ref={searchInputRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nombre, slug o email…"
-                className="w-full h-10 pl-10 pr-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
+                aria-label="Buscar tenants (atajo: tecla /)"
+                className="w-full h-10 pl-10 pr-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
               />
+              <kbd
+                aria-hidden
+                className="hidden lg:inline-flex absolute right-2 top-1/2 -translate-y-1/2 items-center justify-center h-6 px-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[10px] font-bold text-[var(--text-tertiary)] pointer-events-none"
+              >
+                /
+              </kbd>
             </div>
 
             {/* Sort dropdown — compact */}

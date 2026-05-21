@@ -159,12 +159,16 @@ export function TenantCard({
       {/* Brandon 2026-05-21 fix mobile: p-4 sm:p-5 — 16px lateral en mobile
           (de 20px) gana ~8px de ancho interno para los KPIs 4-col. */}
       <div className="p-4 sm:p-5 space-y-4">
-        {/* Kicker: plan label + status pill, sin gradient */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] font-semibold">
+        {/* Kicker: plan label + status pill, sin gradient.
+            Brandon 2026-05-21 high-impact: `shrink-0 whitespace-nowrap` en
+            el plan label (antes "ENTERPRIS" se truncaba en cards estrechas
+            porque el flex se comia el espacio). El derecho con badges
+            usa flex-wrap para que no compita por ancho. */}
+        <div className="flex items-start justify-between gap-2">
+          <span className="shrink-0 whitespace-nowrap text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] font-semibold mt-1">
             Plan {planLabel}
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-end gap-1.5 min-w-0">
             {pendingCount > 0 && (
               <button
                 type="button"
@@ -279,11 +283,12 @@ export function TenantCard({
           </div>
         </div>
 
-        {/* Financial KPIs — Brandon 2026-05-21 fix mobile: 2x2 en mobile
-            (4 cols en sm+). antes 4 cols forzaba ~70px por celda en 360px
-            mobile → label "Ganancia" truncado + valor "S/14r" raro (S/140k
-            cortado). Ahora 2 cols mobile = ~160px por celda, legible. */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {/* Financial KPIs — Brandon 2026-05-21:
+            · mobile: 2x2 con gap-2
+            · desktop high-impact: gap-3 (más respiro entre cards angostas
+              cuando hay grid de 3 col en el page → los valores "S/144 S/0"
+              se veían pegados). */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           <StatCard density="compact" label="Ventas" value={fmtMoney(revenue)} />
           <StatCard density="compact" label="Gastos" value={fmtMoney(expenses)} />
           <StatCard density="compact" label="Ganancia" value={fmtMoney(profit)} />
@@ -393,21 +398,33 @@ export function TenantCard({
           </div>
         )}
 
-        {/* Row 1: Tienda + Panel Admin */}
+        {/* Row 1: Tienda + Panel Admin — Brandon 2026-05-21 high-impact.
+            Panel Admin es LA acción principal del superadmin (impersona el
+            panel del tenant). Antes: igual peso visual que "Ir a Tienda".
+            Ahora:
+            · Panel Admin: gradient + altura mayor (h-11 vs h-9) + icono
+              full-stroke + texto bold (CTA primario obvio)
+            · Ir a Tienda: outline subtle (acción secundaria de preview) */}
         <div className="flex gap-2 pt-1 border-t border-[var(--rule-base)]">
           <a
             href={`/tienda`}
             onClick={(e) => { e.preventDefault(); window.open(`/t/${t.slug}/tienda`, "_blank"); }}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-lg text-xs font-semibold border border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+            title="Abrir el storefront público del tenant en otra pestaña"
           >
             <Store className="w-3.5 h-3.5" /> Ir a Tienda
           </a>
           <button
             type="button"
             onClick={() => onImpersonate(t.slug)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-[var(--accent)] hover:bg-[var(--accent-600)] text-white transition-colors"
+            className="flex-[1.5] inline-flex items-center justify-center gap-2 h-11 rounded-lg text-sm font-extrabold text-white transition-all active:scale-[0.98] shadow-[0_4px_12px_-4px_color-mix(in_oklab,var(--accent)_55%,transparent)] hover:shadow-[0_6px_16px_-4px_color-mix(in_oklab,var(--accent)_70%,transparent)]"
+            style={{
+              background: "linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent) 75%, black))",
+            }}
+            title="Impersonar el panel admin de este tenant"
+            aria-label={`Abrir panel admin de ${t.name}`}
           >
-            <ExternalLink className="w-3.5 h-3.5" /> Panel Admin
+            <ExternalLink className="w-4 h-4" strokeWidth={2.5} /> Panel Admin
           </button>
         </div>
 
