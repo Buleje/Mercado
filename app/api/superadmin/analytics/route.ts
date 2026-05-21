@@ -76,9 +76,15 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
     planCounts[t.plan] = (planCounts[t.plan] ?? 0) + 1;
   }
 
-  // MRR calculation — usa PLAN_PRICES traídos de PlatformSetting arriba.
+  // MRR calculation — Brandon 2026-05-21 audit fix #8:
+  // antes contaba el precio del plan de TODOS los tenants activos sin
+  // importar trial → si los 6 tenants estaban en trial, MRR salía
+  // S/1834 cuando el real era S/0 (todavía no pagan). Ahora excluimos
+  // tenants cuyo trialEndsAt > now (siguen en trial, plan no se cobra).
   const mrr = allTenants.reduce((sum, t) => {
     if (!t.active) return sum;
+    // Si el trial aún no expira, el tenant no paga → no suma a MRR
+    if (t.trialEndsAt && new Date(t.trialEndsAt) > now) return sum;
     const price = PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0;
     return sum + price;
   }, 0);
