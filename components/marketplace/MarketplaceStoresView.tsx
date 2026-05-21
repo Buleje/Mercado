@@ -519,12 +519,12 @@ export default function MarketplaceStoresView({
         </div>
       )}
 
-      {/* Loading state — skeleton matched a la card final (rating + cat + meta + CTA) */}
+      {/* Loading state — skeleton matched al grid final (1 col mobile, 2/3/4 desktop) */}
       {loading && (
         <div
           aria-busy="true"
           aria-label="Cargando tiendas..."
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mt-6"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-4 mt-6"
         >
           {Array.from({ length: 6 }).map((_, i) => (
             <div
@@ -600,7 +600,17 @@ export default function MarketplaceStoresView({
         <div
           role="list"
           aria-label={`${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""} encontrada${filteredStores.length !== 1 ? "s" : ""}`}
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mt-6"
+          // Brandon 2026-05-21 rediseño UX: 1 col mobile (modelo Doordash/
+          // Airbnb/Yelp/Uber Eats) en lugar de 2 cols compactas.
+          // Razón: Buleje tiene 3-6 tiendas hoy, density NO es prioridad.
+          // Cards full-width mobile dan:
+          // - imagen hero 360×180 (en vez de 150×100 squeezed)
+          // - nombre tienda completo sin truncate
+          // - rating + zona + tiempo de entrega legibles
+          // - mejor tap target para conversión
+          // Desktop sin cambios significativos (sm:2, md:3, xl:4 sigue
+          // teniendo density útil cuando hay más viewport).
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-4 mt-6"
         >
           {filteredStores.map((store, i) => (
             <div key={store.id} role="listitem">
