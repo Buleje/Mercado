@@ -710,6 +710,13 @@ function CategoryRow({
 }) {
   const isHidden = !cat.active;
   const linkedCount = cat.linkedStoreSlugs?.length ?? 0;
+  // Brandon 2026-05-21 fix mobile: steps 2 (Tiendas vinculadas) y 3
+  // (Subcategorías) collapsibles en mobile para reducir scroll cuando
+  // user expande una categoría. Default: step 1 (Identidad) siempre
+  // visible — los otros 2 colapsados (ahorra ~3-4 pantallas de scroll
+  // en mobile). Desktop: todos visibles (CSS sm:block siempre).
+  const [step2OpenMobile, setStep2OpenMobile] = useState(false);
+  const [step3OpenMobile, setStep3OpenMobile] = useState(false);
 
   return (
     <article
@@ -797,9 +804,11 @@ function CategoryRow({
         </div>
       </button>
 
-      {/* ─── Expanded editor ─── */}
+      {/* ─── Expanded editor ─── Brandon 2026-05-21 fix mobile:
+            p-4 sm:p-5 (16px lateral mobile vs 20px) + space-y-4 sm:space-y-5
+            para compactar el panel sin perder respiro desktop. */}
       {expanded && (
-        <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/40 p-5 space-y-5">
+        <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/40 p-4 sm:p-5 space-y-4 sm:space-y-5">
           {/* Step 1 — Identidad */}
           <section>
             <SectionHeading
@@ -893,15 +902,33 @@ function CategoryRow({
             )}
           </section>
 
-          {/* Step 2 — Tiendas vinculadas */}
+          {/* Step 2 — Tiendas vinculadas (collapsible mobile) */}
           <section>
-            <SectionHeading
-              step="2"
-              icon={StoreIcon}
-              title="Tiendas vinculadas"
-              subtitle={`Tiendas que aparecen al filtrar por "${cat.label}" en /tiendas`}
-            />
-            <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setStep2OpenMobile((v) => !v)}
+              className="w-full text-left sm:cursor-default flex items-center justify-between gap-2 sm:pointer-events-none"
+              aria-expanded={step2OpenMobile}
+              aria-controls={`step2-content-${cat.id}`}
+            >
+              <SectionHeading
+                step="2"
+                icon={StoreIcon}
+                title="Tiendas vinculadas"
+                subtitle={`${linkedCount} vinculada${linkedCount === 1 ? "" : "s"} · tap para ${step2OpenMobile ? "ocultar" : "ver"}`}
+              />
+              {/* Chevron solo visible en mobile */}
+              <ChevronDown
+                className={`sm:hidden h-5 w-5 shrink-0 text-[var(--text-tertiary)] transition-transform ${
+                  step2OpenMobile ? "rotate-180" : ""
+                }`}
+                strokeWidth={2}
+              />
+            </button>
+            <div
+              id={`step2-content-${cat.id}`}
+              className={`mt-3 ${step2OpenMobile ? "block" : "hidden"} sm:block`}
+            >
               <PrimaryStoreLinker
                 categoryLabel={cat.label}
                 stores={stores}
@@ -914,22 +941,36 @@ function CategoryRow({
             </div>
           </section>
 
-          {/* Step 3 — Subcategorías */}
+          {/* Step 3 — Subcategorías (collapsible mobile) */}
           <section>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-              <SectionHeading
-                step="3"
-                icon={Tag}
-                title="Subcategorías"
-                subtitle="Filtros del paso 2 — más específicos dentro de la categoría"
-                count={cat.subcategories.length}
-                inline
-              />
+              <button
+                type="button"
+                onClick={() => setStep3OpenMobile((v) => !v)}
+                className="flex items-center gap-2 sm:cursor-default sm:pointer-events-none text-left flex-1 min-w-0"
+                aria-expanded={step3OpenMobile}
+                aria-controls={`step3-content-${cat.id}`}
+              >
+                <SectionHeading
+                  step="3"
+                  icon={Tag}
+                  title="Subcategorías"
+                  subtitle={`${cat.subcategories.length} subcategoría${cat.subcategories.length === 1 ? "" : "s"} · tap para ${step3OpenMobile ? "ocultar" : "ver"}`}
+                  count={cat.subcategories.length}
+                  inline
+                />
+                <ChevronDown
+                  className={`sm:hidden h-5 w-5 shrink-0 text-[var(--text-tertiary)] transition-transform ${
+                    step3OpenMobile ? "rotate-180" : ""
+                  }`}
+                  strokeWidth={2}
+                />
+              </button>
               {cat.subcategories.length > 0 && (
                 <button
                   type="button"
                   onClick={onAddSub}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110"
+                  className={`${step3OpenMobile ? "inline-flex" : "hidden"} sm:inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110`}
                 >
                   <Plus className="h-4 w-4" strokeWidth={2.5} />
                   Agregar subcategoría
@@ -937,6 +978,10 @@ function CategoryRow({
               )}
             </div>
 
+            <div
+              id={`step3-content-${cat.id}`}
+              className={`${step3OpenMobile ? "block" : "hidden"} sm:block`}
+            >
             {cat.subcategories.length === 0 ? (
               <EmptySubcategories
                 categoryLabel={cat.label}
@@ -974,6 +1019,7 @@ function CategoryRow({
                 </button>
               </>
             )}
+            </div>
           </section>
         </div>
       )}
