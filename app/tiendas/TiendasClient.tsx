@@ -42,7 +42,7 @@ import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 // dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
 // import estático para no romper el tipado de DEFAULT_FILTERS.
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
-import { Boxes, Package, Sparkles, Leaf, MoreHorizontal } from "@buleje/design-system/icons";
+import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star } from "@buleje/design-system/icons";
 // CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
 import { CupSoda } from "lucide-react";
 import QuickFilterChips, {
@@ -1028,8 +1028,43 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           {/* Brandon 2026-05-20 v7: eyebrow "LO MÁS PEDIDO / REFINÁ TU BÚSQUEDA"
               eliminado — redundaba con el h1 + chips de subcategoría justo
               debajo. El botón de filtros queda alineado a la derecha en el
-              mismo bloque que las chips. */}
-          <div className="flex items-center justify-end gap-3 mb-2.5">
+              mismo bloque que las chips.
+              Brandon 2026-05-21: agregamos chips inline en la fila (Sort
+              dropdown + ⭐ 4+ toggle) para que no quede vacía y dar acción
+              rápida sin abrir el drawer pesado. Modelo Doordash/Yelp. */}
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 mb-2.5">
+            {/* Sort dropdown inline — siempre visible */}
+            <StoresSortSelector value={sortKey} onChange={setSortKey} />
+
+            {/* Toggle ⭐ 4+ — usa el chip "top_rated" del state activeChips */}
+            {(() => {
+              const isActive = activeChips.has("top_rated");
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveChips((prev) => {
+                      const next = new Set(prev);
+                      if (next.has("top_rated")) next.delete("top_rated");
+                      else next.add("top_rated");
+                      return next;
+                    });
+                  }}
+                  aria-pressed={isActive}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
+                    isActive
+                      ? "bg-[var(--accent)] text-white border-2 border-[var(--accent)]"
+                      : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-2 border-[var(--rule-base)] hover:border-[var(--accent)]/50",
+                  )}
+                  title="Solo tiendas con rating 4 estrellas o más"
+                >
+                  <Star className={cn("h-3.5 w-3.5", isActive && "fill-current")} strokeWidth={2} />
+                  4+ estrellas
+                </button>
+              );
+            })()}
+
             <MarketplaceFilters
               filters={productFilters}
               userCoords={userCoords}
@@ -1076,39 +1111,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 aria-label="Filtrá lo más pedido"
                 className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
               >
-                {/* Botón "Todas" */}
-                <button
-                  onClick={() => setSubCategoryId(null)}
-                  aria-pressed={subCategoryId === null}
-                  className={cn(
-                    "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-2xl border-2 transition-all px-3 py-3 min-w-[96px] sm:min-w-[88px]",
-                    subCategoryId === null
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "h-11 w-11 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center",
-                      subCategoryId === null
-                        ? "bg-[var(--accent-600,var(--accent))] text-white"
-                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-                    )}
-                  >
-                    <Boxes className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[length:var(--ts-xs)] font-bold leading-tight text-center",
-                      subCategoryId === null
-                        ? "text-[var(--accent)]"
-                        : "text-[var(--text-primary)]",
-                    )}
-                  >
-                    Todas
-                  </span>
-                </button>
-
+                {/* Brandon 2026-05-21 rediseño: botón "Todas" REMOVIDO —
+                    cuando ninguna subcategoría está activa = todas las
+                    tiendas se muestran (estado default). Click en chip
+                    activo la deselecciona → "Todas" implícito.
+                    Nuevo diseño SIN border ni bg: solo icon + label +
+                    underline accent en activo. Más limpio, modelo
+                    Doordash/Yelp para filter chips. */}
                 {subcategories.map((s) => {
                   const active = subCategoryId === s.id;
                   return (
@@ -1118,41 +1127,39 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                       aria-pressed={active}
                       title={s.description || s.label}
                       className={cn(
-                        "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-2xl border-2 transition-all px-3 py-3 min-w-[96px] sm:min-w-[88px]",
-                        active
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                          : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
+                        "shrink-0 inline-flex flex-col items-center gap-1.5 transition-all px-2 py-2 min-w-[80px] group",
+                        // Sin border ni bg — solo cursor + hover sutil
+                        active ? "" : "opacity-90 hover:opacity-100",
                       )}
                     >
                       <span
                         className={cn(
-                          "h-11 w-11 sm:h-9 sm:w-9 rounded-lg overflow-hidden flex items-center justify-center",
+                          "h-12 w-12 sm:h-11 sm:w-11 rounded-2xl overflow-hidden flex items-center justify-center transition-all",
                           active
-                            ? "bg-[var(--accent-600,var(--accent))] text-white"
-                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                            ? "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 scale-105"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
                         )}
                       >
                         {s.imageUrl ? (
-                          // Brandon 2026-05-18 perf P2 #12: next/image,
-                          // sticky bar mobile (h-11) + desktop (h-9).
                           <Image
                             src={s.imageUrl}
                             alt={s.label}
-                            width={44}
-                            height={44}
-                            sizes="(min-width: 640px) 36px, 44px"
+                            width={48}
+                            height={48}
+                            sizes="(min-width: 640px) 44px, 48px"
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <Boxes className="h-4 w-4" strokeWidth={2} aria-hidden />
+                          <Boxes className="h-5 w-5" strokeWidth={2} aria-hidden />
                         )}
                       </span>
+                      {/* Label con underline accent cuando activo */}
                       <span
                         className={cn(
-                          "text-[length:var(--ts-xs)] font-bold leading-tight text-center max-w-[120px] truncate",
+                          "text-[length:var(--ts-xs)] font-bold leading-tight text-center max-w-[100px] truncate pb-1 border-b-2 transition-all",
                           active
-                            ? "text-[var(--accent)]"
-                            : "text-[var(--text-primary)]",
+                            ? "text-[var(--accent)] border-[var(--accent)]"
+                            : "text-[var(--text-primary)] border-transparent group-hover:border-[var(--accent)]/40",
                         )}
                       >
                         {s.label}
