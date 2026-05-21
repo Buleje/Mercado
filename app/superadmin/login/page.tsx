@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { SectionTitle } from "@buleje/design-system";
 import {
   Loader2, Lock, ShieldCheck, KeyRound, ArrowLeft, Eye, EyeOff, User,
@@ -25,7 +25,6 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function SuperAdminLoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const usernameRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
@@ -43,11 +42,28 @@ export default function SuperAdminLoginPage() {
   const [code, setCode] = useState("");
 
   useEffect(() => {
-    if (document.cookie.includes("buleje-platform-sess")) {
-      router.replace("/superadmin/dashboard");
+    // Brandon 2026-05-21 FIX bug "login congelado al sesión expirada":
+    // 1. El check `document.cookie.includes(...)` SIEMPRE era false porque
+    //    la cookie `buleje-platform-sess` es httpOnly — no aparece en
+    //    document.cookie. Removido (dead code).
+    // 2. Si llegamos con ?reason=expired, hacemos DELETE al endpoint auth
+    //    para limpiar la cookie stale server-side. Sin esto, la cookie
+    //    httpOnly queda en el browser hasta su maxAge y puede causar
+    //    redirects raros si el user intenta navegar mientras logueado.
+    if (sessionExpired) {
+      fetch("/api/superadmin/auth", {
+        method: "DELETE",
+        credentials: "include",
+      }).catch((err) => {
+        // No-op intencional: la limpieza de cookie stale es best-effort.
+        // Si falla (offline, server caído, rate-limited), el form de login
+        // sigue mostrándose y el user puede intentar igual; el server
+        // descartará la cookie inválida al primer POST exitoso.
+        console.warn("[superadmin/login] cleanup stale cookie failed", String(err));
+      });
     }
     usernameRef.current?.focus();
-  }, [router]);
+  }, [sessionExpired]);
 
   useEffect(() => {
     if (error) {

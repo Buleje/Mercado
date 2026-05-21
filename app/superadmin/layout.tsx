@@ -56,20 +56,32 @@ function SuperAdminSkeleton() {
  * See ADR-019.
  */
 async function SuperAdminAuthGate({ children }: { children: ReactNode }) {
-  const cookieStore = await cookies();
   const headerStore = await headers();
+  const pathname = headerStore.get("x-next-pathname") ?? headerStore.get("x-invoke-path") ?? "";
+  const isLoginPage = pathname === "/superadmin/login" || pathname.startsWith("/superadmin/login/");
+
+  // Brandon 2026-05-21 FIX bug "login congelado":
+  // El login NUNCA debe envolverse con SuperAdminShell, incluso si hay
+  // sesión activa válida (caso típico: el server invalidó la sesión por
+  // idle timeout pero la cookie sigue en el browser, o el user navega
+  // manualmente a /superadmin/login con sesión activa). Antes:
+  //   - Sin sesión + ruta login → bare ✓
+  //   - Con sesión + ruta login → SuperAdminShell + login adentro ✗
+  //     (sidebar oscuro + header "Salir" + form atrapado en main content)
+  // Ahora: el login es SIEMPRE bare, antes de cualquier check de sesión.
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  const cookieStore = await cookies();
   const token = cookieStore.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   const ua = headerStore.get("user-agent");
   const session = token ? await getPlatformSession(token, { ua }) : null;
 
-  // No session → for login page render bare, for other pages redirect
+  // No session → redirect a login con reason=expired si había un token
+  // (sesión invalidada server-side) o sin reason si nunca hubo.
   if (!session || !token) {
-    const pathname = headerStore.get("x-next-pathname") ?? headerStore.get("x-invoke-path") ?? "";
-    const isLoginPage = pathname === "/superadmin/login" || pathname.startsWith("/superadmin/login/");
-    if (!isLoginPage) {
-      redirect("/superadmin/login");
-    }
-    return <>{children}</>;
+    redirect(token ? "/superadmin/login?reason=expired" : "/superadmin/login");
   }
 
   // Detect if token rotation is needed (past halfway of 8h lifetime, or
