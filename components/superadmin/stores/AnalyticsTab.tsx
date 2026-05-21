@@ -416,7 +416,11 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
         ) : trend.length === 0 ? (
           <ChartEmpty message="Sin datos en el periodo" />
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
+          // Brandon 2026-05-21 fix mobile: chart height responsive
+          // (200px mobile / 260px desktop) — ahorra ~60px scroll en mobile
+          // sin perder legibilidad del area chart.
+          <div className="h-[200px] sm:h-[260px]">
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trend} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
               <defs>
                 <linearGradient id="atRevGrad" x1="0" y1="0" x2="0" y2="1">
@@ -454,6 +458,7 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
               />
             </AreaChart>
           </ResponsiveContainer>
+          </div>
         )}
       </ChartCard>
 
@@ -765,22 +770,25 @@ function KpiCard({
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-center gap-2.5">
-        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
+    // Brandon 2026-05-21 fix mobile: p-3 sm:p-4 (-8px lateral mobile,
+    // 8 KPIs en grid 2 cols ahora caben sin truncate) + text-xl sm:text-2xl
+    // (value más compacto mobile sin perder legibilidad).
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 sm:p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        <span className={`inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl shrink-0 ${iconBg}`}>
           <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
         </span>
-        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight min-w-0 truncate">
           {label}
         </p>
       </div>
       <p
-        className={`mt-3 font-display ${textValue ? "text-base truncate" : "text-2xl"} font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]`}
+        className={`mt-2 sm:mt-3 font-display ${textValue ? "text-sm sm:text-base truncate" : "text-xl sm:text-2xl"} font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]`}
         title={textValue ? value : undefined}
       >
         {value}
       </p>
-      {sub && <p className="mt-1 text-xs text-[var(--text-tertiary)] truncate">{sub}</p>}
+      {sub && <p className="mt-0.5 sm:mt-1 text-xs text-[var(--text-tertiary)] truncate">{sub}</p>}
     </div>
   );
 }
