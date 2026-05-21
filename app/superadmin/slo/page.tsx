@@ -20,6 +20,7 @@ import {
   ShoppingCart, TrendingUp, XCircle, Zap, BarChart3,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
+import { fmtTimeSafe, fmtDateTimeSafe } from "@/lib/superadmin/safe-helpers";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -225,7 +226,7 @@ export default function SLODashboardPage() {
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-[var(--text-tertiary)]">
-          Actualizado: {new Date(data.loadedAt).toLocaleTimeString("es-PE")}
+          Actualizado: {fmtTimeSafe(data.loadedAt, "—")}
         </p>
         <button
           onClick={reload}
@@ -288,7 +289,7 @@ export default function SLODashboardPage() {
               Duracion: {Math.round(data.deploy.durationMs / 1000)}s
             </span>
             <span className="text-sm text-[var(--text-tertiary)]">
-              {new Date(data.deploy.createdAt).toLocaleString("es-PE")}
+              {fmtDateTimeSafe(data.deploy.createdAt, "—")}
             </span>
             {/* TODO: Reemplazar con datos de API Vercel — ver CLAUDE.md env VERCEL_TOKEN */}
             <span className="text-xs bg-[var(--surface-sunken)] px-2 py-0.5 rounded text-[var(--text-tertiary)]">mock</span>

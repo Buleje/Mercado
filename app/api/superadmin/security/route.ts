@@ -11,7 +11,13 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Sesión inválida" }, { status: 401 });
 
   const url = new URL(req.url);
-  const days = Math.min(Number(url.searchParams.get("days") || "7"), 90);
+  // Brandon 2026-05-21 audit blindaje S6: `Number("0") || "7"` evalúa
+  // a 7 porque 0 es falsy en JS → `?days=0` bypass del scope intencionado
+  // y devuelve full history hasta el cap de 90. Ahora usamos null-check
+  // explícito + Number.isFinite guard + Math.max(1) para forzar mínimo.
+  const daysRaw = url.searchParams.get("days");
+  const daysParsed = daysRaw === null ? 7 : Number(daysRaw);
+  const days = Math.min(Math.max(Number.isFinite(daysParsed) ? daysParsed : 7, 1), 90);
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   // Query security-related activity logs

@@ -73,8 +73,12 @@ const STATUS_FILTERS: Array<{ key: OrderStatus | "all"; label: string }> = [
   { key: "cancelado", label: "Cancelados" },
 ];
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+// Brandon 2026-05-21 audit blindaje: guard Date null/Invalid (defensa-en-profundidad).
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "—";
+  const diff = Date.now() - t;
   const m = Math.floor(diff / 60_000);
   if (m < 1) return "ahora";
   if (m < 60) return `${m} min`;
@@ -616,7 +620,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
               <Field label="Pago" value={order.paymentMethod ?? "—"} />
               <Field label="Repartidor" value={order.riderName ?? "Sin asignar"} />
               <Field label="Estado entrega" value={order.deliveryStatus ?? "—"} />
-              <Field label="Creado" value={new Date(order.createdAt).toLocaleString("es-PE")} />
+              <Field label="Creado" value={order.createdAt ? new Date(order.createdAt).toLocaleString("es-PE") : "—"} />
               {order.notes && <Field label="Notas" value={order.notes} />}
             </dl>
           </section>

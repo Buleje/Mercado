@@ -82,8 +82,12 @@ function getUserMeta(user: string): { icon: typeof Bot; tone: string; bg: string
 }
 
 // ── Tiempo relativo ─────────────────────────────────────────────────────
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+// Brandon 2026-05-21 audit blindaje: guards de Date null/Invalid centralizados.
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "ahora";
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "ahora";
+  const diff = Date.now() - t;
   const s = Math.floor(diff / 1000);
   if (s < 60) return "ahora";
   const m = Math.floor(s / 60);
@@ -97,8 +101,10 @@ function timeAgo(iso: string): string {
 }
 
 // ── Etiqueta de bucket por día (para agrupar las filas) ────────────────
-function dayBucket(iso: string): string {
+function dayBucket(iso: string | null | undefined): string {
+  if (!iso) return "Sin fecha";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Sin fecha";
   const now = new Date();
   const isSameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&

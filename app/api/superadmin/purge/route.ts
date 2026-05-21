@@ -214,9 +214,42 @@ export async function DELETE(req: NextRequest) {
       });
     }
 
+    // ── Brandon 2026-05-21 audit blindaje S1: AUDIT BLOCKING ───────────
+    // COMPLIANCE Ley 29733 Art. 16+18: el audit trail debe persistirse ANTES
+    // de la operación destructiva. Antes: TRUNCATE → audit log (si log
+    // falla, datos ya borrados pero sin trail forensable → no-compliant).
+    // Ahora: audit log PRIMERO con AWAIT; si falla → 503 sin tocar datos.
+    try {
+      const { logSuperadminAction } = await import("@/lib/audit/superadmin-audit");
+      await logSuperadminAction(
+        "nuclear_reset_intent",
+        `Purga total iniciada por ${session.username} — ${totalBefore} registros a borrar de ${Object.keys(beforeCounts).length} tablas. Razon: ${purgeReason}`,
+        {
+          deletedRows: totalBefore,
+          tables: Object.keys(beforeCounts),
+          reason: purgeReason,
+          ip: req.headers.get("x-forwarded-for") ?? null,
+          userAgent: req.headers.get("user-agent") ?? null,
+          timestamp: new Date().toISOString(),
+        },
+        session.username,
+      );
+    } catch (err) {
+      logger.error("[SuperAdmin] audit pre-purge falló — operación abortada para preservar compliance Ley 29733", {
+        error: String(err),
+        username: session.username,
+      });
+      return NextResponse.json(
+        { error: "Audit trail no disponible. La operación se aborta para preservar trazabilidad (Ley 29733)." },
+        { status: 503 },
+      );
+    }
+
     // ── TRUNCATE todas las tablas de datos en UN solo statement ────────
     // CASCADE resuelve TODAS las restricciones FK automáticamente.
     // Es atómico: o se borran todas o ninguna.
+    // Audit trail YA persistido arriba; si TRUNCATE falla, el audit
+    // refleja "intent" y se puede investigar.
     const tableList = DATA_TABLES.map((t) => `"${t}"`).join(", ");
     await prisma.$executeRawUnsafe(`TRUNCATE ${tableList} CASCADE`);
 
@@ -230,22 +263,20 @@ export async function DELETE(req: NextRequest) {
       reason: purgeReason,
     });
 
-    // COMPLIANCE (Ley 29733 Art. 18 + 11): audit trail con reason obligatorio
+    // Audit trail POST-success (complementa el pre-audit con resultado real)
     try {
       const { logSuperadminAction } = await import("@/lib/audit/superadmin-audit");
       logSuperadminAction(
-        "nuclear_reset",
-        `Purga total ejecutada por ${session.username} — ${totalBefore} registros borrados de ${Object.keys(beforeCounts).length} tablas. Razon: ${purgeReason}`,
+        "nuclear_reset_completed",
+        `Purga total COMPLETADA por ${session.username} — ${totalBefore} registros borrados de ${Object.keys(beforeCounts).length} tablas.`,
         {
           deletedRows: totalBefore,
           tables: Object.keys(beforeCounts),
           reason: purgeReason,
-          ip: req.headers.get("x-forwarded-for") ?? null,
-          userAgent: req.headers.get("user-agent") ?? null,
           timestamp: new Date().toISOString(),
         },
         session.username,
-      ).catch((err) => logger.warn("[superadmin] op failed", { err: String(err) }));
+      ).catch((err) => logger.warn("[superadmin] post-audit failed", { err: String(err) }));
     } catch { /* audit logger no disponible */ }
 
     return NextResponse.json({

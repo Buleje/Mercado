@@ -118,8 +118,12 @@ export async function POST(req: NextRequest) {
     tenantSlug: tenant.slug,
   });
 
-  // Sesion de impersonacion: TTL reducido a 30 min (no se puede renovar con refresh normal)
-  const IMPERSONATE_MAX_AGE = 30 * 60; // 30 min en segundos
+  // Brandon 2026-05-21 audit blindaje S3: TTL reducido de 30min → 10min.
+  // 30min permitía ventana de escalada de privilegios si la sesión
+  // superadmin se compromete. 10min cubre operaciones típicas (revisar,
+  // ajustar, salir) y fuerza re-impersonate para sesiones largas, que
+  // queda logueado en audit trail dando trazabilidad fina.
+  const IMPERSONATE_MAX_AGE = 10 * 60; // 10 min en segundos
   response.cookies.set(SESSION.COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProd,
