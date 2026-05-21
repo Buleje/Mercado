@@ -502,7 +502,11 @@ export function PlantillaPanelTab() {
 
       {/* Header editorial v2 — banner premium con gradient + stats row integrada
           y pill "en vivo" pulsante para reforzar el cambio real-time. */}
-      <header className="relative overflow-hidden rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8">
+      {/* Brandon 2026-05-21 fix mobile: p-4 mobile (en lugar p-6) + header
+          stack `flex-col sm:flex-row` para evitar squeeze del título
+          "Plantilla del Panel Admin" en mobile (antes columnas LEFT 150px
+          + RIGHT 200px → título vertical roto, botón superpuesto). */}
+      <header className="relative overflow-hidden rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-6 lg:p-8">
         <div
           aria-hidden
           className="pointer-events-none absolute -top-28 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/[0.12] blur-3xl"
@@ -511,26 +515,28 @@ export function PlantillaPanelTab() {
           aria-hidden
           className="pointer-events-none absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
         />
-        <div className="relative flex items-start justify-between gap-5 flex-wrap">
-          <div className="flex items-start gap-4 flex-1 min-w-0">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/35 shrink-0">
-              <Layers className="h-6 w-6" strokeWidth={2} />
+        <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-5">
+          <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+            <span className="inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/35 shrink-0">
+              <Layers className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
             </span>
             <div className="min-w-0">
               <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
                 <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
-                Configuración global · Plantilla
+                Configuración · Plantilla
               </p>
               <h2 className="text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.05]">
                 Plantilla del{" "}
                 <span className="italic font-serif text-[var(--accent)]">Panel Admin.</span>
               </h2>
-              <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-3 leading-relaxed max-w-2xl">
+              <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-2 sm:mt-3 leading-relaxed max-w-2xl">
                 Define qué módulos y qué <strong className="text-[var(--text-primary)]">estilo de sidebar</strong> heredan los dueños de tienda al abrir su negocio. Los cambios se propagan a todos los tenants abiertos.
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2 shrink-0">
+          {/* Mobile: row full-width abajo del título (status pill + botón).
+              Desktop: column right-aligned como antes. */}
+          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 shrink-0">
             {dirty ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700,var(--data-warning-500))] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-[var(--data-warning-500)]/30">
                 <AlertCircle className="h-3 w-3" strokeWidth={2.5} />
@@ -1037,28 +1043,35 @@ export function PlantillaPanelTab() {
           Aparece SIEMPRE al pie para que Brandon nunca pierda de vista el
           botón "Guardar cambios". Cuando no hay cambios queda en modo
           informativo ("En producción · sin cambios pendientes"). */}
-      <div className="fixed bottom-0 inset-x-0 z-40 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur-md shadow-[var(--shadow-lg)]">
-        <div className="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+      {/* Brandon 2026-05-21 fix mobile: sticky bar
+          - stack vertical (`flex-col sm:flex-row`) — antes status pill +
+            2 botones todo en 1 row se superponian en 390px
+          - safe-area-inset-bottom para iOS notch
+          - status text más corto en mobile (`sm:hidden` para versión larga) */}
+      <div className="fixed bottom-0 inset-x-0 z-40 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur-md shadow-[var(--shadow-lg)] pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-(--breakpoint-2xl) mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-3 sm:flex-1 min-w-0">
             {saveError ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-error-500)]/10 text-[var(--data-error-700,var(--data-error-500))] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--data-error-500)]/30">
-                <AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Error: {saveError}
+              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-error-500)]/10 text-[var(--data-error-700,var(--data-error-500))] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--data-error-500)]/30 truncate">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                <span className="truncate">Error: {saveError}</span>
               </span>
             ) : dirty ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700,var(--data-warning-500))] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--data-warning-500)]/30">
-                <AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Tenés cambios sin guardar
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                <span className="sm:hidden">Sin guardar</span>
+                <span className="hidden sm:inline">Tenés cambios sin guardar</span>
               </span>
             ) : saving ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />
+                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" strokeWidth={2.5} />
                 Guardando…
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-50,var(--accent-soft))] text-[var(--data-success-700,var(--accent))] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider">
-                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
-                En producción · sin cambios pendientes
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                <span className="sm:hidden">En producción</span>
+                <span className="hidden sm:inline">En producción · sin cambios pendientes</span>
               </span>
             )}
             {lastSavedAt && (
@@ -1067,12 +1080,12 @@ export function PlantillaPanelTab() {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:shrink-0">
             <button
               type="button"
               onClick={handleDiscard}
               disabled={!dirty || saving}
-              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-strong,var(--rule-base))] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 h-11 px-4 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-strong,var(--rule-base))] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <RotateCcw className="h-4 w-4" />
               Descartar
@@ -1081,7 +1094,7 @@ export function PlantillaPanelTab() {
               type="button"
               onClick={handleSave}
               disabled={!dirty || saving}
-              className="inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold shadow-md shadow-[var(--accent)]/30 hover:shadow-lg hover:shadow-[var(--accent)]/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+              className="flex-[1.5] sm:flex-none inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold shadow-md shadow-[var(--accent)]/30 hover:shadow-lg hover:shadow-[var(--accent)]/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
               {saving ? "Guardando…" : "Guardar cambios"}
