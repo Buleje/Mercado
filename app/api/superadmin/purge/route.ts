@@ -247,11 +247,18 @@ export async function DELETE(req: NextRequest) {
 
     // ── TRUNCATE todas las tablas de datos en UN solo statement ────────
     // CASCADE resuelve TODAS las restricciones FK automáticamente.
-    // Es atómico: o se borran todas o ninguna.
+    //
+    // Brandon 2026-05-21 audit blindaje S5: envuelto en $transaction para
+    // garantizar atomicidad. Si TRUNCATE falla a medio camino (constraint
+    // violation, lock timeout, etc.), Postgres hace rollback automático y
+    // el estado de la DB queda consistente. Sin transaction, podía quedar
+    // un set parcial de tablas vacías y el resto intactas.
     // Audit trail YA persistido arriba; si TRUNCATE falla, el audit
-    // refleja "intent" y se puede investigar.
+    // refleja "intent" y el rollback deja todo como estaba.
     const tableList = DATA_TABLES.map((t) => `"${t}"`).join(", ");
-    await prisma.$executeRawUnsafe(`TRUNCATE ${tableList} CASCADE`);
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`TRUNCATE ${tableList} CASCADE`);
+    }, { timeout: 60_000 }); // 60s timeout para tables grandes
 
     // ── Limpiar TODA la caché del servidor ─────────────────────────────
     invalidateAll();

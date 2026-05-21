@@ -215,8 +215,19 @@ export default function SuperAdminRecetarioPage() {
       nombre: form.nombre.trim(),
       descripcion: form.descripcion.trim() || undefined,
       emoji: form.emoji.trim() || null,
-      tiempoMinutos: form.tiempoMinutos ? parseInt(form.tiempoMinutos, 10) : null,
-      porciones: form.porciones ? parseInt(form.porciones, 10) : null,
+      // Brandon 2026-05-21 audit blindaje: si user tipea texto como "abc"
+      // parseInt da NaN → al persistir queda como null pero el isFinite
+      // guard hace explícito el contrato (no NaN al server).
+      tiempoMinutos: (() => {
+        if (!form.tiempoMinutos) return null;
+        const n = parseInt(form.tiempoMinutos, 10);
+        return Number.isFinite(n) ? n : null;
+      })(),
+      porciones: (() => {
+        if (!form.porciones) return null;
+        const n = parseInt(form.porciones, 10);
+        return Number.isFinite(n) ? n : null;
+      })(),
       dificultad: form.dificultad || null,
       categoria: form.categoria || null,
       imageUrl: form.imageUrl.trim() || null,

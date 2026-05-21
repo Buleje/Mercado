@@ -1305,7 +1305,12 @@ function FieldRange({
         max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
+        onChange={(e) => {
+          // Brandon 2026-05-21 audit blindaje: guard NaN — parseFloat("") = NaN
+          // que rompe el state numérico downstream. Si inválido, no aplica el change.
+          const n = parseFloat(e.target.value);
+          if (Number.isFinite(n)) onChange(n);
+        }}
         className="w-full accent-[var(--accent)]"
       />
       {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
@@ -1339,7 +1344,12 @@ function FieldNumber({
         max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(parseInt(e.target.value, 10))}
+        onChange={(e) => {
+          // Brandon 2026-05-21 audit blindaje: guard NaN — parseInt("") = NaN
+          // que rompe el state numérico downstream. Si inválido, no aplica.
+          const n = parseInt(e.target.value, 10);
+          if (Number.isFinite(n)) onChange(n);
+        }}
         className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
       />
     </div>

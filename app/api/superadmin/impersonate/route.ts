@@ -26,7 +26,10 @@ async function requirePlatform(req: NextRequest) {
  * idéntico al que produce /api/auth/login y lo escribe en la cookie de sesión.
  */
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-impersonate"); if (_rl) return _rl;
+  // Brandon 2026-05-21 audit blindaje S4: STRICT en lugar de GENEROUS.
+  // Impersonate es escalada de privilegios → tratarlo como auth-tier.
+  // GENEROUS permitía ~100 req/min = enumeración rápida de tenants.
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-impersonate"); if (_rl) return _rl;
   // 1. Verificar sesión SuperAdmin (cookie buleje-platform-sess)
   const platformSession = await requirePlatform(req);
   if (!platformSession) {
