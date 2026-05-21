@@ -160,9 +160,34 @@ export async function GET(req: NextRequest) {
     { label: "Con entregas exitosas", value: tenantsWithCompleted.length },
   ];
 
+  // Brandon 2026-05-21 audit fix #6: agregamos count real de órdenes
+  // del mes por tenant en latestActive — antes el page hardcodeaba
+  // ordersThisMonth=1 para todas las filas (bug visual obvio).
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentNextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const ordersThisMonthByTenant = latestTenantIds.length
+    ? await prisma.order.groupBy({
+        by: ["tenantId"],
+        where: {
+          tenantId: { in: latestTenantIds },
+          createdAt: { gte: currentMonthStart, lt: currentNextMonthStart },
+          status: { not: "cancelado" },
+        },
+        _count: { _all: true },
+        _sum: { total: true },
+      })
+    : [];
+  const ordersMonthMap = new Map(
+    ordersThisMonthByTenant.map((r) => [r.tenantId, {
+      count: r._count._all,
+      revenue: toNumOrZero(r._sum.total ?? 0),
+    }]),
+  );
+
   const latestActive = latestTenantIds.map((id) => {
     const info = tenantById.get(id);
     const last = lastOrderByTenant.get(id);
+    const monthAgg = ordersMonthMap.get(id);
     return {
       id,
       name: info?.name ?? "(sin nombre)",
@@ -170,6 +195,8 @@ export async function GET(req: NextRequest) {
       plan: info?.plan ?? "free",
       lastOrderAt: last?.createdAt.toISOString() ?? null,
       lastOrderTotal: last?.total ?? 0,
+      ordersThisMonth: monthAgg?.count ?? 0,
+      revenueThisMonth: monthAgg?.revenue ?? 0,
     };
   });
 

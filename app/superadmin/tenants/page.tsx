@@ -429,9 +429,14 @@ export default function TenantsPage() {
         />
         <SAStatChip
           icon={DollarSign}
-          label="MRR consolidado"
+          // Brandon 2026-05-21 audit fix #5: antes "MRR consolidado" confundía
+          // con el MRR del dashboard ejecutivo (que es la SUSCRIPCIÓN SaaS
+          // que pagan los tenants a Buleje). ESTE valor es GMV: la suma del
+          // revenue REAL que generaron las tiendas vendiendo en el mes.
+          // Son cosas distintas — clarificado en label y hint.
+          label="GMV marketplaces"
           value={loading ? "—" : `S/ ${stats.mrr.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
-          hint={loading ? "Cargando…" : "Suma de revenue del mes"}
+          hint={loading ? "Cargando…" : "Ventas brutas de tiendas (mes)"}
           tone="emerald"
         />
         <SAStatChip

@@ -116,7 +116,7 @@ interface AnalyticsData {
 interface WidgetsData {
   topStores: Array<{ tenantId: string; name: string; slug: string; plan: string; revenue: number; orders: number }>;
   funnel: Array<{ label: string; value: number }>;
-  latestActive: Array<{ id: string; name: string; slug: string; plan: string; lastOrderAt: string | null; lastOrderTotal: number }>;
+  latestActive: Array<{ id: string; name: string; slug: string; plan: string; lastOrderAt: string | null; lastOrderTotal: number; ordersThisMonth?: number; revenueThisMonth?: number }>;
   revenueSeries: Array<{ date: string; revenue: number }>;
   ordersSeries: Array<{ date: string; count: number }>;
   arpuSeries?: Array<{ month: string; arpu: number }>;
@@ -488,8 +488,10 @@ export default function DashboardPage() {
                     plan: (["free", "pro", "business", "enterprise"].includes(t.plan)
                       ? t.plan
                       : "free") as "free" | "pro" | "business" | "enterprise",
-                    ordersThisMonth: 1,
-                    revenueThisMonth: t.lastOrderTotal,
+                    // Brandon 2026-05-21 audit fix #6: usar datos reales
+                    // del groupBy server (antes hardcoded 1 + lastOrderTotal).
+                    ordersThisMonth: t.ordersThisMonth ?? 0,
+                    revenueThisMonth: t.revenueThisMonth ?? t.lastOrderTotal ?? 0,
                     lastActiveAt: t.lastOrderAt ?? new Date().toISOString(),
                   }))}
                 />

@@ -201,41 +201,43 @@ export function OrdersClient() {
         </>
       }
     >
-      {/* KPIs */}
+      {/* KPIs — Brandon 2026-05-21 audit fix #11: cuando loading=true muestra
+          "—" placeholder en vez de "0" (que hacía pensar al user que no hay
+          pedidos). Igual patrón que tenants page. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
         <KpiCard
           label="Pendientes"
-          value={kpis.grouped.pendiente}
+          value={loading ? "—" : kpis.grouped.pendiente}
           tone="var(--data-warning-500)"
           icon={Clock}
         />
         <KpiCard
           label="Confirmados"
-          value={kpis.grouped.confirmado}
+          value={loading ? "—" : kpis.grouped.confirmado}
           tone="var(--data-info-500)"
           icon={CheckCircle2}
         />
         <KpiCard
           label="Preparando"
-          value={kpis.grouped.preparando}
+          value={loading ? "—" : kpis.grouped.preparando}
           tone="var(--accent)"
           icon={Sparkles}
         />
         <KpiCard
           label="En camino"
-          value={kpis.grouped.en_camino}
+          value={loading ? "—" : kpis.grouped.en_camino}
           tone="var(--accent)"
           icon={Truck}
         />
         <KpiCard
           label="Entregados"
-          value={kpis.grouped.entregado}
+          value={loading ? "—" : kpis.grouped.entregado}
           tone="var(--data-success-500)"
           icon={CheckCircle2}
         />
         <KpiCard
           label="GMV total"
-          value={`S/${Number(kpis.totalRev).toFixed(0)}`}
+          value={loading ? "—" : `S/${Number(kpis.totalRev).toFixed(0)}`}
           tone="var(--accent)"
           icon={CreditCard}
         />

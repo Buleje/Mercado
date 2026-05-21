@@ -55,8 +55,16 @@ export function LatestActiveTenantsTable({ tenants }: Props) {
           {tenants.map((t) => (
             <tr key={t.id}>
               <td>
+                {/* Brandon 2026-05-21 audit fix #2: antes /superadmin/tenants/${slug}
+                    daba 404 (no existe page dinámica). Ahora link al storefront
+                    público del tenant (que sí existe) + abre en nueva pestaña
+                    como preview. El user puede ir a /superadmin/tenants para
+                    el detail completo. */}
                 <Link
-                  href={`/superadmin/tenants/${t.slug}`}
+                  href={`/marketplace/${t.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`Abrir storefront público de ${t.name}`}
                   className="font-semibold text-[var(--text-primary)] hover:underline"
                 >
                   {t.name}
