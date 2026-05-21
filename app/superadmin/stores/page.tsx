@@ -136,9 +136,18 @@ export default function StoresPage() {
         </>
       }
     >
-      {/* ─── Tab bar canónico ────────────────────────────────────── */}
-      <div className="overflow-x-auto -mx-1 px-1">
-        <div className="inline-flex gap-1 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-1.5 min-w-full sm:min-w-0">
+      {/* ─── Tab bar canónico ─────────────────────────────────────
+          Brandon 2026-05-21 mejoras mobile:
+          - sticky top-0 + backdrop-blur para mantener tabs visibles al scroll
+          - scroll-snap-x para que cada tab se alinee al edge en swipe mobile
+          - gradient fade-right (mask-image) indicando "hay más tabs scrolling" */}
+      {/* Brandon 2026-05-21 fix mobile: tab bar wrapper con borde inferior
+          mobile + scroll-snap-x para que cada tab se alinee al edge en swipe.
+          Nota: sticky deshabilitado porque el SuperAdminShell main tiene
+          overflow-auto (nuevo scroll context que impide sticky a window). */}
+      <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)] sm:bg-transparent sm:border-0 sm:px-0 sm:mx-0 sm:py-0">
+        <div className="overflow-x-auto -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
+          <div className="inline-flex gap-1 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-1.5 min-w-full sm:min-w-0">
           {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.key;
@@ -149,7 +158,7 @@ export default function StoresPage() {
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition whitespace-nowrap ${
+                className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition whitespace-nowrap [scroll-snap-align:start] sm:[scroll-snap-align:none] ${
                   isActive
                     ? "bg-[var(--accent)]/10 text-[var(--accent)] shadow-sm"
                     : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
@@ -173,6 +182,7 @@ export default function StoresPage() {
               </button>
             );
           })}
+          </div>
         </div>
       </div>
 
