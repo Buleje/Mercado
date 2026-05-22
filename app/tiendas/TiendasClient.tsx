@@ -61,6 +61,8 @@ import StoresSortSelector, {
 // con ssr:false + gate por useMediaQuery → mobile no descarga ni ejecuta nada.
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
 import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
+import TiendasLocationBar from "@/components/marketplace/TiendasLocationBar";
+import TiendasWelcomeBanner from "@/components/marketplace/TiendasWelcomeBanner";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import dynamic from "next/dynamic";
@@ -76,13 +78,15 @@ const MarketplaceFilters = dynamic(
   () => import("@/components/marketplace/MarketplaceFilters"),
   {
     ssr: false,
+    // Brandon 2026-05-21 perf FOUC: placeholder con la misma altura/forma del
+    // botón "Filtros" real (h-9 rounded-full chip) — NO text, NO loader visible.
+    // Si el chunk carga en <80ms (warm bundle) el usuario nunca ve este
+    // placeholder. Si tarda, ocupa el mismo slot visual evitando layout shift.
     loading: () => (
       <div
         aria-hidden
-        className="inline-flex h-9 w-28 items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-xs text-[var(--text-tertiary)]"
-      >
-        Filtros…
-      </div>
+        className="inline-flex h-9 w-24 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] animate-pulse"
+      />
     ),
   },
 );
@@ -434,12 +438,19 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
   // Skip flag: en el primer mount, si ya tenemos initialStores del server,
   // NO disparamos fetch ni setLoading(true) porque la lista ya está
-  // materializada. PERO si la URL trae filtros activos (?q=, ?cat=, ?zona=),
-  // forzamos el fetch porque initialStores trae TODAS las tiendas sin filtrar.
+  // materializada. PERO si la URL trae filtros activos (q, cat, zona, chips,
+  // sort, subcat), forzamos el fetch porque initialStores trae TODAS las
+  // tiendas sin filtrar.
+  //
+  // Brandon 2026-05-21 perf FOUC: ampliado a chips/sort/subcat para cubrir
+  // todos los entry points con filtros pre-aplicados.
   const hasInitialFilters =
     (searchParams.get("q")?.trim().length ?? 0) > 0 ||
     (searchParams.get("cat") && searchParams.get("cat") !== "todos") ||
-    (searchParams.get("zona")?.trim().length ?? 0) > 0;
+    (searchParams.get("zona")?.trim().length ?? 0) > 0 ||
+    (searchParams.get("chips")?.trim().length ?? 0) > 0 ||
+    (searchParams.get("subcat")?.trim().length ?? 0) > 0 ||
+    (searchParams.get("sort") && searchParams.get("sort") !== "default");
   const skipInitialFetchRef = useRef(initialStores.length > 0 && !hasInitialFilters);
 
   // Fetch con AbortController — cancela request previa si el user sigue
@@ -452,7 +463,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     }
     const controller = new AbortController();
     const timer = setTimeout(async () => {
-      setLoading(true);
+      // Brandon 2026-05-21 perf FOUC: stale-while-revalidate. Si ya hay
+      // stores en pantalla, NO disparamos el shimmer del skeleton — solo
+      // refetcheamos en background y reemplazamos cuando la respuesta llega.
+      // Esto elimina el flash "grid completo → skeleton → grid completo"
+      // post-hidratación cuando initialStores estaba poblado.
+      const isSilentRefetch = stores.length > 0;
+      if (!isSilentRefetch) setLoading(true);
       setError(null);
       try {
         const params = new URLSearchParams();
@@ -955,48 +972,36 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           Mantener ambas creaba duplicación visual y mostraba data
           a deslogueados. */}
 
-      {/* ── Filtros + Grid — directo, sin hero pesado.
-           Brandon 2026-05-20 v7: agregamos h1 SEO sutil al header de la
-           sección (audit detectó que post-remoción del hero la página
-           quedó sin h1, malo para Google). h1 + count dinámico + filtros
-           inline en una sola fila para que sea compacto y comercial. */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8 pb-6 sm:pb-8">
-        {/* Header de la sección — h1 SEO + contador + chips de quick filter */}
-        <div className="mb-3 sm:mb-4">
-          <div className="flex items-end justify-between gap-3 flex-wrap mb-3">
-            <div className="min-w-0">
-              {/* Brandon 2026-05-20 v9 audit P1 SEO: h1 SSR-estable siempre
-                  con "Pucallpa" (ciudad objetivo de SEO). La personalización
-                  por ciudad del cliente (Constitución/Yarinacocha/etc.) se
-                  muestra en un sub-texto con `client-only` para no afectar
-                  el crawl de Googlebot. */}
-              <h1 className="text-[clamp(1.5rem,5vw,2rem)] font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
-                Tiendas en{" "}
-                <span className="text-[var(--accent)]">Pucallpa</span>
-              </h1>
-              {hasLocation && (customerCity || customerRegion) && (
-                <p className="mt-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  cerca de{" "}
-                  <span className="text-[var(--accent)]">
-                    {customerCity ?? customerRegion}
-                  </span>
-                </p>
-              )}
-              {finalStores.length > 0 && (
-                <p className="mt-1 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)]">
-                  <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
-                    {finalStores.length}
-                  </span>{" "}
-                  {finalStores.length === 1 ? "tienda abierta" : "tiendas abiertas"}{" "}
-                  <span className="text-[var(--text-tertiary)]">·</span>{" "}
-                  <span className="font-semibold text-[var(--accent)]">
-                    entrega hoy
-                  </span>
-                </p>
-              )}
-            </div>
-          </div>
-          {!isTiendasOnly && (
+      {/* ── Filtros + Grid — minimalista Rappi-style.
+           Brandon 2026-05-21 v9 rediseño:
+           - Mobile: LocationBar fila + Banner (anónimo) → sin h1 visible.
+           - Desktop: h1 compacto en 1 línea, sin párrafos largos.
+           - Subtítulos mini (eyebrow uppercase) DELANTE de cada sección
+             (categorías, tiendas) en vez de bloque h2 + p separado.
+           - h1 sr-only en mobile para SEO. */}
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-8 pb-6 sm:pb-8">
+        {/* ── MOBILE TOP STACK (Rappi-style) — sin padding extra
+             1. LocationBar (1 línea, tap → modal customer profile)
+             2. WelcomeBanner (compacto, solo si NO logueado) */}
+        <div className="sm:hidden flex flex-col gap-2 mb-3">
+          <TiendasLocationBar />
+          <TiendasWelcomeBanner />
+        </div>
+
+        {/* h1 sr-only mobile — SEO presente, sin ocupar viewport */}
+        <h1 className="sm:hidden sr-only">
+          Tiendas y bodegas en Pucallpa con delivery
+        </h1>
+
+        {/* h1 desktop compacto — 1 línea, sin párrafos extra */}
+        <h1 className="hidden sm:block text-2xl lg:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight mb-4">
+          Tiendas en{" "}
+          <span className="text-[var(--accent)]">Pucallpa</span>
+        </h1>
+
+        {/* ── Filtros rápidos (chips) ── */}
+        {!isTiendasOnly && (
+          <div className="mb-3">
             <QuickFilterChips
               activeChips={activeChips}
               onToggle={handleChipToggle}
@@ -1011,8 +1016,8 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 hasOffers?: boolean;
               }>}
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Filtros: Tipo de producto + Zona en cajitas grandes
              (mismo formato visual). La categoría de tienda ya vive
@@ -1032,16 +1037,22 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               Brandon 2026-05-21: agregamos chips inline en la fila (Sort
               dropdown + ⭐ 4+ toggle) para que no quede vacía y dar acción
               rápida sin abrir el drawer pesado. Modelo Doordash/Yelp. */}
-          {/* Brandon 2026-05-21: 1 sola fila scroll-x mobile (no wrap)
-              para que los 3 controles queden alineados. Sort más compacto.
-              Desktop sigue con flex-wrap por si hay más controles. */}
-          <div className="flex sm:flex-wrap items-center justify-end gap-2 sm:gap-3 mb-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
-            {/* Sort dropdown inline — siempre visible, compacto mobile */}
+          {/* Brandon 2026-05-21 v3: row de filtros estilo Rappi.
+              - Sin justify-end (rompía mobile: el primer chip quedaba oculto).
+              - Mobile: chips h-9 compactos, scroll-x natural desde la izquierda.
+              - Desktop: tamaño normal con flex-wrap, sin scroll. */}
+          <div className="flex sm:flex-wrap items-center gap-2 sm:gap-3 mb-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
+            {/* Sort dropdown — compact en mobile (ícono + valor, ~90px), default desktop */}
             <div className="shrink-0 [scroll-snap-align:start]">
-              <StoresSortSelector value={sortKey} onChange={setSortKey} />
+              <span className="sm:hidden">
+                <StoresSortSelector value={sortKey} onChange={setSortKey} compact />
+              </span>
+              <span className="hidden sm:inline-flex">
+                <StoresSortSelector value={sortKey} onChange={setSortKey} />
+              </span>
             </div>
 
-            {/* Toggle ⭐ 4+ — usa el chip "top_rated" del state activeChips */}
+            {/* Toggle ⭐ 4+ — h-9 mobile, h-10 desktop */}
             {(() => {
               const isActive = activeChips.has("top_rated");
               return (
@@ -1057,74 +1068,75 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   }}
                   aria-pressed={isActive}
                   className={cn(
-                    "shrink-0 [scroll-snap-align:start] inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
+                    "shrink-0 [scroll-snap-align:start] inline-flex items-center gap-1 h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
                     isActive
-                      ? "bg-[var(--accent)] text-white border-2 border-[var(--accent)]"
-                      : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-2 border-[var(--rule-base)] hover:border-[var(--accent)]/50",
+                      ? "bg-[var(--accent)] text-white border border-[var(--accent)]"
+                      : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border border-[var(--rule-base)] hover:border-[var(--accent)]/50",
                   )}
                   title="Solo tiendas con rating 4 estrellas o más"
                 >
                   <Star className={cn("h-3.5 w-3.5", isActive && "fill-current")} strokeWidth={2} />
-                  4+ estrellas
+                  4+
                 </button>
               );
             })()}
 
             <div className="shrink-0 [scroll-snap-align:start]">
-            <MarketplaceFilters
-              filters={productFilters}
-              userCoords={userCoords}
-              geoLoading={geoLoading}
-              onChange={handleFiltersChange}
-              onRequestGeo={handleGeoSort}
-              hideProductCategory
-              zones={zonesForFilter}
-              zone={zone}
-              onZoneChange={setZone}
-              extraSort={{
-                value: sortKey,
-                onChange: (v) => setSortKey(v as StoresSortKey),
-                options: STORES_SORT_OPTIONS,
-              }}
-              onClearAll={() => {
-                setSearch("");
-                setCategory("todos");
-                setZone("");
-                setSubCategoryId(null);
-                setGeoActive(false);
-                setUserCoords(null);
-                setProductFilters(DEFAULT_FILTERS);
-                setActiveChips(new Set());
-                setSortKey("relevance");
-              }}
-              globalActiveCount={
-                (search.trim() ? 1 : 0) +
-                (category !== "todos" ? 1 : 0) +
-                (zone ? 1 : 0) +
-                (subCategoryId ? 1 : 0) +
-                (geoActive ? 1 : 0) +
-                activeChips.size +
-                (sortKey !== "relevance" ? 1 : 0) +
-                (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0)
-              }
-            />
+              <MarketplaceFilters
+                filters={productFilters}
+                userCoords={userCoords}
+                geoLoading={geoLoading}
+                onChange={handleFiltersChange}
+                onRequestGeo={handleGeoSort}
+                hideProductCategory
+                zones={zonesForFilter}
+                zone={zone}
+                onZoneChange={setZone}
+                extraSort={{
+                  value: sortKey,
+                  onChange: (v) => setSortKey(v as StoresSortKey),
+                  options: STORES_SORT_OPTIONS,
+                }}
+                onClearAll={() => {
+                  setSearch("");
+                  setCategory("todos");
+                  setZone("");
+                  setSubCategoryId(null);
+                  setGeoActive(false);
+                  setUserCoords(null);
+                  setProductFilters(DEFAULT_FILTERS);
+                  setActiveChips(new Set());
+                  setSortKey("relevance");
+                }}
+                globalActiveCount={
+                  (search.trim() ? 1 : 0) +
+                  (category !== "todos" ? 1 : 0) +
+                  (zone ? 1 : 0) +
+                  (subCategoryId ? 1 : 0) +
+                  (geoActive ? 1 : 0) +
+                  activeChips.size +
+                  (sortKey !== "relevance" ? 1 : 0) +
+                  (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0)
+                }
+                triggerCompact
+              />
             </div>
           </div>
 
           {subcategories.length > 0 && (
             <div ref={subcategorySectionRef}>
+              {/* Mini-label minimalista encima de subcategorías */}
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+                Categorías
+              </p>
               <div
                 role="group"
-                aria-label="Filtrá lo más pedido"
-                className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+                aria-label="Filtrá por categoría"
+                className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1"
               >
-                {/* Brandon 2026-05-21 rediseño: botón "Todas" REMOVIDO —
-                    cuando ninguna subcategoría está activa = todas las
-                    tiendas se muestran (estado default). Click en chip
-                    activo la deselecciona → "Todas" implícito.
-                    Nuevo diseño SIN border ni bg: solo icon + label +
-                    underline accent en activo. Más limpio, modelo
-                    Doordash/Yelp para filter chips. */}
+                {/* Brandon 2026-05-21 v3 — chips más chicos en mobile:
+                    icono h-10 w-10 mobile / h-12 w-12 desktop. Label ts-2xs.
+                    min-w 64 mobile / 80 desktop. Caben 4–5 en viewport sin scroll. */}
                 {subcategories.map((s) => {
                   const active = subCategoryId === s.id;
                   return (
@@ -1134,16 +1146,15 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                       aria-pressed={active}
                       title={s.description || s.label}
                       className={cn(
-                        "shrink-0 inline-flex flex-col items-center gap-1.5 transition-all px-2 py-2 min-w-[80px] group",
-                        // Sin border ni bg — solo cursor + hover sutil
+                        "shrink-0 inline-flex flex-col items-center gap-1 transition-all px-1 py-1.5 min-w-[64px] sm:min-w-[80px] group",
                         active ? "" : "opacity-90 hover:opacity-100",
                       )}
                     >
                       <span
                         className={cn(
-                          "h-12 w-12 sm:h-11 sm:w-11 rounded-2xl overflow-hidden flex items-center justify-center transition-all",
+                          "h-10 w-10 sm:h-12 sm:w-12 rounded-2xl overflow-hidden flex items-center justify-center transition-all",
                           active
-                            ? "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 scale-105"
+                            ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30 scale-105"
                             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
                         )}
                       >
@@ -1153,17 +1164,16 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                             alt={s.label}
                             width={48}
                             height={48}
-                            sizes="(min-width: 640px) 44px, 48px"
+                            sizes="(min-width: 640px) 48px, 40px"
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <Boxes className="h-5 w-5" strokeWidth={2} aria-hidden />
+                          <Boxes className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} aria-hidden />
                         )}
                       </span>
-                      {/* Label con underline accent cuando activo */}
                       <span
                         className={cn(
-                          "text-[length:var(--ts-xs)] font-bold leading-tight text-center max-w-[100px] truncate pb-1 border-b-2 transition-all",
+                          "text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold leading-tight text-center max-w-[80px] sm:max-w-[100px] truncate pb-0.5 border-b-2 transition-all",
                           active
                             ? "text-[var(--accent)] border-[var(--accent)]"
                             : "text-[var(--text-primary)] border-transparent group-hover:border-[var(--accent)]/40",
@@ -1350,11 +1360,22 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               un toolbar separado para ellos. */}
         </div>
 
-        {/* Brandon 2026-05-20 v7: el bloque "RECOMENDACIONES — Recomendadas
-            para vos · N tiendas del barrio · entrega hoy" se eliminó —
-            redundaba con el h1 + contador agregado al header de la sección
-            arriba. Pasar directo del subcategory chip + filtros al listado
-            mejora el time-to-product (menos scroll, menos lectura). */}
+        {/* Mini-label minimalista arriba del grid de tiendas — solo cuando
+            hay resultados. Brandon 2026-05-21: reemplaza el bloque h2+p
+            largo anterior. Pattern: eyebrow uppercase con count tabular. */}
+        {!loading && !error && finalStores.length > 0 && (
+          <div className="flex items-baseline justify-between gap-3 mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Tiendas{" "}
+              <span className="text-[var(--accent)] tabular-nums">
+                · {finalStores.length}
+              </span>
+            </p>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+              Entrega hoy
+            </p>
+          </div>
+        )}
 
         {/* Listado de tiendas — vista mapa removida (Brandon 2026-05-18 v3). */}
         <MarketplaceStoresView

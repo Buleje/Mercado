@@ -59,7 +59,7 @@ import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTr
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import { useHasActiveOffers } from "@/hooks/use-active-offers";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
-import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
+// Brandon 2026-05-21: `useNavScrollHide` removido — navbar siempre fijo.
 import { useLocale } from "@/contexts/locale-context";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -298,7 +298,17 @@ function useStorefrontLogo(pathname: string | null): {
   return data;
 }
 
-export default function MarketplaceNavbar() {
+type MarketplaceNavbarProps = {
+  /**
+   * Override del modo del navbar. Si se pasa desde el layout server-side
+   * (ej. `/tiendas/layout.tsx`), evita el flash de "links del marketplace →
+   * recorte tiendas-only" que producía el hook client `useMarketplaceNavMode()`
+   * al resolverse post-hidratación. Brandon 2026-05-21 perf FOUC.
+   */
+  modeOverride?: import("@/lib/nav-visibility").MarketplaceNavMode;
+};
+
+export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarProps = {}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -340,7 +350,10 @@ export default function MarketplaceNavbar() {
   const { resolved: themeResolved, toggle: toggleTheme } = useTheme();
   const { t } = useLocale();
   const scrolled = useScrolledPastThreshold(40);
-  const navVisible = useNavScrollHide(80);
+  // Brandon 2026-05-21: navbar siempre fijo en mobile + desktop. Antes
+  // usaba `useNavScrollHide(80)` para esconderse al scrollear hacia abajo,
+  // pero Brandon prefiere acceso constante a buscador/carrito/cuenta. El
+  // hook se sigue usando en otros lugares (sticky bars de subcategorías).
   const hasActiveLive = useActiveLivePoll();
   const { brand } = usePlatformBrand();
   // Logo: si superadmin subió logos.logoLight (o logoDark en dark mode), úsalo;
@@ -352,7 +365,12 @@ export default function MarketplaceNavbar() {
   const brandName = brand?.identity.name ?? "Buleje";
   // Visibilidad de enlaces controlada desde superadmin/stores → Navegación
   const navVisibility = useNavVisibility("marketplace");
-  const navMode = useMarketplaceNavMode();
+  const navModeHook = useMarketplaceNavMode();
+  // Cuando viene `modeOverride` (server-side desde un segment layout) lo
+  // usamos como verdad absoluta. Esto evita el flash post-hidratación, porque
+  // el hook arranca `null` en SSR y resuelve después → con override el primer
+  // render ya conoce el modo correcto.
+  const navMode = modeOverride ?? navModeHook;
   const isTiendasOnly = navMode === "tiendas-only";
   // Brandon 2026-05-18 v3: gate "Ofertas" si no hay descuentos activos en
   // ningún tenant. Antes el link estaba forzado visible en modo tiendas-only,
@@ -453,7 +471,6 @@ export default function MarketplaceNavbar() {
           scrolled
             ? "bg-[var(--surface-raised)]/95 backdrop-blur-md shadow-md border-b border-[var(--rule-base)]"
             : "bg-[var(--surface-raised)] shadow-sm border-b border-[var(--rule-base)]",
-          navVisible ? "translate-y-0" : "-translate-y-full",
         )}
       >
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
