@@ -207,6 +207,11 @@
     "vitest": "^4.0.18",
     "webpack": "^5.105.4"
   },
+  "overrides": {
+    "uuid": "^11.1.1",
+    "postcss": "^8.5.10",
+    "@hono/node-server": "^1.19.13"
+  },
   "lint-staged": {
     "components/{admin,store,ui-system,customer}/**/*.{ts,tsx}": [
       "tsx scripts/lint-design-tokens.ts"
