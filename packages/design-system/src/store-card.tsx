@@ -111,6 +111,27 @@ export interface StoreCardCanonicalProps {
   coverBottomLeft?: ReactNode;
   /** Override de clases del contenedor raiz. */
   className?: string;
+  /**
+   * Override del render del link raíz. El DS es framework-agnostic y usa
+   * `<a>` nativo (full page reload). Para SPA navigation + prefetch, los
+   * consumers Next deben pasar `<Link>`:
+   *
+   *   renderLink={({ href, className, children, ariaLabel }) => (
+   *     <Link href={href} className={className} aria-label={ariaLabel}>
+   *       {children}
+   *     </Link>
+   *   )}
+   *
+   * Brandon 2026-05-21 perf v4: sin este slot, cada click a una tienda
+   * disparaba un GET completo al servidor — TTFB 0.3s+ visible. Con Next
+   * Link + prefetch, la navegación es ~50ms (chunks pre-warm en hover).
+   */
+  renderLink?: (args: {
+    href: string;
+    className: string;
+    ariaLabel: string;
+    children: ReactNode;
+  }) => ReactNode;
 }
 
 // ── Estilos por variante ──────────────────────────────────────────────────────
@@ -149,6 +170,7 @@ export function StoreCardCanonical({
   coverOverlay,
   coverBottomLeft,
   className,
+  renderLink,
 }: StoreCardCanonicalProps) {
   const resolvedHref = href ?? `/marketplace/${slug}`;
   const padding = CARD_PADDING[variant];
@@ -157,19 +179,20 @@ export function StoreCardCanonical({
   const imgClass =
     "absolute inset-0 h-full w-full object-cover transition-transform duration-[var(--dur-base)] group-hover:scale-[1.02]";
 
-  return (
-    <a
-      href={resolvedHref}
-      aria-label={name}
-      className={cn(
-        "group block overflow-hidden rounded-lg border border-[var(--rule-base)]",
-        "bg-[var(--surface-raised)]",
-        "transition-colors duration-[var(--dur-fast)]",
-        "hover:border-[var(--rule-strong)]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
-        className,
-      )}
-    >
+  const rootClassName = cn(
+    "group block overflow-hidden rounded-lg border border-[var(--rule-base)]",
+    "bg-[var(--surface-raised)]",
+    "transition-colors duration-[var(--dur-fast)]",
+    "hover:border-[var(--rule-strong)]",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
+    className,
+  );
+
+  const ariaLabel = `Ir a la tienda ${name}`;
+
+  // Body interno de la card — comparte estructura entre <a> y renderLink.
+  const cardBody = (
+    <>
       {/* Imagen / placeholder ──────────────────────────────────────────────── */}
       {imageUrl ? (
         <div
@@ -277,6 +300,21 @@ export function StoreCardCanonical({
           </div>
         )}
       </div>
+    </>
+  );
+
+  if (renderLink) {
+    return renderLink({
+      href: resolvedHref,
+      className: rootClassName,
+      ariaLabel,
+      children: cardBody,
+    });
+  }
+
+  return (
+    <a href={resolvedHref} className={rootClassName} aria-label={ariaLabel}>
+      {cardBody}
     </a>
   );
 }
