@@ -31,6 +31,26 @@ import MainWithBackKey from "@/components/marketplace/MainWithBackKey";
  *   · El Suspense del navbar se removió: no había async hijo que lo
  *     justificara y producía 1 frame sin chrome.
  */
+/**
+ * NavbarSkeleton — fallback del Suspense del MarketplaceNavbar.
+ *
+ * Brandon 2026-05-21 fix Next 16: el navbar accede uncached data (cookies
+ * vía useCustomer, platform brand fetch) → sin Suspense bloqueaba el
+ * render entero del /tiendas con error
+ *   "Uncached data or connection() was accessed outside of <Suspense>"
+ *
+ * Mantenemos la altura exacta del navbar (h-16 desktop, h-14 mobile) +
+ * background sólido para que NO haya CLS cuando el navbar real hidrate.
+ */
+function NavbarSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="sticky top-0 z-40 h-14 sm:h-16 w-full bg-[var(--surface-raised)] border-b border-[var(--rule-soft)]"
+    />
+  );
+}
+
 export default function TiendasLayout({
   children,
 }: {
@@ -43,15 +63,25 @@ export default function TiendasLayout({
           <AddedToCartDrawerProvider>
             <div className="relative min-h-screen bg-[var(--surface-canvas)]">
               <SkipLink />
-              <MarketplaceNavbar modeOverride="tiendas-only" />
+              {/* Brandon 2026-05-21 fix Next 16 Cache Components: el navbar
+                  accede uncached data (cookies/brand). Wrappear en Suspense
+                  permite que el resto del layout streame mientras el navbar
+                  resuelve. Fallback con la altura exacta para evitar CLS. */}
+              <Suspense fallback={<NavbarSkeleton />}>
+                <MarketplaceNavbar modeOverride="tiendas-only" />
+              </Suspense>
               {/*
                 MainWithBackKey: detecta back-nav desde /marketplace/[slug] y
                 re-monta el subárbol del listado para que useEffect/fetch
                 vuelvan a correr (evita skeletons eternos en /tiendas tras
                 volver de un detail).
               */}
-              <MainWithBackKey>{children}</MainWithBackKey>
-              <Footer modeOverride="tiendas-only" />
+              <Suspense fallback={null}>
+                <MainWithBackKey>{children}</MainWithBackKey>
+              </Suspense>
+              <Suspense fallback={null}>
+                <Footer modeOverride="tiendas-only" />
+              </Suspense>
               <Suspense fallback={null}>
                 <QuickAddDrawer />
               </Suspense>
@@ -60,8 +90,12 @@ export default function TiendasLayout({
                   (/marketplace/[slug]). En el directorio /tiendas el cliente esta
                   navegando entre tiendas, no comprando, asi que el bar flotante
                   era ruido visual. */}
-              <BottomNav />
-              <NavModeToast />
+              <Suspense fallback={null}>
+                <BottomNav />
+              </Suspense>
+              <Suspense fallback={null}>
+                <NavModeToast />
+              </Suspense>
             </div>
           </AddedToCartDrawerProvider>
         </QuickAddProvider>

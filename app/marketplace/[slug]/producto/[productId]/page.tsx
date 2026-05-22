@@ -173,7 +173,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: pageUrl },
+    alternates: {
+      canonical: pageUrl,
+      // Brandon 2026-05-21 SEO pro: hreflang es-PE + x-default.
+      languages: { "es-PE": pageUrl, "x-default": pageUrl },
+    },
     openGraph: {
       title: product.metaTitle || product.name,
       description,

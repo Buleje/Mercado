@@ -122,7 +122,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${store.name} — ${formatCategoryLabel(store.category)} en ${zone}`,
     description: finalDesc,
-    alternates: { canonical: storeUrl },
+    alternates: {
+      canonical: storeUrl,
+      // Brandon 2026-05-21 SEO pro: hreflang para search engines.
+      // x-default señala el fallback para usuarios sin locale preferida.
+      languages: {
+        "es-PE": storeUrl,
+        "x-default": storeUrl,
+      },
+    },
     openGraph: {
       title: `${store.name} — Compra con delivery en ${zone}`,
       description: finalDesc,
@@ -262,6 +270,14 @@ function StoreJsonLd({
       },
     }),
     parentOrganization: { "@id": `${baseUrl}/#organization` },
+    // Brandon 2026-05-21 SEO pro: SpeakableSpecification permite a Google
+    // Assistant + Alexa leer en voz alta el nombre + tagline cuando el
+    // usuario pregunta "qué venden en X". Selectores CSS apuntan al h1 y
+    // el párrafo de tagline en el StoreHero.
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["#store-hero-heading", "#store-hero-tagline"],
+    },
   };
 
     // Brandon mayo 15 v4 (audit Security #2): escape de "<" + separadores

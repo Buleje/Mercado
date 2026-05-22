@@ -43,6 +43,13 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: `${BASE_URL}/tiendas`,
+    // Brandon 2026-05-21 SEO pro: hreflang es-PE + x-default. Google
+    // entiende que es contenido localizado para Perú; usuarios en otros
+    // países lo ven igual al no haber traducción.
+    languages: {
+      "es-PE": `${BASE_URL}/tiendas`,
+      "x-default": `${BASE_URL}/tiendas`,
+    },
   },
   robots: {
     index: true,
