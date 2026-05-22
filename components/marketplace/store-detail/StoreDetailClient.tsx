@@ -32,7 +32,14 @@ import { CartBadge } from "@/components/marketplace/MarketplaceCart";
 import { cn } from "@/lib/utils";
 import { useCustomer } from "@/contexts/customer-context";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
-import SharedMobileNavDrawer from "@/components/marketplace/SharedMobileNavDrawer";
+// Brandon 2026-05-21 perf v7: SharedMobileNavDrawer (400 LOC / 20KB) es un
+// drawer mobile-only que solo se monta cuando el usuario abre el menú.
+// dynamic({ ssr: false }) → chunk separado, descarga on-demand. El chunk
+// se warmea en hover/idle pero NO bloquea el LCP del storefront.
+const SharedMobileNavDrawer = dynamic(
+  () => import("@/components/marketplace/SharedMobileNavDrawer"),
+  { ssr: false, loading: () => null },
+);
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
 // Brandon 2026-05-20 v11 audit P2: StorePromoBannersStrip below-fold +
@@ -58,7 +65,13 @@ const StorePoliciesBlock = dynamic(() => import("./StorePoliciesBlock"), {
   ssr: false,
   loading: () => null,
 });
-import ClosedNowBanner from "./ClosedNowBanner";
+// Brandon 2026-05-21 perf v7: ClosedNowBanner (119 LOC / 8KB) solo se renderiza
+// si `!isOpen` (tienda cerrada). En la mayoría de visits (horario comercial),
+// nunca se monta — sale del bundle inicial.
+const ClosedNowBanner = dynamic(() => import("./ClosedNowBanner"), {
+  ssr: false,
+  loading: () => null,
+});
 import { getStoreTagline } from "@/lib/store-tagline";
 import type { DbStore, DbStoreProduct } from "@/lib/db/marketplace.db";
 import type {
