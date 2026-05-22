@@ -26,7 +26,7 @@ import { dirname } from "node:path";
 const MIN_FREE_MB = 1500;
 const MAX_TSC = 2;
 const MAX_ORPHAN_CHROMIUM = 3;
-const MAX_LOAD_1MIN = 25;
+const MAX_LOAD_1MIN = 14;
 
 function readInput() {
   try { return JSON.parse(readFileSync(0, "utf8")); } catch { return null; }
