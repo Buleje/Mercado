@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import ChatBubble from "@/components/marketplace/ChatBubble";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
-import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
+import StoreDetailLoading from "./loading";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
 
 // Deduplicate getBySlug across generateMetadata + page render in the same
@@ -305,8 +305,14 @@ function StoreJsonLd({
 // El Suspense local permite que el shell se prerender, y los datos streaman.
 export default async function StoreDetailPage({ params }: Props) {
   const { slug } = await params;
+  // Brandon 2026-05-21 perf FOUC v5: el Suspense fallback usaba PaicheLoading
+  // (icono "Abriendo la tienda…" centrado). Durante la SPA navigation desde
+  // /tiendas → click → /marketplace/[slug], el usuario veía 700-900ms del
+  // icono Paiche antes del contenido real. Ahora usamos el MISMO skeleton
+  // que loading.tsx (hero + stats + filter + grid) — estructura matched al
+  // storefront final → fin del flash icono→layout.
   return (
-    <Suspense fallback={<PaicheLoading variant="page" label="Abriendo la tienda…" />}>
+    <Suspense fallback={<StoreDetailLoading />}>
       <StoreDetailContent slug={slug} />
     </Suspense>
   );
