@@ -14,6 +14,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -37,7 +38,14 @@ import {
 // FeaturedStoresNearby movido a dynamic() abajo (Brandon 2026-05-20 perf mobile).
 import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
 import { useCustomer } from "@/contexts/customer-context";
-import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
+// Brandon 2026-05-21 v3 perf — ExplorarTracker es un tracker de analytics
+// (PostHog/Vercel). NO afecta el render visible; bajamos a dynamic + ssr:false
+// para sacarlo del bundle inicial. Si no carga, el peor caso es que un evento
+// de analytics se pierde; el usuario nunca lo nota.
+const ExplorarTracker = dynamic(
+  () => import("@/components/marketplace/explorar/ExplorarTracker"),
+  { ssr: false },
+);
 // Brandon 2026-05-18 perf P0 #2: MarketplaceFilters es 691 LOC y se monta
 // dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
 // import estático para no romper el tipado de DEFAULT_FILTERS.
@@ -45,9 +53,11 @@ import type { MarketplaceFiltersState } from "@/components/marketplace/Marketpla
 import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star } from "@buleje/design-system/icons";
 // CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
 import { CupSoda } from "lucide-react";
-import QuickFilterChips, {
-  type QuickChipId,
-} from "@/components/marketplace/QuickFilterChips";
+// Brandon 2026-05-21 v3: removido import default de QuickFilterChips (chips
+// legacy "Abierto ahora / 4.5 o más / Sin mínimo" eliminados del render).
+// El type sigue siendo necesario para el state `activeChips` que alimenta
+// el toggle "⭐ 4+" inline y el URL sync.
+import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import StoresSortSelector, {
   loadStoredSort,
   STORES_SORT_OPTIONS,
@@ -65,7 +75,8 @@ import TiendasLocationBar from "@/components/marketplace/TiendasLocationBar";
 import TiendasWelcomeBanner from "@/components/marketplace/TiendasWelcomeBanner";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
-import dynamic from "next/dynamic";
+// `dynamic` ya está importado al top — usado por ExplorarTracker, MarketplaceFilters,
+// SearchAutocomplete y los strips desktop-only (Tiendas*Strip).
 
 // Brandon 2026-05-18 v3: TiendasMap dynamic removido — toggle Lista/Mapa
 // eliminado del toolbar.
@@ -999,25 +1010,26 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           <span className="text-[var(--accent)]">Pucallpa</span>
         </h1>
 
-        {/* ── Filtros rápidos (chips) ── */}
-        {!isTiendasOnly && (
-          <div className="mb-3">
-            <QuickFilterChips
-              activeChips={activeChips}
-              onToggle={handleChipToggle}
-              stores={stores as unknown as ReadonlyArray<{
-                rating?: number;
-                isOpenNow?: boolean;
-                freeDelivery?: boolean;
-                paymentMethods?: string[] | null;
-                minimumOrder?: number | null;
-                hours24h?: boolean;
-                createdAt?: string | Date | null;
-                hasOffers?: boolean;
-              }>}
-            />
-          </div>
-        )}
+        {/*
+          Brandon 2026-05-21 v3 — eliminados los chips legacy "Abierto ahora /
+          4.5 o más / Sin mínimo" (componente QuickFilterChips) que se
+          renderizaban arriba del filter bar.
+
+          Razones:
+          (1) DUPLICACIÓN — el chip "⭐ 4+" del filter bar (líneas 1055+)
+              cubre el caso "top_rated" con la misma key.
+          (2) FLASH — el gate `!isTiendasOnly` dependía del hook
+              `useMarketplaceNavMode()` que arranca `null` en SSR; cuando
+              en /tiendas el modo NO está forzado a "tiendas-only" en el
+              superadmin, los chips legacy se renderizaban siempre.
+          (3) FRICCIÓN — Brandon los considera antiguos; el nuevo flujo
+              prioriza el sort dropdown + 4+ + filtros del drawer (modelo
+              Doordash/Rappi).
+
+          El `state activeChips` sigue vivo (lo lee el toggle ⭐ 4+, el
+          URL sync, y `filteredStores` en MarketplaceStoresView). Solo se
+          retiró el render UI duplicado.
+        */}
 
         {/* Filtros: Tipo de producto + Zona en cajitas grandes
              (mismo formato visual). La categoría de tienda ya vive
