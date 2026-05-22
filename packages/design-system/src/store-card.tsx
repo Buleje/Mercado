@@ -88,6 +88,27 @@ export interface StoreCardCanonicalProps {
    * fuerte de la tienda incluso con banner genérico.
    */
   avatar?: ReactNode;
+  /**
+   * Override de clases del contenedor que envuelve el cover/imagen.
+   * Útil para cambiar el aspect-ratio responsivo (ej. `aspect-[16/9] sm:aspect-[4/3]`).
+   * Las clases pasadas se mergean con `cn()` (tailwind-merge) → ganan sobre el default.
+   */
+  imageWrapperClassName?: string;
+  /**
+   * Overlays absolutos sobre el cover (ej: rating chip top-left,
+   * promo badge debajo). Estilo Rappi/Uber Eats — el rating queda en
+   * el cover y el body se libera para nombre + meta.
+   * Se renderiza con `absolute top-3 left-3` y z-10 — el consumer
+   * puede pasar un Fragment con varios elementos stack-vertical.
+   */
+  coverOverlay?: ReactNode;
+  /**
+   * Slot opcional para el logo del negocio en la esquina inferior izquierda
+   * del cover. Estilo Rappi/PedidosYa — un avatar redondo que identifica
+   * la marca sin invadir el body. El consumer es responsable del tamaño y
+   * borde (típicamente h-9 w-9 mobile, h-11 w-11 desktop, border-white).
+   */
+  coverBottomLeft?: ReactNode;
   /** Override de clases del contenedor raiz. */
   className?: string;
 }
@@ -124,6 +145,9 @@ export function StoreCardCanonical({
   renderImage,
   renderImageFallback,
   avatar,
+  imageWrapperClassName,
+  coverOverlay,
+  coverBottomLeft,
   className,
 }: StoreCardCanonicalProps) {
   const resolvedHref = href ?? `/marketplace/${slug}`;
@@ -153,6 +177,7 @@ export function StoreCardCanonical({
             "relative w-full overflow-hidden",
             `aspect-[${STORE_CARD_RATIO}]`,
             "bg-[var(--surface-sunken)]",
+            imageWrapperClassName,
           )}
         >
           {renderImage ? (
@@ -167,6 +192,18 @@ export function StoreCardCanonical({
               className={imgClass}
             />
           )}
+          {/* Cover overlay opcional (rating, promo) — absoluto top-left */}
+          {coverOverlay != null && (
+            <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
+              {coverOverlay}
+            </div>
+          )}
+          {/* Logo del negocio bottom-left (estilo Rappi/PedidosYa) */}
+          {coverBottomLeft != null && (
+            <div className="absolute bottom-2.5 left-2.5 z-10">
+              {coverBottomLeft}
+            </div>
+          )}
         </div>
       ) : renderImageFallback ? (
         <div
@@ -174,16 +211,39 @@ export function StoreCardCanonical({
             "relative w-full overflow-hidden",
             `aspect-[${STORE_CARD_RATIO}]`,
             "bg-[var(--surface-sunken)]",
+            imageWrapperClassName,
           )}
         >
           {renderImageFallback()}
+          {coverOverlay != null && (
+            <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
+              {coverOverlay}
+            </div>
+          )}
+          {coverBottomLeft != null && (
+            <div className="absolute bottom-2.5 left-2.5 z-10">
+              {coverBottomLeft}
+            </div>
+          )}
         </div>
       ) : (
-        <StoreImagePlaceholder
-          storeId={storeId}
-          name={name}
-          className="rounded-t-lg rounded-b-none"
-        />
+        <div className="relative">
+          <StoreImagePlaceholder
+            storeId={storeId}
+            name={name}
+            className="rounded-t-lg rounded-b-none"
+          />
+          {coverOverlay != null && (
+            <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
+              {coverOverlay}
+            </div>
+          )}
+          {coverBottomLeft != null && (
+            <div className="absolute bottom-2.5 left-2.5 z-10">
+              {coverBottomLeft}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Avatar overlay — semi-overlap entre banner y body, estilo Rappi */}

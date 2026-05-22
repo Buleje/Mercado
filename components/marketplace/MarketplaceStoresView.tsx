@@ -159,14 +159,25 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   const cardRef = useRef<HTMLDivElement>(null);
 
   // ── Slots para StoreCardCanonical ──────────────────────────────────────────
+  // Brandon 2026-05-21 rediseño Rappi/Uber Eats:
+  // - Rating + promos → coverOverlay (encima del cover, top-left)
+  // - badges del DS → vacío (no usamos esa fila)
+  // - footer del DS → contiene TODO el contenido del body:
+  //     línea 1: nombre + rating pill (justify-between)
+  //     línea 2: meta (categoría · zona · delivery min, truncate)
+  //     línea 3 condicional: trust chips (envío gratis, mín pedido)
 
-  const badges = (
+  // Aria description enriquecida — antes vivía en el avatar overlay que
+  // removimos. Se usa adentro del footer como sr-only.
+  const ratingTextAria = store.rating > 0 ? `, ${Number(store.rating).toFixed(1)} estrellas` : "";
+  const zoneTextAria = store.zone ? `, ${store.zone}` : "";
+  const ariaLabel = `${store.name}${zoneTextAria}${ratingTextAria}${store.vacationMode ? " — de vacaciones" : ""}`;
+
+  // ── Overlay sobre el cover: rating pill + promo + vacaciones ──
+  const coverOverlay = (
     <>
-      {/* Rating + reseñas count — decision factor #1.
-          Brandon 2026-05-18: antes solo "4.8". Ahora "4.8 · 120" con count
-          inline (signal social que valida el rating frente a "fake-rating-de-1-review"). */}
       {store.rating > 0 && (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/90 backdrop-blur-sm shadow-sm text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)]">
           <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
           <span className="tabular-nums">{Number(store.rating).toFixed(1)}</span>
           {store.reviewCount > 0 && (
@@ -176,63 +187,73 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           )}
         </span>
       )}
-      {/* Pediste hoy — historial reciente */}
-      {lastOrder && (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] border border-[var(--accent)]/30 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
-          <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--accent)]" />
-          {formatDaysAgo(lastOrder.daysAgo)}
-        </span>
-      )}
-      {/* Ofertas activas */}
       {store.activePromos != null && store.activePromos > 0 && (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-500 text-white text-[length:var(--ts-2xs)] font-extrabold shadow-sm">
           {store.activePromos} {store.activePromos === 1 ? "oferta" : "ofertas"}
         </span>
       )}
-      {/* Vacaciones — solo si aplica */}
+      {lastOrder && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-extrabold shadow-sm">
+          <span aria-hidden className="h-1 w-1 rounded-full bg-white" />
+          {formatDaysAgo(lastOrder.daysAgo)}
+        </span>
+      )}
       {store.vacationMode && (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/95 border border-[var(--data-warning-500)]/40 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]">
-          <Plane className="h-2.5 w-2.5" strokeWidth={1.75} aria-hidden="true" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/90 backdrop-blur-sm text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-warning-500)] shadow-sm">
+          <Plane className="h-2.5 w-2.5" strokeWidth={2} aria-hidden="true" />
           Vacaciones
         </span>
       )}
     </>
   );
 
-  // Footer minimal — meta row (zona + delivery time) + trust chips
-  // (envío gratis o mín pedido). La card entera ya es un Link al
-  // storefront, no necesita CTA visible. Estados de vacaciones/cerrada
-  // se comunican con el overlay sobre la imagen.
-  //
-  // Brandon 2026-05-18: agregar señales de confianza visibles antes del
-  // tap — Envío gratis o "Mín. S/15". Antes el cliente solo veía zona
-  // + minutos, decidía a ciegas el costo total.
+  // ── Body: nombre + meta + trust en bloque único pasado como footer ──
+  // El DS renderiza `footer` debajo del nombre por default, pero acá pasamos
+  // `name=""` al canonical via `aria-label` y montamos TODO el contenido nosotros.
+  // En realidad el canonical SIEMPRE renderiza el nombre — entonces:
+  //   - canonical renderiza name como p (línea 1, line-clamp-2)
+  //   - footer renderiza línea 2 (meta) + línea 3 (trust)
+  // Pero queremos nombre + rating en MISMA línea (justify-between). El rating
+  // ya está en coverOverlay → el body puede mantener su layout natural y la
+  // línea 1 (nombre) usa todo el ancho sin competir con rating.
+  const deliveryLabel =
+    store.deliveryMinutes && store.deliveryMinutes > 0
+      ? `${Math.max(15, store.deliveryMinutes - 10)}–${store.deliveryMinutes + 5} min`
+      : "25–35 min";
+
+  const metaParts = [
+    store.category && store.category !== "todos"
+      ? store.category.charAt(0).toUpperCase() + store.category.slice(1)
+      : null,
+    store.zone || null,
+    deliveryLabel,
+  ].filter(Boolean) as string[];
+
   const footer = (
-    <div className="flex flex-col gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-      <div className="flex items-center gap-2">
-        {store.zone && (
-          <span className="inline-flex items-center gap-1 truncate">
-            <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
-            <span className="truncate">{store.zone}</span>
-          </span>
-        )}
-        {store.zone && <span aria-hidden className="text-[var(--rule-base)]">·</span>}
-        <span className="inline-flex items-center gap-1 font-bold text-[var(--text-secondary)] shrink-0">
-          {store.deliveryMinutes && store.deliveryMinutes > 0
-            ? `${Math.max(15, store.deliveryMinutes - 10)}–${store.deliveryMinutes + 5} min`
-            : "25–35 min"}
+    <div className="flex flex-col gap-1.5">
+      {/* sr-only enriched aria description (rating, zone, vacación) — antes
+          vivía en el `avatar` overlay que ya removimos (rediseño Rappi v3). */}
+      <span className="sr-only">{ariaLabel}</span>
+      {/* Línea meta: categoría · zona · delivery time (1 línea, truncate) */}
+      <div className="flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate">
+        <MapPin className="h-3 w-3 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+        <span className="truncate font-semibold text-[var(--text-secondary)]">
+          {metaParts.join(" · ")}
         </span>
       </div>
-      {(store.freeDelivery || (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
-        <div className="flex items-center gap-1.5 flex-wrap">
+
+      {/* Línea trust chips: envío gratis y/o mín pedido (condicional) */}
+      {(store.freeDelivery ||
+        (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
+        <div className="flex items-center gap-1.5">
           {store.freeDelivery && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] border border-[var(--accent)]/30 text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
-              <Bike className="h-2.5 w-2.5" strokeWidth={2.25} aria-hidden="true" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
+              <Bike className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden="true" />
               Envío gratis
             </span>
           )}
           {store.minOrderAmount != null && store.minOrderAmount > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] tabular-nums">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] tabular-nums">
               Mín. S/{store.minOrderAmount}
             </span>
           )}
@@ -240,10 +261,6 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       )}
     </div>
   );
-
-  const ratingText = store.rating > 0 ? `, ${Number(store.rating).toFixed(1)} estrellas` : "";
-  const zoneText = store.zone ? `, ${store.zone}` : "";
-  const ariaLabel = `${store.name}${zoneText}${ratingText}${store.vacationMode ? " — de vacaciones" : ""}`;
 
   return (
     <m.div
@@ -254,16 +271,16 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       className="relative"
     >
       {/* Overlay status (cerrado / construcción) — sobrepuesto al canonical
-          card limitado al área del cover (aspect-[4/3]) via posicionamiento
-          absoluto. Necesario porque StoreCardCanonical ignora renderImageFallback
-          cuando imageUrl es null y usa su propio fallback interno (TIENDA
-          BULEJE banner). */}
+          card limitado al área del cover (aspect-[16/9] mobile, [4/3] desktop)
+          via posicionamiento absoluto. El aspect-ratio debe matchear el del
+          StoreCardCanonical para que el overlay cubra exactamente el cover.
+          Brandon 2026-05-21: mobile cards más bajas estilo Rappi → 16/9. */}
       {store.underConstruction ? (
-        <div className="absolute top-0 left-0 right-0 aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 aspect-[16/9] sm:aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden">
           <UnderConstructionOverlay message={store.underConstructionMessage} />
         </div>
       ) : store.isOpenNow === false ? (
-        <div className="absolute top-0 left-0 right-0 aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 aspect-[16/9] sm:aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden">
           <ClosedNowOverlay nextOpeningLabel={formatNextOpening(store.nextOpeningAt)} />
         </div>
       ) : null}
@@ -278,8 +295,35 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         slug={store.slug}
         imageUrl={store.cover || store.logo}
         variant="compact"
-        badges={badges}
         footer={footer}
+        coverOverlay={coverOverlay}
+        coverBottomLeft={
+          <div
+            className="h-9 w-9 sm:h-11 sm:w-11 rounded-full overflow-hidden bg-[var(--surface-raised)] border-2 border-white dark:border-gray-900 shadow-md flex items-center justify-center"
+            aria-hidden="true"
+          >
+            {store.logo ? (
+              <Image
+                src={store.logo}
+                alt=""
+                width={48}
+                height={48}
+                sizes="48px"
+                quality={70}
+                loading="lazy"
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <span className="text-sm sm:text-base font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
+                {store.name.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+        }
+        // Brandon 2026-05-21: mobile cards menos altas estilo Rappi.
+        // 16/9 mobile (360x202) vs 4/3 desktop (360x270). Reduce el alto
+        // del cover en 70px aprox., permite ver más cards sin scroll en cel.
+        imageWrapperClassName="aspect-[16/9] sm:aspect-[4/3]"
         renderImage={({ src, alt, className }) => (
           <Image
             src={src}
@@ -304,29 +348,6 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         renderImageFallback={() => (
           <MiniBulejeBanner storeName={store.name} category={store.category} />
         )}
-        avatar={
-          <div
-            className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl overflow-hidden bg-[var(--surface-raised)] border-[3px] border-[var(--surface-canvas)] shadow-md flex items-center justify-center"
-            aria-label={ariaLabel}
-          >
-            {store.logo ? (
-              <Image
-                src={store.logo}
-                alt=""
-                width={56}
-                height={56}
-                sizes="56px"
-                quality={70}
-                loading="lazy"
-                className="object-cover w-full h-full"
-              />
-            ) : (
-              <span className="text-base sm:text-lg font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
-                {store.name.trim().charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
-        }
       />
       {/* TS-15 follow store — fuera del Link para no anidar interactivos */}
       <div className="absolute top-3 right-3 z-10">
