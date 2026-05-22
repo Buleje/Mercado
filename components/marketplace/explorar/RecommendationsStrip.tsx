@@ -162,6 +162,12 @@ export default function RecommendationsStrip({ initialStores }: RecommendationsS
                         category={store.category}
                       />
                     )}
+                    // Brandon 2026-05-21 perf v4: SPA navigation con Next Link.
+                    renderLink={({ href, className, ariaLabel, children }) => (
+                      <Link href={href} className={className} aria-label={ariaLabel}>
+                        {children}
+                      </Link>
+                    )}
                   />
                 </div>
               ))}

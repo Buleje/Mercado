@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import LiveViewers from "@/components/marketplace/LiveViewers";
 import { StoreCardCanonical } from "@buleje/design-system";
@@ -158,6 +159,12 @@ function StoreCardWrapper({ store, priority = false }: { store: Store; priority?
             placeholder="blur"
             blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PGZpbHRlciBpZD0iYiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMiIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsdGVyPSJ1cmwoI2IpIiBmaWxsPSIjZWVlIi8+PC9zdmc+"
           />
+        )}
+        // Brandon 2026-05-21 perf v4: SPA navigation con Next Link.
+        renderLink={({ href, className, ariaLabel, children }) => (
+          <Link href={href} className={className} aria-label={ariaLabel}>
+            {children}
+          </Link>
         )}
       />
     </div>

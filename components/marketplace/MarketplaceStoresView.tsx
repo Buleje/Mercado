@@ -12,6 +12,7 @@ import {
   Bike,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { m } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
@@ -347,6 +348,16 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         )}
         renderImageFallback={() => (
           <MiniBulejeBanner storeName={store.name} category={store.category} />
+        )}
+        // Brandon 2026-05-21 perf v4: SPA navigation con Next Link en lugar de
+        // <a> nativo. El DS expone el slot `renderLink` precisamente para que
+        // los consumers Next obtengan prefetch automático + client-side routing.
+        // Sin este slot, cada click a una tienda hacía full page reload (TTFB
+        // 0.3s+ visible). Con Link, navegación instantánea (chunks pre-warm).
+        renderLink={({ href, className, ariaLabel, children }) => (
+          <Link href={href} className={className} aria-label={ariaLabel}>
+            {children}
+          </Link>
         )}
       />
       {/* TS-15 follow store — fuera del Link para no anidar interactivos */}
