@@ -51,7 +51,7 @@ export default function TiendasLayout({
                 volver de un detail).
               */}
               <MainWithBackKey>{children}</MainWithBackKey>
-              <Footer />
+              <Footer modeOverride="tiendas-only" />
               <Suspense fallback={null}>
                 <QuickAddDrawer />
               </Suspense>

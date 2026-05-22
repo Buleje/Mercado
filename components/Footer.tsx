@@ -219,7 +219,18 @@ function LinkGroup({
   );
 }
 
-export default function Footer() {
+type FooterProps = {
+  /**
+   * Override del modo del navbar resuelto desde un segment layout server-side.
+   * Si se pasa, evita el flash post-hidratación que producía el hook client
+   * `useMarketplaceNavMode()` (arranca `null` en SSR → mega-footer marketplace
+   * se renderea primero → cliente recorta al compacto al resolver el modo).
+   * Brandon 2026-05-21 perf FOUC v2.
+   */
+  modeOverride?: import("@/lib/nav-visibility").MarketplaceNavMode;
+};
+
+export default function Footer({ modeOverride }: FooterProps = {}) {
   const { t } = useLocale();
   // SSR-safe (Next 16 prerender-current-time): hidratación en cliente.
   const [year, setYear] = useState(2026);
@@ -257,7 +268,12 @@ export default function Footer() {
   // (NavegacionTab) y el visitante está en /tiendas, mostramos un footer
   // compacto sin links del ecosistema marketplace. Cuando vuelva al modo
   // "Marketplace completo" se renderea el mega-footer normalmente.
-  const navMode = useMarketplaceNavMode();
+  //
+  // Brandon 2026-05-21 perf FOUC v2: si el segment layout pasa modeOverride
+  // (ej. `/tiendas/layout.tsx` → "tiendas-only"), úsalo como verdad. Sin él,
+  // el SSR renderaba mega-footer y el cliente recortaba post-hidratación.
+  const navModeHook = useMarketplaceNavMode();
+  const navMode = modeOverride ?? navModeHook;
   // Brandon 2026-05-18: pad-bottom dinámico cuando hay items en carrito.
   // El StickyCartBar (52px pegado al BottomNav) tapa el copyright en
   // /marketplace/[slug] al hacer scroll abajo. Detectamos items > 0 y

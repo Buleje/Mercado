@@ -72,6 +72,12 @@ export interface MarketplaceFiltersProps {
   onClearAll?: () => void;
   /** Total de filtros activos (incluye los del caller — chips, search, etc.). */
   globalActiveCount?: number;
+  /**
+   * Brandon 2026-05-21: cuando true, el botón trigger mobile usa altura/typo
+   * compactos (`h-9 px-3 text-xs`) para encajar en filas con poco espacio.
+   * Default `false` — backward compatible.
+   */
+  triggerCompact?: boolean;
 }
 
 /* ── Constantes ─────────────────────────────────────────────────────────────── */
@@ -507,6 +513,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
     extraSort,
     onClearAll,
     globalActiveCount,
+    triggerCompact = false,
   } = props;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -544,16 +551,28 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           aria-haspopup="dialog"
           aria-label={activeCount > 0 ? `Filtros (${activeCount} activos)` : "Filtros"}
           className={cn(
-            "inline-flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold border transition-colors",
+            "inline-flex items-center gap-1.5 rounded-full font-bold border transition-colors",
+            triggerCompact
+              ? "h-9 px-3 text-xs"
+              : "min-h-10 px-4 py-2 text-sm rounded-xl",
             activeCount > 0
               ? "bg-primary/10 border-primary/30 text-primary"
               : "border-gray-200 bg-white text-[var(--text-secondary)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
           )}
         >
-          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+          <SlidersHorizontal
+            className={cn(triggerCompact ? "h-3.5 w-3.5" : "h-4 w-4")}
+            aria-hidden="true"
+          />
           Filtros
           {activeCount > 0 && (
-            <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[length:var(--ts-2xs)] font-bold text-white">
+            <span
+              aria-hidden="true"
+              className={cn(
+                "flex items-center justify-center rounded-full bg-primary font-bold text-white",
+                triggerCompact ? "h-4 w-4 text-[10px]" : "h-5 w-5 text-[length:var(--ts-2xs)]",
+              )}
+            >
               {activeCount}
             </span>
           )}
@@ -613,7 +632,12 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           </>
         )}
 
-        {/* Ordenar — dropdown */}
+        {/* Ordenar — dropdown.
+            Brandon 2026-05-21 perf FOUC v2: oculto en desktop bar cuando el
+            caller pasa `extraSort` (caso /tiendas, donde StoresSortSelector
+            externo maneja el sort de tiendas). Sin este gate aparecía un
+            "Ordenar" duplicado: el del StoresSortSelector + este. */}
+        {!extraSort && (
         <div className="relative">
           <button
             type="button"
@@ -654,6 +678,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             </div>
           </FilterDropdown>
         </div>
+        )}
 
         {/* Precio — dropdown con slider */}
         <div className="relative">
