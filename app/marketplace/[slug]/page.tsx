@@ -2,7 +2,10 @@ import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
-import ChatBubble from "@/components/marketplace/ChatBubble";
+// Brandon 2026-05-21 perf v6: ChatBubble vía wrapper client-only con
+// dynamic({ ssr: false }) — saca ~20KB / 496 LOC del bundle inicial del
+// storefront. No afecta LCP ni SEO (es un floating widget interactivo).
+import ChatBubble from "@/components/marketplace/ChatBubble/ChatBubbleLazy";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
 import StoreDetailLoading from "./loading";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";

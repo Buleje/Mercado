@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,7 +37,7 @@ import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
 // Brandon 2026-05-20 v11 audit P2: StorePromoBannersStrip below-fold +
 // hace fetch propio en mount → dynamic ssr:false ahorra ~5KB initial.
-import dynamic from "next/dynamic";
+// (Brandon 2026-05-21 v6: import de `dynamic` ya está en línea 21.)
 const StorePromoBannersStrip = dynamic(
   () => import("./StorePromoBannersStrip"),
   { ssr: false, loading: () => null },
@@ -44,8 +45,19 @@ const StorePromoBannersStrip = dynamic(
 import { type StoreCategoryChip } from "./StoreCategories";
 import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
 import StoreCatalog, { slugifyCat } from "./StoreCatalog";
-import StoreReviews from "./StoreReviews";
-import StorePoliciesBlock from "./StorePoliciesBlock";
+// Brandon 2026-05-21 perf v6: StoreReviews (199 LOC / 8KB) + StorePoliciesBlock
+// (103 LOC / 4KB) son below-the-fold — el usuario los ve solo después de
+// scrollear past el catálogo. Lazy con ssr:false libera ~12KB del bundle
+// inicial sin afectar LCP. SEO no se pierde porque las reviews/policies ya
+// están en JSON-LD del page.tsx (Schema.org Product/AggregateRating).
+const StoreReviews = dynamic(() => import("./StoreReviews"), {
+  ssr: false,
+  loading: () => null,
+});
+const StorePoliciesBlock = dynamic(() => import("./StorePoliciesBlock"), {
+  ssr: false,
+  loading: () => null,
+});
 import ClosedNowBanner from "./ClosedNowBanner";
 import { getStoreTagline } from "@/lib/store-tagline";
 import type { DbStore, DbStoreProduct } from "@/lib/db/marketplace.db";
