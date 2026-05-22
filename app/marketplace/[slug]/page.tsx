@@ -300,6 +300,93 @@ function StoreJsonLd({
   );
 }
 
+// \u2500\u2500 ProductsItemList JSON-LD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Brandon 2026-05-21 SEO round 3: rich result de cat\u00e1logo. Google indexa
+// hasta 30 productos como ItemList con Offer (precio + currency + URL).
+// Pre-exist\u00edan Restaurant + BreadcrumbList; faltaba el cat\u00e1logo en s\u00ed \u2014
+// resultado: el storefront NO compet\u00eda por rich snippets de productos.
+// Limit 30 \u2192 suficiente para rich snippets de Google (>30 los ignora).
+function ProductsItemListJsonLd({
+  storeUrl,
+  storeName,
+  storeSlug,
+  products,
+}: {
+  storeUrl: string;
+  storeName: string;
+  storeSlug: string;
+  products: ReadonlyArray<{
+    productId: number;
+    productName: string;
+    retailPrice: number;
+    productImage: string | null;
+    productCategory: string;
+    stock: number | null;
+  }>;
+}) {
+  // Solo emitimos JSON-LD si hay productos \u2014 evita ItemList vac\u00edo que
+  // Google flagea como "low quality" en Rich Results Test.
+  if (!products.length) return null;
+
+  // Filtra productos agotados (stock === 0) \u2014 Google penaliza Offer
+  // InStock con stock real 0. Productos con stock null = sin control
+  // de stock (restaurantes/servicios) \u2192 asumimos disponible.
+  const available = products.filter((p) => p.stock !== 0);
+
+  const items = available.slice(0, 30).map((p, idx) => {
+    const productUrl = `${storeUrl}/producto/${p.productId}`;
+    return {
+      "@type": "ListItem",
+      position: idx + 1,
+      item: {
+        "@type": "Product",
+        "@id": `${productUrl}#product`,
+        name: p.productName,
+        url: productUrl,
+        ...(p.productImage && { image: p.productImage }),
+        ...(p.productCategory && { category: p.productCategory }),
+        brand: { "@type": "Brand", name: storeName },
+        offers: {
+          "@type": "Offer",
+          url: productUrl,
+          price: p.retailPrice.toFixed(2),
+          priceCurrency: "PEN",
+          availability: "https://schema.org/InStock",
+          seller: {
+            "@type": "Organization",
+            name: storeName,
+            url: storeUrl,
+          },
+        },
+      },
+    };
+  });
+
+  const itemListLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${storeUrl}#catalog`,
+    name: `Cat\u00e1logo de ${storeName}`,
+    description: `Productos disponibles en ${storeName} con delivery en Pucallpa`,
+    numberOfItems: items.length,
+    itemListElement: items,
+  };
+
+  const safe = (obj: object) =>
+    JSON.stringify(obj)
+      .replace(/</g, "\\u003c")
+      .replace(/\u2028/g, "\\u2028")
+      .replace(/\u2029/g, "\\u2029");
+
+  return (
+    <script
+      type="application/ld+json"
+      data-store-slug={storeSlug}
+      dangerouslySetInnerHTML={{ __html: safe(itemListLd) }}
+    />
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 // Cache Components (Next 16): la página delega TODO el fetch a un loader
@@ -461,6 +548,15 @@ async function StoreDetailContent({ slug }: { slug: string }) {
         reviewCount={store.reviewCount}
         hoursJson={hoursJson}
         phone={(store as { phone?: string | null }).phone ?? null}
+      />
+      {/* Brandon 2026-05-21 SEO round 3: ItemList con productos del catálogo.
+          Habilita rich results de Google "Products from this store" — antes
+          solo teníamos Restaurant/LocalBusiness sin enumerar el menú. */}
+      <ProductsItemListJsonLd
+        storeUrl={`https://www.buleje.pe/marketplace/${slug}`}
+        storeName={store.name}
+        storeSlug={slug}
+        products={products}
       />
 
       {/* Breadcrumb largo removido — StoreDetailClient muestra solo
