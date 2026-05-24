@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,9 +23,15 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@buleje/design-system": ["./packages/design-system/src/index.ts"],
-      "@buleje/design-system/*": ["./packages/design-system/src/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@buleje/design-system": [
+        "./packages/design-system/src/index.ts"
+      ],
+      "@buleje/design-system/*": [
+        "./packages/design-system/src/*"
+      ]
     }
   },
   "include": [
@@ -29,7 +39,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
