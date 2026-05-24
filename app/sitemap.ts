@@ -289,6 +289,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.85,
+      alternates: { languages: { "es-PE": `${baseUrl}/zona/${zone.slug}` } },
     });
     // City × category pages
     for (const cat of realCategories) {
@@ -297,6 +298,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified,
         changeFrequency: "daily",
         priority: 0.8,
+        alternates: { languages: { "es-PE": `${baseUrl}/zona/${zone.slug}/${cat.id}` } },
       });
     }
   }
@@ -311,6 +313,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified,
           changeFrequency: "weekly",
           priority: 0.6,
+          alternates: { languages: { "es-PE": `${baseUrl}/zona/${zone.slug}/producto/${slugify(product.name)}` } },
         });
       }
     }
@@ -326,6 +329,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.78,
+      alternates: { languages: { "es-PE": `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}` } },
     });
     // District × category
     for (const cat of realCategories) {
@@ -334,6 +338,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified,
         changeFrequency: "daily",
         priority: 0.72,
+        alternates: { languages: { "es-PE": `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}/${cat.id}` } },
       });
     }
   }

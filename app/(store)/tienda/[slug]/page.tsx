@@ -52,6 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `Compra ${product.name} a S/${Number(product.price).toFixed(2)} por ${product.unit}. ${category?.label ?? "Producto"} con delivery rápido. Paga con Yape o efectivo en ${ctx.name}.`,
     alternates: {
       canonical: productUrl,
+      languages: { "es-PE": productUrl, "x-default": productUrl },
     },
     openGraph: {
       title: titleStr,
