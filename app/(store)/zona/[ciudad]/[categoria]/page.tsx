@@ -74,9 +74,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = `Usa Buleje para gestionar ${cat.label.toLowerCase()} en tu bodega de ${zone.name}. Inventario, precios, delivery y facturación SUNAT integrados. Software gratuito para empezar.`;
   const url = `${BASE_URL}/zona/${zone.slug}/${cat.id}`;
 
+  // SEO 2026-05-24: thin content guard — si la categoría no tiene productos
+  // en esta zona, la página existe para el usuario pero NO se indexa (evita
+  // penalización de Google por páginas vacías). follow:true mantiene el
+  // crawl de links internos. getCategoryProducts está cacheado (no duplica
+  // la query con el componente).
+  const hdrs = await headers();
+  const tenantId = hdrs.get("x-tenant-id") ?? "main";
+  const products = await getCategoryProducts(tenantId, cat.id);
+  const isThin = products.length === 0;
+
   return {
     title,
     description,
+    ...(isThin ? { robots: { index: false, follow: true } } : {}),
     alternates: {
       canonical: url,
       languages: { "es-PE": url, "x-default": url },

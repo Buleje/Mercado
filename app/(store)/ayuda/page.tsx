@@ -30,6 +30,8 @@ import {
 import LandingHeader from "@/components/landing/LandingHeader";
 import Footer from "@/components/Footer";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import { JsonLd } from "@/components/JsonLd";
+import { generateHowToLD, generateSpeakableLD } from "@/lib/seo/json-ld";
 import {
   PageTitle,
   SectionTitle,
@@ -98,6 +100,22 @@ const faqJsonLd = {
     acceptedAnswer: { "@type": "Answer", text: faq.answer },
   })),
 };
+
+// ─── JSON-LD HowTo (cómo comprar) + Speakable (búsqueda por voz) ───────────────
+const howToJsonLd = generateHowToLD({
+  name: "Cómo comprar en Buleje",
+  description:
+    "Pasos para hacer un pedido en el marketplace de bodegas de Pucallpa y pagar con Yape, Plin o efectivo.",
+  steps: [
+    { name: "Buscá tu bodega", text: "Entrá a buleje.pe y buscá una tienda por nombre, categoría o zona." },
+    { name: "Armá tu pedido", text: "Agregá productos al carrito; ves el total real en vivo, sin sorpresas." },
+    { name: "Elegí cómo pagar", text: "Pagá con Yape, Plin o efectivo al recibir. No necesitás tarjeta." },
+    { name: "Recibí en tu puerta", text: "El pedido llega a tu domicilio en 25 minutos promedio." },
+  ],
+});
+
+// Speakable apunta a las respuestas de las FAQ (clases del bloque FAQ).
+const speakableJsonLd = generateSpeakableLD([".faq-question", ".faq-answer"]);
 
 // ─── Secciones de categorias ───────────────────────────────────────────────────
 const HELP_CATEGORIES = [
@@ -209,13 +227,13 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   return (
     <details className="group border-b border-[var(--rule-soft)] last:border-0">
       <summary className="flex cursor-pointer items-center justify-between gap-4 py-4 text-sm font-medium text-[var(--text-primary)] hover:text-[var(--brand-ink)] transition-colors duration-[var(--dur-fast)] list-none select-none">
-        <span>{question}</span>
+        <span className="faq-question">{question}</span>
         <ChevronDown
           className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform duration-[var(--dur-fast)] group-open:rotate-180"
           aria-hidden="true"
         />
       </summary>
-      <div className="pb-4 pr-8 text-sm leading-relaxed text-[var(--text-secondary)]">
+      <div className="faq-answer pb-4 pr-8 text-sm leading-relaxed text-[var(--text-secondary)]">
         {answer}
       </div>
     </details>
@@ -255,10 +273,11 @@ function CategoryCard({
 export default function AyudaPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+      {/* SEO 2026-05-24: FAQ (safeJsonLdStringify), HowTo (featured snippet
+          "cómo comprar") + Speakable (búsqueda por voz / Google Assistant). */}
+      <JsonLd data={faqJsonLd} />
+      <JsonLd data={howToJsonLd} />
+      <JsonLd data={speakableJsonLd} />
       <BreadcrumbSchema
         items={[
           { name: "Buleje", url: "https://www.buleje.pe" },

@@ -99,9 +99,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = `Software para vender ${cat.label.toLowerCase()} en bodegas de ${district.name} (${zone.name}). Inventario, POS, delivery y boletas SUNAT integrados. Compatible con Yape, Plin y efectivo.`;
   const url = `${BASE_URL}/zona/${zone.slug}/distrito/${district.slug}/${cat.id}`;
 
+  // SEO 2026-05-24: thin content guard — noindex si 0 productos (cacheado).
+  const hdrs = await headers();
+  const tenantId = hdrs.get("x-tenant-id") ?? "main";
+  const products = await getCategoryProducts(tenantId, cat.id);
+  const isThin = products.length === 0;
+
   return {
     title,
     description,
+    ...(isThin ? { robots: { index: false, follow: true } } : {}),
     alternates: {
       canonical: url,
       languages: { "es-PE": url, "x-default": url },

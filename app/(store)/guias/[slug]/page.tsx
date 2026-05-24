@@ -14,6 +14,8 @@ import { ArrowLeft, ArrowRight, Clock, User, Share2 } from "@buleje/design-syste
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import { JsonLd } from "@/components/JsonLd";
+import { generateArticleLD } from "@/lib/seo/json-ld";
 import {
   PageTitle,
   SectionTitle,
@@ -398,6 +400,17 @@ export default async function GuiaSlugPage({ params }: PageProps) {
           { name: guide.category, url: `https://www.buleje.pe/guias?categoria=${encodeURIComponent(guide.category)}` },
           { name: guide.title, url: `https://www.buleje.pe/guias/${guide.slug}` },
         ]}
+      />
+      {/* SEO 2026-05-24: Article schema — Google Article rich results + citeable
+          por answer engines (ChatGPT/Perplexity/Google AI). */}
+      <JsonLd
+        data={generateArticleLD({
+          title: guide.title,
+          description: guide.excerpt,
+          slug: guide.slug,
+          datePublished: guide.date,
+          body: guide.body,
+        })}
       />
       <Header />
       <div className="h-[6.75rem] sm:h-[7.75rem]" />

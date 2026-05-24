@@ -90,6 +90,9 @@ export default async function LocalBusinessJsonLd() {
         { "@type": "Offer", itemOffered: { "@type": "Product", name: "Limpieza" } },
       ],
     },
+    // SEO E-E-A-T: cuando el negocio cree su Google Business Profile, agregar
+    // acá la URL de Google Maps (mayor señal de entidad local en Pucallpa) +
+    // redes reales. No inventar URLs — Google penaliza sameAs falso.
     sameAs: [],
   };
 

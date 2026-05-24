@@ -162,6 +162,9 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
       postalCode: "25000",
       addressCountry: "PE",
     },
+    // SEO E-E-A-T: al crear Google Business Profile, agregar su URL de Maps
+    // acá (máxima señal de entidad local Pucallpa) + YouTube/TikTok si existen.
+    // No inventar perfiles — Google penaliza sameAs falso.
     sameAs: [
       "https://www.facebook.com/buleje",
       "https://www.instagram.com/buleje",

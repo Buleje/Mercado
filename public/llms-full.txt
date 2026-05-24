@@ -1,0 +1,121 @@
+# Buleje — Marketplace de bodegas en Pucallpa + Software ERP para tiendas
+
+> Buleje es dos cosas en una plataforma: (1) un **marketplace** donde los vecinos
+> de Pucallpa, Perú compran a bodegas, minimarkets y restaurantes locales con
+> delivery rápido; y (2) un **software ERP/SaaS** que esas mismas tiendas usan
+> para gestionar ventas, inventario, fiados y delivery desde el celular.
+
+Sitio: https://buleje.pe · Idioma: español (es-PE) · Ubicación: Pucallpa, Ucayali, Perú
+
+---
+
+## 1. Marketplace (para compradores / vecinos)
+
+Buleje conecta a los vecinos de Pucallpa con cientos de bodegas, minimarkets,
+pollerías, fruterías, farmacias y restaurantes de su zona. Es como tener todas
+las tiendas del barrio en una sola app.
+
+### Cómo comprar en Buleje (paso a paso)
+1. Entrá a buleje.pe y buscá tu bodega por nombre, categoría o zona (Manantay,
+   Yarinacocha, Callería, etc.).
+2. Armá tu pedido agregando productos al carrito. Ves el total real en vivo, sin
+   sorpresas.
+3. Elegí cómo pagar: **Yape, Plin o efectivo** al recibir. No necesitás tarjeta.
+4. Recibí el pedido en tu puerta. Entrega promedio: 25 minutos.
+
+### Métodos de pago aceptados
+- Yape (billetera móvil más usada en Perú)
+- Plin
+- Efectivo contra entrega
+No se requiere tarjeta de crédito ni registro complejo.
+
+### Cobertura en Pucallpa
+Buleje opera en las principales zonas y distritos de Pucallpa: Callería,
+Manantay, Yarinacocha, y barrios aledaños. Cada zona tiene su propia página con
+las bodegas disponibles: buleje.pe/zona/pucallpa
+
+### Tipos de tienda en el marketplace
+Bodegas y minimarkets, pollerías, fruterías y verdulerías, carnicerías,
+farmacias y boticas, restaurantes, mayoristas, veterinarias.
+
+---
+
+## 2. Software ERP (para dueños de bodegas / vendedores)
+
+Las tiendas del marketplace gestionan su negocio con el ERP de Buleje, diseñado
+para bodegas y minimarkets de Perú y Latinoamérica. Todo desde el celular.
+
+### Características principales
+- POS (punto de venta) rápido, funciona offline y sincroniza después
+- Inventario en tiempo real con alertas de stock bajo
+- Fiado digital con semáforo de crédito (evalúa riesgo antes de fiar)
+- Bot de WhatsApp: toma pedidos, cobra y confirma automáticamente
+- IA: predicción de stock, recomendaciones, asistente virtual, combos sugeridos
+- OCR de facturas: escaneá con foto y registra automáticamente
+- Comandos de voz ("muéstrame las ventas de hoy")
+- Cobranza inteligente en 4 niveles con descuentos por pronto pago
+- Delivery integrado con zonas y tracking
+- Facturación electrónica SUNAT (boletas y facturas)
+- Multi-tienda desde una sola cuenta
+- Reportes automáticos por WhatsApp
+- Cliente frecuente sin tarjeta física, solo con el teléfono
+
+### Planes
+- Free — S/ 0/mes: 50 productos, 2 usuarios, 200 pedidos/mes
+- Pro — S/ 49/mes: 500 productos, 10 usuarios, analytics, bot WhatsApp (popular)
+- Business — S/ 149/mes: ilimitado, 5 tiendas, API, soporte prioritario
+- Enterprise — personalizado: white label, SLA, soporte dedicado
+
+### Cómo abrir tu tienda (vendedores)
+1. Registrate gratis en buleje.pe/abrir-tienda (sin tarjeta, setup en 5 minutos).
+2. Subí tus productos con precios y stock.
+3. Empezá a recibir pedidos del marketplace automáticamente.
+
+---
+
+## 3. Preguntas frecuentes
+
+**¿Cuánto cuesta comprar en Buleje?**
+Comprar es gratis para el vecino. Pagás solo tus productos + el delivery que
+defina la tienda. Aceptamos Yape, Plin y efectivo.
+
+**¿Cuánto tarda el delivery?**
+25 minutos en promedio dentro de Pucallpa, según la zona y la tienda.
+
+**¿Necesito tarjeta de crédito?**
+No. Pagás con Yape, Plin o efectivo al recibir.
+
+**¿Cómo abro mi bodega en Buleje?**
+Gratis en buleje.pe/abrir-tienda. El plan Free no tiene costo y el setup toma
+~5 minutos.
+
+**¿Buleje funciona sin internet?**
+El POS del ERP funciona offline y sincroniza cuando vuelve la conexión.
+
+**¿En qué ciudades opera Buleje?**
+Nació en Pucallpa (Ucayali) y es el foco principal del marketplace. El software
+ERP sirve a tiendas de todo Perú y Latinoamérica.
+
+**¿Es seguro pagar con Yape en Buleje?**
+Sí. El pago se hace directo a la tienda o contra entrega; Buleje no almacena
+datos de tarjetas.
+
+---
+
+## 4. Recursos y contenido
+
+- Guías para comprar y ahorrar: https://buleje.pe/guias
+- Recetas con productos locales: https://buleje.pe/recetas
+- Centro de ayuda: https://buleje.pe/ayuda
+- Cómo pagar: https://buleje.pe/marketplace/como-pagar
+- Explorar el marketplace: https://buleje.pe/marketplace
+- Abrir una tienda: https://buleje.pe/abrir-tienda
+
+## 5. Contacto
+- Web: https://buleje.pe
+- WhatsApp: pedidos y soporte vía el botón de WhatsApp en el sitio
+- Ubicación: Pucallpa, Ucayali, Perú
+
+---
+Última actualización: 2026-05-24. Contenido en español peruano (es-PE).
+Buleje — tu mercado desde la selva amazónica.

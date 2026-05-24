@@ -372,6 +372,73 @@ export function safeJsonLdStringify(payload: unknown): string {
     .replace(/[\u2029]/g, "\\u2029");
 }
 
+// ── Article (guías editoriales — citeable por Google + IAs) ─────────
+
+export function generateArticleLD(article: {
+  title: string;
+  description: string;
+  slug: string;
+  datePublished: string;
+  dateModified?: string;
+  body?: string;
+}) {
+  const url = `${BASE_URL}/guias/${article.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.description,
+    image: `${BASE_URL}/og-image.jpg`,
+    datePublished: article.datePublished,
+    dateModified: article.dateModified ?? article.datePublished,
+    author: { "@type": "Organization", name: "Buleje", url: BASE_URL },
+    publisher: {
+      "@type": "Organization",
+      name: "Buleje",
+      logo: { "@type": "ImageObject", url: `${BASE_URL}/og-image.jpg` },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    url,
+    ...(article.body ? { articleBody: article.body } : {}),
+    inLanguage: "es-PE",
+  };
+}
+
+// ── HowTo (pasos instructivos — featured snippets + IAs) ────────────
+
+export function generateHowToLD(howto: {
+  name: string;
+  description: string;
+  steps: Array<{ name: string; text: string }>;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: howto.name,
+    description: howto.description,
+    inLanguage: "es-PE",
+    step: howto.steps.map((s, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: s.name,
+      text: s.text,
+    })),
+  };
+}
+
+// ── Speakable (búsqueda por voz / Google Assistant) ─────────────────
+
+export function generateSpeakableLD(cssSelectors: string[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: cssSelectors,
+    },
+  };
+}
+
 /** District breadcrumb helper (extends `zoneBreadcrumbs`) */
 export function districtBreadcrumbs(
   district: District,
