@@ -3,14 +3,18 @@
 /**
  * ComplianceTab — Ley 29733 (Perú) + OWASP Top 10.
  *
- * Mejoras 2026-05-11:
- *  - Hero card con % cumplimiento agregado + breakdown pass/partial/fail
- *  - Filtros por estado (Todos / Cumple / Parcial / No cumple)
- *  - Cards consistentes con resto del Security Center
- *  - Export dialog (Art. 18) sin cambios funcionales
+ * Mejoras 2026-05-24:
+ *  - Toast inline reemplaza feedback alert persistente
+ *  - Search debounced en checklists (controles + descripción)
+ *  - CSV export de los 16 controles
+ *  - Keyboard: / busca · Esc limpia
+ *  - Tap targets ≥44px en filter tabs + CTAs
+ *  - Tonos rose-700/dark:rose-300 correctos (3 sitios)
+ *  - Tonos emerald correctos (sin var(--data-success-500))
+ *  - ExportDialog: tap targets + tonos consistentes
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
@@ -21,11 +25,13 @@ import {
   FileDown,
   X,
   Loader2,
-  CheckCircle2,
   Scale,
   Shield,
+  Search,
+  Download,
   type LucideIcon,
 } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 
 type ComplianceStatus = "pass" | "partial" | "fail" | "na";
 
@@ -36,19 +42,19 @@ const STATUS_META: Record<
   pass: {
     label: "Cumple",
     icon: ShieldCheck,
-    cls: "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]",
-    dot: "bg-[var(--data-success-500)]",
+    cls: "border-emerald-300/60 bg-emerald-50 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-500/15 dark:text-emerald-300",
+    dot: "bg-emerald-500",
   },
   partial: {
     label: "Parcial",
     icon: AlertTriangle,
-    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
+    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
     dot: "bg-amber-500",
   },
   fail: {
     label: "No cumple",
     icon: XCircle,
-    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
     dot: "bg-rose-500",
   },
   na: {
@@ -182,11 +188,99 @@ const RETENTION_RULES = [
 ];
 
 type FilterStatus = "all" | "pass" | "partial" | "fail";
+type ToastTone = "success" | "error" | "info";
+type Toast = { id: number; text: string; tone: ToastTone };
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function csvCell(v: string | number | null | undefined): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportComplianceCSV() {
+  const headers = ["Norma", "Control", "Descripción", "Estado"];
+  const rows = [
+    ...LEY_29733.map((i) => ["Ley 29733", i.title, i.description, i.status]),
+    ...OWASP_TOP_10.map((i) => ["OWASP", i.title, i.description, i.status]),
+  ];
+  const csv =
+    "﻿" +
+    [headers, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `compliance_checklist_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function Toasts({ toasts }: { toasts: Toast[] }) {
+  return (
+    <div
+      aria-live="polite"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none"
+    >
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          role="status"
+          className={cn(
+            "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
+            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "error" && "bg-rose-600 text-white",
+            t.tone === "info" && "bg-slate-800 text-white",
+          )}
+        >
+          {t.text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export function ComplianceTab() {
-  const [feedback, setFeedback] = useState<{ title: string; description?: string } | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [filter, setFilter] = useState<FilterStatus>("all");
+  const [searchRaw, setSearchRaw] = useState("");
+  const [search, setSearch] = useState("");
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastIdRef = useRef(1);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const pushToast = useCallback((text: string, tone: ToastTone = "info") => {
+    const id = toastIdRef.current++;
+    setToasts((prev) => [...prev, { id, text, tone }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchRaw), 150);
+    return () => clearTimeout(t);
+  }, [searchRaw]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      const inField = tag === "input" || tag === "textarea" || tag === "select";
+      if (e.key === "Escape" && !inField) {
+        if (searchRaw) setSearchRaw("");
+        else if (filter !== "all") setFilter("all");
+      }
+      if (inField) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [searchRaw, filter]);
 
   const allItems = useMemo(() => [...LEY_29733, ...OWASP_TOP_10], []);
   const stats = useMemo(() => {
@@ -197,26 +291,29 @@ export function ComplianceTab() {
     return { total, pass, partial, fail, percentage: Math.round((pass / total) * 100) };
   }, [allItems]);
 
-  const filterItems = (items: ChecklistItem[]) =>
-    filter === "all" ? items : items.filter((i) => i.status === filter);
+  const filterItems = useCallback(
+    (items: ChecklistItem[]) => {
+      const q = search.trim().toLowerCase();
+      return items.filter((i) => {
+        if (filter !== "all" && i.status !== filter) return false;
+        if (!q) return true;
+        return (
+          i.title.toLowerCase().includes(q) ||
+          i.description.toLowerCase().includes(q)
+        );
+      });
+    },
+    [filter, search],
+  );
+
+  const leyFiltered = filterItems(LEY_29733);
+  const owaspFiltered = filterItems(OWASP_TOP_10);
+  const totalFiltered = leyFiltered.length + owaspFiltered.length;
+  const isFiltered = filter !== "all" || search.trim() !== "";
 
   return (
     <div className="space-y-6">
-      {/* Feedback */}
-      {feedback && (
-        <div
-          role="alert"
-          className="flex items-start gap-3 rounded-xl border border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5 px-4 py-3 text-[var(--data-success-500)]"
-        >
-          <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-display text-sm font-extrabold">{feedback.title}</p>
-            {feedback.description && (
-              <p className="text-xs opacity-90 mt-0.5">{feedback.description}</p>
-            )}
-          </div>
-        </div>
-      )}
+      <Toasts toasts={toasts} />
 
       {/* ─── Hero compliance ─────────────────────────────────────── */}
       <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
@@ -236,33 +333,31 @@ export function ComplianceTab() {
               </div>
             </div>
             <p className="text-sm text-[var(--text-secondary)]">
-              {stats.pass} de {stats.total} controles en estado <strong>cumple</strong>. Los
-              controles parciales requieren revisión del equipo legal.
+              {stats.pass} de {stats.total} controles en estado{" "}
+              <strong className="text-emerald-700 dark:text-emerald-300">cumple</strong>.
+              Los controles parciales requieren revisión del equipo legal.
             </p>
             {/* Progress bar */}
-            <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-              <div className="flex h-full">
-                <div
-                  className="bg-[var(--data-success-500)]"
-                  style={{ width: `${(stats.pass / stats.total) * 100}%` }}
-                  title={`${stats.pass} cumplen`}
-                />
-                <div
-                  className="bg-amber-500"
-                  style={{ width: `${(stats.partial / stats.total) * 100}%` }}
-                  title={`${stats.partial} parciales`}
-                />
-                <div
-                  className="bg-rose-500"
-                  style={{ width: `${(stats.fail / stats.total) * 100}%` }}
-                  title={`${stats.fail} no cumplen`}
-                />
-              </div>
+            <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)] flex">
+              <div
+                className="bg-emerald-500 transition-all duration-500"
+                style={{ width: `${(stats.pass / stats.total) * 100}%` }}
+                title={`${stats.pass} cumplen`}
+              />
+              <div
+                className="bg-amber-500 transition-all duration-500"
+                style={{ width: `${(stats.partial / stats.total) * 100}%` }}
+                title={`${stats.partial} parciales`}
+              />
+              <div
+                className="bg-rose-500 transition-all duration-500"
+                style={{ width: `${(stats.fail / stats.total) * 100}%` }}
+                title={`${stats.fail} no cumplen`}
+              />
             </div>
-            {/* Breakdown legend */}
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
-                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                 {stats.pass} cumplen
               </span>
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
@@ -275,7 +370,6 @@ export function ComplianceTab() {
               </span>
             </div>
           </div>
-          {/* Percentage display */}
           <div className="flex items-center justify-center border-t md:border-t-0 md:border-l border-[var(--rule-soft)] bg-linear-to-br from-[var(--accent)]/5 via-transparent to-transparent p-8">
             <div className="text-center">
               <p className="font-display text-6xl font-extrabold tabular-nums tracking-tight text-[var(--accent)]">
@@ -289,9 +383,9 @@ export function ComplianceTab() {
         </div>
       </section>
 
-      {/* ─── Status filter ───────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+      {/* ─── Action bar (filter + search + CSV) ──────────────────── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1 self-start">
           {(["all", "pass", "partial", "fail"] as const).map((f) => {
             const isActive = filter === f;
             const count =
@@ -308,19 +402,22 @@ export function ComplianceTab() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-bold transition ${
+                aria-pressed={isActive}
+                className={cn(
+                  "inline-flex h-10 items-center gap-1.5 rounded-lg px-3.5 text-sm font-bold transition",
                   isActive
                     ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
-                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                }`}
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                )}
               >
                 {label}
                 <span
-                  className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
+                  className={cn(
+                    "inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums",
                     isActive
                       ? "bg-[var(--accent)]/15 text-[var(--accent)]"
-                      : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
-                  }`}
+                      : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]",
+                  )}
                 >
                   {count}
                 </span>
@@ -328,7 +425,39 @@ export function ComplianceTab() {
             );
           })}
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
+              aria-hidden
+            />
+            <input
+              ref={searchRef}
+              type="search"
+              value={searchRaw}
+              onChange={(e) => setSearchRaw(e.target.value)}
+              placeholder="Buscar control…"
+              aria-label="Buscar control"
+              className="w-full sm:w-64 h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+            />
+          </div>
+          <button
+            onClick={exportComplianceCSV}
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+          >
+            <Download className="h-4 w-4" aria-hidden />
+            CSV
+          </button>
+        </div>
       </div>
+
+      {isFiltered && (
+        <p className="text-xs text-[var(--text-tertiary)]">
+          Mostrando{" "}
+          <strong className="text-[var(--text-primary)]">{totalFiltered}</strong>{" "}
+          de {stats.total} controles
+        </p>
+      )}
 
       {/* ─── Checklists side-by-side ─────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -337,14 +466,14 @@ export function ComplianceTab() {
           eyebrow="Ley 29733 — Perú"
           title="Protección de datos personales"
           subtitle="Cumplimiento regulatorio Perú"
-          items={filterItems(LEY_29733)}
+          items={leyFiltered}
         />
         <ChecklistSection
           icon={Shield}
           eyebrow="OWASP"
           title="OWASP Top 10 (2021)"
           subtitle="Controles de seguridad recomendados"
-          items={filterItems(OWASP_TOP_10)}
+          items={owaspFiltered}
         />
       </div>
 
@@ -360,15 +489,15 @@ export function ComplianceTab() {
                 Derecho de acceso (Art. 18)
               </h3>
               <p className="text-sm text-[var(--text-secondary)] mt-1">
-                Genera un JSON con todos los datos personales de un cliente: pedidos,
-                comentarios, direcciones, consentimientos y audit trail.
+                Genera un JSON con todos los datos personales de un cliente:
+                pedidos, comentarios, direcciones, consentimientos y audit trail.
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setExportOpen(true)}
-            className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20 transition hover:brightness-110"
+            className="shrink-0 inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
           >
             <FileDown className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Abrir flujo
@@ -398,18 +527,31 @@ export function ComplianceTab() {
               className="flex items-center justify-between gap-3 px-5 py-3 transition hover:bg-[var(--surface-sunken)]/50"
             >
               <p className="font-bold text-sm text-[var(--text-primary)]">{r.type}</p>
-              <p className="text-xs font-semibold text-[var(--text-tertiary)]">{r.period}</p>
+              <p className="text-xs font-semibold text-[var(--text-tertiary)]">
+                {r.period}
+              </p>
             </li>
           ))}
         </ul>
       </section>
 
+      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-right">
+        Atajos:{" "}
+        <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">
+          /
+        </kbd>{" "}
+        buscar ·{" "}
+        <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">
+          Esc
+        </kbd>{" "}
+        limpiar
+      </p>
+
       <ExportDialog
         open={exportOpen}
         onOpenChange={setExportOpen}
-        onSuccess={(msg) =>
-          setFeedback({ title: "Exportación generada", description: msg })
-        }
+        onSuccess={(msg) => pushToast(msg, "success")}
+        onError={(msg) => pushToast(msg, "error")}
       />
     </div>
   );
@@ -436,7 +578,7 @@ function ChecklistSection({
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
           <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
         </span>
-        <div>
+        <div className="min-w-0">
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
             {eyebrow}
           </p>
@@ -448,7 +590,9 @@ function ChecklistSection({
       </header>
       {items.length === 0 ? (
         <div className="px-5 py-10 text-center">
-          <p className="text-sm text-[var(--text-tertiary)]">Sin controles en este filtro</p>
+          <p className="text-sm text-[var(--text-tertiary)]">
+            Sin controles que coincidan con los filtros
+          </p>
         </div>
       ) : (
         <ul className="divide-y divide-[var(--rule-soft)]">
@@ -460,21 +604,29 @@ function ChecklistSection({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <span
-                      className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border ${meta.cls}`}
+                      className={cn(
+                        "mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
+                        meta.cls,
+                      )}
                     >
-                      <StatusIcon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                      <StatusIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                     </span>
                     <div className="min-w-0">
-                      <p className="font-bold text-sm text-[var(--text-primary)]">{item.title}</p>
+                      <p className="font-bold text-sm text-[var(--text-primary)]">
+                        {item.title}
+                      </p>
                       <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                         {item.description}
                       </p>
                     </div>
                   </div>
                   <span
-                    className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}
+                    className={cn(
+                      "shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
+                      meta.cls,
+                    )}
                   >
-                    <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
+                    <span className={cn("h-1 w-1 rounded-full", meta.dot)} />
                     {meta.label}
                   </span>
                 </div>
@@ -491,10 +643,12 @@ function ExportDialog({
   open,
   onOpenChange,
   onSuccess,
+  onError,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onSuccess: (msg: string) => void;
+  onError: (msg: string) => void;
 }) {
   const [tenantSlug, setTenantSlug] = useState("");
   const [dni, setDni] = useState("");
@@ -520,19 +674,23 @@ function ExportDialog({
         throw new Error((e as { error?: string }).error ?? `HTTP ${res.status}`);
       }
       const data = await res.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `export-${tenantSlug.trim()}-${dni.trim()}-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      onSuccess(`Archivo descargado: ${a.download}. Acción registrada en el audit log.`);
+      onSuccess(`Exportación descargada · ${a.download}`);
       onOpenChange(false);
       setTenantSlug("");
       setDni("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al generar export");
+      const msg = e instanceof Error ? e.message : "Error al generar export";
+      setError(msg);
+      onError(msg);
     } finally {
       setLoading(false);
     }
@@ -553,7 +711,7 @@ function ExportDialog({
               </Dialog.Title>
             </div>
             <Dialog.Close
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
               aria-label="Cerrar"
             >
               <X className="h-4 w-4" />
@@ -561,8 +719,8 @@ function ExportDialog({
           </div>
           <div className="p-5 space-y-3">
             <Dialog.Description className="text-xs text-[var(--text-tertiary)]">
-              Genera un JSON con todos los datos personales del cliente. Acción auditada bajo Ley
-              29733 Art. 18-20.
+              Genera un JSON con todos los datos personales del cliente. Acción
+              auditada bajo Ley 29733 Art. 18-20.
             </Dialog.Description>
             <label className="block">
               <span className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
@@ -575,7 +733,7 @@ function ExportDialog({
                 value={tenantSlug}
                 onChange={(e) => setTenantSlug(e.target.value)}
                 placeholder="ej: bodega-rosita"
-                className="w-full px-3 py-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="w-full h-11 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>
             <label className="block">
@@ -586,13 +744,13 @@ function ExportDialog({
                 value={dni}
                 onChange={(e) => setDni(e.target.value)}
                 placeholder="ej: 12345678"
-                className="w-full px-3 py-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="w-full h-11 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>
             {error && (
               <p
                 role="alert"
-                className="flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]"
+                className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300"
               >
                 <AlertTriangle className="h-3 w-3 shrink-0" />
                 {error}
@@ -601,14 +759,14 @@ function ExportDialog({
           </div>
           <div className="flex justify-end gap-2 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
             <Dialog.Close asChild>
-              <button className="px-4 py-2 rounded-xl text-sm font-bold border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--rule-base)]">
+              <button className="h-11 px-4 rounded-xl text-sm font-bold border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--rule-base)]">
                 Cancelar
               </button>
             </Dialog.Close>
             <button
               onClick={submit}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-extrabold uppercase tracking-wider text-white bg-[var(--accent)] hover:brightness-110 disabled:opacity-50"
+              className="inline-flex h-11 items-center gap-2 px-4 rounded-xl text-sm font-extrabold uppercase tracking-wider text-white bg-[var(--accent)] hover:brightness-110 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
