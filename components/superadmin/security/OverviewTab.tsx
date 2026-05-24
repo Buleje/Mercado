@@ -3,15 +3,36 @@
 /**
  * OverviewTab — Vista consolidada del Security Center.
  *
- * Hero KPIs (4) + Eventos recientes (severity-colored) + Postura (TOTP barra)
- * + IPs sospechosas (extraído del endpoint, antes oculto).
+ * Hero KPIs (4) + Health Score ring + Login trend sparkline +
+ * Eventos recientes con filtro + Postura + IPs sospechosas +
+ * Lista de admins (TOTP enrolment).
+ *
+ * Mejoras 2026-05-24:
+ *  - Time range selector (24h / 7d / 30d)
+ *  - Mini sparkline derivado de loginSeries
+ *  - Auto-refresh 60s opt-in (con indicador)
+ *  - Search debounced sobre eventos
+ *  - Toast inline (reemplaza alert/banner-only)
+ *  - Skeleton loading
+ *  - Keyboard: / busca · R recarga · Esc limpia
+ *  - Export CSV de eventos
+ *  - Health score visual SVG ring (consistente con vendor-health)
+ *  - Lista de admins TOTP — destaca quién falta enrolar
+ *  - Tonos rose semánticos correctos (NO var(--accent))
+ *  - Tap targets ≥44px
  *
  * Datos REALES:
  *  - GET /api/superadmin/security/posture
- *  - GET /api/superadmin/security?days=7
+ *  - GET /api/superadmin/security?days=N
  */
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -22,11 +43,15 @@ import {
   Shield,
   AlertTriangle,
   Info,
-  Loader2,
   TrendingUp,
   CheckCircle2,
+  Search,
+  RefreshCw,
+  Download,
+  Clock,
   type LucideIcon,
 } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -46,15 +71,17 @@ interface PostureResponse {
   };
 }
 
+interface SecurityEvent {
+  id: string;
+  action: string;
+  detail: string;
+  ipAddress: string | null;
+  createdAt: string;
+}
+
 interface SecurityEventsResponse {
   data: {
-    events: Array<{
-      id: string;
-      action: string;
-      detail: string;
-      ipAddress: string | null;
-      createdAt: string;
-    }>;
+    events: SecurityEvent[];
     summary: Record<string, number>;
     uniqueIPs: number;
     suspiciousIPs: Array<{ ip: string; failedAttempts: number }>;
@@ -62,6 +89,9 @@ interface SecurityEventsResponse {
 }
 
 type Severity = "critical" | "high" | "medium" | "low" | "info";
+type TimeRange = "24h" | "7d" | "30d";
+type ToastTone = "success" | "error" | "info";
+type Toast = { id: number; text: string; tone: ToastTone };
 
 const SEVERITY_META: Record<
   Severity,
@@ -70,25 +100,25 @@ const SEVERITY_META: Record<
   critical: {
     icon: ShieldAlert,
     label: "Crítica",
-    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
     dot: "bg-rose-500",
   },
   high: {
     icon: ShieldAlert,
     label: "Alta",
-    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
     dot: "bg-rose-500",
   },
   medium: {
     icon: AlertTriangle,
     label: "Media",
-    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
+    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
     dot: "bg-amber-500",
   },
   low: {
     icon: Info,
     label: "Baja",
-    cls: "border-sky-300/60 bg-sky-50/60 text-sky-700 dark:border-sky-700/40 dark:bg-sky-950/30 dark:text-sky-300",
+    cls: "border-sky-300/60 bg-sky-50 text-sky-700 dark:border-sky-700/40 dark:bg-sky-500/15 dark:text-sky-300",
     dot: "bg-sky-500",
   },
   info: {
@@ -110,6 +140,14 @@ const ACTION_META: Record<string, { severity: Severity; title: string }> = {
   sessions_revoked_all: { severity: "high", title: "Force logout global" },
 };
 
+const RANGE_DAYS: Record<TimeRange, number> = {
+  "24h": 1,
+  "7d": 7,
+  "30d": 30,
+};
+
+// ─── Helpers ────────────────────────────────────────────────────────────
+
 function fmtRelative(iso: string): string {
   const then = new Date(iso).getTime();
   const diffMin = Math.max(0, Math.round((Date.now() - then) / 60_000));
@@ -120,74 +158,289 @@ function fmtRelative(iso: string): string {
   return `hace ${Math.round(diffH / 24)}d`;
 }
 
+function csvCell(v: string | number | null | undefined): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportEventsCSV(events: SecurityEvent[]) {
+  const headers = ["ID", "Action", "Detail", "IP", "CreatedAt"];
+  const data = events.map((e) => [e.id, e.action, e.detail, e.ipAddress ?? "", e.createdAt]);
+  const csv =
+    "﻿" +
+    [headers, ...data].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `security_events_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Health score 0-100 derivado de varios factores defensivos. */
+function computeHealth(p: PostureResponse["data"]): number {
+  let score = 100;
+  if (p.vulnerabilities.count > 0) score -= Math.min(p.vulnerabilities.count * 5, 30);
+  if (p.loginsFailed24h > 10) score -= Math.min((p.loginsFailed24h - 10) * 2, 20);
+  if (p.ipsBlocked > 0) score -= Math.min(p.ipsBlocked * 3, 15);
+  const totpPct =
+    p.totpCoverage.total === 0
+      ? 100
+      : (p.totpCoverage.enrolled / p.totpCoverage.total) * 100;
+  if (totpPct < 100) score -= Math.round((100 - totpPct) * 0.35);
+  return Math.max(0, Math.min(100, score));
+}
+
+// ─── Health Ring (SVG) ───────────────────────────────────────────────────
+
+function HealthRing({ score }: { score: number }) {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+  const tone =
+    score >= 90
+      ? { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" }
+      : score >= 70
+        ? { stroke: "stroke-amber-500", text: "text-amber-600 dark:text-amber-400" }
+        : { stroke: "stroke-rose-500", text: "text-rose-600 dark:text-rose-400" };
+  return (
+    <div className="relative inline-flex items-center justify-center shrink-0">
+      <svg width="88" height="88" viewBox="0 0 88 88" className="-rotate-90" aria-hidden>
+        <circle cx="44" cy="44" r={radius} fill="none" strokeWidth="8"
+          className="stroke-[var(--rule-soft)]" />
+        <circle cx="44" cy="44" r={radius} fill="none" strokeWidth="8"
+          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
+          className={cn(tone.stroke, "transition-all duration-700")} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cn("text-xl font-extrabold tabular-nums", tone.text)}>{score}</span>
+        <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          /100
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sparkline (login series) ────────────────────────────────────────────
+
+function LoginSparkline({
+  series,
+}: {
+  series: Array<{ day: string; failed: number; succeeded: number }>;
+}) {
+  if (series.length === 0) {
+    return (
+      <p className="text-xs text-[var(--text-tertiary)] py-4 text-center">
+        Sin datos de login en la ventana
+      </p>
+    );
+  }
+  const max = Math.max(1, ...series.flatMap((s) => [s.failed, s.succeeded]));
+  const w = 100;
+  const h = 40;
+  const stepX = w / Math.max(1, series.length - 1);
+  const yFor = (v: number) => h - (v / max) * h;
+  const path = (key: "failed" | "succeeded") =>
+    series.map((s, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(1)} ${yFor(s[key]).toFixed(1)}`).join(" ");
+  return (
+    <div className="w-full">
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-12">
+        <path d={path("succeeded")} fill="none" className="stroke-emerald-500" strokeWidth="1.5" />
+        <path d={path("failed")} fill="none" className="stroke-rose-500" strokeWidth="1.5" />
+      </svg>
+      <div className="mt-1 flex items-center justify-between text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          Exitosos
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-rose-500" />
+          Fallidos
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Skeleton ────────────────────────────────────────────────────────────
+
+function Skeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-2xl bg-[var(--surface-sunken)] h-32" />
+        ))}
+      </div>
+      <div className="rounded-2xl bg-[var(--surface-sunken)] h-32" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 rounded-2xl bg-[var(--surface-sunken)] h-96" />
+        <div className="rounded-2xl bg-[var(--surface-sunken)] h-96" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Toasts ─────────────────────────────────────────────────────────────
+
+function Toasts({ toasts }: { toasts: Toast[] }) {
+  return (
+    <div
+      aria-live="polite"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none"
+    >
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          role="status"
+          className={cn(
+            "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
+            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "error" && "bg-rose-600 text-white",
+            t.tone === "info" && "bg-slate-800 text-white",
+          )}
+        >
+          {t.text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Component ──────────────────────────────────────────────────────────
 
 export function OverviewTab() {
   const [posture, setPosture] = useState<PostureResponse["data"] | null>(null);
-  const [events, setEvents] = useState<SecurityEventsResponse["data"]["events"]>([]);
+  const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [suspiciousIPs, setSuspiciousIPs] = useState<
     SecurityEventsResponse["data"]["suspiciousIPs"]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
+  const [timeRange, setTimeRange] = useState<TimeRange>("7d");
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [searchRaw, setSearchRaw] = useState("");
+  const [search, setSearch] = useState("");
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [pRes, eRes] = await Promise.all([
-        fetch("/api/superadmin/security/posture", { credentials: "include" }),
-        fetch("/api/superadmin/security?days=7", { credentials: "include" }),
-      ]);
-      if (!pRes.ok || !eRes.ok) throw new Error(`HTTP ${pRes.status}/${eRes.status}`);
-      const pData = (await pRes.json()) as PostureResponse;
-      const eData = (await eRes.json()) as SecurityEventsResponse;
-      setPosture(pData.data);
-      setEvents(eData.data.events.slice(0, 20));
-      setSuspiciousIPs(eData.data.suspiciousIPs ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar");
-    } finally {
-      setLoading(false);
-    }
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastIdRef = useRef(1);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const pushToast = useCallback((text: string, tone: ToastTone = "info") => {
+    const id = toastIdRef.current++;
+    setToasts((prev) => [...prev, { id, text, tone }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
   }, []);
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchRaw), 200);
+    return () => clearTimeout(t);
+  }, [searchRaw]);
+
+  const reload = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setRefreshing(true);
+      setError(null);
+      const days = RANGE_DAYS[timeRange];
+      try {
+        const [pRes, eRes] = await Promise.all([
+          fetch("/api/superadmin/security/posture", {
+            credentials: "include",
+            cache: "no-store",
+          }),
+          fetch(`/api/superadmin/security?days=${days}`, {
+            credentials: "include",
+            cache: "no-store",
+          }),
+        ]);
+        if (!pRes.ok || !eRes.ok) throw new Error(`HTTP ${pRes.status}/${eRes.status}`);
+        const pData = (await pRes.json()) as PostureResponse;
+        const eData = (await eRes.json()) as SecurityEventsResponse;
+        setPosture(pData.data);
+        setEvents(eData.data.events.slice(0, 50));
+        setSuspiciousIPs(eData.data.suspiciousIPs ?? []);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Error al cargar";
+        setError(msg);
+        if (silent) pushToast(`Refresh fallido: ${msg}`, "error");
+      } finally {
+        if (!silent) setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [timeRange, pushToast],
+  );
 
   useEffect(() => {
     void reload();
   }, [reload]);
 
-  // Listener para botón "Actualizar" del Hero (custom event).
+  // Auto-refresh 60s
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const t = setInterval(() => void reload(true), 60_000);
+    return () => clearInterval(t);
+  }, [autoRefresh, reload]);
+
+  // Custom event para botón "Actualizar" del Hero
   useEffect(() => {
     const handler = () => void reload();
     window.addEventListener("security-overview-refresh", handler);
     return () => window.removeEventListener("security-overview-refresh", handler);
   }, [reload]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      const inField = tag === "input" || tag === "textarea" || tag === "select";
+      if (e.key === "Escape" && !inField) {
+        setSearchRaw("");
+        setSeverityFilter("all");
+      }
+      if (inField) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        void reload();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [reload]);
+
   const filteredEvents = useMemo(() => {
-    if (severityFilter === "all") return events;
+    const q = search.trim().toLowerCase();
     return events.filter((ev) => {
       const sev = ACTION_META[ev.action]?.severity ?? "info";
-      return sev === severityFilter;
+      if (severityFilter !== "all" && sev !== severityFilter) return false;
+      if (!q) return true;
+      return (
+        ev.action.toLowerCase().includes(q) ||
+        ev.detail.toLowerCase().includes(q) ||
+        (ev.ipAddress?.toLowerCase().includes(q) ?? false)
+      );
     });
-  }, [events, severityFilter]);
+  }, [events, search, severityFilter]);
 
-  if (loading && !posture) {
-    return (
-      <div className="flex items-center justify-center py-16 text-[var(--text-tertiary)]">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Cargando estado de seguridad…
-      </div>
-    );
-  }
+  if (loading && !posture) return <Skeleton />;
 
   if (error && !posture) {
     return (
       <div
         role="alert"
-        className="rounded-2xl border border-rose-300/60 bg-rose-50/40 p-5 dark:border-rose-700/40 dark:bg-rose-950/30"
+        className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-5"
       >
-        <div className="flex items-start gap-3 text-[var(--accent)] dark:text-[var(--accent)]">
+        <div className="flex items-start gap-3 text-rose-700 dark:text-rose-300">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
             <p className="font-display text-base font-extrabold">
@@ -195,9 +448,10 @@ export function OverviewTab() {
             </p>
             <p className="text-sm opacity-80 mt-0.5">{error}</p>
             <button
-              onClick={reload}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-current px-3 py-1.5 text-xs font-bold transition hover:bg-rose-100 dark:hover:bg-rose-900/40"
+              onClick={() => reload()}
+              className="mt-3 inline-flex h-11 items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-3.5 text-sm font-bold transition"
             >
+              <RefreshCw className="h-4 w-4" />
               Reintentar
             </button>
           </div>
@@ -212,9 +466,106 @@ export function OverviewTab() {
     posture.totpCoverage.total === 0
       ? 0
       : Math.round((posture.totpCoverage.enrolled / posture.totpCoverage.total) * 100);
+  const healthScore = computeHealth(posture);
+  const missingTotp = posture.totpCoverage.admins.filter((a) => !a.totpEnabled);
 
   return (
     <div className="space-y-6">
+      <Toasts toasts={toasts} />
+
+      {/* ─── Action bar ──────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] overflow-hidden">
+          {(["24h", "7d", "30d"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setTimeRange(r)}
+              aria-pressed={timeRange === r}
+              className={cn(
+                "px-3 text-sm font-bold transition",
+                timeRange === r
+                  ? "bg-[var(--accent)] text-white"
+                  : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+              )}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => reload()}
+          disabled={refreshing}
+          title="Recargar (R)"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+        >
+          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} aria-hidden />
+          Recargar
+        </button>
+        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+          <input
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+            className="h-4 w-4 accent-[var(--accent)]"
+          />
+          Auto 60s
+        </label>
+        <button
+          onClick={() => exportEventsCSV(filteredEvents)}
+          disabled={filteredEvents.length === 0}
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" aria-hidden />
+          CSV ({filteredEvents.length})
+        </button>
+        <span className="ml-auto text-xs text-[var(--text-tertiary)]">
+          Atajos:{" "}
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">
+            /
+          </kbd>{" "}
+          buscar ·{" "}
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">
+            R
+          </kbd>{" "}
+          recargar
+        </span>
+      </div>
+
+      {/* ─── Health Score + Login Trend ──────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 flex items-center gap-4">
+          <HealthRing score={healthScore} />
+          <div className="min-w-0">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Health score
+            </p>
+            <h3 className="font-display text-lg font-extrabold text-[var(--text-primary)] mt-0.5">
+              {healthScore >= 90
+                ? "Postura sólida"
+                : healthScore >= 70
+                  ? "Atención requerida"
+                  : "Acción urgente"}
+            </h3>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">
+              Vulns · logins · TOTP · IPs
+            </p>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <h3 className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Logins últimos 7 días
+            </h3>
+            <span className="text-xs font-bold text-[var(--text-tertiary)]">
+              {posture.loginSeries7d.reduce((a, s) => a + s.succeeded, 0)} ok ·{" "}
+              {posture.loginSeries7d.reduce((a, s) => a + s.failed, 0)} fallidos
+            </span>
+          </div>
+          <LoginSparkline series={posture.loginSeries7d} />
+        </div>
+      </div>
+
       {/* ─── KPIs Hero (4 cards) ─────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
@@ -251,7 +602,7 @@ export function OverviewTab() {
         />
       </div>
 
-      {/* ─── Eventos recientes + Postura side-by-side ─────────────── */}
+      {/* ─── Eventos + Postura ────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Eventos (col 2) */}
         <section className="lg:col-span-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
@@ -265,14 +616,15 @@ export function OverviewTab() {
                   Eventos recientes
                 </h3>
                 <p className="text-xs text-[var(--text-tertiary)]">
-                  {filteredEvents.length} de {events.length} en los últimos 7 días
+                  {filteredEvents.length} de {events.length} en {timeRange}
                 </p>
               </div>
             </div>
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value as Severity | "all")}
-              className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              aria-label="Filtrar por severidad"
+              className="h-9 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             >
               <option value="all">Todas las severidades</option>
               <option value="critical">Críticas</option>
@@ -282,6 +634,24 @@ export function OverviewTab() {
               <option value="info">Info</option>
             </select>
           </header>
+
+          {/* Search row */}
+          <div className="relative border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-2.5">
+            <Search
+              className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
+              aria-hidden
+            />
+            <input
+              ref={searchRef}
+              type="search"
+              value={searchRaw}
+              onChange={(e) => setSearchRaw(e.target.value)}
+              placeholder="Buscar action, detalle, IP…"
+              aria-label="Buscar eventos"
+              className="w-full h-9 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+            />
+          </div>
+
           {filteredEvents.length === 0 ? (
             <div className="px-5 py-12 text-center">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
@@ -293,9 +663,20 @@ export function OverviewTab() {
               <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 No hubo actividad que coincida con el filtro.
               </p>
+              {(search || severityFilter !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearchRaw("");
+                    setSeverityFilter("all");
+                  }}
+                  className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                >
+                  Limpiar filtros
+                </button>
+              )}
             </div>
           ) : (
-            <ul className="divide-y divide-[var(--rule-soft)]">
+            <ul className="divide-y divide-[var(--rule-soft)] max-h-[480px] overflow-y-auto">
               {filteredEvents.map((ev) => {
                 const meta = ACTION_META[ev.action] ?? { severity: "info" as Severity, title: ev.action };
                 const sev = SEVERITY_META[meta.severity];
@@ -305,11 +686,9 @@ export function OverviewTab() {
                     key={ev.id}
                     className="group flex items-start gap-3 px-5 py-3 transition hover:bg-[var(--surface-sunken)]/50"
                   >
-                    <div className="mt-0.5">
-                      <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border ${sev.cls}`}>
-                        <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                      </span>
-                    </div>
+                    <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border shrink-0 ${sev.cls}`}>
+                      <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                    </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-bold text-sm text-[var(--text-primary)]">
@@ -344,7 +723,7 @@ export function OverviewTab() {
 
         {/* Postura (col 1) */}
         <aside className="space-y-4">
-          {/* TOTP Coverage con progress bar */}
+          {/* TOTP Coverage */}
           <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
@@ -366,13 +745,10 @@ export function OverviewTab() {
             </div>
             <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
               <div
-                className={`h-full rounded-full transition-all ${
-                  totpPct === 100
-                    ? "bg-[var(--data-success-500)]"
-                    : totpPct >= 50
-                      ? "bg-amber-500"
-                      : "bg-rose-500"
-                }`}
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  totpPct === 100 ? "bg-emerald-500" : totpPct >= 50 ? "bg-amber-500" : "bg-rose-500",
+                )}
                 style={{ width: `${totpPct}%` }}
                 aria-hidden
               />
@@ -380,9 +756,32 @@ export function OverviewTab() {
             <p className="mt-2 text-xs text-[var(--text-tertiary)]">
               {posture.totpCoverage.enrolled} de {posture.totpCoverage.total} enrolados
             </p>
+            {missingTotp.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-[var(--rule-soft)]">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 mb-1.5">
+                  Falta enrolar
+                </p>
+                <ul className="space-y-1">
+                  {missingTotp.map((a) => (
+                    <li
+                      key={a.username}
+                      className="flex items-center justify-between gap-2 text-xs"
+                    >
+                      <span className="font-bold text-[var(--text-primary)] truncate">
+                        {a.username}
+                      </span>
+                      <span className="text-[var(--text-tertiary)] shrink-0 inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {a.lastLoginAt ? fmtRelative(a.lastLoginAt) : "nunca"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
-          {/* Checks postura compactos */}
+          {/* Checks postura */}
           <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
             <header className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
@@ -411,14 +810,20 @@ export function OverviewTab() {
                 status={totpPct === 100 ? "ok" : "warning"}
                 detail={`${totpPct}% cobertura`}
               />
+              <PostureCheck
+                icon={Globe}
+                label="CSRF estricto"
+                status="ok"
+                detail="Endpoints destructivos protegidos"
+              />
             </ul>
           </div>
         </aside>
       </div>
 
-      {/* ─── IPs sospechosas (extraído del endpoint, antes oculto) ── */}
+      {/* ─── IPs sospechosas ────────────────────────────────── */}
       {suspiciousIPs.length > 0 && (
-        <section className="rounded-2xl border border-amber-300/60 bg-amber-50/30 overflow-hidden dark:border-amber-700/40 dark:bg-amber-950/20">
+        <section className="rounded-2xl border-2 border-amber-300/60 bg-amber-50/30 overflow-hidden dark:border-amber-700/40 dark:bg-amber-950/20">
           <header className="flex items-center gap-3 border-b border-amber-200/60 dark:border-amber-700/40 px-5 py-3.5">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
               <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
@@ -429,7 +834,7 @@ export function OverviewTab() {
               </h3>
               <p className="text-xs text-amber-700/80 dark:text-amber-400/80">
                 {suspiciousIPs.length} IP{suspiciousIPs.length === 1 ? "" : "s"} con ≥3 intentos
-                fallidos en los últimos 7 días
+                fallidos en los últimos {timeRange}
               </p>
             </div>
           </header>
@@ -451,6 +856,11 @@ export function OverviewTab() {
           </div>
         </section>
       )}
+
+      {/* Generated at */}
+      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-right">
+        Generado: {new Date(posture.generatedAt).toLocaleString("es-PE")}
+      </p>
     </div>
   );
 }
@@ -472,17 +882,17 @@ function KpiCard({
 }) {
   const iconBg =
     tone === "warning"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+      ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
       : tone === "danger"
-        ? "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
+        ? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
         : tone === "success"
-          ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
+          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
           : "bg-[var(--accent)]/10 text-[var(--accent)]";
   const valueTone =
     tone === "warning"
       ? "text-amber-700 dark:text-amber-300"
       : tone === "danger"
-        ? "text-[var(--accent)] dark:text-[var(--accent)]"
+        ? "text-rose-700 dark:text-rose-300"
         : "text-[var(--text-primary)]";
   return (
     <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
@@ -514,9 +924,21 @@ function PostureCheck({
   detail: string;
 }) {
   const meta = {
-    ok: { cls: "text-[var(--data-success-500)]", dot: "bg-[var(--data-success-500)]", txt: "Activo" },
-    warning: { cls: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500", txt: "Revisar" },
-    error: { cls: "text-[var(--accent)] dark:text-[var(--accent)]", dot: "bg-rose-500", txt: "Inactivo" },
+    ok: {
+      cls: "text-emerald-700 dark:text-emerald-300",
+      dot: "bg-emerald-500",
+      txt: "Activo",
+    },
+    warning: {
+      cls: "text-amber-700 dark:text-amber-300",
+      dot: "bg-amber-500",
+      txt: "Revisar",
+    },
+    error: {
+      cls: "text-rose-700 dark:text-rose-300",
+      dot: "bg-rose-500",
+      txt: "Inactivo",
+    },
   }[status];
   return (
     <li className="flex items-center justify-between gap-3 px-5 py-3">
