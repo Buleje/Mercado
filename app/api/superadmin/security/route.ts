@@ -2,13 +2,24 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0",
+  "X-Content-Type-Options": "nosniff",
+} as const;
 
 // GET /api/superadmin/security — Security events for superadmin dashboard
 export async function GET(req: NextRequest) {
+  // P1 fix 2026-05-24: rate-limit defensivo (AuditLogTab + OverviewTab usan
+  // este endpoint, ambos pueden disparar auto-refresh)
+  const rl = await applyRateLimit(req, "GENEROUS", "superadmin-security-events");
+  if (rl) return rl;
+
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401, headers: NO_STORE_HEADERS });
   const session = await getPlatformSession(token);
-  if (!session) return NextResponse.json({ error: "Sesión inválida" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Sesión inválida" }, { status: 401, headers: NO_STORE_HEADERS });
 
   const url = new URL(req.url);
   // Brandon 2026-05-21 audit blindaje S6: `Number("0") || "7"` evalúa
@@ -74,16 +85,19 @@ export async function GET(req: NextRequest) {
     summaryMap[s.action] = s._count.action;
   }
 
-  return NextResponse.json({
-    data: {
-      events,
-      summary: summaryMap,
-      uniqueIPs: ipSet.size,
-      suspiciousIPs: Array.from(failedIPs.entries())
-        .filter(([, count]) => count >= 3)
-        .map(([ip, count]) => ({ ip, failedAttempts: count }))
-        .sort((a, b) => b.failedAttempts - a.failedAttempts),
-      period: { days, since: since.toISOString() },
+  return NextResponse.json(
+    {
+      data: {
+        events,
+        summary: summaryMap,
+        uniqueIPs: ipSet.size,
+        suspiciousIPs: Array.from(failedIPs.entries())
+          .filter(([, count]) => count >= 3)
+          .map(([ip, count]) => ({ ip, failedAttempts: count }))
+          .sort((a, b) => b.failedAttempts - a.failedAttempts),
+        period: { days, since: since.toISOString() },
+      },
     },
-  });
+    { headers: NO_STORE_HEADERS },
+  );
 }
