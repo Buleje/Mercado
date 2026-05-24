@@ -104,7 +104,7 @@ export default function SecurityCenterPage() {
         aria-label="Secciones del Security Center"
         className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8"
       >
-        <div className="max-w-[1400px] mx-auto overflow-x-auto">
+        <div className="w-full overflow-x-auto">
           <ul className="inline-flex min-w-full gap-1">
             {TABS.map((tab) => {
               const isActive = active === tab.key;
@@ -137,7 +137,7 @@ export default function SecurityCenterPage() {
         role="tabpanel"
         id={`panel-${active}`}
         aria-labelledby={`tab-${active}`}
-        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+        className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
         {active === "overview" && <OverviewTab />}
         {active === "auth" && <AuthSessionsTab />}

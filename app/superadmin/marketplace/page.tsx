@@ -183,7 +183,7 @@ export default async function SuperadminMarketplaceHubPage() {
           className="pointer-events-none absolute right-0 top-0 hidden h-full w-1/2 bg-gradient-to-l from-[var(--accent)]/[0.06] to-transparent lg:block"
         />
 
-        <div className="relative mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <div className="relative w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="flex items-start gap-4">
               <span className="relative inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/20">
@@ -259,7 +259,7 @@ export default async function SuperadminMarketplaceHubPage() {
       </header>
 
       {/* ── Content ─────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-[1400px] space-y-10 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10">
         {/* Operaciones activas */}
         <section className="space-y-5">
           <SectionHeading

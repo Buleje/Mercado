@@ -481,7 +481,7 @@ function SuperadminBannersPageInner() {
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       {/* ── Hero header ────────────────────────────────────────────────── */}
       <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="max-w-[1400px] mx-auto">
+        <div className="w-full">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3.5">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
@@ -513,7 +513,7 @@ function SuperadminBannersPageInner() {
       </header>
 
       {/* ── 2-column layout ────────────────────────────────────────────── */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           {/* Sidebar — slot navigator agrupado */}
           <aside className="lg:sticky lg:top-6 lg:self-start space-y-5">

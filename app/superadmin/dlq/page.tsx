@@ -25,7 +25,7 @@ export default async function DLQDashboardPage() {
   const { events, crons, mpWebhooks } = await getDeadLetterDashboard();
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">

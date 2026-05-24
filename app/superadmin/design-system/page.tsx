@@ -242,7 +242,7 @@ export default function DesignSystemPage() {
     <main className="min-h-screen bg-[var(--surface-canvas)]">
       {/* ── Hero canónico ───────────────────────────────────────── */}
       <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="max-w-[1400px] mx-auto">
+        <div className="w-full">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3.5 min-w-0 flex-1">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
@@ -323,7 +323,7 @@ export default function DesignSystemPage() {
         </div>
       </header>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* Tabs */}
         <nav className="flex flex-wrap items-center gap-1 border-b-2 border-[var(--rule-base)]">
           {(
