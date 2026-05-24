@@ -135,7 +135,7 @@ export default function SuggestionBox() {
                 onMouseLeave={() => setHoveredStar(0)}
                 onClick={() => setRating(star)}
                 aria-label={`${star} estrella${star !== 1 ? "s" : ""}`}
-                className="focus:outline-none"
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)]"
               >
                 <Star
                   className={cn(

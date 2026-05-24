@@ -80,7 +80,7 @@ export function ThreadsList({
                     aria-pressed={isSelected}
                     className={cn(
                       "w-full border-l-4 p-3 text-left transition",
-                      "hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60",
+                      "hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)] dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60",
                       isSelected
                         ? "border-primary bg-primary/10 dark:bg-primary/10"
                         : "border-transparent",

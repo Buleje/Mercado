@@ -228,7 +228,7 @@ export default function CommandPalette() {
             onChange={(e) => { setQuery(e.target.value); setSelected(0); }}
             onKeyDown={handleKeyDown}
             placeholder="Buscar módulos, productos, acciones..."
-            className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none text-base"
+            className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)] text-base"
             autoFocus
             aria-label="Buscar en la paleta de comandos"
             aria-autocomplete="list"

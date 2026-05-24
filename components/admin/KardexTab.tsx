@@ -89,7 +89,7 @@ function ModuleTooltip() {
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="text-[var(--text-tertiary)] hover:text-primary transition-colors focus:outline-none"
+        className="text-[var(--text-tertiary)] hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)]"
         aria-label="Ayuda sobre Movimientos"
       >
         <Info className="h-4 w-4" />

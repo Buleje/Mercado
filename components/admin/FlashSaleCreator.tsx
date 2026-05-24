@@ -282,7 +282,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               <button
                 type="button"
                 onClick={clearSelection}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] focus:outline-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)]"
                 aria-label="Limpiar seleccion"
               >
                 <X className="h-4 w-4" />

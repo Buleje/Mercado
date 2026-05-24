@@ -508,7 +508,7 @@ function ColorField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 h-8 bg-transparent text-sm font-mono font-bold text-[var(--text-primary)] focus:outline-none uppercase"
+          className="flex-1 h-8 bg-transparent text-sm font-mono font-bold text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)] uppercase"
         />
       </div>
     </div>

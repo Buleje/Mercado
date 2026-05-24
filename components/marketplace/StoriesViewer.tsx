@@ -105,7 +105,7 @@ export default function StoriesViewer({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm" />
         <Dialog.Content
-          className="fixed inset-0 z-[61] flex items-center justify-center p-0 sm:p-8 focus:outline-none"
+          className="fixed inset-0 z-[61] flex items-center justify-center p-0 sm:p-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)]"
           aria-describedby={undefined}
         >
           <Dialog.Title className="sr-only">{title}</Dialog.Title>

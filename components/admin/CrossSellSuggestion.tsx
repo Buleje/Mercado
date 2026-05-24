@@ -223,7 +223,7 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
                   <button
                     type="button"
                     onClick={() => handleDismiss(product.id)}
-                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors focus:outline-none"
+                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)]"
                     aria-label="Ignorar sugerencia"
                   >
                     <X className="h-3.5 w-3.5" />
