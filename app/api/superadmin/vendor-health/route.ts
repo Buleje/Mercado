@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { cacheStore } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 interface VendorHealthSummary {
   lastRunAt: string;
@@ -18,13 +19,9 @@ interface VendorHealthSummary {
   checked: number;
   changed: number;
   errors: number;
-  /** Notifications nuevas creadas (dedup 24h) — opcional para summaries viejos */
   notifiedCount?: number;
-  /** Mensajes WhatsApp enviados al vendor — solo cuando notification.created=true */
   waSentCount?: number;
-  /** Emails enviados al vendor — solo cuando WA falló o no había phone */
   emailSentCount?: number;
-  /** Vendors skippeados por grace period (self-service ack) */
   gracedCount?: number;
   alerts: Array<{
     vendorId: string;
@@ -32,7 +29,6 @@ interface VendorHealthSummary {
     kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
     detail: string;
   }>;
-  /** Graces activos detectados — opcional para summaries previos al feature */
   graces?: Array<{
     tenantId: string;
     tenantSlug: string | null;
@@ -49,20 +45,38 @@ interface VendorHealthSummary {
 const SUMMARY_KEY = "vendor-health:summary";
 const STALE_HOURS = 36; // >24h sin run → flag
 
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0",
+  "X-Content-Type-Options": "nosniff",
+} as const;
+
 export async function GET(req: NextRequest) {
+  const rl = await applyRateLimit(
+    req,
+    "GENEROUS",
+    "superadmin-vendor-health-get",
+  );
+  if (rl) return rl;
+
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
   const summary = cacheStore.get<VendorHealthSummary>(SUMMARY_KEY);
 
   if (!summary) {
-    logger.info("[superadmin/vendor-health] no summary yet", { by: auth.username });
-    return NextResponse.json({
-      stale: true,
-      neverRun: true,
-      message: "El cron de re-verification aún no se ejecutó. Próxima corrida: 07:00 UTC diario.",
-      summary: null,
+    logger.info("[superadmin/vendor-health] no summary yet", {
+      by: auth.username,
     });
+    return NextResponse.json(
+      {
+        stale: true,
+        neverRun: true,
+        message:
+          "El cron de re-verification aún no se ejecutó. Próxima corrida: 02:00 UTC diario.",
+        summary: null,
+      },
+      { headers: NO_STORE_HEADERS },
+    );
   }
 
   // Marcar stale si el último run fue hace >36h (cron debería correr diario).
@@ -70,21 +84,28 @@ export async function GET(req: NextRequest) {
   const stale = ageMs > STALE_HOURS * 60 * 60 * 1000;
 
   // KPIs derivados
-  const healthScore = summary.total > 0
-    ? Math.round(((summary.total - summary.alerts.length) / summary.total) * 100)
-    : 100;
+  const healthScore =
+    summary.total > 0
+      ? Math.round(((summary.total - summary.alerts.length) / summary.total) * 100)
+      : 100;
 
-  const alertsByKind = summary.alerts.reduce<Record<string, number>>((acc, a) => {
-    acc[a.kind] = (acc[a.kind] ?? 0) + 1;
-    return acc;
-  }, {});
+  const alertsByKind = summary.alerts.reduce<Record<string, number>>(
+    (acc, a) => {
+      acc[a.kind] = (acc[a.kind] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
 
-  return NextResponse.json({
-    stale,
-    neverRun: false,
-    ageMinutes: Math.floor(ageMs / 60000),
-    healthScore,
-    alertsByKind,
-    summary,
-  });
+  return NextResponse.json(
+    {
+      stale,
+      neverRun: false,
+      ageMinutes: Math.floor(ageMs / 60000),
+      healthScore,
+      alertsByKind,
+      summary,
+    },
+    { headers: NO_STORE_HEADERS },
+  );
 }
