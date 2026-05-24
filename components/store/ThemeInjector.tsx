@@ -367,6 +367,14 @@ export default function ThemeInjector() {
 
   return (
     <>
+      {/* PERF 2026-05-24: preconnect a Google Fonts antes del stylesheet
+          (display=swap ya está en cada url). Ahorra DNS+TCP+TLS render-blocking. */}
+      {fontConfig && (
+        <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        </>
+      )}
       {fontConfig && <link rel="stylesheet" href={fontConfig.url} />}
       <style>{allCSS}</style>
     </>

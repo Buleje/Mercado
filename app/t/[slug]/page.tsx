@@ -233,7 +233,11 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           Sobreescribe el theme de Buleje solo en el subarbol .tenant-theme. */}
       <style dangerouslySetInnerHTML={{ __html: tokensToCssBlock(designTokens) }} />
 
-      {/* Google Fonts loader — carga solo la fuente que el tenant eligio */}
+      {/* Google Fonts loader — carga solo la fuente que el tenant eligio.
+          PERF 2026-05-24: preconnect evita ~200-400ms de DNS+TCP+TLS a Google
+          antes de descubrir el stylesheet (display=swap ya evita FOIT). */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link
         rel="stylesheet"
         href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(tenantFont.label).replace(/%20/g, "+")}:wght@400;600;700;800;900&display=swap`}
