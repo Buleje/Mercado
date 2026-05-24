@@ -14,13 +14,17 @@ import { logger } from "@/lib/logger";
  *     return NextResponse.json(data);
  *   });
  */
-export function withApiHandler(
+export function withApiHandler<C = { params: Promise<Record<string, string>> }>(
   tag: string,
-  handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>,
+  handler: (req: NextRequest, ctx: C) => Promise<Response>,
 ) {
-  return async (req: NextRequest, ctx: { params: Promise<Record<string, string>> }): Promise<Response> => {
+  // Genérico C: handlers de rutas dinámicas ([id]) requieren ctx con sus params;
+  // handlers estáticos lo ignoran. El RETORNO hace ctx opcional para que
+  // tests/callers que invocan con 1 argumento (req) no fallen tipos — Next
+  // siempre provee ctx en runtime (de ahí el cast).
+  return async (req: NextRequest, ctx?: C): Promise<Response> => {
     try {
-      return await handler(req, ctx);
+      return await handler(req, ctx as C);
     } catch (e) {
       const requestId = req.headers.get("x-request-id") ?? undefined;
       logger.error(`[${tag}] Unhandled error`, {

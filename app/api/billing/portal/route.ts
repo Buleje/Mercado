@@ -3,10 +3,14 @@ import { requireAdmin } from "@/lib/require-admin";
 import { BillingPortalDB } from "@/lib/db/billing-portal.db";
 import { createBillingPortalSession } from "@/lib/stripe";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { withApiHandler } from "@/lib/api-handler";
 
 // POST /api/billing/portal
 // Opens the Stripe Customer Portal for managing subscription / payment method
-export async function POST(req: NextRequest) {
+// SEO/reliability 2026-05-24: envuelto en withApiHandler — si la llamada a
+// Stripe (createBillingPortalSession) falla, devuelve JSON 500 consistente +
+// log, en vez del 500 HTML genérico que rompe el fetch().json() del cliente.
+export const POST = withApiHandler("billing-portal", async (req: NextRequest) => {
   const _rl = await applyRateLimit(req, "MODERATE", "billing-portal"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
@@ -31,4 +35,4 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ url });
-}
+});

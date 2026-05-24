@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
+import { withApiHandler } from "@/lib/api-handler";
 import { logger } from "@/lib/logger";
 import { getAvailableCredit } from "@/lib/credit/installment-manager";
 import { updateCreditProfile } from "@/lib/credit/scoring-engine";
@@ -19,7 +20,7 @@ const CheckSchema = z.object({
 
 // ── POST /api/credit/check ────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("credit-check", async (req: NextRequest) => {
   const _rl = await applyRateLimit(req, "MODERATE", "credit-check"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
@@ -114,4 +115,4 @@ export async function POST(req: NextRequest) {
     interestRate,
     totalWithInterest,
   });
-}
+});

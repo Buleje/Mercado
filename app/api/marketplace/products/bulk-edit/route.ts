@@ -5,6 +5,7 @@ import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 const UpdateItemSchema = z.object({
   id: z.number().int().positive(),
@@ -18,7 +19,7 @@ const BodySchema = z.object({
   updates: z.array(UpdateItemSchema).min(1).max(500),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("marketplace-products-bulk-edit", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -47,4 +48,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ updated, failed });
-}
+});

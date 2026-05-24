@@ -20,6 +20,7 @@ import { sunatEventBus } from "@/lib/sunat/sale-events";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
+import { withApiHandler } from "@/lib/api-handler";
 
 const BodySchema = z.object({
   saleId: z.string().min(1),
@@ -28,7 +29,7 @@ const BodySchema = z.object({
   customerName: z.string().optional(),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("sunat-emit-on-sale", async (req: NextRequest) => {
   const _rl = await applyRateLimit(req, "MODERATE", "sunat-emit-on-sale"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
@@ -75,4 +76,4 @@ export async function POST(req: NextRequest) {
     { message: "Evento de venta recibido. Factura encolada en background." },
     { status: 202 }
   );
-}
+});

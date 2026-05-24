@@ -7,6 +7,7 @@ import {
   sendFiadoReminder,
   sendWelcomeTenant,
 } from "@/lib/email/resend";
+import { withApiHandler } from "@/lib/api-handler";
 
 const Schema = z.object({
   type: z.enum(["order-confirmation", "fiado-reminder", "welcome"]),
@@ -14,7 +15,7 @@ const Schema = z.object({
   data: z.record(z.string(), z.unknown()),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("email-send", async (req: NextRequest) => {
   // SECURITY/CRITICAL 2026-05-06 (audit email #1): cerrar relay anónimo.
   // Antes cualquiera podía mandar emails desde nuestro dominio Resend → spam
   // masivo + reputación quemada. Requiere admin + rate limit estricto.
@@ -58,4 +59,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ success: true });
-}
+});
