@@ -262,16 +262,37 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         className="relative overflow-hidden -mt-14 pt-14"
         style={
           heroImage
-            ? {
-                backgroundImage: `linear-gradient(180deg, ${primary}dd 0%, ${primary}aa 50%, ${primary}cc 100%), url(${heroImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
+            ? undefined
             : {
                 background: `radial-gradient(circle at 30% 20%, ${accent}66 0%, transparent 50%), linear-gradient(135deg, ${primary} 0%, ${primary}dd 50%, ${primary} 100%)`,
               }
         }
       >
+        {/* PERF 2026-05-24: hero LCP via next/image (AVIF/WebP + preload por
+            priority) en vez de CSS background-image, que el browser no podía
+            preloadear ni optimizar. El gradient queda como overlay aparte. */}
+        {heroImage && (
+          <>
+            <Image
+              src={heroImage}
+              alt=""
+              fill
+              priority
+              fetchPriority="high"
+              sizes="100vw"
+              className="object-cover"
+              aria-hidden
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage: `linear-gradient(180deg, ${primary}dd 0%, ${primary}aa 50%, ${primary}cc 100%)`,
+              }}
+            />
+          </>
+        )}
+
         {/* Pattern decorativo sutil */}
         <div
           aria-hidden
