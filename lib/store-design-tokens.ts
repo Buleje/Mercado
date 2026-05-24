@@ -353,6 +353,16 @@ ${varsStr}
   color: var(--tenant-text);
   background: var(--tenant-bg);
 }
+/* DARK MODE 2026-05-24: el storefront soporta el toggle de dark del usuario,
+   pero los tokens del tenant (--tenant-bg/--tenant-text) son light-only. En
+   dark, el fondo del tenant quedaba blanco y los títulos (--text-primary, que
+   sí se aclara) resultaban casi blancos sobre blanco = invisibles. Fix: en
+   .dark, el fondo y texto base usan los tokens dark de Buleje. Los acentos del
+   tenant (--tenant-primary/accent en botones) se mantienen intactos. */
+.dark .tenant-theme {
+  color: var(--text-primary);
+  background: var(--surface-canvas);
+}
 .tenant-theme h1, .tenant-theme [data-tenant-h1] {
   font-size: var(--tenant-h1);
   line-height: var(--tenant-line-height);
