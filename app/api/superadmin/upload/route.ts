@@ -7,6 +7,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 /**
  * POST /api/superadmin/upload
@@ -32,6 +33,8 @@ const BUCKET = "media";
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-upload"); if (_rl) return _rl;
+  // P1 fix 2026-05-24: CSRF defense-in-depth (multipart upload)
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const session = await getPlatformSession(token);

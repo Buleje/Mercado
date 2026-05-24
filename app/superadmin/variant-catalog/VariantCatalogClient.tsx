@@ -263,7 +263,12 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
       fd.append("file", file);
       fd.append("folder", folder);
       fd.append("mode", "square");
-      const res = await fetch("/api/superadmin/upload", { method: "POST", body: fd });
+      const res = await fetch("/api/superadmin/upload", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders({}),
+        body: fd,
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(err.error ?? `HTTP ${res.status}`);

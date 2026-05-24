@@ -92,7 +92,12 @@ export default function SuppliersQueueClient() {
     try {
       const res = await fetch(
         `/api/superadmin/marketplace/suppliers/${id}/approve`,
-        { method: "POST" },
+        {
+          method: "POST",
+          credentials: "include",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({}),
+        },
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);

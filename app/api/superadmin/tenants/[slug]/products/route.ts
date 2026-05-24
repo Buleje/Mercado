@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { invalidateByPrefix } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -119,6 +120,8 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-tenants-X-products"); if (_rl) return _rl;
+  // P1 fix 2026-05-24: CSRF defense-in-depth (mutation cross-tenant)
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   try {
     const session = await requirePlatform(req);
     if (!session) {

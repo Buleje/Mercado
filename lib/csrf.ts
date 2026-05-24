@@ -166,6 +166,42 @@ export function validateCsrfToken(request: NextRequest): boolean {
 }
 
 /**
+ * validateSuperadminCsrf — validación estricta SIN el bypass
+ * `pathname.startsWith("/api/superadmin/")` de `validateCsrfToken`.
+ *
+ * Brandon 2026-05-24: el bypass histórico era porque las páginas
+ * superadmin no seteaban `csrf-token` cookie (middleware retornaba
+ * early). Ya no es cierto: la cookie está presente en el browser. Para
+ * endpoints destructivos (purge, impersonate, repartidores/impersonate)
+ * queremos defense-in-depth: cookie present + header match.
+ *
+ * NO leerse desde `validateCsrfToken` — este helper se invoca solo en
+ * endpoints donde explícitamente queremos el chequeo (caller decide).
+ *
+ * Returns true si:
+ *   - Método NO es mutación (GET/HEAD/OPTIONS)
+ *   - Auth Bearer sk_… (API key)
+ *   - Cookie csrf-token y header X-CSRF-Token presentes y matchean (constant-time)
+ */
+export function validateSuperadminCsrf(request: NextRequest): boolean {
+  if (!MUTATION_METHODS.has(request.method)) return true;
+
+  const authHeader = request.headers.get("authorization") ?? "";
+  if (authHeader.startsWith("Bearer sk_")) return true;
+
+  const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
+  const headerToken = request.headers.get(CSRF_HEADER_NAME);
+  if (!cookieToken || !headerToken) return false;
+  if (cookieToken.length !== headerToken.length) return false;
+
+  let result = 0;
+  for (let i = 0; i < cookieToken.length; i++) {
+    result |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
  * Create a 403 Forbidden response for CSRF validation failures.
  */
 export function csrfForbiddenResponse(): NextResponse {

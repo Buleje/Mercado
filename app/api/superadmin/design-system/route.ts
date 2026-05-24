@@ -26,6 +26,7 @@ import {
   type DesignTokens,
 } from "@/lib/design-presets";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 async function requirePlatformSession(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -175,6 +176,8 @@ const ActivateSchema = z.union([
 
 export async function PUT(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-design-system"); if (_rl) return _rl;
+  // P1 fix 2026-05-24: CSRF defense-in-depth (validateCsrfToken skipea superadmin)
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const session = await requirePlatformSession(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -296,6 +299,8 @@ const PostSchema = z.discriminatedUnion("mode", [
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-design-system"); if (_rl) return _rl;
+  // P1 fix 2026-05-24: CSRF defense-in-depth
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const session = await requirePlatformSession(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -420,6 +425,8 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-design-system"); if (_rl) return _rl;
+  // P1 fix 2026-05-24: CSRF defense-in-depth
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const session = await requirePlatformSession(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

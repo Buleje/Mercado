@@ -15,6 +15,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Upload, RefreshCw, Trash2, AlertTriangle, Crop } from "@buleje/design-system/icons";
 import ImageCropEditor from "./ImageCropEditor";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface ImageUploaderProps {
   value: string | null;
@@ -93,6 +94,7 @@ export default function ImageUploader({
       const res = await fetch("/api/superadmin/upload", {
         method: "POST",
         credentials: "include",
+        headers: csrfHeaders({}),
         body: fd,
       });
       if (!res.ok) {

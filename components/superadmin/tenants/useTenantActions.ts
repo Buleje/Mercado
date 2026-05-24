@@ -69,7 +69,16 @@ export function useTenantActions({
   const handleNuclearReset = useCallback(async () => {
     setNuclearResetLoading(true);
     try {
-      const res = await fetch("/api/superadmin/purge", { method: "DELETE", credentials: "include" });
+      // P0 fix 2026-05-24: ahora el server requiere CSRF token.
+      // Nota: el body con { confirm, reason, totpCode } se enviará desde un
+      // formulario más rico cuando se actualice el modal — por ahora vacío
+      // dispara 400 con `details` indicando los campos faltantes.
+      const res = await fetch("/api/superadmin/purge", {
+        method: "DELETE",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error" }));
         showToast((err as { error?: string }).error ?? "Error al limpiar datos", false);

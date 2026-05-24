@@ -754,7 +754,12 @@ function ImageDropzone({ value, onChange }: { value: string; onChange: (url: str
       fd.append("file", file);
       fd.append("folder", "image-bank");
       fd.append("mode", "square");
-      const res = await fetch("/api/superadmin/upload", { method: "POST", body: fd });
+      const res = await fetch("/api/superadmin/upload", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders({}),
+        body: fd,
+      });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
       const data = await res.json() as { url: string };
       onChange(data.url);

@@ -19,13 +19,27 @@ import {
   setPartnerCookie,
 } from "@/lib/delivery/partner-session";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 const ImpersonateSchema = z.object({
   partnerId: z.string().min(1).max(64),
 });
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-repartidores-impersonate"); if (_rl) return _rl;
+  // P0 fix 2026-05-24: STRICT rate-limit (antes GENEROUS) — escalada
+  // privilegios merece tier de auth, no de listing.
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-repartidores-impersonate"); if (_rl) return _rl;
+
+  // P0 fix 2026-05-24: CSRF double-submit obligatorio.
+  // Sin esto, un atacante con sesión de superadmin víctima (XSS/sameSite-lax)
+  // podía emitir cookie de partner para cualquier repartidor activo.
+  if (!validateSuperadminCsrf(req)) {
+    logger.warn("[superadmin/repartidores/impersonate] CSRF token inválido", {
+      ip: req.headers.get("x-forwarded-for") ?? null,
+    });
+    return csrfForbiddenResponse();
+  }
+
   // 1. Verify superadmin session.
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });

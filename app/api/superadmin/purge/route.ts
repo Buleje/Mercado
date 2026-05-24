@@ -7,6 +7,7 @@ import { invalidateAll, cacheStore } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { SuperadminTotpDB } from "@/lib/db/admin-totp.db";
 import { verifyTotpCode } from "@/lib/auth/totp";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { z } from "zod";
 
 /**
@@ -103,6 +104,19 @@ export async function DELETE(req: NextRequest) {
   // STRICT rate-limit — un superadmin comprometido no debería poder ejecutar
   // purga en ráfaga aunque tenga credenciales + TOTP.
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-purge"); if (_rl) return _rl;
+
+  // P0 fix 2026-05-24: CSRF double-submit cookie obligatorio.
+  // Antes: sólo session+TOTP. Una página atacante con la cookie del superadmin
+  // (xss/sameSite=lax browser bug) podía disparar este DELETE programáticamente.
+  // Ahora: requiere X-CSRF-Token header == cookie csrf-token (un atacante
+  // cross-origin NO puede leer la cookie para echarla en el header).
+  if (!validateSuperadminCsrf(req)) {
+    logger.warn("[SuperAdmin] purge: CSRF token inválido o ausente", {
+      ip: req.headers.get("x-forwarded-for") ?? null,
+    });
+    return csrfForbiddenResponse();
+  }
+
   const session = await requirePlatform(req);
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

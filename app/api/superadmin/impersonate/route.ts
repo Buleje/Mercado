@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 const ImpersonateSchema = z.object({
   slug: z.string().min(1).max(64),
@@ -30,6 +31,19 @@ export async function POST(req: NextRequest) {
   // Impersonate es escalada de privilegios → tratarlo como auth-tier.
   // GENEROUS permitía ~100 req/min = enumeración rápida de tenants.
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-impersonate"); if (_rl) return _rl;
+
+  // P0 fix 2026-05-24: CSRF double-submit obligatorio.
+  // Impersonate = escalada de privilegios cross-tenant. Sin CSRF, una página
+  // atacante visitada por un superadmin logueado podía pedirle credenciales
+  // de cualquier tenant programáticamente. Ahora requiere el header
+  // X-CSRF-Token == cookie csrf-token — defense-in-depth contra confused deputy.
+  if (!validateSuperadminCsrf(req)) {
+    logger.warn("[superadmin/impersonate] CSRF token inválido", {
+      ip: req.headers.get("x-forwarded-for") ?? null,
+    });
+    return csrfForbiddenResponse();
+  }
+
   // 1. Verificar sesión SuperAdmin (cookie buleje-platform-sess)
   const platformSession = await requirePlatform(req);
   if (!platformSession) {
@@ -115,11 +129,21 @@ export async function POST(req: NextRequest) {
 
   // 5. Escribir la misma cookie que usa /api/auth/login
   const isProd = process.env.NODE_ENV === "production";
-  const response = NextResponse.json({
-    ok: true,
-    tenantName: tenant.name,
-    tenantSlug: tenant.slug,
-  });
+  // P1 fix 2026-05-24: secureJson — no-store + nosniff para evitar que un
+  // proxy cachee la respuesta con datos cross-tenant.
+  const response = NextResponse.json(
+    {
+      ok: true,
+      tenantName: tenant.name,
+      tenantSlug: tenant.slug,
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+        "X-Content-Type-Options": "nosniff",
+      },
+    },
+  );
 
   // Brandon 2026-05-21 audit blindaje S3: TTL reducido de 30min → 10min.
   // 30min permitía ventana de escalada de privilegios si la sesión
