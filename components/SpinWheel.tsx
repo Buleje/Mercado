@@ -262,7 +262,7 @@ export default function SpinWheel() {
       `}</style>
 
       <div
-        className="relative max-w-md w-full p-6 sm:p-8 text-center rounded-[28px] bg-linear-to-br from-white via-white to-[var(--color-primary)]/5 dark:from-card dark:via-card dark:to-[var(--color-primary)]/10 shadow-[var(--shadow-xl)] border border-white/40 dark:border-white/10"
+        className="relative max-w-md w-full p-6 sm:p-8 text-center rounded-[28px] bg-linear-to-br from-white via-white to-[var(--color-primary)]/5 dark:from-[var(--surface-raised)] dark:via-[var(--surface-raised)] dark:to-[var(--color-primary)]/10 shadow-[var(--shadow-xl)] border border-white/40 dark:border-white/10"
         style={{ animation: "spinwheel-pop 0.4s cubic-bezier(0.16,1,0.3,1) both" }}
       >
         {/* Close button */}
@@ -270,7 +270,7 @@ export default function SpinWheel() {
           type="button"
           onClick={dismiss}
           aria-label="Cerrar"
-          className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur shadow-md hover:scale-110 hover:bg-white transition-all"
+          className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 dark:bg-[var(--surface-sunken)] backdrop-blur shadow-md hover:scale-110 hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-all"
         >
           <X className="w-4.5 h-4.5 text-[var(--text-primary)]" strokeWidth={2.5} />
         </button>
