@@ -72,7 +72,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      // Local SEO PE: señal de localización es-PE para el programmatic SEO de
+      // zonas. x-default apunta al mismo canonical (sitio mono-locale).
+      languages: { "es-PE": url, "x-default": url },
+    },
     openGraph: {
       title,
       description,
