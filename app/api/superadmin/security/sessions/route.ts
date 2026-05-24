@@ -2,6 +2,12 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0",
+  "X-Content-Type-Options": "nosniff",
+} as const;
 
 // ─── GET /api/superadmin/security/sessions ────────────────────────────────────
 //
@@ -17,6 +23,10 @@ import { prisma } from "@/lib/prisma";
 const SESSION_WINDOW_MS = 8 * 60 * 60 * 1000;
 
 export async function GET(req: NextRequest) {
+  // P1 fix 2026-05-24: rate-limit defensivo + cache no-store
+  const rl = await applyRateLimit(req, "GENEROUS", "superadmin-security-sessions");
+  if (rl) return rl;
+
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -74,15 +84,18 @@ export async function GET(req: NextRequest) {
     }))
     .sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1));
 
-  return NextResponse.json({
-    data: {
-      sessions,
-      windowMs: SESSION_WINDOW_MS,
-      // Disclaimer honesto: el frontend lo muestra al usuario para que sepa
-      // las limitaciones del enfoque actual.
-      note: "Sesiones JWT stateless: lista derivada del audit log. Para invalidación efectiva, usar 'Forzar logout global'.",
+  return NextResponse.json(
+    {
+      data: {
+        sessions,
+        windowMs: SESSION_WINDOW_MS,
+        // Disclaimer honesto: el frontend lo muestra al usuario para que sepa
+        // las limitaciones del enfoque actual.
+        note: "Sesiones JWT stateless: lista derivada del audit log. Para invalidación efectiva, usar 'Forzar logout global'.",
+      },
     },
-  });
+    { headers: NO_STORE_HEADERS },
+  );
 }
 
 function extractIpFromDetail(detail: string): string | null {

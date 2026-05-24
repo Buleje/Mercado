@@ -5,6 +5,12 @@ import { revokeAllSessions } from "@/lib/superadmin-revocation";
 import { logActivityQueued } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0",
+  "X-Content-Type-Options": "nosniff",
+} as const;
 
 // ─── POST /api/superadmin/security/sessions/revoke ────────────────────────────
 //
@@ -18,7 +24,15 @@ import { applyRateLimit } from "@/lib/rate-limit";
 // Body opcional: { all: true } — único modo soportado por ahora.
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-security-sessions-revoke"); if (_rl) return _rl;
+  // P1 fix 2026-05-24: STRICT en lugar de GENEROUS — esta acción es
+  // destructiva (invalida TODAS las sesiones, incluso la del operador).
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-security-sessions-revoke");
+  if (_rl) return _rl;
+
+  // P1 fix 2026-05-24: CSRF estricto. Sin esto, una página atacante visitada
+  // por un superadmin logueado podía disparar el force-logout global como CSRF.
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
+
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -34,7 +48,7 @@ export async function POST(req: NextRequest) {
       {
         error: "Invalidación per-sesión no soportada (sesiones JWT stateless). Enviá { all: true } para forzar logout global.",
       },
-      { status: 400 },
+      { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -52,11 +66,14 @@ export async function POST(req: NextRequest) {
     "superadmin",
   ).catch((err) => logger.error("[security/sessions/revoke] activity log failed", { error: String(err) }));
 
-  return NextResponse.json({
-    data: {
-      ok: true,
-      cutoff: new Date(cutoffMs).toISOString(),
-      note: "Todas las sesiones (incluyendo la tuya) serán invalidadas en su próximo request.",
+  return NextResponse.json(
+    {
+      data: {
+        ok: true,
+        cutoff: new Date(cutoffMs).toISOString(),
+        note: "Todas las sesiones (incluyendo la tuya) serán invalidadas en su próximo request.",
+      },
     },
-  });
+    { headers: NO_STORE_HEADERS },
+  );
 }
