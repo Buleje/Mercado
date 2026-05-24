@@ -55,12 +55,19 @@ echo "✅ tsc clean"
 # 2a. Danger-zone skills integrity: si algún skill referenciado en el hook
 #     danger-zone.mjs no existe como .instructions.md, el gate falla. Evita
 #     que el hook bloquee edits con "skill path not found" en otra sesión.
-node scripts/check-zone-skills.mjs || {
-  echo ""
-  echo "❌ Falta algún skill .instructions.md referenciado por danger-zone.mjs."
-  echo "   Corre \`npm run dev:dangers:check\` para ver cuál."
-  exit 1
-}
+#     Brandon 2026-05-24: si danger-zone.mjs está desactivado (renombrado a
+#     .OFF), el gate no aplica — skipear en vez de abortar el commit por un
+#     hook deshabilitado a propósito.
+if [ -f .claude/hooks/danger-zone.mjs ]; then
+  node scripts/check-zone-skills.mjs || {
+    echo ""
+    echo "❌ Falta algún skill .instructions.md referenciado por danger-zone.mjs."
+    echo "   Corre \`npm run dev:dangers:check\` para ver cuál."
+    exit 1
+  }
+else
+  echo "⏭️  danger-zone.mjs desactivado (.OFF) — skip check-zone-skills"
+fi
 
 # 2b. Vitest --changed: corre SOLO los tests afectados por archivos staged.
 #     Usa resolución de dependencias de Vitest — si tocas `hooks/x.ts`, corre
