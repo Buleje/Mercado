@@ -7,6 +7,7 @@ import { OrdersDB } from "@/lib/db/orders.db";
 import { notifyYapeApproved } from "@/lib/whatsapp/notify-yape-result";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
@@ -30,6 +31,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-payment-approvals-X-approve"); if (_rl) return _rl;
+  // P0 fix 2026-05-24: CSRF estricto — aprueba dinero (Yape/Plin transfer)
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 

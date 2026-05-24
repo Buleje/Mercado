@@ -129,6 +129,7 @@ export default function SuppliersQueueClient() {
         `/api/superadmin/marketplace/suppliers/${rejectingId}/reject`,
         {
           method: "POST",
+          credentials: "include",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ reason: rejectReason.trim() }),
         },

@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
 import { logActivity } from "@/lib/activity-logger";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
@@ -29,6 +30,9 @@ export async function POST(
 
   const limited = applyRateLimit(req, "MODERATE", "sa-supplier-approve");
   if (limited) return limited;
+
+  // P0 fix 2026-05-24: CSRF estricto — emite apiKey + crea tenant supplier
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
 
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
