@@ -1926,7 +1926,7 @@ model CommissionRule {
   label     String   @default("") // e.g. "Nivel base", "Objetivo Q1"
   minSales  Decimal  @default(0) // minimum revenue to qualify @db.Decimal(12, 2)
   maxSales  Decimal? @db.Decimal(12, 2) // null = no upper limit
-  rate      Float    @default(0) // commission % applied to revenue
+  rate      Decimal  @default(0) @db.Decimal(5, 4) // commission % applied to revenue (e.g. 0.0500 = 5%)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -2607,7 +2607,7 @@ model Store {
   isPublished         Boolean              @default(false)
   vacationMode        Boolean              @default(false)
   vacationMessage     String?
-  commission          Float                @default(5.0)
+  commission          Decimal              @default(5.0) @db.Decimal(5, 2) // marketplace commission %, e.g. 5.00
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   products            StoreProduct[]
@@ -2925,8 +2925,8 @@ model WholesaleOrder {
   id             String               @id @default(cuid())
   buyerTenantId  String
   sellerTenantId String
-  // EXPAND-PATTERN: tenantId nullable — backfill con buyerTenantId, luego migrar a NOT NULL
-  tenantId       String?
+  // CONTRACT aplicado — backfill via MANUAL-p0-wholesale-order-tenantid-not-null.sql
+  tenantId       String
   status         String               @default("pending")
   total          Decimal              @db.Decimal(12, 2)
   commission     Decimal              @default(0) @db.Decimal(12, 2)
@@ -2934,7 +2934,7 @@ model WholesaleOrder {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   items          WholesaleOrderItem[]
-  tenant         Tenant?              @relation("WholesaleOrderTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant         Tenant               @relation("WholesaleOrderTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([buyerTenantId])
   @@index([sellerTenantId])
