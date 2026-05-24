@@ -143,7 +143,7 @@ export const MarketplaceStoresDB = {
       rating:      store.rating,
       reviewCount: store.reviewCount,
       isPublished: store.isPublished,
-      commission:  store.commission,
+      commission:  store.commission.toNumber(),
       createdAt:   store.createdAt.toISOString(),
     };
   },
@@ -209,7 +209,7 @@ export const MarketplaceStoresDB = {
       rating:      store.rating,
       reviewCount: store.reviewCount,
       isPublished: store.isPublished,
-      commission:  store.commission,
+      commission:  store.commission.toNumber(),
       createdAt:   store.createdAt.toISOString(),
     };
   },
@@ -263,7 +263,7 @@ export const MarketplaceStoresDB = {
         rating:      s.rating,
         reviewCount: s.reviewCount,
         isPublished: s.isPublished,
-        commission:  s.commission,
+        commission:  s.commission.toNumber(),
         createdAt:   s.createdAt.toISOString(),
       }));
     });
@@ -319,7 +319,7 @@ export const MarketplaceStoresDB = {
         rating:      s.rating,
         reviewCount: s.reviewCount,
         isPublished: s.isPublished,
-        commission:  s.commission,
+        commission:  s.commission.toNumber(),
         createdAt:   s.createdAt.toISOString(),
         vacationMode:    s.vacationMode ?? false,
         vacationMessage: s.vacationMessage ?? null,
@@ -354,7 +354,7 @@ export const MarketplaceStoresDB = {
       rating:      s.rating,
       reviewCount: s.reviewCount,
       isPublished: s.isPublished,
-      commission:  s.commission,
+      commission:  s.commission.toNumber(),
       createdAt:   s.createdAt.toISOString(),
     };
   },
@@ -379,7 +379,7 @@ export const MarketplaceStoresDB = {
       description: s.description, logo: s.logo, banner: s.banner,
       category: s.category, zone: s.zone, rating: s.rating,
       reviewCount: s.reviewCount, isPublished: s.isPublished,
-      commission: s.commission, createdAt: s.createdAt.toISOString(),
+      commission: s.commission.toNumber(), createdAt: s.createdAt.toISOString(),
       vacationMode: s.vacationMode, vacationMessage: s.vacationMessage,
     };
   },
@@ -441,7 +441,7 @@ export const MarketplaceStoresDB = {
       description: store.description, logo: store.logo, banner: store.banner,
       category: store.category, zone: store.zone, rating: store.rating,
       reviewCount: store.reviewCount, isPublished: store.isPublished,
-      commission: store.commission, createdAt: store.createdAt.toISOString(),
+      commission: store.commission.toNumber(), createdAt: store.createdAt.toISOString(),
       vacationMode: store.vacationMode, vacationMessage: store.vacationMessage,
       hours: savedHours,
     };
@@ -499,7 +499,7 @@ export const MarketplaceStoresDB = {
       description: store.description, logo: store.logo, banner: store.banner,
       category: store.category, zone: store.zone, rating: store.rating,
       reviewCount: store.reviewCount, isPublished: store.isPublished,
-      commission: store.commission, createdAt: store.createdAt.toISOString(),
+      commission: store.commission.toNumber(), createdAt: store.createdAt.toISOString(),
       vacationMode: store.vacationMode, vacationMessage: store.vacationMessage,
       hours: savedHours,
     };

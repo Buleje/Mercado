@@ -257,7 +257,8 @@ export async function checkoutMultiVendor(
       const store = await prisma.store
         .findUnique({ where: { id: storeId }, select: { commission: true } })
         .catch(() => null);
-      const rate = store?.commission ?? 5;
+      // P0 schema fix 2026-05-24: Store.commission ahora es Decimal — normalizamos a number.
+      const rate = store?.commission ? store.commission.toNumber() : 5;
       const commission = round2(calculateCommission(subtotal, rate));
 
       orders.push({
@@ -305,7 +306,8 @@ export async function checkoutMultiVendor(
       throw new Error(`store-not-published:${storeId}`);
     }
 
-    const rate = store.commission ?? 5;
+    // P0 schema fix 2026-05-24: Store.commission ahora es Decimal — normalizamos a number.
+    const rate = store.commission ? store.commission.toNumber() : 5;
     const commission = round2(calculateCommission(subtotal, rate));
 
     // Build idempotency key scoped to (conversationId + storeId)

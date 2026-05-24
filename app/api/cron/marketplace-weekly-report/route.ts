@@ -103,7 +103,9 @@ export async function GET(req: NextRequest) {
         const phone = phoneMap.get(store.tenantId) ?? process.env.NOTIFY_PHONE;
         if (!phone) continue;
 
-        const commissionAmount = revenue * (store.commission / 100);
+        // P0 schema fix 2026-05-24: Store.commission ahora es Decimal — normalizamos.
+        const commissionRate = typeof store.commission === "number" ? store.commission : store.commission.toNumber();
+        const commissionAmount = revenue * (commissionRate / 100);
 
         // Build WhatsApp message
         const topStr = topProducts.length > 0

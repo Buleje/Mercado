@@ -69,8 +69,13 @@ export const WholesaleOrdersDB = {
     notes?: string;
     items: ResolvedWholesaleItem[];
   }) {
+    // ADR-… P0 schema fix 2026-05-24: WholesaleOrder ahora requiere tenantId
+    // (CONTRACT aplicado via MANUAL-p0-wholesale-order-tenantid-not-null.sql).
+    // El vendedor es el dueño canónico del registro — cumple con multi-tenant
+    // isolation guardrail: queries filtran por tenant del vendor (sellerTenantId).
     return prisma.wholesaleOrder.create({
       data: {
+        tenantId: data.sellerTenantId,
         buyerTenantId: data.buyerTenantId,
         sellerTenantId: data.sellerTenantId,
         status: "pending",

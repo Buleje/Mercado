@@ -110,7 +110,13 @@ export const CommissionsDB = {
       where: { id: storeId, tenantId },
       select: { id: true, name: true, commission: true },
     });
-    return store ?? null;
+    // P0 schema fix 2026-05-24: Store.commission ahora es Decimal — normalizamos a number.
+    if (!store) return null;
+    return {
+      id: store.id,
+      name: store.name,
+      commission: store.commission ? store.commission.toNumber() : null,
+    };
   },
 
   async cashierSummary(
@@ -329,7 +335,8 @@ export const CommissionsDB = {
       where: { id: params.storeId, tenantId },
       select: { commission: true },
     });
-    const overrideRate = store?.commission ?? null;
+    // P0 schema fix 2026-05-24: Store.commission ahora es Decimal — normalizamos.
+    const overrideRate = store?.commission ? store.commission.toNumber() : null;
 
     // 2. Tier dinámico (con posible override de Store.commission)
     const tierInfo = await this.computeVendorTier(tenantId, params.storeId, overrideRate);
