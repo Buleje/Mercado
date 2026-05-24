@@ -22,7 +22,7 @@
  * API: GET/PATCH /api/superadmin/brand.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Save, Sparkles, Image as ImageIcon, Palette, Type, Phone,
   Hash, Search, Scale, CalendarClock, CheckCircle2, AlertCircle,
@@ -32,6 +32,12 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
 import { broadcastPlatformBrandUpdate, clearPlatformBrandCache } from "@/lib/use-platform-brand";
+import {
+  SUPERADMIN_PAGE,
+  SUPERADMIN_HERO,
+  SUPERADMIN_HERO_INNER,
+  SUPERADMIN_CONTENT,
+} from "@/lib/superadmin-layout";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types (espejo de lib/platform-brand.ts)
@@ -77,11 +83,14 @@ export default function SuperadminMarcaPage() {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>("identity");
   const [dirty, setDirty] = useState(false);
+  const [dirtySections, setDirtySections] = useState<Set<SectionId>>(new Set());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [sectionSearch, setSectionSearch] = useState("");
+  const saveRef = useRef<() => Promise<void>>(undefined);
 
   useEffect(() => {
-    fetch("/api/superadmin/brand", { cache: "no-store" })
+    fetch("/api/superadmin/brand", { cache: "no-store", credentials: "include" })
       .then((r) => r.json())
       .then((d) => { setBrand(d); setLoading(false); })
       .catch(() => setLoading(false));
@@ -91,6 +100,24 @@ export default function SuperadminMarcaPage() {
     if (!brand) return;
     setBrand({ ...brand, [key]: { ...brand[key], ...value } });
     setDirty(true);
+    setDirtySections((prev) => {
+      const next = new Set(prev);
+      // Mapeo PlatformBrand key -> SectionId
+      const map: Partial<Record<keyof PlatformBrand, SectionId>> = {
+        identity: "identity",
+        logos: "logos",
+        colors: "colors",
+        typography: "typography",
+        contact: "contact",
+        socials: "socials",
+        seo: "seo",
+        legal: "legal",
+        eventMode: "event",
+      };
+      const sid = map[key];
+      if (sid) next.add(sid);
+      return next;
+    });
   }
 
   async function save() {
@@ -100,6 +127,7 @@ export default function SuperadminMarcaPage() {
     try {
       const res = await fetch("/api/superadmin/brand", {
         method: "PATCH",
+        credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(brand),
       });
@@ -111,7 +139,7 @@ export default function SuperadminMarcaPage() {
         if (json.brand) setBrand(json.brand);
         setSaved({ kind: "ok", text: "Marca actualizada · cambios visibles en el sitio" });
         setDirty(false);
-        // Notificar a todas las tabs y limpiar el cache del hook usePlatformBrand
+        setDirtySections(new Set());
         clearPlatformBrandCache();
         broadcastPlatformBrandUpdate();
         setTimeout(() => setSaved(null), 4000);
@@ -121,6 +149,36 @@ export default function SuperadminMarcaPage() {
     }
     setSaving(false);
   }
+
+  // Mantén ref con la última versión de save para usarla desde shortcuts sin cierre obsoleto
+  useEffect(() => {
+    saveRef.current = save;
+  });
+
+  // Cmd+S / Ctrl+S → guardar (sin abrir el diálogo del browser)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        if (dirty && !saving) {
+          void saveRef.current?.();
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [dirty, saving]);
+
+  // beforeunload — confirma si hay cambios sin guardar
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   // Stats
   const stats = useMemo(() => {
@@ -133,11 +191,41 @@ export default function SuperadminMarcaPage() {
     };
   }, [brand]);
 
+  // Filtrado de secciones por búsqueda (rápido — 9 items).
+  // DEBE estar antes del early return para no violar rules-of-hooks.
+  const visibleSections = useMemo(() => {
+    const q = sectionSearch.trim().toLowerCase();
+    if (!q) return SECTIONS;
+    return SECTIONS.filter(
+      (s) =>
+        s.label.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q),
+    );
+  }, [sectionSearch]);
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--text-tertiary)]">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Sparkles className="h-4 w-4 animate-pulse" /> Cargando marca…
+      <div className={SUPERADMIN_PAGE}>
+        <header className={SUPERADMIN_HERO}>
+          <div className={SUPERADMIN_HERO_INNER}>
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="h-12 w-12 rounded-2xl bg-[var(--surface-sunken)] animate-pulse" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-32 rounded bg-[var(--surface-sunken)] animate-pulse" />
+                <div className="h-6 w-72 rounded bg-[var(--surface-sunken)] animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className={SUPERADMIN_CONTENT}>
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+            <div className="space-y-2">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="h-12 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
+              ))}
+            </div>
+            <div className="h-96 rounded-2xl bg-[var(--surface-sunken)] animate-pulse" />
+          </div>
         </div>
       </div>
     );
@@ -152,10 +240,10 @@ export default function SuperadminMarcaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div className={SUPERADMIN_PAGE}>
       {/* ── Header con preview de marca + stats ─────────────────────── */}
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="max-w-[1400px] mx-auto">
+      <header className={SUPERADMIN_HERO}>
+        <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3.5 min-w-0">
               <span
@@ -202,51 +290,87 @@ export default function SuperadminMarcaPage() {
       </header>
 
       {/* ── 2-column layout ─────────────────────────────────────────── */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className={SUPERADMIN_CONTENT}>
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
           {/* Sidebar de secciones */}
           <aside className="lg:sticky lg:top-6 lg:self-start space-y-4">
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2 px-1">
-                Secciones
-              </p>
+              <div className="flex items-center justify-between gap-2 mb-2 px-1">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  Secciones
+                </p>
+                {dirtySections.size > 0 && (
+                  <span className="text-[length:var(--ts-2xs)] font-extrabold text-amber-700 dark:text-amber-300">
+                    {dirtySections.size} editada{dirtySections.size === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
+              {/* Search filter sobre secciones */}
+              <div className="relative mb-2">
+                <Search
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)] pointer-events-none"
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  value={sectionSearch}
+                  onChange={(e) => setSectionSearch(e.target.value)}
+                  placeholder="Filtrar secciones…"
+                  aria-label="Filtrar secciones"
+                  className="w-full h-9 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-8 pr-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
               <div className="space-y-1">
-                {SECTIONS.map((s) => {
-                  const Icon = s.icon;
-                  const active = activeSection === s.id;
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => setActiveSection(s.id)}
-                      aria-pressed={active}
-                      className={cn(
-                        "w-full flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-all border",
-                        active
-                          ? "bg-[var(--accent)]/10 border-[var(--accent)]/30 shadow-sm"
-                          : "border-transparent hover:bg-[var(--surface-sunken)]",
-                      )}
-                    >
-                      <Icon
+                {visibleSections.length === 0 ? (
+                  <p className="text-xs text-[var(--text-tertiary)] px-3 py-2">
+                    Ninguna sección coincide.
+                  </p>
+                ) : (
+                  visibleSections.map((s) => {
+                    const Icon = s.icon;
+                    const active = activeSection === s.id;
+                    const isDirty = dirtySections.has(s.id);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setActiveSection(s.id)}
+                        aria-pressed={active}
                         className={cn(
-                          "h-4 w-4 mt-0.5 shrink-0",
-                          active ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]",
+                          "w-full flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-all border relative",
+                          active
+                            ? "bg-[var(--accent)]/10 border-[var(--accent)]/30 shadow-sm"
+                            : "border-transparent hover:bg-[var(--surface-sunken)]",
                         )}
-                        aria-hidden
-                      />
-                      <div className="min-w-0">
-                        <p className={cn(
-                          "text-sm font-bold truncate",
-                          active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
-                        )}>
-                          {s.label}
-                        </p>
-                        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">
-                          {s.description}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
+                      >
+                        <Icon
+                          className={cn(
+                            "h-4 w-4 mt-0.5 shrink-0",
+                            active ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]",
+                          )}
+                          aria-hidden
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className={cn(
+                            "text-sm font-bold truncate flex items-center gap-1.5",
+                            active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
+                          )}>
+                            {s.label}
+                            {isDirty && (
+                              <span
+                                className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"
+                                aria-label="modificada sin guardar"
+                                title="Modificada sin guardar"
+                              />
+                            )}
+                          </p>
+                          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">
+                            {s.description}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
 
