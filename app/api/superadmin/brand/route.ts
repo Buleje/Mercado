@@ -5,6 +5,7 @@ import { getPlatformBrand, savePlatformBrand, type PlatformBrand } from "@/lib/p
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 /**
  * GET/PATCH /api/superadmin/brand — gestiona la marca de la plataforma.
@@ -151,6 +152,7 @@ function deepMerge(base: PlatformBrand, patch: Record<string, unknown>): Platfor
 
 export async function PATCH(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-brand"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   if (!(await requireSession(req))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

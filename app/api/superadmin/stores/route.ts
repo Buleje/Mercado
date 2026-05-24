@@ -8,6 +8,7 @@ import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { sendWelcomeTenant } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 /**
  * Lógica completa del listado de stores con product counts, cacheada via
@@ -92,6 +93,7 @@ const PatchSchema = z.object({
 
 export async function PATCH(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-stores"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status:401 });
   const session = await getPlatformSession(token);

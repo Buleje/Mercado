@@ -15,10 +15,12 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { VendorGraceDB } from "@/lib/db/vendor-grace.db";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 export async function DELETE(req: NextRequest) {
   const rl = applyRateLimit(req, "STRICT", "superadmin-vendor-grace-clear");
   if (rl) return rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
 
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;

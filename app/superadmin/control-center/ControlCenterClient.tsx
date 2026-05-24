@@ -14,7 +14,7 @@
  *   C) Info del sistema (versión + Next + Node + deploy).
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AdminPage,
   AdminSection,
@@ -405,9 +405,20 @@ export function ControlCenterClient({
   healthMap,
   systemInfo,
 }: ControlCenterClientProps) {
+  // Toast inline (sustituye window.alert nativo)
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const handlePendingAction = (message: string) => {
-    // Stubs mientras no haya ADR — mantener copia profesional.
-    window.alert(`Acción pendiente: ${message}.`);
+    // Stubs mientras no haya ADR — feedback inline en vez de alert nativo.
+    showToast(`Acción pendiente: ${message}`);
   };
 
   // Quick stats — overview del estado del Control Center
@@ -438,6 +449,29 @@ export function ControlCenterClient({
     category: cat,
     items: filteredPlatforms.filter((p) => p.category === cat),
   })).filter((g) => g.items.length > 0);
+
+  // Keyboard: "/" enfoca el buscador · "Esc" limpia
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const inField =
+        el?.tagName === "INPUT" ||
+        el?.tagName === "TEXTAREA" ||
+        el?.isContentEditable;
+      if (e.key === "Escape" && !inField && query) {
+        setQuery("");
+        return;
+      }
+      if (inField) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [query]);
 
   return (
     <AdminPage>
@@ -499,10 +533,11 @@ export function ControlCenterClient({
             aria-hidden
           />
           <input
+            ref={searchInputRef}
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar plataforma — nombre, ruta o categoría…"
+            placeholder="Buscar plataforma — nombre, ruta o categoría…  ( / )"
             className={cn(
               "w-full h-11 pl-10 pr-10 rounded-xl border-2",
               "border-[var(--rule-base)] bg-[var(--surface-raised)]",
@@ -692,6 +727,15 @@ export function ControlCenterClient({
         deployedAt={systemInfo.deployedAt}
       />
       </AdminTabShell>
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-[90] rounded-xl px-5 py-3 text-sm font-bold text-white shadow-lg backdrop-blur bg-slate-800"
+        >
+          {toast}
+        </div>
+      )}
     </AdminPage>
   );
 }

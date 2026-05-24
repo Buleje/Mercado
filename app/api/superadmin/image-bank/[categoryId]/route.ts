@@ -4,6 +4,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { ImageBankDB } from "@/lib/db/image-bank.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 /**
  * PATCH /api/superadmin/image-bank/[categoryId]
@@ -20,6 +21,7 @@ const PatchSchema = z.object({
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ categoryId: string }> }) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-image-bank-X"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   const { categoryId } = await ctx.params;
@@ -40,6 +42,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ categoryI
 
 export async function DELETE(req: NextRequest, ctx: { params: Promise<{ categoryId: string }> }) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-image-bank-X"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   const { categoryId } = await ctx.params;

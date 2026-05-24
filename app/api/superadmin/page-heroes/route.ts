@@ -4,6 +4,7 @@ import { PageHeroesDB } from "@/lib/db/page-heroes.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 const VALID_PAGES = ["home", "marketplace", "recetas", "negocios", "tienda"] as const;
 
@@ -30,6 +31,7 @@ export async function GET(req: NextRequest) {
 /** POST — create a hero (platform-only: requiere sesion superadmin) */
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 

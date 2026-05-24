@@ -4,6 +4,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { VariantCatalogDb } from "@/lib/db/variant-catalog.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 // Brandon 2026-05-16 (audit Info): force-dynamic obligatorio + nota
 // platform-wide. Las mutaciones del VariantCatalog SOLO viven aquí
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-variant-catalog"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 

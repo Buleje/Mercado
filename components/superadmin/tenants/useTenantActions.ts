@@ -52,9 +52,22 @@ export function useTenantActions({
   }, [setTenants, setActionLoading, showToast]);
 
   const handleDeleteTenant = useCallback(async (slug: string, name: string) => {
+    // P0 fix 2026-05-24: TOTP step-up obligatorio en server.
+    const totpCode = window.prompt(
+      `Código TOTP (6 dígitos) para confirmar borrado de "${name}":`,
+    );
+    if (!totpCode || !/^\d{6}$/.test(totpCode)) {
+      showToast("Código TOTP inválido — operación cancelada", false);
+      return;
+    }
     setActionLoading(`${slug}-delete`);
     try {
-      const res = await fetch(`/api/superadmin/tenants/${slug}/delete`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`/api/superadmin/tenants/${slug}/delete`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ totpCode }),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error" }));
         showToast((err as { error?: string }).error ?? "Error al eliminar", false);
@@ -93,9 +106,29 @@ export function useTenantActions({
 
   const handlePurgeTenant = useCallback(async (slug: string, name: string) => {
     if (!confirm(`¿Limpiar TODOS los datos de "${name}"?\n\nSe eliminarán productos, pedidos, movimientos, ventas y todo el historial.\nLa tienda seguirá activa pero vacía.`)) return;
+    // P0 fix 2026-05-24: TOTP step-up + body { confirm, reason, totpCode }
+    const totpCode = window.prompt(`Código TOTP (6 dígitos) para purgar "${name}":`);
+    if (!totpCode || !/^\d{6}$/.test(totpCode)) {
+      showToast("Código TOTP inválido — operación cancelada", false);
+      return;
+    }
+    const reason = window.prompt(`Motivo (mínimo 10 caracteres):`, "Limpieza de datos a pedido del cliente");
+    if (!reason || reason.trim().length < 10) {
+      showToast("Motivo requerido (mín. 10 caracteres)", false);
+      return;
+    }
     setActionLoading(`${slug}-purge`);
     try {
-      const res = await fetch(`/api/superadmin/tenants/${slug}/purge`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`/api/superadmin/tenants/${slug}/purge`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          confirm: `PURGE-${slug}`,
+          reason: reason.trim(),
+          totpCode,
+        }),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error" }));
         showToast((err as { error?: string }).error ?? "Error al limpiar datos", false);

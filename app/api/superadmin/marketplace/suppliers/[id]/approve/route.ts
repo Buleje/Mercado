@@ -57,15 +57,17 @@ export async function POST(
     ).catch((err) => logger.error("[superadmin/marketplace/suppliers/[id]/approve] operation failed", { error: String(err) }));
 
     if (supplier.contactPhone) {
-      const apiKeyPreview = supplier.apiKey
-        ? `${supplier.apiKey.slice(0, 14)}…`
-        : "n/a";
+      // SECURITY 2026-05-24 (Ola 1.4): la API key NUNCA viaja por WhatsApp —
+      // el mensaje queda persistido en el historial del chat del proveedor y
+      // de cualquiera con acceso a ese teléfono = fuga de credencial. La key
+      // se entrega solo en el panel superadmin (one-time, response inline).
+      // El equipo Buleje se la pasa al proveedor por un canal seguro.
       const message =
         `✅ *¡Tu solicitud fue aprobada!*\n\n` +
         `Hola ${supplier.contactName ?? supplier.name},\n\n` +
         `Ya eres parte de la red de proveedores de Buleje.\n\n` +
-        `Tu API Key (guarda este mensaje, solo se muestra una vez):\n` +
-        `\`${supplier.apiKey ?? apiKeyPreview}\`\n\n` +
+        `Nuestro equipo se contactará para entregarte tus credenciales de ` +
+        `acceso de forma segura. Por tu seguridad, no enviamos claves por WhatsApp.\n\n` +
         `Documentación: https://buleje.pe/supplier/docs\n` +
         `Panel: https://buleje.pe/supplier/dashboard`;
       sendWhatsAppQueued(supplier.contactPhone, message, { tenantId: "__platform__", context: "supplier-approve-notify" }).catch(() => {

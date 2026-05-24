@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import Image from "next/image";
 import {
   ChefHat, Search, Plus, Pencil, Trash2, Image as ImageIcon,
   ToggleLeft, ToggleRight, RefreshCw, AlertCircle,
-  CheckCircle2, XCircle, X, Clock, Users, Loader2,
+  CheckCircle2, XCircle, X, Clock, Users, Loader2, Download,
 } from "@buleje/design-system/icons";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared";
+import { AdminTabShell } from "../_components/_shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -106,6 +107,8 @@ export default function SuperAdminRecetarioPage() {
   const [deleteTarget, setDeleteTarget] = useState<RecetaRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3500);
@@ -154,6 +157,39 @@ export default function SuperAdminRecetarioPage() {
     void loadTenants();
   }, [loadRecetas, loadTenants]);
 
+  // Keyboard: "/" search · "R" reload · "N" nueva receta · "Esc" cerrar/limpiar
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const inField =
+        el?.tagName === "INPUT" ||
+        el?.tagName === "TEXTAREA" ||
+        el?.tagName === "SELECT" ||
+        el?.isContentEditable;
+      if (e.key === "Escape") {
+        if (showForm) return closeForm();
+        if (deleteTarget) return setDeleteTarget(null);
+        if (!inField && search) setSearch("");
+        return;
+      }
+      if (inField || showForm || deleteTarget) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        void loadRecetas();
+      } else if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        openCreate();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showForm, deleteTarget, search, loadRecetas]);
+
   const filtered = useMemo(() => {
     if (!search.trim()) return recetas;
     const q = search.toLowerCase();
@@ -164,6 +200,32 @@ export default function SuperAdminRecetarioPage() {
         (r.tenantName?.toLowerCase().includes(q) ?? false),
     );
   }, [recetas, search]);
+
+  // CSV export (RFC 4180 + BOM UTF-8)
+  const exportCsv = useCallback(() => {
+    const headers = [
+      "Nombre", "Tenant", "Categoría", "Dificultad", "Tiempo (min)",
+      "Porciones", "Ingredientes", "Costo total", "Activa", "Creada",
+    ];
+    const lines = filtered.map((r) =>
+      [
+        r.nombre, r.tenantName, r.categoria ?? "", r.dificultad ?? "",
+        r.tiempoMinutos ?? "", r.porciones ?? "", r.ingredientesCount,
+        r.costoTotal, r.activa ? "sí" : "no", r.createdAt,
+      ]
+        .map((c) => `"${String(c).replace(/"/g, '""')}"`)
+        .join(","),
+    );
+    const csv = "﻿" + [headers.join(","), ...lines].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `recetario-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`${filtered.length} recetas exportadas`);
+  }, [filtered]);
 
   // ── Form handlers ──────────────────────────────────────────────────────────
 
@@ -317,47 +379,53 @@ export default function SuperAdminRecetarioPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <ChefHat className="w-6 h-6 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
-            Recetario Global
-          </h1>
-          <p className="text-[var(--text-tertiary)] text-sm mt-1">
-            {filtered.length} receta{filtered.length !== 1 ? "s" : ""}
-            {recetas.length !== filtered.length ? ` de ${recetas.length}` : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+    <AdminTabShell
+      title="Recetario Global"
+      kicker="Plataforma · Contenido"
+      description="Recetas cross-tenant para el catálogo de cocina. Crea, edita y activa recetas de cualquier tienda."
+      icon={ChefHat}
+      actions={
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => void loadRecetas()}
             disabled={loading}
-            className="p-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--text-tertiary)] transition-colors disabled:opacity-50"
+            title="Recargar (R)"
+            className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--text-tertiary)] transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+            title="Exportar CSV"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--text-secondary)] text-sm font-bold transition-colors disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">CSV</span>
           </button>
           <button
             type="button"
             onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] hover:brightness-110 text-white text-sm font-semibold transition-colors shadow-[var(--shadow-sm)]"
+            title="Nueva receta (N)"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-[var(--shadow-sm)]"
           >
             <Plus className="w-4 h-4" />
             Nueva Receta
           </button>
         </div>
-      </div>
-
+      }
+    >
       {/* Search */}
-      <div className="relative max-w-md">
+      <div className="relative max-w-md mb-5">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         <input
+          ref={searchInputRef}
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre, categoria o tenant..."
+          placeholder="Buscar por nombre, categoría o tenant…  ( / )"
           className={`${inputCls} pl-9`}
         />
       </div>
@@ -806,6 +874,6 @@ export default function SuperAdminRecetarioPage() {
           {toast.msg}
         </div>
       )}
-    </div>
+    </AdminTabShell>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X, Building2, ExternalLink, Loader2,
   Copy, Globe, RotateCcw, KeyRound, ShoppingBag,
@@ -57,9 +58,26 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
   const storeInfo = t.stores?.[0];
 
   const handleResetPassword = async () => {
-    setResetLoading(true); setResetResult(null);
+    // P0 fix 2026-05-24: TOTP step-up obligatorio en server.
+    const totpCode = window.prompt(
+      `Código TOTP (6 dígitos) para resetear contraseña de "${t.name}":`,
+    );
+    if (!totpCode || !/^\d{6}$/.test(totpCode)) {
+      setResetResult("Código TOTP inválido — operación cancelada");
+      return;
+    }
+    setResetLoading(true);
+    setResetResult(null);
     try {
-      const res = await fetch(`/api/superadmin/tenants/${t.slug}/reset-password`, { method: "POST", credentials: "include" });
+      const res = await fetch(
+        `/api/superadmin/tenants/${t.slug}/reset-password`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ totpCode }),
+        },
+      );
       const data = await res.json() as { tempPassword?: string; error?: string };
       if (res.ok && data.tempPassword) {
         setResetResult(data.tempPassword);

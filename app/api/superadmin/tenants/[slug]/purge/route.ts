@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { invalidateAll } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { z } from "zod";
 
 const PurgeSchema = z.object({
@@ -84,6 +85,11 @@ export async function DELETE(
 
   // F1: Double-step confirmation — evita borrado accidental de tienda
   const body = await req.json().catch((err) => { logger.warn("[purge] op failed", { err: String(err) }); return null; });
+
+  // P0 fix 2026-05-24: TOTP step-up — borra TODOS los datos de la tienda
+  const totpFail = await requireTotpStepUp(session.username, body);
+  if (totpFail) return totpFail;
+
   const parsed = PurgeSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

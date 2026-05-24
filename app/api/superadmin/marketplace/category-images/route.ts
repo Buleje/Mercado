@@ -9,6 +9,7 @@ import {
 import { invalidateByPrefix } from "@/lib/cache";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 /**
  * GET/PUT /api/superadmin/marketplace/category-images
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const user = await requireSuperadmin(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

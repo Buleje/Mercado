@@ -190,6 +190,24 @@ export default function SLODashboardPage() {
 
   useEffect(() => { reload(); }, [reload]);
 
+  // Keyboard: "R" recarga el dashboard (sin foco en campos)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const inField =
+        el?.tagName === "INPUT" ||
+        el?.tagName === "TEXTAREA" ||
+        el?.tagName === "SELECT" ||
+        el?.isContentEditable;
+      if (!inField && (e.key === "r" || e.key === "R")) {
+        e.preventDefault();
+        void reload();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [reload]);
+
   const checkoutRate =
     data.checkoutFunnel.length >= 2
       ? Math.round(
@@ -231,6 +249,7 @@ export default function SLODashboardPage() {
         <button
           onClick={reload}
           disabled={loading}
+          title="Actualizar (R)"
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />

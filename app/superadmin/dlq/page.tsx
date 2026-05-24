@@ -1,7 +1,10 @@
 import "server-only";
+import { Suspense } from "react";
 import Link from "next/link";
+import { CheckCircle2 } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { getDeadLetterDashboard } from "@/lib/db/dlq.db";
+import { DLQExport } from "./DLQExport";
 
 // Next 16 (CLAUDE.md #4): NO usar `force-dynamic`. Dejamos sin "use cache"
 // para que el RSC re-renderice a cada request (panel ops, datos frescos).
@@ -21,8 +24,6 @@ import { getDeadLetterDashboard } from "@/lib/db/dlq.db";
 export default async function DLQDashboardPage() {
   // requirePlatformPage lee de cookies en SSR + redirige a /superadmin/login si no auth
   await requirePlatformPage();
-
-  const { events, crons, mpWebhooks } = await getDeadLetterDashboard();
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
@@ -46,6 +47,62 @@ export default async function DLQDashboardPage() {
           ← Superadmin
         </Link>
       </header>
+
+      {/* Suspense: el shell + header se pintan al instante; el body (query
+          cross-tenant pesada) muestra skeleton mientras carga. */}
+      <Suspense fallback={<DLQSkeleton />}>
+        <DLQBody />
+      </Suspense>
+    </div>
+  );
+}
+
+async function DLQBody() {
+  const { events, crons, mpWebhooks } = await getDeadLetterDashboard();
+
+  // Filas aplanadas para el CSV unificado (categoría + campos comunes).
+  const csvRows: (string | number)[][] = [
+    ...events.map((e) => [
+      "Evento",
+      e.eventType,
+      e.handlerName,
+      e.attemptCount,
+      new Date(e.failedAt).toISOString(),
+      e.lastError,
+    ]),
+    ...crons.map((c) => [
+      "Cron",
+      c.jobName,
+      "",
+      c.attempts,
+      new Date(c.createdAt).toISOString(),
+      c.error,
+    ]),
+    ...mpWebhooks.map((w) => [
+      "MP Webhook",
+      w.stripeId,
+      w.eventType,
+      w.attempts,
+      new Date(w.createdAt).toISOString(),
+      w.lastError ?? "",
+    ]),
+  ];
+
+  return (
+    <>
+      <div className="flex justify-end">
+        <DLQExport
+          headers={[
+            "Categoría",
+            "Identificador",
+            "Detalle",
+            "Intentos",
+            "Fecha",
+            "Error",
+          ]}
+          rows={csvRows}
+        />
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -80,8 +137,9 @@ export default async function DLQDashboardPage() {
           </p>
         </header>
         {events.length === 0 ? (
-          <div className="px-5 py-8 text-center text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            ✓ Sin eventos en DLQ
+          <div className="px-5 py-8 flex items-center justify-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Sin eventos en DLQ
           </div>
         ) : (
           <table className="w-full text-[length:var(--ts-sm)]">
@@ -122,8 +180,9 @@ export default async function DLQDashboardPage() {
           </p>
         </header>
         {crons.length === 0 ? (
-          <div className="px-5 py-8 text-center text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            ✓ Sin crons fallidos recientes
+          <div className="px-5 py-8 flex items-center justify-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Sin crons fallidos recientes
           </div>
         ) : (
           <table className="w-full text-[length:var(--ts-sm)]">
@@ -160,8 +219,9 @@ export default async function DLQDashboardPage() {
           </p>
         </header>
         {mpWebhooks.length === 0 ? (
-          <div className="px-5 py-8 text-center text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            ✓ Sin webhooks pendientes
+          <div className="px-5 py-8 flex items-center justify-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Sin webhooks pendientes
           </div>
         ) : (
           <table className="w-full text-[length:var(--ts-sm)]">
@@ -188,6 +248,27 @@ export default async function DLQDashboardPage() {
           </table>
         )}
       </section>
+    </>
+  );
+}
+
+function DLQSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 h-24"
+          />
+        ))}
+      </div>
+      {Array.from({ length: 2 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] h-48"
+        />
+      ))}
     </div>
   );
 }
@@ -199,7 +280,7 @@ function StatCard({ label, value, warn, critical }: { label: string; value: numb
         critical
           ? "border-[var(--data-error-500)] bg-[var(--data-error-50,#fef2f2)]/30"
           : warn
-            ? "border-[var(--data-warn-500,#f59e0b)] bg-[var(--data-warn-50,#fef3c7)]/30"
+            ? "border-[var(--data-warning-500,#f59e0b)] bg-[var(--data-warning-50,#fef3c7)]/30"
             : "border-[var(--rule-soft)] bg-[var(--surface-raised)]"
       }`}
     >

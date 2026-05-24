@@ -16,6 +16,7 @@ import {
   HardDrive,
   Activity,
   Timer,
+  Download,
 } from "@buleje/design-system/icons";
 import SAHealthScore from "@/components/superadmin/_shared/SAHealthScore";
 import { AdminTabShell } from "../_components/_shared";
@@ -280,6 +281,42 @@ export default function SystemHealthPage() {
     runChecks();
   }, [runChecks]);
 
+  // Keyboard: "R" re-verifica (sin foco en campos)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const inField =
+        el?.tagName === "INPUT" ||
+        el?.tagName === "TEXTAREA" ||
+        el?.tagName === "SELECT" ||
+        el?.isContentEditable;
+      if (!inField && (e.key === "r" || e.key === "R")) {
+        e.preventDefault();
+        runChecks();
+        setCountdown(AUTO_REFRESH_SECONDS);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [runChecks]);
+
+  // CSV export de checks de sistema + servicios (RFC 4180 + BOM)
+  const exportCsv = useCallback(() => {
+    const esc = (c: string | number) => `"${String(c).replace(/"/g, '""')}"`;
+    const headers = ["Check", "Estado", "Latencia (ms)", "Detalle"];
+    const rows = checks.map((c) => [c.name, c.status, c.latency ?? "", c.detail ?? ""]);
+    const csv =
+      "﻿" +
+      [headers.map(esc).join(","), ...rows.map((r) => r.map(esc).join(","))].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `health-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [checks]);
+
   useEffect(() => {
     if (!autoRefresh) {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -317,7 +354,7 @@ export default function SystemHealthPage() {
       icon: XCircle,
       label: "Problemas detectados",
       bg: "border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/20",
-      iconCls: "text-[var(--accent)] dark:text-[var(--accent)]",
+      iconCls: "text-rose-600 dark:text-rose-400",
     },
     checking: {
       icon: RefreshCw,
@@ -407,6 +444,7 @@ export default function SystemHealthPage() {
               setCountdown(AUTO_REFRESH_SECONDS);
             }}
             disabled={loading}
+            title="Verificar (R)"
             className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
           >
             <RefreshCw
@@ -414,6 +452,15 @@ export default function SystemHealthPage() {
               strokeWidth={2.25}
             />
             Verificar
+          </button>
+          <button
+            onClick={exportCsv}
+            disabled={checks.length === 0}
+            title="Exportar CSV"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+          >
+            <Download className="h-3.5 w-3.5" strokeWidth={2.25} />
+            CSV
           </button>
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}

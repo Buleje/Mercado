@@ -4,6 +4,7 @@ import { SuperadminChurnTenantDB } from "@/lib/db/superadmin-churn-tenant.db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 // ─── Validación params ────────────────────────────────────────────────────────
 
@@ -83,6 +84,7 @@ export async function PATCH(
   { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-churn-X"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const auth = await requirePlatformAPI(req);
   if ("status" in auth) return auth;
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 async function requirePlatform(req: NextRequest) {
@@ -74,6 +75,11 @@ export async function DELETE(
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  // P0 fix 2026-05-24: TOTP step-up — borra tenant + cascada destructiva
+  const body = await req.json().catch(() => ({}));
+  const totpFail = await requireTotpStepUp(session.username, body);
+  if (totpFail) return totpFail;
 
   const { slug } = await params;
 

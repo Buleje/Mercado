@@ -6,6 +6,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { getCategoryOrder, setCategoryOrder } from "@/lib/store-category-order";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 /**
  * GET/PUT /api/superadmin/stores/[slug]/category-order
@@ -48,6 +49,7 @@ export async function PUT(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-stores-X-category-order"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const denied = await authGuard(req);
   if (denied) return denied;
 

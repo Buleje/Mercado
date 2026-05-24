@@ -26,10 +26,7 @@ import {
   type PlatformConfig,
 } from "@/lib/platform-config";
 import { AdminTabShell } from "../_components/_shared";
-
-function csrf(): string {
-  return document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1] ?? "";
-}
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type ImageKind = "logo" | "favicon" | "yapeQr" | "plinQr" | "ogImage";
 
@@ -60,14 +57,14 @@ export default function ConfiguracionClient() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const save = async () => {
+  const save = useCallback(async () => {
     setSaving(true);
     setError(null);
     try {
       const res = await fetch("/api/superadmin/platform-config", {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(config),
       });
       const data = await res.json();
@@ -82,7 +79,19 @@ export default function ConfiguracionClient() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [config]);
+
+  // Keyboard: Cmd/Ctrl+S guarda sin recargar la página
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        if (!saving && !loading) void save();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [save, saving, loading]);
 
   const uploadImage = async (kind: ImageKind, file: File): Promise<string | null> => {
     const fd = new FormData();
@@ -91,7 +100,7 @@ export default function ConfiguracionClient() {
     const res = await fetch("/api/superadmin/platform-config/upload", {
       method: "POST",
       credentials: "include",
-      headers: { "x-csrf-token": csrf() },
+      headers: csrfHeaders(),
       body: fd,
     });
     const data = await res.json();

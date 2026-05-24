@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 /**
  * GET/PATCH /api/superadmin/marketplace/categories
@@ -173,6 +174,7 @@ const PatchSchema = z.object({
 
 export async function PATCH(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-marketplace-categories"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const session = await getPlatformSession(token);

@@ -4,6 +4,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { logger } from "@/lib/logger";
 
@@ -28,6 +29,11 @@ export async function POST(
 
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // P0 fix 2026-05-24: TOTP step-up — reset de credenciales admin tenant
+  const body = await req.json().catch(() => ({}));
+  const totpFail = await requireTotpStepUp(session.username, body);
+  if (totpFail) return totpFail;
 
   const { slug } = await params;
 
