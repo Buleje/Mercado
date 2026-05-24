@@ -9,11 +9,17 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  // TypeScript gate: tsc validation runs in pre-commit hook (husky) and CI.
-  // Build-time tsc disabled because it OOMs on Vercel 8GB (131 Prisma models + 3000+ files).
-  // Turbopack compilation still type-checks during "Compiled successfully" step.
+  // TypeScript gate ACTIVO en build (2026-05-24): el OOM en Vercel 8GB que
+  // motivaba `ignoreBuildErrors: true` venía de re-chequear el Prisma Client
+  // generado (~cientos de miles de líneas) + tests + scripts. `tsconfig.build.json`
+  // excluye eso y deja el código de producción, bajando la memoria por debajo
+  // del límite. Así errores TS reales SÍ rompen el build (regla #8 CLAUDE.md).
+  // El pre-commit hook + CI siguen corriendo el `tsc --noEmit` full (con tests).
   // See docs/adr/008-typescript-strict-gate.md.
-  typescript: { ignoreBuildErrors: true },
+  typescript: {
+    ignoreBuildErrors: false,
+    tsconfigPath: "tsconfig.build.json",
+  },
 
   // Ocultar el boton flotante "compiling" / dev indicators en desarrollo.
   // Bloqueaba la navegacion al superponerse sobre la UI en pantallas pequenas.

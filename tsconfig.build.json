@@ -1,0 +1,28 @@
+{
+  // Config de type-check SOLO para `next build`. Extiende el tsconfig base
+  // pero excluye lo que NO es código de producción y que infla la memoria del
+  // type-checker (causa del OOM en Vercel 8GB que motivaba ignoreBuildErrors).
+  //
+  // - lib/generated/**: el Prisma Client generado son ~cientos de miles de
+  //   líneas de tipos; skipLibCheck ya cubre su validez, no hace falta
+  //   re-chequearlo en cada build.
+  // - tests / e2e / stories / scripts: no se despliegan, no deben bloquear el
+  //   build de producción (corren en CI por separado vía `tsc --noEmit` full).
+  //
+  // El código de app/, components/, lib/ (no-generated), contexts/, hooks/ SÍ
+  // se type-checkea — que es el objetivo de bajar ignoreBuildErrors a false.
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "tools/mcp-bodega/**",
+    "lib/generated/**",
+    "__tests__/**",
+    "e2e/**",
+    "scripts/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.stories.tsx",
+    "packages/**/dist/**"
+  ]
+}
