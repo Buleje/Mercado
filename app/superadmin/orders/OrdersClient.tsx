@@ -1,11 +1,25 @@
 "use client";
 
+/**
+ * OrdersClient — Vista cross-tenant de pedidos del marketplace.
+ *
+ * Mejoras 2026-05-24:
+ *  - Auto-refresh 30s OPT-IN (antes era constante — drenaba recursos)
+ *  - Toast inline (sustituye error block)
+ *  - CSV export
+ *  - Sort selector (recientes / antiguas / monto)
+ *  - SLA badge en pendientes (verde<30min, ámbar<2h, rojo>2h)
+ *  - Copy clipboard en phone + order id
+ *  - Keyboard: / busca · R recarga · Esc cierra drawer/limpia
+ *  - Drawer: Esc cierra, tap target close h-11
+ *  - Tonos rose-700/dark:rose-300 correctos (sustituye var(--data-error-700))
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ShoppingBag,
   Search,
   RefreshCw,
-  Filter,
   Phone,
   MapPin,
   Clock,
@@ -18,9 +32,13 @@ import {
   X,
   CreditCard,
   Sparkles,
+  Download,
+  Copy,
+  AlertTriangle,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
+import { cn } from "@/lib/utils";
 
 type OrderStatus = "pendiente" | "confirmado" | "preparando" | "en_camino" | "entregado" | "cancelado";
 
@@ -54,6 +72,10 @@ interface OrderRow {
   items: OrderItem[];
 }
 
+type ToastTone = "success" | "error" | "info";
+type Toast = { id: number; text: string; tone: ToastTone };
+type SortKey = "recent" | "oldest" | "total_desc" | "total_asc";
+
 const STATUS_META: Record<OrderStatus, { label: string; tone: string; icon: typeof CheckCircle2 }> = {
   pendiente: { label: "Pendiente", tone: "var(--data-warning-500)", icon: Clock },
   confirmado: { label: "Confirmado", tone: "var(--data-info-500)", icon: CheckCircle2 },
@@ -73,7 +95,8 @@ const STATUS_FILTERS: Array<{ key: OrderStatus | "all"; label: string }> = [
   { key: "cancelado", label: "Cancelados" },
 ];
 
-// Brandon 2026-05-21 audit blindaje: guard Date null/Invalid (defensa-en-profundidad).
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
 function timeAgo(iso: string | null | undefined): string {
   if (!iso) return "—";
   const t = new Date(iso).getTime();
@@ -88,55 +111,214 @@ function timeAgo(iso: string | null | undefined): string {
   return `hace ${d} d`;
 }
 
+function slaInfoForOrder(iso: string): {
+  label: string;
+  tone: "good" | "warn" | "bad";
+  minutes: number;
+} {
+  const ms = Date.now() - new Date(iso).getTime();
+  const minutes = Math.max(0, Math.floor(ms / 60_000));
+  let label: string;
+  if (minutes < 1) label = "ahora";
+  else if (minutes < 60) label = `${minutes}m`;
+  else if (minutes < 24 * 60) label = `${Math.floor(minutes / 60)}h`;
+  else label = `${Math.floor(minutes / (24 * 60))}d`;
+  const tone: "good" | "warn" | "bad" =
+    minutes >= 120 ? "bad" : minutes >= 30 ? "warn" : "good";
+  return { label, tone, minutes };
+}
+
+function csvCell(v: string | number | null | undefined): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportOrdersCSV(rows: OrderRow[]) {
+  const headers = [
+    "ID",
+    "Tenant",
+    "Cliente",
+    "Telefono",
+    "Direccion",
+    "Total",
+    "Status",
+    "Pago",
+    "Source",
+    "Repartidor",
+    "Items",
+    "Creado",
+  ];
+  const data = rows.map((o) => [
+    o.id,
+    o.tenant.name,
+    o.customer.name,
+    o.customer.phone ?? "",
+    o.customer.location,
+    o.total,
+    o.status,
+    o.paymentMethod ?? "",
+    o.source,
+    o.riderName ?? "",
+    o.items.length,
+    o.createdAt,
+  ]);
+  const csv =
+    "﻿" +
+    [headers, ...data].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `superadmin_orders_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+const SLA_CLS: Record<"good" | "warn" | "bad", string> = {
+  good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+};
+
+function Toasts({ toasts }: { toasts: Toast[] }) {
+  return (
+    <div
+      aria-live="polite"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] flex flex-col gap-2 pointer-events-none"
+    >
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          role="status"
+          className={cn(
+            "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
+            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "error" && "bg-rose-600 text-white",
+            t.tone === "info" && "bg-slate-800 text-white",
+          )}
+        >
+          {t.text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Main component ─────────────────────────────────────────────────────────
+
 export function OrdersClient() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [tenantFilter, setTenantFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortKey>("recent");
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const [selected, setSelected] = useState<OrderRow | null>(null);
 
-  // FIX 2026-05-06: load() lee filtros vía ref para que el polling no
-  // capture closures stale (search desactualizado en interval).
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastIdRef = useRef(1);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const pushToast = useCallback((text: string, tone: ToastTone = "info") => {
+    const id = toastIdRef.current++;
+    setToasts((prev) => [...prev, { id, text, tone }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
+  }, []);
+
+  // Filters ref para que el polling no capture closures stale
   const filtersRef = useRef({ statusFilter, tenantFilter, search });
   filtersRef.current = { statusFilter, tenantFilter, search };
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { statusFilter: s, tenantFilter: t, search: q } = filtersRef.current;
-      const sp = new URLSearchParams();
-      if (s !== "all") sp.set("status", s);
-      if (t !== "all") sp.set("tenant", t);
-      if (q.trim()) sp.set("q", q.trim());
-      sp.set("limit", "100");
-      const r = await fetch(`/api/superadmin/orders?${sp.toString()}`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-      if (!r.ok) throw new Error(String(r.status));
-      const json = (await r.json()) as { orders: OrderRow[] };
-      setOrders(json.orders);
-    } catch (err) {
-      setError(`No se pudieron cargar los pedidos (${String(err)})`);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setRefreshing(true);
+      try {
+        const { statusFilter: s, tenantFilter: t, search: q } = filtersRef.current;
+        const sp = new URLSearchParams();
+        if (s !== "all") sp.set("status", s);
+        if (t !== "all") sp.set("tenant", t);
+        if (q.trim()) sp.set("q", q.trim());
+        sp.set("limit", "100");
+        const r = await fetch(`/api/superadmin/orders?${sp.toString()}`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const json = (await r.json()) as { orders: OrderRow[] };
+        setOrders(json.orders);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        pushToast(`No se pudieron cargar los pedidos: ${msg}`, "error");
+      } finally {
+        if (!silent) setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [pushToast],
+  );
 
   useEffect(() => {
     void load();
-    const id = setInterval(() => void load(), 30_000);
-    return () => clearInterval(id);
   }, [statusFilter, tenantFilter, load]);
 
-  // Search debounced: refresh when text settles, no closure stale.
+  // Search debounced
   useEffect(() => {
     const t = setTimeout(() => void load(), 350);
     return () => clearTimeout(t);
   }, [search, load]);
+
+  // Auto-refresh OPT-IN cada 30s
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const t = setInterval(() => void load(true), 30_000);
+    return () => clearInterval(t);
+  }, [autoRefresh, load]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      const inField = tag === "input" || tag === "textarea" || tag === "select";
+      if (e.key === "Escape") {
+        if (selected) {
+          setSelected(null);
+          return;
+        }
+        if (!inField && (search || statusFilter !== "all" || tenantFilter !== "all")) {
+          setSearch("");
+          setStatusFilter("all");
+          setTenantFilter("all");
+        }
+        return;
+      }
+      if (inField) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        void load();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selected, search, statusFilter, tenantFilter, load]);
+
+  const copy = useCallback(
+    async (text: string, label: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        pushToast(`${label} copiado`, "success");
+      } catch {
+        pushToast("No se pudo copiar", "error");
+      }
+    },
+    [pushToast],
+  );
 
   const tenantOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -147,18 +329,42 @@ export function OrdersClient() {
   }, [orders]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return orders;
-    const q = search.trim().toLowerCase();
-    return orders.filter(
-      (o) =>
-        o.id.toLowerCase().includes(q) ||
-        o.customer.name.toLowerCase().includes(q) ||
-        (o.customer.phone ?? "").includes(q) ||
-        o.tenant.name.toLowerCase().includes(q),
-    );
-  }, [orders, search]);
+    let result = orders;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(
+        (o) =>
+          o.id.toLowerCase().includes(q) ||
+          o.customer.name.toLowerCase().includes(q) ||
+          (o.customer.phone ?? "").includes(q) ||
+          o.tenant.name.toLowerCase().includes(q),
+      );
+    }
+    // Sort
+    const sorted = [...result];
+    switch (sort) {
+      case "recent":
+        sorted.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        break;
+      case "oldest":
+        sorted.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+        break;
+      case "total_desc":
+        sorted.sort((a, b) => b.total - a.total);
+        break;
+      case "total_asc":
+        sorted.sort((a, b) => a.total - b.total);
+        break;
+    }
+    return sorted;
+  }, [orders, search, sort]);
 
-  // KPI counters por estado
   const kpis = useMemo(() => {
     const grouped: Record<OrderStatus, number> = {
       pendiente: 0,
@@ -171,8 +377,6 @@ export function OrdersClient() {
     let totalRev = 0;
     for (const o of orders) {
       grouped[o.status] = (grouped[o.status] ?? 0) + 1;
-      // Brandon mayo 2026 v7: solo `entregado` cuenta como revenue. Pedidos
-      // en pendiente/confirmado/preparando/en_camino aún pueden cancelarse.
       if (o.status === "entregado") totalRev += o.total;
     }
     return { grouped, totalRev };
@@ -182,7 +386,7 @@ export function OrdersClient() {
     <AdminTabShell
       title="Pedidos del marketplace"
       kicker="Plataforma · Operaciones"
-      description="Vista cross-tenant de todos los pedidos. Aplicá filtros por tienda, estado o término de búsqueda para diagnosticar problemas."
+      description="Vista cross-tenant de todos los pedidos. Filtros por tienda, estado o búsqueda."
       icon={ShoppingBag}
       stats={
         <>
@@ -205,63 +409,85 @@ export function OrdersClient() {
         </>
       }
     >
-      {/* KPIs — Brandon 2026-05-21 audit fix #11: cuando loading=true muestra
-          "—" placeholder en vez de "0" (que hacía pensar al user que no hay
-          pedidos). Igual patrón que tenants page. */}
+      <Toasts toasts={toasts} />
+
+      {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
-        <KpiCard
-          label="Pendientes"
-          value={loading ? "—" : kpis.grouped.pendiente}
-          tone="var(--data-warning-500)"
-          icon={Clock}
-        />
-        <KpiCard
-          label="Confirmados"
-          value={loading ? "—" : kpis.grouped.confirmado}
-          tone="var(--data-info-500)"
-          icon={CheckCircle2}
-        />
-        <KpiCard
-          label="Preparando"
-          value={loading ? "—" : kpis.grouped.preparando}
-          tone="var(--accent)"
-          icon={Sparkles}
-        />
-        <KpiCard
-          label="En camino"
-          value={loading ? "—" : kpis.grouped.en_camino}
-          tone="var(--accent)"
-          icon={Truck}
-        />
-        <KpiCard
-          label="Entregados"
-          value={loading ? "—" : kpis.grouped.entregado}
-          tone="var(--data-success-500)"
-          icon={CheckCircle2}
-        />
-        <KpiCard
-          label="GMV total"
-          value={loading ? "—" : `S/${Number(kpis.totalRev).toFixed(0)}`}
-          tone="var(--accent)"
-          icon={CreditCard}
-        />
+        <KpiCard label="Pendientes" value={loading ? "—" : kpis.grouped.pendiente} tone="var(--data-warning-500)" icon={Clock} />
+        <KpiCard label="Confirmados" value={loading ? "—" : kpis.grouped.confirmado} tone="var(--data-info-500)" icon={CheckCircle2} />
+        <KpiCard label="Preparando" value={loading ? "—" : kpis.grouped.preparando} tone="var(--accent)" icon={Sparkles} />
+        <KpiCard label="En camino" value={loading ? "—" : kpis.grouped.en_camino} tone="var(--accent)" icon={Truck} />
+        <KpiCard label="Entregados" value={loading ? "—" : kpis.grouped.entregado} tone="var(--data-success-500)" icon={CheckCircle2} />
+        <KpiCard label="GMV total" value={loading ? "—" : `S/${Number(kpis.totalRev).toFixed(0)}`} tone="var(--accent)" icon={CreditCard} />
       </div>
 
-      {/* Filtros */}
+      {/* Action bar */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <button
+          type="button"
+          onClick={() => void load()}
+          disabled={refreshing}
+          title="Recargar (R)"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+        >
+          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} aria-hidden />
+          Recargar
+        </button>
+        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+          <input
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+            className="h-4 w-4 accent-[var(--accent)]"
+          />
+          Auto 30s
+        </label>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          aria-label="Ordenar por"
+          className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer focus:outline-none focus:border-[var(--accent)]"
+        >
+          <option value="recent">Recientes primero</option>
+          <option value="oldest">Antiguas primero</option>
+          <option value="total_desc">Mayor monto</option>
+          <option value="total_asc">Menor monto</option>
+        </select>
+        <button
+          onClick={() => exportOrdersCSV(filtered)}
+          disabled={filtered.length === 0}
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" aria-hidden />
+          CSV ({filtered.length})
+        </button>
+        <span className="ml-auto text-xs text-[var(--text-tertiary)]">
+          Atajos:{" "}
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">/</kbd>{" "}
+          buscar ·{" "}
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">R</kbd>{" "}
+          recargar
+        </span>
+      </div>
+
+      {/* Filtros search + tenant */}
       <div className="flex flex-wrap gap-2 mb-5">
         <div className="flex-1 min-w-[240px] relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
           <input
+            ref={searchInputRef}
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por cliente, ID, teléfono o tienda…"
+            aria-label="Buscar pedidos"
             className="w-full h-12 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)]"
           />
         </div>
         <select
           value={tenantFilter}
           onChange={(e) => setTenantFilter(e.target.value)}
+          aria-label="Filtrar por tienda"
           className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--accent)]"
         >
           <option value="all">Todas las tiendas</option>
@@ -271,13 +497,6 @@ export function OrdersClient() {
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] flex items-center gap-2"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
-        </button>
       </div>
 
       {/* Status pills */}
@@ -289,11 +508,13 @@ export function OrdersClient() {
               key={f.key}
               type="button"
               onClick={() => setStatusFilter(f.key)}
-              className={`shrink-0 px-4 h-10 rounded-full text-sm font-semibold border-2 transition-colors ${
+              aria-pressed={active}
+              className={cn(
+                "shrink-0 px-4 h-11 rounded-full text-sm font-semibold border-2 transition-colors",
                 active
                   ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                  : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-              }`}
+                  : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
+              )}
             >
               {f.label}
             </button>
@@ -302,16 +523,17 @@ export function OrdersClient() {
       </div>
 
       {/* Lista */}
-      {error && (
-        <div className="rounded-2xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 p-4 text-sm text-[var(--data-error-700)] mb-4">
-          {error}
-        </div>
-      )}
-
       {loading && orders.length === 0 ? (
         <SkeletonRows />
       ) : filtered.length === 0 ? (
-        <EmptyState />
+        <EmptyState
+          isFiltered={!!search || statusFilter !== "all" || tenantFilter !== "all"}
+          onClear={() => {
+            setSearch("");
+            setStatusFilter("all");
+            setTenantFilter("all");
+          }}
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {filtered.map((o) => (
@@ -320,7 +542,13 @@ export function OrdersClient() {
         </div>
       )}
 
-      {selected && <OrderDetailDrawer order={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <OrderDetailDrawer
+          order={selected}
+          onClose={() => setSelected(null)}
+          onCopy={copy}
+        />
+      )}
     </AdminTabShell>
   );
 }
@@ -366,6 +594,8 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
   const Icon = meta.icon;
   const itemCount = order.items.reduce((acc, it) => acc + it.quantity, 0);
   const previewItems = order.items.slice(0, 3);
+  const isPending = order.status === "pendiente";
+  const sla = isPending ? slaInfoForOrder(order.createdAt) : null;
   return (
     <button
       type="button"
@@ -395,16 +625,30 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
             #{order.id.slice(-8)} · {timeAgo(order.createdAt)}
           </p>
         </div>
-        <span
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-          style={{
-            background: `color-mix(in oklch, ${meta.tone} 14%, transparent)`,
-            color: meta.tone,
-          }}
-        >
-          <Icon className="w-3 h-3" strokeWidth={2.5} />
-          {meta.label}
-        </span>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+            style={{
+              background: `color-mix(in oklch, ${meta.tone} 14%, transparent)`,
+              color: meta.tone,
+            }}
+          >
+            <Icon className="w-3 h-3" strokeWidth={2.5} />
+            {meta.label}
+          </span>
+          {sla && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
+                SLA_CLS[sla.tone],
+              )}
+              title={`Pendiente hace ${sla.minutes} min`}
+            >
+              <Clock className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
+              {sla.label}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Body: cliente + items */}
@@ -461,7 +705,9 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
       {/* Footer: total */}
       <div className="px-4 py-3 border-t border-[var(--rule-base)] flex items-center justify-between">
         <div>
-          <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
+          <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
+            Total
+          </p>
           <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">
             S/{Number(order.total).toFixed(2)}
           </p>
@@ -474,13 +720,28 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
   );
 }
 
-function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () => void }) {
+function OrderDetailDrawer({
+  order,
+  onClose,
+  onCopy,
+}: {
+  order: OrderRow;
+  onClose: () => void;
+  onCopy: (text: string, label: string) => void;
+}) {
   const meta = STATUS_META[order.status];
   const Icon = meta.icon;
-  // PERF (audit React Compiler 2026-05-12): cache-buster fijo al mount del drawer
-  // via useState lazy init (pure capture de Date.now()). Sigue forzando refresh
-  // del panel admin del tenant porque el modal se monta cada vez que se abre.
   const [cacheBust] = useState(() => Date.now());
+
+  // Bloqueo scroll body
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
@@ -503,17 +764,29 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
             <p className="text-base font-bold text-[var(--text-primary)] truncate">
               {order.tenant.name}
             </p>
-            <p className="text-xs text-[var(--text-tertiary)] font-mono">
-              #{order.id.slice(-12)}
-            </p>
+            <div className="flex items-center gap-1">
+              <p className="text-xs text-[var(--text-tertiary)] font-mono truncate">
+                #{order.id.slice(-12)}
+              </p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCopy(order.id, "Order ID");
+                }}
+                aria-label="Copiar Order ID"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-canvas)] shrink-0"
+              >
+                <Copy className="h-3 w-3" />
+              </button>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] shrink-0"
             aria-label="Cerrar"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </header>
 
@@ -534,7 +807,9 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
             </div>
             <div className="ml-auto text-right">
               <p className="text-xs uppercase tracking-wider opacity-80">Total</p>
-              <p className="text-lg font-extrabold tabular-nums">S/{Number(order.total).toFixed(2)}</p>
+              <p className="text-lg font-extrabold tabular-nums">
+                S/{Number(order.total).toFixed(2)}
+              </p>
             </div>
           </div>
 
@@ -548,12 +823,22 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
                 {order.customer.name}
               </p>
               {order.customer.phone && (
-                <p className="text-sm text-[var(--text-secondary)] flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-[var(--text-tertiary)]" />
-                  <a href={`tel:${order.customer.phone}`} className="hover:underline">
+                <div className="flex items-center justify-between gap-2 text-sm text-[var(--text-secondary)]">
+                  <a
+                    href={`tel:${order.customer.phone}`}
+                    className="flex items-center gap-2 hover:underline"
+                  >
+                    <Phone className="w-4 h-4 text-[var(--text-tertiary)]" />
                     {order.customer.phone}
                   </a>
-                </p>
+                  <button
+                    onClick={() => onCopy(order.customer.phone!, "Teléfono")}
+                    aria-label="Copiar teléfono"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               )}
               {order.customer.location && (
                 <p className="text-sm text-[var(--text-secondary)] flex items-start gap-2">
@@ -620,24 +905,30 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
               <Field label="Pago" value={order.paymentMethod ?? "—"} />
               <Field label="Repartidor" value={order.riderName ?? "Sin asignar"} />
               <Field label="Estado entrega" value={order.deliveryStatus ?? "—"} />
-              <Field label="Creado" value={order.createdAt ? new Date(order.createdAt).toLocaleString("es-PE") : "—"} />
+              <Field
+                label="Creado"
+                value={
+                  order.createdAt
+                    ? new Date(order.createdAt).toLocaleString("es-PE")
+                    : "—"
+                }
+              />
               {order.notes && <Field label="Notas" value={order.notes} />}
             </dl>
           </section>
 
-          {/* Comprobante de pago (Yape/Plin/Transfer). Retorna null si la
-              Order es efectivo o no tiene PaymentApproval. */}
+          {/* Comprobante de pago */}
           <PaymentProofViewer
             orderId={order.id}
             isCash={order.paymentMethod === "efectivo"}
           />
 
-          {/* CTA → entrar al admin del tenant */}
+          {/* CTA */}
           <a
             href={`/t/${order.tenant.slug}/admin?tab=pedidos&_fresh=${cacheBust}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full text-center px-5 py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent-600)] transition-colors"
+            className="block w-full text-center h-12 leading-[3rem] rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:brightness-110 transition"
           >
             Abrir panel admin de {order.tenant.name}
           </a>
@@ -669,14 +960,32 @@ function SkeletonRows() {
   );
 }
 
-function EmptyState() {
+function EmptyState({
+  isFiltered,
+  onClear,
+}: {
+  isFiltered: boolean;
+  onClear: () => void;
+}) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center">
       <ShoppingBag className="w-10 h-10 mx-auto text-[var(--text-tertiary)] mb-3" />
-      <p className="text-base font-bold text-[var(--text-primary)]">Sin pedidos</p>
-      <p className="text-sm text-[var(--text-tertiary)] mt-1">
-        No hay pedidos que cumplan con los filtros actuales.
+      <p className="text-base font-bold text-[var(--text-primary)]">
+        {isFiltered ? "Sin pedidos que coincidan" : "Sin pedidos"}
       </p>
+      <p className="text-sm text-[var(--text-tertiary)] mt-1">
+        {isFiltered
+          ? "Ajustá los filtros o la búsqueda."
+          : "Cuando los clientes hagan pedidos, aparecerán aquí."}
+      </p>
+      {isFiltered && (
+        <button
+          onClick={onClear}
+          className="mt-4 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+        >
+          Limpiar filtros
+        </button>
+      )}
     </div>
   );
 }

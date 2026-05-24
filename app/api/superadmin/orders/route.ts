@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0",
+  "X-Content-Type-Options": "nosniff",
+} as const;
 
 /**
  * GET /api/superadmin/orders
@@ -16,10 +22,14 @@ import { logger } from "@/lib/logger";
  *   cursor   — orderId desde donde continuar (pagination)
  */
 export async function GET(req: NextRequest) {
+  // P1 fix 2026-05-24: rate-limit defensivo + no-store
+  const rl = await applyRateLimit(req, "GENEROUS", "superadmin-orders-list");
+  if (rl) return rl;
+
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: NO_STORE_HEADERS });
   const session = await getPlatformSession(token);
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: NO_STORE_HEADERS });
 
   const sp = req.nextUrl.searchParams;
   const tenantParam = sp.get("tenant");
@@ -157,9 +167,9 @@ export async function GET(req: NextRequest) {
       })),
     }));
 
-    return NextResponse.json({ orders: result, nextCursor });
+    return NextResponse.json({ orders: result, nextCursor }, { headers: NO_STORE_HEADERS });
   } catch (err) {
     logger.error("[superadmin/orders] list failed", { err: String(err) });
-    return NextResponse.json({ error: "server error" }, { status: 500 });
+    return NextResponse.json({ error: "server error" }, { status: 500, headers: NO_STORE_HEADERS });
   }
 }
