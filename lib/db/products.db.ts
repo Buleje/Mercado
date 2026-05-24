@@ -1,5 +1,5 @@
 import "server-only";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type {
   Product as PProduct,
@@ -193,6 +193,9 @@ export const ProductsDB = {
       create: { id: product.id, ...d, tenantId: product.tenantId },
       update: d,
     });
+    // PERF 2026-05-24: invalidar el cache de getAll (cacheTag products) tras
+    // el write — sin esto /tienda y /api/products sirven datos stale hasta 5min.
+    revalidateTag(`tenant:${product.tenantId}:products`, "max");
     return mapProduct(row);
   },
   /** Soft-delete: sets deletedAt instead of physically removing the row. */
@@ -200,12 +203,14 @@ export const ProductsDB = {
     await prisma.$executeRaw`UPDATE "Product" SET "deletedAt" = NOW() WHERE id = ${id} AND "tenantId" = ${tenantId}`.catch((err) => {
       logger.error("[products.db] soft-delete failed", { id, tenantId, error: String(err) });
     });
+    revalidateTag(`tenant:${tenantId}:products`, "max");
   },
   /** Hard-delete: permanently removes the row (admin use only). */
   async hardDelete(tenantId: string, id: number): Promise<void> {
     await prisma.product.deleteMany({ where: { id, tenantId } }).catch((err) => {
       logger.error("[products.db] hard-delete failed", { id, tenantId, error: String(err) });
     });
+    revalidateTag(`tenant:${tenantId}:products`, "max");
   },
 
   /**
@@ -238,6 +243,7 @@ export const ProductsDB = {
       where: { id: { in: ids }, tenantId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
+    revalidateTag(`tenant:${tenantId}:products`, "max");
     return result.count;
   },
 };

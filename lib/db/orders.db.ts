@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, invalidate } from "@/lib/cache";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   Order as POrder,
@@ -331,6 +331,11 @@ export const OrdersDB = {
     if (order.idempotencyKey) {
       await prisma.$executeRaw`UPDATE "Order" SET "idempotencyKey" = ${order.idempotencyKey} WHERE id = ${row.id}`.catch((err) => logger.error("[orders.db] persist idempotencyKey failed", { error: String(err), orderId: row.id }));
     }
+    // PERF 2026-05-24: invalidar el lookup "última orden del customer" — sin
+    // esto, tras comprar el storefront muestra el pedido anterior hasta 60s.
+    // `phone` ya viene normalizado (línea ~249); mismo cacheKey que
+    // getLastOrderByCustomer (línea ~576).
+    if (phone) invalidate(`orders:last-by-customer:${tenantId}:${phone}`);
     // Emit domain event — fire-and-forget, never breaks the happy path (see ADR 007)
     DomainEvents.ventaCompletada(tenantId, {
       orderId:       row.id,
