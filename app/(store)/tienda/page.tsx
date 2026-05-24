@@ -38,6 +38,12 @@ export async function generateMetadata(): Promise<Metadata> {
     const title = `${ctx.name} — Catálogo`;
     const description = `Explora el catálogo de ${ctx.name}. ${slogan}. Delivery con Yape y efectivo.`;
 
+    // SEO 2026-05-24: og:image dinámico (share visual en WhatsApp/FB) — el
+    // twitter card era summary_large_image pero sin imagen. Sirve para /tienda
+    // y /t/{slug}/tienda (rewrite). Patrón /api/og igual al landing del tenant.
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
+    const ogImage = `${baseUrl}/api/og?title=${encodeURIComponent(ctx.name)}&subtitle=${encodeURIComponent("Catálogo · delivery con Yape o efectivo")}`;
+
     return {
       title: ctx.isTenant ? { absolute: title } : title,
       description,
@@ -47,11 +53,13 @@ export async function generateMetadata(): Promise<Metadata> {
         type: "website",
         locale: "es_PE",
         siteName: ctx.name,
+        images: [{ url: ogImage, width: 1200, height: 630, alt: ctx.name }],
       },
       twitter: {
         card: "summary_large_image",
         title,
         description,
+        images: [ogImage],
       },
     };
   } catch {
