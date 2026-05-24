@@ -14,6 +14,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { ImageIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -50,11 +51,13 @@ export default function ExplorarHero({
           )}
         >
           {hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={imageUrl!}
               alt={alt}
-              className="absolute inset-0 h-full w-full object-cover"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
             />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-[var(--accent)]">

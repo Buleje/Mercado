@@ -8,6 +8,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ChefHat,
   Clock,
@@ -50,11 +51,12 @@ function IngredientCard({
       {/* Imagen / Placeholder */}
       <div className="relative aspect-square bg-[var(--surface-canvas)] flex items-center justify-center">
         {ingredient.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={ingredient.image}
             alt={ingredient.name}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 640px) 50vw, 200px"
+            className="object-cover"
           />
         ) : (
           <Package className="h-7 w-7 text-[var(--text-tertiary)]" aria-hidden />

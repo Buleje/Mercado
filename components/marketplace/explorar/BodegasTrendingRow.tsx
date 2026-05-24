@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Star, Package, Truck, MapPin } from "@buleje/design-system/icons";
 import ExplorarSectionHeader from "./ExplorarSectionHeader";
 import { cn } from "@/lib/utils";
@@ -55,10 +56,12 @@ function StoreCard({ store }: { store: StoreItem }) {
       <div className="flex items-start gap-3 mb-4">
         <div className="h-14 w-14 shrink-0 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] flex items-center justify-center overflow-hidden group-hover:border-[var(--accent)]/30 transition-colors">
           {store.logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={store.logo}
               alt={store.name}
+              width={56}
+              height={56}
+              sizes="56px"
               className="h-full w-full object-cover"
             />
           ) : (
