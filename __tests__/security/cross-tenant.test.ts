@@ -14,7 +14,10 @@
  *
  * Si algún test falla => el handler NO está filtrando por tenantId => IDOR abierto.
  *
- * Tests marcados .skip con TODO => IDOR detectado aún sin parchear.
+ * Estado 2026-05-24: 12/12 suites activas, 0 .skip. Los antiguos CT-06 y CT-12
+ * (que estaban .skip) fueron reescritos: sus routes migraron de `prisma.*`
+ * directo a clases DB con scope tenant (DeliveryAssignmentsDB / CustomerDataDB),
+ * y los tests ahora verifican que el handler pasa auth.tenantId a la clase.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -87,6 +90,7 @@ const prismaMocks = {
   reviewUpdateMany: vi.fn(),
   sunatInvoiceFindFirst: vi.fn(),
   tenantSunatConfigFindUnique: vi.fn(),
+  orderFindMany: vi.fn(),
 };
 
 vi.mock("@/lib/prisma", () => ({
@@ -97,6 +101,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     order: {
       findFirst: (...a: unknown[]) => prismaMocks.orderFindFirst(...a),
+      findMany: (...a: unknown[]) => prismaMocks.orderFindMany(...a),
       findUnique: vi.fn(async () => null),
       count: vi.fn(async () => 0),
     },
@@ -131,6 +136,11 @@ vi.mock("@/lib/prisma", () => ({
     },
   },
 }));
+
+// Nota CT-06/CT-12: los routes usan las clases DeliveryAssignmentsDB /
+// CustomerDataDB, que NO mockeamos — corren reales y delegan a `prisma`
+// (mockeado arriba) con el tenantId como 1er argumento. Así el test verifica el
+// aislamiento en el punto real: el `where` que llega a prisma lleva tenantId.
 
 // Mocks de servicios externos (evitan llamadas reales)
 vi.mock("@/lib/whatsapp", () => ({
@@ -201,11 +211,13 @@ function buildReq(
   body?: unknown,
   headers: Record<string, string> = {},
 ): NextRequest {
-  return new Request(url, {
+  // NextRequest (no Request plano) para que `req.nextUrl.searchParams` exista
+  // en handlers como /api/customer/data GET. Compatible con los que usan req.url.
+  return new NextRequest(url, {
     method,
     headers: { "content-type": "application/json", ...headers },
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  }) as unknown as NextRequest;
+  });
 }
 
 // ── Reset entre tests ─────────────────────────────────────────────────────────
@@ -397,34 +409,37 @@ describe("CT-05 — PATCH /api/delivery/assignments: no actualiza assignment aje
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// TEST 6: GET /api/delivery/assignments — IDOR abierto detectado
+// TEST 6: GET /api/delivery/assignments — listado scopeado por tenantId
 //
-// TODO: El GET de assignments NO filtra por tenantId en el `where` (líneas
-// 36-54 del route). Un admin de TENANT_A puede listar assignments de TENANT_B
-// si conoce los filtros. Fix necesario: añadir `where.tenantId = auth.tenantId`
-// en el bloque de construcción del where.
+// Fix aplicado 2026-05-05: el route migró a `DeliveryAssignmentsDB.listByTenant(
+// auth.tenantId, filters)` (route.ts:40). El aislamiento vive en la clase, que
+// recibe el tenantId como 1er argumento. Este test verifica que el handler pasa
+// el tenantId del ATACANTE (TENANT_A) — nunca el de la víctima — de modo que la
+// clase nunca puede devolver assignments de TENANT_B.
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("CT-06 — GET /api/delivery/assignments: IDOR en listado (FIXED 2026-05-05)", () => {
-  it.skip(
-    "TODO REESCRIBIR (fix YA aplicado en route.ts:40 — `where = { tenantId: auth.tenantId }`). El test asume comportamiento pre-fix.",
-    async () => {
-      // El handler construye `where = {}` sin incluir tenantId (route.ts L36-54).
-      // Fix: where.tenantId = auth.tenantId antes del findMany.
-      prismaMocks.deliveryAssignmentFindMany.mockResolvedValue([
-        { id: "asgn-B", tenantId: TENANT_B, orderId: "order-B" },
-      ]);
+describe("CT-06 — GET /api/delivery/assignments: listado scopeado por tenantId", () => {
+  it("el findMany recibe el tenantId del atacante (TENANT_A) en el where, no el de la víctima", async () => {
+    // Arrange: con where.tenantId = TENANT_A, prisma no encuentra nada de B.
+    prismaMocks.deliveryAssignmentFindMany.mockResolvedValue([]);
 
-      const { GET } = await import("@/app/api/delivery/assignments/route");
-      const req = buildReq("http://localhost/api/delivery/assignments");
-      const res = await GET(req);
-      const json = await res.json();
+    // Act
+    const { GET } = await import("@/app/api/delivery/assignments/route");
+    const req = buildReq("http://localhost/api/delivery/assignments");
+    const res = await GET(req);
+    const json = await res.json();
 
-      expect(res.status).toBe(200);
-      // Con el fix aplicado, la respuesta debe ser array vacío para TENANT_A
-      expect(json).toEqual([]);
-    },
-  );
+    // Assert: lista vacía para el atacante, nunca datos de TENANT_B.
+    expect(res.status).toBe(200);
+    expect(json).toEqual([]);
+
+    // CRÍTICO: el where pasado a prisma DEBE incluir el tenantId del atacante.
+    expect(prismaMocks.deliveryAssignmentFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: TENANT_A }),
+      }),
+    );
+  });
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -598,7 +613,7 @@ describe("CT-10 — POST /api/sunat/emit: no emite comprobante con orden ajena",
 
 describe("CT-11 — DELETE /api/customer/data: scope por phone + tenantId", () => {
   it("atacante TENANT_A no puede borrar customer de TENANT_B con mismo phone", async () => {
-    // Arrange: customer no existe en TENANT_A con ese phone
+    // Arrange: customer no existe en TENANT_A con ese phone (findFirst de la clase).
     prismaMocks.customerFindFirst.mockResolvedValue(null);
 
     // Act
@@ -612,7 +627,7 @@ describe("CT-11 — DELETE /api/customer/data: scope por phone + tenantId", () =
     // Assert: 404, no borra nada
     expect(res.status).toBe(404);
 
-    // CRÍTICO: la búsqueda de guard usa tenantId (include:savedCarts permitido).
+    // CRÍTICO: la búsqueda de guard usa tenantId del atacante.
     expect(prismaMocks.customerFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { phone: "51999000111", tenantId: TENANT_A },
@@ -628,6 +643,7 @@ describe("CT-11 — DELETE /api/customer/data: scope por phone + tenantId", () =
     prismaMocks.customerFindFirst.mockResolvedValue({
       phone: "51999000111",
       tenantId: TENANT_A,
+      savedCarts: [],
     });
     prismaMocks.customerDeleteMany.mockResolvedValue({ count: 1 });
     prismaMocks.reviewUpdateMany.mockResolvedValue({ count: 0 });
@@ -651,30 +667,70 @@ describe("CT-11 — DELETE /api/customer/data: scope por phone + tenantId", () =
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// TEST 12: GET /api/customer/data — IDOR en export de PII
+// TEST 12: GET /api/customer/data — export de PII scopeado por tenantId
 //
-// TODO: El GET de /api/customer/data usa `findUnique({where:{phone}})` sin
-// tenantId (route.ts L36). Un admin autenticado puede exportar PII completa de
-// un customer de OTRO tenant si conoce su phone. Fix: cambiar a findFirst con
-// tenantId. Impacto: Ley 29733 PE (datos personales).
+// Fix aplicado 2026-05-05: el route migró a `CustomerDataDB.findCustomerWithCarts(
+// auth.tenantId, phone)` (route.ts:40). El tenantId es el 1er argumento, así que
+// un admin de TENANT_A nunca puede exportar la PII de un customer de TENANT_B
+// aunque conozca su teléfono. Ley 29733 PE.
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("CT-12 — GET /api/customer/data: IDOR en export PII (FIXED 2026-05-05)", () => {
-  it.skip(
-    "TODO REESCRIBIR (fix YA aplicado en route.ts:41-42 — `findFirst({phone, tenantId})`). Ley 29733 cumplida en código, test pendiente de update.",
-    async () => {
-      // El handler usa prisma.customer.findUnique({where:{phone}}) (route.ts L36).
-      // Esto retorna el customer de cualquier tenant que tenga ese phone (IDOR).
-      // Fix: prisma.customer.findFirst({where:{phone, tenantId: auth.tenantId}})
+describe("CT-12 — GET /api/customer/data: export PII scopeado por tenantId", () => {
+  it("atacante TENANT_A no puede exportar PII de un customer de TENANT_B con su phone", async () => {
+    // Arrange: con where.tenantId = TENANT_A, prisma no encuentra al customer de B.
+    prismaMocks.customerFindFirst.mockResolvedValue(null);
 
-      const { GET } = await import("@/app/api/customer/data/route");
-      const req = buildReq(
-        "http://localhost/api/customer/data?phone=51999000111",
-      );
-      const res = await GET(req);
+    // Act
+    const { GET } = await import("@/app/api/customer/data/route");
+    const req = buildReq("http://localhost/api/customer/data?phone=51999000111");
+    const res = await GET(req);
 
-      // Con el fix: debe ser 404 porque el customer no existe en TENANT_A
-      expect(res.status).toBe(404);
-    },
-  );
+    // Assert: 404, sin filtrar PII ajena.
+    expect(res.status).toBe(404);
+
+    // CRÍTICO: el findFirst DEBE filtrar por phone + tenantId del atacante.
+    expect(prismaMocks.customerFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { phone: "51999000111", tenantId: TENANT_A },
+      }),
+    );
+  });
+
+  it("dueño legítimo de TENANT_A sí exporta la PII de su propio customer", async () => {
+    // Arrange: el customer existe en TENANT_A.
+    prismaMocks.customerFindFirst.mockResolvedValue({
+      phone: "51999000111",
+      name: "Cliente A",
+      location: "Av. 1",
+      reference: null,
+      birthday: null,
+      aiNotes: null,
+      privateNotes: null,
+      createdAt: new Date("2026-05-05"),
+      updatedAt: new Date("2026-05-05"),
+      loyaltyPoints: 0,
+      loyaltyTier: "bronze",
+      totalSpent: 0,
+      creditBalance: 0,
+      referralCode: null,
+      referredBy: null,
+      savedCarts: [],
+    });
+    prismaMocks.orderFindMany.mockResolvedValue([]);
+    // review.findMany ya retorna [] por el mock base.
+
+    const { GET } = await import("@/app/api/customer/data/route");
+    const req = buildReq("http://localhost/api/customer/data?phone=51999000111");
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.personal.phone).toBe("51999000111");
+    // El guard del export filtra por tenantId del solicitante.
+    expect(prismaMocks.customerFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { phone: "51999000111", tenantId: TENANT_A },
+      }),
+    );
+  });
 });
