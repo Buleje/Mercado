@@ -29,8 +29,11 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "tools/mcp-bodega/**"]
+  "exclude": [
+    "node_modules",
+    "tools/mcp-bodega/**",
+    ".next/dev/types/**"
+  ]
 }
