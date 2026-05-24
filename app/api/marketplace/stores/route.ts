@@ -26,13 +26,20 @@ const QuerySchema = z.object({
 type TrustLevel = "alta" | "media" | "nueva";
 
 /**
-/**
- * Resolve tenantId → ensure the Tenant record exists and return
- * both the canonical CUID id and the slug. Queries on other tables
- * may use either value (legacy data used the slug "main").
+ * Resolve tenantId → return the canonical CUID id and slug if the tenant
+ * exists. Queries on other tables may use either value (legacy data used
+ * the slug "main").
+ *
+ * P0-5 fix (audit 2026-05-23): NUNCA auto-crea tenants. La versión anterior
+ * llamaba a `prisma.tenant.create` para slugs arbitrarios, permitiendo que
+ * un atacante hiciera bulk-insert en la tabla Tenant y agotara recursos /
+ * envenenara routing multi-tenant. El onboarding controlado de tiendas
+ * vive en `lib/db/payment-proofs.db.ts` → approve() (con revisión humana).
+ *
+ * Devuelve `null` si el tenant no existe — el caller debe responder 404.
  */
-async function ensureTenant(tenantId: string): Promise<{ id: string; slug: string; possibleIds: string[] }> {
-  // 1+2. Try by id OR slug en 1 sola query (perf DB-H5 audit 2026-05-19).
+async function ensureTenant(tenantId: string): Promise<{ id: string; slug: string; possibleIds: string[] } | null> {
+  // Resolve por id OR slug en 1 sola query (perf DB-H5 audit 2026-05-19).
   // tenantId puede ser CUID (id) o el slug legacy "main".
   const existing = await prisma.tenant.findFirst({
     where: { OR: [{ id: tenantId }, { slug: tenantId }] },
@@ -40,18 +47,8 @@ async function ensureTenant(tenantId: string): Promise<{ id: string; slug: strin
   });
   if (existing) return { id: existing.id, slug: existing.slug, possibleIds: [existing.id, existing.slug] };
 
-  // 3. Tenant doesn't exist — auto-create from Settings if available
-  const settings = await prisma.settings.findUnique({ where: { tenantId } }).catch((err) => { logger.error("[marketplace/stores] DB query failed", { error: String(err), tenantId }); return null; });
-  const tenant = await prisma.tenant.create({
-    data: {
-      slug:   tenantId,
-      name:   settings?.businessName || tenantId,
-      plan:   "free",
-      active: true,
-    },
-  });
-  logger.info("[ensureTenant] Auto-created tenant", { tenantId: tenant.id, slug: tenant.slug });
-  return { id: tenant.id, slug: tenant.slug, possibleIds: [tenant.id, tenant.slug] };
+  logger.warn("[ensureTenant] tenant no encontrado (no se auto-crea)", { tenantId });
+  return null;
 }
 
 /**
@@ -79,6 +76,13 @@ export async function GET(req: NextRequest) {
       if (auth instanceof NextResponse) return auth;
 
       const tenant = await ensureTenant(auth.tenantId);
+      // P0-5: el tenant debe existir antes (onboarding). No auto-create.
+      if (!tenant) {
+        return NextResponse.json(
+          { error: "Tenant no encontrado. Completa el onboarding antes de configurar la tienda." },
+          { status: 404 },
+        );
+      }
 
       let store = null;
       try {
@@ -712,8 +716,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Resolve tenant ID (handle slug vs CUID, auto-create if needed)
+    // Resolve tenant ID (handle slug vs CUID).
+    // P0-5: ya no auto-crea — tenant debe venir del onboarding controlado.
     const tenant = await ensureTenant(auth.tenantId);
+    if (!tenant) {
+      return NextResponse.json(
+        { error: "Tenant no encontrado. Completa el onboarding antes de crear una tienda." },
+        { status: 404 },
+      );
+    }
 
     // Verificar que el tenant no tenga ya una tienda
     let existing = null;
@@ -831,7 +842,14 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    // P0-5: no auto-crea tenant — el tenant tiene que venir del onboarding.
     const tenant = await ensureTenant(auth.tenantId);
+    if (!tenant) {
+      return NextResponse.json(
+        { error: "Tenant no encontrado. Completa el onboarding antes de editar la tienda." },
+        { status: 404 },
+      );
+    }
 
     let existing = null;
     try {

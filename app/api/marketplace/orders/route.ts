@@ -18,7 +18,10 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { cacheStore } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
-import { verifyProofToken } from "@/app/api/marketplace/checkout/payment-proof/route";
+import {
+  verifyProofToken,
+  extractStoragePathFromProofUrl,
+} from "@/app/api/marketplace/checkout/payment-proof/route";
 import {
   getCustomerPayload,
   CUSTOMER_SESSION,
@@ -223,11 +226,28 @@ export async function POST(req: NextRequest) {
         );
       }
       const expectedCents = Math.round(paymentProof.amountPEN * 100);
+      // P0-4 fix (audit 2026-05-23): extraer storagePath del proofUrl firmado
+      // para que verifyProofToken pueda validar el _pathHash via timingSafeEqual.
+      // Si la URL no matchea el formato Supabase signed (ej. URL externa), el
+      // path resulta null y la verificación rechaza con bad-path-hash — fail-loud.
+      const bucket = process.env.SUPABASE_PROOF_BUCKET ?? "order-proofs";
+      const storagePath = extractStoragePathFromProofUrl(paymentProof.proofUrl, bucket);
+      if (!storagePath) {
+        logger.warn("[marketplace/orders] proof URL no extractable", {
+          customerId: proofCustomerId,
+          storeSlug,
+        });
+        return NextResponse.json(
+          { error: "Comprobante inválido (URL no reconocida). Sube la captura nuevamente." },
+          { status: 400 },
+        );
+      }
       const verify = verifyProofToken(paymentProof.proofToken, {
         customerId: proofCustomerId,
         storeSlug,
         method,
         amountCents: expectedCents,
+        storagePath,
       });
       if (!verify.ok) {
         logger.warn("[marketplace/orders] proof token invalid", {

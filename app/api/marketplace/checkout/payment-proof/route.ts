@@ -21,7 +21,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { z } from "zod/v4";
-import { randomBytes, createHmac } from "crypto";
+import { randomBytes, createHmac, timingSafeEqual } from "crypto";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -90,14 +90,51 @@ function signProofToken(input: {
 }
 
 /**
+ * Recalcula el hash del storagePath con la misma clave HMAC que `signProofToken`.
+ * Exportado para que el caller (orders POST) lo use al validar `_pathHash`.
+ */
+export function hashProofStoragePath(storagePath: string): string | null {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) return null;
+  return createHmac("sha256", secret + "-proof-path")
+    .update(storagePath)
+    .digest("hex")
+    .slice(0, 12);
+}
+
+/**
+ * Extrae el storagePath del proofUrl firmado de Supabase Storage.
+ * Formato típico: `${SUPABASE_URL}/storage/v1/object/sign/${bucket}/${path}?token=...`
+ * Devuelve `null` si la URL no matchea el formato esperado.
+ */
+export function extractStoragePathFromProofUrl(proofUrl: string, bucket: string): string | null {
+  try {
+    const u = new URL(proofUrl);
+    // pathname: /storage/v1/object/sign/<bucket>/<path>
+    const marker = `/storage/v1/object/sign/${bucket}/`;
+    const idx = u.pathname.indexOf(marker);
+    if (idx === -1) return null;
+    return decodeURIComponent(u.pathname.slice(idx + marker.length));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Verifica un proofToken emitido por este endpoint. Re-exportado para que
  * el endpoint de creación de Orders lo use al recibir la confirmación.
+ *
+ * P0-4 fix (audit 2026-05-23): si el caller pasa `storagePath`, validamos
+ * que coincida con el `_pathHash` embebido en el token via `timingSafeEqual`.
+ * Antes: el token incluía `_pathHash` pero NUNCA se chequeaba — un atacante
+ * podía reusar un token contra cualquier path subido por él mismo.
  */
 export function verifyProofToken(token: string, expected: {
   customerId: string;
   storeSlug: string;
   method: string;
   amountCents: number;
+  storagePath?: string; // P0-4: opcional por compat, pero recomendado siempre.
 }): { ok: true } | { ok: false; reason: string } {
   const secret = process.env.AUTH_SECRET;
   if (!secret) return { ok: false, reason: "no-secret" };
@@ -118,6 +155,22 @@ export function verifyProofToken(token: string, expected: {
     .digest("hex")
     .slice(0, 16);
   if (sig !== expectedSig) return { ok: false, reason: "bad-sig" };
+
+  // P0-4: validar que el _pathHash del token corresponde al storagePath actual.
+  // Sin esto, un atacante con un proofUrl ajeno podría reusarlo para confirmar
+  // pedidos de víctimas — el sig sigue válido porque firmamos el base que ya
+  // contiene _pathHash, pero ningún check ataba el path al recurso real.
+  if (expected.storagePath !== undefined) {
+    const recalculated = hashProofStoragePath(expected.storagePath);
+    if (!recalculated) return { ok: false, reason: "no-secret" };
+    // timingSafeEqual exige buffers de la misma longitud. _pathHash siempre
+    // mide 12 chars y recalculated también — comparamos como UTF-8 bytes.
+    const a = Buffer.from(_pathHash, "utf8");
+    const b = Buffer.from(recalculated, "utf8");
+    if (a.length !== b.length) return { ok: false, reason: "bad-path-hash" };
+    if (!timingSafeEqual(a, b)) return { ok: false, reason: "bad-path-hash" };
+  }
+
   return { ok: true };
 }
 

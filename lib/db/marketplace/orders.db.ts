@@ -4,6 +4,7 @@ import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { CouponsDB } from "@/lib/db/coupons.db";
+import { CommissionsDB } from "@/lib/db/commissions.db";
 import { PTS_PER_SOL } from "@/lib/loyalty-constants";
 import { type DbMarketplaceOrder, type DbVendorDashboard } from "./types";
 import type { OrderStatus } from "@/lib/generated/prisma/client";
@@ -230,8 +231,20 @@ export const MarketplaceOrdersDB = {
       Math.max(0, total - couponDiscount - loyaltyDiscount).toFixed(2)
     );
 
-    // TD-018: store.commission es Decimal → convertir para toFixed()
-    const commissionRate = toNumOrZero(store.commission);
+    // P0-1 fix (audit 2026-05-23): unificar motor de comisión usando
+    // CommissionsDB.computeVendorTier (tier dinámico 2/3/4/5% por volumen 30d).
+    // Antes: `store.commission` legacy fijo en 5% — el sistema de tiers
+    // existía pero nunca se aplicaba en el checkout. `Store.commission ≠ 5`
+    // sigue ganando como override (preserva configuraciones manuales — ver
+    // computeVendorTier).
+    // TD-018: store.commission es Decimal → convertir para pasar a tier resolver.
+    const overrideRate = toNumOrZero(store.commission);
+    const tierInfo = await CommissionsDB.computeVendorTier(
+      store.tenantId,
+      store.id,
+      overrideRate,
+    );
+    const commissionRate = tierInfo.rate;
     const commission = parseFloat(((totalAfterDiscounts * commissionRate) / 100).toFixed(2));
 
     // Componer notas con tags de descuentos para audit
@@ -377,15 +390,21 @@ export const MarketplaceOrdersDB = {
       });
 
       // Registrar comisión
+      // P0-2 fix (audit 2026-05-23): usar enum oficial `marketplace_fee` en lugar
+      // del string libre "sale". Mantenerlo silenciaba listLedger/payoutSummary
+      // (filtran por `type` typed) y dejaba estas filas invisibles para el
+      // settle cron. Ver lib/db/commissions.db.ts → CommissionType.
+      // P0-1 fix: `rate` ahora refleja el tier dinámico calculado arriba (no el
+      // legacy `store.commission` que era fijo en 5%).
       // eslint-disable-next-line no-restricted-properties -- $transaction interna: commissionLedger.create scoped a tenantId.
       await tx.commissionLedger.create({
         data: {
           id:       crypto.randomUUID(),
           orderId:  fullOrderId,
           storeId:  store.id,
-          type:     "sale",
+          type:     "marketplace_fee",
           amount:   commission,
-          rate:     store.commission,
+          rate:     commissionRate,
           status:   "pending",
           tenantId: store.tenantId,
         },
@@ -861,13 +880,17 @@ export const MarketplaceOrdersDB = {
 
     // 4. Comisiones (fire-and-forget).
     if (newStatus === "entregado") {
+      // P0-3 fix (audit 2026-05-23): el enum válido en CommissionLedger.status es
+      // "settled" (no "cleared"). El cron de settlement filtra por status="settled"
+      // — usar "cleared" silenciaba el ledger para payouts y dejaba marketplace_fee
+      // en limbo. Ver lib/db/commissions.db.ts → CommissionStatus.
       prisma.commissionLedger
         .updateMany({
           where: { orderId, tenantId, status: "pending" },
-          data: { status: "cleared", settledAt: new Date() },
+          data: { status: "settled", settledAt: new Date() },
         })
         .catch((err) =>
-          logger.warn("[MarketplaceOrdersDB.changeStatus] commission clear failed", {
+          logger.warn("[MarketplaceOrdersDB.changeStatus] commission settle failed", {
             error: String(err), orderId,
           }),
         );
@@ -991,11 +1014,13 @@ export const MarketplaceOrdersDB = {
     }
 
     // Comisiones bulk (fire-and-forget).
+    // P0-3 fix (audit 2026-05-23): enum válido = "settled" (no "cleared"). Ver
+    // changeStatus arriba + lib/db/commissions.db.ts → CommissionStatus.
     if (newStatus === "entregado") {
       prisma.commissionLedger
         .updateMany({
           where: { orderId: { in: updatable }, tenantId, status: "pending" },
-          data: { status: "cleared", settledAt: new Date() },
+          data: { status: "settled", settledAt: new Date() },
         })
         .catch((err) =>
           logger.warn("[MarketplaceOrdersDB.bulkChangeStatus] commission clear failed", {

@@ -49,6 +49,9 @@ vi.mock("@/lib/prisma", () => ({
     coupon:        { findFirst: mockCouponFindFirst },
     loyaltyPoints: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn().mockResolvedValue(null) },
     product:       { updateMany: vi.fn().mockResolvedValue({ count: 1 }), findMany: mockProductFindMany },
+    // P0-1 fix (audit 2026-05-23): CommissionsDB.computeVendorTier requiere
+    // prisma.commissionLedger.findMany. Mock vacío → tier base.
+    commissionLedger: { findMany: vi.fn().mockResolvedValue([]) },
     $transaction:  mockTransaction,
   },
 }));
