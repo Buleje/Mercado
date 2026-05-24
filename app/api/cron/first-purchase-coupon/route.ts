@@ -28,6 +28,9 @@ export const GET = withCronHealth("first-purchase-coupon", async (req: NextReque
     let couponsCreated = 0;
     let totalNewCustomers = 0;
 
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30); // 30 days validity
+
     for (const tenant of tenants) {
       const tenantId = tenant.id;
 
@@ -40,69 +43,79 @@ export const GET = withCronHealth("first-purchase-coupon", async (req: NextReque
         select: { phone: true, name: true },
       });
       totalNewCustomers += newCustomers.length;
+      if (newCustomers.length === 0) continue;
 
+      const phones = newCustomers.map((c) => c.phone);
+      const codeFor = (phone: string) => `BIENVENIDA-${phone.slice(-4)}`;
+
+      // PERF 2026-05-24: antes era N+1 (order.count + coupon.findFirst + create
+      // por customer). Ahora 3 queries batch por tenant: phones-con-orders +
+      // cupones-existentes + createMany. De ~3N a ~4 queries/tenant.
+      const [withOrders, existingCoupons] = await Promise.all([
+        prisma.order.findMany({
+          where: { tenantId, customerPhone: { in: phones } },
+          select: { customerPhone: true },
+          distinct: ["customerPhone"],
+        }),
+        prisma.coupon.findMany({
+          where: { tenantId, code: { in: phones.map(codeFor) } },
+          select: { code: true },
+        }),
+      ]);
+      const phonesWithOrders = new Set(withOrders.map((o) => o.customerPhone));
+      const existingCodes = new Set(existingCoupons.map((c) => c.code));
+
+      // Filtrar elegibles + dedupe por código (dos phones con mismos últimos 4
+      // dígitos colisionan en el código; replica el skip del findFirst original).
+      const seenCodes = new Set<string>();
+      const eligible: { phone: string; name: string | null; code: string }[] = [];
       for (const customer of newCustomers) {
-        // Check if customer already has orders in this tenant
-        const orderCount = await prisma.order.count({
-          where: { tenantId, customerPhone: customer.phone },
-        });
+        if (phonesWithOrders.has(customer.phone)) continue;
+        const code = codeFor(customer.phone);
+        if (existingCodes.has(code) || seenCodes.has(code)) continue;
+        seenCodes.add(code);
+        eligible.push({ phone: customer.phone, name: customer.name, code });
+      }
 
-        if (orderCount > 0) continue;
+      if (eligible.length === 0) continue;
 
-        // Check if coupon already exists for this customer in this tenant
-        const existingCoupon = await prisma.coupon.findFirst({
-          where: {
-            tenantId,
-            code: `BIENVENIDA-${customer.phone.slice(-4)}`,
-          },
-        });
+      // Batch insert de todos los cupones del tenant en 1 query.
+      await prisma.coupon.createMany({
+        data: eligible.map((e) => ({
+          code: e.code,
+          discountType: "percent",
+          discountValue: 10,
+          maxUses: 1,
+          usedCount: 0,
+          minPurchase: 20,
+          active: true,
+          expiresAt: expiryDate,
+          tenantId,
+          description: "Cupon de bienvenida - 10% en tu primera compra",
+        })),
+        // Defensa contra @@unique([tenantId, code]) si el cron corre 2× o
+        // colisiona con un cupón creado entre el findMany y el createMany.
+        skipDuplicates: true,
+      });
+      couponsCreated += eligible.length;
 
-        if (existingCoupon) continue;
-
-        // Create welcome coupon
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 30); // 30 days validity
-
-        await prisma.coupon.create({
-          data: {
-            code: `BIENVENIDA-${customer.phone.slice(-4)}`,
-            discountType: "percent",
-            discountValue: 10,
-            maxUses: 1,
-            usedCount: 0,
-            minPurchase: 20,
-            active: true,
-            expiresAt: expiryDate,
-            tenantId,
-            description: "Cupon de bienvenida - 10% en tu primera compra",
-          },
-        });
-
-        couponsCreated++;
-
-        // Send WhatsApp with the coupon code
-        const firstName = customer.name?.split(" ")[0] ?? "vecino";
-        const couponCode = `BIENVENIDA-${customer.phone.slice(-4)}`;
+      // Notificaciones WhatsApp (fire-and-forget, no bloquean el cron).
+      for (const e of eligible) {
+        const firstName = e.name?.split(" ")[0] ?? "vecino";
         const whatsappMsg =
           `🎉 ¡Hola ${firstName}! Te damos la bienvenida.\n\n` +
           `Tienes un cupón de *10% de descuento* en tu primera compra:\n\n` +
-          `🏷️ Código: *${couponCode}*\n` +
+          `🏷️ Código: *${e.code}*\n` +
           `💰 Mínimo de compra: S/ 20\n` +
           `📅 Válido por 30 días\n\n` +
           `¡Haz tu primer pedido ahora! 🛒`;
         enqueueNotification({
           type: "whatsapp",
-          recipient: customer.phone,
+          recipient: e.phone,
           message: whatsappMsg,
           tenantId,
           metadata: { purpose: "first-purchase-coupon" },
-        }).catch((err) => logger.error("[cron/first-purchase-coupon] WhatsApp enqueue failed", { error: String(err), phone: customer.phone, tenantId }));
-
-        logger.info("[cron/first-purchase-coupon] Cupón creado", {
-          tenantId,
-          customer: customer.name,
-          code: `BIENVENIDA-${customer.phone.slice(-4)}`,
-        });
+        }).catch((err) => logger.error("[cron/first-purchase-coupon] WhatsApp enqueue failed", { error: String(err), phone: e.phone, tenantId }));
       }
     } // end for tenant
 
