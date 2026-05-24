@@ -9,6 +9,7 @@ import {
   Loader2, Upload, Camera, Check, AlertTriangle, Sparkles,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/superadmin/_shared/useConfirm";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -643,10 +644,20 @@ function TemplateCard({
   template: Template; expanded: boolean; onToggle: () => void; onChanged: () => void;
 }) {
   const [optionModal, setOptionModal] = useState<{ mode: "new" } | { mode: "edit"; option: Option } | null>(null);
+  const { confirm, confirmModal } = useConfirm();
 
   const deleteTemplate = async () => {
-    if (!confirm(`¿Eliminar plantilla "${template.name}" y todas sus ${template.options.length} opciones?`)) return;
-    const res = await fetch(`/api/superadmin/variant-catalog/${template.id}`, { method: "DELETE" });
+    const ok = await confirm({
+      title: "Eliminar plantilla",
+      message: `Se eliminará "${template.name}" y sus ${template.options.length} ${template.options.length === 1 ? "opción" : "opciones"}. No se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!ok) return;
+    const res = await fetch(`/api/superadmin/variant-catalog/${template.id}`, {
+      method: "DELETE",
+      headers: csrfHeaders(),
+    });
     if (res.ok) onChanged();
   };
 
@@ -736,6 +747,7 @@ function TemplateCard({
         editing={optionModal?.mode === "edit" ? optionModal.option : null}
         onSaved={() => { setOptionModal(null); onChanged(); }}
       />
+      {confirmModal}
     </>
   );
 }
@@ -743,13 +755,25 @@ function TemplateCard({
 // ─── Option card ──────────────────────────────────────────────────────────────
 
 function OptionCard({ option, onEdit, onChanged }: { option: Option; onEdit: () => void; onChanged: () => void }) {
+  const { confirm, confirmModal } = useConfirm();
+
   const remove = async () => {
-    if (!confirm(`¿Eliminar opción "${option.name}"?`)) return;
-    const res = await fetch(`/api/superadmin/variant-catalog/options/${option.id}`, { method: "DELETE" });
+    const ok = await confirm({
+      title: "Eliminar opción",
+      message: `Se eliminará la opción "${option.name}". No se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!ok) return;
+    const res = await fetch(`/api/superadmin/variant-catalog/options/${option.id}`, {
+      method: "DELETE",
+      headers: csrfHeaders(),
+    });
     if (res.ok) onChanged();
   };
 
   return (
+    <>
     <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
       <div className="flex items-start gap-3">
         <div className={cn(
@@ -786,6 +810,8 @@ function OptionCard({ option, onEdit, onChanged }: { option: Option; onEdit: () 
         </div>
       </div>
     </div>
+    {confirmModal}
+    </>
   );
 }
 

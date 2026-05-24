@@ -36,6 +36,7 @@ import {
   AlertTriangle,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/superadmin/_shared/useConfirm";
 import {
   DESIGN_PRESETS,
   type DesignTokens,
@@ -71,6 +72,7 @@ export default function DesignSystemPage() {
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
   const [view, setView] = useState<View>("gallery");
   const [editorTokens, setEditorTokens] = useState<DesignTokens | null>(null);
+  const { confirm, confirmModal } = useConfirm();
 
   const reload = useCallback(async () => {
     try {
@@ -189,7 +191,13 @@ export default function DesignSystemPage() {
 
   const deletePreset = useCallback(
     async (slug: string) => {
-      if (!confirm("¿Eliminar este preset? No se puede deshacer.")) return;
+      const ok = await confirm({
+        title: "Eliminar preset",
+        message: "Se eliminará este preset guardado. No se puede deshacer.",
+        confirmLabel: "Eliminar",
+        danger: true,
+      });
+      if (!ok) return;
       try {
         const res = await fetch("/api/superadmin/design-system", {
           method: "POST",
@@ -207,7 +215,7 @@ export default function DesignSystemPage() {
         setError(err instanceof Error ? err.message : "Error inesperado");
       }
     },
-    [flash, reload],
+    [flash, reload, confirm],
   );
 
   const openEditor = useCallback((base: DesignTokens) => {
@@ -229,11 +237,27 @@ export default function DesignSystemPage() {
     [allPresets, activeSlug, oficialPresets],
   );
 
-  // Loading skeleton — match con el patrón superadmin
+  // Loading skeleton — match con el patrón superadmin (grid de presets)
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
+      <main className="min-h-screen bg-[var(--surface-canvas)]">
+        <div className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex items-center gap-3.5 animate-pulse">
+            <div className="h-12 w-12 rounded-2xl bg-[var(--surface-sunken)]" />
+            <div className="space-y-2">
+              <div className="h-3 w-32 rounded bg-[var(--surface-sunken)]" />
+              <div className="h-6 w-56 rounded bg-[var(--surface-sunken)]" />
+            </div>
+          </div>
+        </div>
+        <div className="px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-40 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] animate-pulse"
+            />
+          ))}
+        </div>
       </main>
     );
   }
@@ -420,6 +444,7 @@ export default function DesignSystemPage() {
           />
         )}
       </div>
+      {confirmModal}
     </main>
   );
 }
