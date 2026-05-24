@@ -36,7 +36,7 @@ import {
   ShoppingCart,
   type LucideIcon,
 } from "@buleje/design-system/icons";
-import { CartBadge } from "@/components/marketplace/MarketplaceCart";
+import { CartBadge } from "@/components/marketplace/cart/CartBadge";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useTheme } from "@/contexts/theme-context";
 import { useWishlist } from "@/hooks/use-wishlist";

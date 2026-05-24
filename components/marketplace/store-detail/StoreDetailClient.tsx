@@ -28,7 +28,6 @@ import {
   Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
   ShoppingCart, MessageCircle,
 } from "@buleje/design-system/icons";
-import { CartBadge } from "@/components/marketplace/MarketplaceCart";
 import { cn } from "@/lib/utils";
 import { useCustomer } from "@/contexts/customer-context";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
