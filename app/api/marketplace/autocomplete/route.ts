@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { MarketplaceSearchDB } from "@/lib/db/marketplace-search.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const QuerySchema = z.object({
   q: z
@@ -23,6 +24,10 @@ const QuerySchema = z.object({
  * Cache de 30s en el DB layer. No requiere autenticacion.
  */
 export async function GET(req: NextRequest) {
+  // SECURITY: rate limit (autocomplete público = vector de scraping del catálogo).
+  const rl = applyRateLimit(req, "GENEROUS", "autocomplete");
+  if (rl) return rl;
+
   const traceId = newTraceId();
   const requestId = req.headers.get("x-request-id") ?? traceId;
 

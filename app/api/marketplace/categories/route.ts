@@ -1,8 +1,9 @@
 import "server-only";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/marketplace/categories
@@ -37,7 +38,9 @@ type CategoryRecord = {
   active: boolean;
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const rl = applyRateLimit(req, "GENEROUS", "marketplace-categories");
+  if (rl) return rl;
   try {
     let data: Record<string, CategoryRecord> = FALLBACK as unknown as Record<string, CategoryRecord>;
     try {

@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/marketplace/catalog/sections
@@ -16,6 +17,10 @@ import { logger } from "@/lib/logger";
  * - liquidations: products with very low stock (≤3) and still active
  */
 export async function GET(req: NextRequest) {
+  // SECURITY: rate limit — esta ruta dispara 4 queries DB; evita abuso.
+  const rl = applyRateLimit(req, "GENEROUS", "catalog-sections");
+  if (rl) return rl;
+
   const requestId = req.headers.get("x-request-id") ?? "sections";
 
   try {

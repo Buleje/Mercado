@@ -48,9 +48,9 @@ export default function TiendasDestacadas() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/marketplace/featured-stores?limit=10&productsPerStore=3", {
-      cache: "no-store",
-    })
+    // Respeta el Cache-Control del endpoint (max-age 120) — evita un hit de
+    // red en cada montaje / back-navigation.
+    fetch("/api/marketplace/featured-stores?limit=10&productsPerStore=3")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (cancelled) return;
