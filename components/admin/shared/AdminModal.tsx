@@ -46,9 +46,9 @@ interface AdminModalProps {
 }
 
 const VARIANT_CLASSES: Record<Variant, string> = {
-  default: "max-w-lg w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
-  "centered-sm": "max-w-sm w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
-  wide: "max-w-2xl w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
+  default: "max-w-lg w-[calc(100vw-2rem)] rounded-2xl max-h-[85vh]",
+  "centered-sm": "max-w-sm w-[calc(100vw-2rem)] rounded-2xl max-h-[85vh]",
+  wide: "max-w-2xl w-[calc(100vw-2rem)] rounded-2xl max-h-[85vh]",
   // Brandon 2026-05-16: variant `pos` para checkouts con 2-columnas
   // desktop. max-w-6xl + 92vh para que en PC quepa TODO el flujo de
   // cobro (descuento + métodos + cliente + comprobante + vuelto) sin

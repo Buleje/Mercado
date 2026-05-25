@@ -1,8 +1,9 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Package, Loader2, Plus, Trash2, ToggleLeft, ToggleRight, X, Search } from "@buleje/design-system/icons";
+import { Package, Loader2, Plus, Trash2, ToggleLeft, ToggleRight, Search } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/erp";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -125,14 +126,9 @@ export default function BundlesTab() {
       </div>
 
       {/* Form modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setShowForm(false); resetForm(); }}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-lg">Crear Combo</CardTitle>
-              <button onClick={() => { setShowForm(false); resetForm(); }}><X className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
-            </div>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del combo" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
+      <AdminModal open={showForm} onClose={() => { setShowForm(false); resetForm(); }} title="Crear Combo">
+        <div className="p-5 space-y-4">
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del combo" className="w-full h-10 px-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
             <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción (opcional)" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
             <div className="flex flex-wrap gap-3">
               <div className="relative flex-1">
@@ -186,12 +182,11 @@ export default function BundlesTab() {
               )}
             </div>
 
-            <button onClick={save} disabled={saving || !name || !price || items.length === 0} className="w-full py-2.5 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+            <button onClick={save} disabled={saving || !name || !price || items.length === 0} className="w-full h-10 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Package className="h-4 w-4" />}Crear Combo
             </button>
-          </div>
         </div>
-      )}
+      </AdminModal>
 
       {/* Bundle cards */}
       {bundles.length === 0 ? (
