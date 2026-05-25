@@ -19,7 +19,15 @@ import {
   MessageCircle,
   Pencil,
   Trash2,
+  BarChart3,
+  Activity,
+  AlertTriangle,
+  FileText,
 } from "@buleje/design-system/icons";
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { formatCurrency } from "@/lib/currency";
@@ -59,6 +67,9 @@ const TABS = [
   { id: "resumen", label: "Resumen", icon: Wallet },
   { id: "lista", label: "Adelantos", icon: Coins },
   { id: "personas", label: "Personas", icon: Users },
+  { id: "cobranza", label: "Cobranza", icon: AlertTriangle },
+  { id: "actividad", label: "Actividad", icon: Activity },
+  { id: "analisis", label: "Análisis", icon: BarChart3 },
 ];
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
@@ -129,8 +140,11 @@ export default function AdelantosModule() {
           />
         )}
         {tab === "personas" && (
-          <PersonasView beneficiarios={beneficiarios} loading={loading} onChange={reload} />
+          <PersonasView beneficiarios={beneficiarios} adelantos={adelantos} loading={loading} onChange={reload} />
         )}
+        {tab === "cobranza" && <CobranzaView adelantos={adelantos} loading={loading} onGoTab={setTab} />}
+        {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
+        {tab === "analisis" && <AnalisisView adelantos={adelantos} loading={loading} />}
       </AdminTabBar>
     </div>
   );
@@ -677,10 +691,12 @@ function DetalleAdelantoModal({
 // ── Personas ─────────────────────────────────────────────────────────────────
 function PersonasView({
   beneficiarios,
+  adelantos,
   loading,
   onChange,
 }: {
   beneficiarios: BeneficiarioConSaldo[];
+  adelantos: DbAdelanto[];
   loading: boolean;
   onChange: () => void;
 }) {
@@ -925,6 +941,236 @@ function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: Benefi
         </button>
       </div>
     </ModalShell>
+  );
+}
+
+// ── Cobranza ─────────────────────────────────────────────────────────────────
+function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]; loading: boolean; onGoTab: (t: string) => void }) {
+  if (loading) return <SkeletonGrid />;
+  const now = Date.now();
+  const abiertos = adelantos.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0);
+
+  // Antigüedad del saldo (días desde fechaAdelanto)
+  const buckets = { d0: { label: "Al día (0-30 días)", tone: "var(--data-success)", total: 0, n: 0 }, d30: { label: "Vencido (31-60 días)", tone: "var(--data-warning)", total: 0, n: 0 }, d60: { label: "Crítico (+60 días)", tone: "var(--data-error)", total: 0, n: 0 } };
+  for (const a of abiertos) {
+    const dias = (now - new Date(a.fechaAdelanto).getTime()) / 86_400_000;
+    const b = dias > 60 ? buckets.d60 : dias > 30 ? buckets.d30 : buckets.d0;
+    b.total += a.saldoPendiente; b.n += 1;
+  }
+
+  // Entregas pactadas pendientes (vencidas o por vencer)
+  const pactadas = abiertos
+    .filter((a) => a.modalidad === "ENTREGAS_PACTADAS")
+    .flatMap((a) => a.entregasPactadas.filter((p) => p.fechaEsperada).map((p) => ({ persona: a.beneficiario?.nombre ?? "—", desc: p.descripcionEsperada, valor: p.valorEsperado, fecha: p.fechaEsperada! })))
+    .sort((x, y) => new Date(x.fecha).getTime() - new Date(y.fecha).getTime());
+
+  // Deudores ordenados (para recordatorio)
+  const deudores = abiertos
+    .reduce<Record<string, { nombre: string; telefono: string | null; saldo: number }>>((acc, a) => {
+      const k = a.beneficiarioId;
+      if (!acc[k]) acc[k] = { nombre: a.beneficiario?.nombre ?? "—", telefono: a.beneficiario?.telefono ?? null, saldo: 0 };
+      acc[k].saldo += a.saldoPendiente;
+      return acc;
+    }, {});
+  const deudoresArr = Object.values(deudores).sort((a, b) => b.saldo - a.saldo);
+  const totalPorCobrar = deudoresArr.reduce((s, d) => s + d.saldo, 0);
+
+  const waLink = (nombre: string, telefono: string | null, saldo: number) => {
+    const digits = (telefono ?? "").replace(/\D/g, "");
+    const phone = digits.length === 9 ? `51${digits}` : digits;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(`Hola ${nombre}, te recuerdo que tenés un saldo pendiente de ${formatCurrency(saldo)} por liquidar. ¡Gracias!`)}`;
+  };
+
+  if (abiertos.length === 0) {
+    return <EmptyState icon={CheckCircle} title="Nada por cobrar" hint="No hay adelantos abiertos con saldo pendiente." />;
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Antigüedad de saldos */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {Object.values(buckets).map((b) => (
+          <div key={b.label} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4" style={{ borderLeftWidth: 6, borderLeftColor: b.tone }}>
+            <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{b.label}</p>
+            <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(b.total)}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{b.n} adelanto{b.n === 1 ? "" : "s"}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Entregas pactadas por vencer */}
+      {pactadas.length > 0 && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+          <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Entregas pactadas pendientes</CardTitle>
+          <ul className="divide-y divide-[var(--rule-soft)]">
+            {pactadas.slice(0, 8).map((p, i) => {
+              const vencida = new Date(p.fecha).getTime() < now;
+              return (
+                <li key={i} className="flex items-center gap-3 py-2.5">
+                  <span className="flex-1 text-base font-semibold text-[var(--text-primary)] truncate">{p.persona} · <span className="font-normal text-[var(--text-secondary)]">{p.desc}</span></span>
+                  <span className="tabular-nums text-base font-bold text-[var(--text-primary)]">{formatCurrency(p.valor)}</span>
+                  <span className={`tabular-nums text-sm font-bold ${vencida ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>{new Date(p.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Recordatorios de cobranza */}
+      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recordatorios ({deudoresArr.length}) · {formatCurrency(totalPorCobrar)}</CardTitle>
+          <button onClick={() => onGoTab("personas")} className="text-base font-bold text-primary hover:underline">Ver personas</button>
+        </div>
+        <ul className="divide-y divide-[var(--rule-soft)]">
+          {deudoresArr.map((d, i) => (
+            <li key={i} className="flex items-center gap-3 py-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-primary">{d.nombre.charAt(0).toUpperCase()}</span>
+              <span className="flex-1 text-base font-bold text-[var(--text-primary)] truncate">{d.nombre}</span>
+              <span className="tabular-nums text-base font-extrabold text-[var(--data-warning)]">{formatCurrency(d.saldo)}</span>
+              {d.telefono ? (
+                <a href={waLink(d.nombre, d.telefono, d.saldo)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-sm font-bold text-primary hover:bg-primary/10 transition-colors">
+                  <MessageCircle className="h-4 w-4" /> Recordar
+                </a>
+              ) : (
+                <span className="text-sm text-[var(--text-tertiary)]">sin teléfono</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ── Actividad ────────────────────────────────────────────────────────────────
+function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
+  if (loading) return <SkeletonGrid />;
+  type Evento = { fecha: string; tipo: "adelanto" | "entrega"; persona: string; monto: number; desc?: string };
+  const eventos: Evento[] = [];
+  for (const a of adelantos) {
+    const persona = a.beneficiario?.nombre ?? "—";
+    if (a.status !== "CANCELADO") eventos.push({ fecha: a.fechaAdelanto, tipo: "adelanto", persona, monto: a.montoAdelantado });
+    for (const e of a.entregas) eventos.push({ fecha: e.fecha, tipo: "entrega", persona, monto: e.valor, desc: e.descripcion ?? undefined });
+  }
+  eventos.sort((x, y) => new Date(y.fecha).getTime() - new Date(x.fecha).getTime());
+
+  if (eventos.length === 0) return <EmptyState icon={Activity} title="Sin actividad" hint="Acá aparecen adelantos y entregas a medida que ocurren." />;
+
+  return (
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+      <ul className="space-y-1">
+        {eventos.slice(0, 60).map((e, i) => {
+          const esAdelanto = e.tipo === "adelanto";
+          return (
+            <li key={i} className="flex items-center gap-3 py-2.5 border-b border-[var(--rule-soft)] last:border-0">
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${esAdelanto ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]" : "bg-[var(--data-success)]/15 text-[var(--data-success)]"}`}>
+                {esAdelanto ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-bold text-[var(--text-primary)] truncate">
+                  {esAdelanto ? "Adelanto" : "Entrega"} · {e.persona}
+                </p>
+                {e.desc && <p className="text-sm text-[var(--text-tertiary)] truncate">{e.desc}</p>}
+              </div>
+              <span className={`tabular-nums text-base font-extrabold ${esAdelanto ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>
+                {esAdelanto ? "+" : "−"}{formatCurrency(e.monto)}
+              </span>
+              <span className="tabular-nums text-sm text-[var(--text-tertiary)] w-16 text-right shrink-0">{new Date(e.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+// ── Análisis ─────────────────────────────────────────────────────────────────
+function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
+  if (loading) return <SkeletonGrid />;
+  if (adelantos.length === 0) return <EmptyState icon={BarChart3} title="Sin datos" hint="Los gráficos aparecen cuando registres adelantos." />;
+
+  // Evolución mensual (6 meses): adelantado vs liquidado
+  const meses: { mes: string; adelantado: number; liquidado: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("es-PE", { month: "short" });
+    let adelantado = 0, liquidado = 0;
+    for (const a of adelantos) {
+      if (a.status !== "CANCELADO" && a.fechaAdelanto.startsWith(key)) adelantado += a.montoAdelantado;
+      for (const e of a.entregas) if (e.fecha.startsWith(key)) liquidado += e.valor;
+    }
+    meses.push({ mes: label, adelantado, liquidado });
+  }
+
+  // Por modalidad
+  const porModalidad = [
+    { name: "Cuenta corriente", value: adelantos.filter((a) => a.modalidad === "CUENTA_CORRIENTE" && a.status !== "CANCELADO").length, color: "var(--accent)" },
+    { name: "Entregas pactadas", value: adelantos.filter((a) => a.modalidad === "ENTREGAS_PACTADAS" && a.status !== "CANCELADO").length, color: "var(--data-warning)" },
+  ].filter((d) => d.value > 0);
+
+  // Top deudores
+  const deudorMap = adelantos.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0)
+    .reduce<Record<string, number>>((acc, a) => { const k = (a.beneficiario?.nombre ?? "—").slice(0, 14); acc[k] = (acc[k] ?? 0) + a.saldoPendiente; return acc; }, {});
+  const topDeudores = Object.entries(deudorMap).map(([name, monto]) => ({ name, monto })).sort((a, b) => b.monto - a.monto).slice(0, 5);
+
+  const hayMov = meses.some((m) => m.adelantado > 0 || m.liquidado > 0);
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+        <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-4">Adelantado vs Liquidado (6 meses)</CardTitle>
+        {hayMov ? (
+          <ResponsiveContainer minWidth={0} width="100%" height={240}>
+            <AreaChart data={meses}>
+              <defs>
+                <linearGradient id="adelGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data-warning)" stopOpacity={0.3} /><stop offset="100%" stopColor="var(--data-warning)" stopOpacity={0} /></linearGradient>
+                <linearGradient id="liqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data-success)" stopOpacity={0.3} /><stop offset="100%" stopColor="var(--data-success)" stopOpacity={0} /></linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
+              <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
+              <YAxis tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 12 }} />
+              <Tooltip formatter={((v: number, name: string) => [formatCurrency(Number(v)), name === "adelantado" ? "Adelantado" : "Liquidado"]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} />
+              <Area type="monotone" dataKey="adelantado" stroke="var(--data-warning)" fill="url(#adelGrad)" strokeWidth={2} />
+              <Area type="monotone" dataKey="liquidado" stroke="var(--data-success)" fill="url(#liqGrad)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Sin movimiento en los últimos 6 meses.</p>}
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+          <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Por modalidad</CardTitle>
+          {porModalidad.length > 0 ? (
+            <>
+              <ResponsiveContainer minWidth={0} width="100%" height={170}>
+                <PieChart><Pie data={porModalidad} cx="50%" cy="50%" innerRadius={45} outerRadius={72} dataKey="value" stroke="none" paddingAngle={2}>{porModalidad.map((d, i) => <Cell key={i} fill={d.color} />)}</Pie><Tooltip formatter={((v: number, n: string) => [v, n]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} /></PieChart>
+              </ResponsiveContainer>
+              <div className="mt-2 flex flex-wrap gap-3">
+                {porModalidad.map((d) => (<span key={d.name} className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: d.color }} />{d.name}: <strong>{d.value}</strong></span>))}
+              </div>
+            </>
+          ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Sin datos.</p>}
+        </div>
+
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+          <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Top 5 deudores</CardTitle>
+          {topDeudores.length > 0 ? (
+            <ResponsiveContainer minWidth={0} width="100%" height={200}>
+              <BarChart data={topDeudores} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" horizontal={false} />
+                <XAxis type="number" tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={((v: number) => [formatCurrency(Number(v)), "Saldo"]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} />
+                <Bar dataKey="monto" radius={[0, 6, 6, 0]}>{topDeudores.map((_, i) => <Cell key={i} fill={i === 0 ? "var(--data-warning)" : "var(--text-tertiary)"} />)}</Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie debe nada.</p>}
+        </div>
+      </div>
+    </div>
   );
 }
 
