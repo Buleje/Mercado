@@ -5,6 +5,7 @@ import { prismaReadonly as prisma } from "@/lib/prisma-readonly";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { getOrSet } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -21,229 +22,235 @@ async function requirePlatform(req: NextRequest) {
  * basados en el mes en curso por ser KPIs estables.
  */
 export async function GET(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, "GENEROUS", "sa-dashboard-widgets");
-  if (rateLimited) return rateLimited;
+  try {
+    const rateLimited = applyRateLimit(req, "GENEROUS", "sa-dashboard-widgets");
+    if (rateLimited) return rateLimited;
 
-  const session = await requirePlatform(req);
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const session = await requirePlatform(req);
+    if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // ── Parse range param — 7d / 30d / 90d / 1y (clamp a valores válidos) ──
-  const rangeParam = req.nextUrl.searchParams.get("range") ?? "30d";
-  const daysWindow =
-    rangeParam === "7d" ? 7
-    : rangeParam === "90d" ? 90
-    : rangeParam === "1y" ? 365
-    : 30; // default
+    // ── Parse range param — 7d / 30d / 90d / 1y (clamp a valores válidos) ──
+    const rangeParam = req.nextUrl.searchParams.get("range") ?? "30d";
+    const daysWindow =
+      rangeParam === "7d" ? 7
+      : rangeParam === "90d" ? 90
+      : rangeParam === "1y" ? 365
+      : 30; // default
 
-  // F3: cache 30s — evita 22 queries (~2.5s) en cada request.
-  // Key incluye rango para no servir respuestas cruzadas.
-  const cached = getOrSet(`superadmin:dashboard:widgets:${rangeParam}`, 30, async () => {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysWindow);
-  const last30Start = windowStart; // mantengo el nombre para minimal diff
-  const monthFmt = new Intl.DateTimeFormat("es-PE", { month: "short" });
+    // F3: cache 30s — evita 22 queries (~2.5s) en cada request.
+    // Key incluye rango para no servir respuestas cruzadas.
+    const cached = getOrSet(`superadmin:dashboard:widgets:${rangeParam}`, 30, async () => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysWindow);
+    const last30Start = windowStart; // mantengo el nombre para minimal diff
+    const monthFmt = new Intl.DateTimeFormat("es-PE", { month: "short" });
 
-  // Pre-compute month windows para ARPU (últimos 6 meses)
-  const arpuWindows = Array.from({ length: 6 }, (_, idx) => {
-    const i = 5 - idx;
-    const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    return { monthStart, nextMonthStart };
-  });
+    // Pre-compute month windows para ARPU (últimos 6 meses)
+    const arpuWindows = Array.from({ length: 6 }, (_, idx) => {
+      const i = 5 - idx;
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonthStart = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      return { monthStart, nextMonthStart };
+    });
 
-  // ── Phase 1: todas las queries independientes en paralelo ───────────────
-  const [
-    ordersByTenant,
-    totalTenants,
-    tenantsWithProducts,
-    tenantsWithOrders,
-    tenantsWithCompleted,
-    recentOrders,
-    ordersLast30,
-    arpuMonthly,
-  ] = await Promise.all([
-    prisma.order.groupBy({
-      by: ["tenantId"],
-      where: { createdAt: { gte: startOfMonth }, status: { not: "cancelado" } },
-      _sum: { total: true },
-      _count: { _all: true },
-      orderBy: { _sum: { total: "desc" } },
-      take: 5,
-    }),
-    prisma.tenant.count({ where: { active: true } }),
-    prisma.product.findMany({
-      where: { deletedAt: null, active: true },
-      distinct: ["tenantId"],
-      select: { tenantId: true },
-    }),
-    prisma.order.findMany({
-      distinct: ["tenantId"],
-      select: { tenantId: true },
-    }),
-    prisma.order.findMany({
-      where: { status: "entregado" },
-      distinct: ["tenantId"],
-      select: { tenantId: true },
-    }),
-    prisma.order.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      select: { tenantId: true, createdAt: true, total: true },
-    }),
-    prisma.order.findMany({
-      where: { createdAt: { gte: windowStart }, status: { not: "cancelado" } },
-      select: { createdAt: true, total: true },
-    }),
-    Promise.all(
-      arpuWindows.map(({ monthStart, nextMonthStart }) =>
-        Promise.all([
-          prisma.order.aggregate({
-            where: {
-              createdAt: { gte: monthStart, lt: nextMonthStart },
-              status: { not: "cancelado" },
-            },
-            _sum: { total: true },
-          }),
-          prisma.tenant.count({
-            where: { active: true, plan: { not: "free" }, createdAt: { lt: nextMonthStart } },
-          }),
-        ]),
-      ),
-    ),
-  ]);
-
-  // ── Phase 2: queries que dependen de Phase 1 ───────────────────────────
-  const topStoreIds = ordersByTenant.map((t) => t.tenantId);
-  const seen = new Set<string>();
-  const latestTenantIds: string[] = [];
-  const lastOrderByTenant = new Map<string, { createdAt: Date; total: number }>();
-  for (const o of recentOrders) {
-    if (!seen.has(o.tenantId)) {
-      seen.add(o.tenantId);
-      latestTenantIds.push(o.tenantId);
-      lastOrderByTenant.set(o.tenantId, {
-        createdAt: o.createdAt,
-        total: toNumOrZero(o.total),
-      });
-    }
-    if (latestTenantIds.length >= 8) break;
-  }
-
-  // Una sola query consolidada para info de tenants (top + latest)
-  const allInfoIds = Array.from(new Set([...topStoreIds, ...latestTenantIds]));
-  const tenantInfos = allInfoIds.length
-    ? await prisma.tenant.findMany({
-        where: { id: { in: allInfoIds } },
-        select: { id: true, name: true, slug: true, plan: true },
-      })
-    : [];
-  const tenantById = new Map(tenantInfos.map((t) => [t.id, t]));
-
-  // ── Build payloads ──────────────────────────────────────────────────────
-  const topStores = ordersByTenant.map((row) => {
-    const t = tenantById.get(row.tenantId);
-    return {
-      tenantId: row.tenantId,
-      name: t?.name ?? "(sin nombre)",
-      slug: t?.slug ?? row.tenantId,
-      plan: t?.plan ?? "free",
-      revenue: toNumOrZero(row._sum.total ?? 0),
-      orders: row._count._all,
-    };
-  });
-
-  const funnel = [
-    { label: "Tiendas activas", value: totalTenants },
-    { label: "Con productos", value: tenantsWithProducts.length },
-    { label: "Con pedidos", value: tenantsWithOrders.length },
-    { label: "Con entregas exitosas", value: tenantsWithCompleted.length },
-  ];
-
-  // Brandon 2026-05-21 audit fix #6: agregamos count real de órdenes
-  // del mes por tenant en latestActive — antes el page hardcodeaba
-  // ordersThisMonth=1 para todas las filas (bug visual obvio).
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const currentNextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const ordersThisMonthByTenant = latestTenantIds.length
-    ? await prisma.order.groupBy({
+    // ── Phase 1: todas las queries independientes en paralelo ───────────────
+    const [
+      ordersByTenant,
+      totalTenants,
+      tenantsWithProducts,
+      tenantsWithOrders,
+      tenantsWithCompleted,
+      recentOrders,
+      ordersLast30,
+      arpuMonthly,
+    ] = await Promise.all([
+      prisma.order.groupBy({
         by: ["tenantId"],
-        where: {
-          tenantId: { in: latestTenantIds },
-          createdAt: { gte: currentMonthStart, lt: currentNextMonthStart },
-          status: { not: "cancelado" },
-        },
-        _count: { _all: true },
+        where: { createdAt: { gte: startOfMonth }, status: { not: "cancelado" } },
         _sum: { total: true },
-      })
-    : [];
-  const ordersMonthMap = new Map(
-    ordersThisMonthByTenant.map((r) => [r.tenantId, {
-      count: r._count._all,
-      revenue: toNumOrZero(r._sum.total ?? 0),
-    }]),
-  );
+        _count: { _all: true },
+        orderBy: { _sum: { total: "desc" } },
+        take: 5,
+      }),
+      prisma.tenant.count({ where: { active: true } }),
+      prisma.product.findMany({
+        where: { deletedAt: null, active: true },
+        distinct: ["tenantId"],
+        select: { tenantId: true },
+      }),
+      prisma.order.findMany({
+        distinct: ["tenantId"],
+        select: { tenantId: true },
+      }),
+      prisma.order.findMany({
+        where: { status: "entregado" },
+        distinct: ["tenantId"],
+        select: { tenantId: true },
+      }),
+      prisma.order.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: { tenantId: true, createdAt: true, total: true },
+      }),
+      prisma.order.findMany({
+        where: { createdAt: { gte: windowStart }, status: { not: "cancelado" } },
+        select: { createdAt: true, total: true },
+      }),
+      Promise.all(
+        arpuWindows.map(({ monthStart, nextMonthStart }) =>
+          Promise.all([
+            prisma.order.aggregate({
+              where: {
+                createdAt: { gte: monthStart, lt: nextMonthStart },
+                status: { not: "cancelado" },
+              },
+              _sum: { total: true },
+            }),
+            prisma.tenant.count({
+              where: { active: true, plan: { not: "free" }, createdAt: { lt: nextMonthStart } },
+            }),
+          ]),
+        ),
+      ),
+    ]);
 
-  const latestActive = latestTenantIds.map((id) => {
-    const info = tenantById.get(id);
-    const last = lastOrderByTenant.get(id);
-    const monthAgg = ordersMonthMap.get(id);
-    return {
-      id,
-      name: info?.name ?? "(sin nombre)",
-      slug: info?.slug ?? id,
-      plan: info?.plan ?? "free",
-      lastOrderAt: last?.createdAt.toISOString() ?? null,
-      lastOrderTotal: last?.total ?? 0,
-      ordersThisMonth: monthAgg?.count ?? 0,
-      revenueThisMonth: monthAgg?.revenue ?? 0,
-    };
-  });
-
-  // Series últimos N días (N = daysWindow del query param)
-  const dayKey = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const revenueByDay = new Map<string, number>();
-  const ordersByDay = new Map<string, number>();
-  for (let i = 0; i < daysWindow; i++) {
-    const d = new Date(last30Start);
-    d.setDate(last30Start.getDate() + i);
-    revenueByDay.set(dayKey(d), 0);
-    ordersByDay.set(dayKey(d), 0);
-  }
-  for (const o of ordersLast30) {
-    const k = dayKey(o.createdAt);
-    if (revenueByDay.has(k)) {
-      revenueByDay.set(k, (revenueByDay.get(k) ?? 0) + toNumOrZero(o.total));
-      ordersByDay.set(k, (ordersByDay.get(k) ?? 0) + 1);
+    // ── Phase 2: queries que dependen de Phase 1 ───────────────────────────
+    const topStoreIds = ordersByTenant.map((t) => t.tenantId);
+    const seen = new Set<string>();
+    const latestTenantIds: string[] = [];
+    const lastOrderByTenant = new Map<string, { createdAt: Date; total: number }>();
+    for (const o of recentOrders) {
+      if (!seen.has(o.tenantId)) {
+        seen.add(o.tenantId);
+        latestTenantIds.push(o.tenantId);
+        lastOrderByTenant.set(o.tenantId, {
+          createdAt: o.createdAt,
+          total: toNumOrZero(o.total),
+        });
+      }
+      if (latestTenantIds.length >= 8) break;
     }
+
+    // Una sola query consolidada para info de tenants (top + latest)
+    const allInfoIds = Array.from(new Set([...topStoreIds, ...latestTenantIds]));
+    const tenantInfos = allInfoIds.length
+      ? await prisma.tenant.findMany({
+          where: { id: { in: allInfoIds } },
+          select: { id: true, name: true, slug: true, plan: true },
+        })
+      : [];
+    const tenantById = new Map(tenantInfos.map((t) => [t.id, t]));
+
+    // ── Build payloads ──────────────────────────────────────────────────────
+    const topStores = ordersByTenant.map((row) => {
+      const t = tenantById.get(row.tenantId);
+      return {
+        tenantId: row.tenantId,
+        name: t?.name ?? "(sin nombre)",
+        slug: t?.slug ?? row.tenantId,
+        plan: t?.plan ?? "free",
+        revenue: toNumOrZero(row._sum.total ?? 0),
+        orders: row._count._all,
+      };
+    });
+
+    const funnel = [
+      { label: "Tiendas activas", value: totalTenants },
+      { label: "Con productos", value: tenantsWithProducts.length },
+      { label: "Con pedidos", value: tenantsWithOrders.length },
+      { label: "Con entregas exitosas", value: tenantsWithCompleted.length },
+    ];
+
+    // Brandon 2026-05-21 audit fix #6: agregamos count real de órdenes
+    // del mes por tenant en latestActive — antes el page hardcodeaba
+    // ordersThisMonth=1 para todas las filas (bug visual obvio).
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentNextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const ordersThisMonthByTenant = latestTenantIds.length
+      ? await prisma.order.groupBy({
+          by: ["tenantId"],
+          where: {
+            tenantId: { in: latestTenantIds },
+            createdAt: { gte: currentMonthStart, lt: currentNextMonthStart },
+            status: { not: "cancelado" },
+          },
+          _count: { _all: true },
+          _sum: { total: true },
+        })
+      : [];
+    const ordersMonthMap = new Map(
+      ordersThisMonthByTenant.map((r) => [r.tenantId, {
+        count: r._count._all,
+        revenue: toNumOrZero(r._sum.total ?? 0),
+      }]),
+    );
+
+    const latestActive = latestTenantIds.map((id) => {
+      const info = tenantById.get(id);
+      const last = lastOrderByTenant.get(id);
+      const monthAgg = ordersMonthMap.get(id);
+      return {
+        id,
+        name: info?.name ?? "(sin nombre)",
+        slug: info?.slug ?? id,
+        plan: info?.plan ?? "free",
+        lastOrderAt: last?.createdAt.toISOString() ?? null,
+        lastOrderTotal: last?.total ?? 0,
+        ordersThisMonth: monthAgg?.count ?? 0,
+        revenueThisMonth: monthAgg?.revenue ?? 0,
+      };
+    });
+
+    // Series últimos N días (N = daysWindow del query param)
+    const dayKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const revenueByDay = new Map<string, number>();
+    const ordersByDay = new Map<string, number>();
+    for (let i = 0; i < daysWindow; i++) {
+      const d = new Date(last30Start);
+      d.setDate(last30Start.getDate() + i);
+      revenueByDay.set(dayKey(d), 0);
+      ordersByDay.set(dayKey(d), 0);
+    }
+    for (const o of ordersLast30) {
+      const k = dayKey(o.createdAt);
+      if (revenueByDay.has(k)) {
+        revenueByDay.set(k, (revenueByDay.get(k) ?? 0) + toNumOrZero(o.total));
+        ordersByDay.set(k, (ordersByDay.get(k) ?? 0) + 1);
+      }
+    }
+    const revenueSeries = Array.from(revenueByDay.entries()).map(([date, revenue]) => ({
+      date,
+      revenue,
+    }));
+    const ordersSeries = Array.from(ordersByDay.entries()).map(([date, count]) => ({
+      date,
+      count,
+    }));
+
+    // ARPU desde los pares pre-resueltos en paralelo
+    const arpuSeries = arpuWindows.map(({ monthStart }, idx) => {
+      const [orderSum, payingCount] = arpuMonthly[idx];
+      const total = toNumOrZero(orderSum._sum.total ?? 0);
+      const arpu = payingCount > 0 ? total / payingCount : 0;
+      return {
+        month: monthFmt.format(monthStart),
+        arpu: Math.round(arpu * 100) / 100,
+      };
+    });
+
+    return { topStores, funnel, latestActive, revenueSeries, ordersSeries, arpuSeries };
+    }); // fin getOrSet
+
+    const payload = await cached;
+    return NextResponse.json(
+      payload,
+      { headers: { "Cache-Control": "private, max-age=30" } },
+    );
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-  const revenueSeries = Array.from(revenueByDay.entries()).map(([date, revenue]) => ({
-    date,
-    revenue,
-  }));
-  const ordersSeries = Array.from(ordersByDay.entries()).map(([date, count]) => ({
-    date,
-    count,
-  }));
-
-  // ARPU desde los pares pre-resueltos en paralelo
-  const arpuSeries = arpuWindows.map(({ monthStart }, idx) => {
-    const [orderSum, payingCount] = arpuMonthly[idx];
-    const total = toNumOrZero(orderSum._sum.total ?? 0);
-    const arpu = payingCount > 0 ? total / payingCount : 0;
-    return {
-      month: monthFmt.format(monthStart),
-      arpu: Math.round(arpu * 100) / 100,
-    };
-  });
-
-  return { topStores, funnel, latestActive, revenueSeries, ordersSeries, arpuSeries };
-  }); // fin getOrSet
-
-  const payload = await cached;
-  return NextResponse.json(
-    payload,
-    { headers: { "Cache-Control": "private, max-age=30" } },
-  );
 }

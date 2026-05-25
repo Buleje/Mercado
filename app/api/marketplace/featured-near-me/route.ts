@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getFeaturedNearby } from "@/lib/db/marketplace-featured.db";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/marketplace/featured-near-me?lat=X&lng=Y&radiusKm=50&limit=6
@@ -26,22 +27,28 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const params = Object.fromEntries(req.nextUrl.searchParams.entries());
-  const parsed = QuerySchema.safeParse(params);
+  try {
+    const params = Object.fromEntries(req.nextUrl.searchParams.entries());
+    const parsed = QuerySchema.safeParse(params);
 
-  if (!parsed.success) {
-    return NextResponse.json({ stores: [] });
+    if (!parsed.success) {
+      return NextResponse.json({ stores: [] });
+    }
+
+    const stores = await getFeaturedNearby({
+      lat: parsed.data.lat,
+      lng: parsed.data.lng,
+      radiusKm: parsed.data.radiusKm,
+      limit: parsed.data.limit,
+      productsPerStore: 4,
+    });
+
+    return NextResponse.json({ stores }, {
+      headers: { "Cache-Control": "private, max-age=60" },
+    });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const stores = await getFeaturedNearby({
-    lat: parsed.data.lat,
-    lng: parsed.data.lng,
-    radiusKm: parsed.data.radiusKm,
-    limit: parsed.data.limit,
-    productsPerStore: 4,
-  });
-
-  return NextResponse.json({ stores }, {
-    headers: { "Cache-Control": "private, max-age=60" },
-  });
 }

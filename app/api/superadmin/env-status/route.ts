@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getEnvStatus } from "@/lib/superadmin/env-status";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/superadmin/env-status
@@ -21,13 +22,19 @@ async function requirePlatform(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, "GENEROUS", "sa-env-status-get");
-  if (rateLimited) return rateLimited;
+  try {
+    const rateLimited = applyRateLimit(req, "GENEROUS", "sa-env-status-get");
+    if (rateLimited) return rateLimited;
 
-  const session = await requirePlatform(req);
-  if (!session) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const session = await requirePlatform(req);
+    if (!session) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    return NextResponse.json({ envStatus: getEnvStatus() });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  return NextResponse.json({ envStatus: getEnvStatus() });
 }

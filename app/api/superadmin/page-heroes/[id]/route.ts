@@ -19,31 +19,43 @@ const UpdateSchema = z.object({
 
 /** PUT — update a hero (platform-only: requiere sesion superadmin) */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
-  const auth = await requirePlatformAPI(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
+    const auth = await requirePlatformAPI(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const { id } = await params;
-  const body = await req.json().catch((err) => { logger.error("[superadmin/page-heroes/[id]] parse JSON body failed", { error: String(err) }); return null; });
-  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  const parsed = UpdateSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Datos invalidos" }, { status: 400 });
+    const { id } = await params;
+    const body = await req.json().catch((err) => { logger.error("[superadmin/page-heroes/[id]] parse JSON body failed", { error: String(err) }); return null; });
+    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    const parsed = UpdateSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: "Datos invalidos" }, { status: 400 });
 
-  const hero = await PageHeroesDB.update("__platform__", id, parsed.data);
-  if (!hero) return NextResponse.json({ error: "Hero no encontrado" }, { status: 404 });
+    const hero = await PageHeroesDB.update("__platform__", id, parsed.data);
+    if (!hero) return NextResponse.json({ error: "Hero no encontrado" }, { status: 404 });
 
-  return NextResponse.json({ data: hero });
+    return NextResponse.json({ data: hero });
+
+  } catch (e) {
+    logger.error("[put] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 /** DELETE — remove a hero (platform-only: requiere sesion superadmin) */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
-  const auth = await requirePlatformAPI(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
+    const auth = await requirePlatformAPI(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const { id } = await params;
-  const hero = await PageHeroesDB.remove("__platform__", id);
-  if (!hero) return NextResponse.json({ error: "Hero no encontrado" }, { status: 404 });
+    const { id } = await params;
+    const hero = await PageHeroesDB.remove("__platform__", id);
+    if (!hero) return NextResponse.json({ error: "Hero no encontrado" }, { status: 404 });
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+
+  } catch (e) {
+    logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

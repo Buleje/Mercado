@@ -92,21 +92,27 @@ async function executeAction(action: { type: string; payload: Record<string, unk
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const rateLimited = applyRateLimit(req, "STRICT", "ai-actions");
-  if (rateLimited) return rateLimited;
+    const rateLimited = applyRateLimit(req, "STRICT", "ai-actions");
+    if (rateLimited) return rateLimited;
 
-  const body = await req.json().catch((err) => { logger.error("[ai-assistant] failure", { error: String(err) }); return null; });
-  if (!body?.action?.type) {
-    return NextResponse.json({ error: "Se requiere { action: { type, payload } }" }, { status: 400 });
+    const body = await req.json().catch((err) => { logger.error("[ai-assistant] failure", { error: String(err) }); return null; });
+    if (!body?.action?.type) {
+      return NextResponse.json({ error: "Se requiere { action: { type, payload } }" }, { status: 400 });
+    }
+
+    // Round 16 M004: AI actions ejecutan writes a Order/Product. Audit log
+    // con admin actor (AI nunca actúa por sí mismo, siempre con confirmación).
+    const result = await runWithAuditContext(req, `ai:${auth.username}`, () =>
+      executeAction(body.action, auth.tenantId),
+    );
+    return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  // Round 16 M004: AI actions ejecutan writes a Order/Product. Audit log
-  // con admin actor (AI nunca actúa por sí mismo, siempre con confirmación).
-  const result = await runWithAuditContext(req, `ai:${auth.username}`, () =>
-    executeAction(body.action, auth.tenantId),
-  );
-  return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

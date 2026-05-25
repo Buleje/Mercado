@@ -3,37 +3,50 @@ import { ChatDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { logger } from "@/lib/logger";
 
 // GET: list all conversations or messages for one customer
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const phone = req.nextUrl.searchParams.get("phone");
-  if (phone) {
-    await ChatDB.markRead(auth.tenantId, phone);
-    const messages = await ChatDB.getByPhone(auth.tenantId, phone);
-    return NextResponse.json(messages);
+    const phone = req.nextUrl.searchParams.get("phone");
+    if (phone) {
+      await ChatDB.markRead(auth.tenantId, phone);
+      const messages = await ChatDB.getByPhone(auth.tenantId, phone);
+      return NextResponse.json(messages);
+    }
+    const conversations = await ChatDB.getConversations(auth.tenantId);
+    return NextResponse.json(conversations);
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-  const conversations = await ChatDB.getConversations(auth.tenantId);
-  return NextResponse.json(conversations);
 }
 
 // POST: admin replies to a customer chat
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "admin-chat"); if (_rl) return _rl;
-  const csrfFail = assertCsrf(req);
-  if (csrfFail) return csrfFail;
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const _rl = await applyRateLimit(req, "MODERATE", "admin-chat"); if (_rl) return _rl;
+    const csrfFail = assertCsrf(req);
+    if (csrfFail) return csrfFail;
+    const auth = await requireAdmin(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const { phone, message } = await req.json();
-  if (!phone || !message?.trim()) {
-    return NextResponse.json({ error: "phone y message requeridos" }, { status: 400 });
+    const { phone, message } = await req.json();
+    if (!phone || !message?.trim()) {
+      return NextResponse.json({ error: "phone y message requeridos" }, { status: 400 });
+    }
+    if (message.trim().length > 500) {
+      return NextResponse.json({ error: "Mensaje máx 500 chars" }, { status: 400 });
+    }
+    const msg = await ChatDB.add(auth.tenantId, phone, "Admin", "admin", message.trim());
+    return NextResponse.json(msg, { status: 201 });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-  if (message.trim().length > 500) {
-    return NextResponse.json({ error: "Mensaje máx 500 chars" }, { status: 400 });
-  }
-  const msg = await ChatDB.add(auth.tenantId, phone, "Admin", "admin", message.trim());
-  return NextResponse.json(msg, { status: 201 });
 }

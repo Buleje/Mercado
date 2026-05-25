@@ -29,58 +29,64 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const ip = getClientIp(req);
-  const { allowed } = rateLimit(`marketplace-notifs:${ip}`, 30, 60);
-  if (!allowed) {
-    return NextResponse.json({ data: [], error: "rate_limited" }, { status: 429 });
-  }
+  try {
+    const ip = getClientIp(req);
+    const { allowed } = rateLimit(`marketplace-notifs:${ip}`, 30, 60);
+    if (!allowed) {
+      return NextResponse.json({ data: [], error: "rate_limited" }, { status: 429 });
+    }
 
-  const { searchParams } = new URL(req.url);
-  const parsed = QuerySchema.safeParse({
-    customerId: searchParams.get("customerId"),
-  });
-  if (!parsed.success) {
-    return NextResponse.json({ data: [], error: "invalid_params" }, { status: 400 });
-  }
-
-  const tenantId = getTenantIdFromRequest(req);
-  const requestedPhone = normalizePhone(parsed.data.customerId);
-
-  // Verificar session: solo el dueño del phone puede ver sus notifs.
-  const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
-  if (!sessionToken) {
-    return NextResponse.json({ data: [] });
-  }
-  const payload = await getCustomerPayload(sessionToken);
-  if (!payload?.customerId) {
-    return NextResponse.json({ data: [] });
-  }
-  if (normalizePhone(payload.customerId) !== requestedPhone) {
-    logger.info("[marketplace/notifications] customerId mismatch — empty", {
-      ip,
-      requestedPhone: requestedPhone.slice(0, 4) + "***",
+    const { searchParams } = new URL(req.url);
+    const parsed = QuerySchema.safeParse({
+      customerId: searchParams.get("customerId"),
     });
-    return NextResponse.json({ data: [] });
+    if (!parsed.success) {
+      return NextResponse.json({ data: [], error: "invalid_params" }, { status: 400 });
+    }
+
+    const tenantId = getTenantIdFromRequest(req);
+    const requestedPhone = normalizePhone(parsed.data.customerId);
+
+    // Verificar session: solo el dueño del phone puede ver sus notifs.
+    const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+    if (!sessionToken) {
+      return NextResponse.json({ data: [] });
+    }
+    const payload = await getCustomerPayload(sessionToken);
+    if (!payload?.customerId) {
+      return NextResponse.json({ data: [] });
+    }
+    if (normalizePhone(payload.customerId) !== requestedPhone) {
+      logger.info("[marketplace/notifications] customerId mismatch — empty", {
+        ip,
+        requestedPhone: requestedPhone.slice(0, 4) + "***",
+      });
+      return NextResponse.json({ data: [] });
+    }
+
+    // Audit project-wide 2026-05-19: migrado a CustomerNotificationsDB
+    // (canonical DB class con tenantId obligatorio + Promise.all paralelo).
+    const { data, unreadCount } = await CustomerNotificationsDB.listByPhone(
+      tenantId,
+      requestedPhone,
+      30,
+    );
+
+    return NextResponse.json({
+      data: data.map((n) => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        body: n.body,
+        link: n.link,
+        read: n.read,
+        createdAt: n.createdAt.toISOString(),
+      })),
+      unreadCount,
+    });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  // Audit project-wide 2026-05-19: migrado a CustomerNotificationsDB
-  // (canonical DB class con tenantId obligatorio + Promise.all paralelo).
-  const { data, unreadCount } = await CustomerNotificationsDB.listByPhone(
-    tenantId,
-    requestedPhone,
-    30,
-  );
-
-  return NextResponse.json({
-    data: data.map((n) => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      body: n.body,
-      link: n.link,
-      read: n.read,
-      createdAt: n.createdAt.toISOString(),
-    })),
-    unreadCount,
-  });
 }

@@ -59,74 +59,80 @@ const resendLimiter = createRateLimiter({ maxRequests: 3, windowMs: 60 * 60 * 10
  * Rate limit: 3 intentos por IP por hora.
  */
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "STRICT", "auth-resend-verification"); if (_rl) return _rl;
-  const requestId = req.headers.get("x-request-id") ?? undefined;
+  try {
+    const _rl = await applyRateLimit(req, "STRICT", "auth-resend-verification"); if (_rl) return _rl;
+    const requestId = req.headers.get("x-request-id") ?? undefined;
 
-  // 1. Rate limit
-  const ip = getClientIp(req);
-  if (!resendLimiter.check(ip)) {
-    logger.warn("[resend-verification] Rate limit excedido", { requestId, ip });
-    return NextResponse.json(
-      { error: "Demasiadas solicitudes. Intenta nuevamente en una hora." },
-      {
-        status: 429,
-        headers: { "Retry-After": "3600" },
-      },
-    );
-  }
+    // 1. Rate limit
+    const ip = getClientIp(req);
+    if (!resendLimiter.check(ip)) {
+      logger.warn("[resend-verification] Rate limit excedido", { requestId, ip });
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Intenta nuevamente en una hora." },
+        {
+          status: 429,
+          headers: { "Retry-After": "3600" },
+        },
+      );
+    }
 
-  // 2. Auth
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+    // 2. Auth
+    const auth = await requireAdmin(req);
+    if (auth instanceof NextResponse) return auth;
 
-  // 3. Verificar si ya fue verificado (no tiene sentido reenviar)
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: auth.tenantId },
-    select: { emailVerified: true, ownerEmail: true, name: true },
-  });
+    // 3. Verificar si ya fue verificado (no tiene sentido reenviar)
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: auth.tenantId },
+      select: { emailVerified: true, ownerEmail: true, name: true },
+    });
 
-  if (!tenant) {
-    logger.error("[resend-verification] Tenant no encontrado", {
+    if (!tenant) {
+      logger.error("[resend-verification] Tenant no encontrado", {
+        requestId,
+        tenantId: auth.tenantId,
+      });
+      return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
+    }
+
+    if (tenant.emailVerified) {
+      return NextResponse.json(
+        { message: "El email ya fue verificado anteriormente." },
+        { status: 200 },
+      );
+    }
+
+    if (!tenant.ownerEmail) {
+      return NextResponse.json(
+        { error: "El tenant no tiene email registrado." },
+        { status: 400 },
+      );
+    }
+
+    // 4. Generar nuevo token y enviar email (fire-and-forget)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
+
+    resendVerificationEmail(auth.tenantId)
+      .then((token) => {
+        const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
+        const storeName = tenant.name;
+        enqueueEmail({
+          to: tenant.ownerEmail!,
+          subject: `Verifica tu email para activar ${storeName}`,
+          html: buildVerificationHtml(storeName, verifyUrl),
+          tenantId: auth.tenantId,
+        }).catch((err) => logger.error("[resend-verification] enqueueEmail failed", { error: String(err) }));
+      })
+      .catch((err) => logger.error("[resend-verification] resendVerificationEmail failed", { error: String(err) }));
+
+    logger.info("[resend-verification] Reenvío de verificación solicitado", {
       requestId,
       tenantId: auth.tenantId,
     });
-    return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
+
+    return NextResponse.json({ message: "Email de verificación reenviado." }, { status: 200 });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  if (tenant.emailVerified) {
-    return NextResponse.json(
-      { message: "El email ya fue verificado anteriormente." },
-      { status: 200 },
-    );
-  }
-
-  if (!tenant.ownerEmail) {
-    return NextResponse.json(
-      { error: "El tenant no tiene email registrado." },
-      { status: 400 },
-    );
-  }
-
-  // 4. Generar nuevo token y enviar email (fire-and-forget)
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
-
-  resendVerificationEmail(auth.tenantId)
-    .then((token) => {
-      const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
-      const storeName = tenant.name;
-      enqueueEmail({
-        to: tenant.ownerEmail!,
-        subject: `Verifica tu email para activar ${storeName}`,
-        html: buildVerificationHtml(storeName, verifyUrl),
-        tenantId: auth.tenantId,
-      }).catch((err) => logger.error("[resend-verification] enqueueEmail failed", { error: String(err) }));
-    })
-    .catch((err) => logger.error("[resend-verification] resendVerificationEmail failed", { error: String(err) }));
-
-  logger.info("[resend-verification] Reenvío de verificación solicitado", {
-    requestId,
-    tenantId: auth.tenantId,
-  });
-
-  return NextResponse.json({ message: "Email de verificación reenviado." }, { status: 200 });
 }

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { BirthdayCouponsDB } from "@/lib/db/birthday-coupons.db";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 async function checkAndCreateBirthdayCoupons() {
   const now = new Date();
@@ -56,20 +57,32 @@ async function checkAndCreateBirthdayCoupons() {
 }
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const authHeader = req.headers.get("authorization");
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const result = await checkAndCreateBirthdayCoupons();
+    return NextResponse.json({ ok: true, ...result });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-  const result = await checkAndCreateBirthdayCoupons();
-  return NextResponse.json({ ok: true, ...result });
 }
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "STRICT", "birthday-coupons"); if (_rl) return _rl;
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const _rl = await applyRateLimit(req, "STRICT", "birthday-coupons"); if (_rl) return _rl;
+    const authHeader = req.headers.get("authorization");
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const result = await checkAndCreateBirthdayCoupons();
+    return NextResponse.json({ ok: true, ...result });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-  const result = await checkAndCreateBirthdayCoupons();
-  return NextResponse.json({ ok: true, ...result });
 }

@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePartner } from "@/lib/delivery/partner-session";
 import { DeliveryScoreDb } from "@/lib/db/delivery-score.db";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/delivery/me/score
@@ -89,16 +90,22 @@ function getMockBadges(score: number): BadgeDef[] {
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  // 1. Auth
-  const session = await requirePartner(req);
-  if (session instanceof NextResponse) return session;
+  try {
+    // 1. Auth
+    const session = await requirePartner(req);
+    if (session instanceof NextResponse) return session;
 
-  // 2. Leer score desde DB
-  const { score } = await DeliveryScoreDb.getScore(session.partnerId);
+    // 2. Leer score desde DB
+    const { score } = await DeliveryScoreDb.getScore(session.partnerId);
 
-  // 3. Calcular tier y badges server-side
-  const tier:   Tier       = getTier(score);
-  const badges: BadgeDef[] = getMockBadges(score);
+    // 3. Calcular tier y badges server-side
+    const tier:   Tier       = getTier(score);
+    const badges: BadgeDef[] = getMockBadges(score);
 
-  return NextResponse.json({ score, tier, badges });
+    return NextResponse.json({ score, tier, badges });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

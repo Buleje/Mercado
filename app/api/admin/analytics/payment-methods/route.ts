@@ -21,68 +21,74 @@ import { logger } from "@/lib/logger";
  *   que delega el SUM/COUNT a Postgres — 1 query, O(filas/grupo) memoria.
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "analista"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "analista"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const { tenantId, username } = auth;
-  const url = new URL(req.url);
-  const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 30, 1), 365);
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const { tenantId, username } = auth;
+    const url = new URL(req.url);
+    const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 30, 1), 365);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  // Brandon mayo 2026 v7: solo `entregado` cuenta como venta para métricas
-  // de payment methods. Pedidos en confirmado/en_camino pueden cancelarse
-  // y distorsionan la atribución por medio de pago.
-  const validStatuses = ["entregado"];
+    // Brandon mayo 2026 v7: solo `entregado` cuenta como venta para métricas
+    // de payment methods. Pedidos en confirmado/en_camino pueden cancelarse
+    // y distorsionan la atribución por medio de pago.
+    const validStatuses = ["entregado"];
 
-  // 1 query agregada — Postgres hace COUNT + SUM por paymentMethod.
-  const grouped = await AdminPaymentMethodsDB.groupByPaymentMethod(
-    tenantId,
-    since,
-    validStatuses,
-  );
+    // 1 query agregada — Postgres hace COUNT + SUM por paymentMethod.
+    const grouped = await AdminPaymentMethodsDB.groupByPaymentMethod(
+      tenantId,
+      since,
+      validStatuses,
+    );
 
-  // Acumular por método (DB class ya normaliza null → "sin_especificar").
-  const byMethod: Record<string, { count: number; total: number }> = {};
-  let grandTotal = 0;
-  let totalOrders = 0;
-  for (const g of grouped) {
-    const method = g.method;
-    if (!byMethod[method]) byMethod[method] = { count: 0, total: 0 };
-    byMethod[method].count += g.count;
-    byMethod[method].total += g.total;
-    grandTotal += g.total;
-    totalOrders += g.count;
+    // Acumular por método (DB class ya normaliza null → "sin_especificar").
+    const byMethod: Record<string, { count: number; total: number }> = {};
+    let grandTotal = 0;
+    let totalOrders = 0;
+    for (const g of grouped) {
+      const method = g.method;
+      if (!byMethod[method]) byMethod[method] = { count: 0, total: 0 };
+      byMethod[method].count += g.count;
+      byMethod[method].total += g.total;
+      grandTotal += g.total;
+      totalOrders += g.count;
+    }
+
+    // Build sorted result
+    const breakdown = Object.entries(byMethod)
+      .map(([method, data]) => ({
+        method,
+        label: LABELS[method] || method,
+        count: data.count,
+        total: Math.round(data.total * 100) / 100,
+        percentage: grandTotal > 0 ? Math.round((data.total / grandTotal) * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    logActivity(
+      "analytics_payment_methods_viewed",
+      "analytics",
+      JSON.stringify({ days }),
+      undefined,
+      username,
+      undefined,
+      tenantId,
+    ).catch((err) => logger.error("[analytics/payment-methods] logActivity failed", { tenantId, error: (err as Error).message }));
+
+    return NextResponse.json({
+      data: {
+        days,
+        totalOrders,
+        totalRevenue: Math.round(grandTotal * 100) / 100,
+        breakdown,
+      },
+    });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  // Build sorted result
-  const breakdown = Object.entries(byMethod)
-    .map(([method, data]) => ({
-      method,
-      label: LABELS[method] || method,
-      count: data.count,
-      total: Math.round(data.total * 100) / 100,
-      percentage: grandTotal > 0 ? Math.round((data.total / grandTotal) * 1000) / 10 : 0,
-    }))
-    .sort((a, b) => b.total - a.total);
-
-  logActivity(
-    "analytics_payment_methods_viewed",
-    "analytics",
-    JSON.stringify({ days }),
-    undefined,
-    username,
-    undefined,
-    tenantId,
-  ).catch((err) => logger.error("[analytics/payment-methods] logActivity failed", { tenantId, error: (err as Error).message }));
-
-  return NextResponse.json({
-    data: {
-      days,
-      totalOrders,
-      totalRevenue: Math.round(grandTotal * 100) / 100,
-      breakdown,
-    },
-  });
 }
 
 const LABELS: Record<string, string> = {

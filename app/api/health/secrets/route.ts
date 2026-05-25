@@ -1,6 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
+import { logger } from "@/lib/logger";
 
 
 // ─── Definicion de variables ──────────────────────────────────────────────────
@@ -55,46 +56,52 @@ const ENV_VARS: EnvVarDef[] = [
  * Retorna 200 si todas las criticas estan presentes; 503 si falta alguna.
  */
 export async function GET(req: NextRequest) {
-  // Verificar sesion de superadmin
-  const auth = await requirePlatformAPI(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    // Verificar sesion de superadmin
+    const auth = await requirePlatformAPI(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const results = ENV_VARS.map(({ name, critical, hint }) => {
-    const value = process.env[name];
-    const present = typeof value === "string" && value.length > 0;
-    return {
-      name,
-      critical,
-      present,
-      length: present ? value!.length : 0,
-      hint,
+    const results = ENV_VARS.map(({ name, critical, hint }) => {
+      const value = process.env[name];
+      const present = typeof value === "string" && value.length > 0;
+      return {
+        name,
+        critical,
+        present,
+        length: present ? value!.length : 0,
+        hint,
+      };
+    });
+
+    const missingCritical = results.filter((r) => r.critical && !r.present);
+    const healthy = missingCritical.length === 0;
+
+    const summary = {
+      status: healthy ? "ok" : "missing_critical",
+      totalVars: results.length,
+      presentCount: results.filter((r) => r.present).length,
+      missingCount: results.filter((r) => !r.present).length,
+      missingCritical: missingCritical.map((r) => r.name),
     };
-  });
 
-  const missingCritical = results.filter((r) => r.critical && !r.present);
-  const healthy = missingCritical.length === 0;
-
-  const summary = {
-    status: healthy ? "ok" : "missing_critical",
-    totalVars: results.length,
-    presentCount: results.filter((r) => r.present).length,
-    missingCount: results.filter((r) => !r.present).length,
-    missingCritical: missingCritical.map((r) => r.name),
-  };
-
-  return NextResponse.json(
-    {
-      ...summary,
-      vars: results,
-      checkedAt: new Date().toISOString(),
-      checkedBy: auth.username,
-    },
-    {
-      status: healthy ? 200 : 503,
-      headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate",
-        Pragma: "no-cache",
+    return NextResponse.json(
+      {
+        ...summary,
+        vars: results,
+        checkedAt: new Date().toISOString(),
+        checkedBy: auth.username,
       },
-    },
-  );
+      {
+        status: healthy ? 200 : 503,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          Pragma: "no-cache",
+        },
+      },
+    );
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

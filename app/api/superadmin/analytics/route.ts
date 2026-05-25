@@ -5,6 +5,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prismaReadonly as prisma } from "@/lib/prisma-readonly";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getAllPlanPrices } from "@/lib/plans-server";
+import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -324,28 +325,34 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
 // GET /api/superadmin/analytics
 // Returns aggregated platform analytics: revenue, growth, plan distribution, usage
 export async function GET(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, "GENEROUS", "sa-analytics");
-  if (rateLimited) return rateLimited;
+  try {
+    const rateLimited = applyRateLimit(req, "GENEROUS", "sa-analytics");
+    if (rateLimited) return rateLimited;
 
-  const session = await requirePlatform(req);
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const session = await requirePlatform(req);
+    if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // Acepta from/to (YYYY-MM-DD) para filtrar el periodo. Si no vienen, fallback al mes en curso.
-  const from = req.nextUrl.searchParams.get("from") ?? undefined;
-  const to = req.nextUrl.searchParams.get("to") ?? undefined;
-  const data = await getAnalyticsData(from, to);
-  // Brandon 2026-05-21 audit blindaje batch 3 perf:
-  // Cache-Control private + max-age 60s + stale-while-revalidate 300s.
-  // - private: solo browser superadmin del usuario actual lo cachea
-  //   (NO CDN/proxy intermedio — datos sensibles)
-  // - max-age 60s: refresh suave cada minuto
-  // - stale-while-revalidate 300s: si el cache expiró pero el server
-  //   tarda, devuelve stale instantáneo y revalida en background
-  // Impact: refresh frecuente del dashboard pega cache (analytics es
-  // query pesada: findMany tenants + 3 counts + 6 monthly aggregates).
-  return NextResponse.json(data, {
-    headers: {
-      "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
-    },
-  });
+    // Acepta from/to (YYYY-MM-DD) para filtrar el periodo. Si no vienen, fallback al mes en curso.
+    const from = req.nextUrl.searchParams.get("from") ?? undefined;
+    const to = req.nextUrl.searchParams.get("to") ?? undefined;
+    const data = await getAnalyticsData(from, to);
+    // Brandon 2026-05-21 audit blindaje batch 3 perf:
+    // Cache-Control private + max-age 60s + stale-while-revalidate 300s.
+    // - private: solo browser superadmin del usuario actual lo cachea
+    //   (NO CDN/proxy intermedio — datos sensibles)
+    // - max-age 60s: refresh suave cada minuto
+    // - stale-while-revalidate 300s: si el cache expiró pero el server
+    //   tarda, devuelve stale instantáneo y revalida en background
+    // Impact: refresh frecuente del dashboard pega cache (analytics es
+    // query pesada: findMany tenants + 3 counts + 6 monthly aggregates).
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+      },
+    });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

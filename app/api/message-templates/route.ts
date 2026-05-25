@@ -4,6 +4,7 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { MessageTemplatesDB } from "@/lib/db/message-templates.db";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { logger } from "@/lib/logger";
 
 const ChannelEnum = z.enum(["whatsapp", "email", "sms"]);
 const CategoryEnum = z.enum(["ventas", "cobranza", "delivery", "promociones", "atención", "general"]);
@@ -31,76 +32,100 @@ const UpdateSchema = z.object({
 
 // GET /api/message-templates
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const rows = await MessageTemplatesDB.list(auth.tenantId);
+    const rows = await MessageTemplatesDB.list(auth.tenantId);
 
-  return NextResponse.json(rows.map(r => ({
-    ...r,
-    variables: JSON.parse(r.variablesJson),
-    subject: r.subject ?? undefined,
-  })));
+    return NextResponse.json(rows.map(r => ({
+      ...r,
+      variables: JSON.parse(r.variablesJson),
+      subject: r.subject ?? undefined,
+    })));
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 // POST /api/message-templates
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
-  const rl = applyRateLimit(req, "MODERATE", "templates");
-  if (rl) return rl;
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+    const rl = applyRateLimit(req, "MODERATE", "templates");
+    if (rl) return rl;
 
-  return runWithAuditContext(req, auth.username, async () => {
-    const body = await req.json();
-    const parsed = CreateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-    }
+    return runWithAuditContext(req, auth.username, async () => {
+      const body = await req.json();
+      const parsed = CreateSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      }
 
-    const row = await MessageTemplatesDB.create(auth.tenantId, {
-      ...parsed.data,
-      subject: parsed.data.subject ?? null,
+      const row = await MessageTemplatesDB.create(auth.tenantId, {
+        ...parsed.data,
+        subject: parsed.data.subject ?? null,
+      });
+      return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) }, { status: 201 });
     });
-    return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) }, { status: 201 });
-  });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 // PATCH /api/message-templates?id=xxx
 export async function PATCH(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  return runWithAuditContext(req, auth.username, async () => {
-    const body = await req.json();
-    const parsed = UpdateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-    }
+    return runWithAuditContext(req, auth.username, async () => {
+      const body = await req.json();
+      const parsed = UpdateSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      }
 
-    // updateMany atómico con tenantId (previene TOCTOU — HOTFIX-M3 2026-04-29)
-    const row = await MessageTemplatesDB.update(auth.tenantId, id, parsed.data);
-    if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      // updateMany atómico con tenantId (previene TOCTOU — HOTFIX-M3 2026-04-29)
+      const row = await MessageTemplatesDB.update(auth.tenantId, id, parsed.data);
+      if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-    return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) });
-  });
+      return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) });
+    });
+
+  } catch (e) {
+    logger.error("[patch] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 // DELETE /api/message-templates?id=xxx
 export async function DELETE(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
-  const rl = applyRateLimit(req, "MODERATE", "templates");
-  if (rl) return rl;
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+    const rl = applyRateLimit(req, "MODERATE", "templates");
+    if (rl) return rl;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  return runWithAuditContext(req, auth.username, async () => {
-    const deleted = await MessageTemplatesDB.delete(auth.tenantId, id);
-    if (!deleted) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json({ ok: true });
-  });
+    return runWithAuditContext(req, auth.username, async () => {
+      const deleted = await MessageTemplatesDB.delete(auth.tenantId, id);
+      if (!deleted) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ ok: true });
+    });
+
+  } catch (e) {
+    logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

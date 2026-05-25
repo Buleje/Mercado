@@ -15,6 +15,7 @@ import { VendorApplicationsDB } from "@/lib/db/vendor-applications.db";
 import { toSuperadminView } from "@/lib/vendor/registration-mapper";
 import type { ApplicationStatus } from "@/lib/db/vendor-applications.db";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const VALID_STATUSES: readonly ApplicationStatus[] = [
   "pending",
@@ -31,45 +32,51 @@ const NO_STORE_HEADERS = {
 } as const;
 
 export async function GET(req: NextRequest) {
-  // Rate limit defensivo — el endpoint puede listar hasta 500 filas y
-  // dispara queries pesadas. Cap por IP para evitar abuse / scraping.
-  const rl = await applyRateLimit(
-    req,
-    "GENEROUS",
-    "superadmin-vendor-applications-list",
-  );
-  if (rl) return rl;
-
-  const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
-  if (!platformToken) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: NO_STORE_HEADERS },
+  try {
+    // Rate limit defensivo — el endpoint puede listar hasta 500 filas y
+    // dispara queries pesadas. Cap por IP para evitar abuse / scraping.
+    const rl = await applyRateLimit(
+      req,
+      "GENEROUS",
+      "superadmin-vendor-applications-list",
     );
-  }
-  const session = await getPlatformSession(platformToken);
-  if (!session) {
+    if (rl) return rl;
+
+    const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+    if (!platformToken) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401, headers: NO_STORE_HEADERS },
+      );
+    }
+    const session = await getPlatformSession(platformToken);
+    if (!session) {
+      return NextResponse.json(
+        { error: "Invalid session" },
+        { status: 401, headers: NO_STORE_HEADERS },
+      );
+    }
+
+    const statusParam = req.nextUrl.searchParams.get("status");
+    const status: ApplicationStatus | "all" =
+      statusParam === null || statusParam === "all"
+        ? "all"
+        : (VALID_STATUSES as readonly string[]).includes(statusParam)
+          ? (statusParam as ApplicationStatus)
+          : "all";
+
+    const rows = await VendorApplicationsDB.listByStatus(status);
     return NextResponse.json(
-      { error: "Invalid session" },
-      { status: 401, headers: NO_STORE_HEADERS },
+      {
+        ok: true,
+        applications: rows.map(toSuperadminView),
+        count: rows.length,
+      },
+      { headers: NO_STORE_HEADERS },
     );
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const statusParam = req.nextUrl.searchParams.get("status");
-  const status: ApplicationStatus | "all" =
-    statusParam === null || statusParam === "all"
-      ? "all"
-      : (VALID_STATUSES as readonly string[]).includes(statusParam)
-        ? (statusParam as ApplicationStatus)
-        : "all";
-
-  const rows = await VendorApplicationsDB.listByStatus(status);
-  return NextResponse.json(
-    {
-      ok: true,
-      applications: rows.map(toSuperadminView),
-      count: rows.length,
-    },
-    { headers: NO_STORE_HEADERS },
-  );
 }

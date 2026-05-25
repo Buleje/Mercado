@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/marketplace/dashboard
@@ -14,5 +15,11 @@ import { NextResponse } from "next/server";
  * cumple el mismo contrato (caller comprueba payload, no status).
  */
 export async function GET() {
-  return NextResponse.json({}, { status: 200 });
+  try {
+    return NextResponse.json({}, { status: 200 });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

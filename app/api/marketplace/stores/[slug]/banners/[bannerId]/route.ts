@@ -21,36 +21,48 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string; bannerId: string }> }
 ) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const { bannerId } = await params;
+    const { bannerId } = await params;
 
-  const body = await req.json().catch((err) => { logger.error("[marketplace/stores/[slug]/banners/[bannerId]] parse JSON body failed", { error: String(err) }); return null; });
-  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  const parsed = PutSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
+    const body = await req.json().catch((err) => { logger.error("[marketplace/stores/[slug]/banners/[bannerId]] parse JSON body failed", { error: String(err) }); return null; });
+    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    const parsed = PutSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
+    }
+
+    const banner = await StoreBannersDB.update(auth.tenantId, bannerId, parsed.data);
+    if (!banner) {
+      return NextResponse.json({ error: "Banner no encontrado" }, { status: 404 });
+    }
+
+    return NextResponse.json({ banner });
+
+  } catch (e) {
+    logger.error("[put] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const banner = await StoreBannersDB.update(auth.tenantId, bannerId, parsed.data);
-  if (!banner) {
-    return NextResponse.json({ error: "Banner no encontrado" }, { status: 404 });
-  }
-
-  return NextResponse.json({ banner });
 }
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string; bannerId: string }> }
 ) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const { bannerId } = await params;
+    const { bannerId } = await params;
 
-  await StoreBannersDB.delete(auth.tenantId, bannerId);
+    await StoreBannersDB.delete(auth.tenantId, bannerId);
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+
+  } catch (e) {
+    logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

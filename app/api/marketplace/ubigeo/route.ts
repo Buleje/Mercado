@@ -4,6 +4,7 @@ import {
   listProvincias,
   listDistritos,
 } from "@/lib/peru-ubigeo";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/marketplace/ubigeo
@@ -22,15 +23,20 @@ import {
 const UBIGEO_CACHE = "public, max-age=86400, s-maxage=86400, immutable";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const dep = searchParams.get("dep");
-  const prov = searchParams.get("prov");
+  try {
+    const { searchParams } = new URL(req.url);
+    const dep = searchParams.get("dep");
+    const prov = searchParams.get("prov");
 
-  const items = !dep
-    ? listDepartamentos()
-    : !prov
-      ? listProvincias(dep)
-      : listDistritos(dep, prov);
+    const items = !dep
+      ? listDepartamentos()
+      : !prov
+        ? listProvincias(dep)
+        : listDistritos(dep, prov);
 
-  return NextResponse.json({ items }, { headers: { "Cache-Control": UBIGEO_CACHE } });
+    return NextResponse.json({ items }, { headers: { "Cache-Control": UBIGEO_CACHE } });
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

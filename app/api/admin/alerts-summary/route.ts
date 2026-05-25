@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { AlertsDB } from "@/lib/db/alerts.db";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/alerts-summary
@@ -14,9 +15,15 @@ import { AlertsDB } from "@/lib/db/alerts.db";
  * P1: violaba no-restricted-properties multi-tenant rule).
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const payload = await AlertsDB.getSummary(auth.tenantId);
-  return NextResponse.json(payload);
+    const payload = await AlertsDB.getSummary(auth.tenantId);
+    return NextResponse.json(payload);
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, SuppliersDB } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  try {
   const limited = applyRateLimit(req, "GENEROUS", "search");
   if (limited) return limited;
 
@@ -112,4 +114,8 @@ export async function GET(req: NextRequest) {
 
   // Limit to 20 results
   return NextResponse.json({ results: results.slice(0, 20) });
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

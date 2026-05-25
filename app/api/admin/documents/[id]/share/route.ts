@@ -15,46 +15,58 @@ const ShareBody = z.object({
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
-  const rl = await applyRateLimit(req, "MODERATE", "documents:share:list");
-  if (rl) return rl;
-  const csrfFail = assertCsrf(req);
-  if (csrfFail) return csrfFail;
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const rl = await applyRateLimit(req, "MODERATE", "documents:share:list");
+    if (rl) return rl;
+    const csrfFail = assertCsrf(req);
+    if (csrfFail) return csrfFail;
+    const auth = await requireAdmin(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const { id } = await ctx.params;
-  const shares = await DocumentsDB.listShares(auth.tenantId, id);
-  return NextResponse.json({ shares });
+    const { id } = await ctx.params;
+    const shares = await DocumentsDB.listShares(auth.tenantId, id);
+    return NextResponse.json({ shares });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest, ctx: Ctx) {
-  const rl = await applyRateLimit(req, "STRICT", "documents:share:create");
-  if (rl) return rl;
-  const csrfFail = assertCsrf(req);
-  if (csrfFail) return csrfFail;
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const rl = await applyRateLimit(req, "STRICT", "documents:share:create");
+    if (rl) return rl;
+    const csrfFail = assertCsrf(req);
+    if (csrfFail) return csrfFail;
+    const auth = await requireAdmin(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const { id } = await ctx.params;
-  const body = await req.json().catch(() => ({}));
-  const parsed = ShareBody.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
+    const { id } = await ctx.params;
+    const body = await req.json().catch(() => ({}));
+    const parsed = ShareBody.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
+    }
+
+    const share = await DocumentsDB.createShare(auth.tenantId, id, {
+      createdById: auth.username,
+      expiresInDays: parsed.data.expiresInDays,
+      password: parsed.data.password,
+    });
+    if (!share) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+    DocumentsDB.log(auth.tenantId, {
+      documentId: id,
+      actorId: auth.username,
+      action: "share",
+      metadata: { token: share.token.slice(0, 8) + "…", expiresAt: share.expiresAt, hasPassword: share.hasPassword },
+    }).catch((err) => logger.warn("documents.audit.fail", { err: String(err) }));
+
+    return NextResponse.json({ share });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const share = await DocumentsDB.createShare(auth.tenantId, id, {
-    createdById: auth.username,
-    expiresInDays: parsed.data.expiresInDays,
-    password: parsed.data.password,
-  });
-  if (!share) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  DocumentsDB.log(auth.tenantId, {
-    documentId: id,
-    actorId: auth.username,
-    action: "share",
-    metadata: { token: share.token.slice(0, 8) + "…", expiresAt: share.expiresAt, hasPassword: share.hasPassword },
-  }).catch((err) => logger.warn("documents.audit.fail", { err: String(err) }));
-
-  return NextResponse.json({ share });
 }

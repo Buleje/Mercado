@@ -51,61 +51,67 @@ const NO_STORE_HEADERS = {
 } as const;
 
 export async function GET(req: NextRequest) {
-  const rl = await applyRateLimit(
-    req,
-    "GENEROUS",
-    "superadmin-vendor-health-get",
-  );
-  if (rl) return rl;
+  try {
+    const rl = await applyRateLimit(
+      req,
+      "GENEROUS",
+      "superadmin-vendor-health-get",
+    );
+    if (rl) return rl;
 
-  const auth = await requirePlatformAPI(req);
-  if (auth instanceof NextResponse) return auth;
+    const auth = await requirePlatformAPI(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const summary = cacheStore.get<VendorHealthSummary>(SUMMARY_KEY);
+    const summary = cacheStore.get<VendorHealthSummary>(SUMMARY_KEY);
 
-  if (!summary) {
-    logger.info("[superadmin/vendor-health] no summary yet", {
-      by: auth.username,
-    });
+    if (!summary) {
+      logger.info("[superadmin/vendor-health] no summary yet", {
+        by: auth.username,
+      });
+      return NextResponse.json(
+        {
+          stale: true,
+          neverRun: true,
+          message:
+            "El cron de re-verification aún no se ejecutó. Próxima corrida: 02:00 UTC diario.",
+          summary: null,
+        },
+        { headers: NO_STORE_HEADERS },
+      );
+    }
+
+    // Marcar stale si el último run fue hace >36h (cron debería correr diario).
+    const ageMs = Date.now() - new Date(summary.lastRunAt).getTime();
+    const stale = ageMs > STALE_HOURS * 60 * 60 * 1000;
+
+    // KPIs derivados
+    const healthScore =
+      summary.total > 0
+        ? Math.round(((summary.total - summary.alerts.length) / summary.total) * 100)
+        : 100;
+
+    const alertsByKind = summary.alerts.reduce<Record<string, number>>(
+      (acc, a) => {
+        acc[a.kind] = (acc[a.kind] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
+
     return NextResponse.json(
       {
-        stale: true,
-        neverRun: true,
-        message:
-          "El cron de re-verification aún no se ejecutó. Próxima corrida: 02:00 UTC diario.",
-        summary: null,
+        stale,
+        neverRun: false,
+        ageMinutes: Math.floor(ageMs / 60000),
+        healthScore,
+        alertsByKind,
+        summary,
       },
       { headers: NO_STORE_HEADERS },
     );
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  // Marcar stale si el último run fue hace >36h (cron debería correr diario).
-  const ageMs = Date.now() - new Date(summary.lastRunAt).getTime();
-  const stale = ageMs > STALE_HOURS * 60 * 60 * 1000;
-
-  // KPIs derivados
-  const healthScore =
-    summary.total > 0
-      ? Math.round(((summary.total - summary.alerts.length) / summary.total) * 100)
-      : 100;
-
-  const alertsByKind = summary.alerts.reduce<Record<string, number>>(
-    (acc, a) => {
-      acc[a.kind] = (acc[a.kind] ?? 0) + 1;
-      return acc;
-    },
-    {},
-  );
-
-  return NextResponse.json(
-    {
-      stale,
-      neverRun: false,
-      ageMinutes: Math.floor(ageMs / 60000),
-      healthScore,
-      alertsByKind,
-      summary,
-    },
-    { headers: NO_STORE_HEADERS },
-  );
 }

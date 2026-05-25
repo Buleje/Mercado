@@ -18,79 +18,86 @@ import { getAvailableCredit } from "@/lib/credit/installment-manager";
 import { MeCreditScoreDB } from "@/lib/db/me-credit-score.db";
 import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 // Next 16 con cacheComponents: force-dynamic es redundante (cookies/headers
 // hacen la route dinamica implicitamente).
 
 export async function GET(req: NextRequest) {
-  const anon = anonymousGate(req);
-  if (anon) return anon;
-  if (!isFiadoDigitalPhase1Enabled()) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const anon = anonymousGate(req);
+    if (anon) return anon;
+    if (!isFiadoDigitalPhase1Enabled()) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const customer = await requireCustomer(req);
+    if (customer instanceof NextResponse) return customer;
+
+    const { tenantId, customerId } = customer;
+
+    if (!customerId) {
+      return NextResponse.json(
+        { error: "Tu cuenta aún no está vinculada a un perfil de cliente" },
+        { status: 400 },
+      );
+    }
+
+    // Calculate current score with full breakdown
+    const scoreResult = await calculateCreditScore(tenantId, customerId);
+    const creditInfo = await getAvailableCredit(tenantId, customerId);
+
+    // Audit project-wide 2026-05-19: migrado a MeCreditScoreDB.getHistory.
+    const history = await MeCreditScoreDB.getHistory(tenantId, customerId, 12);
+
+    // Calculate delta vs previous snapshot
+    const previousScore = history.length > 1 ? history[1].score : null;
+    const delta = previousScore !== null ? scoreResult.score - previousScore : null;
+
+    // Generate personalized tips based on weakest factors
+    const tips = generateTips(scoreResult.breakdown);
+
+    // Next review date: next Sunday at midnight (weekly recalc runs Sundays)
+    const nextReview = new Date();
+    nextReview.setDate(nextReview.getDate() + (7 - nextReview.getDay()));
+    nextReview.setHours(0, 0, 0, 0);
+
+    // Build reason string for transparency banner
+    let reason = "Tu score se revisa cada semana automáticamente.";
+    if (delta !== null) {
+      if (delta > 0) reason = `Subió ${delta} puntos desde la última revisión.`;
+      else if (delta < 0) reason = `Bajó ${Math.abs(delta)} puntos desde la última revisión.`;
+      else reason = "Tu score se mantuvo igual desde la última revisión.";
+    }
+
+    return NextResponse.json({
+      score: scoreResult.score,
+      creditLimit: scoreResult.creditLimit,
+      riskLevel: scoreResult.riskLevel,
+      breakdown: scoreResult.breakdown,
+      credit: {
+        limit: creditInfo.creditLimit,
+        used: creditInfo.usedCredit,
+        available: creditInfo.availableCredit,
+        isActive: creditInfo.isActive,
+      },
+      delta,
+      reason,
+      nextReviewDate: nextReview.toISOString(),
+      tips,
+      history: history.reverse().map((h) => ({
+        score: h.score,
+        creditLimit: toNumOrZero(h.creditLimit),
+        riskLevel: h.riskLevel,
+        trigger: h.trigger,
+        date: h.createdAt.toISOString(),
+      })),
+    });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const customer = await requireCustomer(req);
-  if (customer instanceof NextResponse) return customer;
-
-  const { tenantId, customerId } = customer;
-
-  if (!customerId) {
-    return NextResponse.json(
-      { error: "Tu cuenta aún no está vinculada a un perfil de cliente" },
-      { status: 400 },
-    );
-  }
-
-  // Calculate current score with full breakdown
-  const scoreResult = await calculateCreditScore(tenantId, customerId);
-  const creditInfo = await getAvailableCredit(tenantId, customerId);
-
-  // Audit project-wide 2026-05-19: migrado a MeCreditScoreDB.getHistory.
-  const history = await MeCreditScoreDB.getHistory(tenantId, customerId, 12);
-
-  // Calculate delta vs previous snapshot
-  const previousScore = history.length > 1 ? history[1].score : null;
-  const delta = previousScore !== null ? scoreResult.score - previousScore : null;
-
-  // Generate personalized tips based on weakest factors
-  const tips = generateTips(scoreResult.breakdown);
-
-  // Next review date: next Sunday at midnight (weekly recalc runs Sundays)
-  const nextReview = new Date();
-  nextReview.setDate(nextReview.getDate() + (7 - nextReview.getDay()));
-  nextReview.setHours(0, 0, 0, 0);
-
-  // Build reason string for transparency banner
-  let reason = "Tu score se revisa cada semana automáticamente.";
-  if (delta !== null) {
-    if (delta > 0) reason = `Subió ${delta} puntos desde la última revisión.`;
-    else if (delta < 0) reason = `Bajó ${Math.abs(delta)} puntos desde la última revisión.`;
-    else reason = "Tu score se mantuvo igual desde la última revisión.";
-  }
-
-  return NextResponse.json({
-    score: scoreResult.score,
-    creditLimit: scoreResult.creditLimit,
-    riskLevel: scoreResult.riskLevel,
-    breakdown: scoreResult.breakdown,
-    credit: {
-      limit: creditInfo.creditLimit,
-      used: creditInfo.usedCredit,
-      available: creditInfo.availableCredit,
-      isActive: creditInfo.isActive,
-    },
-    delta,
-    reason,
-    nextReviewDate: nextReview.toISOString(),
-    tips,
-    history: history.reverse().map((h) => ({
-      score: h.score,
-      creditLimit: toNumOrZero(h.creditLimit),
-      riskLevel: h.riskLevel,
-      trigger: h.trigger,
-      date: h.createdAt.toISOString(),
-    })),
-  });
 }
 
 /** Generate 2-3 actionable tips based on weakest score factors */

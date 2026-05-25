@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { readData, writeData } from "@/lib/file-store";
 import { randomUUID } from "crypto";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const KEY = "tasks";
 
@@ -28,31 +29,43 @@ async function saveTasks(tasks: Task[]): Promise<void> {
 }
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
-  const tasks = await getTasks();
-  return NextResponse.json(tasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+  try {
+    const auth = await requireAdmin(req);
+    if (auth instanceof NextResponse) return auth;
+    const tasks = await getTasks();
+    return NextResponse.json(tasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "tasks"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
-  const body = await req.json();
-  if (!body.title) return NextResponse.json({ error: "title required" }, { status: 400 });
-  const tasks = await getTasks();
-  const task: Task = {
-    id: randomUUID(),
-    title: body.title,
-    description: body.description,
-    priority: body.priority ?? "media",
-    status: "pendiente",
-    assignedTo: body.assignedTo,
-    dueDate: body.dueDate,
-    module: body.module,
-    createdAt: new Date().toISOString(),
-  };
-  tasks.push(task);
-  await saveTasks(tasks);
-  return NextResponse.json(task, { status: 201 });
+  try {
+    const _rl = await applyRateLimit(req, "MODERATE", "tasks"); if (_rl) return _rl;
+    const auth = await requireAdmin(req);
+    if (auth instanceof NextResponse) return auth;
+    const body = await req.json();
+    if (!body.title) return NextResponse.json({ error: "title required" }, { status: 400 });
+    const tasks = await getTasks();
+    const task: Task = {
+      id: randomUUID(),
+      title: body.title,
+      description: body.description,
+      priority: body.priority ?? "media",
+      status: "pendiente",
+      assignedTo: body.assignedTo,
+      dueDate: body.dueDate,
+      module: body.module,
+      createdAt: new Date().toISOString(),
+    };
+    tasks.push(task);
+    await saveTasks(tasks);
+    return NextResponse.json(task, { status: 201 });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

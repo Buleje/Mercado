@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { BatchesDB } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -37,76 +38,100 @@ const GetSchema = z.object({
 // ── GET /api/batches ──────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const parsed = GetSchema.safeParse(Object.fromEntries(req.nextUrl.searchParams));
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Parámetros inválidos", issues: parsed.error.issues }, { status: 400 });
+    const parsed = GetSchema.safeParse(Object.fromEntries(req.nextUrl.searchParams));
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Parámetros inválidos", issues: parsed.error.issues }, { status: 400 });
+    }
+
+    const result = await BatchesDB.getAll(auth.tenantId, parsed.data);
+    return NextResponse.json(result);
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const result = await BatchesDB.getAll(auth.tenantId, parsed.data);
-  return NextResponse.json(result);
 }
 
 // ── POST /api/batches ─────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const rl = applyRateLimit(req, "MODERATE", "batches");
-  if (rl) return rl;
+    const rl = applyRateLimit(req, "MODERATE", "batches");
+    if (rl) return rl;
 
-  const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
 
-  const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
+    const parsed = CreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
+    }
+
+    const batch = await BatchesDB.create(auth.tenantId, parsed.data);
+    return NextResponse.json(batch, { status: 201 });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const batch = await BatchesDB.create(auth.tenantId, parsed.data);
-  return NextResponse.json(batch, { status: 201 });
 }
 
 // ── PATCH /api/batches?id=xxx ─────────────────────────────────────────────────
 
 export async function PATCH(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "Parámetro id requerido" }, { status: 400 });
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Parámetro id requerido" }, { status: 400 });
 
-  const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
 
-  const parsed = UpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
+    const parsed = UpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
+    }
+
+    const batch = await BatchesDB.update(auth.tenantId, id, parsed.data);
+    if (!batch) return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
+
+    return NextResponse.json(batch);
+
+  } catch (e) {
+    logger.error("[patch] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const batch = await BatchesDB.update(auth.tenantId, id, parsed.data);
-  if (!batch) return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
-
-  return NextResponse.json(batch);
 }
 
 // ── DELETE /api/batches?id=xxx ────────────────────────────────────────────────
 
 export async function DELETE(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const rl = applyRateLimit(req, "MODERATE", "batches");
-  if (rl) return rl;
+    const rl = applyRateLimit(req, "MODERATE", "batches");
+    if (rl) return rl;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "Parámetro id requerido" }, { status: 400 });
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Parámetro id requerido" }, { status: 400 });
 
-  const deleted = await BatchesDB.delete(auth.tenantId, id);
-  if (!deleted) return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
+    const deleted = await BatchesDB.delete(auth.tenantId, id);
+    if (!deleted) return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+
+  } catch (e) {
+    logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

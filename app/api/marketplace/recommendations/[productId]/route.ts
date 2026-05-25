@@ -24,46 +24,51 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ productId: string }> },
 ) {
-  const requestId = req.headers.get("x-request-id") ?? undefined;
-  const { productId: productIdParam } = await params;
+  try {
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    const { productId: productIdParam } = await params;
 
-  // Validar productId
-  const pid = parseInt(productIdParam, 10);
-  if (!Number.isFinite(pid) || pid <= 0) {
-    return NextResponse.json(
-      { error: "productId inválido — debe ser un entero positivo" },
-      { status: 400 },
-    );
+    // Validar productId
+    const pid = parseInt(productIdParam, 10);
+    if (!Number.isFinite(pid) || pid <= 0) {
+      return NextResponse.json(
+        { error: "productId inválido — debe ser un entero positivo" },
+        { status: 400 },
+      );
+    }
+
+    // Validar query params
+    const { searchParams } = req.nextUrl;
+    const parsed = QuerySchema.safeParse({ limit: searchParams.get("limit") ?? undefined });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Parámetros inválidos", issues: parsed.error.issues },
+        { status: 400 },
+      );
+    }
+
+    // SECURITY 2026-05-06 (audit AI): derivar tenantId del producto pedido,
+    // no del header. El productId es global, así que la fuente de verdad es
+    // su tenantId real. Antes el header podía cruzar y contaminar el cache.
+    // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.
+    const { MarketplaceProductsDB } = await import("@/lib/db/marketplace-products.db");
+    const tenantId = await MarketplaceProductsDB.getTenantById(pid);
+    if (!tenantId) {
+      return NextResponse.json({ products: [] });
+    }
+
+    logger.debug("[recommendations/productId] request", {
+      tenantId,
+      productId: pid,
+      limit: parsed.data.limit,
+      requestId,
+    });
+
+    const products = await getRelatedProducts(tenantId, pid, parsed.data.limit);
+
+    return NextResponse.json({ products });
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  // Validar query params
-  const { searchParams } = req.nextUrl;
-  const parsed = QuerySchema.safeParse({ limit: searchParams.get("limit") ?? undefined });
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Parámetros inválidos", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
-
-  // SECURITY 2026-05-06 (audit AI): derivar tenantId del producto pedido,
-  // no del header. El productId es global, así que la fuente de verdad es
-  // su tenantId real. Antes el header podía cruzar y contaminar el cache.
-  // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.
-  const { MarketplaceProductsDB } = await import("@/lib/db/marketplace-products.db");
-  const tenantId = await MarketplaceProductsDB.getTenantById(pid);
-  if (!tenantId) {
-    return NextResponse.json({ products: [] });
-  }
-
-  logger.debug("[recommendations/productId] request", {
-    tenantId,
-    productId: pid,
-    limit: parsed.data.limit,
-    requestId,
-  });
-
-  const products = await getRelatedProducts(tenantId, pid, parsed.data.limit);
-
-  return NextResponse.json({ products });
 }

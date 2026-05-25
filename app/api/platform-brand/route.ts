@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { getPlatformBrand, resolveActiveBrand } from "@/lib/platform-brand";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/platform-brand — endpoint público, sin auth.
@@ -13,11 +14,17 @@ import { getPlatformBrand, resolveActiveBrand } from "@/lib/platform-brand";
  * propagar (aceptable para marca; no es transaccional).
  */
 export async function GET() {
-  const brand = await getPlatformBrand();
-  const active = resolveActiveBrand(brand);
-  return NextResponse.json(active, {
-    headers: {
-      "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=3600",
-    },
-  });
+  try {
+    const brand = await getPlatformBrand();
+    const active = resolveActiveBrand(brand);
+    return NextResponse.json(active, {
+      headers: {
+        "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=3600",
+      },
+    });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

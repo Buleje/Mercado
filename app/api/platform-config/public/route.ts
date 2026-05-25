@@ -5,6 +5,7 @@ import {
   PLATFORM_CONFIG_KEYS,
   flatToNested,
 } from "@/lib/platform-config";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/platform-config/public
@@ -17,15 +18,20 @@ import {
  * agrega un secret (api key, etc), filtrá acá antes de retornar.
  */
 export async function GET() {
-  const all = await PlatformSettingsDB.getAll();
-  const flat: Record<string, unknown> = {};
-  for (const k of Object.keys(PLATFORM_CONFIG_KEYS)) {
-    if (k in all) flat[k] = all[k];
+  try {
+    const all = await PlatformSettingsDB.getAll();
+    const flat: Record<string, unknown> = {};
+    for (const k of Object.keys(PLATFORM_CONFIG_KEYS)) {
+      if (k in all) flat[k] = all[k];
+    }
+    const config = flatToNested(flat);
+    return NextResponse.json({ config }, {
+      headers: {
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+      },
+    });
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-  const config = flatToNested(flat);
-  return NextResponse.json({ config }, {
-    headers: {
-      "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
-    },
-  });
 }

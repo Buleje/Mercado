@@ -21,25 +21,37 @@ const CreateSchema = z.object({
 
 /** GET — list all heroes (platform-only: requiere sesion superadmin) */
 export async function GET(req: NextRequest) {
-  const auth = await requirePlatformAPI(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requirePlatformAPI(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const data = await PageHeroesDB.listAll("__platform__");
-  return NextResponse.json({ data });
+    const data = await PageHeroesDB.listAll("__platform__");
+    return NextResponse.json({ data });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 /** POST — create a hero (platform-only: requiere sesion superadmin) */
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes"); if (_rl) return _rl;
-  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
-  const auth = await requirePlatformAPI(req);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes"); if (_rl) return _rl;
+    if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
+    const auth = await requirePlatformAPI(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch((err) => { logger.error("[superadmin/page-heroes] parse JSON body failed", { error: String(err) }); return null; });
-  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues }, { status: 400 });
+    const body = await req.json().catch((err) => { logger.error("[superadmin/page-heroes] parse JSON body failed", { error: String(err) }); return null; });
+    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    const parsed = CreateSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues }, { status: 400 });
 
-  const hero = await PageHeroesDB.create("__platform__", parsed.data);
-  return NextResponse.json({ data: hero }, { status: 201 });
+    const hero = await PageHeroesDB.create("__platform__", parsed.data);
+    return NextResponse.json({ data: hero }, { status: 201 });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

@@ -2,38 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import { ProductsDB, CustomersDB, OrdersDB, ReviewsDB, SettingsDB, SuppliersDB, PurchasesDB, SalesDB, PromotionsDB, PayablesDB } from "@/lib/jsondb";
 import { enqueueActivityLog } from "@/lib/queue";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
-  const tenantId = auth.tenantId;
-  const [products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables] = await Promise.all([
-    ProductsDB.getAll(tenantId),
-    CustomersDB.getAll(tenantId),
-    OrdersDB.getAll(tenantId),
-    ReviewsDB.getAll(tenantId),
-    SettingsDB.get(tenantId),
-    SuppliersDB.getAll(tenantId),
-    PurchasesDB.getAll(tenantId),
-    SalesDB.getAll(tenantId),
-    PromotionsDB.getAll(tenantId),
-    PayablesDB.getAll(tenantId),
-  ]);
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+    const tenantId = auth.tenantId;
+    const [products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables] = await Promise.all([
+      ProductsDB.getAll(tenantId),
+      CustomersDB.getAll(tenantId),
+      OrdersDB.getAll(tenantId),
+      ReviewsDB.getAll(tenantId),
+      SettingsDB.get(tenantId),
+      SuppliersDB.getAll(tenantId),
+      PurchasesDB.getAll(tenantId),
+      SalesDB.getAll(tenantId),
+      PromotionsDB.getAll(tenantId),
+      PayablesDB.getAll(tenantId),
+    ]);
 
-  const backup = {
-    exportedAt: new Date().toISOString(),
-    version: "1.0",
-    data: { products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables },
-  };
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      version: "1.0",
+      data: { products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables },
+    };
 
-  enqueueActivityLog({ action: "Backup", resource: "configuracion", userId: "admin", tenantId: auth.tenantId, details: { description: "Backup de datos descargado" }, timestamp: new Date().toISOString() }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+    enqueueActivityLog({ action: "Backup", resource: "configuracion", userId: "admin", tenantId: auth.tenantId, details: { description: "Backup de datos descargado" }, timestamp: new Date().toISOString() }).catch(() => {
+        /* fire-and-forget per CLAUDE.md rule #7 */
+      });
+
+    return new NextResponse(JSON.stringify(backup, null, 2), {
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Disposition": `attachment; filename="bodega-backup-${new Date().toISOString().slice(0, 10)}.json"`,
+      },
     });
 
-  return new NextResponse(JSON.stringify(backup, null, 2), {
-    headers: {
-      "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="bodega-backup-${new Date().toISOString().slice(0, 10)}.json"`,
-    },
-  });
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

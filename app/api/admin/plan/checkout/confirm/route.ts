@@ -31,53 +31,59 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  // Audit 2026-05-19: registra solicitud manual de pago — STRICT.
-  const _rl = await applyRateLimit(req, "STRICT", "admin-plan-checkout-confirm"); if (_rl) return _rl;
-  const csrfFail = assertCsrf(req);
-  if (csrfFail) return csrfFail;
-  // 1. Auth obligatoria — solo el admin del tenant puede solicitar upgrade.
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    // Audit 2026-05-19: registra solicitud manual de pago — STRICT.
+    const _rl = await applyRateLimit(req, "STRICT", "admin-plan-checkout-confirm"); if (_rl) return _rl;
+    const csrfFail = assertCsrf(req);
+    if (csrfFail) return csrfFail;
+    // 1. Auth obligatoria — solo el admin del tenant puede solicitar upgrade.
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
 
-  // 2. Validar body.
-  const json = await req.json().catch((err) => {
-    logger.warn("[plan/checkout/confirm] body parse failed", { err: String(err) });
-    return null;
-  });
-  const parsed = bodySchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Datos inválidos", details: parsed.error.issues },
-      { status: 400 },
-    );
-  }
-
-  const { plan, method, reference } = parsed.data;
-
-  // 3. Registrar la solicitud en activity log para que soporte la procese.
-  //    El plan NO se activa acá — soporte valida el voucher y activa via
-  //    el panel de superadmin (que dispara el cambio de plan en DB).
-  logActivity(
-    "plan_upgrade_requested",
-    "tenant",
-    `Solicitud upgrade plan="${plan}" method="${method}"${reference ? ` ref="${reference}"` : ""}`,
-    auth.tenantId,
-    "admin",
-    undefined,
-    auth.tenantId,
-  ).catch((err) => {
-    logger.warn("[plan/checkout/confirm] logActivity failed", {
-      tenantId: auth.tenantId,
-      err: err instanceof Error ? err.message : String(err),
+    // 2. Validar body.
+    const json = await req.json().catch((err) => {
+      logger.warn("[plan/checkout/confirm] body parse failed", { err: String(err) });
+      return null;
     });
-  });
+    const parsed = bodySchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Datos inválidos", details: parsed.error.issues },
+        { status: 400 },
+      );
+    }
 
-  return NextResponse.json({
-    ok: true,
-    plan,
-    method,
-    requestedAt: new Date().toISOString(),
-    status: "pending_manual_review",
-    note: "Solicitud recibida. Coordinamos contigo por WhatsApp para validar el pago y activar el plan.",
-  });
+    const { plan, method, reference } = parsed.data;
+
+    // 3. Registrar la solicitud en activity log para que soporte la procese.
+    //    El plan NO se activa acá — soporte valida el voucher y activa via
+    //    el panel de superadmin (que dispara el cambio de plan en DB).
+    logActivity(
+      "plan_upgrade_requested",
+      "tenant",
+      `Solicitud upgrade plan="${plan}" method="${method}"${reference ? ` ref="${reference}"` : ""}`,
+      auth.tenantId,
+      "admin",
+      undefined,
+      auth.tenantId,
+    ).catch((err) => {
+      logger.warn("[plan/checkout/confirm] logActivity failed", {
+        tenantId: auth.tenantId,
+        err: err instanceof Error ? err.message : String(err),
+      });
+    });
+
+    return NextResponse.json({
+      ok: true,
+      plan,
+      method,
+      requestedAt: new Date().toISOString(),
+      status: "pending_manual_review",
+      note: "Solicitud recibida. Coordinamos contigo por WhatsApp para validar el pago y activar el plan.",
+    });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

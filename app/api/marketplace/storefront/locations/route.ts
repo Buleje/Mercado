@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const QuerySchema = z.object({
   stores: z
@@ -30,25 +31,31 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const rl = await applyRateLimit(req, "GENEROUS", "store-location");
-  if (rl) return rl;
+  try {
+    const rl = await applyRateLimit(req, "GENEROUS", "store-location");
+    if (rl) return rl;
 
-  const { searchParams } = new URL(req.url);
-  const parsed = QuerySchema.safeParse({ stores: searchParams.get("stores") ?? "" });
-  if (!parsed.success) {
+    const { searchParams } = new URL(req.url);
+    const parsed = QuerySchema.safeParse({ stores: searchParams.get("stores") ?? "" });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Falta el parámetro `stores=slug1,slug2`" },
+        { status: 400 },
+      );
+    }
+
+    const slugs = parsed.data.stores;
+    if (slugs.length === 0) return NextResponse.json({ stores: [] });
+
+    const stores = await MarketplacePublicDB.getStoreLocationsBySlugs(slugs);
+
     return NextResponse.json(
-      { error: "Falta el parámetro `stores=slug1,slug2`" },
-      { status: 400 },
+      { stores },
+      { headers: { "Cache-Control": "public, max-age=60, s-maxage=300" } },
     );
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const slugs = parsed.data.stores;
-  if (slugs.length === 0) return NextResponse.json({ stores: [] });
-
-  const stores = await MarketplacePublicDB.getStoreLocationsBySlugs(slugs);
-
-  return NextResponse.json(
-    { stores },
-    { headers: { "Cache-Control": "public, max-age=60, s-maxage=300" } },
-  );
 }

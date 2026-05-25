@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { AdminPreferencesDB } from "@/lib/db/admin-preferences.db";
+import { logger } from "@/lib/logger";
 
 /**
  * app/api/admin/preferences/route.ts
@@ -22,29 +23,41 @@ const PatchSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero", "manager"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero", "manager"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const prefs = await AdminPreferencesDB.read(auth.tenantId);
-  return NextResponse.json({ adminMode: prefs["adminMode"] ?? "easy" });
+    const prefs = await AdminPreferencesDB.read(auth.tenantId);
+    return NextResponse.json({ adminMode: prefs["adminMode"] ?? "easy" });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "admin-preferences"); if (_rl) return _rl;
-  const csrfFail = assertCsrf(req);
-  if (csrfFail) return csrfFail;
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero", "manager"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const _rl = await applyRateLimit(req, "MODERATE", "admin-preferences"); if (_rl) return _rl;
+    const csrfFail = assertCsrf(req);
+    if (csrfFail) return csrfFail;
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero", "manager"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const body: unknown = await req.json().catch(() => ({}));
-  const parsed = PatchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    const body: unknown = await req.json().catch(() => ({}));
+    const parsed = PatchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+
+    if (parsed.data.adminMode !== undefined) {
+      await AdminPreferencesDB.write(auth.tenantId, { adminMode: parsed.data.adminMode });
+    }
+
+    return NextResponse.json({ ok: true });
+
+  } catch (e) {
+    logger.error("[patch] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  if (parsed.data.adminMode !== undefined) {
-    await AdminPreferencesDB.write(auth.tenantId, { adminMode: parsed.data.adminMode });
-  }
-
-  return NextResponse.json({ ok: true });
 }

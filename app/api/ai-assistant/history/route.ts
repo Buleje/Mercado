@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -25,56 +26,62 @@ const SaveMessageSchema = z.object({
  * List conversations for the current user, or get a specific conversation's messages.
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const { searchParams } = req.nextUrl;
-  const conversationId = searchParams.get("conversationId");
-  const search = searchParams.get("search");
-  const channel = searchParams.get("channel");
+    const { searchParams } = req.nextUrl;
+    const conversationId = searchParams.get("conversationId");
+    const search = searchParams.get("search");
+    const channel = searchParams.get("channel");
 
-  if (conversationId) {
-    // Get specific conversation with messages
-    const conversation = await prisma.aIConversation.findFirst({
-      where: { id: conversationId, tenantId: auth.tenantId, user: auth.username },
-      include: { messages: { orderBy: { createdAt: "asc" } } },
-    });
-    if (!conversation) {
-      return NextResponse.json({ error: "Conversación no encontrada" }, { status: 404 });
+    if (conversationId) {
+      // Get specific conversation with messages
+      const conversation = await prisma.aIConversation.findFirst({
+        where: { id: conversationId, tenantId: auth.tenantId, user: auth.username },
+        include: { messages: { orderBy: { createdAt: "asc" } } },
+      });
+      if (!conversation) {
+        return NextResponse.json({ error: "Conversación no encontrada" }, { status: 404 });
+      }
+      return NextResponse.json({ data: conversation });
     }
-    return NextResponse.json({ data: conversation });
+
+    // List conversations — most recent first
+    const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
+
+    const where: Record<string, unknown> = {
+      tenantId: auth.tenantId,
+      user: auth.username,
+    };
+    if (channel) where.channel = channel;
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { messages: { some: { content: { contains: search, mode: "insensitive" } } } },
+      ];
+    }
+
+    const conversations = await prisma.aIConversation.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        channel: true,
+        title: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: { select: { messages: true } },
+      },
+    });
+
+    return NextResponse.json({ data: conversations });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  // List conversations — most recent first
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
-
-  const where: Record<string, unknown> = {
-    tenantId: auth.tenantId,
-    user: auth.username,
-  };
-  if (channel) where.channel = channel;
-  if (search) {
-    where.OR = [
-      { title: { contains: search, mode: "insensitive" } },
-      { messages: { some: { content: { contains: search, mode: "insensitive" } } } },
-    ];
-  }
-
-  const conversations = await prisma.aIConversation.findMany({
-    where,
-    orderBy: { updatedAt: "desc" },
-    take: limit,
-    select: {
-      id: true,
-      channel: true,
-      title: true,
-      createdAt: true,
-      updatedAt: true,
-      _count: { select: { messages: true } },
-    },
-  });
-
-  return NextResponse.json({ data: conversations });
 }
 
 /**
@@ -82,70 +89,76 @@ export async function GET(req: NextRequest) {
  * Create a new conversation or save a message to an existing one.
  */
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "ai-assistant-history"); if (_rl) return _rl;
-  const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const _rl = await applyRateLimit(req, "MODERATE", "ai-assistant-history"); if (_rl) return _rl;
+    const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => ({}));
-  const action = body.action;
+    const body = await req.json().catch(() => ({}));
+    const action = body.action;
 
-  if (action === "create") {
-    const parsed = CreateConversationSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
-    }
-    const conversation = await prisma.aIConversation.create({
-      data: {
-        tenantId: auth.tenantId,
-        user: auth.username,
-        channel: parsed.data.channel,
-        title: parsed.data.title,
-      },
-    });
-    return NextResponse.json({ data: conversation }, { status: 201 });
-  }
-
-  if (action === "message") {
-    const parsed = SaveMessageSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
-    }
-
-    // Verify conversation belongs to user + tenant
-    const conv = await prisma.aIConversation.findFirst({
-      where: { id: parsed.data.conversationId, tenantId: auth.tenantId, user: auth.username },
-    });
-    if (!conv) {
-      return NextResponse.json({ error: "Conversación no encontrada" }, { status: 404 });
-    }
-
-    const message = await prisma.aIMessage.create({
-      data: {
-        conversationId: parsed.data.conversationId,
-        role: parsed.data.role,
-        content: parsed.data.content,
-        mode: parsed.data.mode,
-        tokensUsed: parsed.data.tokensUsed,
-        latencyMs: parsed.data.latencyMs,
-      },
-    });
-
-    // Update conversation title from first user message if empty
-    if (!conv.title && parsed.data.role === "user") {
-      await prisma.aIConversation.update({
-        where: { id: conv.id },
-        data: { title: parsed.data.content.slice(0, 120) },
+    if (action === "create") {
+      const parsed = CreateConversationSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
+      }
+      const conversation = await prisma.aIConversation.create({
+        data: {
+          tenantId: auth.tenantId,
+          user: auth.username,
+          channel: parsed.data.channel,
+          title: parsed.data.title,
+        },
       });
-    } else {
-      // Touch updatedAt
-      await prisma.aIConversation.update({
-        where: { id: conv.id },
-        data: { updatedAt: new Date() },
-      });
+      return NextResponse.json({ data: conversation }, { status: 201 });
     }
 
-    return NextResponse.json({ data: message }, { status: 201 });
-  }
+    if (action === "message") {
+      const parsed = SaveMessageSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
+      }
 
-  return NextResponse.json({ error: "action requerido: 'create' o 'message'" }, { status: 400 });
+      // Verify conversation belongs to user + tenant
+      const conv = await prisma.aIConversation.findFirst({
+        where: { id: parsed.data.conversationId, tenantId: auth.tenantId, user: auth.username },
+      });
+      if (!conv) {
+        return NextResponse.json({ error: "Conversación no encontrada" }, { status: 404 });
+      }
+
+      const message = await prisma.aIMessage.create({
+        data: {
+          conversationId: parsed.data.conversationId,
+          role: parsed.data.role,
+          content: parsed.data.content,
+          mode: parsed.data.mode,
+          tokensUsed: parsed.data.tokensUsed,
+          latencyMs: parsed.data.latencyMs,
+        },
+      });
+
+      // Update conversation title from first user message if empty
+      if (!conv.title && parsed.data.role === "user") {
+        await prisma.aIConversation.update({
+          where: { id: conv.id },
+          data: { title: parsed.data.content.slice(0, 120) },
+        });
+      } else {
+        // Touch updatedAt
+        await prisma.aIConversation.update({
+          where: { id: conv.id },
+          data: { updatedAt: new Date() },
+        });
+      }
+
+      return NextResponse.json({ data: message }, { status: 201 });
+    }
+
+    return NextResponse.json({ error: "action requerido: 'create' o 'message'" }, { status: 400 });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

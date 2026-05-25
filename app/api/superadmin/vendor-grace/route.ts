@@ -18,44 +18,49 @@ import { VendorGraceDB } from "@/lib/db/vendor-grace.db";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 export async function DELETE(req: NextRequest) {
-  const rl = applyRateLimit(req, "STRICT", "superadmin-vendor-grace-clear");
-  if (rl) return rl;
-  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
+  try {
+    const rl = applyRateLimit(req, "STRICT", "superadmin-vendor-grace-clear");
+    if (rl) return rl;
+    if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
 
-  const auth = await requirePlatformAPI(req);
-  if (auth instanceof NextResponse) return auth;
+    const auth = await requirePlatformAPI(req);
+    if (auth instanceof NextResponse) return auth;
 
-  const tenantId = req.nextUrl.searchParams.get("tenantId");
-  if (!tenantId || tenantId.length < 3) {
-    return NextResponse.json(
-      { error: "tenantId requerido" },
-      { status: 400 },
-    );
-  }
+    const tenantId = req.nextUrl.searchParams.get("tenantId");
+    if (!tenantId || tenantId.length < 3) {
+      return NextResponse.json(
+        { error: "tenantId requerido" },
+        { status: 400 },
+      );
+    }
 
-  const existing = VendorGraceDB.get(tenantId);
-  if (!existing) {
-    return NextResponse.json(
-      { ok: true, cleared: false, message: "Ya no había grace activo" },
-    );
-  }
+    const existing = VendorGraceDB.get(tenantId);
+    if (!existing) {
+      return NextResponse.json(
+        { ok: true, cleared: false, message: "Ya no había grace activo" },
+      );
+    }
 
-  VendorGraceDB.clear(tenantId);
-  logger.warn("[superadmin/vendor-grace] cleared by superadmin override", {
-    tenantId,
-    vendorId: existing.vendorId,
-    kind: existing.kind,
-    originalAcknowledgedBy: existing.acknowledgedBy,
-    by: auth.username,
-  });
-
-  return NextResponse.json({
-    ok: true,
-    cleared: true,
-    previousGrace: {
+    VendorGraceDB.clear(tenantId);
+    logger.warn("[superadmin/vendor-grace] cleared by superadmin override", {
+      tenantId,
       vendorId: existing.vendorId,
       kind: existing.kind,
-      acknowledgedBy: existing.acknowledgedBy,
-    },
-  });
+      originalAcknowledgedBy: existing.acknowledgedBy,
+      by: auth.username,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      cleared: true,
+      previousGrace: {
+        vendorId: existing.vendorId,
+        kind: existing.kind,
+        acknowledgedBy: existing.acknowledgedBy,
+      },
+    });
+  } catch (e) {
+    logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

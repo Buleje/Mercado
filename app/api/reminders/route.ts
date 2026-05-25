@@ -4,6 +4,7 @@ import { RemindersDB } from "@/lib/db/reminders.db";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { logger } from "@/lib/logger";
 
 const CreateSchema = z.object({
   title: z.string().min(1).max(200),
@@ -43,69 +44,93 @@ function mapReminder(r: {
 
 // GET /api/reminders
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  // Auto-mark overdue on every GET
-  await RemindersDB.markOverdue(auth.tenantId);
+    // Auto-mark overdue on every GET
+    await RemindersDB.markOverdue(auth.tenantId);
 
-  const rows = await RemindersDB.list(auth.tenantId);
-  return NextResponse.json(rows.map(mapReminder));
+    const rows = await RemindersDB.list(auth.tenantId);
+    return NextResponse.json(rows.map(mapReminder));
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 // POST /api/reminders
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
-  const rl = applyRateLimit(req, "MODERATE", "reminders");
-  if (rl) return rl;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
+    const rl = applyRateLimit(req, "MODERATE", "reminders");
+    if (rl) return rl;
 
-  return runWithAuditContext(req, auth.username, async () => {
-    const body = await req.json();
-    const parsed = CreateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-    }
+    return runWithAuditContext(req, auth.username, async () => {
+      const body = await req.json();
+      const parsed = CreateSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      }
 
-    const row = await RemindersDB.create(auth.tenantId, parsed.data);
-    return NextResponse.json(mapReminder(row), { status: 201 });
-  });
+      const row = await RemindersDB.create(auth.tenantId, parsed.data);
+      return NextResponse.json(mapReminder(row), { status: 201 });
+    });
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 // PATCH /api/reminders?id=xxx
 export async function PATCH(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  return runWithAuditContext(req, auth.username, async () => {
-    const id = req.nextUrl.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    return runWithAuditContext(req, auth.username, async () => {
+      const id = req.nextUrl.searchParams.get("id");
+      if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    const body = await req.json();
-    const parsed = UpdateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-    }
+      const body = await req.json();
+      const parsed = UpdateSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      }
 
-    const row = await RemindersDB.updateForTenant(auth.tenantId, id, parsed.data);
-    if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json(mapReminder(row));
-  });
+      const row = await RemindersDB.updateForTenant(auth.tenantId, id, parsed.data);
+      if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json(mapReminder(row));
+    });
+
+  } catch (e) {
+    logger.error("[patch] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 // DELETE /api/reminders?id=xxx
 export async function DELETE(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
-  const rl = applyRateLimit(req, "MODERATE", "reminders");
-  if (rl) return rl;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
+    if (auth instanceof NextResponse) return auth;
+    const rl = applyRateLimit(req, "MODERATE", "reminders");
+    if (rl) return rl;
 
-  return runWithAuditContext(req, auth.username, async () => {
-    const id = req.nextUrl.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    return runWithAuditContext(req, auth.username, async () => {
+      const id = req.nextUrl.searchParams.get("id");
+      if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    const ok = await RemindersDB.deleteForTenant(auth.tenantId, id);
-    if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json({ ok: true });
-  });
+      const ok = await RemindersDB.deleteForTenant(auth.tenantId, id);
+      if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ ok: true });
+    });
+
+  } catch (e) {
+    logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

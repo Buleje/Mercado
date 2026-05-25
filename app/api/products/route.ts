@@ -13,18 +13,32 @@
  */
 
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import {
   GET as V1_GET,
   POST as V1_POST,
 } from "@/app/api/v1/products/route";
 import { deprecatedResponse } from "@/lib/api-version";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest): Promise<Response> {
-  const res = await V1_GET(req);
-  return deprecatedResponse(res, "/api/v1/products");
+  try {
+    const res = await V1_GET(req);
+    return deprecatedResponse(res, "/api/v1/products");
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
-  const res = await V1_POST(req);
-  return deprecatedResponse(res, "/api/v1/products");
+  try {
+    const res = await V1_POST(req);
+    return deprecatedResponse(res, "/api/v1/products");
+
+  } catch (e) {
+    logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

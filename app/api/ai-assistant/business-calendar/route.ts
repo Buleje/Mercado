@@ -6,6 +6,7 @@ import {
   getTemporada,
   getProximoFeriado,
 } from "@/lib/ai-business-snapshot";
+import { logger } from "@/lib/logger";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -112,29 +113,34 @@ function calcularEventos(today: Date, dias: number): CalendarEvent[] {
 // ── GET handler ─────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero", "analista"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero", "analista"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const rateLimited = applyRateLimit(req, "GENEROUS", "ai-calendar");
-  if (rateLimited) return rateLimited;
+    const rateLimited = applyRateLimit(req, "GENEROUS", "ai-calendar");
+    if (rateLimited) return rateLimited;
 
-  const today = new Date();
-  const eventos = calcularEventos(today, 30);
-  const temporada = getTemporada(today);
-  const esQuincena = isQuincena(today);
-  const proximoFeriado = getProximoFeriado(today);
+    const today = new Date();
+    const eventos = calcularEventos(today, 30);
+    const temporada = getTemporada(today);
+    const esQuincena = isQuincena(today);
+    const proximoFeriado = getProximoFeriado(today);
 
-  return NextResponse.json({
-    today: today.toISOString(),
-    temporada,
-    esQuincena,
-    proximoFeriado: proximoFeriado
-      ? {
-          nombre: proximoFeriado.nombre,
-          fecha: proximoFeriado.fecha.toISOString().slice(0, 10),
-          diasAntes: proximoFeriado.diasAntes,
-        }
-      : null,
-    eventos,
-  });
+    return NextResponse.json({
+      today: today.toISOString(),
+      temporada,
+      esQuincena,
+      proximoFeriado: proximoFeriado
+        ? {
+            nombre: proximoFeriado.nombre,
+            fecha: proximoFeriado.fecha.toISOString().slice(0, 10),
+            diasAntes: proximoFeriado.diasAntes,
+          }
+        : null,
+      eventos,
+    });
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }

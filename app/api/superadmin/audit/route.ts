@@ -29,41 +29,47 @@ async function requirePlatform(req: NextRequest) {
 // ─── Handler ───────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  logger.info("[superadmin/audit] GET", { url: req.url });
+  try {
+    logger.info("[superadmin/audit] GET", { url: req.url });
 
-  // Rate limit conservador — datos sensibles
-  const rateLimited = applyRateLimit(req, "STRICT", "sa-audit");
-  if (rateLimited) return rateLimited;
+    // Rate limit conservador — datos sensibles
+    const rateLimited = applyRateLimit(req, "STRICT", "sa-audit");
+    if (rateLimited) return rateLimited;
 
-  // Auth: sesión superadmin de plataforma
-  const session = await requirePlatform(req);
-  if (!session) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  // Parámetros de consulta — extraer desde URL para compatibilidad Next.js 16
-  const url = new URL(req.url);
-  const limitParam = url.searchParams.get("limit");
-  const limit = limitParam
-    ? Math.min(Math.max(parseInt(limitParam, 10) || 100, 1), 500)
-    : 100;
-
-  const fromParam = url.searchParams.get("from");
-  let from: Date | undefined;
-  if (fromParam) {
-    const parsed = new Date(fromParam);
-    if (!isNaN(parsed.getTime())) {
-      from = parsed;
+    // Auth: sesión superadmin de plataforma
+    const session = await requirePlatform(req);
+    if (!session) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
+
+    // Parámetros de consulta — extraer desde URL para compatibilidad Next.js 16
+    const url = new URL(req.url);
+    const limitParam = url.searchParams.get("limit");
+    const limit = limitParam
+      ? Math.min(Math.max(parseInt(limitParam, 10) || 100, 1), 500)
+      : 100;
+
+    const fromParam = url.searchParams.get("from");
+    let from: Date | undefined;
+    if (fromParam) {
+      const parsed = new Date(fromParam);
+      if (!isNaN(parsed.getTime())) {
+        from = parsed;
+      }
+    }
+
+    // Consulta via DB class
+    const entries = await getSuperadminAuditLog(limit, from);
+
+    return NextResponse.json({
+      entries,
+      count: entries.length,
+      limit,
+      from: from?.toISOString() ?? null,
+    });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  // Consulta via DB class
-  const entries = await getSuperadminAuditLog(limit, from);
-
-  return NextResponse.json({
-    entries,
-    count: entries.length,
-    limit,
-    from: from?.toISOString() ?? null,
-  });
 }

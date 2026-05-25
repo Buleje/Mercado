@@ -27,89 +27,95 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ customerId: string }> },
 ) {
-  const auth = await requireAdmin(req, ["admin", "cajero"]);
-  if (auth instanceof NextResponse) return auth;
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const { customerId } = await params;
+    const { customerId } = await params;
 
-  // Feature flag gate
-  if (!isFiadoDigitalPhase1Enabled()) {
-    logger.info("[credit/score-history] Phase 1 disabled — 404", {
-      customerId,
-      tenantId: auth.tenantId,
-    });
-    return NextResponse.json(
-      { error: "Fiado Digital Phase 1 no habilitado" },
-      { status: 404 },
-    );
-  }
+    // Feature flag gate
+    if (!isFiadoDigitalPhase1Enabled()) {
+      logger.info("[credit/score-history] Phase 1 disabled — 404", {
+        customerId,
+        tenantId: auth.tenantId,
+      });
+      return NextResponse.json(
+        { error: "Fiado Digital Phase 1 no habilitado" },
+        { status: 404 },
+      );
+    }
 
-  // Fetch history snapshots (last 50, newest first)
-  const history = await prisma.creditScoreHistory.findMany({
-    where: { tenantId: auth.tenantId, customerId },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-    select: {
-      id: true,
-      score: true,
-      creditLimit: true,
-      riskLevel: true,
-      breakdownPurchaseHistory: true,
-      breakdownPaymentPunctuality: true,
-      breakdownAvgTicket: true,
-      breakdownSeniority: true,
-      breakdownLoyaltyPoints: true,
-      trigger: true,
-      createdAt: true,
-    },
-  });
-
-  // Calculate current live score for comparison
-  const currentScore = await calculateCreditScore(auth.tenantId, customerId);
-
-  // Fetch current profile limits
-  const profile = await prisma.creditProfile.findUnique({
-    where: {
-      tenantId_customerId: { tenantId: auth.tenantId, customerId },
-    },
-    select: {
-      creditLimit: true,
-      usedCredit: true,
-      availableCredit: true,
-      riskLevel: true,
-      lastScoreUpdate: true,
-    },
-  });
-
-  return NextResponse.json({
-    customerId,
-    currentScore: currentScore.score,
-    currentLimit: currentScore.creditLimit,
-    currentRiskLevel: currentScore.riskLevel,
-    breakdown: currentScore.breakdown,
-    profile: profile
-      ? {
-          creditLimit: toNumOrZero(profile.creditLimit),
-          usedCredit: toNumOrZero(profile.usedCredit),
-          availableCredit: toNumOrZero(profile.availableCredit),
-          riskLevel: profile.riskLevel,
-          lastScoreUpdate: profile.lastScoreUpdate.toISOString(),
-        }
-      : null,
-    history: history.map((h) => ({
-      id: h.id,
-      score: h.score,
-      creditLimit: toNumOrZero(h.creditLimit),
-      riskLevel: h.riskLevel,
-      breakdown: {
-        purchaseHistory: h.breakdownPurchaseHistory,
-        paymentPunctuality: h.breakdownPaymentPunctuality,
-        avgTicket: h.breakdownAvgTicket,
-        seniority: h.breakdownSeniority,
-        loyaltyPoints: h.breakdownLoyaltyPoints,
+    // Fetch history snapshots (last 50, newest first)
+    const history = await prisma.creditScoreHistory.findMany({
+      where: { tenantId: auth.tenantId, customerId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        score: true,
+        creditLimit: true,
+        riskLevel: true,
+        breakdownPurchaseHistory: true,
+        breakdownPaymentPunctuality: true,
+        breakdownAvgTicket: true,
+        breakdownSeniority: true,
+        breakdownLoyaltyPoints: true,
+        trigger: true,
+        createdAt: true,
       },
-      trigger: h.trigger,
-      date: h.createdAt.toISOString(),
-    })),
-  });
+    });
+
+    // Calculate current live score for comparison
+    const currentScore = await calculateCreditScore(auth.tenantId, customerId);
+
+    // Fetch current profile limits
+    const profile = await prisma.creditProfile.findUnique({
+      where: {
+        tenantId_customerId: { tenantId: auth.tenantId, customerId },
+      },
+      select: {
+        creditLimit: true,
+        usedCredit: true,
+        availableCredit: true,
+        riskLevel: true,
+        lastScoreUpdate: true,
+      },
+    });
+
+    return NextResponse.json({
+      customerId,
+      currentScore: currentScore.score,
+      currentLimit: currentScore.creditLimit,
+      currentRiskLevel: currentScore.riskLevel,
+      breakdown: currentScore.breakdown,
+      profile: profile
+        ? {
+            creditLimit: toNumOrZero(profile.creditLimit),
+            usedCredit: toNumOrZero(profile.usedCredit),
+            availableCredit: toNumOrZero(profile.availableCredit),
+            riskLevel: profile.riskLevel,
+            lastScoreUpdate: profile.lastScoreUpdate.toISOString(),
+          }
+        : null,
+      history: history.map((h) => ({
+        id: h.id,
+        score: h.score,
+        creditLimit: toNumOrZero(h.creditLimit),
+        riskLevel: h.riskLevel,
+        breakdown: {
+          purchaseHistory: h.breakdownPurchaseHistory,
+          paymentPunctuality: h.breakdownPaymentPunctuality,
+          avgTicket: h.breakdownAvgTicket,
+          seniority: h.breakdownSeniority,
+          loyaltyPoints: h.breakdownLoyaltyPoints,
+        },
+        trigger: h.trigger,
+        date: h.createdAt.toISOString(),
+      })),
+    });
+
+  } catch (e) {
+    logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
