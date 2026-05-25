@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
+import { csrfMock } from "../helpers/mocks";
 
 vi.mock("server-only", () => ({}));
 
@@ -10,10 +11,7 @@ vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
 }));
 
-vi.mock("@/lib/csrf", () => ({
-  validateSuperadminCsrf: vi.fn(() => true),
-  csrfForbiddenResponse: vi.fn(() => new Response(null, { status: 403 })),
-}));
+vi.mock("@/lib/csrf", () => csrfMock());
 
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
