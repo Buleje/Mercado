@@ -45,14 +45,20 @@ export const MarketplaceOrdersDB = {
       throw new Error("Tienda no disponible");
     }
 
-    // 2. Verificar que todos los items pertenecen a esta tienda y calcular totales
+    // 2. Verificar que todos los items pertenecen a esta tienda y calcular totales.
+    // Dedup de storeProductIds: el carrito puede tener el MISMO producto en
+    // varias líneas (ej. "1/4 Pollo" x3 con distinto precio/adicional). El
+    // `findMany({ in })` devuelve cada producto UNA vez, así que comparar contra
+    // la longitud CON duplicados rompía con "Uno o más productos no están
+    // disponibles" → 500. Comparamos contra los IDs únicos.
     const storeProductIds = params.items.map((i) => i.storeProductId);
+    const uniqueStoreProductIds = [...new Set(storeProductIds)];
     const storeProducts = await prisma.storeProduct.findMany({
-      where: { id: { in: storeProductIds }, storeId: store.id, isActive: true },
+      where: { id: { in: uniqueStoreProductIds }, storeId: store.id, isActive: true },
       select: { id: true, productId: true, retailPrice: true, minOrderQty: true },
     });
 
-    if (storeProducts.length !== storeProductIds.length) {
+    if (storeProducts.length !== uniqueStoreProductIds.length) {
       throw new Error("Uno o más productos no están disponibles en esta tienda");
     }
 

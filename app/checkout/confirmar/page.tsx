@@ -866,9 +866,12 @@ export default function CheckoutConfirmarPage() {
                       </p>
                     </div>
                     <ul className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] space-y-1">
-                      {g.items.map((it) => (
+                      {g.items.map((it, itIdx) => (
                         <li
-                          key={`${it.storeId}-${it.productId}`}
+                          // El mismo producto puede aparecer en varias líneas
+                          // (distinto precio/adicional) → incluir índice para
+                          // que la key sea única (storeId-productId colisionaba).
+                          key={`${it.storeId}-${it.productId}-${itIdx}`}
                           className="flex justify-between gap-3"
                         >
                           <span className="truncate">
