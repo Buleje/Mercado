@@ -13,8 +13,10 @@ const QuerySchema = z.object({
  *
  * Top productos mas vendidos del marketplace (consumido por
  * MarketplaceBestsellersStrip en la home). Reusa getTopToday (ventana
- * 24h con fallback a 7d) y proyecta al shape del strip:
- *   { items: [{ id, name, storeName, storeSlug, image, price, unitsSold }] }
+ * 24h con fallback a 7d) y proyecta al shape de UnifiedProductCard:
+ *   { items: [{ id(productId), storeProductId, productId, name, storeId,
+ *               storeName, storeSlug, image, price, originalPrice, unit,
+ *               category, stock, unitsSold }] }
  *
  * @cross-tenant intentional — agrega OrderItems de todos los tenants.
  */
@@ -30,12 +32,20 @@ export async function GET(req: NextRequest) {
     const top = await MarketplacePublicDB.getTopToday(parsed.data.limit);
 
     const items = top.items.map((it) => ({
-      id: it.storeProductId,
+      // id = productId numérico (lo que espera UnifiedProductCard.product.id).
+      id: it.productId,
+      storeProductId: it.storeProductId,
+      productId: it.productId,
       name: it.name,
+      storeId: it.store.id,
       storeName: it.store.name,
       storeSlug: it.store.slug,
       image: it.image,
       price: it.price,
+      originalPrice: it.originalPrice,
+      unit: it.unit,
+      category: it.category,
+      stock: it.stock,
       unitsSold: it.soldUnits,
     }));
 

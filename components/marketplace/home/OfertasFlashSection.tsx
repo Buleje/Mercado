@@ -18,7 +18,6 @@ import {
 } from "@buleje/design-system/icons";
 import type { Deal } from "@/lib/mock-deals";
 import { useMarketplaceDeals } from "@/hooks/use-marketplace-deals";
-import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
@@ -132,6 +131,7 @@ export default function OfertasFlashSection() {
             key={d.id}
             product={dealToCardProduct(d)}
             variant="flash"
+            layout="compact"
             endsAt={new Date(d.endsAt)}
             index={i}
             href={`/marketplace/${d.storeSlug}/producto/${dealToCardProduct(d).id}`}

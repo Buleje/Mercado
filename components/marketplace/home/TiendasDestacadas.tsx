@@ -80,10 +80,7 @@ export default function TiendasDestacadas() {
         </Link>
       }
     >
-      <HorizontalCarousel
-        ariaLabel="Tiendas destacadas"
-        itemWidthClass="w-[220px] sm:w-[240px] shrink-0 snap-start"
-      >
+      <HorizontalCarousel ariaLabel="Tiendas destacadas">
         {(loading ? Array.from({ length: 6 }, () => null) : stores).map((store, i) =>
           store ? (
             <Link

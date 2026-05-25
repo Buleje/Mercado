@@ -118,111 +118,36 @@ export default function CatalogSections() {
   }, []);
 
   if (loading) {
-    return (
-      <>
-        <SectionSkeleton kicker="Cargando" title="Ofertas relámpago" />
-        <SectionSkeleton kicker="Cargando" title="Top más vendidos" />
-      </>
-    );
+    return <SectionSkeleton kicker="Cargando" title="Últimas unidades" />;
   }
 
   if (!data) return null;
 
-  const hasFeatured = data.featured.length > 0;
-  const hasFlashDeals = data.flashDeals.length > 0;
-  const hasTopSellers = data.topSellers.length > 0;
+  // De-dup (2026-05-24): flash / top / featured ya tienen secciones dedicadas
+  // en la home (OfertasFlashSection, MarketplaceBestsellersStrip,
+  // OfertasDelDiaHero). CatalogSections renderiza SOLO "Últimas unidades"
+  // (liquidations), que no tiene sección propia, para no repetir títulos.
   const hasLiquidations = data.liquidations.length > 0;
-
-  if (!hasFeatured && !hasFlashDeals && !hasTopSellers && !hasLiquidations) {
-    return null;
-  }
+  if (!hasLiquidations) return null;
 
   return (
-    <>
-      {/* ── Ofertas Relámpago ── */}
-      {hasFlashDeals && (
-        <MarketplaceSection
-          id="catalog-flash"
-          kicker="Por tiempo limitado"
-          title="Ofertas relámpago"
-          subtitle="Descuentos que terminan pronto. No te quedes afuera."
-        >
-          <HorizontalCarousel ariaLabel="Ofertas relámpago">
-            {data.flashDeals.map((product, i) => (
-              <UnifiedProductCard
-                key={product.storeProductId}
-                product={toCardProduct(product)}
-                variant="flash"
-                index={i}
-              />
-            ))}
-          </HorizontalCarousel>
-        </MarketplaceSection>
-      )}
-
-      {/* ── Top Más Vendidos ── */}
-      {hasTopSellers && (
-        <MarketplaceSection
-          id="catalog-top"
-          kicker="Ranking de la semana"
-          title="Top más vendidos"
-          subtitle="Los productos preferidos por nuestros clientes."
-        >
-          <HorizontalCarousel ariaLabel="Top más vendidos">
-            {data.topSellers.slice(0, 8).map((product, i) => (
-              <UnifiedProductCard
-                key={product.storeProductId}
-                product={toCardProduct(product)}
-                variant="top"
-                rank={product.rank ?? i + 1}
-                index={i}
-              />
-            ))}
-          </HorizontalCarousel>
-        </MarketplaceSection>
-      )}
-
-      {/* ── Productos Destacados ── */}
-      {hasFeatured && (
-        <MarketplaceSection
-          id="catalog-featured"
-          kicker="Recomendados"
-          title="Productos destacados"
-          subtitle="Selección curada por la tienda."
-        >
-          <HorizontalCarousel ariaLabel="Productos destacados">
-            {data.featured.map((product, i) => (
-              <UnifiedProductCard
-                key={product.storeProductId}
-                product={toCardProduct(product)}
-                variant="default"
-                index={i}
-              />
-            ))}
-          </HorizontalCarousel>
-        </MarketplaceSection>
-      )}
-
-      {/* ── Últimas Unidades ── */}
-      {hasLiquidations && (
-        <MarketplaceSection
-          id="catalog-liquidations"
-          kicker="Stock final"
-          title="Últimas unidades"
-          subtitle="Quedan pocas. Llevatelas antes que se agoten."
-        >
-          <HorizontalCarousel ariaLabel="Últimas unidades">
-            {data.liquidations.map((product, i) => (
-              <UnifiedProductCard
-                key={product.storeProductId}
-                product={toCardProduct(product)}
-                variant="liquidation"
-                index={i}
-              />
-            ))}
-          </HorizontalCarousel>
-        </MarketplaceSection>
-      )}
-    </>
+    <MarketplaceSection
+      id="catalog-liquidations"
+      kicker="Stock final"
+      title="Últimas unidades"
+      subtitle="Quedan pocas. Llevatelas antes que se agoten."
+    >
+      <HorizontalCarousel ariaLabel="Últimas unidades">
+        {data.liquidations.map((product, i) => (
+          <UnifiedProductCard
+            key={product.storeProductId}
+            product={toCardProduct(product)}
+            variant="liquidation"
+            layout="compact"
+            index={i}
+          />
+        ))}
+      </HorizontalCarousel>
+    </MarketplaceSection>
   );
 }

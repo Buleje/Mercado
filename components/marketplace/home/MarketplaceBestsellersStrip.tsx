@@ -3,34 +3,39 @@
 /**
  * MarketplaceBestsellersStrip — Top 10 más vendidos esta semana.
  *
- * Cards horizontales con número de ranking grande (estilo Netflix top-10),
- * imagen del producto, nombre, tienda, precio, badge de unidades vendidas.
- * Datos del endpoint top-products o fallback a productos populares.
+ * Cards verticales (UnifiedProductCard layout="compact" variant="top") en un
+ * HorizontalCarousel con drag + snap. Antes usaba un BestsellerCard propio
+ * (duplicado, sin botón "Agregar") — migrado al card único del marketplace
+ * para consistencia visual + add-to-cart funcional. Datos reales del endpoint
+ * /api/marketplace/bestsellers; si la DB no tiene ventas aún, se oculta sola.
  */
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Flame,
   ChevronRight,
   TrendingUp,
-  Package,
 } from "@buleje/design-system/icons";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
+import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 
 interface BestsellerProduct {
-  id: string | number;
+  id: number;
+  storeProductId: string;
+  productId: number;
   name: string;
+  storeId: string;
   storeName: string;
   storeSlug: string;
   image: string | null;
   price: number;
-  oldPrice?: number;
+  originalPrice: number | null;
+  unit: string | null;
+  category: string | null;
+  stock: number;
   unitsSold: number;
 }
-
-const fmtPrice = (n: number) =>
-  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
 export default function MarketplaceBestsellersStrip() {
   // Solo datos reales — si la DB no tiene bestsellers todavia, la seccion se oculta.
@@ -46,7 +51,9 @@ export default function MarketplaceBestsellersStrip() {
           setItems(d.items);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        /* strip no crítico: si el fetch falla, la sección se oculta sola */
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -89,103 +96,33 @@ export default function MarketplaceBestsellersStrip() {
         </Link>
       </header>
 
-      {/* Horizontal scroll cards */}
-      <div className="-mx-1 overflow-x-auto scrollbar-hide">
-        <div className="inline-flex gap-3 px-1 pb-2">
-          {items.slice(0, 10).map((item, idx) => (
-            <BestsellerCard key={item.id} item={item} rank={idx + 1} />
-          ))}
-        </div>
-      </div>
+      {/* Carrusel horizontal — card vertical compacto + ranking (variant top) */}
+      <HorizontalCarousel ariaLabel="Más vendidos">
+        {items.slice(0, 10).map((item, idx) => (
+          <UnifiedProductCard
+            key={item.storeProductId}
+            product={{
+              id: item.productId,
+              name: item.name,
+              price: item.price,
+              originalPrice: item.originalPrice ?? undefined,
+              image: item.image,
+              storeName: item.storeName,
+              storeSlug: item.storeSlug,
+              storeId: item.storeId,
+              storeProductId: item.storeProductId,
+              unit: item.unit,
+              category: item.category ?? undefined,
+              stock: item.stock,
+            }}
+            variant="top"
+            rank={idx + 1}
+            layout="compact"
+            index={idx}
+            href={`/marketplace/${item.storeSlug}`}
+          />
+        ))}
+      </HorizontalCarousel>
     </section>
-  );
-}
-
-function BestsellerCard({
-  item,
-  rank,
-}: {
-  item: BestsellerProduct;
-  rank: number;
-}) {
-  const hasDiscount = item.oldPrice && item.oldPrice > item.price;
-  const isTopThree = rank <= 3;
-
-  return (
-    <Link
-      href={`/marketplace/${item.storeSlug}`}
-      className="group relative shrink-0 w-[200px] sm:w-[220px] rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg hover:border-[var(--accent)]/40"
-    >
-      {/* Rank big number — estilo Netflix top */}
-      <span
-        className={`absolute top-1 left-1 z-10 font-display font-extrabold leading-none select-none ${
-          isTopThree
-            ? "text-[80px] sm:text-[100px] text-[var(--accent)] opacity-25"
-            : "text-[60px] sm:text-[80px] text-[var(--text-tertiary)] opacity-20"
-        }`}
-        aria-hidden
-      >
-        {rank}
-      </span>
-
-      {/* Image */}
-      <div className="relative aspect-square bg-[var(--surface-sunken)] flex items-center justify-center">
-        {item.image ? (
-          <Image
-            src={item.image}
-            alt={item.name}
-            fill
-            sizes="220px"
-            className="object-cover transition-transform group-hover:scale-105"
-            unoptimized
-          />
-        ) : (
-          <Package
-            className="h-12 w-12 text-[var(--text-tertiary)]/40"
-            strokeWidth={1.5}
-            aria-hidden
-          />
-        )}
-
-        {hasDiscount && (
-          <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md shadow-md/30">
-            <Flame className="h-3 w-3" strokeWidth={2.75} />
-            -{Math.round(((item.oldPrice! - item.price) / item.oldPrice!) * 100)}%
-          </span>
-        )}
-
-        {isTopThree && (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/30">
-            TOP {rank}
-          </span>
-        )}
-      </div>
-
-      {/* Body */}
-      <div className="relative p-3.5 space-y-1.5">
-        <h3 className="font-display text-base font-extrabold text-[var(--text-primary)] line-clamp-2 leading-tight tracking-tight">
-          {item.name}
-        </h3>
-        <p className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)] truncate uppercase tracking-wider">
-          {item.storeName}
-        </p>
-        <div className="flex items-baseline justify-between gap-2 pt-1">
-          <div className="flex items-baseline gap-1.5 min-w-0">
-            <p className="font-display text-lg sm:text-xl font-extrabold tabular-nums text-[var(--text-primary)] leading-none tracking-tight">
-              {fmtPrice(item.price)}
-            </p>
-            {hasDiscount && (
-              <p className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--text-tertiary)] line-through leading-none">
-                {fmtPrice(item.oldPrice!)}
-              </p>
-            )}
-          </div>
-          <span className="inline-flex items-center gap-0.5 text-xs font-extrabold text-[var(--text-tertiary)] tabular-nums whitespace-nowrap">
-            <Flame className="h-3 w-3 text-[var(--accent)]" strokeWidth={2.75} />
-            {item.unitsSold}
-          </span>
-        </div>
-      </div>
-    </Link>
   );
 }

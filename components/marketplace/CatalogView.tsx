@@ -15,7 +15,12 @@ import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import SponsoredBadge from "@/components/marketplace/SponsoredBadge";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
-import { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
+// Grid del catálogo: 1 COLUMNA en mobile (card horizontal full-width estilo
+// PedidosYa — imagen 176px + nombre/precio/CTA visibles, nada cortado), grid
+// vertical multi-columna desde sm. No reusa MARKETPLACE_GRID (que arranca en
+// 2-col) porque el card list horizontal necesita el ancho completo en mobile.
+const CATALOG_GRID =
+  "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -273,7 +278,7 @@ export default function CatalogView({
 
       {/* Loading skeleton */}
       {loading && (
-        <div className={MARKETPLACE_GRID}>
+        <div className={CATALOG_GRID}>
           {Array.from({ length: 20 }).map((_, i) => (
             <div
               key={i}
@@ -295,7 +300,7 @@ export default function CatalogView({
       {!loading && products.length > 0 && (
         <div
           ref={gridRef}
-          className={MARKETPLACE_GRID}
+          className={CATALOG_GRID}
         >
           {products.map((product, i) => (
             <div key={product.storeProductId} className="relative">

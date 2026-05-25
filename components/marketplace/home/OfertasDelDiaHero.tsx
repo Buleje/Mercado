@@ -3,20 +3,17 @@
 /**
  * OfertasDelDiaHero — Seccion hero con ProductCardHero (DS Ola 7).
  *
- * Se monta inmediatamente despues del hero principal del marketplace para
- * capturar el primer pantallazo del usuario con 2 ofertas grandes y
- * visualmente dominantes. Usa el primitivo canonico del DS que garantiza
- * consistencia visual con tienda/admin (mismo token set, mismas proporciones).
+ * 2 productos destacados grandes, visualmente dominantes, con el primitivo
+ * canonico del DS (mismo token set que tienda/admin).
  *
- * Data: mock local hoy. Cuando exista endpoint `/api/marketplace/featured`
- * que devuelva productos destacados con stock + originalPrice se reemplaza
- * el array `FEATURED` por fetch + fallback al mock.
+ * Data REAL desde /api/marketplace/catalog/sections (campo `featured`).
+ * Antes usaba un array FEATURED mock hardcodeado (violaba "solo data real").
+ * Si no hay destacados publicados, la seccion se oculta sola (early-return).
  *
- * Container: max-w-[1600px] para aprovechar desktops grandes segun pedido
- * del user ("las secciones seran mas amplias, abarcan todo el ancho").
- * En viewports < 1600px el max-w no cambia nada.
+ * Container: max-w-[1600px] para desktops grandes; en < 1600px no cambia nada.
  */
 
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -28,39 +25,23 @@ import {
 import { ArrowRight } from "@buleje/design-system/icons";
 import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 
-// Mock de 2 productos destacados. Estructura lista para reemplazar por fetch.
-const FEATURED: ProductCardProduct[] = [
-  {
-    id: "feat-arroz-5kg",
-    name: "Arroz Costeno extra 5 kg",
-    category: "Abarrotes",
-    price: 20.9,
-    originalPrice: 24.9,
-    image: null,
-    stock: 40,
-    rating: 4.7,
-    reviewCount: 120,
-    storeSlug: "bodega-don-pepe",
-    storeName: "Bodega Don Pepe",
-    unit: "x 5 kg",
-    badge: "oferta",
-  },
-  {
-    id: "feat-aceite-primor-1l",
-    name: "Aceite Primor 1 L",
-    category: "Abarrotes",
-    price: 7.5,
-    originalPrice: 9.5,
-    image: null,
-    stock: 68,
-    rating: 4.8,
-    reviewCount: 210,
-    storeSlug: "frutas-selva",
-    storeName: "Frutas de la Selva",
-    unit: "x 1 L",
-    badge: "oferta",
-  },
-];
+/** Shape del producto que devuelve /api/marketplace/catalog/sections.featured */
+interface FeaturedProduct {
+  storeProductId: string;
+  productId: number;
+  name: string;
+  // El endpoint serializa Decimal de Prisma como string ("15") — coercionar.
+  price: number | string;
+  image: string | null;
+  unit: string | null;
+  category: string | null;
+  stock: number;
+  storeId: string;
+  storeName: string;
+  storeSlug: string;
+  storeRating: number;
+  discountPercent?: number;
+}
 
 /**
  * Renderer de imagen con Next/Image para optimizacion. Se inyecta via
@@ -87,28 +68,81 @@ function nextImage({
   );
 }
 
+function toCardProduct(p: FeaturedProduct): ProductCardProduct {
+  const price = Number(p.price);
+  // Si hay % de descuento, reconstruir el precio original para el tachado.
+  const originalPrice =
+    p.discountPercent && p.discountPercent > 0
+      ? Math.round((price / (1 - p.discountPercent / 100)) * 100) / 100
+      : undefined;
+  return {
+    id: p.productId,
+    name: p.name,
+    category: p.category ?? undefined,
+    price,
+    originalPrice,
+    image: p.image,
+    stock: p.stock,
+    rating: p.storeRating || undefined,
+    storeSlug: p.storeSlug,
+    storeName: p.storeName,
+    unit: p.unit ?? undefined,
+    badge: originalPrice ? "oferta" : undefined,
+  };
+}
+
 export default function OfertasDelDiaHero() {
   const { addItemWithUndo } = useCartWithUndo();
+  const [featured, setFeatured] = useState<FeaturedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  // Mapa productId → raw para resolver storeId/storeProductId al agregar.
+  const rawById = useRef(new Map<number, FeaturedProduct>());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/marketplace/catalog/sections")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return;
+        const list = (d?.data?.featured ?? []) as FeaturedProduct[];
+        const top2 = list.slice(0, 2);
+        rawById.current = new Map(top2.map((p) => [p.productId, p]));
+        setFeatured(top2);
+      })
+      .catch(() => {
+        /* sección no crítica: si el fetch falla, se oculta sola (early-return) */
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const cards = useMemo(() => featured.map(toCardProduct), [featured]);
 
   const handleAdd = (p: ProductCardProduct) => {
+    const raw = rawById.current.get(Number(p.id));
     addItemWithUndo({
-      storeId: p.storeSlug ?? "",
-      storeName: p.storeName ?? "",
-      storeSlug: p.storeSlug ?? "",
-      storeProductId: String(p.id),
+      storeId: raw?.storeId ?? p.storeSlug ?? "",
+      storeName: raw?.storeName ?? p.storeName ?? "",
+      storeSlug: raw?.storeSlug ?? p.storeSlug ?? "",
+      storeProductId: raw?.storeProductId ?? String(p.id),
       productId: typeof p.id === "number" ? p.id : Number(p.id) || 0,
       name: p.name,
       price: p.price,
       image: p.image ?? null,
       unit: p.unit ?? null,
+      stock: raw?.stock ?? null,
     });
   };
 
+  // Sin destacados reales → no render (consistente con el resto de strips).
+  if (loading || cards.length === 0) return null;
+
   return (
-    <section
-      aria-labelledby="ofertas-del-dia-title"
-      className="py-8 sm:py-10"
-    >
+    <section aria-labelledby="ofertas-del-dia-title" className="py-8 sm:py-10">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-4 mb-5">
           <div>
@@ -132,8 +166,7 @@ export default function OfertasDelDiaHero() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {FEATURED.slice(0, 2).map((p) => (
-            /* ProductCardHero (Ola 7) — destacar oferta del dia */
+          {cards.map((p) => (
             <ProductCardHero
               key={p.id}
               product={p}

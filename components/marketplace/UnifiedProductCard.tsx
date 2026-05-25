@@ -150,6 +150,15 @@ export interface UnifiedProductCardProps {
   /** Si true, oculta el nombre de la tienda (util en storefront /marketplace/[slug]
       donde el contexto de tienda ya es obvio y repetirlo es ruido visual). */
   hideStore?: boolean;
+  /**
+   * Layout del card:
+   * - `"list"` (default): mobile HORIZONTAL (imagen 176px izq + contenido der),
+   *   desktop vertical. Para listas/grids full-width 1-columna en mobile.
+   * - `"compact"`: SIEMPRE vertical (imagen cuadrada arriba + contenido abajo),
+   *   en todos los breakpoints. Para carruseles horizontales donde cada card
+   *   vive en un slot angosto (~42vw) — el horizontal no entra y "corta todo".
+   */
+  layout?: "list" | "compact";
 }
 
 /* ── Formateador de moneda ──────────────────────────────────────────────────── */
@@ -193,7 +202,9 @@ export default function UnifiedProductCard({
   href,
   index = 0,
   hideStore = false,
+  layout = "list",
 }: UnifiedProductCardProps) {
+  const isCompact = layout === "compact";
   const { addItemWithUndo } = useCartWithUndo();
   // Brandon 2026-05-18 v6: importamos `addItem` directo (sin drawer) para
   // el flow de modifiers — cuando el cliente confirma desde el modal de
@@ -336,10 +347,12 @@ export default function UnifiedProductCard({
       whileHover={{ y: -6 }}
       className={cn(
         // Brandon 2026-05-18 v3: layout horizontal en mobile (estilo PedidosYa/
-        // Cornershop) — imagen 96×96 a la izquierda, info + precio + CTA en
-        // columna derecha. Más cards visibles por scroll, escaneo rápido.
-        // Desktop conserva el vertical card original (sm:flex-col).
-        "group relative flex w-full flex-row sm:flex-col overflow-hidden rounded-2xl sm:rounded-xl",
+        // Cornershop) — imagen a la izquierda, info + precio + CTA en columna
+        // derecha. Desktop conserva el vertical card original (sm:flex-col).
+        // layout="compact": SIEMPRE vertical (carruseles angostos donde el
+        // horizontal no entra). Default "list" = horizontal mobile.
+        "group relative flex w-full overflow-hidden rounded-2xl sm:rounded-xl",
+        isCompact ? "flex-col" : "flex-row sm:flex-col",
         "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
         "transition-[border-color,box-shadow,transform] duration-200",
         "hover:border-[var(--accent)]/60 hover:shadow-[0_12px_32px_-8px_color-mix(in oklab, var(--accent) 28%, transparent)]",
@@ -353,7 +366,7 @@ export default function UnifiedProductCard({
           aún más grande y dominante (Brandon 2026-05-18 v5: pidió que la
           imagen ocupe más ancho del card para que el cliente la vea bien).
           Desktop (sm+): wrapper full-width aspect-[4/3] como siempre. */}
-      <div className="relative w-44 sm:w-full shrink-0 sm:shrink">
+      <div className={cn("relative", isCompact ? "w-full shrink" : "w-44 sm:w-full shrink-0 sm:shrink")}>
         {/* Brandon 2026-05-18 v3: en MOBILE el Link a detalles queda inerte
             (`pointer-events-none`) — el cliente que toca el card ya no se va
             a /producto/[slug]. La única acción mobile es el botón "Agregar"
@@ -362,22 +375,31 @@ export default function UnifiedProductCard({
             El href se conserva para SEO/crawlers. */}
         <Link
           href={productHref}
-          className="block pointer-events-none sm:pointer-events-auto"
-          tabIndex={-1}
-          aria-hidden="true"
+          className={isCompact ? "block" : "block pointer-events-none sm:pointer-events-auto"}
+          tabIndex={isCompact ? undefined : -1}
+          aria-hidden={isCompact ? undefined : "true"}
         >
-          {/* Mobile: aspect-square 144×144. Desktop: aspect-[4/3] landscape.
-              Brandon 2026-05-18 v4: imagen llena el card (object-cover sin
-              padding) — antes object-contain p-2 dejaba márgenes blancos y
-              hacía ver el producto pequeño. Ahora ocupa el 100% del slot. */}
-          <div className="relative aspect-square sm:aspect-[4/3] h-full sm:h-auto overflow-hidden bg-[var(--surface-sunken)] sm:bg-white dark:sm:bg-gray-900">
+          {/* list: mobile aspect-square / desktop aspect-[4/3] landscape.
+              compact: aspect-square en todos los breakpoints (imagen arriba). */}
+          <div
+            className={cn(
+              "relative overflow-hidden",
+              isCompact
+                ? "aspect-square h-auto bg-white dark:bg-gray-900"
+                : "aspect-square sm:aspect-[4/3] h-full sm:h-auto bg-[var(--surface-sunken)] sm:bg-white dark:sm:bg-gray-900",
+            )}
+          >
             {product.image ? (
               <Image
                 src={product.image}
                 alt={product.name}
                 fill
                 className="object-cover sm:object-contain sm:p-2 transition-transform duration-500 group-hover:scale-[1.04]"
-                sizes="(max-width: 640px) 176px, (max-width: 1024px) 50vw, 33vw"
+                sizes={
+                  isCompact
+                    ? "(max-width: 640px) 42vw, (max-width: 1024px) 210px, 230px"
+                    : "(max-width: 640px) 176px, (max-width: 1024px) 50vw, 33vw"
+                }
               />
             ) : (
               <ProductImageFallback name={product.name} category={product.category} />
@@ -390,7 +412,7 @@ export default function UnifiedProductCard({
             (imagen 112×112). El descuento ya aparece como precio tachado +
             "Ahorra S/X" en el bloque del precio. Liquidación/PERUANO se
             muestran en sm+ donde la imagen es más grande. */}
-        <div className="hidden sm:flex absolute top-2 left-2 z-10 flex-col gap-1.5">
+        <div className={cn("absolute top-2 left-2 z-10 flex-col gap-1.5", isCompact ? "flex" : "hidden sm:flex")}>
           {/* Rank badge (variant top) */}
           {variant === "top" && rank !== undefined && (
             <span
@@ -478,8 +500,10 @@ export default function UnifiedProductCard({
         </div>
 
         {/* Brandon 2026-05-18 v3: badge -N% mini en mobile xs cuando hay
-            descuento. Posición top-left. Diseño compacto pill. */}
-        {product.discount != null && product.discount > 0 && (
+            descuento. Posición top-left. Diseño compacto pill.
+            En compact el bloque de badges de arriba ya lo muestra (flex en
+            todos los breakpoints) — no duplicar. */}
+        {!isCompact && product.discount != null && product.discount > 0 && (
           <span
             className="sm:hidden absolute top-1.5 left-1.5 z-10 inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)] shadow-sm"
             aria-label={`${product.discount}% de descuento`}
@@ -515,9 +539,9 @@ export default function UnifiedProductCard({
             Link inerte en mobile (el cliente en cel solo usa "Agregar"). */}
         <Link
           href={productHref}
-          className="pointer-events-none sm:pointer-events-auto"
-          tabIndex={-1}
-          aria-hidden="true"
+          className={isCompact ? undefined : "pointer-events-none sm:pointer-events-auto"}
+          tabIndex={isCompact ? undefined : -1}
+          aria-hidden={isCompact ? undefined : "true"}
         >
           <h3 className="text-sm sm:text-lg font-extrabold sm:font-bold leading-snug text-[var(--text-primary)] line-clamp-2 sm:min-h-[2.75rem] group-hover:text-[var(--accent)] group-focus-within:text-[var(--accent)] transition-colors">
             {product.name}

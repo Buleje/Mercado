@@ -625,12 +625,14 @@ export const MarketplacePublicDB = {
       productId: number;
       name: string;
       price: number;
+      originalPrice: number | null;
       image: string | null;
       unit: string;
+      category: string | null;
       stock: number;
       soldUnits: number;
       trendPct: number | null;
-      store: { slug: string; name: string; rating: number };
+      store: { id: string; slug: string; name: string; rating: number };
     }>;
     window: "24h" | "7d";
     updatedAt: string;
@@ -718,8 +720,8 @@ export const MarketplacePublicDB = {
           id: true,
           retailPrice: true,
           productId: true,
-          product: { select: { id: true, name: true, image: true, unit: true, stock: true } },
-          store: { select: { slug: true, name: true, rating: true } },
+          product: { select: { id: true, name: true, image: true, unit: true, stock: true, price: true, category: true } },
+          store: { select: { id: true, slug: true, name: true, rating: true } },
         },
       });
 
@@ -742,17 +744,22 @@ export const MarketplacePublicDB = {
             soldPrev != null && soldPrev > 0
               ? Math.round(((soldNow - soldPrev) / soldPrev) * 100)
               : null;
+          const retail = Number(sp.retailPrice);
+          const base = sp.product.price != null ? Number(sp.product.price) : null;
           return {
             storeProductId: sp.id,
             productId: sp.productId,
             name: sp.product.name,
-            price: Number(sp.retailPrice),
+            price: retail,
+            originalPrice: base != null && base > retail ? base : null,
             image: sp.product.image,
             unit: sp.product.unit,
+            category: sp.product.category ?? null,
             stock: sp.product.stock ?? 0,
             soldUnits: soldNow,
             trendPct,
             store: {
+              id: sp.store.id,
               slug: sp.store.slug,
               name: sp.store.name,
               rating: Number(sp.store.rating ?? 0),

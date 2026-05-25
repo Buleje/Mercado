@@ -50,7 +50,10 @@ export type HorizontalCarouselProps = {
   className?: string;
 };
 
-const DEFAULT_ITEM_W = "w-[220px] sm:w-[240px] shrink-0 snap-start";
+// Mobile: 42vw → ~2.2 cards visibles en 390px (el corte parcial de la 3ra
+// invita a scrollear). Antes 220px fijo cortaba el card horizontal adentro.
+// Desde sm vuelve a ancho fijo cómodo para card vertical compacto.
+const DEFAULT_ITEM_W = "w-[42vw] sm:w-[210px] lg:w-[230px] shrink-0 snap-start";
 
 export default function HorizontalCarousel({
   children,
