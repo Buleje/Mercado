@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Search,
   MessageCircle,
+  Pencil,
+  Trash2,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -450,14 +452,16 @@ function AdelantosView({
 
 function CrearAdelantoModal({
   beneficiarios,
+  initialBeneficiarioId,
   onClose,
   onCreated,
 }: {
   beneficiarios: BeneficiarioConSaldo[];
+  initialBeneficiarioId?: string;
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const [beneficiarioId, setBeneficiarioId] = useState(beneficiarios[0]?.id ?? "");
+  const [beneficiarioId, setBeneficiarioId] = useState(initialBeneficiarioId ?? beneficiarios[0]?.id ?? "");
   const [modalidad, setModalidad] = useState<AdelantoModalidad>("CUENTA_CORRIENTE");
   const [monto, setMonto] = useState("");
   const [notas, setNotas] = useState("");
@@ -681,13 +685,27 @@ function PersonasView({
   onChange: () => void;
 }) {
   const [showCreate, setShowCreate] = useState(false);
+  const [editPersona, setEditPersona] = useState<BeneficiarioConSaldo | null>(null);
+  const [deletePersona, setDeletePersona] = useState<BeneficiarioConSaldo | null>(null);
+  const [adelantoPara, setAdelantoPara] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [orden, setOrden] = useState<"saldo" | "nombre" | "adelantado">("saldo");
 
-  // Orden: quien más debe primero. Filtro: por nombre.
-  const filtrados = beneficiarios
+  const ordenados = beneficiarios
     .filter((b) => !q.trim() || b.nombre.toLowerCase().includes(q.trim().toLowerCase()))
-    .sort((a, b) => b.saldoPendiente - a.saldoPendiente);
+    .sort((a, b) => {
+      if (orden === "nombre") return a.nombre.localeCompare(b.nombre);
+      if (orden === "adelantado") return b.totalAdelantado - a.totalAdelantado;
+      return b.saldoPendiente - a.saldoPendiente;
+    });
   const conSaldo = beneficiarios.filter((b) => b.saldoPendiente > 0).length;
+
+  // Totales de toda la cartera de personas
+  const tot = beneficiarios.reduce(
+    (acc, b) => { acc.adelantado += b.totalAdelantado; acc.porRecuperar += b.saldoPendiente; return acc; },
+    { adelantado: 0, porRecuperar: 0 },
+  );
+  const entregado = Math.max(0, tot.adelantado - tot.porRecuperar);
 
   // Recordatorio por WhatsApp (con saldo si debe).
   const waLink = (b: BeneficiarioConSaldo) => {
@@ -699,6 +717,11 @@ function PersonasView({
         : `Hola ${b.nombre}, ¿cómo estás?`;
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };
+
+  const ordenChip = (val: typeof orden, label: string) =>
+    `h-10 px-3 rounded-full border-2 text-sm font-bold transition-colors ${
+      orden === val ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+    }`;
 
   return (
     <div className="space-y-4">
@@ -713,30 +736,58 @@ function PersonasView({
       </div>
 
       {beneficiarios.length > 0 && (
-        <div className="relative max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar persona..."
-            className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
-          />
-        </div>
+        <>
+          {/* Búsqueda + orden */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[220px] flex-1 sm:max-w-sm">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar persona..."
+                className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold text-[var(--text-tertiary)]">Orden:</span>
+              <button className={ordenChip("saldo", "")} onClick={() => setOrden("saldo")}>Saldo</button>
+              <button className={ordenChip("nombre", "")} onClick={() => setOrden("nombre")}>Nombre</button>
+              <button className={ordenChip("adelantado", "")} onClick={() => setOrden("adelantado")}>Adelantado</button>
+            </div>
+          </div>
+
+          {/* Totales de la cartera */}
+          <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
+            <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(tot.adelantado)}</strong></span>
+            <span>Entregado <strong className="tabular-nums text-[var(--data-success)]">{formatCurrency(entregado)}</strong></span>
+            <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{formatCurrency(tot.porRecuperar)}</strong></span>
+          </div>
+        </>
       )}
 
       {loading ? (
         <SkeletonGrid />
       ) : beneficiarios.length === 0 ? (
         <EmptyState icon={Users} title="Sin personas" hint="Agregá a quién le das adelantos." />
-      ) : filtrados.length === 0 ? (
+      ) : ordenados.length === 0 ? (
         <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro nombre." />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtrados.map((b) => {
+          {ordenados.map((b) => {
             const debe = b.saldoPendiente > 0;
             return (
-              <div key={b.id} className="flex flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-white p-4">
-                <div className="flex items-start gap-3">
+              <div key={b.id} className="relative flex flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-white p-4">
+                {/* Acciones editar / eliminar */}
+                <div className="absolute right-3 top-3 flex gap-1">
+                  <button onClick={() => setEditPersona(b)} title="Editar" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors">
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => setDeletePersona(b)} title="Eliminar" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--data-error)]/10 hover:text-[var(--data-error)] transition-colors">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex items-start gap-3 pr-16">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-extrabold text-primary">
                     {b.nombre.charAt(0).toUpperCase()}
                   </span>
@@ -758,7 +809,7 @@ function PersonasView({
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between gap-2">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                   {debe ? (
                     <span className="inline-flex items-center rounded-full bg-[var(--data-warning)]/15 px-3 py-1 text-sm font-bold text-[var(--data-warning)]">
                       {b.adelantosAbiertos} abierto{b.adelantosAbiertos === 1 ? "" : "s"}
@@ -768,34 +819,54 @@ function PersonasView({
                       <CheckCircle className="h-4 w-4" /> Al día
                     </span>
                   )}
-                  {b.telefono && (
-                    <a
-                      href={waLink(b)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
-                      title={debe ? "Recordar saldo por WhatsApp" : "Escribir por WhatsApp"}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setAdelantoPara(b.id)}
+                      className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
                     >
-                      <MessageCircle className="h-4 w-4" /> WhatsApp
-                    </a>
-                  )}
+                      <Plus className="h-4 w-4" /> Adelanto
+                    </button>
+                    {b.telefono && (
+                      <a
+                        href={waLink(b)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+                        title={debe ? "Recordar saldo por WhatsApp" : "Escribir por WhatsApp"}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
       {showCreate && (
         <CrearPersonaModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); onChange(); }} />
+      )}
+      {editPersona && (
+        <CrearPersonaModal persona={editPersona} onClose={() => setEditPersona(null)} onCreated={() => { setEditPersona(null); onChange(); }} />
+      )}
+      {deletePersona && (
+        <EliminarPersonaModal persona={deletePersona} onClose={() => setDeletePersona(null)} onDeleted={() => { setDeletePersona(null); onChange(); }} />
+      )}
+      {adelantoPara && (
+        <CrearAdelantoModal beneficiarios={beneficiarios} initialBeneficiarioId={adelantoPara} onClose={() => setAdelantoPara(null)} onCreated={() => { setAdelantoPara(null); onChange(); }} />
       )}
     </div>
   );
 }
 
-function CrearPersonaModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [nombre, setNombre] = useState("");
-  const [documento, setDocumento] = useState("");
-  const [telefono, setTelefono] = useState("");
+function CrearPersonaModal({ persona, onClose, onCreated }: { persona?: BeneficiarioConSaldo; onClose: () => void; onCreated: () => void }) {
+  const editing = !!persona;
+  const [nombre, setNombre] = useState(persona?.nombre ?? "");
+  const [documento, setDocumento] = useState(persona?.documento ?? "");
+  const [telefono, setTelefono] = useState(persona?.telefono ?? "");
+  const [notas, setNotas] = useState(persona?.notas ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -803,24 +874,56 @@ function CrearPersonaModal({ onClose, onCreated }: { onClose: () => void; onCrea
     setErr(null);
     if (!nombre.trim()) { setErr("El nombre es obligatorio."); return; }
     setSaving(true);
-    const res = await fetch("/api/adelantos/beneficiarios", {
-      method: "POST",
-      headers: jsonHeaders(),
-      credentials: "include",
-      body: JSON.stringify({ nombre: nombre.trim(), documento: documento.trim() || undefined, telefono: telefono.trim() || undefined }),
-    });
+    const res = await fetch(
+      editing ? `/api/adelantos/beneficiarios/${persona!.id}` : "/api/adelantos/beneficiarios",
+      {
+        method: editing ? "PATCH" : "POST",
+        headers: jsonHeaders(),
+        credentials: "include",
+        body: JSON.stringify({ nombre: nombre.trim(), documento: documento.trim() || undefined, telefono: telefono.trim() || undefined, notas: notas.trim() || undefined }),
+      },
+    );
     setSaving(false);
     if (res.ok) onCreated();
-    else setErr("No se pudo crear la persona.");
+    else setErr(editing ? "No se pudo guardar los cambios." : "No se pudo crear la persona.");
   };
 
   return (
-    <ModalShell title="Nueva persona" onClose={onClose}>
+    <ModalShell title={editing ? "Editar persona" : "Nueva persona"} onClose={onClose}>
       <Field label="Nombre"><input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} /></Field>
       <Field label="DNI / RUC (opcional)"><input value={documento} onChange={(e) => setDocumento(e.target.value)} className={inputCls + " tabular-nums"} /></Field>
       <Field label="Teléfono (opcional)"><input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls + " tabular-nums"} /></Field>
+      <Field label="Notas (opcional)"><textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className={inputCls + " py-3"} /></Field>
       {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
-      <ModalActions onClose={onClose} onSubmit={submit} saving={saving} label="Crear persona" />
+      <ModalActions onClose={onClose} onSubmit={submit} saving={saving} label={editing ? "Guardar cambios" : "Crear persona"} />
+    </ModalShell>
+  );
+}
+
+function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: BeneficiarioConSaldo; onClose: () => void; onDeleted: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    setErr(null);
+    setSaving(true);
+    const res = await fetch(`/api/adelantos/beneficiarios/${persona.id}`, { method: "DELETE", headers: jsonHeaders(), credentials: "include" });
+    setSaving(false);
+    if (res.ok) { onDeleted(); return; }
+    const body = await res.json().catch(() => null);
+    setErr(body?.error ?? "No se pudo eliminar la persona.");
+  };
+  return (
+    <ModalShell title="Eliminar persona" onClose={onClose}>
+      <p className="text-base text-[var(--text-secondary)]">
+        ¿Seguro que querés eliminar a <strong className="text-[var(--text-primary)]">{persona.nombre}</strong>? Esta acción no se puede deshacer.
+      </p>
+      {err && <p className="mt-3 text-base font-semibold text-[var(--data-error)]">{err}</p>}
+      <div className="mt-5 flex justify-end gap-2">
+        <button onClick={onClose} className="h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button onClick={submit} disabled={saving} className="h-12 px-5 rounded-2xl bg-[var(--data-error)] text-white text-base font-bold hover:opacity-90 disabled:opacity-50">
+          {saving ? "Eliminando…" : "Eliminar"}
+        </button>
+      </div>
     </ModalShell>
   );
 }

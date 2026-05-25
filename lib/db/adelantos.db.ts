@@ -403,4 +403,31 @@ export const AdelantosDB = {
       beneficiarios: totalBenef,
     };
   },
+
+  // ── Beneficiarios: editar / eliminar ──
+  async updateBeneficiario(tenantId: string, id: string, data: BeneficiarioInput): Promise<DbBeneficiario | null> {
+    const existing = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
+    if (!existing) return null;
+    await prisma.adelantoBeneficiario.updateMany({
+      where: { id, tenantId },
+      data: {
+        nombre: data.nombre.trim(),
+        documento: data.documento?.trim() || null,
+        telefono: data.telefono?.trim() || null,
+        notas: data.notas?.trim() || null,
+      },
+    });
+    const row = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
+    return row ? mapBeneficiario(row) : null;
+  },
+
+  /** Elimina una persona. Bloquea si tiene adelantos registrados (integridad). */
+  async deleteBeneficiario(tenantId: string, id: string): Promise<{ ok: true } | { ok: false; reason: "not_found" | "has_adelantos" }> {
+    const existing = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
+    if (!existing) return { ok: false, reason: "not_found" };
+    const adelantos = await prisma.adelanto.count({ where: { tenantId, beneficiarioId: id } });
+    if (adelantos > 0) return { ok: false, reason: "has_adelantos" };
+    await prisma.adelantoBeneficiario.deleteMany({ where: { id, tenantId } });
+    return { ok: true };
+  },
 };
