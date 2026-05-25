@@ -16,7 +16,6 @@ import { usePathname } from "next/navigation";
 import { ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import CategoryMegaMenu from "@/components/marketplace/CategoryMegaMenu";
-import MarketplaceCategoriesBar from "@/components/marketplace/MarketplaceCategoriesBar";
 import { FreeShippingIndicator } from "@/components/marketplace/MarketplaceFreeShippingBar";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 
@@ -100,12 +99,7 @@ export default function MarketplaceSecondaryNav() {
   };
 
   return (
-    <>
-    {/* Mobile: barra de categorías estilo storefront (chips scrollables).
-        Antes el sub-nav era hidden md:block → en cel no había categorías. */}
-    <MarketplaceCategoriesBar />
-
-    {/* Desktop: mega-menú de categorías + accesos rápidos */}
+    // Desktop: mega-menú de categorías + accesos rápidos
     <div
       className={cn(
         "nav-smooth-transition hidden md:block w-full border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] sticky top-16 z-40",
@@ -194,6 +188,5 @@ export default function MarketplaceSecondaryNav() {
         </div>
       </div>
     </div>
-    </>
   );
 }

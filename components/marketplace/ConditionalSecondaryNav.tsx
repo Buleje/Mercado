@@ -9,6 +9,7 @@
 
 import dynamic from "next/dynamic";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
+import MarketplaceCategoriesBar from "@/components/marketplace/MarketplaceCategoriesBar";
 
 const MarketplaceSecondaryNav = dynamic(
   () => import("@/components/marketplace/MarketplaceSecondaryNav"),
@@ -17,8 +18,18 @@ const MarketplaceSecondaryNav = dynamic(
 
 export default function ConditionalSecondaryNav() {
   const mode = useMarketplaceNavMode();
-  // En tiendas-only el banner secundario se oculta — la página /tiendas
-  // expone su propio bloque de filtros y un hero de búsqueda cuando hay query.
-  if (mode === "tiendas-only") return null;
-  return <MarketplaceSecondaryNav />;
+  return (
+    <>
+      {/* Barra de categorías MOBILE (chips scrollables estilo storefront) —
+          SIEMPRE visible. NO depende del modo: el default del marketplace es
+          "tiendas-only", que ocultaba el secondary nav entero y dejaba el cel
+          sin categorías. Es md:hidden, así que en desktop no compite con el
+          mega-menú. */}
+      <MarketplaceCategoriesBar />
+
+      {/* Desktop: mega-menú + accesos rápidos. En tiendas-only se oculta —
+          /tiendas tiene su propio bloque de filtros + hero de búsqueda. */}
+      {mode !== "tiendas-only" && <MarketplaceSecondaryNav />}
+    </>
+  );
 }
