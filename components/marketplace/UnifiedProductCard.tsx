@@ -280,6 +280,14 @@ export default function UnifiedProductCard({
 
   const hasModifiers =
     Array.isArray(product.modifierGroups) && product.modifierGroups.length > 0;
+  // Solo hay que FORZAR el modal de adicionales si algún grupo es obligatorio
+  // (required) o exige un mínimo. Si todos son opcionales, el "+" agrega el
+  // producto base directo (Brandon 2026-05-24) — así nunca se "pierde" el
+  // producto al cerrar el modal con X. Los extras se pueden agregar luego
+  // desde el drawer ("Editar") o el carrito.
+  const hasRequiredModifiers = (product.modifierGroups ?? []).some(
+    (g) => g.required || g.minSelect > 0,
+  );
 
   // Brandon 2026-05-18 v5: handleDecrement removido — el stepper mobile
   // del card se quitó (CTA mobile ahora es círculo icon-only igual que
@@ -295,8 +303,8 @@ export default function UnifiedProductCard({
         /* silent */
       }
     }
-    if (hasModifiers) {
-      // Abre selector — el cliente debe elegir antes de agregar al carrito.
+    if (hasRequiredModifiers) {
+      // Hay adicionales OBLIGATORIOS → el cliente debe elegir antes de agregar.
       setModifierModalOpen(true);
       return;
     }
@@ -318,7 +326,7 @@ export default function UnifiedProductCard({
     });
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
-  }, [addItemWithUndo, product, isOutOfStock, hasModifiers]);
+  }, [addItemWithUndo, product, isOutOfStock, hasRequiredModifiers]);
 
   /* ── Badges top-left ───────────────────────────────────────────── */
   const showOfertaBadge =
