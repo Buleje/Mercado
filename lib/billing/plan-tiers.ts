@@ -141,6 +141,10 @@ export const PLAN_BASICO: PlanDefinition = {
     // Mi tienda (customizer si)
     "store-customizer",
     "pagina-inicio",
+    // Finanzas — adelantos a personas por servicios (módulo nuevo ADR-117).
+    // En basico para que sea visible/usable desde el free; re-gatear a plan
+    // pago si la estrategia comercial lo requiere.
+    "adelantos",
     // Config (siempre)
     "config",
     "plan",
