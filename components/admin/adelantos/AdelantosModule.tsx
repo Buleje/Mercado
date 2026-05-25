@@ -500,7 +500,10 @@ function CrearAdelantoModal({
     });
     setSaving(false);
     if (res.ok) onCreated();
-    else setErr("No se pudo crear el adelanto.");
+    else {
+      const j = await res.json().catch(() => null);
+      setErr(j?.error ?? "No se pudo crear el adelanto.");
+    }
   };
 
   return (
@@ -844,6 +847,12 @@ function PersonasView({
                     <p className={`text-base font-extrabold tabular-nums ${debe ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{formatCurrency(b.saldoPendiente)}</p>
                   </div>
                 </div>
+                {b.limiteCredito != null && b.limiteCredito > 0 && (
+                  <p className={`mt-1.5 text-sm font-semibold ${b.saldoPendiente >= b.limiteCredito ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
+                    Límite de crédito: {formatCurrency(b.limiteCredito)}
+                    {b.saldoPendiente >= b.limiteCredito && " · alcanzado"}
+                  </p>
+                )}
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                   {debe ? (
@@ -906,12 +915,14 @@ function CrearPersonaModal({ persona, onClose, onCreated }: { persona?: Benefici
   const [documento, setDocumento] = useState(persona?.documento ?? "");
   const [telefono, setTelefono] = useState(persona?.telefono ?? "");
   const [notas, setNotas] = useState(persona?.notas ?? "");
+  const [limite, setLimite] = useState(persona?.limiteCredito != null ? String(persona.limiteCredito) : "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const submit = async () => {
     setErr(null);
     if (!nombre.trim()) { setErr("El nombre es obligatorio."); return; }
+    const lim = limite.trim() ? Number(limite) : null;
     setSaving(true);
     const res = await fetch(
       editing ? `/api/adelantos/beneficiarios/${persona!.id}` : "/api/adelantos/beneficiarios",
@@ -919,7 +930,7 @@ function CrearPersonaModal({ persona, onClose, onCreated }: { persona?: Benefici
         method: editing ? "PATCH" : "POST",
         headers: jsonHeaders(),
         credentials: "include",
-        body: JSON.stringify({ nombre: nombre.trim(), documento: documento.trim() || undefined, telefono: telefono.trim() || undefined, notas: notas.trim() || undefined }),
+        body: JSON.stringify({ nombre: nombre.trim(), documento: documento.trim() || undefined, telefono: telefono.trim() || undefined, notas: notas.trim() || undefined, limiteCredito: lim && lim > 0 ? lim : null }),
       },
     );
     setSaving(false);
@@ -932,6 +943,7 @@ function CrearPersonaModal({ persona, onClose, onCreated }: { persona?: Benefici
       <Field label="Nombre"><input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} /></Field>
       <Field label="DNI / RUC (opcional)"><input value={documento} onChange={(e) => setDocumento(e.target.value)} className={inputCls + " tabular-nums"} /></Field>
       <Field label="Teléfono (opcional)"><input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputCls + " tabular-nums"} /></Field>
+      <Field label="Límite de crédito S/ (opcional)"><input type="number" min={0} value={limite} onChange={(e) => setLimite(e.target.value)} placeholder="Sin límite" className={inputCls + " tabular-nums"} /></Field>
       <Field label="Notas (opcional)"><textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className={inputCls + " py-3"} /></Field>
       {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
       <ModalActions onClose={onClose} onSubmit={submit} saving={saving} label={editing ? "Guardar cambios" : "Crear persona"} />

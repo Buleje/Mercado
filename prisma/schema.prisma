@@ -75,6 +75,7 @@ model Tenant {
   treasuryTransferencias TreasuryTransferencia[]
   adelantos              Adelanto[]
   adelantoBeneficiarios  AdelantoBeneficiario[]
+  adelantosRecurrentes   AdelantoRecurrente[]
   stores                 Store[]
   featureFlags           TenantFeatureFlag[]
   storePage              TenantStorePage?
@@ -4402,19 +4403,46 @@ enum AdelantoEntregaTipo {
 }
 
 model AdelantoBeneficiario {
-  id        String     @id @default(cuid())
-  tenantId  String
-  nombre    String
-  documento String? // DNI / RUC
-  telefono  String?
-  notas     String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  adelantos Adelanto[]
+  id                 String               @id @default(cuid())
+  tenantId           String
+  nombre             String
+  documento          String? // DNI / RUC
+  telefono           String?
+  notas              String?
+  limiteCredito      Decimal?             @db.Decimal(12, 2) // ADR-118: tope de adelanto por persona
+  ultimoRecordatorio DateTime? // ADR-118: último recordatorio de cobranza (server-side)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  adelantos          Adelanto[]
+  recurrentes        AdelantoRecurrente[]
 
   @@index([tenantId])
   @@index([tenantId, nombre])
+}
+
+// ADR-118: plantilla de adelantos recurrentes (materializados por cron diario)
+model AdelantoRecurrente {
+  id               String               @id @default(cuid())
+  tenantId         String
+  beneficiarioId   String
+  modalidad        AdelantoModalidad    @default(CUENTA_CORRIENTE)
+  monto            Decimal              @db.Decimal(12, 2)
+  moneda           String               @default("PEN")
+  frecuencia       String // "semanal" | "quincenal" | "mensual"
+  diaSemana        Int? // 0-6 (semanal/quincenal)
+  diaMes           Int? // 1-28 (mensual)
+  activo           Boolean              @default(true)
+  ultimaEjecucion  DateTime?
+  proximaEjecucion DateTime?
+  notas            String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  tenant           Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  beneficiario     AdelantoBeneficiario @relation(fields: [beneficiarioId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([activo, proximaEjecucion])
 }
 
 model Adelanto {
@@ -4429,6 +4457,7 @@ model Adelanto {
   // Mantenido por backend: montoAdelantado - SUM(entregas.valor). Negativo => EXCEDIDO.
   saldoPendiente  Decimal                  @db.Decimal(12, 2)
   notas           String?
+  comprobanteUrl  String? // ADR-118: foto/comprobante del adelanto
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   tenant          Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -4454,6 +4483,7 @@ model AdelantoEntrega {
   valor       Decimal             @db.Decimal(12, 2)
   sumadoAStock Boolean            @default(false)
   notas       String?
+  comprobanteUrl String? // ADR-118: foto/comprobante de la entrega
   createdAt   DateTime            @default(now())
   adelanto    Adelanto            @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
   pactada     AdelantoEntregaPactada?

@@ -12,6 +12,7 @@ const CreateSchema = z.object({
   documento: z.string().max(20).optional(),
   telefono: z.string().max(20).optional(),
   notas: z.string().max(500).optional(),
+  limiteCredito: z.number().positive().max(9_999_999).nullable().optional(),
 });
 
 // GET /api/adelantos/beneficiarios — personas + saldo consolidado

@@ -59,7 +59,13 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const adelanto = await AdelantosDB.create(auth.tenantId, parsed.data);
+    let adelanto;
+    try {
+      adelanto = await AdelantosDB.create(auth.tenantId, parsed.data);
+    } catch (bizErr) {
+      // Errores de negocio (límite de crédito, persona inexistente) → 400 claro.
+      return NextResponse.json({ error: bizErr instanceof Error ? bizErr.message : "Error de validación" }, { status: 400 });
+    }
     logActivity(
       "Crear",
       "adelanto",

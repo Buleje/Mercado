@@ -24,6 +24,7 @@ export type DbBeneficiario = {
   documento?: string | null;
   telefono?: string | null;
   notas?: string | null;
+  limiteCredito?: number | null;
   createdAt: string;
 };
 
@@ -85,11 +86,12 @@ type AdelantoRow = Prisma.AdelantoGetPayload<{ include: typeof INCLUDE_FULL }>;
 
 function mapBeneficiario(b: {
   id: string; nombre: string; documento: string | null; telefono: string | null;
-  notas: string | null; createdAt: Date;
+  notas: string | null; limiteCredito?: Prisma.Decimal | number | null; createdAt: Date;
 }): DbBeneficiario {
   return {
     id: b.id, nombre: b.nombre, documento: b.documento, telefono: b.telefono,
-    notas: b.notas, createdAt: b.createdAt.toISOString(),
+    notas: b.notas, limiteCredito: b.limiteCredito != null ? Number(b.limiteCredito) : null,
+    createdAt: b.createdAt.toISOString(),
   };
 }
 
@@ -128,7 +130,7 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
 export type BeneficiarioInput = {
-  nombre: string; documento?: string; telefono?: string; notas?: string;
+  nombre: string; documento?: string; telefono?: string; notas?: string; limiteCredito?: number | null;
 };
 
 export type EntregaPactadaInput = {
@@ -194,6 +196,7 @@ export const AdelantosDB = {
         documento: data.documento?.trim() || null,
         telefono: data.telefono?.trim() || null,
         notas: data.notas?.trim() || null,
+        limiteCredito: data.limiteCredito != null && data.limiteCredito > 0 ? data.limiteCredito : null,
       },
     });
     return mapBeneficiario(b);
@@ -229,6 +232,23 @@ export const AdelantosDB = {
     const monto = Math.round(data.montoAdelantado * 100) / 100;
     const modalidad = data.modalidad ?? "CUENTA_CORRIENTE";
     const pactadas = modalidad === "ENTREGAS_PACTADAS" ? (data.entregasPactadas ?? []) : [];
+
+    // ADR-118: límite de crédito por persona (saldo abierto + nuevo monto ≤ límite)
+    const benef = await prisma.adelantoBeneficiario.findFirst({
+      where: { id: data.beneficiarioId, tenantId },
+      select: { nombre: true, limiteCredito: true },
+    });
+    if (benef?.limiteCredito != null) {
+      const limite = Number(benef.limiteCredito);
+      const abiertos = await prisma.adelanto.aggregate({
+        where: { tenantId, beneficiarioId: data.beneficiarioId, status: "ABIERTO" },
+        _sum: { saldoPendiente: true },
+      });
+      const actual = Number(abiertos._sum.saldoPendiente ?? 0);
+      if (actual + monto > limite) {
+        throw new Error(`Supera el límite de crédito de ${benef.nombre} (S/${limite.toFixed(2)}). Ya tiene S/${actual.toFixed(2)} sin liquidar.`);
+      }
+    }
 
     const row = await prisma.adelanto.create({
       data: {
@@ -415,6 +435,7 @@ export const AdelantosDB = {
         documento: data.documento?.trim() || null,
         telefono: data.telefono?.trim() || null,
         notas: data.notas?.trim() || null,
+        limiteCredito: data.limiteCredito != null && data.limiteCredito > 0 ? data.limiteCredito : null,
       },
     });
     const row = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
