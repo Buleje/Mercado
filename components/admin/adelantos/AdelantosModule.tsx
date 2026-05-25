@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
 import {
   Coins,
   Users,
@@ -88,6 +88,8 @@ export default function AdelantosModule() {
     reload();
   }, [reload]);
 
+  const sinPersonas = beneficiarios.length === 0;
+
   return (
     <div>
       <AdminModuleHeader
@@ -95,7 +97,15 @@ export default function AdelantosModule() {
         title="Adelantos & Liquidaciones"
         description="Adelantos de dinero a personas por servicios. Se liquidan con lo que te entregan (producto o servicio)."
         icon={Coins}
-      />
+      >
+        <button
+          onClick={() => setTab(sinPersonas ? "personas" : "lista")}
+          className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors"
+        >
+          <Plus className="h-5 w-5" />
+          {sinPersonas ? "Agregar persona" : "Nuevo adelanto"}
+        </button>
+      </AdminModuleHeader>
 
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={setTab} moduleId={MODULE_ID}>
         {error && (
@@ -104,7 +114,7 @@ export default function AdelantosModule() {
           </div>
         )}
 
-        {tab === "resumen" && <ResumenView resumen={resumen} loading={loading} />}
+        {tab === "resumen" && <ResumenView resumen={resumen} loading={loading} onGoTab={setTab} />}
         {tab === "lista" && (
           <AdelantosView
             adelantos={adelantos}
@@ -122,9 +132,56 @@ export default function AdelantosModule() {
 }
 
 // ── Resumen ──────────────────────────────────────────────────────────────────
-function ResumenView({ resumen, loading }: { resumen: Resumen | null; loading: boolean }) {
+function ResumenView({
+  resumen,
+  loading,
+  onGoTab,
+}: {
+  resumen: Resumen | null;
+  loading: boolean;
+  onGoTab: (tab: string) => void;
+}) {
   if (loading) return <SkeletonGrid />;
   if (!resumen) return <EmptyState icon={Wallet} title="Sin datos aún" hint="Creá tu primer adelanto en la pestaña Adelantos." />;
+
+  // Sin actividad todavía → guía de 2 pasos en vez del muro de ceros.
+  const sinActividad =
+    resumen.beneficiarios === 0 &&
+    resumen.adelantosAbiertos === 0 &&
+    resumen.adelantosLiquidados === 0;
+
+  if (sinActividad) {
+    return (
+      <div className="mx-auto max-w-2xl rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+          <Coins className="h-8 w-8 text-primary" />
+        </div>
+        <SectionTitle className="text-2xl">Empezá a registrar adelantos</SectionTitle>
+        <p className="mt-2 text-base text-[var(--text-secondary)]">
+          Un adelanto es plata que le das a alguien y se va liquidando con lo que te entrega (producto o servicio).
+        </p>
+        <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
+          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">1</span>
+            <p className="mt-2 text-base font-bold text-[var(--text-primary)]">Agregá una persona</p>
+            <p className="text-sm text-[var(--text-secondary)]">A quién le vas a adelantar plata.</p>
+          </div>
+          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">2</span>
+            <p className="mt-2 text-base font-bold text-[var(--text-primary)]">Registrá el adelanto</p>
+            <p className="text-sm text-[var(--text-secondary)]">El monto y cómo se va a liquidar.</p>
+          </div>
+        </div>
+        <button
+          onClick={() => onGoTab("personas")}
+          className="mt-6 inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-white transition-colors hover:bg-primary-dark"
+        >
+          <Plus className="h-5 w-5" /> Agregar primera persona
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
