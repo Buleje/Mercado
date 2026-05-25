@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 import { withDbRetry } from "@/lib/db-retry";
 
 /**
@@ -28,6 +29,9 @@ export const AnalyticsKpisDB = {
    * Los cálculos de margen, pct change y stock crítico quedan en el route.
    */
   async fetchKpisRaw(tenantId: string, r: KpiDateRanges) {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:kpis`);
     const tenantFilter = { tenantId };
 
     return withDbRetry(() =>

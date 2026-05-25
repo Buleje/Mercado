@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 import { logger } from "@/lib/logger";
 import type {
   Payable as PPayable,
@@ -57,14 +58,23 @@ function mapExpense(e: PExpense): DbExpense {
 
 export const PayablesDB = {
   async getAll(tenantId: string): Promise<DbPayable[]> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:payables`);
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.payable.findMany({ where, include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
   },
   async getById(tenantId: string, id: string): Promise<DbPayable | null> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:payables`);
     const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
     return row ? mapPayable(row) : null;
   },
   async getBySupplierId(tenantId: string, supplierId: string): Promise<DbPayable[]> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:payables`);
     return (await prisma.payable.findMany({ where: { supplierId, tenantId }, include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
   },
   async add(tenantId: string, p: DbPayable): Promise<DbPayable> {
@@ -137,12 +147,18 @@ export const PayablesDB = {
 
 export const ExpensesDB = {
   async getAll(tenantId: string, filters?: { recurring?: boolean; category?: string }): Promise<DbExpense[]> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:expenses`);
     const where: Record<string, unknown> = { tenantId };
     if (filters?.recurring !== undefined) where.recurring = filters.recurring;
     if (filters?.category) where.category = filters.category;
     return (await prisma.expense.findMany({ where, orderBy: { date: "desc" } })).map(mapExpense);
   },
   async getByDateRange(tenantId: string, from: Date, to: Date): Promise<DbExpense[]> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:expenses`);
     return (await prisma.expense.findMany({ where: { tenantId, date: { gte: from, lte: to } }, orderBy: { date: "desc" } })).map(mapExpense);
   },
   /**
@@ -152,6 +168,9 @@ export const ExpensesDB = {
    * con recurring=false (gasto real ejecutado).
    */
   async getRecurringTemplates(tenantId: string): Promise<DbExpense[]> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:expenses`);
     return (await prisma.expense.findMany({
       where: { tenantId, recurring: true },
       orderBy: [{ category: "asc" }, { description: "asc" }],
@@ -191,6 +210,9 @@ export const ExpensesDB = {
     await prisma.expense.deleteMany({ where: { id, tenantId } }).catch((err) => logger.warn("[finance.db] expense delete failed", { id, tenantId, err: String(err) }));
   },
   async getSummary(tenantId: string): Promise<{ category: string; total: number; count: number }[]> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:expenses`);
     const groups = await prisma.expense.groupBy({ by: ["category"], where: { tenantId }, _sum: { amount: true }, _count: true, orderBy: { _sum: { amount: "desc" } } });
     // TD-018: g._sum.amount es Decimal | null
     return groups.map(g => ({ category: g.category, total: toNumOrZero(g._sum.amount), count: g._count }));

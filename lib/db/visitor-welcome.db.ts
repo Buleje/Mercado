@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 
 /**
  * VisitorWelcomeDB
@@ -38,6 +39,9 @@ export const VisitorWelcomeDB = {
     rows: Array<{ id: string; name: string; devices: string; userAgent: string | null; createdAt: Date; tenantId: string }>;
     total: number;
   }> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:visitor-welcome`);
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
     const skip = (page - 1) * limit;

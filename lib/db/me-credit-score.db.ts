@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 
 /**
  * MeCreditScoreDB
@@ -27,6 +28,9 @@ export const MeCreditScoreDB = {
     customerId: string,
     take = 12,
   ) {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:credit-score:${customerId}`);
     return prisma.creditScoreHistory
       .findMany({
         where: { tenantId, customerId },

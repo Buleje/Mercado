@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Tipos públicos ─────────────────────────────────────────────────────────────
@@ -89,6 +90,9 @@ export class TransactionsDB {
     tenantId: string,
     filters: TransactionFilters,
   ): Promise<TransactionsResult> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:transactions`);
     const { from, to, source, q, page, limit } = filters;
 
     const needSales = source === "pos" || source === "all";

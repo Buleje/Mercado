@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 
 /**
  * StatsLiveDB
@@ -21,6 +22,9 @@ export const StatsLiveDB = {
     ordersLastHour: number;
     activeShoppers: number;
   }> {
+    "use cache";
+    cacheLife({ revalidate: 5, stale: 10 });
+    cacheTag("platform:stats-live");
     const now = Date.now();
     const since24h = new Date(now - 24 * 60 * 60 * 1000);
     const since1h = new Date(now - 60 * 60 * 1000);

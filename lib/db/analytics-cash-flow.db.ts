@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 
 /**
  * AnalyticsCashFlowDB
@@ -14,6 +15,9 @@ export const AnalyticsCashFlowDB = {
    * Ventas en rango (ingresos directos).
    */
   async getSalesInRange(tenantId: string, since: Date) {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:cash-flow`);
     return prisma.sale.findMany({
       where: { tenantId, createdAt: { gte: since } },
       select: { total: true, createdAt: true },
@@ -25,6 +29,9 @@ export const AnalyticsCashFlowDB = {
    * tenantId scope via relation `fiado.tenantId`.
    */
   async getFiadoCuotasPaid(tenantId: string, since: Date) {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:cash-flow`);
     return prisma.fiadoCuota.findMany({
       where: {
         pagadoEn: { not: null, gte: since },
@@ -38,6 +45,9 @@ export const AnalyticsCashFlowDB = {
    * Expenses en rango (egresos operativos).
    */
   async getExpensesInRange(tenantId: string, since: Date) {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:cash-flow`);
     return prisma.expense.findMany({
       where: { tenantId, date: { gte: since } },
       select: { amount: true, date: true },
@@ -49,6 +59,9 @@ export const AnalyticsCashFlowDB = {
    * tenantId scope via relation `payable.tenantId`.
    */
   async getSupplierPaymentsInRange(tenantId: string, since: Date) {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:cash-flow`);
     return prisma.payment.findMany({
       where: {
         date: { gte: since },

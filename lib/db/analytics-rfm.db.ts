@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 
 /**
  * lib/db/analytics-rfm.db.ts
@@ -39,6 +40,9 @@ export const AnalyticsRFMDB = {
     tenantId: string,
     since: Date
   ): Promise<RFMSaleRaw[]> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:rfm`);
     const rows = await prisma.sale.findMany({
       where: {
         tenantId,
@@ -68,6 +72,9 @@ export const AnalyticsRFMDB = {
     tenantId: string,
     since: Date
   ): Promise<RFMOrderRaw[]> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:rfm`);
     const rows = await prisma.order.findMany({
       where: {
         tenantId,

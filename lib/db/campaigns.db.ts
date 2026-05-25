@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 
 /**
  * CampaignsDB
@@ -37,6 +38,8 @@ export const CampaignsDB = {
    * pero scoped al tenant. Errors → 0 (graceful degrade).
    */
   async estimateAudience(tenantId: string, segment: Segment): Promise<number> {
+    // NO "use cache": se invoca dentro del POST de crear campaña — la estimación
+    // de audiencia debe ser fresca al momento de crear, no cacheada.
     try {
       const thirty = new Date();
       thirty.setDate(thirty.getDate() - 30);
@@ -74,6 +77,9 @@ export const CampaignsDB = {
   },
 
   async list(tenantId: string, opts: { status?: string } = {}) {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:campaigns`);
     return prisma.campaign.findMany({
       where: {
         tenantId,
@@ -99,6 +105,9 @@ export const CampaignsDB = {
   },
 
   async getForTenant(tenantId: string, id: string) {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:campaigns`);
     return prisma.campaign.findFirst({ where: { id, tenantId } });
   },
 

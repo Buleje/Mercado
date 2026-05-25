@@ -9,6 +9,7 @@
 
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 import { logger } from "@/lib/logger";
 
 // ── Tipos públicos ─────────────────────────────────────────────────────────────
@@ -35,6 +36,9 @@ export const AbandonedCartStatsDB = {
     minAgeMs = 2 * 60 * 60 * 1000,
     maxAgeMs = 24 * 60 * 60 * 1000,
   ): Promise<AbandonedCartStatsResult> {
+    "use cache";
+    cacheLife({ revalidate: 30, stale: 60 });
+    cacheTag(`tenant:${tenantId}:abandoned-carts`);
     const now = Date.now();
     const cutoff = new Date(now - minAgeMs);
     const maxAge = new Date(now - maxAgeMs);
