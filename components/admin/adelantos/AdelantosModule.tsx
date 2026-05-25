@@ -15,6 +15,7 @@ import {
   Package,
   Ban,
   ChevronRight,
+  Search,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -289,6 +290,38 @@ function AdelantosView({
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [detalle, setDetalle] = useState<DbAdelanto | null>(null);
+  const [filtro, setFiltro] = useState<string>("TODOS");
+  const [q, setQ] = useState("");
+
+  const counts = adelantos.reduce<Record<string, number>>((acc, a) => {
+    acc[a.status] = (acc[a.status] ?? 0) + 1;
+    return acc;
+  }, {});
+  const estadosPresentes = (["ABIERTO", "LIQUIDADO", "EXCEDIDO", "CANCELADO"] as const).filter((e) => counts[e]);
+
+  const filtrados = adelantos.filter((a) => {
+    const okEstado = filtro === "TODOS" || a.status === filtro;
+    const okQ = !q.trim() || (a.beneficiario?.nombre ?? "").toLowerCase().includes(q.trim().toLowerCase());
+    return okEstado && okQ;
+  });
+
+  // Totales de la vista filtrada
+  const tot = filtrados.reduce(
+    (acc, a) => {
+      acc.adelantado += a.montoAdelantado;
+      acc.liquidado += Math.max(0, a.montoAdelantado - a.saldoPendiente);
+      acc.porRecuperar += a.status === "ABIERTO" ? a.saldoPendiente : 0;
+      return acc;
+    },
+    { adelantado: 0, liquidado: 0, porRecuperar: 0 },
+  );
+
+  const chipCls = (active: boolean) =>
+    `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${
+      active
+        ? "border-primary bg-primary/10 text-primary"
+        : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+    }`;
 
   return (
     <div className="space-y-4">
@@ -306,10 +339,42 @@ function AdelantosView({
         </button>
       </div>
 
+      {adelantos.length > 0 && (
+        <>
+          {/* Filtros por estado + búsqueda */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button className={chipCls(filtro === "TODOS")} onClick={() => setFiltro("TODOS")}>Todos {adelantos.length}</button>
+            {estadosPresentes.map((e) => (
+              <button key={e} className={chipCls(filtro === e)} onClick={() => setFiltro(e)}>
+                {STATUS_BADGE[e].label} {counts[e]}
+              </button>
+            ))}
+            <div className="relative ml-auto min-w-[220px] flex-1 sm:flex-none">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar persona..."
+                className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          {/* Totales de la vista filtrada */}
+          <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
+            <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(tot.adelantado)}</strong></span>
+            <span>Liquidado <strong className="tabular-nums text-[var(--data-success)]">{formatCurrency(tot.liquidado)}</strong></span>
+            <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{formatCurrency(tot.porRecuperar)}</strong></span>
+          </div>
+        </>
+      )}
+
       {loading ? (
         <SkeletonGrid />
       ) : adelantos.length === 0 ? (
         <EmptyState icon={Coins} title="Sin adelantos" hint={beneficiarios.length === 0 ? "Primero creá una persona en la pestaña Personas." : "Registrá tu primer adelanto."} />
+      ) : filtrados.length === 0 ? (
+        <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro filtro o búsqueda." />
       ) : (
         <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-white">
           <table className="w-full text-base">
@@ -317,20 +382,41 @@ function AdelantosView({
               <tr className="text-left">
                 <th className="px-4 py-3 font-bold">Persona</th>
                 <th className="px-4 py-3 font-bold">Adelantado</th>
+                <th className="px-4 py-3 font-bold">Liquidación</th>
                 <th className="px-4 py-3 font-bold">Saldo</th>
                 <th className="px-4 py-3 font-bold">Estado</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)]">
-              {adelantos.map((a) => {
+              {filtrados.map((a) => {
                 const badge = STATUS_BADGE[a.status];
+                const pct = a.montoAdelantado > 0 ? Math.min(100, Math.max(0, Math.round(((a.montoAdelantado - a.saldoPendiente) / a.montoAdelantado) * 100))) : 0;
                 return (
                   <tr key={a.id} onClick={() => setDetalle(a)} className="cursor-pointer hover:bg-[var(--surface-sunken)]/50 transition-colors">
                     <td className="px-4 py-3 font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</td>
                     <td className="px-4 py-3 tabular-nums text-[var(--text-secondary)]">{formatCurrency(a.montoAdelantado)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2.5 w-24 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                          <div className="h-full rounded-full bg-[var(--data-success)]" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="tabular-nums text-sm font-semibold text-[var(--text-tertiary)]">{pct}%</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 tabular-nums font-bold text-[var(--text-primary)]">{formatCurrency(a.saldoPendiente)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label ?? a.status}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {a.status === "ABIERTO" && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDetalle(a); }}
+                          className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-primary text-sm font-bold hover:bg-primary/10 transition-colors"
+                        >
+                          <Plus className="h-4 w-4" /> Registrar entrega
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
