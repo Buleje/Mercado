@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GiftCardsDB } from "@/lib/db/gift-cards.db";
 import { getTenantId } from "@/lib/tenant";
+import { getCustomerUserId } from "@/lib/auth/customer-server";
 import { buildTenantTitle } from "@/lib/store-metadata";
 import GiftCardsClient from "@/components/customer/gift-cards/GiftCardsClient";
 import Header from "@/components/Header";
@@ -15,14 +16,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CuentaGiftCardsPage() {
   const tenantId = await getTenantId();
-  // TODO(agent-E): leer userId del session. Mock hasta integrar auth real.
-  const userId = "user_me";
+  const userId = await getCustomerUserId();
 
-  const [received, sent, usage] = await Promise.all([
-    GiftCardsDB.listReceivedForUser(tenantId, userId),
-    GiftCardsDB.listSentByUser(tenantId, userId),
-    GiftCardsDB.listUsageForUser(tenantId, userId),
-  ]);
+  // Sin sesión → sin datos (en vez del mock "user_me" anterior).
+  // NOTA: la compra (app/api/gift-cards/purchase) aún no persiste senderUserId
+  // desde la sesión — completar wiring de identidad end-to-end para que esto liste datos reales.
+  const [received, sent, usage] = userId
+    ? await Promise.all([
+        GiftCardsDB.listReceivedForUser(tenantId, userId),
+        GiftCardsDB.listSentByUser(tenantId, userId),
+        GiftCardsDB.listUsageForUser(tenantId, userId),
+      ])
+    : [[], [], []];
 
   return (
     <>

@@ -7,9 +7,9 @@ import { toNumOrZero } from "@/lib/decimal-utils";
  *
  * Audit project-wide 2026-05-19 — migración de /api/recommendations.
  * Motor colaborativo simple: historial propio → co-compradores → categorías → best-sellers.
- * Nota: este endpoint es público (sin auth), por lo que tenantId NO es obligatorio
- * en todas las queries. Sin embargo, los productos y órdenes se filtran por
- * los datos del phone del cliente dentro del store actual del tenant.
+ * SECURITY 2026-05-25 (audit): tenantId AHORA obligatorio (1er param). Antes
+ * `product.findMany` traía catálogo de TODOS los tenants → leak cross-tenant +
+ * O(productos_globales) en RAM por request. Todas las queries scopean por tenant.
  */
 
 export interface RecommendedProduct {
@@ -31,13 +31,13 @@ export const RecommendationsDB = {
    * Devuelve productos recomendados para un phone dado (o best-sellers si sin historial).
    * Algoritmo: collaborative filtering → categorías frecuentes → best-sellers fallback.
    */
-  async forPhone(opts: RecommendOpts = {}): Promise<RecommendedProduct[]> {
+  async forPhone(tenantId: string, opts: RecommendOpts = {}): Promise<RecommendedProduct[]> {
     const { phone, limit = 8 } = opts;
     const safeLimit = Math.min(Math.max(limit, 1), 30);
 
-    // Todos los productos activos para mapeo rápido
+    // Productos activos del tenant para mapeo rápido (scopeado — antes era global)
     const allProducts = await prisma.product.findMany({
-      where: { active: true },
+      where: { tenantId, active: true },
       select: {
         id: true,
         name: true,
@@ -56,11 +56,11 @@ export const RecommendationsDB = {
       // 1. Historial del cliente
       const [orderItems, saleItems] = await Promise.all([
         prisma.orderItem.findMany({
-          where: { order: { customerPhone: phone, status: { not: "cancelado" } } },
+          where: { order: { tenantId, customerPhone: phone, status: { not: "cancelado" } } },
           select: { productId: true },
         }),
         prisma.saleItem.findMany({
-          where: { sale: { customerPhone: phone } },
+          where: { sale: { tenantId, customerPhone: phone } },
           select: { productId: true },
         }),
       ]);
@@ -75,14 +75,14 @@ export const RecommendationsDB = {
           prisma.orderItem.findMany({
             where: {
               productId: { in: [...boughtIds] },
-              order: { customerPhone: { not: phone }, status: { not: "cancelado" } },
+              order: { tenantId, customerPhone: { not: phone }, status: { not: "cancelado" } },
             },
             select: { order: { select: { customerPhone: true } } },
           }),
           prisma.saleItem.findMany({
             where: {
               productId: { in: [...boughtIds] },
-              sale: { customerPhone: { not: phone } },
+              sale: { tenantId, customerPhone: { not: phone } },
             },
             select: { sale: { select: { customerPhone: true } } },
           }),
@@ -97,14 +97,14 @@ export const RecommendationsDB = {
           const [coOrderItems, coSaleItems] = await Promise.all([
             prisma.orderItem.findMany({
               where: {
-                order: { customerPhone: { in: [...coPhones] }, status: { not: "cancelado" } },
+                order: { tenantId, customerPhone: { in: [...coPhones] }, status: { not: "cancelado" } },
                 productId: { notIn: [...boughtIds] },
               },
               select: { productId: true },
             }),
             prisma.saleItem.findMany({
               where: {
-                sale: { customerPhone: { in: [...coPhones] } },
+                sale: { tenantId, customerPhone: { in: [...coPhones] } },
                 productId: { notIn: [...boughtIds] },
               },
               select: { productId: true },
@@ -153,7 +153,7 @@ export const RecommendationsDB = {
 
       const topSold = await prisma.orderItem.groupBy({
         by: ["productId"],
-        where: { order: { createdAt: { gte: since }, status: { not: "cancelado" } } },
+        where: { order: { tenantId, createdAt: { gte: since }, status: { not: "cancelado" } } },
         _sum: { quantity: true },
         orderBy: { _sum: { quantity: "desc" } },
         take: safeLimit * 2,

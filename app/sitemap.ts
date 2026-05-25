@@ -129,7 +129,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let dbCategoryPages: MetadataRoute.Sitemap = [];
   try {
     const dbCats = await prisma.product.findMany({
-      where: { active: true, deletedAt: null },
+      // SECURITY 2026-05-25 (audit): scope a tenant "main" — antes exponía
+      // categorías cross-tenant en el sitemap público (mismo patrón que dbProducts arriba).
+      where: { tenantId: "main", active: true, deletedAt: null },
       select: { category: true },
       distinct: ["category"],
     });
@@ -264,7 +266,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let recipePages: MetadataRoute.Sitemap = [];
   try {
     const recipes = await prisma.receta.findMany({
-      where: { activa: true },
+      // SECURITY 2026-05-25 (audit): scope a tenant "main" — antes listaba recetas cross-tenant.
+      where: { tenantId: "main", activa: true },
       select: { id: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
       take: 1000,

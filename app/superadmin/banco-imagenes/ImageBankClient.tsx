@@ -599,7 +599,7 @@ function ItemCard({ categoryId, item, onChanged }: { categoryId: string; item: B
         {safeUrl ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={safeUrl} alt={item.name} className="w-full h-full object-contain p-2" />
+            <img src={safeUrl} alt={item.name} loading="lazy" decoding="async" className="w-full h-full object-contain p-2" />
             <button
               onClick={() => setPreviewOpen(true)}
               className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 opacity-0 hover:opacity-100 transition-all"
@@ -798,7 +798,7 @@ function ImageDropzone({ value, onChange }: { value: string; onChange: (url: str
         {value ? (
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt="preview" className="h-16 w-16 rounded-lg object-cover border border-[var(--rule-soft)]" />
+            <img src={value} alt="preview" loading="lazy" decoding="async" className="h-16 w-16 rounded-lg object-cover border border-[var(--rule-soft)]" />
             <p className="flex-1 text-xs font-mono text-[var(--text-secondary)] truncate">{value}</p>
             <button type="button" onClick={(e) => { e.stopPropagation(); onChange(""); }} className="text-xs text-[var(--data-error-500)] font-bold">Quitar</button>
           </div>

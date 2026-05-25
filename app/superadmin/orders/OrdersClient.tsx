@@ -681,7 +681,7 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
               >
                 {it.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={it.image} alt={it.name} className="w-full h-full object-cover" />
+                  <img src={it.image} alt={it.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[var(--text-tertiary)]">
                     <Package className="w-3.5 h-3.5" />
@@ -871,7 +871,7 @@ function OrderDetailDrawer({
                   <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--surface-sunken)] shrink-0 border border-[var(--rule-soft)]">
                     {it.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.image} alt={it.name} className="w-full h-full object-cover" />
+                      <img src={it.image} alt={it.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[var(--text-tertiary)]">
                         <Package className="w-5 h-5" />

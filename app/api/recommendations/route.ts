@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RecommendationsDB } from "@/lib/db/recommendations.db";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 
 /**
@@ -20,7 +21,8 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(Math.max(parseInt(searchParams.get("limit") ?? "8", 10) || 8, 1), 30);
 
   try {
-    const results = await RecommendationsDB.forPhone({ phone, limit });
+    const tenantId = getTenantIdFromRequest(req);
+    const results = await RecommendationsDB.forPhone(tenantId, { phone, limit });
     return NextResponse.json(results);
   } catch (e) {
     logger.error("[recommendations] error", { err: e instanceof Error ? e.message : String(e) });
