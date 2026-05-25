@@ -52,6 +52,7 @@ const LivesAdminModule         = dynamic(() => import("@/components/admin/unifie
 const FiadosModule              = dynamic(() => import("@/components/admin/FiadosModule"),              { loading: TabSpinner });
 const TurnosModule              = dynamic(() => import("@/components/admin/TurnosModule"),              { loading: TabSpinner });
 const PrestamosModule           = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: TabSpinner });
+const AdelantosModule           = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: TabSpinner });
 const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
 const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/ScoringCrediticioTab"),      { loading: TabSpinner });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
@@ -215,6 +216,7 @@ export function TabRouter({
   if (tab === "fiados")    return <FiadosModule />;
   if (tab === "turnos")    return <TurnosModule />;
   if (tab === "prestamos") return <PrestamosModule />;
+  if (tab === "adelantos") return <AdelantosModule />;
   if (tab === "recetas")   return <RecetasModule />;
   if (tab === "scoring")   return <ScoringCrediticioTab />;
   if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;

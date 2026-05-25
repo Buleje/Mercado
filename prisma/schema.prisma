@@ -73,6 +73,8 @@ model Tenant {
   treasuryCuentas        TreasuryCuenta[]
   treasuryMovimientos    TreasuryMovimiento[]
   treasuryTransferencias TreasuryTransferencia[]
+  adelantos              Adelanto[]
+  adelantoBeneficiarios  AdelantoBeneficiario[]
   stores                 Store[]
   featureFlags           TenantFeatureFlag[]
   storePage              TenantStorePage?
@@ -4372,4 +4374,106 @@ model DocumentTemplate {
 
   @@unique([tenantId, key])
   @@index([tenantId])
+}
+
+// ═══════════════════════════════════════════════════════
+// ADELANTOS & LIQUIDACIONES (ADR-XXX, 2026-05-25)
+// Adelanto de dinero a una persona/proveedor por servicios, liquidado a
+// medida que entrega producto/servicio. Distinto de Prestamo (cuotas+interes),
+// Fiado (credito a cliente) y Treasury (libro de caja). Saldo a favor del
+// negocio que se consume con entregas valuadas. Totales SIEMPRE en backend.
+// ═══════════════════════════════════════════════════════
+
+enum AdelantoModalidad {
+  CUENTA_CORRIENTE // saldo se consume libremente con cada entrega
+  ENTREGAS_PACTADAS // plan fijo de entregas esperadas
+}
+
+enum AdelantoStatus {
+  ABIERTO // saldo pendiente > 0
+  LIQUIDADO // saldo == 0 (entregas == monto adelantado)
+  EXCEDIDO // entregas > monto adelantado (el negocio le debe a la persona)
+  CANCELADO // anulado manualmente
+}
+
+enum AdelantoEntregaTipo {
+  LIBRE // descripcion + valor manual
+  PRODUCTO // vinculado a Product (cantidad x precio)
+}
+
+model AdelantoBeneficiario {
+  id        String     @id @default(cuid())
+  tenantId  String
+  nombre    String
+  documento String? // DNI / RUC
+  telefono  String?
+  notas     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  adelantos Adelanto[]
+
+  @@index([tenantId])
+  @@index([tenantId, nombre])
+}
+
+model Adelanto {
+  id              String                   @id @default(cuid())
+  tenantId        String
+  beneficiarioId  String
+  modalidad       AdelantoModalidad        @default(CUENTA_CORRIENTE)
+  montoAdelantado Decimal                  @db.Decimal(12, 2)
+  moneda          String                   @default("PEN")
+  fechaAdelanto   DateTime                 @default(now())
+  status          AdelantoStatus           @default(ABIERTO)
+  // Mantenido por backend: montoAdelantado - SUM(entregas.valor). Negativo => EXCEDIDO.
+  saldoPendiente  Decimal                  @db.Decimal(12, 2)
+  notas           String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  tenant          Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  beneficiario    AdelantoBeneficiario     @relation(fields: [beneficiarioId], references: [id], onDelete: Restrict)
+  entregas        AdelantoEntrega[]
+  entregasPactadas AdelantoEntregaPactada[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, fechaAdelanto])
+  @@index([beneficiarioId])
+}
+
+model AdelantoEntrega {
+  id          String              @id @default(cuid())
+  adelantoId  String
+  fecha       DateTime            @default(now())
+  tipo        AdelantoEntregaTipo @default(LIBRE)
+  descripcion String?
+  // Solo tipo PRODUCTO: referencia suelta a Product.id (sin relacion formal — desacople).
+  productId   Int?
+  cantidad    Decimal?            @db.Decimal(12, 3)
+  // Valor en S/ que descuenta del saldo — SIEMPRE calculado en backend.
+  valor       Decimal             @db.Decimal(12, 2)
+  sumadoAStock Boolean            @default(false)
+  notas       String?
+  createdAt   DateTime            @default(now())
+  adelanto    Adelanto            @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
+  pactada     AdelantoEntregaPactada?
+
+  @@index([adelantoId])
+  @@index([adelantoId, fecha])
+}
+
+model AdelantoEntregaPactada {
+  id                String           @id @default(cuid())
+  adelantoId        String
+  numero            Int
+  descripcionEsperada String
+  valorEsperado     Decimal          @db.Decimal(12, 2)
+  fechaEsperada     DateTime?
+  cumplidaEn        DateTime?
+  // Link a la entrega real que la cumplio (1:1 opcional).
+  entregaId         String?          @unique
+  adelanto          Adelanto         @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
+  entrega           AdelantoEntrega? @relation(fields: [entregaId], references: [id], onDelete: SetNull)
+
+  @@index([adelantoId])
 }

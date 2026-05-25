@@ -23,6 +23,7 @@ import {
   HandCoins,
   BarChart3,
   Banknote,
+  Coins,
   Zap,
   ClipboardList,
   ShoppingBag,
@@ -74,6 +75,7 @@ export const ALL_TABS = [
   { id: "forecasting" as Tab,         label: "Predicción Demanda",  icon: TrendingUp },
   // — FINANZAS EXTRA —
   { id: "prestamos" as Tab,           label: "Préstamos",           icon: Banknote },
+  { id: "adelantos" as Tab,           label: "Adelantos",           icon: Coins },
   { id: "plan" as Tab,                label: "Plan & Límites",      icon: Zap },
 
   // — FACTURACIÓN SUNAT —
