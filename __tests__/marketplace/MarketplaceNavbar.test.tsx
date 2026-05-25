@@ -49,12 +49,18 @@ vi.mock("next/dynamic", () => ({
   },
 }));
 
-vi.mock("lucide-react", () => ({
-  Search: () => <span data-testid="icon-search" />,
-  ChefHat: () => <span data-testid="icon-chef" />,
-  Menu: () => <span data-testid="icon-menu">menu</span>,
-  X: () => <span data-testid="icon-x">x</span>,
-}));
+// Spread del módulo real para que iconos transitivos (p.ej. _category-icons
+// usa Flame, Beef, Apple…) existan; solo override los que el test verifica.
+vi.mock("lucide-react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("lucide-react")>();
+  return {
+    ...actual,
+    Search: () => <span data-testid="icon-search" />,
+    ChefHat: () => <span data-testid="icon-chef" />,
+    Menu: () => <span data-testid="icon-menu">menu</span>,
+    X: () => <span data-testid="icon-x">x</span>,
+  };
+});
 
 vi.mock("framer-motion", () => {
   const motion = {

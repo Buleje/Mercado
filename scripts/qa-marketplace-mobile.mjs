@@ -54,6 +54,29 @@ try {
     await page.screenshot({ path: scrolled });
     shots.push(scrolled);
 
+    // 3) Abrir el buscador mobile (overlay full-screen)
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForTimeout(300);
+    if (scheme === "light") {
+      const pill = page.getByPlaceholder("Buscar productos o tiendas…");
+      if (await pill.count().catch(() => 0)) {
+        await pill.first().click().catch(() => {});
+        await page.waitForTimeout(900);
+        await page.screenshot({ path: `${OUT}/mobile-search-1-empty.png` });
+        shots.push(`${OUT}/mobile-search-1-empty.png`);
+        // tipear para ver sugerencias en vivo
+        const overlayInput = page.getByPlaceholder("Buscar productos, bodegas o categorías");
+        if (await overlayInput.count().catch(() => 0)) {
+          await overlayInput.first().fill("arroz").catch(() => {});
+          await page.waitForTimeout(1200);
+          await page.screenshot({ path: `${OUT}/mobile-search-2-typing.png` });
+          shots.push(`${OUT}/mobile-search-2-typing.png`);
+        }
+        await page.keyboard.press("Escape").catch(() => {});
+        await page.waitForTimeout(300);
+      }
+    }
+
     // Diagnóstico runtime del sticky del navbar + barra de categorías
     const diag = await page.evaluate(() => {
       const nav = document.querySelector('nav[aria-label="Navegación del marketplace"]');

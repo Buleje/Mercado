@@ -53,6 +53,7 @@ const NotificationsMenu = dynamic(
   {},
 );
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
+import MobileSearchOverlay from "@/components/marketplace/MobileSearchOverlay";
 import SharedMobileNavDrawer from "@/components/marketplace/SharedMobileNavDrawer";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
@@ -309,7 +310,7 @@ type MarketplaceNavbarProps = {
 };
 
 export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarProps = {}) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
@@ -404,23 +405,13 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
     return () => window.removeEventListener("buleje:open-cart", onOpenCart);
   }, [router]);
 
-  const handleSearch = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      const q = searchQuery.trim();
-      if (q) {
-        // En modo "Solo Tiendas" la búsqueda filtra el listado de tiendas en
-        // /tiendas?q=, no abre la página de búsqueda cross-product.
-        if (isTiendasOnly) {
-          router.push(`/tiendas?q=${encodeURIComponent(q)}`);
-        } else {
-          router.push(`/marketplace/buscar?q=${encodeURIComponent(q)}`);
-        }
-        setMobileMenuOpen(false);
-      }
-    },
-    [searchQuery, router, isTiendasOnly],
-  );
+  // El search mobile ahora abre MobileSearchOverlay (panel full-screen con
+  // sugerencias/recientes). El form solo previene el submit nativo y abre el
+  // overlay — la query real se escribe dentro del overlay.
+  const openMobileSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    setMobileSearchOpen(true);
+  }, []);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -797,7 +788,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
 
               {/* Search pill compacto: logo + placeholder + lupa */}
               <form
-                onSubmit={handleSearch}
+                onSubmit={openMobileSearch}
                 role="search"
                 aria-label={t("nav.search")}
                 className="flex-1 min-w-0"
@@ -829,16 +820,26 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                       <BulejeWordmark size={24} showText={false} />
                     )}
                   </Link>
+                  {/* Brandon 2026-05-24: el input mobile ahora ABRE el overlay
+                      de búsqueda full-screen (sugerencias + recientes +
+                      categorías) en vez de tipear inline sin panel. readOnly +
+                      onFocus/onClick → setMobileSearchOpen(true). */}
                   <input
                     type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar tienda…"
+                    readOnly
+                    onFocus={(e) => {
+                      e.currentTarget.blur();
+                      setMobileSearchOpen(true);
+                    }}
+                    onClick={() => setMobileSearchOpen(true)}
+                    placeholder="Buscar productos o tiendas…"
                     aria-label={t("nav.search")}
-                    className="flex-1 min-w-0 bg-transparent outline-none text-[13px] font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-medium"
+                    aria-haspopup="dialog"
+                    className="flex-1 min-w-0 bg-transparent outline-none text-[13px] font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-medium cursor-pointer"
                   />
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={() => setMobileSearchOpen(true)}
                     aria-label="Buscar"
                     className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
                   >
@@ -904,6 +905,13 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
       <SharedMobileNavDrawer
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
+      />
+
+      {/* Buscador full-screen mobile — sugerencias + recientes + categorías */}
+      <MobileSearchOverlay
+        open={mobileSearchOpen}
+        onClose={() => setMobileSearchOpen(false)}
+        storesOnly={isTiendasOnly}
       />
 
       <AuthModal

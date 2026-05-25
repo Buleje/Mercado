@@ -33,6 +33,8 @@ import {
   Gift,
   Sparkles,
   HeartPulse,
+  Clock,
+  X,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -41,6 +43,11 @@ import {
   CATEGORIAS,
   type CategoriaDef,
 } from "@/lib/constants/marketplace-categories";
+import {
+  getRecentSearches,
+  addRecentSearch,
+  clearRecentSearches,
+} from "@/lib/marketplace/recent-searches";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 type SuggestionType = "query" | "store" | "product" | "category";
@@ -154,6 +161,24 @@ export default function NavbarSearchAutocomplete({
   const popularCategories = useMemo(popularCategoriesAsSuggestions, []);
   const topStores = useTopStores();
 
+  // ── Búsquedas recientes (localStorage real) ──
+  const [recent, setRecent] = useState<string[]>([]);
+  useEffect(() => {
+    if (open) setRecent(getRecentSearches());
+  }, [open]);
+  const recentSuggestions = useMemo<Suggestion[]>(
+    () =>
+      recent.map((term) => ({
+        id: `recent:${term}`,
+        type: "query",
+        label: term,
+        href: storesOnly
+          ? `/tiendas?q=${encodeURIComponent(term)}`
+          : `/marketplace/buscar?q=${encodeURIComponent(term)}`,
+      })),
+    [recent, storesOnly],
+  );
+
   // ── Fetch sugerencias con debounce ──
   useEffect(() => {
     const q = query.trim();
@@ -205,6 +230,7 @@ export default function NavbarSearchAutocomplete({
     const isEmpty = query.trim().length === 0;
     if (isEmpty) {
       return [
+        { kind: "recent", title: "Búsquedas recientes", items: recentSuggestions },
         { kind: "category", title: "Categorías populares", items: popularCategories },
         { kind: "store", title: "Tiendas destacadas", items: topStores },
       ].filter((g) => g.items.length > 0);
@@ -219,7 +245,7 @@ export default function NavbarSearchAutocomplete({
       { kind: "store", title: "Tiendas", items: stores },
       { kind: "category", title: "Categorías", items: cats },
     ].filter((g) => g.items.length > 0);
-  }, [query, suggestions, popularCategories, topStores]);
+  }, [query, suggestions, popularCategories, topStores, recentSuggestions]);
 
   const flatItems = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
@@ -240,6 +266,7 @@ export default function NavbarSearchAutocomplete({
           e.preventDefault();
           const it = flatItems[activeIdx];
           setOpen(false);
+          if (it.type !== "store") addRecentSearch(it.label);
           // En storesOnly: solo type=store mantiene su href (storefront).
           // Productos/categorias/queries redirigen a /tiendas?q=label para
           // filtrar el listado de tiendas con ese termino.
@@ -260,6 +287,7 @@ export default function NavbarSearchAutocomplete({
       const q = query.trim();
       if (!q) return;
       setOpen(false);
+      addRecentSearch(q);
       // En storesOnly el submit filtra tiendas en /tiendas, no abre la
       // pagina cross-product de busqueda.
       const target = storesOnly
@@ -309,6 +337,20 @@ export default function NavbarSearchAutocomplete({
             "buleje-search-input",
           )}
         />
+        {query.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setActiveIdx(-1);
+              inputRef.current?.focus();
+            }}
+            aria-label="Limpiar búsqueda"
+            className="absolute right-12 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-secondary)] transition-colors"
+          >
+            <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+          </button>
+        )}
         <button
           type="submit"
           className={cn(
@@ -375,21 +417,37 @@ export default function NavbarSearchAutocomplete({
               for (let k = 0; k < gi; k++) runningIdx += groups[k].items.length;
               return (
                 <div key={g.kind} className="border-b border-[var(--rule-soft)] last:border-b-0">
-                  <p className="px-4 pt-3 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                    {g.title}
-                  </p>
+                  <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      {g.title}
+                    </p>
+                    {g.kind === "recent" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearRecentSearches();
+                          setRecent([]);
+                        }}
+                        className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] hover:underline"
+                      >
+                        Borrar
+                      </button>
+                    )}
+                  </div>
                   <ul>
                     {g.items.map((s, i) => {
                       const idx = runningIdx + i;
                       const active = idx === activeIdx;
                       const Icon =
-                        s.type === "store"
-                          ? Store
-                          : s.type === "category"
-                            ? POPULAR_CATEGORY_ICONS[s.id.replace(/^c:|^pc:/, "")] ?? Tag
-                            : s.type === "product"
-                              ? Package
-                              : Search;
+                        s.id.startsWith("recent:")
+                          ? Clock
+                          : s.type === "store"
+                            ? Store
+                            : s.type === "category"
+                              ? POPULAR_CATEGORY_ICONS[s.id.replace(/^c:|^pc:/, "")] ?? Tag
+                              : s.type === "product"
+                                ? Package
+                                : Search;
                       const targetHref = storesOnly && s.type !== "store"
                         ? `/tiendas?q=${encodeURIComponent(s.label)}`
                         : s.href;
@@ -399,7 +457,10 @@ export default function NavbarSearchAutocomplete({
                             href={targetHref}
                             role="option"
                             aria-selected={active}
-                            onClick={() => setOpen(false)}
+                            onClick={() => {
+                              if (s.type !== "store") addRecentSearch(s.label);
+                              setOpen(false);
+                            }}
                             onMouseEnter={() => setActiveIdx(idx)}
                             className={cn(
                               "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
