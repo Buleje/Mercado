@@ -13,11 +13,13 @@ import { applyRateLimit } from "@/lib/rate-limit";
  *
  * SECURITY 2026-05-06 (audit notifs #1+#3+#10):
  *  - Tenant-scoped: cada admin solo recibe eventos de su propio tenant.
- *  - Rate limit STRICT por IP para frenar spam de conexiones.
+ *  - Rate limit GENEROUS por IP: EventSource reconecta seguido (y en dev con
+ *    Fast Refresh cada rebuild), STRICT (10/15min) daba 429 espurio. GENEROUS
+ *    (100/min) frena spam real sin romper reconexiones legítimas.
  *  - Cap global de 1000 conexiones + cap por tenant de 50 (anti DoS).
  */
 export async function GET(req: NextRequest) {
-  const rl = applyRateLimit(req, "STRICT", "admin-sse");
+  const rl = applyRateLimit(req, "GENEROUS", "admin-sse");
   if (rl) return rl;
 
   const auth = await requireAdmin(req, ["admin", "cajero"]);

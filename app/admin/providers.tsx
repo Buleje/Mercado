@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState, useCallback } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { VocabularyProvider } from "@/contexts/vocabulary-context";
 import { ModuleTabsProvider } from "@/contexts/module-tabs-context";
+import { SettingsProvider } from "@/contexts/settings-context";
 import AdminMotionProvider from "@/components/admin/providers/AdminMotionProvider";
 import { UndoToastProvider } from "@/components/admin/shared/UndoToast";
 import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
@@ -98,13 +99,15 @@ export function AdminProviders({ children }: { children: React.ReactNode }) {
 function AdminProvidersBare({ children }: { children: React.ReactNode }) {
   return (
     <AdminMotionProvider>
-      <VocabularyProvider>
-        <ModuleTabsProvider>
-          <UndoToastProvider>
-            <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
-          </UndoToastProvider>
-        </ModuleTabsProvider>
-      </VocabularyProvider>
+      <SettingsProvider>
+        <VocabularyProvider>
+          <ModuleTabsProvider>
+            <UndoToastProvider>
+              <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+            </UndoToastProvider>
+          </ModuleTabsProvider>
+        </VocabularyProvider>
+      </SettingsProvider>
     </AdminMotionProvider>
   );
 }
@@ -150,18 +153,20 @@ function AdminProvidersInner({ children }: { children: React.ReactNode }) {
 
   return (
     <AdminMotionProvider>
-      <VocabularyProvider>
-        <ModuleTabsProvider>
-          <UndoToastProvider>
-            <ConfirmDialogProvider>
-              {children}
-              <NotificationToast />
-              {showFab && <QuickActionsFab />}
-              <KeyboardShortcutsHelp open={showShortcuts} onClose={() => setShowShortcuts(false)} />
-            </ConfirmDialogProvider>
-          </UndoToastProvider>
-        </ModuleTabsProvider>
-      </VocabularyProvider>
+      <SettingsProvider>
+        <VocabularyProvider>
+          <ModuleTabsProvider>
+            <UndoToastProvider>
+              <ConfirmDialogProvider>
+                {children}
+                <NotificationToast />
+                {showFab && <QuickActionsFab />}
+                <KeyboardShortcutsHelp open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+              </ConfirmDialogProvider>
+            </UndoToastProvider>
+          </ModuleTabsProvider>
+        </VocabularyProvider>
+      </SettingsProvider>
     </AdminMotionProvider>
   );
 }

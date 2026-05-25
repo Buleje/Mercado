@@ -343,31 +343,43 @@ export const BASIC_MODULES: TabCategory[] = [
   },
 
   // ── 05 · CLIENTES ────────────────────────────────
-  // CRM + créditos informales + préstamos + comunicación + leads.
+  // CRM + comunicación + leads. (Créditos/préstamos movidos a Finanzas.)
   {
     id: "clientes",
     label: "Clientes",
     icon: Heart,
     tabs: [
       "clientes",
-      "fiados",
-      "prestamos",
       "marketplace-chat",
       "support-inbox",
       "leads-funnel",
     ],
   },
 
-  // ── 06 · GRÁFICOS ────────────────────────────────
-  // Visión estratégica: analytics, forecast, finanzas, rendimiento técnico.
+  // ── 06 · FINANZAS ────────────────────────────────
+  // Todo el dinero del negocio: caja/saldos, créditos a clientes (fiados),
+  // préstamos, y adelantos a personas por servicios. Inicia la sección "Gestión".
+  {
+    id: "finanzas",
+    label: "Finanzas",
+    icon: Wallet,
+    tabs: [
+      "plata",
+      "fiados",
+      "prestamos",
+      "adelantos",
+    ],
+  },
+
+  // ── 07 · GRÁFICOS ────────────────────────────────
+  // Visión estratégica: analytics, forecast, rendimiento técnico.
   {
     id: "graficos",
-    label: "Gráficos",
+    label: "Análisis",
     icon: BarChart3,
     tabs: [
       "analytics-pro",
       "forecasting",
-      "plata",
       "rendimiento",
     ],
   },
