@@ -558,6 +558,7 @@ function DetalleAdelantoModal({
   const [sumarAStock, setSumarAStock] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [productos, setProductos] = useState<{ id: number; name: string; price: number; stock?: number }[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -567,6 +568,14 @@ function DetalleAdelantoModal({
   }, [adelantoId]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    fetch("/api/products", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: unknown) => setProductos(Array.isArray(d) ? d.map((p: { id: number; name: string; price?: number; stock?: number }) => ({ id: p.id, name: p.name, price: Number(p.price ?? 0), stock: p.stock })) : []))
+      .catch((err) => console.warn("[adelantos] /api/products failed:", err));
+  }, []);
+
+  const prodSel = productos.find((p) => String(p.id) === productId);
 
   const registrar = async () => {
     setErr(null);
@@ -578,7 +587,7 @@ function DetalleAdelantoModal({
       body.valorManual = v;
     } else {
       const pid = Number(productId);
-      if (!pid) { setErr("Indicá el ID del producto."); return; }
+      if (!pid) { setErr("Elegí un producto del catálogo."); return; }
       body.productId = pid;
       body.descripcion = descripcion.trim() || undefined;
       if (cantidad) body.cantidad = Number(cantidad);
@@ -645,9 +654,17 @@ function DetalleAdelantoModal({
               <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder={tipo === "LIBRE" ? "Ej: reparación del local" : "Descripción (opcional)"} className={inputCls} />
               {tipo === "PRODUCTO" && (
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={productId} onChange={(e) => setProductId(e.target.value)} placeholder="ID producto" className={inputCls + " tabular-nums"} />
-                  <input type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} placeholder="Cantidad" className={inputCls + " tabular-nums"} />
+                  <select value={productId} onChange={(e) => setProductId(e.target.value)} className={inputCls}>
+                    <option value="">Elegí un producto…</option>
+                    {productos.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name} — {formatCurrency(p.price)}{p.stock != null ? ` · stock ${p.stock}` : ""}</option>
+                    ))}
+                  </select>
+                  <input type="number" min={1} value={cantidad} onChange={(e) => setCantidad(e.target.value)} placeholder="Cantidad" className={inputCls + " tabular-nums"} />
                 </div>
+              )}
+              {tipo === "PRODUCTO" && prodSel && cantidad && Number(cantidad) > 0 && !valor && (
+                <p className="text-sm text-[var(--text-secondary)]">Valor estimado: <strong className="text-[var(--text-primary)]">{formatCurrency(prodSel.price * Number(cantidad))}</strong> ({Number(cantidad)} × {formatCurrency(prodSel.price)})</p>
               )}
               <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={tipo === "LIBRE" ? "Valor en S/" : "Valor S/ (vacío = precio × cantidad)"} className={inputCls + " tabular-nums"} />
               {tipo === "PRODUCTO" && (
