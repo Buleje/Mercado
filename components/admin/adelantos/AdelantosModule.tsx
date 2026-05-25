@@ -704,6 +704,7 @@ function PersonasView({
   const [editPersona, setEditPersona] = useState<BeneficiarioConSaldo | null>(null);
   const [deletePersona, setDeletePersona] = useState<BeneficiarioConSaldo | null>(null);
   const [adelantoPara, setAdelantoPara] = useState<string | null>(null);
+  const [estadoCuenta, setEstadoCuenta] = useState<BeneficiarioConSaldo | null>(null);
   const [q, setQ] = useState("");
   const [orden, setOrden] = useState<"saldo" | "nombre" | "adelantado">("saldo");
 
@@ -803,16 +804,16 @@ function PersonasView({
                   </button>
                 </div>
 
-                <div className="flex items-start gap-3 pr-16">
+                <button onClick={() => setEstadoCuenta(b)} className="flex items-start gap-3 pr-16 text-left group" title="Ver estado de cuenta">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-extrabold text-primary">
                     {b.nombre.charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{b.nombre}</p>
+                    <p className="text-base font-extrabold text-[var(--text-primary)] truncate group-hover:text-primary transition-colors">{b.nombre}</p>
                     {b.documento && <p className="text-sm text-[var(--text-tertiary)] tabular-nums truncate">{b.documento}</p>}
                     {b.telefono && <p className="text-sm text-[var(--text-tertiary)] tabular-nums truncate">{b.telefono}</p>}
                   </div>
-                </div>
+                </button>
 
                 <div className="mt-3 grid grid-cols-2 gap-2 border-t-2 border-[var(--rule-soft)] pt-3">
                   <div>
@@ -872,6 +873,9 @@ function PersonasView({
       )}
       {adelantoPara && (
         <CrearAdelantoModal beneficiarios={beneficiarios} initialBeneficiarioId={adelantoPara} onClose={() => setAdelantoPara(null)} onCreated={() => { setAdelantoPara(null); onChange(); }} />
+      )}
+      {estadoCuenta && (
+        <EstadoCuentaModal persona={estadoCuenta} adelantos={adelantos} onClose={() => setEstadoCuenta(null)} />
       )}
     </div>
   );
@@ -939,6 +943,101 @@ function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: Benefi
         <button onClick={submit} disabled={saving} className="h-12 px-5 rounded-2xl bg-[var(--data-error)] text-white text-base font-bold hover:opacity-90 disabled:opacity-50">
           {saving ? "Eliminando…" : "Eliminar"}
         </button>
+      </div>
+    </ModalShell>
+  );
+}
+
+// ── Estado de cuenta por persona (libro mayor + WhatsApp + PDF) ────────────────
+function EstadoCuentaModal({ persona, adelantos, onClose }: { persona: BeneficiarioConSaldo; adelantos: DbAdelanto[]; onClose: () => void }) {
+  const mios = adelantos.filter((a) => a.beneficiarioId === persona.id && a.status !== "CANCELADO");
+  const movs: { fecha: string; concepto: string; monto: number }[] = [];
+  for (const a of mios) {
+    movs.push({ fecha: a.fechaAdelanto, concepto: "Adelanto", monto: a.montoAdelantado });
+    for (const e of a.entregas) movs.push({ fecha: e.fecha, concepto: e.descripcion || "Entrega", monto: -e.valor });
+  }
+  movs.sort((x, y) => new Date(x.fecha).getTime() - new Date(y.fecha).getTime());
+  let acc = 0;
+  const rows = movs.map((m) => { acc += m.monto; return { ...m, saldo: acc }; });
+  const saldoFinal = acc;
+  const fmt = (f: string) => new Date(f).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
+  const signo = (n: number) => (n >= 0 ? "+" : "−") + formatCurrency(Math.abs(n));
+
+  const texto = () => {
+    const lineas = rows.map((r) => `${fmt(r.fecha)} · ${r.concepto}: ${signo(r.monto)}`).join("\n");
+    return `*Estado de cuenta*\n${persona.nombre}\n━━━━━━━━━━━━━━━━━━━\n${lineas}\n━━━━━━━━━━━━━━━━━━━\n*Saldo pendiente: ${formatCurrency(saldoFinal)}*`;
+  };
+  const waLink = () => {
+    const digits = (persona.telefono ?? "").replace(/\D/g, "");
+    const phone = digits.length === 9 ? `51${digits}` : digits;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(texto())}`;
+  };
+  const exportarPdf = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.text("Estado de cuenta", 14, 18);
+    doc.setFontSize(11); doc.text(persona.nombre, 14, 26);
+    if (persona.documento) doc.text(`Doc: ${persona.documento}`, 14, 32);
+    if (persona.telefono) doc.text(`Tel: ${persona.telefono}`, 14, persona.documento ? 38 : 32);
+    autoTable(doc, {
+      startY: persona.documento ? 44 : 38,
+      head: [["Fecha", "Concepto", "Monto", "Saldo"]],
+      body: rows.map((r) => [fmt(r.fecha), r.concepto, signo(r.monto), formatCurrency(r.saldo)]),
+      foot: [["", "", "Saldo pendiente", formatCurrency(saldoFinal)]],
+    });
+    doc.save(`estado-cuenta-${persona.nombre.replace(/\s+/g, "-")}.pdf`);
+  };
+
+  return (
+    <ModalShell title="Estado de cuenta" onClose={onClose} wide>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{persona.nombre}</p>
+          {persona.telefono && <p className="text-sm text-[var(--text-tertiary)] tabular-nums">{persona.telefono}</p>}
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-sm font-semibold text-[var(--text-tertiary)]">Saldo pendiente</p>
+          <p className={`text-2xl font-extrabold tabular-nums ${saldoFinal > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{formatCurrency(saldoFinal)}</p>
+        </div>
+      </div>
+
+      {rows.length === 0 ? (
+        <EmptyState icon={FileText} title="Sin movimientos" hint="Esta persona no tiene adelantos registrados." />
+      ) : (
+        <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]">
+          <table className="w-full text-base">
+            <thead className="bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+              <tr className="text-left">
+                <th className="px-3 py-2 font-bold">Fecha</th>
+                <th className="px-3 py-2 font-bold">Concepto</th>
+                <th className="px-3 py-2 font-bold text-right">Monto</th>
+                <th className="px-3 py-2 font-bold text-right">Saldo</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--rule-soft)]">
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td className="px-3 py-2 tabular-nums text-[var(--text-secondary)]">{fmt(r.fecha)}</td>
+                  <td className="px-3 py-2 text-[var(--text-primary)]">{r.concepto}</td>
+                  <td className={`px-3 py-2 text-right tabular-nums font-bold ${r.monto >= 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{signo(r.monto)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-[var(--text-primary)]">{formatCurrency(r.saldo)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-5 flex flex-wrap justify-end gap-2">
+        <button onClick={exportarPdf} className="inline-flex items-center gap-1 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+          <FileText className="h-5 w-5" /> Descargar PDF
+        </button>
+        {persona.telefono && (
+          <a href={waLink()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors">
+            <MessageCircle className="h-5 w-5" /> Enviar por WhatsApp
+          </a>
+        )}
       </div>
     </ModalShell>
   );
