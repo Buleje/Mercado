@@ -56,8 +56,8 @@ export default function PromoBannerCarousel({ slot, banners: override }: Props) 
                 key={b.id}
                 type="button"
                 onClick={() => setIdx(i)}
-                aria-label={`Banner ${i + 1}`}
-                aria-current={i === idx}
+                aria-label={`Ver banner ${i + 1} de ${banners.length}`}
+                aria-pressed={i === idx}
                 className={cn(
                   "h-1.5 rounded-full transition-all duration-300",
                   i === idx

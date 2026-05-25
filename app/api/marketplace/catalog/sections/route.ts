@@ -47,7 +47,18 @@ export async function GET(req: NextRequest) {
       liquidations: lowStockRaw.map((r) => formatProduct(r)),
     };
 
-    return NextResponse.json({ data: sections });
+    return NextResponse.json(
+      { data: sections },
+      {
+        headers: {
+          // Catálogo no personalizado — cacheable. Evita doble-fetch cuando
+          // OfertasDelDiaHero (featured) y CatalogSections (liquidations)
+          // consumen este mismo endpoint en el home. SWR refresca en bg.
+          "Cache-Control":
+            "public, max-age=120, s-maxage=120, stale-while-revalidate=600",
+        },
+      },
+    );
   } catch (err) {
     logger.error("marketplace/catalog/sections error", { requestId, err });
     return NextResponse.json(
