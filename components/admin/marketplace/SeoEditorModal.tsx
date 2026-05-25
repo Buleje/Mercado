@@ -1,8 +1,9 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { X, Loader2, Search, CheckCircle, XCircle } from "@buleje/design-system/icons";
+import { Loader2, Search, CheckCircle, XCircle, X } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -175,156 +176,104 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] shrink-0">
-          <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">Editor SEO</SectionTitle>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
-          {loading ? (
-            <LoadingState />
-          ) : (
-            <>
-              {/* Meta Title */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-[var(--text-secondary)]">
-                    Meta título
-                  </label>
-                  <span className={cn(
-                    "text-xs",
-                    form.metaTitle.length > 70 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
-                  )}>
-                    {form.metaTitle.length}/70
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={form.metaTitle}
-                  onChange={(e) => setForm((f) => ({ ...f, metaTitle: e.target.value }))}
-                  className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
-                    errors.metaTitle
-                      ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
-                      : "border-[var(--rule-base)]"
-                  )}
-                  placeholder="Título optimizado para Google"
-                />
-                {errors.metaTitle && (
-                  <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaTitle}</p>
+    <AdminModal open={open} onClose={onClose} title="Editor SEO" variant="default">
+      <div className="p-5 space-y-5">
+        {loading ? (
+          <LoadingState />
+        ) : (
+          <>
+            {/* Meta Title */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium text-[var(--text-secondary)]">Meta título</label>
+                <span className={cn("text-xs", form.metaTitle.length > 70 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+                  {form.metaTitle.length}/70
+                </span>
+              </div>
+              <input
+                type="text"
+                value={form.metaTitle}
+                onChange={(e) => setForm((f) => ({ ...f, metaTitle: e.target.value }))}
+                className={cn(
+                  "w-full px-3 py-2 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+                  errors.metaTitle ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)]"
                 )}
-              </div>
+                placeholder="Título optimizado para Google"
+              />
+              {errors.metaTitle && <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaTitle}</p>}
+            </div>
 
-              {/* Meta Description */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-[var(--text-secondary)]">
-                    Meta descripción
-                  </label>
-                  <span className={cn(
-                    "text-xs",
-                    form.metaDescription.length > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
-                  )}>
-                    {form.metaDescription.length}/160
-                  </span>
-                </div>
-                <textarea
-                  rows={3}
-                  value={form.metaDescription}
-                  onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))}
-                  className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none",
-                    errors.metaDescription
-                      ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
-                      : "border-[var(--rule-base)]"
-                  )}
-                  placeholder="Descripción que aparecerá en los resultados de búsqueda"
-                />
-                {errors.metaDescription && (
-                  <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaDescription}</p>
+            {/* Meta Description */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium text-[var(--text-secondary)]">Meta descripción</label>
+                <span className={cn("text-xs", form.metaDescription.length > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+                  {form.metaDescription.length}/160
+                </span>
+              </div>
+              <textarea
+                rows={3}
+                value={form.metaDescription}
+                onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))}
+                className={cn(
+                  "w-full px-3 py-2 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none",
+                  errors.metaDescription ? "border-[var(--data-error)] dark:border-[var(--data-error)]" : "border-[var(--rule-base)]"
                 )}
-              </div>
+                placeholder="Descripción que aparecerá en los resultados de búsqueda"
+              />
+              {errors.metaDescription && <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaDescription}</p>}
+            </div>
 
-              {/* Keywords */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-[var(--text-secondary)]">
-                    Palabras clave
-                  </label>
-                  <span className="text-xs text-[var(--text-tertiary)]">{form.keywords.length}/10</span>
-                </div>
-                <TagInput
-                  tags={form.keywords}
-                  onChange={(tags) => setForm((f) => ({ ...f, keywords: tags }))}
-                  max={10}
-                />
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">Presiona Enter para agregar cada keyword</p>
+            {/* Keywords */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium text-[var(--text-secondary)]">Palabras clave</label>
+                <span className="text-xs text-[var(--text-tertiary)]">{form.keywords.length}/10</span>
               </div>
+              <TagInput tags={form.keywords} onChange={(tags) => setForm((f) => ({ ...f, keywords: tags }))} max={10} />
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">Presiona Enter para agregar cada keyword</p>
+            </div>
 
-              {/* OG Image */}
-              <div>
-                <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">
-                  Imagen OG (URL)
-                </label>
-                <input
-                  type="text"
-                  value={form.ogImage}
-                  onChange={(e) => setForm((f) => ({ ...f, ogImage: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
-                  placeholder="https://..."
-                />
-              </div>
+            {/* OG Image */}
+            <div>
+              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">Imagen OG (URL)</label>
+              <input
+                type="text"
+                value={form.ogImage}
+                onChange={(e) => setForm((f) => ({ ...f, ogImage: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+                placeholder="https://..."
+              />
+            </div>
 
-              {/* Preview SERP */}
-              <SerpPreview title={form.metaTitle} description={form.metaDescription} />
-            </>
-          )}
-        </div>
+            {/* Preview SERP */}
+            <SerpPreview title={form.metaTitle} description={form.metaDescription} />
+          </>
+        )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[var(--rule-base)] flex gap-3 shrink-0">
-          <button
-            onClick={onClose}
-            disabled={saving}
-            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-          >
+        <div className="flex gap-3 pt-2">
+          <button onClick={onClose} disabled={saving} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50">
             Cancelar
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || loading}
-            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <button onClick={handleSave} disabled={saving || loading} className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2">
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar
           </button>
         </div>
-      </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className={cn(
-          "fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-          toast.type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
-        )}>
-          {toast.type === "success"
-            ? <CheckCircle className="h-4 w-4 shrink-0" />
-            : <XCircle className="h-4 w-4 shrink-0" />}
-          {toast.msg}
-        </div>
-      )}
-    </div>
+        {/* Toast */}
+        {toast && (
+          <div className={cn(
+            "fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
+            toast.type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+          )}>
+            {toast.type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+            {toast.msg}
+          </div>
+        )}
+      </div>
+    </AdminModal>
   );
 }

@@ -22,9 +22,10 @@ import { CSS } from "@dnd-kit/utilities";
 import Image from "next/image";
 import {
   GripVertical, Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
-  Loader2, ImageOff, CheckCircle, XCircle, X,
+  Loader2, ImageOff, CheckCircle, XCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -104,86 +105,75 @@ function BannerModal({
     setForm((f) => ({ ...f, [field]: value }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)]">
-          <CardTitle className="text-base font-semibold text-[var(--text-primary)]">
-            Banner — {SECTION_LABELS[section]}
-          </CardTitle>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
-            <X className="h-4 w-4" />
+    <AdminModal open onClose={onClose} title={`Banner — ${SECTION_LABELS[section]}`}>
+      <div className="p-5 space-y-4">
+        {[
+          { key: "title", label: "Título", placeholder: "Ej: Oferta de la semana" },
+          { key: "subtitle", label: "Subtítulo", placeholder: "Ej: Hasta 30% de descuento" },
+          { key: "imageUrl", label: "URL imagen", placeholder: "https://..." },
+          { key: "linkUrl", label: "URL destino", placeholder: "https://..." },
+        ].map(({ key, label, placeholder }) => (
+          <div key={key}>
+            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">{label}</label>
+            <input
+              type="text"
+              value={form[key as keyof BannerFormData] as string}
+              onChange={(e) => set(key as keyof BannerFormData, e.target.value)}
+              placeholder={placeholder}
+              className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            />
+          </div>
+        ))}
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Inicio</label>
+            <input
+              type="date"
+              value={form.startDate}
+              onChange={(e) => set("startDate", e.target.value)}
+              className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Fin</label>
+            <input
+              type="date"
+              value={form.endDate}
+              onChange={(e) => set("endDate", e.target.value)}
+              className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-[var(--text-secondary)]">Activo</span>
+          <button onClick={() => set("active", !form.active)}>
+            {form.active
+              ? <ToggleRight className="h-6 w-6 text-[#00B4A6]" />
+              : <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />}
           </button>
         </div>
 
-        <div className="px-6 py-4 space-y-4">
-          {[
-            { key: "title", label: "Título", placeholder: "Ej: Oferta de la semana" },
-            { key: "subtitle", label: "Subtítulo", placeholder: "Ej: Hasta 30% de descuento" },
-            { key: "imageUrl", label: "URL imagen", placeholder: "https://..." },
-            { key: "linkUrl", label: "URL destino", placeholder: "https://..." },
-          ].map(({ key, label, placeholder }) => (
-            <div key={key}>
-              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">{label}</label>
-              <input
-                type="text"
-                value={form[key as keyof BannerFormData] as string}
-                onChange={(e) => set(key as keyof BannerFormData, e.target.value)}
-                placeholder={placeholder}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
-              />
-            </div>
-          ))}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Inicio</label>
-              <input
-                type="date"
-                value={form.startDate}
-                onChange={(e) => set("startDate", e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Fin</label>
-              <input
-                type="date"
-                value={form.endDate}
-                onChange={(e) => set("endDate", e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[var(--text-secondary)]">Activo</span>
-            <button onClick={() => set("active", !form.active)}>
-              {form.active
-                ? <ToggleRight className="h-6 w-6 text-[#00B4A6]" />
-                : <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />}
-            </button>
-          </div>
-        </div>
-
-        <div className="px-6 py-4 border-t border-[var(--rule-base)] flex gap-3">
+        <div className="flex gap-3 pt-2">
           <button
             onClick={onClose}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="flex-1 h-10 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={() => onSave(form)}
             disabled={saving || !form.title.trim()}
-            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 h-10 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar
           </button>
         </div>
       </div>
-    </div>
+    </AdminModal>
   );
 }
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 /**
  * ExclusiveOffersTab — Catálogo de productos con precio Socio.
  *
@@ -12,13 +11,13 @@ import {
   Plus,
   Edit2,
   Trash2,
-  X,
   Save,
   Package,
   TrendingDown,
   AlertCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 interface ExclusiveOffer {
   id: string;
@@ -114,26 +113,11 @@ function OfferModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-      onClick={onClose}
+    <AdminModal
+      open
+      onClose={onClose}
+      title={offer?.id ? "Editar oferta exclusiva" : "Nueva oferta exclusiva"}
     >
-      <div
-        className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <CardTitle className="font-extrabold text-[var(--text-primary)]">
-            {offer?.id ? "Editar oferta exclusiva" : "Nueva oferta exclusiva"}
-          </CardTitle>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
             <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
@@ -204,21 +188,20 @@ function OfferModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+              className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
             >
               <Save className="h-4 w-4" />
               Guardar
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 

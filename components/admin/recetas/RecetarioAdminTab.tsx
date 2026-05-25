@@ -1,14 +1,14 @@
 'use client';
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 import { useState, useEffect, useCallback } from "react";
-import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, Trash2, ChevronUp, ChevronDown,
   Eye, EyeOff, Save, BookOpen, Clock, Users, BarChart3,
 } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ export default function RecetarioAdminTab() {
     fetch("/api/products?limit=500")
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setProducts(d); })
-      .catch((err) => console.warn("[RecetarioAdminTab] products fetch failed:", err));
+      .catch(() => {});
   }, []);
 
   // ── Form helpers ──
@@ -364,68 +364,43 @@ export default function RecetarioAdminTab() {
       )}
 
       {/* Delete Confirm */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <>
-            <m.div key="del-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" onClick={() => setDeleteConfirm(null)} />
-            <m.div key="del-modal" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-[var(--color-card)] rounded-xl p-6 max-w-sm w-full space-y-4">
-                <p className="text-base font-bold text-[var(--text-primary)]">Eliminar receta?</p>
-                <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario público.</p>
-                <div className="flex gap-2">
-                  <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 transition-colors">Cancelar</button>
-                  <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] transition-colors">Eliminar</button>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+      <AdminModal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Eliminar receta" variant="centered-sm">
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario público.</p>
+          <div className="flex gap-2">
+            <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 transition-colors">Cancelar</button>
+            <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] transition-colors">Eliminar</button>
+          </div>
+        </div>
+      </AdminModal>
 
       {/* Create/Edit Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <>
-            <m.div key="modal-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" onClick={() => { setShowModal(false); resetForm(); }} />
-            <m.div
-              key="modal-content"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && (() => { setShowModal(false); resetForm(); })()}
-            >
-              <div className="w-full max-w-2xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] shrink-0">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">
-                    {editing ? "Editar Receta" : "Nueva Receta del Recetario"}
-                  </CardTitle>
-                  <button onClick={() => { setShowModal(false); resetForm(); }} className="p-1.5 rounded-lg hover:bg-gray-100">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
+      <AdminModal
+        open={showModal}
+        onClose={() => { setShowModal(false); resetForm(); }}
+        title={editing ? "Editar Receta" : "Nueva Receta del Recetario"}
+        variant="wide"
+      >
+          {/* Modal Tabs */}
+          <div className="flex gap-1 px-5 pt-3 border-b border-[var(--rule-soft)]">
+            {(["info", "ingredientes", "pasos", "preview"] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setModalTab(t)}
+                className={cn(
+                  "px-3 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-colors",
+                  modalTab === t
+                    ? "border-primary text-primary"
+                    : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                )}
+              >
+                {t === "info" ? "Info Básica" : t === "ingredientes" ? "Ingredientes" : t === "pasos" ? "Pasos" : "Vista previa"}
+              </button>
+            ))}
+          </div>
 
-                {/* Modal Tabs */}
-                <div className="flex gap-1 px-5 pt-3 border-b border-[var(--rule-soft)] shrink-0">
-                  {(["info", "ingredientes", "pasos", "preview"] as const).map(t => (
-                    <button
-                      key={t}
-                      onClick={() => setModalTab(t)}
-                      className={cn(
-                        "px-3 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-colors",
-                        modalTab === t
-                          ? "border-primary text-primary"
-                          : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-                      )}
-                    >
-                      {t === "info" ? "Info Básica" : t === "ingredientes" ? "Ingredientes" : t === "pasos" ? "Pasos" : "Vista previa"}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Modal Body */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* Modal Body */}
+          <div className="px-5 py-4 space-y-4">
                   {/* A) Info Básica */}
                   {modalTab === "info" && (
                     <div className="space-y-3">
@@ -650,25 +625,21 @@ export default function RecetarioAdminTab() {
                   )}
                 </div>
 
-                {/* Modal Footer */}
-                <div className="flex gap-2 px-5 py-4 border-t border-[var(--rule-soft)] shrink-0">
-                  <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving || !nombre.trim() || ingredientes.length === 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
-                  >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    {editing ? "Actualizar" : "Guardar"}
-                  </button>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+          {/* Modal Footer */}
+          <div className="flex gap-2 px-5 py-4 border-t border-[var(--rule-soft)]">
+            <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || !nombre.trim() || ingredientes.length === 0}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {editing ? "Actualizar" : "Guardar"}
+            </button>
+          </div>
+      </AdminModal>
     </div>
   );
 }

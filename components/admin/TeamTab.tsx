@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback } from "react";
 import {
   Users,
@@ -11,7 +12,6 @@ import {
   ShoppingCart,
   Package,
   Loader2,
-  X,
   Eye,
   EyeOff,
   CheckCircle2,
@@ -260,13 +260,13 @@ export default function TeamTab() {
                 <button
                   onClick={() => handleToggleActive(u)}
                   title={u.active ? "Desactivar" : "Activar"}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-[var(--text-primary)]"
+                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
                   {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)]" /> : <XCircle className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => openEdit(u)}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-[var(--text-primary)]"
+                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
@@ -283,19 +283,8 @@ export default function TeamTab() {
       )}
 
       {/* Create / Edit form modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-(--color-card) rounded-xl w-full max-w-md p-3 sm:p-6 space-y-4">
-            {/* Modal header */}
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-bold text-base">
-                {editingId ? "Editar usuario" : "Nuevo usuario"}
-              </CardTitle>
-              <button onClick={() => setShowForm(false)} className="p-1 rounded-lg hover:bg-(--color-surface)">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
+      <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editingId ? "Editar usuario" : "Nuevo usuario"} variant="default">
+        <div className="p-5 space-y-4">
             {/* Username (only on create) */}
             {!editingId && (
               <div className="space-y-1">
@@ -389,9 +378,8 @@ export default function TeamTab() {
                 {editingId ? "Guardar cambios" : "Crear usuario"}
               </button>
             </div>
-          </div>
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

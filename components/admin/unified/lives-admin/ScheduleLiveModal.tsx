@@ -1,6 +1,5 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 /**
  * ScheduleLiveModal — Programar una transmisión en vivo futura.
  *
@@ -8,8 +7,9 @@ import { CardTitle } from "@buleje/design-system";
  */
 
 import { useState } from "react";
-import { X, Radio, Save, AlertCircle, Check } from "@buleje/design-system/icons";
+import { Radio, Save, AlertCircle, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 export interface ScheduledLiveData {
   title: string;
@@ -94,139 +94,121 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-      onClick={onClose}
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Programar transmisión"
+      variant="default"
     >
-      <div
-        className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sticky top-0 bg-white dark:bg-[var(--color-card)] flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center">
-              <Radio className="h-4 w-4" />
-            </div>
-            <CardTitle className="font-extrabold text-[var(--text-primary)]">Programar transmisión</CardTitle>
+      <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
+            <AlertCircle className="h-4 w-4 shrink-0" /> {error}
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+        )}
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-[var(--text-secondary)]">Título *</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ej: Ofertas de fin de semana"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            autoFocus
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
-              <AlertCircle className="h-4 w-4 shrink-0" /> {error}
-            </div>
-          )}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            placeholder="Describe qué verán los espectadores"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
+          />
+        </div>
 
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Título *</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Fecha *</label>
             <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: Ofertas de fin de semana"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-              autoFocus
             />
           </div>
-
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              placeholder="Describe qué verán los espectadores"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Fecha *</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Hora *</label>
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Productos destacados ({selectedIds.size} seleccionados)</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Hora *</label>
             <input
-              type="search"
-              placeholder="Buscar producto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-            <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100">
-              {filteredProducts.map((p) => {
-                const selected = selectedIds.has(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => toggleProduct(p.id)}
-                    className={cn(
-                      "w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors",
-                      selected && "bg-primary/5"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0",
-                        selected ? "border-primary bg-primary" : "border-gray-300"
-                      )}>
-                        {selected && <Check className="h-3 w-3 text-white" />}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{p.name}</p>
-                        <p className="text-xs text-[var(--text-secondary)]">Stock: {p.stock}</p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-bold text-[var(--text-primary)]">{fmt(p.price)}</span>
-                  </button>
-                );
-              })}
-            </div>
           </div>
+        </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
-            >
-              <Save className="h-4 w-4" />
-              Programar
-            </button>
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-[var(--text-secondary)]">Productos destacados ({selectedIds.size} seleccionados)</label>
+          <input
+            type="search"
+            placeholder="Buscar producto..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+          />
+          <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100">
+            {filteredProducts.map((p) => {
+              const selected = selectedIds.has(p.id);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => toggleProduct(p.id)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors",
+                    selected && "bg-primary/5"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0",
+                      selected ? "border-primary bg-primary" : "border-gray-300"
+                    )}>
+                      {selected && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{p.name}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">Stock: {p.stock}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold text-[var(--text-primary)]">{fmt(p.price)}</span>
+                </button>
+              );
+            })}
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+          >
+            <Save className="h-4 w-4" />
+            Programar
+          </button>
+        </div>
+      </form>
+    </AdminModal>
   );
 }

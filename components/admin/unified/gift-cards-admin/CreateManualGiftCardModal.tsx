@@ -1,6 +1,5 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 /**
  * CreateManualGiftCardModal — Emitir gift card manual como admin.
  *
@@ -9,7 +8,8 @@ import { CardTitle } from "@buleje/design-system";
  */
 
 import { useState } from "react";
-import { X, Gift, Save, AlertCircle } from "@buleje/design-system/icons";
+import { Gift, Save, AlertCircle } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 interface Props {
   onClose: () => void;
@@ -65,30 +65,14 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
   })();
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center">
+    <AdminModal open onClose={onClose} title="Emitir gift card manual">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-xl">
+            <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center shrink-0">
               <Gift className="h-4 w-4" />
             </div>
-            <CardTitle className="font-extrabold text-[var(--text-primary)]">Emitir gift card manual</CardTitle>
+            <span className="text-xs font-semibold text-[var(--text-secondary)]">Gift card manual</span>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
             <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
               <AlertCircle className="h-4 w-4 shrink-0" /> {error}
@@ -176,14 +160,14 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -194,7 +178,6 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

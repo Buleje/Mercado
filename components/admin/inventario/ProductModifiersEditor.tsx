@@ -12,7 +12,6 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -20,6 +19,7 @@ import {
   Sliders, Upload, Star,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import VariantCatalogPicker from "./VariantCatalogPicker";
 import CatalogOptionPicker from "./CatalogOptionPicker";
 
@@ -158,32 +158,13 @@ export default function ProductModifiersEditor({ productId, productName, onClose
   };
 
   return (
-    <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[8000] bg-black/60 backdrop-blur-sm" />
-        <Dialog.Content
-          aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[8001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[92vh] flex flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] overflow-hidden"
-        >
-          {/* Header */}
-          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Sliders className="h-5 w-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <Dialog.Title className="text-base font-extrabold text-[var(--text-primary)]">
-                Adicionales y modificadores
-              </Dialog.Title>
-              <p className="text-xs text-[var(--text-tertiary)] truncate">
-                {productName} — extras que el cliente elige al ordenar (cremas, salsas, presa, toppings…)
-              </p>
-            </div>
-            <button onClick={onClose} aria-label="Cerrar"
-              className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Adicionales y modificadores"
+      description={`${productName} — extras que el cliente elige al ordenar (cremas, salsas, presa, toppings…)`}
+      variant="wide"
+    >
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-[var(--surface-canvas)]/50">
             {loading && (
@@ -194,7 +175,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             )}
 
             {!loading && groups.length === 0 && (
-              <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center bg-[var(--surface-raised)]">
+              <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center bg-white dark:bg-card">
                 <Sliders className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-3" />
                 <h3 className="text-sm font-bold text-[var(--text-primary)] mb-1">Aún no hay adicionales</h3>
                 <p className="text-xs text-[var(--text-tertiary)] max-w-md mx-auto leading-snug">
@@ -223,7 +204,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             {!loading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                 <button onClick={addGroup}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-white dark:bg-card px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
                   <Plus className="h-4 w-4" /> Agregar grupo nuevo
                 </button>
                 <button onClick={() => setShowCatalog(true)}
@@ -251,7 +232,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3.5 flex items-center justify-between gap-2 bg-[var(--surface-raised)]">
+          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3.5 flex items-center justify-between gap-2 bg-white dark:bg-card">
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hidden sm:block">
               Los cambios reemplazan completamente los adicionales del producto al guardar.
             </p>
@@ -267,9 +248,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
               </button>
             </div>
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    </AdminModal>
   );
 }
 
@@ -289,7 +268,7 @@ function GroupCard({
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
   const existingNames = new Set(group.options.map((o) => o.name.toLowerCase()));
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden shadow-sm">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden shadow-sm">
       {/* Group header */}
       <div className="border-b border-[var(--rule-soft)] p-4 space-y-3">
         <div className="flex items-start gap-2">
@@ -419,7 +398,7 @@ function OptionRow({
   };
 
   return (
-    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2.5">
+    <div className="rounded-xl border border-[var(--rule-soft)] bg-white dark:bg-card p-2.5">
       <div className="flex flex-wrap items-center gap-2.5">
         {/* Image upload zone — drag-drop + click */}
         <button

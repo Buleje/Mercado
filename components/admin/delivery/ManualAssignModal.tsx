@@ -12,11 +12,11 @@
  */
 
 import { useEffect, useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
 import {
-  X, Loader2, MapPin, Star, CheckCircle2, AlertTriangle, Bike,
+  Loader2, MapPin, Star, CheckCircle2, AlertTriangle, Bike,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 interface Partner {
   id: string;
@@ -85,19 +85,14 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-[var(--surface-canvas)] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <header className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)]">
-          <div>
-            <SectionTitle as="h2">Asignar repartidor manualmente</SectionTitle>
-            <p className="text-xs text-[var(--text-tertiary)]">Pedido #{orderId.slice(-8)}{orderLocation ? ` · ${orderLocation}` : ""}</p>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)]">
-            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Asignar repartidor manualmente"
+      description={`Pedido #${orderId.slice(-8)}${orderLocation ? ` · ${orderLocation}` : ""}`}
+      variant="wide"
+    >
+        <div className="p-5 space-y-4">
           {success && (
             <div className="rounded-xl bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)] p-5 text-center">
               <CheckCircle2 className="h-12 w-12 mx-auto text-[var(--data-success-500)]" strokeWidth={2.25} />
@@ -176,7 +171,6 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

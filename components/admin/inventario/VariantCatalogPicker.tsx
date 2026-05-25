@@ -11,13 +11,13 @@
 
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import * as Dialog from "@radix-ui/react-dialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
-  X, BookOpen, Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
+  BookOpen, Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
   CheckSquare, Square, Plus,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 const OptionSchema = z.object({
   id: z.string(),
@@ -173,31 +173,15 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
   const totalSelected = Array.from(selected.values()).reduce((sum, s) => sum + s.size, 0);
 
   return (
-    <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[8500] bg-black/60 backdrop-blur-sm" />
-        <Dialog.Content
-          aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
-        >
-          {/* Header */}
-          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] flex items-center gap-3 bg-[var(--surface-raised)]">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <Dialog.Title className="text-base font-extrabold text-[var(--text-primary)]">Catálogo de adicionales</Dialog.Title>
-              <p className="text-xs text-[var(--text-secondary)]">
-                Importá plantillas completas o seleccioná opciones específicas (con sus imágenes).
-              </p>
-            </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)]">
-              <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-            </button>
-          </div>
-
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Catálogo de adicionales"
+      description="Importá plantillas completas o seleccioná opciones específicas (con sus imágenes)."
+      variant="wide"
+    >
           {/* Filtros */}
-          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)]">
+          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-white dark:bg-card">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -212,7 +196,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
                     "px-3 py-1.5 rounded-full text-xs font-bold border transition-colors",
                     !activeCategory
                       ? "border-primary bg-primary text-white"
-                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40"
+                      : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40"
                   )}
                 >
                   Todas ({templates.length})
@@ -228,7 +212,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
                         "px-3 py-1.5 rounded-full text-xs font-bold border transition-colors",
                         active
                           ? "border-primary bg-primary text-white"
-                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40"
+                          : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40"
                       )}
                     >
                       {c} ({count})
@@ -281,7 +265,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-[var(--surface-raised)]">
+          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-white dark:bg-card">
             <span className="text-xs text-[var(--text-tertiary)]">
               {totalSelected > 0
                 ? `${totalSelected} opción${totalSelected === 1 ? "" : "es"} seleccionada${totalSelected === 1 ? "" : "s"}`
@@ -295,9 +279,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
               Listo
             </button>
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    </AdminModal>
   );
 }
 
@@ -321,7 +303,7 @@ function TemplateRow({
   const allSelected = selectedIds.size === template.options.length && template.options.length > 0;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <button onClick={onToggleExpand} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors mt-1">
@@ -410,7 +392,7 @@ function TemplateRow({
                     "text-left rounded-xl border-2 p-2.5 transition-all relative",
                     isChecked
                       ? "border-primary bg-primary/5"
-                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-primary/40"
+                      : "border-[var(--rule-soft)] bg-white dark:bg-card hover:border-primary/40"
                   )}
                 >
                   <div className="flex items-center gap-2.5">

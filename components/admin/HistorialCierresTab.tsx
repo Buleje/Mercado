@@ -1,8 +1,8 @@
 "use client";
-import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { m, AnimatePresence } from "@/components/admin/providers";
-import { Download, Eye, X, ChevronLeft, ChevronRight, CalendarOff } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { Download, Eye, ChevronLeft, ChevronRight, CalendarOff } from "@buleje/design-system/icons";
 import { exportToExcel } from "@/lib/export-excel";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
@@ -98,7 +98,7 @@ export default function HistorialCierresTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">
             Historial de Cierres
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
@@ -117,7 +117,7 @@ export default function HistorialCierresTab() {
 
       {/* Table */}
       {loading ? (
-        <TableSkeleton rows={5} cols={4} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl" />
+        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
       ) : !data?.items.length ? (
         <EmptyState
           icon={CalendarOff}
@@ -125,11 +125,11 @@ export default function HistorialCierresTab() {
           description="No hay cierres de caja registrados aún. Usa el botón «Cerrar día» en la barra superior para crear el primer cierre."
         />
       ) : (
-        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                <tr className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
                   <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Ventas</th>
                   <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Caja</th>
@@ -143,12 +143,12 @@ export default function HistorialCierresTab() {
                   return (
                     <tr
                       key={s.id}
-                      className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0 hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+                      className="border-b border-[var(--rule-soft)] dark:border-card-border last:border-0 hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
                     >
-                      <td className="px-4 py-3 font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-nowrap">
+                      <td className="px-4 py-3 font-medium text-[var(--text-primary)] dark:text-foreground whitespace-nowrap">
                         {formatFecha(s.fecha)}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
                         {formatMoney(s.totalVentas)}
                       </td>
                       <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
@@ -158,7 +158,7 @@ export default function HistorialCierresTab() {
                         <span className={`font-bold ${
                           dif > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
                           dif < 0 ? "text-[var(--data-error-500)]" :
-                          "text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
+                          "text-[var(--text-secondary)] dark:text-foreground"
                         }`}>
                           {s.efectivoContado != null ? (
                             <>{dif >= 0 ? "+" : ""}S/ {dif.toFixed(2)}</>
@@ -185,7 +185,7 @@ export default function HistorialCierresTab() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-base)] dark:border-card-border">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
@@ -209,48 +209,29 @@ export default function HistorialCierresTab() {
       )}
 
       {/* Detail modal */}
-      <AnimatePresence>
+      <AdminModal open={!!detail} onClose={() => setDetail(null)} title={detail ? `Cierre — ${formatFecha(detail.fecha)}` : ""} variant="default">
         {detail && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center">
-            <div className="modal-backdrop" onClick={() => setDetail(null)} />
-            <m.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-lg max-h-[85vh] overflow-y-auto z-10 mx-4"
-            >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)]">
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                  Cierre — {formatFecha(detail.fecha)}
-                </CardTitle>
-                <button
-                  onClick={() => setDetail(null)}
-                  className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="px-6 py-5 space-y-4">
+          <div className="p-5 space-y-4">
                 {/* Ventas */}
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-primary">Ventas</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Total vendido</p>
-                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatMoney(detail.totalVentas)}</p>
+                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">{formatMoney(detail.totalVentas)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">N&ordm; de ventas</p>
-                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.cantidadVentas}</p>
+                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">{detail.cantidadVentas}</p>
                     </div>
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Ticket promedio</p>
-                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatMoney(detail.ticketPromedio)}</p>
+                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">{formatMoney(detail.ticketPromedio)}</p>
                     </div>
                     {detail.mejorHora && (
                       <div>
                         <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Mejor hora</p>
-                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.mejorHora}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{detail.mejorHora}</p>
                       </div>
                     )}
                   </div>
@@ -267,11 +248,11 @@ export default function HistorialCierresTab() {
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Contado</p>
-                      <p className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatMoney(detail.efectivoContado)}</p>
+                      <p className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">{formatMoney(detail.efectivoContado)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Esperado</p>
-                      <p className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatMoney(detail.efectivoEsperado)}</p>
+                      <p className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">{formatMoney(detail.efectivoEsperado)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Diferencia</p>
@@ -304,7 +285,7 @@ export default function HistorialCierresTab() {
                     </div>
                     <div>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Vencidos</p>
-                      <p className={`text-base font-bold ${detail.fiadosVencidos > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)] dark:text-[var(--text-primary)]"}`}>
+                      <p className={`text-base font-bold ${detail.fiadosVencidos > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)] dark:text-foreground"}`}>
                         {detail.fiadosVencidos}
                       </p>
                     </div>
@@ -342,7 +323,7 @@ export default function HistorialCierresTab() {
                     <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
                     <div>
                       <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</p>
-                      <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap">{detail.notas}</p>
+                      <p className="text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap">{detail.notas}</p>
                     </div>
                   </>
                 )}
@@ -351,11 +332,9 @@ export default function HistorialCierresTab() {
                 <div className="pt-2 text-xs text-[var(--text-tertiary)] dark:text-muted">
                   Creado por: {detail.creadoPor} &middot; {new Date(detail.createdAt).toLocaleString("es-PE")}
                 </div>
-              </div>
-            </m.div>
           </div>
         )}
-      </AnimatePresence>
+      </AdminModal>
     </div>
   );
 }

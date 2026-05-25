@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2, Plus, X, AlertTriangle, Pencil, Wallet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -218,7 +219,7 @@ export default function PresupuestoMensualTab() {
           return (
             <div
               key={cat.nombre}
-              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4  space-y-3"
+              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  space-y-3"
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{cat.nombre}</p>
@@ -273,7 +274,7 @@ export default function PresupuestoMensualTab() {
       </div>
 
       {/* Resumen inferior */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 ">
+      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total presupuestado</p>
@@ -306,85 +307,75 @@ export default function PresupuestoMensualTab() {
       </div>
 
       {/* ── Edit Modal ──────────────────────────────────────────────────────── */}
-      {showEdit && (
-        <>
-          <div className="modal-backdrop" onClick={() => setShowEdit(false)} />
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            onClick={e => e.target === e.currentTarget && setShowEdit(false)}
-          >
-            <div className="w-full max-w-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Editar Presupuesto</CardTitle>
-                <button onClick={() => setShowEdit(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
-                  <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                {draft.map((d, i) => (
-                  <div key={i} className="flex gap-2 items-end bg-gray-50 dark:bg-white/5 rounded-xl p-3">
-                    <div className="flex-1">
-                      <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Categoria</label>
-                      <input
-                        type="text"
-                        value={d.nombre}
-                        onChange={e => updateDraft(i, "nombre", e.target.value)}
-                        placeholder="Ej: Mercaderia"
-                        className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                    </div>
-                    <div className="w-28">
-                      <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Limite (S/)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={d.limite}
-                        onChange={e => updateDraft(i, "limite", e.target.value)}
-                        placeholder="0.00"
-                        className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                    </div>
-                    <button
-                      onClick={() => removeDraftCat(i)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={addDraftCat}
-                className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-              >
-                <Plus className="h-3.5 w-3.5" /> Agregar categoria
-              </button>
-
-              {saveError && <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">{saveError}</p>}
-
-              <div className="flex gap-2 pt-1">
+      <AdminModal
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        title="Editar Presupuesto"
+        variant="default"
+      >
+        <div className="p-5 space-y-4">
+          <div className="space-y-2">
+            {draft.map((d, i) => (
+              <div key={i} className="flex gap-2 items-end bg-gray-50 dark:bg-white/5 rounded-xl p-3">
+                <div className="flex-1">
+                  <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Categoria</label>
+                  <input
+                    type="text"
+                    value={d.nombre}
+                    onChange={e => updateDraft(i, "nombre", e.target.value)}
+                    placeholder="Ej: Mercaderia"
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                </div>
+                <div className="w-28">
+                  <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Limite (S/)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={d.limite}
+                    onChange={e => updateDraft(i, "limite", e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                </div>
                 <button
-                  onClick={() => setShowEdit(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                  onClick={() => removeDraftCat(i)}
+                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                 >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
-                >
-                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Guardar
+                  <X className="h-3.5 w-3.5" />
                 </button>
               </div>
-            </div>
+            ))}
           </div>
-        </>
-      )}
+
+          <button
+            onClick={addDraftCat}
+            className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+          >
+            <Plus className="h-3.5 w-3.5" /> Agregar categoria
+          </button>
+
+          {saveError && <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">{saveError}</p>}
+
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => setShowEdit(false)}
+              className="flex-1 h-10 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Guardar
+            </button>
+          </div>
+        </div>
+      </AdminModal>
     </div>
   );
 }

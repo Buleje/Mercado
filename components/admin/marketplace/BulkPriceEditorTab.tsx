@@ -1,12 +1,13 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
   Search, X, Upload, Download, CheckCircle, XCircle,
   Loader2, AlertTriangle, ImageOff, ToggleLeft, ToggleRight,
 } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -41,48 +42,7 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   );
 }
 
-// ── Confirm Modal ─────────────────────────────────────────────────────────────
-
-function ConfirmModal({
-  changeCount,
-  applying,
-  onConfirm,
-  onCancel,
-}: {
-  changeCount: number;
-  applying: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl p-6 w-full max-w-sm">
-        <CardTitle className="text-lg font-bold text-[var(--text-primary)] mb-2">Confirmar cambios</CardTitle>
-        <p className="text-sm text-[var(--text-secondary)] mb-6">
-          Se aplicarán <span className="font-semibold text-[#00B4A6]">{changeCount}</span> cambios a productos.
-          Esta acción no se puede deshacer.
-        </p>
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            disabled={applying}
-            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={applying}
-            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {applying && <Loader2 className="h-4 w-4 animate-spin" />}
-            Confirmar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ConfirmModal migrado a AdminModal — ver uso en JSX abajo.
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
@@ -508,14 +468,31 @@ export default function BulkPriceEditorTab() {
         {filtered.length} productos · {selected.size} seleccionados · {changeCount} con cambios pendientes
       </p>
 
-      {showConfirm && (
-        <ConfirmModal
-          changeCount={changeCount}
-          applying={applying}
-          onConfirm={applyChanges}
-          onCancel={() => setShowConfirm(false)}
-        />
-      )}
+      <AdminModal open={showConfirm} onClose={() => setShowConfirm(false)} title="Confirmar cambios" variant="centered-sm">
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Se aplicarán <span className="font-semibold text-[#00B4A6]">{changeCount}</span> cambios a productos.
+            Esta acción no se puede deshacer.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowConfirm(false)}
+              disabled={applying}
+              className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={applyChanges}
+              disabled={applying}
+              className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {applying && <Loader2 className="h-4 w-4 animate-spin" />}
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </AdminModal>
 
       {toast && <Toast msg={toast.msg} type={toast.type} />}
     </div>

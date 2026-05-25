@@ -1,9 +1,10 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { SectionTitle } from "@buleje/design-system";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Target, TrendingUp, Plus, Pencil, Trash2, Check, X, BarChart3,
+  Target, TrendingUp, Plus, Pencil, Trash2, Check, BarChart3,
   Calendar, AlertTriangle, CheckCircle2, Clock, RefreshCw, Sparkles,
   Users, Coins, Package,
 } from "@buleje/design-system/icons";
@@ -815,65 +816,48 @@ export default function GoalsTab() {
       )}
 
       {/* Templates picker modal */}
-      {showTemplates && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowTemplates(false)}>
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl w-full max-w-2xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">¿Qué tipo de meta querés crear?</CardTitle>
-              <button onClick={() => setShowTemplates(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-              </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {TEMPLATES.map(t => {
-                const auto = pickAutoCurrent(t.category, t.period, autoStats);
-                const Icon = t.icon;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => applyTemplate(t)}
-                    className="text-left p-4 rounded-xl border border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-colors flex gap-3"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-sm text-[var(--text-primary)]">{t.label}</p>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
-                      {auto != null && auto > 0 && (
-                        <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
-                          Hoy llevás {formatNumber(Math.round(auto), t.unit)}
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => { setShowTemplates(false); setForm(EMPTY_FORM); setEditId(null); setShowForm(true); }}
-              className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
-            >
-              Crear meta personalizada
-            </button>
+      <AdminModal open={showTemplates} onClose={() => setShowTemplates(false)} title="¿Qué tipo de meta querés crear?" variant="wide">
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {TEMPLATES.map(t => {
+              const auto = pickAutoCurrent(t.category, t.period, autoStats);
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => applyTemplate(t)}
+                  className="text-left p-4 rounded-xl border border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-colors flex gap-3"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-[var(--text-primary)]">{t.label}</p>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t.description}</p>
+                    {auto != null && auto > 0 && (
+                      <p className="text-xs text-[var(--data-success-500)] mt-1.5 font-semibold">
+                        Hoy llevás {formatNumber(Math.round(auto), t.unit)}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
+          <button
+            onClick={() => { setShowTemplates(false); setForm(EMPTY_FORM); setEditId(null); setShowForm(true); }}
+            className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
+          >
+            Crear meta personalizada
+          </button>
         </div>
-      )}
+      </AdminModal>
 
       {/* Create/Edit Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">{editId ? "Editar meta" : "Nueva meta"}</CardTitle>
-              <button onClick={() => setShowForm(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Nombre de la meta</label>
+      <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editId ? "Editar meta" : "Nueva meta"} variant="default">
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Nombre de la meta</label>
                 <input
                   type="text"
                   value={form.name}
@@ -973,23 +957,21 @@ export default function GoalsTab() {
                   />
                 </div>
               )}
-            </div>
 
-            <div className="flex gap-3 pt-1">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
-                Cancelar
-              </button>
-              <button
-                onClick={save}
-                disabled={saving || !form.name.trim() || !form.target}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
-              >
-                {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear meta"}</>}
-              </button>
-            </div>
+          <div className="flex gap-3 pt-1">
+            <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
+              Cancelar
+            </button>
+            <button
+              onClick={save}
+              disabled={saving || !form.name.trim() || !form.target}
+              className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+            >
+              {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear meta"}</>}
+            </button>
           </div>
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

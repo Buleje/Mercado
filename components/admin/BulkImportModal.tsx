@@ -15,9 +15,9 @@
  */
 
 import { useCallback, useRef, useState } from "react";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   Upload,
-  X,
   FileText,
   Download,
   CheckCircle2,
@@ -159,8 +159,6 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
     URL.revokeObjectURL(url);
   };
 
-  if (!open) return null;
-
   const previewRows = rows.slice(0, 8);
   const REQUIRED = ["name", "category", "price"];
   const missingRequired = rows.length > 0
@@ -168,38 +166,14 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
     : [];
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="bulk-import-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
-      onClick={closeAndReset}
+    <AdminModal
+      open={open}
+      onClose={closeAndReset}
+      title="Importar productos desde CSV"
+      description="Subí un archivo .csv o .tsv (máx 5MB · 2000 filas)"
+      variant="wide"
     >
-      <div
-        className="relative w-full max-w-3xl max-h-[92vh] overflow-hidden rounded-t-2xl sm:rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-[var(--shadow-xl)] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <header className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
-          <div>
-            <h2 id="bulk-import-title" className="text-lg font-black text-[var(--text-primary)] tracking-tight">
-              Importar productos desde CSV
-            </h2>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-              Subí un archivo .csv o .tsv (máx 5MB · 2000 filas)
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={closeAndReset}
-            aria-label="Cerrar"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-          >
-            <X className="h-4 w-4" strokeWidth={2.25} />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="p-5 space-y-4">
           {/* Drop zone — solo si no hay archivo cargado */}
           {!fileName && (
             <>
@@ -411,7 +385,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
         </div>
 
         {/* Footer */}
-        <footer className="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+        <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
           <button
             type="button"
             onClick={closeAndReset}
@@ -448,8 +422,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
               Importar otro archivo
             </button>
           )}
-        </footer>
-      </div>
-    </div>
+        </div>
+    </AdminModal>
   );
 }
