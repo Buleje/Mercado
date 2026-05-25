@@ -44,9 +44,11 @@ export default function MarketplaceBestsellersStrip() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     fetch("/api/marketplace/bestsellers?limit=10", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
+        if (cancelled) return;
         if (d?.items && Array.isArray(d.items)) {
           setItems(d.items);
         }
@@ -54,7 +56,12 @@ export default function MarketplaceBestsellersStrip() {
       .catch(() => {
         /* strip no crítico: si el fetch falla, la sección se oculta sola */
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Sin data real → no render. Evita "decorar" la home con productos inventados.
@@ -64,14 +71,14 @@ export default function MarketplaceBestsellersStrip() {
 
   return (
     <section>
-      <header className="flex items-center justify-between gap-3 px-1 mb-4 sm:mb-5">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-[var(--accent)] dark:bg-rose-950/40 dark:text-[var(--accent)]">
-            <Flame className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+      <header className="flex items-center justify-between gap-3 px-1 mb-2.5 sm:mb-5">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <span className="inline-flex h-7 w-7 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-[var(--accent)] dark:bg-rose-950/40 dark:text-[var(--accent)]">
+            <Flame className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.25} aria-hidden />
           </span>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <h2 className="font-display text-base sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
                 Más vendidos
               </h2>
               <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white shadow-md shadow-md/30">

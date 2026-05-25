@@ -140,7 +140,7 @@ export default function MarketplaceSection({
     <section
       id={id}
       aria-labelledby={titleId}
-      className={cn("w-full py-12 sm:py-16", toneStyles.section, className)}
+      className={cn("w-full py-6 sm:py-12 lg:py-16", toneStyles.section, className)}
     >
       {/* Decorative blobs for explosive variants */}
       {isExplosive && (
@@ -169,10 +169,10 @@ export default function MarketplaceSection({
         )}
       >
         {/* Header — typography mayor para mejor jerarquia visual */}
-        <div className={cn("flex items-end justify-between gap-3 mb-8 pb-5 border-b", toneStyles.border)}>
+        <div className={cn("flex items-end justify-between gap-3 mb-4 sm:mb-8 pb-3 sm:pb-5 border-b", toneStyles.border)}>
           <div className="min-w-0">
             {(kicker || toneStyles.accentPill) && (
-              <div className="flex items-center gap-2 flex-wrap mb-2">
+              <div className="flex items-center gap-2 flex-wrap mb-1 sm:mb-2">
                 {toneStyles.accentPill && (
                   <span
                     className={cn(
@@ -201,19 +201,19 @@ export default function MarketplaceSection({
               className={cn(
                 "font-bold tracking-[var(--ls-tight)]",
                 isExplosive
-                  ? "text-3xl sm:text-4xl lg:text-5xl font-black"
-                  : "text-2xl sm:text-3xl lg:text-4xl",
+                  ? "text-xl sm:text-3xl lg:text-5xl font-black"
+                  : "text-lg sm:text-2xl lg:text-4xl",
                 toneStyles.title,
               )}
             >
               {title}
             </h2>
             {subtitle && (
-              <p className="text-sm sm:text-base text-[var(--text-tertiary)] mt-2 max-w-xl leading-relaxed">
+              <p className="text-xs sm:text-base text-[var(--text-tertiary)] mt-1 sm:mt-2 max-w-xl leading-relaxed">
                 {subtitle}
               </p>
             )}
-            {headerExtra && <div className="mt-4">{headerExtra}</div>}
+            {headerExtra && <div className="mt-2 sm:mt-4">{headerExtra}</div>}
           </div>
           {actions && <div className="shrink-0 self-end">{actions}</div>}
         </div>

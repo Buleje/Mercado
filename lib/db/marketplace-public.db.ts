@@ -893,6 +893,36 @@ export const MarketplacePublicDB = {
   },
 
   /**
+   * Conteo de pedidos marketplace por tienda (tenantId) en los últimos 30 días.
+   * Una sola query groupBy — sin N+1. Resultado: Map<tenantId, orderCount>.
+   * Cache: 120s (mismo TTL que el listado de tiendas).
+   *
+   * @cross-tenant intentional (ADR-082) — ranking de popularidad cross-store.
+   */
+  async getStorePopularity30d(): Promise<Map<string, number>> {
+    return getOrSet("marketplace:store-popularity-30d:v1", 120, async () => {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const rows = await prisma.order.groupBy({
+        by: ["tenantId"],
+        where: {
+          source: "marketplace",
+          deletedAt: null,
+          createdAt: { gte: since },
+        },
+        _count: { _all: true },
+      }).catch((err: unknown) => {
+        logger.warn("[marketplace] getStorePopularity30d failed", { error: String(err) });
+        return [] as Array<{ tenantId: string; _count: { _all: number } }>;
+      });
+      const map = new Map<string, number>();
+      for (const row of rows) {
+        map.set(row.tenantId, row._count._all);
+      }
+      return map;
+    });
+  },
+
+  /**
    * Métricas en vivo del marketplace para el LiveStats banner.
    * Cache: 60s — suficiente para sensación de "live" sin martillar la DB.
    *

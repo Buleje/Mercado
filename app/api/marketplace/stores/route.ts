@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 
 // Brandon 2026-05-18 perf P1 #8: server-side cache para el listado público
 // de tiendas. Antes solo había `Cache-Control` (cliente/CDN); ahora la query
@@ -198,6 +199,10 @@ export async function GET(req: NextRequest) {
       // sin archivo → ignorar (modo legacy, sólo store.category aplica)
     }
 
+    // Carga popularidad (pedidos 30d por tienda) en paralelo con la query principal.
+    // Si falla (DB vacía / error) devuelve Map vacío — el sort cae limpio a qualityScore.
+    const popularityPromise = MarketplacePublicDB.getStorePopularity30d().catch(() => new Map<string, number>());
+
     let stores: Record<string, unknown>[] = [];
     try {
       // Si hay categoría con vínculos manuales: OR(category match, slug ∈ linked)
@@ -364,7 +369,35 @@ export async function GET(req: NextRequest) {
       return { productCount, trustScore, trustLevel, trustLabel, trustReason };
     }
 
-    stores.sort((a, b) => qualityScore(b) - qualityScore(a));
+    // ── Popularity-aware ranking ──────────────────────────────────────────────
+    // Combina qualityScore (reputacion: rating + productos + reviews) con
+    // popularityScore (ventas reales 30d, normalizado 0-100, peso 40%).
+    // Sin datos de ventas (popularityMap vacío) el peso cae a 0 y el orden
+    // es idéntico al qualityScore solo (sin romper nada).
+    const popularityMap = await popularityPromise;
+
+    let maxOrders = 0;
+    if (popularityMap.size > 0) {
+      for (const s of stores) {
+        const tid = (s as { tenantId?: string }).tenantId;
+        if (tid) {
+          const cnt = popularityMap.get(tid) ?? 0;
+          if (cnt > maxOrders) maxOrders = cnt;
+        }
+      }
+    }
+
+    function combinedScore(s: Record<string, unknown>): number {
+      const qScore = qualityScore(s);
+      if (maxOrders === 0) return qScore;
+      const tid = (s as { tenantId?: string }).tenantId;
+      const orders: number = (tid ? (popularityMap.get(tid) ?? 0) : 0);
+      // popularityScore normalizado 0-100 con peso 40%; qualityScore peso 60%.
+      const pScore = (orders / maxOrders) * 100;
+      return qScore * 0.6 + pScore * 0.4;
+    }
+
+    stores.sort((a, b) => combinedScore(b) - combinedScore(a));
     const rankedStores = stores.slice(0, limit);
 
     // ── Backfill: paymentMethods / minOrderAmount / freeDelivery / activePromos ──
