@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { AnalyticsKpisV2DB } from "@/lib/db/analytics-kpis-v2.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 
 /**
@@ -13,6 +14,10 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    // PERF 2026-05-25 (audit 07-P0): 13 queries DB cacheadas por tenant 60s.
+    // Antes 2 componentes (KPIBarV2 60s + FinanzasModule 30s) las re-ejecutaban
+    // sin compartir cache → ~780 queries/hora/tenant duplicadas.
+    const payload = await getOrSet(`analytics:kpis-v2:${auth.tenantId}`, 60, async () => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -186,13 +191,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      ingresosHoy,
-      ticketPromedio,
-      margenOperativo,
-      clientesActivos,
-      fiadoPendiente,
-      rotacionInventario,
+      return {
+        ingresosHoy,
+        ticketPromedio,
+        margenOperativo,
+        clientesActivos,
+        fiadoPendiente,
+        rotacionInventario,
+      };
+    });
+
+    return NextResponse.json(payload, {
+      headers: { "Cache-Control": "private, max-age=60" },
     });
   } catch (e) {
     logger.error("[analytics/kpis-v2] GET error", { error: (e as Error).message, tenantId: auth.tenantId });

@@ -43,7 +43,7 @@ export default function MoneyLeakDetector() {
   const [error, setError] = useState<string | null>(null);
   const LEAK_THRESHOLD = 30; // %
 
-  const load = () => {
+  const load = (isActive: () => boolean = () => true) => {
     setLoading(true);
     setError(null);
     const curr = getMonthRange(0);
@@ -58,17 +58,20 @@ export default function MoneyLeakDetector() {
 
     Promise.all(queries)
       .then(([current, m1, m2, m3]) => {
+        if (!isActive()) return; // evita setState tras unmount
         const parse = (d: unknown) =>
           Array.isArray(d) ? d : (d as { expenses?: ExpenseRecord[] })?.expenses ?? [];
         setCurrentExp(parse(current));
         setPrevExp([...parse(m1), ...parse(m2), ...parse(m3)]);
       })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .catch((e) => { if (isActive()) setError(e.message); })
+      .finally(() => { if (isActive()) setLoading(false); });
   };
 
   useEffect(() => {
-    load();
+    let active = true;
+    load(() => active);
+    return () => { active = false; };
   }, []);
 
   /* ── Calculos ── */
@@ -128,7 +131,7 @@ export default function MoneyLeakDetector() {
           </SectionTitle>
         </div>
         <button
-          onClick={load}
+          onClick={() => load()}
           disabled={loading}
           className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[#2dd4bf] transition-colors"
         >
