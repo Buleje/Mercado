@@ -1233,10 +1233,14 @@ function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]
 }
 
 // ── Actividad ────────────────────────────────────────────────────────────────
+type ActEvento = { fecha: string; tipo: "adelanto" | "entrega"; persona: string; monto: number; desc?: string };
+
 function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
-  if (loading) return <SkeletonGrid />;
-  type Evento = { fecha: string; tipo: "adelanto" | "entrega"; persona: string; monto: number; desc?: string };
-  const eventos: Evento[] = [];
+  const [tipo, setTipo] = useState<"todo" | "adelanto" | "entrega">("todo");
+  const [rango, setRango] = useState<"hoy" | "semana" | "mes" | "todo">("mes");
+  const [q, setQ] = useState("");
+
+  const eventos: ActEvento[] = [];
   for (const a of adelantos) {
     const persona = a.beneficiario?.nombre ?? "—";
     if (a.status !== "CANCELADO") eventos.push({ fecha: a.fechaAdelanto, tipo: "adelanto", persona, monto: a.montoAdelantado });
@@ -1244,32 +1248,122 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
   }
   eventos.sort((x, y) => new Date(y.fecha).getTime() - new Date(x.fecha).getTime());
 
+  const now = Date.now();
+  const cutoff = rango === "hoy" ? new Date(new Date().setHours(0, 0, 0, 0)).getTime()
+    : rango === "semana" ? now - 7 * 86_400_000
+    : rango === "mes" ? now - 30 * 86_400_000
+    : 0;
+  const ql = q.trim().toLowerCase();
+  const filtrados = eventos.filter((e) =>
+    new Date(e.fecha).getTime() >= cutoff &&
+    (tipo === "todo" || e.tipo === tipo) &&
+    (!ql || e.persona.toLowerCase().includes(ql)),
+  );
+
+  const resumen = filtrados.reduce((a, e) => { if (e.tipo === "adelanto") a.adel += e.monto; else a.liq += e.monto; return a; }, { adel: 0, liq: 0 });
+
+  // Agrupar por día (local)
+  const localKey = (f: string) => { const d = new Date(f); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  const hoyK = localKey(new Date().toISOString());
+  const ayerK = localKey(new Date(Date.now() - 86_400_000).toISOString());
+  const dayLabel = (k: string) => (k === hoyK ? "Hoy" : k === ayerK ? "Ayer" : new Date(k + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "long" }));
+  const grupos: { key: string; eventos: ActEvento[]; adel: number; liq: number }[] = [];
+  for (const e of filtrados) {
+    const k = localKey(e.fecha);
+    let g = grupos[grupos.length - 1];
+    if (!g || g.key !== k) { g = { key: k, eventos: [], adel: 0, liq: 0 }; grupos.push(g); }
+    g.eventos.push(e);
+    if (e.tipo === "adelanto") g.adel += e.monto; else g.liq += e.monto;
+  }
+
+  const exportarPdf = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.text("Historial de actividad", 14, 18);
+    doc.setFontSize(10); doc.text(`${filtrados.length} movimientos · +${formatCurrency(resumen.adel)} adelantado · −${formatCurrency(resumen.liq)} liquidado`, 14, 25);
+    autoTable(doc, {
+      startY: 31,
+      head: [["Fecha", "Tipo", "Persona", "Detalle", "Monto"]],
+      body: filtrados.map((e) => [new Date(e.fecha).toLocaleDateString("es-PE"), e.tipo === "adelanto" ? "Adelanto" : "Entrega", e.persona, e.desc ?? "", `${e.tipo === "adelanto" ? "+" : "-"}${formatCurrency(e.monto)}`]),
+    });
+    doc.save(`actividad-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+  if (loading) return <SkeletonGrid />;
   if (eventos.length === 0) return <EmptyState icon={Activity} title="Sin actividad" hint="Acá aparecen adelantos y entregas a medida que ocurren." />;
 
+  const chip = (active: boolean) =>
+    `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
+  const rangoChip = (active: boolean) =>
+    `h-9 px-3 rounded-full border-2 text-sm font-bold transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
+
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-      <ul className="space-y-1">
-        {eventos.slice(0, 60).map((e, i) => {
-          const esAdelanto = e.tipo === "adelanto";
-          return (
-            <li key={i} className="flex items-center gap-3 py-2.5 border-b border-[var(--rule-soft)] last:border-0">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${esAdelanto ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]" : "bg-[var(--data-success)]/15 text-[var(--data-success)]"}`}>
-                {esAdelanto ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-base font-bold text-[var(--text-primary)] truncate">
-                  {esAdelanto ? "Adelanto" : "Entrega"} · {e.persona}
-                </p>
-                {e.desc && <p className="text-sm text-[var(--text-tertiary)] truncate">{e.desc}</p>}
+    <div className="space-y-4">
+      {/* Rango + resumen del periodo */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+        <div className="flex items-center gap-1.5">
+          {([["hoy", "Hoy"], ["semana", "Semana"], ["mes", "Mes"], ["todo", "Todo"]] as const).map(([v, l]) => (
+            <button key={v} className={rangoChip(rango === v)} onClick={() => setRango(v)}>{l}</button>
+          ))}
+        </div>
+        <p className="text-base text-[var(--text-secondary)]">
+          <span className="font-bold text-[var(--data-warning)]">+{formatCurrency(resumen.adel)}</span> adelantado ·{" "}
+          <span className="font-bold text-[var(--data-success)]">−{formatCurrency(resumen.liq)}</span> liquidado ·{" "}
+          <span className="font-bold text-[var(--text-primary)]">{filtrados.length}</span> movs
+        </p>
+      </div>
+
+      {/* Filtros por tipo + búsqueda + PDF */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button className={chip(tipo === "todo")} onClick={() => setTipo("todo")}>Todo</button>
+        <button className={chip(tipo === "adelanto")} onClick={() => setTipo("adelanto")}>Adelantos</button>
+        <button className={chip(tipo === "entrega")} onClick={() => setTipo("entrega")}>Entregas</button>
+        <div className="relative ml-auto min-w-[200px] flex-1 sm:flex-none">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar persona..." className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
+        </div>
+        <button onClick={exportarPdf} disabled={filtrados.length === 0} className="inline-flex items-center gap-1 h-12 px-4 rounded-xl border border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
+          <FileText className="h-5 w-5" /> PDF
+        </button>
+      </div>
+
+      {/* Feed agrupado por día */}
+      {grupos.length === 0 ? (
+        <EmptyState icon={Search} title="Sin movimientos" hint="Probá con otro filtro o rango." />
+      ) : (
+        <div className="space-y-4">
+          {grupos.map((g) => (
+            <div key={g.key} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2">
+                <span className="text-sm font-extrabold uppercase tracking-wide text-[var(--text-secondary)]">{dayLabel(g.key)}</span>
+                <span className="text-sm tabular-nums text-[var(--text-tertiary)]">
+                  {g.adel > 0 && <span className="font-bold text-[var(--data-warning)]">+{formatCurrency(g.adel)}</span>}
+                  {g.adel > 0 && g.liq > 0 && " · "}
+                  {g.liq > 0 && <span className="font-bold text-[var(--data-success)]">−{formatCurrency(g.liq)}</span>}
+                </span>
               </div>
-              <span className={`tabular-nums text-base font-extrabold ${esAdelanto ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>
-                {esAdelanto ? "+" : "−"}{formatCurrency(e.monto)}
-              </span>
-              <span className="tabular-nums text-sm text-[var(--text-tertiary)] w-16 text-right shrink-0">{new Date(e.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
-            </li>
-          );
-        })}
-      </ul>
+              <ul>
+                {g.eventos.map((e, i) => {
+                  const esAdelanto = e.tipo === "adelanto";
+                  return (
+                    <li key={i} className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--rule-soft)] last:border-0">
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${esAdelanto ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]" : "bg-[var(--data-success)]/15 text-[var(--data-success)]"}`}>
+                        {esAdelanto ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-bold text-[var(--text-primary)] truncate">{esAdelanto ? "Adelanto" : "Entrega"} · {e.persona}</p>
+                        {e.desc && <p className="text-sm text-[var(--text-tertiary)] truncate">{e.desc}</p>}
+                      </div>
+                      <span className={`tabular-nums text-base font-extrabold ${esAdelanto ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{esAdelanto ? "+" : "−"}{formatCurrency(e.monto)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
