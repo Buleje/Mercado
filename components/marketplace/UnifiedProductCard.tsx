@@ -380,13 +380,13 @@ export default function UnifiedProductCard({
           aria-hidden={isCompact ? undefined : "true"}
         >
           {/* list: mobile aspect-square / desktop aspect-[4/3] landscape.
-              compact: aspect-square en todos los breakpoints (imagen arriba). */}
+              compact: aspect-square en todos los breakpoints (imagen arriba).
+              Brandon 2026-05-24: object-contain (no cover) + fondo claro para
+              MOSTRAR LA FOTO COMPLETA del producto, sin recortar. */}
           <div
             className={cn(
-              "relative overflow-hidden",
-              isCompact
-                ? "aspect-square h-auto bg-white dark:bg-gray-900"
-                : "aspect-square sm:aspect-[4/3] h-full sm:h-auto bg-[var(--surface-sunken)] sm:bg-white dark:sm:bg-gray-900",
+              "relative overflow-hidden bg-white dark:bg-gray-900",
+              isCompact ? "aspect-square h-auto" : "aspect-square sm:aspect-[4/3] h-full sm:h-auto",
             )}
           >
             {product.image ? (
@@ -394,7 +394,7 @@ export default function UnifiedProductCard({
                 src={product.image}
                 alt={product.name}
                 fill
-                className="object-cover sm:object-contain sm:p-2 transition-transform duration-500 group-hover:scale-[1.04]"
+                className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.04]"
                 sizes={
                   isCompact
                     ? "(max-width: 640px) 42vw, (max-width: 1024px) 210px, 230px"
