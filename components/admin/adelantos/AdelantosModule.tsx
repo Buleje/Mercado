@@ -173,7 +173,7 @@ function ResumenView({
 
   if (sinActividad) {
     return (
-      <div className="mx-auto max-w-2xl rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 text-center">
+      <div className="mx-auto max-w-2xl rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <Coins className="h-8 w-8 text-primary" />
         </div>
@@ -182,12 +182,12 @@ function ResumenView({
           Un adelanto es plata que le das a alguien y se va liquidando con lo que te entrega (producto o servicio).
         </p>
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">1</span>
             <p className="mt-2 text-base font-bold text-[var(--text-primary)]">Agregá una persona</p>
             <p className="text-sm text-[var(--text-secondary)]">A quién le vas a adelantar plata.</p>
           </div>
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">2</span>
             <p className="mt-2 text-base font-bold text-[var(--text-primary)]">Registrá el adelanto</p>
             <p className="text-sm text-[var(--text-secondary)]">El monto y cómo se va a liquidar.</p>
@@ -223,7 +223,7 @@ function ResumenView({
     <div className="space-y-5">
       {/* Hero saldo + barra de progreso de recuperación */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
           <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Saldo pendiente</p>
           <p className="mt-1 text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(resumen.saldoPendiente)}</p>
           <div className={`mt-3 flex items-center gap-2 text-base font-semibold ${health.cls}`}>
@@ -231,7 +231,7 @@ function ResumenView({
             <span>{health.text}</span>
           </div>
         </div>
-        <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 lg:col-span-2">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 lg:col-span-2">
           <div className="flex items-baseline justify-between">
             <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recuperación de adelantos</CardTitle>
             <span className="text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{pct}%</span>
@@ -248,7 +248,7 @@ function ResumenView({
 
       {/* Quién te debe — lista accionable de adelantos abiertos */}
       {abiertos.length > 0 && (
-        <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <div className="mb-2 flex items-center justify-between">
             <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Quién te debe ({abiertos.length})</CardTitle>
             <button onClick={() => onGoTab("lista")} className="inline-flex items-center gap-1 text-base font-bold text-primary hover:underline">
@@ -372,13 +372,13 @@ function AdelantosView({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar persona..."
-                className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
+                className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
           </div>
 
           {/* Totales de la vista filtrada */}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
+          <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
             <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(tot.adelantado)}</strong></span>
             <span>Liquidado <strong className="tabular-nums text-[var(--data-success)]">{formatCurrency(tot.liquidado)}</strong></span>
             <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{formatCurrency(tot.porRecuperar)}</strong></span>
@@ -393,7 +393,7 @@ function AdelantosView({
       ) : filtrados.length === 0 ? (
         <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro filtro o búsqueda." />
       ) : (
-        <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-white">
+        <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <table className="w-full text-base">
             <thead className="bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
               <tr className="text-left">
@@ -762,7 +762,7 @@ function PersonasView({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar persona..."
-                className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
+                className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -774,7 +774,7 @@ function PersonasView({
           </div>
 
           {/* Totales de la cartera */}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
+          <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
             <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(tot.adelantado)}</strong></span>
             <span>Entregado <strong className="tabular-nums text-[var(--data-success)]">{formatCurrency(entregado)}</strong></span>
             <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{formatCurrency(tot.porRecuperar)}</strong></span>
@@ -793,7 +793,7 @@ function PersonasView({
           {ordenados.map((b) => {
             const debe = b.saldoPendiente > 0;
             return (
-              <div key={b.id} className="relative flex flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-white p-4">
+              <div key={b.id} className="relative flex flex-col rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                 {/* Acciones editar / eliminar */}
                 <div className="absolute right-3 top-3 flex gap-1">
                   <button onClick={() => setEditPersona(b)} title="Editar" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors">
@@ -1005,7 +1005,7 @@ function EstadoCuentaModal({ persona, adelantos, onClose }: { persona: Beneficia
       {rows.length === 0 ? (
         <EmptyState icon={FileText} title="Sin movimientos" hint="Esta persona no tiene adelantos registrados." />
       ) : (
-        <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
           <table className="w-full text-base">
             <thead className="bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
               <tr className="text-left">
@@ -1089,7 +1089,7 @@ function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]
       {/* Antigüedad de saldos */}
       <div className="grid gap-3 sm:grid-cols-3">
         {Object.values(buckets).map((b) => (
-          <div key={b.label} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4" style={{ borderLeftWidth: 6, borderLeftColor: b.tone }}>
+          <div key={b.label} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4" style={{ borderLeftWidth: 6, borderLeftColor: b.tone }}>
             <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{b.label}</p>
             <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(b.total)}</p>
             <p className="text-sm text-[var(--text-secondary)]">{b.n} adelanto{b.n === 1 ? "" : "s"}</p>
@@ -1099,7 +1099,7 @@ function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]
 
       {/* Entregas pactadas por vencer */}
       {pactadas.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Entregas pactadas pendientes</CardTitle>
           <ul className="divide-y divide-[var(--rule-soft)]">
             {pactadas.slice(0, 8).map((p, i) => {
@@ -1117,7 +1117,7 @@ function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]
       )}
 
       {/* Recordatorios de cobranza */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-2 flex items-center justify-between gap-2">
           <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recordatorios ({deudoresArr.length}) · {formatCurrency(totalPorCobrar)}</CardTitle>
           <button onClick={() => onGoTab("personas")} className="text-base font-bold text-primary hover:underline">Ver personas</button>
@@ -1158,7 +1158,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
   if (eventos.length === 0) return <EmptyState icon={Activity} title="Sin actividad" hint="Acá aparecen adelantos y entregas a medida que ocurren." />;
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <ul className="space-y-1">
         {eventos.slice(0, 60).map((e, i) => {
           const esAdelanto = e.tipo === "adelanto";
@@ -1219,7 +1219,7 @@ function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-4">Adelantado vs Liquidado (6 meses)</CardTitle>
         {hayMov ? (
           <ResponsiveContainer minWidth={0} width="100%" height={240}>
@@ -1240,7 +1240,7 @@ function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Por modalidad</CardTitle>
           {porModalidad.length > 0 ? (
             <>
@@ -1254,7 +1254,7 @@ function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading
           ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Sin datos.</p>}
         </div>
 
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Top 5 deudores</CardTitle>
           {topDeudores.length > 0 ? (
             <ResponsiveContainer minWidth={0} width="100%" height={200}>
@@ -1275,7 +1275,7 @@ function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading
 
 // ── Primitivos compartidos ─────────────────────────────────────────────────────
 const inputCls =
-  "w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white text-base font-semibold text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors";
+  "w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -1289,7 +1289,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function ModalShell({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-[var(--shadow-xl)]`}>
+      <div onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] overflow-y-auto rounded-2xl bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-xl)]`}>
         <div className="flex items-center justify-between mb-4">
           <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">{title}</CardTitle>
           <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
@@ -1333,7 +1333,7 @@ function SkeletonGrid() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-28 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] animate-pulse" />
+        <div key={i} className="h-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] animate-pulse" />
       ))}
     </div>
   );
