@@ -85,7 +85,7 @@ export async function POST(req: Request) {
 
   /** Tenant resolved by edge middleware from the subdomain header. */
   const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const resolvedSlug = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  let resolvedSlug = (await resolveTenantSlug(rawTenantId)) ?? "main";
 
   try {
   // Round 27 (security hardening): req.json() puede throw si body no es JSON
@@ -109,12 +109,25 @@ export async function POST(req: Request) {
   let tenantId = resolvedSlug;
   let tenantResolvedToDb = false;
   try {
-    const tenant = await prisma.tenant.findUnique({
+    // El hint (x-tenant-id) puede venir como slug ("mi-pollo") O como CUID
+    // (cmoe...) si el middleware resolvió el subdominio a un ID. Probamos por
+    // slug y, si no resuelve, por id. Fail-closed igual abajo.
+    let tenant = await prisma.tenant.findUnique({
       where: { slug: resolvedSlug },
       select: { id: true, slug: true },
     });
+    if (!tenant && rawTenantId && rawTenantId !== resolvedSlug) {
+      tenant = await prisma.tenant.findUnique({
+        where: { id: rawTenantId },
+        select: { id: true, slug: true },
+      });
+    }
     if (tenant) {
       tenantId = tenant.id;
+      // Normalizamos resolvedSlug al slug real → así `tenantResolved` (id !== slug)
+      // queda TRUE y el findMany scopea correctamente al tenant (evita matchear
+      // un username duplicado de otro tenant cuando el hint vino como CUID).
+      resolvedSlug = tenant.slug;
       tenantResolvedToDb = true;
     }
   } catch { /* DB unavailable — keep slug as-is, validate below */ }

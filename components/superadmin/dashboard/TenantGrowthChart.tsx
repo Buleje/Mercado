@@ -182,7 +182,7 @@ export function TenantGrowthChart({ range }: Props) {
       {!loading && !error && data && data.series.length > 0 && (
         <>
           <div className="h-[320px] sm:h-[360px]" style={{ width: "100%", minHeight: 240 }}>
-            <ResponsiveContainer width="99%" height="99%" debounce={50}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={50}>
               <LineChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
                 <XAxis
