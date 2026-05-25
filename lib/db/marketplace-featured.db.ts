@@ -15,6 +15,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { haversineKm } from "@/lib/geo-utils";
 import { cacheLife, cacheTag } from "next/cache";
+import { publicStoreWhere } from "@/lib/marketplace/public-store-filter";
 
 export interface FeaturedNearbyProduct {
   id: string;
@@ -177,7 +178,7 @@ export async function getFeaturedStoresWithProducts(opts: {
   const { limit, productsPerStore } = opts;
 
   const rows = await prisma.store.findMany({
-    where: { isPublished: true, vacationMode: { not: true } },
+    where: { ...publicStoreWhere, vacationMode: { not: true } },
     orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
     take: limit,
     select: {

@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
+import { publicStoreWhere } from "@/lib/marketplace/public-store-filter";
 
 /**
  * Shape esperado por MarketplaceContent.initialStores.
@@ -162,16 +163,18 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
 }
 
 /**
- * Conteo real de tiendas publicadas — para el trust strip del header SSR
- * ("N tiendas activas"). Cacheado igual que el listado (invalidable con el
- * mismo tag). Devuelve 0 si la DB falla (el badge se oculta si count === 0).
+ * Conteo de tiendas PÚBLICAS — para el trust strip del header SSR ("N tiendas
+ * activas"). Usa el mismo filtro que el listado público (excluye test/demo/
+ * plataforma) para que el número coincida con lo que el usuario realmente ve.
+ * Antes contaba todas las publicadas (incluía las de prueba) → decía 6 donde
+ * el público ve 3. Devuelve 0 si la DB falla (el badge se oculta).
  */
 export async function getPublishedStoreCount(): Promise<number> {
   "use cache";
   cacheLife("minutes");
   cacheTag("marketplace:stores");
   try {
-    return await prisma.store.count({ where: { isPublished: true } });
+    return await prisma.store.count({ where: publicStoreWhere });
   } catch {
     return 0;
   }

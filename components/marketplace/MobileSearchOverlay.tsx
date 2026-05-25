@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Search,
   ArrowLeft,
@@ -27,6 +28,10 @@ import {
   Clock,
   Loader,
   TrendingUp,
+  Flame,
+  ChefHat,
+  Truck,
+  ChevronRight,
 } from "@buleje/design-system/icons";
 import { useMarketplaceStores } from "@/hooks/useMarketplaceStores";
 import { CATEGORIAS, type CategoriaDef } from "@/lib/constants/marketplace-categories";
@@ -225,9 +230,39 @@ export default function MobileSearchOverlay({ open, onClose, storesOnly = false 
           </div>
         )}
 
-        {/* ── Estado vacío: recientes + categorías + tiendas ── */}
+        {/* ── Estado vacío: accesos + recientes + categorías + tiendas ── */}
         {isEmpty && (
           <div className="space-y-6">
+            {/* Accesos rápidos — atajos de navegación frecuentes */}
+            <section>
+              <h2 className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Accesos rápidos
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    { label: "Ofertas del día", href: "/marketplace/ofertas", Icon: Tag },
+                    { label: "Más vendidos", href: "/marketplace?sort=bestsellers", Icon: Flame },
+                    { label: "Todas las tiendas", href: "/tiendas", Icon: StoreIcon },
+                    { label: "Recetas", href: "/recetas", Icon: ChefHat },
+                    { label: "Delivery gratis", href: "/marketplace/explorar?delivery=free", Icon: Truck },
+                  ] as const
+                ).map((q) => (
+                  <button
+                    key={q.href}
+                    type="button"
+                    onClick={() => go(q.href)}
+                    className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-3 text-left text-sm font-bold text-[var(--text-primary)] active:border-[var(--accent)] active:bg-[var(--accent-soft)]"
+                  >
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                      <q.Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    </span>
+                    <span className="truncate">{q.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
             {recent.length > 0 && (
               <section>
                 <div className="mb-2 flex items-center justify-between">
@@ -298,20 +333,37 @@ export default function MobileSearchOverlay({ open, onClose, storesOnly = false 
                   Tiendas destacadas
                 </h2>
                 <ul className="space-y-1">
-                  {stores.slice(0, 6).map((s) => (
-                    <li key={s.id}>
-                      <button
-                        type="button"
-                        onClick={() => go(`/marketplace/${s.slug}`)}
-                        className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left active:bg-[var(--surface-sunken)]"
-                      >
-                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
-                          <StoreIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                        </span>
-                        <span className="truncate font-bold text-[var(--text-primary)]">{s.name}</span>
-                      </button>
-                    </li>
-                  ))}
+                  {stores.slice(0, 6).map((s) => {
+                    const logo = (s.logo as string | null) ?? null;
+                    const category = (s.category as string | null) ?? null;
+                    const rating = typeof s.rating === "number" ? s.rating : 0;
+                    return (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          onClick={() => go(`/marketplace/${s.slug}`)}
+                          className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left active:bg-[var(--surface-sunken)]"
+                        >
+                          {/* Logo real de la tienda (su imagen característica) */}
+                          <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+                            {logo ? (
+                              <Image src={logo} alt="" fill sizes="44px" className="object-cover" />
+                            ) : (
+                              <StoreIcon className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+                            )}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-bold text-[var(--text-primary)]">{s.name}</span>
+                            <span className="block truncate text-xs text-[var(--text-tertiary)]">
+                              {category ?? "Tienda"}
+                              {rating > 0 && ` · ★ ${rating.toFixed(1)}`}
+                            </span>
+                          </span>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} aria-hidden />
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             )}
