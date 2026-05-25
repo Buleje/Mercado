@@ -10,7 +10,6 @@ import { m } from "framer-motion";
 import { deserializeCart } from "@/lib/marketplace/cart-sharing";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
-import SectionDivider from "@/components/marketplace/home/SectionDivider";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
 import MyFidelidadCard from "@/components/marketplace/MyFidelidadCard";
@@ -196,50 +195,52 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
           la seccion se oculta sola (cada componente hace early-return null).
           NO hay categorias/marcas/productos inventados.
           ══════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[var(--surface-sunken)] py-3 sm:py-4">
-        <div className="mx-auto max-w-[1600px] space-y-3 sm:space-y-4 px-3 sm:px-4 lg:px-6">
+      <div className="bg-[var(--surface-sunken)] py-4 sm:py-6">
+        <div className="mx-auto max-w-[1600px] space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-6">
+          {/* ── Above-fold (montaje inmediato) ── */}
           {/* Tiendas reales publicadas */}
           <BodegasSectionBox><TiendasDestacadas /></BodegasSectionBox>
 
           {/* Top mas vendidos — desde OrderItems reales (cross-store) */}
           <BodegasSectionBox><MarketplaceBestsellersStrip /></BodegasSectionBox>
 
+          {/* ── Below-fold (montaje diferido al acercar el scroll) ── */}
           {/* Ofertas del dia — desde Promotion DB */}
-          <BodegasSectionBox><OfertasDelDiaHero /></BodegasSectionBox>
+          <BodegasSectionBox defer><OfertasDelDiaHero /></BodegasSectionBox>
 
           {/* Ofertas flash — desde Promotion con tiempo limitado */}
-          <BodegasSectionBox><OfertasFlashSection /></BodegasSectionBox>
+          <BodegasSectionBox defer><OfertasFlashSection /></BodegasSectionBox>
 
           {/* Catalogo cross-store — productos reales */}
-          <BodegasSectionBox>
+          <BodegasSectionBox defer>
             <MarketplaceCatalogViewSection searchQuery={search || undefined} />
           </BodegasSectionBox>
 
           {/* Recetas publicas con ingredientes resueltos cross-marketplace */}
-          <BodegasSectionBox><MarketplaceRecipesWidget /></BodegasSectionBox>
+          <BodegasSectionBox defer><MarketplaceRecipesWidget /></BodegasSectionBox>
 
           {/* Productos comparados — desde localStorage del cliente */}
           {isVisible("comparar-productos") && (
-            <BodegasSectionBox><ComparedProductsSection /></BodegasSectionBox>
+            <BodegasSectionBox defer><ComparedProductsSection /></BodegasSectionBox>
           )}
 
           {/* Suscripcion Bodega al Mes — feature real */}
           {isVisible("bodega-al-mes") && (
-            <BodegasSectionBox><SubscribeAndSaveSection /></BodegasSectionBox>
+            <BodegasSectionBox defer><SubscribeAndSaveSection /></BodegasSectionBox>
           )}
 
           {/* Gift cards — feature real */}
           {isVisible("gift-cards") && (
-            <BodegasSectionBox><GiftCardsBanner /></BodegasSectionBox>
+            <BodegasSectionBox defer><GiftCardsBanner /></BodegasSectionBox>
           )}
 
           {/* Asistente IA — feature real */}
           {isVisible("asistente-ia") && (
-            <BodegasSectionBox><AsistenteHomeBanner /></BodegasSectionBox>
+            <BodegasSectionBox defer><AsistenteHomeBanner /></BodegasSectionBox>
           )}
 
           {/* Vistos recientemente — desde localStorage del cliente */}
-          <BodegasSectionBox><MarketplaceRecentViewed /></BodegasSectionBox>
+          <BodegasSectionBox defer><MarketplaceRecentViewed /></BodegasSectionBox>
         </div>
       </div>
 
@@ -329,14 +330,27 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
  * strip aparezca con fade+slide al entrar en viewport (sensación premium,
  * ~700ms ease-out, respeta prefers-reduced-motion).
  */
-function BodegasSectionBox({ children }: { children: React.ReactNode }) {
+function BodegasSectionBox({
+  children,
+  defer = false,
+}: {
+  children: React.ReactNode;
+  /** Difiere el montaje hasta acercarse al viewport (perf below-fold). */
+  defer?: boolean;
+}) {
   return (
-    <RevealOnScroll>
+    <RevealOnScroll
+      defer={defer}
+      // Pre-monta ~500px antes de entrar (el fetch arranca antes de verse).
+      rootMargin={defer ? "500px 0px 500px 0px" : undefined}
+      // Reserva alto mientras no montó → sin layout shift al aparecer.
+      minHeightClass={defer ? "min-h-[260px]" : undefined}
+    >
       <div
         className={[
           "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
           "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
-          "sm:[&_section]:!px-5 [&_section]:!py-4 sm:[&_section]:!py-5",
+          "sm:[&_section]:!px-6 [&_section]:!py-5 sm:[&_section]:!py-6",
         ].join(" ")}
       >
         {children}

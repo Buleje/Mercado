@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import MarketplaceContent from "@/components/marketplace/MarketplaceContent";
+import MarketplaceHomeHeader from "@/components/marketplace/home/MarketplaceHomeHeader";
 import JsonLd from "@/components/JsonLd";
 import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
-import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
+import {
+  getInitialMarketplaceStores,
+  getPublishedStoreCount,
+} from "@/lib/marketplace/initial-stores";
 import { getStoreTagline } from "@/lib/store-tagline";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -29,7 +33,6 @@ export async function generateMetadata(props: {
   // Adapt title and description based on zona.
   // Designer audit P0 SEO: layout root tiene `template: "%s | Buleje"` —
   // NO duplicar "Buleje" en titles de child pages, y "Perú" con tilde.
-  const zonaDisplay = zona ? ` — ${zona.charAt(0).toUpperCase() + zona.slice(1)}` : "";
   const title = zona
     ? `Marketplace en ${zona.charAt(0).toUpperCase() + zona.slice(1)} — Bodegas y Tiendas`
     : "Marketplace — Bodegas y Tiendas del Perú";
@@ -117,9 +120,11 @@ export default async function MarketplacePage(props: {
     !!zona || !!searchParams.categoria || !!searchParams.buscar;
 
   // Server-side prefetch de stores para eliminar skeleton flash del first paint.
-  const initialStores = hasFilters
-    ? undefined
-    : await getInitialMarketplaceStores();
+  // storeCount: conteo real para el trust strip del header SSR.
+  const [initialStores, storeCount] = await Promise.all([
+    hasFilters ? Promise.resolve(undefined) : getInitialMarketplaceStores(),
+    getPublishedStoreCount(),
+  ]);
 
   return (
     <>
@@ -164,6 +169,9 @@ export default async function MarketplacePage(props: {
           }))}
         />
       )}
+
+      {/* Header SSR — <h1> + propuesta de valor + trust strip (crawlable). */}
+      <MarketplaceHomeHeader storeCount={storeCount} />
 
       <MarketplaceContent />
     </>

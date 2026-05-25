@@ -160,3 +160,19 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
     return [];
   }
 }
+
+/**
+ * Conteo real de tiendas publicadas — para el trust strip del header SSR
+ * ("N tiendas activas"). Cacheado igual que el listado (invalidable con el
+ * mismo tag). Devuelve 0 si la DB falla (el badge se oculta si count === 0).
+ */
+export async function getPublishedStoreCount(): Promise<number> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("marketplace:stores");
+  try {
+    return await prisma.store.count({ where: { isPublished: true } });
+  } catch {
+    return 0;
+  }
+}

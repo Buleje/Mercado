@@ -24,6 +24,18 @@ interface Props {
   /** Margen del IntersectionObserver. */
   rootMargin?: string;
   className?: string;
+  /**
+   * Si true, NO monta los children hasta que el wrapper entra en viewport.
+   * Difiere el fetch/JS de secciones below-fold (no todas montan a la vez
+   * en el primer paint → home percibida más rápida). Default false.
+   */
+  defer?: boolean;
+  /**
+   * Alto mínimo reservado mientras la sección diferida aún no montó.
+   * Evita layout shift (CLS) cuando el contenido aparece al scrollear.
+   * Solo aplica con `defer`. Ej: "min-h-[280px]".
+   */
+  minHeightClass?: string;
 }
 
 export default function RevealOnScroll({
@@ -31,6 +43,8 @@ export default function RevealOnScroll({
   delayMs = 0,
   rootMargin = "0px 0px -80px 0px",
   className,
+  defer = false,
+  minHeightClass,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
@@ -51,6 +65,18 @@ export default function RevealOnScroll({
     obs.observe(el);
     return () => obs.disconnect();
   }, [delayMs, rootMargin, revealed]);
+
+  // defer: hasta que entra en viewport, render solo un placeholder con alto
+  // reservado (no monta children → no fetch → primer paint más liviano).
+  if (defer && !revealed) {
+    return (
+      <div
+        ref={ref}
+        className={cn(minHeightClass, className)}
+        aria-hidden="true"
+      />
+    );
+  }
 
   return (
     <div
