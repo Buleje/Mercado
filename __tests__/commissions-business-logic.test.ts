@@ -233,7 +233,7 @@ describe("recordMarketplaceCommissions — flow completo (tier dinámico)", () =
   });
 
   it("usa override rate de la tienda cuando != 5", async () => {
-    mockStoreFindFirst.mockResolvedValue({ commission: 8 });
+    mockStoreFindFirst.mockResolvedValue({ commission: { toNumber: () => 8 } });
     mockLedgerCreate.mockResolvedValue({});
     mockAssignmentFindFirst.mockResolvedValue(null);
 
@@ -244,7 +244,7 @@ describe("recordMarketplaceCommissions — flow completo (tier dinámico)", () =
   });
 
   it("tier bronze 5% cuando store sin override y sin ventas históricas", async () => {
-    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: { toNumber: () => 5 } });
     mockLedgerCreate.mockResolvedValue({});
 
     await recordMarketplaceCommissions(TENANT, ORDER_ID, 200, STORE_ID);
@@ -261,7 +261,7 @@ describe("recordMarketplaceCommissions — flow completo (tier dinámico)", () =
   });
 
   it("solo registra 1 comisión (marketplace_fee) si no hay delivery partner", async () => {
-    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: { toNumber: () => 5 } });
     mockLedgerCreate.mockResolvedValue({});
 
     await recordMarketplaceCommissions(TENANT, ORDER_ID, 100, STORE_ID);
@@ -270,7 +270,7 @@ describe("recordMarketplaceCommissions — flow completo (tier dinámico)", () =
   });
 
   it("registra 2 comisiones (marketplace + delivery) si hay partner con assignment", async () => {
-    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: { toNumber: () => 5 } });
     mockLedgerCreate.mockResolvedValue({});
     mockAssignmentFindFirst.mockResolvedValue({ fee: 8 });
 
@@ -284,7 +284,7 @@ describe("recordMarketplaceCommissions — flow completo (tier dinámico)", () =
   });
 
   it("NO registra delivery_fee si partner existe pero assignment NO existe", async () => {
-    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: { toNumber: () => 5 } });
     mockLedgerCreate.mockResolvedValue({});
     mockAssignmentFindFirst.mockResolvedValue(null);
 
@@ -293,7 +293,7 @@ describe("recordMarketplaceCommissions — flow completo (tier dinámico)", () =
   });
 
   it("delivery fee usa toNumOrZero para manejar Decimal de Prisma", async () => {
-    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: { toNumber: () => 5 } });
     mockLedgerCreate.mockResolvedValue({});
     mockAssignmentFindFirst.mockResolvedValue({ fee: "10.50" });
 

@@ -25,6 +25,11 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
+vi.mock("@/lib/csrf", () => ({
+  validateSuperadminCsrf: vi.fn(() => true),
+  csrfForbiddenResponse: vi.fn(() => new Response(null, { status: 403 })),
+}));
+
 const { mockGetSession, mockGetBrand, mockSaveBrand } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
   mockGetBrand: vi.fn(),

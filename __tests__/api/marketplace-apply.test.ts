@@ -160,7 +160,7 @@ describe("POST /api/marketplace/stores/apply (ADR-023 real tenants)", () => {
             rating:      0,
             reviewCount: 0,
             isPublished: false,
-            commission:  (args.data.commission as number) ?? 5.0,
+            commission:  { toNumber: () => Number((args.data.commission as number) ?? 5.0) },
             createdAt:   new Date("2026-04-09T00:00:00Z"),
             updatedAt:   new Date("2026-04-09T00:00:00Z"),
           })),

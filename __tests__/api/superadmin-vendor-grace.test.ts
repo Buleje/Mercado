@@ -10,6 +10,11 @@ vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
 }));
 
+vi.mock("@/lib/csrf", () => ({
+  validateSuperadminCsrf: vi.fn(() => true),
+  csrfForbiddenResponse: vi.fn(() => new Response(null, { status: 403 })),
+}));
+
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));

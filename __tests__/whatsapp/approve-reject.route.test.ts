@@ -20,6 +20,11 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIp: vi.fn(() => "127.0.0.1"),
 }));
 
+vi.mock("@/lib/csrf", () => ({
+  validateSuperadminCsrf: vi.fn(() => true),
+  csrfForbiddenResponse: vi.fn(() => new Response(null, { status: 403 })),
+}));
+
 vi.mock("@/lib/logger", () => ({
   logger: {
     info: vi.fn(),

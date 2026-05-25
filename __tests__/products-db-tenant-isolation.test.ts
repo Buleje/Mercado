@@ -47,6 +47,7 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("next/cache", () => ({
   cacheLife: vi.fn(),
   cacheTag: vi.fn(),
+  revalidateTag: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 
