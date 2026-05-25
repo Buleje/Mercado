@@ -17,6 +17,7 @@ const EntregaSchema = z
     sumarAStock: z.boolean().optional(),
     pactadaId: z.string().max(40).optional(),
     notas: z.string().max(500).optional(),
+    comprobanteUrl: z.string().url().max(500).optional(),
     fecha: z.string().optional(),
   })
   .refine((d) => (d.tipo === "PRODUCTO" ? d.productId != null || d.valorManual != null : d.valorManual != null), {

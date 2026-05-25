@@ -14,6 +14,7 @@ const CreateSchema = z.object({
   moneda: z.string().max(3).optional(),
   fechaAdelanto: z.string().optional(),
   notas: z.string().max(1000).optional(),
+  comprobanteUrl: z.string().url().max(500).optional(),
   entregasPactadas: z
     .array(
       z.object({

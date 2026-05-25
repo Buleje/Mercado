@@ -481,6 +481,7 @@ function CrearAdelantoModal({
   const [modalidad, setModalidad] = useState<AdelantoModalidad>("CUENTA_CORRIENTE");
   const [monto, setMonto] = useState("");
   const [notas, setNotas] = useState("");
+  const [comprobante, setComprobante] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -496,7 +497,7 @@ function CrearAdelantoModal({
       method: "POST",
       headers: jsonHeaders(),
       credentials: "include",
-      body: JSON.stringify({ beneficiarioId, modalidad, montoAdelantado: m, notas: notas.trim() || undefined }),
+      body: JSON.stringify({ beneficiarioId, modalidad, montoAdelantado: m, notas: notas.trim() || undefined, comprobanteUrl: comprobante || undefined }),
     });
     setSaving(false);
     if (res.ok) onCreated();
@@ -535,6 +536,7 @@ function CrearAdelantoModal({
       <Field label="Notas (opcional)">
         <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className={inputCls + " py-3"} />
       </Field>
+      <Field label="Comprobante (opcional)"><ComprobanteUpload url={comprobante} onChange={setComprobante} /></Field>
       {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
       <ModalActions onClose={onClose} onSubmit={submit} saving={saving} label="Crear adelanto" />
     </ModalShell>
@@ -559,6 +561,7 @@ function DetalleAdelantoModal({
   const [productId, setProductId] = useState("");
   const [cantidad, setCantidad] = useState("");
   const [sumarAStock, setSumarAStock] = useState(false);
+  const [entregaComp, setEntregaComp] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [productos, setProductos] = useState<{ id: number; name: string; price: number; stock?: number }[]>([]);
@@ -582,7 +585,7 @@ function DetalleAdelantoModal({
 
   const registrar = async () => {
     setErr(null);
-    const body: Record<string, unknown> = { tipo, notas: descripcion.trim() || undefined };
+    const body: Record<string, unknown> = { tipo, notas: descripcion.trim() || undefined, comprobanteUrl: entregaComp || undefined };
     if (tipo === "LIBRE") {
       const v = Number(valor);
       if (!descripcion.trim() || !v || v <= 0) { setErr("Describí la entrega y poné un valor."); return; }
@@ -606,7 +609,7 @@ function DetalleAdelantoModal({
     });
     setSaving(false);
     if (res.ok) {
-      setDescripcion(""); setValor(""); setProductId(""); setCantidad(""); setSumarAStock(false);
+      setDescripcion(""); setValor(""); setProductId(""); setCantidad(""); setSumarAStock(false); setEntregaComp(null);
       await load();
       onChange();
     } else {
@@ -637,6 +640,12 @@ function DetalleAdelantoModal({
           </div>
           <div className="flex items-center gap-2">
             <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label}</span>
+            {a.comprobanteUrl && (
+              <a href={a.comprobanteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
+                {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
+                <img src={a.comprobanteUrl} alt="comprobante" className="h-7 w-7 rounded-md object-cover border border-[var(--rule-base)]" /> Comprobante
+              </a>
+            )}
             {a.status !== "CANCELADO" && (
               <button onClick={cancelar} className="ml-auto inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-error)] hover:underline">
                 <Ban className="h-4 w-4" /> Cancelar adelanto
@@ -676,6 +685,7 @@ function DetalleAdelantoModal({
                   Sumar al stock del inventario
                 </label>
               )}
+              <ComprobanteUpload url={entregaComp} onChange={setEntregaComp} />
               {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
               <button onClick={registrar} disabled={saving} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-[var(--data-success)] text-white text-base font-bold hover:opacity-90 transition disabled:opacity-50">
                 <CheckCircle className="h-5 w-5" /> {saving ? "Registrando…" : "Registrar entrega"}
@@ -698,6 +708,12 @@ function DetalleAdelantoModal({
                       <p className="text-base font-bold text-[var(--text-primary)] truncate">{e.descripcion || (e.tipo === "PRODUCTO" ? `Producto #${e.productId}` : "Entrega")}</p>
                       <p className="text-sm text-[var(--text-tertiary)] tabular-nums">{new Date(e.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>
                     </div>
+                    {e.comprobanteUrl && (
+                      <a href={e.comprobanteUrl} target="_blank" rel="noopener noreferrer" title="Ver comprobante" className="shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
+                        <img src={e.comprobanteUrl} alt="comprobante" className="h-9 w-9 rounded-lg object-cover border border-[var(--rule-base)]" />
+                      </a>
+                    )}
                     <span className="text-base font-extrabold tabular-nums text-[var(--data-success)] shrink-0">{formatCurrency(e.valor)}</span>
                   </li>
                 ))}
@@ -1503,6 +1519,40 @@ function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading
           ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie debe nada.</p>}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Comprobante (subida de foto/recibo) ───────────────────────────────────────
+function ComprobanteUpload({ url, onChange }: { url: string | null; onChange: (u: string | null) => void }) {
+  const [up, setUp] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const handle = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErr(null); setUp(true);
+    const fd = new FormData(); fd.append("file", file); fd.append("folder", "media");
+    const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
+    setUp(false);
+    if (res.ok) { const j = await res.json().catch(() => null); if (j?.url) onChange(j.url); }
+    else { const j = await res.json().catch(() => null); setErr(j?.error ?? "No se pudo subir la imagen."); }
+  };
+  return (
+    <div>
+      {url ? (
+        <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail de comprobante desde Supabase Storage */}
+          <img src={url} alt="comprobante" className="h-12 w-12 rounded-lg object-cover border border-[var(--rule-base)]" />
+          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline">Ver</a>
+          <button type="button" onClick={() => onChange(null)} className="text-sm font-bold text-[var(--data-error)] hover:underline">Quitar</button>
+        </div>
+      ) : (
+        <label className="inline-flex items-center gap-2 h-10 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary cursor-pointer transition-colors">
+          <FileText className="h-4 w-4" /> {up ? "Subiendo…" : "Adjuntar comprobante"}
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handle} className="hidden" disabled={up} />
+        </label>
+      )}
+      {err && <p className="mt-1 text-sm text-[var(--data-error)]">{err}</p>}
     </div>
   );
 }

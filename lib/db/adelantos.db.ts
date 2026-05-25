@@ -39,6 +39,7 @@ export type DbAdelantoEntrega = {
   valor: number;
   sumadoAStock: boolean;
   notas?: string | null;
+  comprobanteUrl?: string | null;
   createdAt: string;
 };
 
@@ -65,6 +66,7 @@ export type DbAdelanto = {
   saldoPendiente: number;
   totalEntregado: number;
   notas?: string | null;
+  comprobanteUrl?: string | null;
   entregas: DbAdelantoEntrega[];
   entregasPactadas: DbEntregaPactada[];
   createdAt: string;
@@ -111,11 +113,13 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
     saldoPendiente,
     totalEntregado: Math.round((montoAdelantado - saldoPendiente) * 100) / 100,
     notas: row.notas,
+    comprobanteUrl: row.comprobanteUrl,
     entregas: row.entregas.map((e) => ({
       id: e.id, adelantoId: e.adelantoId, fecha: e.fecha.toISOString(),
       tipo: e.tipo as AdelantoEntregaTipo, descripcion: e.descripcion,
       productId: e.productId, cantidad: e.cantidad == null ? null : toNum(e.cantidad),
       valor: toNum(e.valor), sumadoAStock: e.sumadoAStock, notas: e.notas,
+      comprobanteUrl: e.comprobanteUrl,
       createdAt: e.createdAt.toISOString(),
     })),
     entregasPactadas: row.entregasPactadas.map((p) => ({
@@ -144,6 +148,7 @@ export type AdelantoCreateInput = {
   moneda?: string;
   fechaAdelanto?: string;
   notas?: string;
+  comprobanteUrl?: string;
   entregasPactadas?: EntregaPactadaInput[]; // solo modalidad ENTREGAS_PACTADAS
 };
 
@@ -156,6 +161,7 @@ export type EntregaInput = {
   sumarAStock?: boolean;
   pactadaId?: string; // marca una entrega pactada como cumplida
   notas?: string;
+  comprobanteUrl?: string;
   fecha?: string;
 };
 
@@ -261,6 +267,7 @@ export const AdelantosDB = {
         status: "ABIERTO",
         saldoPendiente: monto, // arranca con saldo completo a favor del negocio
         notas: data.notas?.trim() || null,
+        comprobanteUrl: data.comprobanteUrl?.trim() || null,
         entregasPactadas: pactadas.length
           ? {
               create: pactadas.map((p, i) => ({
@@ -322,6 +329,7 @@ export const AdelantosDB = {
           valor,
           sumadoAStock: Boolean(input.tipo === "PRODUCTO" && input.sumarAStock),
           notas: input.notas?.trim() || null,
+          comprobanteUrl: input.comprobanteUrl?.trim() || null,
         },
       });
 
