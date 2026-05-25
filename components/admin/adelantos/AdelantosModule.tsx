@@ -1417,8 +1417,30 @@ function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading
 
   const hayMov = meses.some((m) => m.adelantado > 0 || m.liquidado > 0);
 
+  // Export contable a CSV (movimientos: adelantos + entregas)
+  const exportarCsv = () => {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const rows: (string | number)[][] = [["Fecha", "Tipo", "Persona", "Modalidad", "Detalle", "Monto", "Moneda"]];
+    for (const a of adelantos) {
+      const persona = a.beneficiario?.nombre ?? "—";
+      if (a.status !== "CANCELADO") rows.push([a.fechaAdelanto.slice(0, 10), "Adelanto", persona, a.modalidad === "CUENTA_CORRIENTE" ? "Cuenta corriente" : "Entregas pactadas", a.notas ?? "", a.montoAdelantado.toFixed(2), a.moneda]);
+      for (const e of a.entregas) rows.push([e.fecha.slice(0, 10), "Entrega", persona, "", e.descripcion ?? "", (-e.valor).toFixed(2), a.moneda]);
+    }
+    const csv = "﻿" + rows.map((r) => r.map(esc).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url; link.download = `adelantos-movimientos-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click(); URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5">
+      <div className="flex items-center justify-between gap-2">
+        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Análisis del módulo</CardTitle>
+        <button onClick={exportarCsv} className="inline-flex items-center gap-1 h-10 px-4 rounded-xl border border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+          <FileText className="h-5 w-5" /> Exportar a CSV (Excel)
+        </button>
+      </div>
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-4">Adelantado vs Liquidado (6 meses)</CardTitle>
         {hayMov ? (
