@@ -29,6 +29,14 @@ type OrderInfo = {
   paymentMethod?: string;
   deliverySlot?: string;
   items?: OrderItem[];
+  /** Nombre del negocio del tenant (white-label). Fallback: "Buleje". */
+  storeName?: string;
+  /** Descuento total aplicado (cupón + otros). Si > 0 se muestra desglose. */
+  discount?: number;
+  /** Código de cupón aplicado, para mostrarlo junto al descuento. */
+  couponCode?: string;
+  /** Base URL de la tienda del tenant (dominio propio). Fallback: base de plataforma. */
+  storeUrl?: string;
 };
 
 /** 8-char short order ID for display */
@@ -44,6 +52,21 @@ function renderItems(items: OrderItem[]): string {
   return lines.join("\n");
 }
 
+/** Bloque de totales: si hay descuento, muestra subtotal + descuento + total. */
+function renderTotals(o: OrderInfo): string {
+  const discount = o.discount ?? 0;
+  if (discount > 0) {
+    const subtotal = o.total + discount;
+    const code = o.couponCode ? ` (${o.couponCode})` : "";
+    return (
+      `🧾 Subtotal: S/${subtotal.toFixed(2)}\n` +
+      `🏷️ Descuento${code}: -S/${discount.toFixed(2)}\n` +
+      `💰 *Total: S/${o.total.toFixed(2)}*\n`
+    );
+  }
+  return `💰 *Total: S/${o.total.toFixed(2)}*\n`;
+}
+
 const PAYMENT_LABELS: Record<string, string> = { efectivo: "Efectivo 💵", yape: "Yape 📱", plin: "Plin 📲", tarjeta: "Tarjeta 💳" };
 
 const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
@@ -51,18 +74,18 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
     const items = o.items?.length ? `\n\n*Tu pedido:*\n${renderItems(o.items)}\n\n` : "\n\n";
     const pay = o.paymentMethod ? `💳 Pago: ${PAYMENT_LABELS[o.paymentMethod] ?? o.paymentMethod}\n` : "";
     return (
-      `🏪 *Buleje*\n` +
+      `🏪 *${o.storeName || "Buleje"}*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `📋 *PEDIDO RECIBIDO*\n` +
       `Pedido #${shortId(o.id)}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `Hola *${o.customerName}* 👋 ¡Recibimos tu pedido!` +
       items +
-      `💰 *Total: S/${o.total.toFixed(2)}*\n` +
+      renderTotals(o) +
       pay +
       `⏳ Estamos procesando tu pedido. Te avisamos cuando sea confirmado.\n\n` +
-      `📍 Seguimiento en tiempo real:\n${getTrackingUrl(o.id)}\n\n` +
-      `_Gracias por comprar en Buleje_ 🙏`
+      `📍 Seguimiento en tiempo real:\n${getTrackingUrl(o.id, o.storeUrl)}\n\n` +
+      `_Gracias por comprar en ${o.storeName || "Buleje"}_ 🙏`
     );
   },
 
@@ -71,46 +94,46 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
     const pay = o.paymentMethod ? `💳 Pago: ${PAYMENT_LABELS[o.paymentMethod] ?? o.paymentMethod}\n` : "";
     const slot = o.deliverySlot && o.deliverySlot !== "lo-antes-posible" ? `🕐 Entrega: ${o.deliverySlot}\n` : "🕐 Entrega: Lo antes posible\n";
     return (
-      `🏪 *Buleje*\n` +
+      `🏪 *${o.storeName || "Buleje"}*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `✅ *PEDIDO CONFIRMADO*\n` +
       `Pedido #${shortId(o.id)}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `Hola *${o.customerName}* 👋 ¡Recibimos tu pedido!` +
       items +
-      `💰 *Total: S/${o.total.toFixed(2)}*\n` +
+      renderTotals(o) +
       pay +
       slot +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `📍 Seguimiento en tiempo real:\n${getTrackingUrl(o.id)}\n\n` +
+      `📍 Seguimiento en tiempo real:\n${getTrackingUrl(o.id, o.storeUrl)}\n\n` +
       `_Gracias por confiar en nosotros_ 🙏`
     );
   },
 
   en_camino: (o) =>
-    `🏪 *Buleje*\n` +
+    `🏪 *${o.storeName || "Buleje"}*\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `🛵 *¡TU PEDIDO VA EN CAMINO!*\n` +
     `Pedido #${shortId(o.id)}\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `Hola *${o.customerName}*, estate atento 🚗💨\n\n` +
     `💰 Total: S/${o.total.toFixed(2)}\n\n` +
-    `📍 Sigue tu pedido en vivo:\n${getTrackingUrl(o.id)}\n\n` +
+    `📍 Sigue tu pedido en vivo:\n${getTrackingUrl(o.id, o.storeUrl)}\n\n` +
     `_Llegamos pronto, ¡gracias por esperar!_`,
 
   entregado: (o) =>
-    `🏪 *Buleje*\n` +
+    `🏪 *${o.storeName || "Buleje"}*\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `🎉 *PEDIDO ENTREGADO*\n` +
     `Pedido #${shortId(o.id)}\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `¡Hola *${o.customerName}*! Tu pedido llegó 😊\n\n` +
     `💰 Total pagado: S/${o.total.toFixed(2)}\n\n` +
-    `⭐ ¿Todo estuvo bien? Déjanos una reseña:\n${getAccountUrl()}\n\n` +
+    `⭐ ¿Todo estuvo bien? Déjanos una reseña:\n${getAccountUrl(o.storeUrl)}\n\n` +
     `_¡Hasta la próxima compra!_ 🛒`,
 
   cancelado: (o) =>
-    `🏪 *Buleje*\n` +
+    `🏪 *${o.storeName || "Buleje"}*\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `❌ Pedido *cancelado*\n` +
     `Pedido #${shortId(o.id)}\n` +
@@ -121,15 +144,17 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
 };
 
 function getBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_BASE_URL ?? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
+  if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
 }
 
-function getTrackingUrl(orderId: string): string {
-  return `${getBaseUrl()}/pedido/${orderId}`;
+function getTrackingUrl(orderId: string, storeUrl?: string): string {
+  return `${storeUrl || getBaseUrl()}/pedido/${orderId}`;
 }
 
-function getAccountUrl(): string {
-  return `${getBaseUrl()}/cuenta`;
+function getAccountUrl(storeUrl?: string): string {
+  return `${storeUrl || getBaseUrl()}/cuenta`;
 }
 
 /** Format a phone for wa.me (expects digits, adds 51 prefix if 9 digits) */

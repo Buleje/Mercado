@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { OrdersDB, NotificationLogsDB } from "@/lib/jsondb";
 import { CouponsDB } from "@/lib/db/coupons.db";
+import { SettingsDB } from "@/lib/db/settings.db";
 import type { DbOrder } from "@/lib/jsondb";
 import { getWhatsAppLink, sendWhatsAppNotification } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-logger";
@@ -296,6 +297,25 @@ async function patchOrder(
     let whatsappLink: string | null = null;
     let whatsappSent = false;
     if (statusChanged && NOTIFIABLE_STATUSES.has(parsed.data.status!)) {
+      // Branding white-label del tenant para el mensaje WhatsApp.
+      // storeName: Settings.businessName → Tenant.name → fallback "Buleje".
+      // storeUrl:  dominio propio del tenant (customDomain) si existe.
+      let storeName: string | undefined;
+      let storeUrl: string | undefined;
+      try {
+        const s = await SettingsDB.get(auth.tenantId);
+        if (s.businessName?.trim()) storeName = s.businessName.trim();
+      } catch { /* sigue al fallback */ }
+      try {
+        const t = await prisma.tenant.findUnique({
+          where: { id: auth.tenantId },
+          select: { name: true, customDomain: true },
+        });
+        if (!storeName && t?.name?.trim()) storeName = t.name.trim();
+        if (t?.customDomain?.trim()) storeUrl = `https://${t.customDomain.trim()}`;
+      } catch { /* sigue al fallback */ }
+
+      const discount = (updated.couponDiscount ?? 0) + (updated.discountAmount ?? 0);
       const orderInfo = {
         id: updated.id,
         customerName: updated.customer.name,
@@ -305,6 +325,10 @@ async function patchOrder(
         paymentMethod: updated.paymentMethod,
         deliverySlot: updated.deliverySlot,
         items: updated.items,
+        storeName,
+        storeUrl,
+        discount: discount > 0 ? discount : undefined,
+        couponCode: updated.appliedCouponCode ?? undefined,
       };
 
       // Try auto-sending via WhatsApp API first (respects customer preference)
