@@ -1,36 +1,27 @@
 "use client";
 
 /**
- * OfertasDelDiaHero — Seccion hero con ProductCardHero (DS Ola 7).
+ * OfertasDelDiaHero — "Ofertas del día": carrusel de productos destacados/en
+ * oferta con badge de descuento y countdown a fin del día (urgencia comercial).
  *
- * 2 productos destacados grandes, visualmente dominantes, con el primitivo
- * canonico del DS (mismo token set que tienda/admin).
- *
- * Data REAL desde /api/marketplace/catalog/sections (campo `featured`).
- * Antes usaba un array FEATURED mock hardcodeado (violaba "solo data real").
- * Si no hay destacados publicados, la seccion se oculta sola (early-return).
- *
- * Container: max-w-[1600px] para desktops grandes; en < 1600px no cambia nada.
+ * Data REAL desde /api/marketplace/catalog/sections (campo `featured`). Antes
+ * mostraba 2 hero-cards mock; Brandon pidió más productos + badge de descuento
+ * + countdown. Ahora usa el patrón canónico (MarketplaceSection +
+ * HorizontalCarousel + UnifiedProductCard compact), consistente con el resto
+ * del home. Si no hay destacados, la sección se oculta sola.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import {
-  ProductCardHero,
-  type ProductCardProduct,
-  Kicker,
-  SectionTitle,
-} from "@buleje/design-system";
-import { ArrowRight } from "@buleje/design-system/icons";
-import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
+import { ArrowRight, Clock } from "@buleje/design-system/icons";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
+import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 
-/** Shape del producto que devuelve /api/marketplace/catalog/sections.featured */
 interface FeaturedProduct {
   storeProductId: string;
   productId: number;
   name: string;
-  // El endpoint serializa Decimal de Prisma como string ("15") — coercionar.
   price: number | string;
   image: string | null;
   unit: string | null;
@@ -43,34 +34,31 @@ interface FeaturedProduct {
   discountPercent?: number;
 }
 
-/**
- * Renderer de imagen con Next/Image para optimizacion. Se inyecta via
- * `renderImage` slot del primitivo DS (que por default usa `<img>` lazy).
- */
-function nextImage({
-  src,
-  alt,
-  className,
-}: {
-  src: string;
-  alt: string;
-  className: string;
-}) {
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      fill
-      className={className}
-      sizes="(max-width: 768px) 100vw, 60vw"
-      priority
-    />
-  );
+/** Countdown a la medianoche local — las ofertas del día "cierran" a fin de día. */
+function useEndOfDayCountdown(): string {
+  const [label, setLabel] = useState("");
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      const diff = end.getTime() - now.getTime();
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1000);
+      setLabel(
+        `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`,
+      );
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return label;
 }
 
-function toCardProduct(p: FeaturedProduct): ProductCardProduct {
+function toCardProduct(p: FeaturedProduct) {
   const price = Number(p.price);
-  // Si hay % de descuento, reconstruir el precio original para el tachado.
   const originalPrice =
     p.discountPercent && p.discountPercent > 0
       ? Math.round((price / (1 - p.discountPercent / 100)) * 100) / 100
@@ -78,25 +66,25 @@ function toCardProduct(p: FeaturedProduct): ProductCardProduct {
   return {
     id: p.productId,
     name: p.name,
-    category: p.category ?? undefined,
     price,
     originalPrice,
     image: p.image,
-    stock: p.stock,
-    rating: p.storeRating || undefined,
-    storeSlug: p.storeSlug,
     storeName: p.storeName,
-    unit: p.unit ?? undefined,
-    badge: originalPrice ? "oferta" : undefined,
+    storeSlug: p.storeSlug,
+    storeId: p.storeId,
+    storeProductId: p.storeProductId,
+    storeRating: p.storeRating,
+    unit: p.unit,
+    category: p.category ?? undefined,
+    stock: p.stock,
+    discount: p.discountPercent,
   };
 }
 
 export default function OfertasDelDiaHero() {
-  const { addItemWithUndo } = useCartWithUndo();
   const [featured, setFeatured] = useState<FeaturedProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  // Mapa productId → raw para resolver storeId/storeProductId al agregar.
-  const rawById = useRef(new Map<number, FeaturedProduct>());
+  const countdown = useEndOfDayCountdown();
 
   useEffect(() => {
     let cancelled = false;
@@ -104,13 +92,10 @@ export default function OfertasDelDiaHero() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (cancelled) return;
-        const list = (d?.data?.featured ?? []) as FeaturedProduct[];
-        const top2 = list.slice(0, 2);
-        rawById.current = new Map(top2.map((p) => [p.productId, p]));
-        setFeatured(top2);
+        setFeatured(((d?.data?.featured ?? []) as FeaturedProduct[]).slice(0, 12));
       })
       .catch(() => {
-        /* sección no crítica: si el fetch falla, se oculta sola (early-return) */
+        /* sección no crítica: se oculta sola si falla */
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -122,62 +107,48 @@ export default function OfertasDelDiaHero() {
 
   const cards = useMemo(() => featured.map(toCardProduct), [featured]);
 
-  const handleAdd = (p: ProductCardProduct) => {
-    const raw = rawById.current.get(Number(p.id));
-    addItemWithUndo({
-      storeId: raw?.storeId ?? p.storeSlug ?? "",
-      storeName: raw?.storeName ?? p.storeName ?? "",
-      storeSlug: raw?.storeSlug ?? p.storeSlug ?? "",
-      storeProductId: raw?.storeProductId ?? String(p.id),
-      productId: typeof p.id === "number" ? p.id : Number(p.id) || 0,
-      name: p.name,
-      price: p.price,
-      image: p.image ?? null,
-      unit: p.unit ?? null,
-      stock: raw?.stock ?? null,
-    });
-  };
-
-  // Sin destacados reales → no render (consistente con el resto de strips).
   if (loading || cards.length === 0) return null;
 
   return (
-    <section aria-labelledby="ofertas-del-dia-title" className="py-8 sm:py-10">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-4 mb-5">
-          <div>
-            <Kicker className="text-[var(--text-tertiary)]">
-              Ofertas del dia
-            </Kicker>
-            <SectionTitle
-              id="ofertas-del-dia-title"
-              className="mt-1 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
-            >
-              Productos destacados
-            </SectionTitle>
+    <MarketplaceSection
+      id="ofertas-del-dia"
+      kicker="Ofertas del día"
+      title="Productos destacados"
+      subtitle="Aprovechá hoy — los precios del día se renuevan a medianoche."
+      headerExtra={
+        countdown ? (
+          <div className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-1.5">
+            <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+            <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Cierra en
+            </span>
+            <span className="tabular-nums text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)]">
+              {countdown}
+            </span>
           </div>
-          <Link
-            href="/marketplace/ofertas"
-            className="inline-flex items-center gap-1 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0"
-          >
-            Ver todas
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {cards.map((p) => (
-            <ProductCardHero
-              key={p.id}
-              product={p}
-              variant="oferta"
-              priority
-              onAddToCart={handleAdd}
-              renderImage={p.image ? nextImage : undefined}
-            />
-          ))}
-        </div>
-      </div>
-    </section>
+        ) : undefined
+      }
+      actions={
+        <Link
+          href="/marketplace/ofertas"
+          className="inline-flex items-center gap-1 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0"
+        >
+          Ver todas
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      }
+    >
+      <HorizontalCarousel ariaLabel="Ofertas del día">
+        {cards.map((p, i) => (
+          <UnifiedProductCard
+            key={p.storeProductId}
+            product={p}
+            variant={p.discount ? "flash" : "default"}
+            layout="compact"
+            index={i}
+          />
+        ))}
+      </HorizontalCarousel>
+    </MarketplaceSection>
   );
 }

@@ -1,59 +1,63 @@
 "use client";
 
 /**
- * TiendasDestacadas — cards de tiendas cerca tuyo.
+ * TiendasDestacadas — "Cerca tuyo": tiendas destacadas con preview de productos.
  *
- * Sección horizontal en /marketplace que muestra 6-8 tiendas destacadas
- * con avatar/logo + nombre + categoria + rating + distancia/zona.
- *
- * Card pequena (200px), single row con HorizontalCarousel.
- * Click → /marketplace/{storeSlug}.
+ * Brandon 2026-05-24: cards más grandes/visuales + 2-3 productos reales
+ * embebidos por tienda (mini preview shoppable). Data REAL de
+ * /api/marketplace/featured-stores (una sola query, sin N+1). Si no hay
+ * tiendas publicadas, la sección se oculta sola.
  */
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, MapPin, Store as StoreIcon } from "@buleje/design-system/icons";
+import { Star, MapPin, Store as StoreIcon, Package, ArrowRight } from "@buleje/design-system/icons";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 
-type Store = {
+interface PreviewProduct {
+  id: string;
+  productId: number;
+  name: string;
+  image: string;
+  retailPrice: number;
+  discountPrice: number | null;
+}
+
+interface FeaturedStore {
   id: string;
   slug: string;
   name: string;
   logo: string | null;
+  banner: string | null;
   category: string | null;
-  rating: number | null;
   zone: string | null;
+  rating: number;
+  reviewCount: number;
   productsCount: number;
-};
+  productosDestacados: PreviewProduct[];
+}
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
 export default function TiendasDestacadas() {
-  const [stores, setStores] = useState<Store[]>([]);
+  const [stores, setStores] = useState<FeaturedStore[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/marketplace/stores?limit=10", { cache: "no-store" })
+    fetch("/api/marketplace/featured-stores?limit=10&productsPerStore=3", {
+      cache: "no-store",
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (cancelled) return;
-        const items = (d?.data ?? d?.stores ?? d ?? []) as Array<Record<string, unknown>>;
-        setStores(
-          items.slice(0, 10).map((s) => ({
-            id: String(s.id ?? s.slug ?? Math.random()),
-            slug: String(s.slug ?? ""),
-            name: String(s.name ?? "Tienda"),
-            logo: (s.logo as string | null) ?? (s.imageUrl as string | null) ?? null,
-            category: (s.category as string | null) ?? null,
-            rating: typeof s.rating === "number" ? s.rating : null,
-            zone: (s.zone as string | null) ?? (s.address as string | null) ?? null,
-            productsCount: typeof s.productsCount === "number" ? s.productsCount : 0,
-          })),
-        );
+        setStores((d?.stores ?? []) as FeaturedStore[]);
       })
       .catch(() => {
-        if (!cancelled) setStores([]);
+        /* sección no crítica: se oculta sola si falla */
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -74,65 +78,116 @@ export default function TiendasDestacadas() {
       actions={
         <Link
           href="/tiendas"
-          className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] whitespace-nowrap"
+          className="inline-flex items-center gap-1 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] whitespace-nowrap"
         >
-          Ver todas las tiendas
+          Ver todas
+          <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       }
     >
-      <HorizontalCarousel ariaLabel="Tiendas destacadas">
-        {(loading ? Array.from({ length: 6 }, () => null) : stores).map((store, i) =>
+      <HorizontalCarousel
+        ariaLabel="Tiendas destacadas"
+        itemWidthClass="w-[80vw] sm:w-[340px] shrink-0 snap-start"
+      >
+        {(loading ? Array.from({ length: 4 }, () => null) : stores).map((store, i) =>
           store ? (
-            <Link
+            <article
               key={store.id}
-              href={`/marketplace/${store.slug}`}
-              className="group block rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:shadow-[0_8px_20px_-12px_color-mix(in oklab, var(--accent) 18%, transparent)] hover:-translate-y-0.5 transition-transform duration-200 overflow-hidden"
+              className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition-all duration-200 hover:border-[var(--accent)]/50 hover:shadow-[0_12px_28px_-12px_color-mix(in_oklab,var(--accent)_22%,transparent)]"
             >
-              {/* Logo / banner */}
-              <div className="relative h-28 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]">
-                {store.logo ? (
+              {/* Banner / logo grande */}
+              <Link href={`/marketplace/${store.slug}`} className="relative block h-32 sm:h-36 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]">
+                {store.banner || store.logo ? (
                   <Image
-                    src={store.logo}
+                    src={(store.banner || store.logo) as string}
                     alt={store.name}
                     fill
-                    sizes="240px"
-                    className="object-cover"
+                    sizes="340px"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
-                    <StoreIcon className="h-8 w-8" strokeWidth={1.5} aria-hidden />
-                  </div>
-                )}
-                {store.rating != null && store.rating > 0 && (
-                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 text-[length:var(--ts-2xs)] font-bold text-gray-800 backdrop-blur">
-                    <Star
-                      className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
-                      strokeWidth={1.75}
-                      aria-hidden
-                    />
-                    {Number(store.rating).toFixed(1)}
+                  <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
+                    <StoreIcon className="h-10 w-10" strokeWidth={1.5} aria-hidden />
                   </span>
                 )}
-              </div>
-              {/* Body */}
-              <div className="p-3 space-y-1">
-                <h3 className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
-                  {store.name}
-                </h3>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
-                  {store.category ?? "Bodega"}
-                  {store.productsCount > 0 && ` · ${store.productsCount} productos`}
-                </p>
-                {store.zone && (
-                  <p className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    <MapPin className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden />
-                    <span className="truncate">{store.zone}</span>
-                  </p>
+                {store.rating > 0 && (
+                  <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[length:var(--ts-xs)] font-bold text-gray-800 shadow-sm backdrop-blur">
+                    <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={1.75} aria-hidden />
+                    {Number(store.rating).toFixed(1)}
+                    {store.reviewCount > 0 && (
+                      <span className="font-medium text-gray-500">({store.reviewCount})</span>
+                    )}
+                  </span>
                 )}
+              </Link>
+
+              {/* Header tienda */}
+              <div className="flex items-start gap-3 px-3.5 pt-3">
+                {store.logo && (
+                  <span className="relative -mt-8 h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 border-[var(--surface-raised)] bg-[var(--surface-raised)] shadow-sm">
+                    <Image src={store.logo} alt="" fill sizes="56px" className="object-cover" />
+                  </span>
+                )}
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <Link href={`/marketplace/${store.slug}`}>
+                    <h3 className="truncate text-base font-extrabold leading-tight text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                      {store.name}
+                    </h3>
+                  </Link>
+                  <p className="mt-0.5 inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
+                    <Package className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+                    {store.productsCount} productos
+                    {store.zone && (
+                      <>
+                        <span aria-hidden>·</span>
+                        <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+                        <span className="truncate">{store.zone}</span>
+                      </>
+                    )}
+                  </p>
+                </div>
               </div>
-            </Link>
+
+              {/* Preview de productos reales */}
+              {store.productosDestacados.length > 0 && (
+                <div className="mt-3 grid grid-cols-3 gap-1.5 px-3.5">
+                  {store.productosDestacados.slice(0, 3).map((p) => (
+                    <Link
+                      key={p.id}
+                      href={`/marketplace/${store.slug}`}
+                      className="group/prod block overflow-hidden rounded-lg border border-[var(--rule-soft)] bg-white dark:bg-gray-900"
+                      title={p.name}
+                    >
+                      <span className="relative block aspect-square">
+                        {p.image ? (
+                          <Image src={p.image} alt={p.name} fill sizes="100px" className="object-contain p-1" />
+                        ) : (
+                          <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
+                            <Package className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+                          </span>
+                        )}
+                      </span>
+                      <span className="block px-1 pb-1 text-center text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-primary)]">
+                        {fmt(p.discountPrice ?? p.retailPrice)}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* CTA */}
+              <div className="mt-auto p-3.5 pt-3">
+                <Link
+                  href={`/marketplace/${store.slug}`}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] py-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
+                >
+                  Ver tienda
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                </Link>
+              </div>
+            </article>
           ) : (
-            <div key={`skel-${i}`} className="h-52 rounded-xl skeleton-shimmer" />
+            <div key={`skel-${i}`} className="h-80 rounded-2xl skeleton-shimmer" />
           ),
         )}
       </HorizontalCarousel>

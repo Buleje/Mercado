@@ -146,3 +146,86 @@ export async function getFeaturedNearby(
 
   return enriched;
 }
+
+export interface FeaturedStoreWithProducts {
+  id: string;
+  slug: string;
+  name: string;
+  logo: string | null;
+  banner: string | null;
+  category: string;
+  zone: string | null;
+  rating: number;
+  reviewCount: number;
+  productsCount: number;
+  productosDestacados: FeaturedNearbyProduct[];
+}
+
+/**
+ * Tiendas destacadas SIN geolocalización — para la sección "Cerca tuyo" del
+ * home cuando no hay coords del usuario. Misma estrategia de embeber productos
+ * en UNA sola query (sin N+1), ordenadas por rating + reseñas. Cacheado.
+ */
+export async function getFeaturedStoresWithProducts(opts: {
+  limit: number;
+  productsPerStore: number;
+}): Promise<FeaturedStoreWithProducts[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("marketplace:featured-stores");
+
+  const { limit, productsPerStore } = opts;
+
+  const rows = await prisma.store.findMany({
+    where: { isPublished: true, vacationMode: { not: true } },
+    orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
+    take: limit,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      logo: true,
+      banner: true,
+      category: true,
+      zone: true,
+      rating: true,
+      reviewCount: true,
+      _count: { select: { products: true } },
+      products: {
+        where: { isActive: true },
+        orderBy: [{ id: "desc" }],
+        take: productsPerStore,
+        select: {
+          id: true,
+          productId: true,
+          retailPrice: true,
+          discountPrice: true,
+          discountLabel: true,
+          product: { select: { name: true, image: true } },
+        },
+      },
+    },
+  });
+
+  return rows.map((s) => ({
+    id: s.id,
+    slug: s.slug,
+    name: s.name,
+    logo: s.logo,
+    banner: s.banner,
+    category: s.category,
+    zone: s.zone,
+    rating: Number(s.rating ?? 0),
+    reviewCount: s.reviewCount,
+    productsCount: s._count.products,
+    productosDestacados: s.products.map((p) => ({
+      id: p.id,
+      productId: p.productId,
+      name: p.product.name,
+      image: p.product.image ?? "",
+      retailPrice: Number(p.retailPrice),
+      discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+      discountLabel: p.discountLabel,
+    })),
+  }));
+}
