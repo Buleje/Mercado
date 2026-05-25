@@ -14,6 +14,7 @@ import {
   Clock,
   Package,
   Ban,
+  ChevronRight,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -114,7 +115,7 @@ export default function AdelantosModule() {
           </div>
         )}
 
-        {tab === "resumen" && <ResumenView resumen={resumen} loading={loading} onGoTab={setTab} />}
+        {tab === "resumen" && <ResumenView resumen={resumen} adelantos={adelantos} loading={loading} onGoTab={setTab} />}
         {tab === "lista" && (
           <AdelantosView
             adelantos={adelantos}
@@ -134,10 +135,12 @@ export default function AdelantosModule() {
 // ── Resumen ──────────────────────────────────────────────────────────────────
 function ResumenView({
   resumen,
+  adelantos,
   loading,
   onGoTab,
 }: {
   resumen: Resumen | null;
+  adelantos: DbAdelanto[];
   loading: boolean;
   onGoTab: (tab: string) => void;
 }) {
@@ -182,18 +185,91 @@ function ResumenView({
     );
   }
 
+  const adelantado = resumen.totalAdelantado;
+  const liquidado = resumen.totalLiquidado;
+  const pct = adelantado > 0 ? Math.min(100, Math.round((liquidado / adelantado) * 100)) : 0;
+  const abiertos = adelantos
+    .filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0)
+    .sort((a, b) => b.saldoPendiente - a.saldoPendiente);
+  const totalPorRecuperar = abiertos.reduce((s, a) => s + a.saldoPendiente, 0);
+
+  // Mensaje de salud: prioriza lo que te deben; si nada, todo al día; si excedente, a favor de ellos.
+  const health =
+    resumen.saldoPendiente > 0
+      ? { cls: "text-[var(--data-warning)]", Icon: Clock, text: `Te faltan ${formatCurrency(resumen.saldoPendiente)} por recuperar.` }
+      : resumen.excedente > 0
+        ? { cls: "text-[var(--data-info)]", Icon: Coins, text: `Te entregaron ${formatCurrency(resumen.excedente)} de más.` }
+        : { cls: "text-[var(--data-success)]", Icon: CheckCircle, text: "Todo al día — nadie te debe nada." };
+
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total adelantado" value={formatCurrency(resumen.totalAdelantado)} icon={TrendingDown} emphasis="neutral" subValue="Plata que diste" />
-        <StatCard label="Total liquidado" value={formatCurrency(resumen.totalLiquidado)} icon={TrendingUp} emphasis="success" subValue="Recuperado en entregas" />
-        <StatCard label="Saldo pendiente" value={formatCurrency(resumen.saldoPendiente)} icon={Clock} emphasis={resumen.saldoPendiente > 0 ? "warning" : "neutral"} subValue="Te deben en servicios" />
+    <div className="space-y-5">
+      {/* Hero saldo + barra de progreso de recuperación */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6">
+          <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Saldo pendiente</p>
+          <p className="mt-1 text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(resumen.saldoPendiente)}</p>
+          <div className={`mt-3 flex items-center gap-2 text-base font-semibold ${health.cls}`}>
+            <health.Icon className="h-5 w-5 shrink-0" />
+            <span>{health.text}</span>
+          </div>
+        </div>
+        <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 lg:col-span-2">
+          <div className="flex items-baseline justify-between">
+            <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recuperación de adelantos</CardTitle>
+            <span className="text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{pct}%</span>
+          </div>
+          <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+            <div className="h-full rounded-full bg-[var(--data-success)] transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="mt-3 text-base text-[var(--text-secondary)]">
+            Recuperaste <span className="font-bold text-[var(--text-primary)]">{formatCurrency(liquidado)}</span> de{" "}
+            <span className="font-bold text-[var(--text-primary)]">{formatCurrency(adelantado)}</span> adelantados.
+          </p>
+        </div>
+      </div>
+
+      {/* Quién te debe — lista accionable de adelantos abiertos */}
+      {abiertos.length > 0 && (
+        <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
+          <div className="mb-2 flex items-center justify-between">
+            <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Quién te debe ({abiertos.length})</CardTitle>
+            <button onClick={() => onGoTab("lista")} className="inline-flex items-center gap-1 text-base font-bold text-primary hover:underline">
+              Ver todos <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <ul className="divide-y divide-[var(--rule-soft)]">
+            {abiertos.slice(0, 5).map((a) => (
+              <li key={a.id}>
+                <button onClick={() => onGoTab("lista")} className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-[var(--surface-sunken)]/50">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-primary">
+                    {(a.beneficiario?.nombre ?? "?").charAt(0).toUpperCase()}
+                  </span>
+                  <span className="flex-1 text-base font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</span>
+                  <span className="tabular-nums text-base font-extrabold text-[var(--data-warning)]">{formatCurrency(a.saldoPendiente)}</span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2 flex items-center justify-between border-t-2 border-[var(--rule-base)] pt-3">
+            <span className="text-base font-bold text-[var(--text-secondary)]">Total por recuperar</span>
+            <span className="tabular-nums text-lg font-extrabold text-[var(--data-warning)]">{formatCurrency(totalPorRecuperar)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Plata (secundario) */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Total adelantado" value={formatCurrency(adelantado)} icon={TrendingDown} subValue="Plata que diste" />
+        <StatCard label="Total liquidado" value={formatCurrency(liquidado)} icon={TrendingUp} emphasis="success" subValue="Recuperado en entregas" />
         <StatCard label="A favor de ellos" value={formatCurrency(resumen.excedente)} icon={Coins} emphasis={resumen.excedente > 0 ? "error" : "neutral"} subValue="Entregaron de más" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Adelantos abiertos" value={String(resumen.adelantosAbiertos)} icon={Coins} density="compact" />
-        <StatCard label="Liquidados" value={String(resumen.adelantosLiquidados)} icon={CheckCircle} density="compact" />
-        <StatCard label="Personas" value={String(resumen.beneficiarios)} icon={Users} density="compact" />
+
+      {/* Contadores clickeables → llevan a la lista/personas filtrada */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Adelantos abiertos" value={String(resumen.adelantosAbiertos)} icon={Coins} density="compact" onClick={() => onGoTab("lista")} />
+        <StatCard label="Liquidados" value={String(resumen.adelantosLiquidados)} icon={CheckCircle} density="compact" onClick={() => onGoTab("lista")} />
+        <StatCard label="Personas" value={String(resumen.beneficiarios)} icon={Users} density="compact" onClick={() => onGoTab("personas")} />
       </div>
     </div>
   );
