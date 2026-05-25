@@ -16,6 +16,7 @@ import {
   Ban,
   ChevronRight,
   Search,
+  MessageCircle,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -680,34 +681,108 @@ function PersonasView({
   onChange: () => void;
 }) {
   const [showCreate, setShowCreate] = useState(false);
+  const [q, setQ] = useState("");
+
+  // Orden: quien más debe primero. Filtro: por nombre.
+  const filtrados = beneficiarios
+    .filter((b) => !q.trim() || b.nombre.toLowerCase().includes(q.trim().toLowerCase()))
+    .sort((a, b) => b.saldoPendiente - a.saldoPendiente);
+  const conSaldo = beneficiarios.filter((b) => b.saldoPendiente > 0).length;
+
+  // Recordatorio por WhatsApp (con saldo si debe).
+  const waLink = (b: BeneficiarioConSaldo) => {
+    const digits = (b.telefono ?? "").replace(/\D/g, "");
+    const phone = digits.length === 9 ? `51${digits}` : digits;
+    const msg =
+      b.saldoPendiente > 0
+        ? `Hola ${b.nombre}, te recuerdo que tenés un saldo pendiente de ${formatCurrency(b.saldoPendiente)} por liquidar. ¡Gracias!`
+        : `Hola ${b.nombre}, ¿cómo estás?`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
           {beneficiarios.length} persona{beneficiarios.length === 1 ? "" : "s"}
+          {conSaldo > 0 && <span className="font-semibold text-[var(--text-tertiary)]"> · {conSaldo} con saldo</span>}
         </CardTitle>
         <button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors">
           <Plus className="h-5 w-5" /> Nueva persona
         </button>
       </div>
+
+      {beneficiarios.length > 0 && (
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar persona..."
+            className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
+          />
+        </div>
+      )}
+
       {loading ? (
         <SkeletonGrid />
       ) : beneficiarios.length === 0 ? (
         <EmptyState icon={Users} title="Sin personas" hint="Agregá a quién le das adelantos." />
+      ) : filtrados.length === 0 ? (
+        <EmptyState icon={Search} title="Sin resultados" hint="Probá con otro nombre." />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {beneficiarios.map((b) => (
-            <div key={b.id} className="rounded-2xl border-2 border-[var(--rule-base)] bg-white p-4">
-              <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{b.nombre}</p>
-              {b.documento && <p className="text-sm text-[var(--text-tertiary)] tabular-nums">{b.documento}</p>}
-              {b.telefono && <p className="text-sm text-[var(--text-tertiary)] tabular-nums">{b.telefono}</p>}
-              <div className="mt-3 flex items-center justify-between border-t-2 border-[var(--rule-soft)] pt-3">
-                <span className="text-sm font-semibold text-[var(--text-tertiary)]">Saldo</span>
-                <span className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(b.saldoPendiente)}</span>
+          {filtrados.map((b) => {
+            const debe = b.saldoPendiente > 0;
+            return (
+              <div key={b.id} className="flex flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-white p-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-extrabold text-primary">
+                    {b.nombre.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{b.nombre}</p>
+                    {b.documento && <p className="text-sm text-[var(--text-tertiary)] tabular-nums truncate">{b.documento}</p>}
+                    {b.telefono && <p className="text-sm text-[var(--text-tertiary)] tabular-nums truncate">{b.telefono}</p>}
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 border-t-2 border-[var(--rule-soft)] pt-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-tertiary)]">Adelantado</p>
+                    <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(b.totalAdelantado)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-[var(--text-tertiary)]">Saldo</p>
+                    <p className={`text-base font-extrabold tabular-nums ${debe ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{formatCurrency(b.saldoPendiente)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  {debe ? (
+                    <span className="inline-flex items-center rounded-full bg-[var(--data-warning)]/15 px-3 py-1 text-sm font-bold text-[var(--data-warning)]">
+                      {b.adelantosAbiertos} abierto{b.adelantosAbiertos === 1 ? "" : "s"}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success)]/15 px-3 py-1 text-sm font-bold text-[var(--data-success)]">
+                      <CheckCircle className="h-4 w-4" /> Al día
+                    </span>
+                  )}
+                  {b.telefono && (
+                    <a
+                      href={waLink(b)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+                      title={debe ? "Recordar saldo por WhatsApp" : "Escribir por WhatsApp"}
+                    >
+                      <MessageCircle className="h-4 w-4" /> WhatsApp
+                    </a>
+                  )}
+                </div>
               </div>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">{b.adelantosAbiertos} abierto{b.adelantosAbiertos === 1 ? "" : "s"}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {showCreate && (
