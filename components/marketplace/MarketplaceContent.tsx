@@ -13,6 +13,12 @@ import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
 import MyFidelidadCard from "@/components/marketplace/MyFidelidadCard";
+// SEO/SSR (2026-05-24): estas 2 secciones de mayor valor comercial se importan
+// ESTÁTICAMENTE (no dynamic ssr:false) y reciben datos del servidor por props,
+// para que su contenido (tiendas, productos, precios) salga en el HTML inicial
+// y Google lo indexe. El resto sigue diferido client-side.
+import TiendasDestacadas from "@/components/marketplace/home/TiendasDestacadas";
+import MarketplaceBestsellersStrip from "@/components/marketplace/home/MarketplaceBestsellersStrip";
 
 // Audit P10 (sprint perf): below-fold sections diferidas para reducir
 // el initial bundle (138 → ~60 chunks meta). Cada `dynamic({ ssr: false })`
@@ -20,10 +26,6 @@ import MyFidelidadCard from "@/components/marketplace/MyFidelidadCard";
 // tras el hero, después del paint inicial.
 const MarketplaceCatalogViewSection = dynamic(
   () => import("@/components/marketplace/MarketplaceCatalogViewSection"),
-  { ssr: false },
-);
-const TiendasDestacadas = dynamic(
-  () => import("@/components/marketplace/home/TiendasDestacadas"),
   { ssr: false },
 );
 const MarketplaceRecipesWidget = dynamic(
@@ -69,11 +71,7 @@ const LiveOrderCounter = dynamic(
   { ssr: false },
 );
 
-// ─── Strips B2C que pegan a DB real ────────────────────────────────
-const MarketplaceBestsellersStrip = dynamic(
-  () => import("@/components/marketplace/home/MarketplaceBestsellersStrip"),
-  { ssr: false },
-);
+// MarketplaceBestsellersStrip ahora se importa estáticamente arriba (SSR + SEO).
 
 // REMOVIDOS (Brandon, mayo 2026 — pedido: solo data real, nada hardcodeado):
 //   - MarketplaceCategoriesNav  → tenia const CATEGORIES hardcodeado
@@ -101,14 +99,20 @@ const _MAX_PRICE_LIMIT = 500;
 
 /* ── Props ──────────────────────────────────────────────────────────────────── */
 
-// initialStores removido (ronda A) — ya no se pre-fetcha el listado de tiendas
-// en el marketplace home. El catálogo de productos lo maneja MarketplaceCatalogViewSection.
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface MarketplaceContentProps {}
+// SEO/SSR: page.tsx (server) pre-fetcha tiendas destacadas + más vendidos y los
+// pasa por props para que esas 2 secciones rendericen su contenido en el HTML
+// inicial (crawlable por Google). Los tipos se derivan de cada componente.
+interface MarketplaceContentProps {
+  initialStores?: NonNullable<React.ComponentProps<typeof TiendasDestacadas>>["initialStores"];
+  initialBestsellers?: NonNullable<React.ComponentProps<typeof MarketplaceBestsellersStrip>>["initialItems"];
+}
 
 /* ── MarketplaceContent (orchestrator) ─────────────────────────────────────── */
 
-export default function MarketplaceContent(_props: MarketplaceContentProps = {}) {
+export default function MarketplaceContent({
+  initialStores,
+  initialBestsellers,
+}: MarketplaceContentProps = {}) {
   const searchParams = useSearchParams();
   const { addItem } = useMarketplaceCart();
   const cartImportDone = useRef(false);
@@ -198,11 +202,11 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
       <div className="bg-[var(--surface-sunken)] py-4 sm:py-6">
         <div className="mx-auto max-w-[1600px] space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-6">
           {/* ── Above-fold (montaje inmediato) ── */}
-          {/* Tiendas reales publicadas */}
-          <BodegasSectionBox><TiendasDestacadas /></BodegasSectionBox>
+          {/* Tiendas reales publicadas — SSR con data del servidor (SEO) */}
+          <BodegasSectionBox><TiendasDestacadas initialStores={initialStores} /></BodegasSectionBox>
 
-          {/* Top mas vendidos — desde OrderItems reales (cross-store) */}
-          <BodegasSectionBox><MarketplaceBestsellersStrip /></BodegasSectionBox>
+          {/* Top mas vendidos — SSR con data del servidor (SEO) */}
+          <BodegasSectionBox><MarketplaceBestsellersStrip initialItems={initialBestsellers} /></BodegasSectionBox>
 
           {/* ── Below-fold (montaje diferido al acercar el scroll) ── */}
           {/* Ofertas del dia — desde Promotion DB */}

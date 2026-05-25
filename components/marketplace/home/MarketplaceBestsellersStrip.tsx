@@ -8,9 +8,12 @@
  * (duplicado, sin botón "Agregar") — migrado al card único del marketplace
  * para consistencia visual + add-to-cart funcional. Datos reales del endpoint
  * /api/marketplace/bestsellers; si la DB no tiene ventas aún, se oculta sola.
+ *
+ * SSR-ready: acepta `initialItems` para sembrar datos desde el servidor (SEO).
+ * Si se reciben datos iniciales, el useEffect NO hace fetch (evita doble carga).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Flame,
@@ -37,13 +40,21 @@ interface BestsellerProduct {
   unitsSold: number;
 }
 
-export default function MarketplaceBestsellersStrip() {
+export default function MarketplaceBestsellersStrip(
+  { initialItems }: { initialItems?: BestsellerProduct[] } = {}
+) {
   // Solo datos reales — si la DB no tiene bestsellers todavia, la seccion se oculta.
   // Sin FALLBACK hardcoded (Brandon: nada inventado).
-  const [items, setItems] = useState<BestsellerProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<BestsellerProduct[]>(initialItems ?? []);
+  const [loading, setLoading] = useState(!initialItems);
+  // Ref estable para que el useEffect no se re-ejecute si el padre re-renderiza
+  // con una nueva referencia de array (los datos SSR no cambian tras el montaje).
+  const hasInitialItems = useRef(Boolean(initialItems && initialItems.length > 0));
 
   useEffect(() => {
+    // Si ya tenemos datos sembrados desde el servidor, no hacer fetch.
+    if (hasInitialItems.current) return;
+
     let cancelled = false;
     fetch("/api/marketplace/bestsellers?limit=10", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
@@ -54,7 +65,8 @@ export default function MarketplaceBestsellersStrip() {
         }
       })
       .catch(() => {
-        /* strip no crítico: si el fetch falla, la sección se oculta sola */
+        /* strip no crítico — rechazo intencional: si el fetch falla, la sección se oculta sola */
+        return;
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

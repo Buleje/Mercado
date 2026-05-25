@@ -7,6 +7,8 @@ import {
   getInitialMarketplaceStores,
   getPublishedStoreCount,
 } from "@/lib/marketplace/initial-stores";
+import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db";
+import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { getStoreTagline } from "@/lib/store-tagline";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -119,12 +121,35 @@ export default async function MarketplacePage(props: {
   const hasFilters =
     !!zona || !!searchParams.categoria || !!searchParams.buscar;
 
-  // Server-side prefetch de stores para eliminar skeleton flash del first paint.
+  // Server-side prefetch para eliminar skeleton flash + SSR/SEO de las 2
+  // secciones de mayor valor comercial (Cerca tuyo + Más vendidos): su
+  // contenido sale en el HTML inicial, crawlable por Google.
   // storeCount: conteo real para el trust strip del header SSR.
-  const [initialStores, storeCount] = await Promise.all([
+  const [initialStores, storeCount, featuredStores, topToday] = await Promise.all([
     hasFilters ? Promise.resolve(undefined) : getInitialMarketplaceStores(),
     getPublishedStoreCount(),
+    getFeaturedStoresWithProducts({ limit: 10, productsPerStore: 3 }).catch(() => []),
+    MarketplacePublicDB.getTopToday(10).catch(() => ({ items: [] as Awaited<ReturnType<typeof MarketplacePublicDB.getTopToday>>["items"] })),
   ]);
+
+  // Proyecta getTopToday al shape que espera MarketplaceBestsellersStrip
+  // (mismo mapeo que /api/marketplace/bestsellers).
+  const initialBestsellers = topToday.items.map((it) => ({
+    id: it.productId,
+    storeProductId: it.storeProductId,
+    productId: it.productId,
+    name: it.name,
+    storeId: it.store.id,
+    storeName: it.store.name,
+    storeSlug: it.store.slug,
+    image: it.image,
+    price: it.price,
+    originalPrice: it.originalPrice,
+    unit: it.unit,
+    category: it.category,
+    stock: it.stock,
+    unitsSold: it.soldUnits,
+  }));
 
   return (
     <>
@@ -173,7 +198,10 @@ export default async function MarketplacePage(props: {
       {/* Header SSR — <h1> + propuesta de valor + trust strip (crawlable). */}
       <MarketplaceHomeHeader storeCount={storeCount} />
 
-      <MarketplaceContent />
+      <MarketplaceContent
+        initialStores={featuredStores}
+        initialBestsellers={initialBestsellers}
+      />
     </>
   );
 }

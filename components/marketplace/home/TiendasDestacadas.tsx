@@ -42,11 +42,12 @@ interface FeaturedStore {
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
-export default function TiendasDestacadas() {
-  const [stores, setStores] = useState<FeaturedStore[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function TiendasDestacadas({ initialStores }: { initialStores?: FeaturedStore[] } = {}) {
+  const [stores, setStores] = useState<FeaturedStore[]>(initialStores ?? []);
+  const [loading, setLoading] = useState(!initialStores);
 
   useEffect(() => {
+    if (initialStores && initialStores.length > 0) return;
     let cancelled = false;
     // Respeta el Cache-Control del endpoint (max-age 120) — evita un hit de
     // red en cada montaje / back-navigation.
