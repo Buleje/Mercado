@@ -174,13 +174,13 @@ function SparklineKPICard({
   const resolvedIconColor = iconColor ?? "var(--text-secondary)";
   const resolvedValueColor = valueColor ?? "var(--text-primary)";
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 relative overflow-hidden">
+    <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl p-4 relative overflow-hidden">
       <div className="flex items-center gap-1.5 mb-1">
-        <Icon className="h-3.5 w-3.5" style={{ color: resolvedIconColor }} />
-        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] truncate">{title}</p>
+        <Icon className="h-4 w-4" style={{ color: resolvedIconColor }} />
+        <p className="text-xs uppercase font-bold text-[var(--text-tertiary)] truncate">{title}</p>
       </div>
-      <p className="text-xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
-      {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
+      <p className="text-2xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
+      {sub && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{sub}</p>}
       <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
         <ResponsiveContainer minWidth={0} width={80} height={40}>
           <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
@@ -303,10 +303,27 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
     { name: "Cancelados", value: statusCounts.CANCELADO, color: "var(--text-tertiary)" },
   ].filter(d => d.value > 0);
 
+  // Salud de la cartera: prioriza cuotas vencidas; si no, al día con/ sin saldo.
+  const saldoPorCobrar = resumen?.saldoDados ?? porCobrar;
+  const health =
+    cuotasVencidas > 0
+      ? { cls: "text-[var(--data-warning-500)]", border: "border-l-[var(--data-warning)]", Icon: AlertTriangle, text: `Tenés ${cuotasVencidas} cuota${cuotasVencidas === 1 ? "" : "s"} vencida${cuotasVencidas === 1 ? "" : "s"} · ${formatCurrency(saldoPorCobrar)} por cobrar.` }
+      : saldoPorCobrar > 0
+        ? { cls: "text-[var(--text-primary)]", border: "border-l-[var(--accent)]", Icon: DollarSign, text: `Cartera al día · ${formatCurrency(saldoPorCobrar)} por cobrar, sin atrasos.` }
+        : { cls: "text-[var(--data-success-500)]", border: "border-l-[var(--data-success)]", Icon: TrendingUp, text: "Cartera al día — no tenés nada por cobrar." };
+
   return (
     <div className="space-y-6">
+      {/* Mejora 0: mensaje de salud de la cartera */}
+      <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+        <div className={cn("rounded-2xl border-2 border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3", health.border)}>
+          <health.Icon className={cn("h-6 w-6 shrink-0", health.cls)} />
+          <p className={cn("text-base font-semibold", health.cls)}>{health.text}</p>
+        </div>
+      </m.div>
+
       {/* Mejora 1: KPI Cards con sparklines */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <SparklineKPICard title="Dados" value={formatCurrency(totalDados)} sub={`${resumen?.activosDados ?? prestamos.filter(p=>p.direccion==="DADO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={ArrowUpFromLine} sparkData={spark1} />
           <SparklineKPICard title="Recibidos" value={formatCurrency(totalRecibidos)} sub={`${resumen?.activosRecibidos ?? prestamos.filter(p=>p.direccion==="RECIBIDO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={ArrowDownToLine} sparkData={spark2} />
