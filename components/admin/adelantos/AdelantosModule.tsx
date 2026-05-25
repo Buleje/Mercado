@@ -124,27 +124,29 @@ export default function AdelantosModule() {
       </AdminModuleHeader>
 
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={setTab} moduleId={MODULE_ID}>
-        {error && (
-          <div className="mb-4 rounded-2xl border-2 border-[var(--data-error)]/30 bg-[var(--data-error)]/10 px-4 py-3 text-base font-semibold text-[var(--data-error)]">
-            {error}
-          </div>
-        )}
+        <div className="pt-5 lg:pt-6">
+          {error && (
+            <div className="mb-4 rounded-xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/10 px-4 py-3 text-base font-semibold text-[var(--data-error)]">
+              {error}
+            </div>
+          )}
 
-        {tab === "resumen" && <ResumenView resumen={resumen} adelantos={adelantos} loading={loading} onGoTab={setTab} />}
-        {tab === "lista" && (
-          <AdelantosView
-            adelantos={adelantos}
-            beneficiarios={beneficiarios}
-            loading={loading}
-            onChange={reload}
-          />
-        )}
-        {tab === "personas" && (
-          <PersonasView beneficiarios={beneficiarios} adelantos={adelantos} loading={loading} onChange={reload} />
-        )}
-        {tab === "cobranza" && <CobranzaView adelantos={adelantos} loading={loading} onGoTab={setTab} />}
-        {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
-        {tab === "analisis" && <AnalisisView adelantos={adelantos} loading={loading} />}
+          {tab === "resumen" && <ResumenView resumen={resumen} adelantos={adelantos} loading={loading} onGoTab={setTab} />}
+          {tab === "lista" && (
+            <AdelantosView
+              adelantos={adelantos}
+              beneficiarios={beneficiarios}
+              loading={loading}
+              onChange={reload}
+            />
+          )}
+          {tab === "personas" && (
+            <PersonasView beneficiarios={beneficiarios} adelantos={adelantos} loading={loading} onChange={reload} />
+          )}
+          {tab === "cobranza" && <CobranzaView adelantos={adelantos} loading={loading} onGoTab={setTab} />}
+          {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
+          {tab === "analisis" && <AnalisisView adelantos={adelantos} loading={loading} />}
+        </div>
       </AdminTabBar>
     </div>
   );
@@ -1044,60 +1046,128 @@ function EstadoCuentaModal({ persona, adelantos, onClose }: { persona: Beneficia
 }
 
 // ── Cobranza ─────────────────────────────────────────────────────────────────
+type DeudorCobranza = { id: string; nombre: string; telefono: string | null; saldo: number; dias: number };
+
 function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]; loading: boolean; onGoTab: (t: string) => void }) {
-  if (loading) return <SkeletonGrid />;
+  const [filtro, setFiltro] = useState<"todos" | "d0" | "d30" | "d60">("todos");
+  const [recordados, setRecordados] = useState<Record<string, number>>({});
   const now = Date.now();
   const abiertos = adelantos.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0);
 
-  // Antigüedad del saldo (días desde fechaAdelanto)
-  const buckets = { d0: { label: "Al día (0-30 días)", tone: "var(--data-success)", total: 0, n: 0 }, d30: { label: "Vencido (31-60 días)", tone: "var(--data-warning)", total: 0, n: 0 }, d60: { label: "Crítico (+60 días)", tone: "var(--data-error)", total: 0, n: 0 } };
-  for (const a of abiertos) {
-    const dias = (now - new Date(a.fechaAdelanto).getTime()) / 86_400_000;
-    const b = dias > 60 ? buckets.d60 : dias > 30 ? buckets.d30 : buckets.d0;
-    b.total += a.saldoPendiente; b.n += 1;
-  }
+  // Cargar "recordados" de localStorage
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    for (const a of adelantos) {
+      const raw = typeof window !== "undefined" ? window.localStorage.getItem(`adelanto-recordatorio-${a.beneficiarioId}`) : null;
+      if (raw) map[a.beneficiarioId] = Number(raw);
+    }
+    setRecordados(map);
+  }, [adelantos]);
 
-  // Entregas pactadas pendientes (vencidas o por vencer)
+  const bucketOf = (dias: number): "d0" | "d30" | "d60" => (dias > 60 ? "d60" : dias > 30 ? "d30" : "d0");
+  const BUCKETS = [
+    { id: "d0" as const, label: "Al día (0-30 días)", tone: "var(--data-success)" },
+    { id: "d30" as const, label: "Vencido (31-60 días)", tone: "var(--data-warning)" },
+    { id: "d60" as const, label: "Crítico (+60 días)", tone: "var(--data-error)" },
+  ];
+
+  // Deudores con saldo + días de atraso (adelanto abierto más antiguo)
+  const dmap: Record<string, DeudorCobranza & { oldest: number }> = {};
+  for (const a of abiertos) {
+    const k = a.beneficiarioId;
+    const t = new Date(a.fechaAdelanto).getTime();
+    if (!dmap[k]) dmap[k] = { id: k, nombre: a.beneficiario?.nombre ?? "—", telefono: a.beneficiario?.telefono ?? null, saldo: 0, dias: 0, oldest: t };
+    dmap[k].saldo += a.saldoPendiente;
+    if (t < dmap[k].oldest) dmap[k].oldest = t;
+  }
+  const deudores: DeudorCobranza[] = Object.values(dmap).map((d) => ({ id: d.id, nombre: d.nombre, telefono: d.telefono, saldo: d.saldo, dias: Math.floor((now - d.oldest) / 86_400_000) }));
+
+  const bucketTotals = { d0: { total: 0, n: 0 }, d30: { total: 0, n: 0 }, d60: { total: 0, n: 0 } };
+  for (const d of deudores) { const b = bucketTotals[bucketOf(d.dias)]; b.total += d.saldo; b.n += 1; }
+
+  const totalPorCobrar = deudores.reduce((s, d) => s + d.saldo, 0);
+  const vencidoTotal = bucketTotals.d30.total + bucketTotals.d60.total;
+  const pctVencido = totalPorCobrar > 0 ? Math.round((vencidoTotal / totalPorCobrar) * 100) : 0;
+  const masAntiguo = [...deudores].sort((a, b) => b.dias - a.dias)[0];
+
   const pactadas = abiertos
     .filter((a) => a.modalidad === "ENTREGAS_PACTADAS")
     .flatMap((a) => a.entregasPactadas.filter((p) => p.fechaEsperada).map((p) => ({ persona: a.beneficiario?.nombre ?? "—", desc: p.descripcionEsperada, valor: p.valorEsperado, fecha: p.fechaEsperada! })))
     .sort((x, y) => new Date(x.fecha).getTime() - new Date(y.fecha).getTime());
 
-  // Deudores ordenados (para recordatorio)
-  const deudores = abiertos
-    .reduce<Record<string, { nombre: string; telefono: string | null; saldo: number }>>((acc, a) => {
-      const k = a.beneficiarioId;
-      if (!acc[k]) acc[k] = { nombre: a.beneficiario?.nombre ?? "—", telefono: a.beneficiario?.telefono ?? null, saldo: 0 };
-      acc[k].saldo += a.saldoPendiente;
-      return acc;
-    }, {});
-  const deudoresArr = Object.values(deudores).sort((a, b) => b.saldo - a.saldo);
-  const totalPorCobrar = deudoresArr.reduce((s, d) => s + d.saldo, 0);
+  const filtrados = (filtro === "todos" ? deudores : deudores.filter((d) => bucketOf(d.dias) === filtro)).sort((a, b) => b.dias - a.dias);
 
-  const waLink = (nombre: string, telefono: string | null, saldo: number) => {
-    const digits = (telefono ?? "").replace(/\D/g, "");
+  const waLink = (d: DeudorCobranza) => {
+    const digits = (d.telefono ?? "").replace(/\D/g, "");
     const phone = digits.length === 9 ? `51${digits}` : digits;
-    return `https://wa.me/${phone}?text=${encodeURIComponent(`Hola ${nombre}, te recuerdo que tenés un saldo pendiente de ${formatCurrency(saldo)} por liquidar. ¡Gracias!`)}`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(`Hola ${d.nombre}, te recuerdo que tenés un saldo pendiente de ${formatCurrency(d.saldo)} por liquidar. ¡Gracias!`)}`;
+  };
+  const marcarRecordado = (id: string) => {
+    const ts = Date.now();
+    window.localStorage.setItem(`adelanto-recordatorio-${id}`, String(ts));
+    setRecordados((r) => ({ ...r, [id]: ts }));
+  };
+  const haceTexto = (dias: number) => (dias <= 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`);
+  const recordadoHace = (ts: number) => { const d = Math.floor((now - ts) / 86_400_000); return d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`; };
+
+  const exportarPdf = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.text("Lista de cobranza", 14, 18);
+    doc.setFontSize(10); doc.text(`Total por cobrar: ${formatCurrency(totalPorCobrar)} · ${deudores.length} deudores · ${new Date().toLocaleDateString("es-PE")}`, 14, 25);
+    autoTable(doc, {
+      startY: 31,
+      head: [["Persona", "Saldo", "Atraso", "Teléfono"]],
+      body: [...deudores].sort((a, b) => b.dias - a.dias).map((d) => [d.nombre, formatCurrency(d.saldo), `${d.dias} días`, d.telefono ?? "—"]),
+    });
+    doc.save(`cobranza-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
-  if (abiertos.length === 0) {
-    return <EmptyState icon={CheckCircle} title="Nada por cobrar" hint="No hay adelantos abiertos con saldo pendiente." />;
-  }
+  if (loading) return <SkeletonGrid />;
+  if (abiertos.length === 0) return <EmptyState icon={CheckCircle} title="Nada por cobrar" hint="No hay adelantos abiertos con saldo pendiente." />;
 
   return (
     <div className="space-y-5">
-      {/* Antigüedad de saldos */}
+      {/* KPIs de cobranza */}
       <div className="grid gap-3 sm:grid-cols-3">
-        {Object.values(buckets).map((b) => (
-          <div key={b.label} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4" style={{ borderLeftWidth: 6, borderLeftColor: b.tone }}>
-            <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{b.label}</p>
-            <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(b.total)}</p>
-            <p className="text-sm text-[var(--text-secondary)]">{b.n} adelanto{b.n === 1 ? "" : "s"}</p>
-          </div>
-        ))}
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Total por cobrar</p>
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--data-warning)]">{formatCurrency(totalPorCobrar)}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{deudores.length} deudor{deudores.length === 1 ? "" : "es"}</p>
+        </div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Cartera vencida</p>
+          <p className={`mt-1 text-2xl font-extrabold tabular-nums ${pctVencido > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]"}`}>{pctVencido}%</p>
+          <p className="text-sm text-[var(--text-secondary)]">{formatCurrency(vencidoTotal)} con atraso</p>
+        </div>
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Deuda más antigua</p>
+          <p className="mt-1 text-2xl font-extrabold text-[var(--text-primary)] truncate">{masAntiguo?.nombre ?? "—"}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{masAntiguo ? haceTexto(masAntiguo.dias) : "—"}</p>
+        </div>
       </div>
 
-      {/* Entregas pactadas por vencer */}
+      {/* Antigüedad de saldos — clickeable para filtrar */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {BUCKETS.map((b) => {
+          const activo = filtro === b.id;
+          return (
+            <button
+              key={b.id}
+              onClick={() => setFiltro(activo ? "todos" : b.id)}
+              className={`text-left rounded-xl border bg-[var(--surface-raised)] p-4 transition-all ${activo ? "ring-2 ring-primary border-primary" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"}`}
+              style={{ borderLeftWidth: 6, borderLeftColor: b.tone }}
+            >
+              <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{b.label}</p>
+              <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(bucketTotals[b.id].total)}</p>
+              <p className="text-sm text-[var(--text-secondary)]">{bucketTotals[b.id].n} deudor{bucketTotals[b.id].n === 1 ? "" : "es"}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Entregas pactadas pendientes */}
       {pactadas.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Entregas pactadas pendientes</CardTitle>
@@ -1118,25 +1188,44 @@ function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]
 
       {/* Recordatorios de cobranza */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recordatorios ({deudoresArr.length}) · {formatCurrency(totalPorCobrar)}</CardTitle>
-          <button onClick={() => onGoTab("personas")} className="text-base font-bold text-primary hover:underline">Ver personas</button>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
+            Recordatorios ({filtrados.length}{filtro !== "todos" ? ` de ${deudores.length}` : ""})
+          </CardTitle>
+          <button onClick={exportarPdf} className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+            <FileText className="h-4 w-4" /> Descargar lista (PDF)
+          </button>
         </div>
         <ul className="divide-y divide-[var(--rule-soft)]">
-          {deudoresArr.map((d, i) => (
-            <li key={i} className="flex items-center gap-3 py-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-primary">{d.nombre.charAt(0).toUpperCase()}</span>
-              <span className="flex-1 text-base font-bold text-[var(--text-primary)] truncate">{d.nombre}</span>
-              <span className="tabular-nums text-base font-extrabold text-[var(--data-warning)]">{formatCurrency(d.saldo)}</span>
-              {d.telefono ? (
-                <a href={waLink(d.nombre, d.telefono, d.saldo)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border-2 border-primary text-sm font-bold text-primary hover:bg-primary/10 transition-colors">
-                  <MessageCircle className="h-4 w-4" /> Recordar
-                </a>
-              ) : (
-                <span className="text-sm text-[var(--text-tertiary)]">sin teléfono</span>
-              )}
-            </li>
-          ))}
+          {filtrados.map((d) => {
+            const ts = recordados[d.id];
+            const vencido = d.dias > 30;
+            return (
+              <li key={d.id} className="flex items-center gap-3 py-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-primary">{d.nombre.charAt(0).toUpperCase()}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-bold text-[var(--text-primary)] truncate">{d.nombre}</p>
+                  <p className={`text-sm ${vencido ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
+                    {haceTexto(d.dias)}{ts ? ` · recordado ${recordadoHace(ts)}` : ""}
+                  </p>
+                </div>
+                <span className="tabular-nums text-base font-extrabold text-[var(--data-warning)]">{formatCurrency(d.saldo)}</span>
+                {d.telefono ? (
+                  <a
+                    href={waLink(d)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => marcarRecordado(d.id)}
+                    className={`inline-flex items-center gap-1 h-9 px-3 rounded-xl border text-sm font-bold transition-colors ${ts ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary" : "border-primary text-primary hover:bg-primary/10"}`}
+                  >
+                    <MessageCircle className="h-4 w-4" /> {ts ? "Recordar de nuevo" : "Recordar"}
+                  </a>
+                ) : (
+                  <span className="text-sm text-[var(--text-tertiary)]">sin teléfono</span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
