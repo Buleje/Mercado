@@ -313,8 +313,8 @@ async function RappiStyleHero() {
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-40 -left-20 h-[400px] w-[400px] rounded-full opacity-[0.12]"
-        style={{ background: "radial-gradient(circle, #f97316 0%, transparent 70%)" }}
+        className="pointer-events-none absolute -bottom-40 -left-20 h-[400px] w-[400px] rounded-full opacity-[0.14]"
+        style={{ background: "radial-gradient(circle, #5fd6cb 0%, transparent 70%)" }}
       />
 
       {/* Borde inferior sutil para separación de sección */}
@@ -346,7 +346,7 @@ async function RappiStyleHero() {
           ¿Qué se te{" "}
           <span
             className="italic font-serif"
-            style={{ color: "#f97316" }}
+            style={{ color: "var(--accent)" }}
           >
             antoja hoy?
           </span>
@@ -388,7 +388,7 @@ async function RappiStyleHero() {
             <button
               type="submit"
               className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 h-11 sm:h-14 px-4 sm:px-7 rounded-xl sm:rounded-full text-white text-sm sm:text-base font-extrabold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-              style={{ background: "#f97316" }}
+              style={{ background: "var(--accent)" }}
             >
               <span className="hidden sm:inline">Buscar</span>
               <Search className="h-4 w-4 sm:hidden" strokeWidth={2.5} aria-hidden />
@@ -433,8 +433,8 @@ async function RappiStyleHero() {
           </Link>
           <Link
             href="/marketplace/ofertas"
-            className="inline-flex items-center gap-2 rounded-full px-6 h-11 sm:h-12 text-sm font-extrabold text-white transition-all shadow-md hover:shadow-lg hover:scale-[1.02]"
-            style={{ background: "#f97316" }}
+            className="inline-flex items-center gap-2 rounded-full px-6 h-11 sm:h-12 text-sm font-extrabold text-white transition-all shadow-md shadow-[var(--accent)]/25 hover:shadow-lg hover:scale-[1.02]"
+            style={{ background: "var(--accent)" }}
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Ofertas del día
@@ -649,102 +649,170 @@ function StoreRatingStars({ rating, reviewCount }: { rating: number; reviewCount
   );
 }
 
+/**
+ * StoreCard — card pro de tienda: logo grande + nombre + rating + chips de
+ * categoría/zona + pie de delivery. Reusada por Tiendas destacadas (grid) y
+ * Recomendadas para vos (rail). `priority` solo para las primeras (LCP).
+ */
+function StoreCard({ s, priority = false }: { s: TopStore; priority?: boolean }) {
+  return (
+    <Link
+      href={`/marketplace/${s.slug}`}
+      aria-label={`${s.name}${s.rating > 0 ? `, ${s.rating.toFixed(1)} estrellas` : ""}${s.category ? `, ${s.category}` : ""}${s.zone ? `, ${s.zone}` : ""}`}
+      className="group flex h-full flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-xl transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+    >
+      {/* Logo grande centrado */}
+      <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] overflow-hidden shadow-sm group-hover:scale-[1.04] transition-transform mx-auto mb-3 shrink-0">
+        {s.logo ? (
+          <Image
+            src={s.logo}
+            alt=""
+            fill
+            sizes="(min-width: 640px) 96px, 80px"
+            className="object-cover"
+            priority={priority}
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-white font-black text-3xl sm:text-4xl">
+            {s.name.trim().charAt(0).toUpperCase()}
+          </div>
+        )}
+      </div>
+
+      {/* Nombre */}
+      <p className="text-sm sm:text-base font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors mb-1.5">
+        {s.name}
+      </p>
+
+      {/* Rating */}
+      {s.rating > 0 && (
+        <div className="flex justify-center mb-2.5">
+          <StoreRatingStars rating={s.rating} reviewCount={s.reviewCount} />
+        </div>
+      )}
+
+      {/* Chips categoría + zona */}
+      {(s.category || s.zone) && (
+        <div className="mt-auto flex flex-wrap items-center justify-center gap-1.5 mb-2.5">
+          {s.category && (
+            <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[10px] sm:text-xs font-bold text-[var(--accent)] line-clamp-1 max-w-full">
+              {s.category}
+            </span>
+          )}
+          {s.zone && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-[var(--text-secondary)] line-clamp-1 max-w-full">
+              <MapPin className="h-2.5 w-2.5 shrink-0" strokeWidth={2} aria-hidden />
+              {s.zone}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Pie: delivery disponible (honesto — sin minutos inventados) */}
+      <div className="flex items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5 text-[10px] sm:text-xs font-bold text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors">
+        <Bike className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+        Delivery a domicilio
+      </div>
+    </Link>
+  );
+}
+
 async function TopStoresSection() {
   const stores = await getTopStores();
   if (stores.length === 0) {
     return <EmptyStoresPlaceholder />;
   }
+  // Recomendadas: mismo universo ordenado por rating (orden distinto al de
+  // destacadas, que viene por popularidad/destaque desde la DB).
+  const recommended = [...stores].sort((a, b) => b.rating - a.rating);
   return (
-    <section
-      aria-label="Tiendas destacadas"
-      className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-12 sm:py-20"
-    >
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-3 mb-6 sm:mb-10">
-          <div>
-            <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-              <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
-              Tiendas destacadas
-            </p>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
-              Las más elegidas{" "}
-              <span className="italic font-serif text-[var(--accent)]">esta semana</span>
-            </h2>
+    <>
+      <section
+        aria-label="Tiendas destacadas"
+        className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-12 sm:py-20"
+      >
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-3 mb-6 sm:mb-10">
+            <div>
+              <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+                <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
+                Tiendas destacadas
+              </p>
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+                Las más elegidas{" "}
+                <span className="italic font-serif text-[var(--accent)]">esta semana</span>
+              </h2>
+            </div>
+            <Link
+              href="/tiendas"
+              className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:text-[var(--accent)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] transition-all"
+            >
+              Ver todas
+              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+            </Link>
           </div>
-          <Link
-            href="/tiendas"
-            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:text-[var(--accent)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] transition-all"
+
+          {/* Grid: 2 cols mobile / 3 tablet / 5 desktop. */}
+          <ul
+            role="list"
+            aria-label={`${stores.length} tiendas destacadas`}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"
           >
-            Ver todas
-            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-          </Link>
+            {stores.slice(0, 10).map((s, idx) => (
+              <li key={s.id}>
+                <StoreCard s={s} priority={idx < 3} />
+              </li>
+            ))}
+          </ul>
         </div>
+      </section>
 
-        {/* Grid de cards: 2 cols mobile / 3 tablet / 5 desktop.
-            Cada card: logo + nombre + rating + categoría + zona. */}
-        <ul
-          role="list"
-          aria-label={`${stores.length} tiendas destacadas`}
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"
+      {/* ── Recomendadas para vos — rail horizontal (descubrimiento) ── */}
+      {recommended.length > 0 && (
+        <section
+          aria-label="Recomendadas para vos"
+          className="py-12 sm:py-16"
         >
-          {stores.slice(0, 10).map((s, idx) => (
-            <li key={s.id}>
-              <Link
-                href={`/marketplace/${s.slug}`}
-                aria-label={`${s.name}${s.rating > 0 ? `, ${s.rating.toFixed(1)} estrellas` : ""}${s.category ? `, ${s.category}` : ""}${s.zone ? `, ${s.zone}` : ""}`}
-                className="group flex flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-xl transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-              >
-                {/* Logo */}
-                <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] overflow-hidden shadow-sm group-hover:scale-[1.04] transition-transform mx-auto mb-3 shrink-0">
-                  {s.logo ? (
-                    <Image
-                      src={s.logo}
-                      alt=""
-                      fill
-                      sizes="(min-width: 640px) 80px, 64px"
-                      className="object-cover"
-                      // Primeras 3 logos = LCP candidate
-                      priority={idx < 3}
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white font-black text-2xl sm:text-3xl">
-                      {s.name.trim().charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-
-                {/* Nombre */}
-                <p className="text-sm font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors mb-1.5">
-                  {s.name}
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between gap-3 mb-5 sm:mb-7">
+              <div>
+                <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+                  <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                  Para vos
                 </p>
-
-                {/* Rating */}
-                <div className="flex justify-center mb-1.5">
-                  <StoreRatingStars rating={s.rating} reviewCount={s.reviewCount} />
-                </div>
-
-                {/* Categoría + zona */}
-                {(s.category || s.zone) && (
-                  <div className="flex flex-col items-center gap-0.5">
-                    {s.category && (
-                      <span className="text-[10px] sm:text-xs font-semibold text-[var(--text-tertiary)] line-clamp-1 text-center">
-                        {s.category}
-                      </span>
-                    )}
-                    {s.zone && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs font-medium text-[var(--text-tertiary)] line-clamp-1">
-                        <MapPin className="h-2.5 w-2.5 shrink-0" strokeWidth={2} aria-hidden />
-                        {s.zone}
-                      </span>
-                    )}
-                  </div>
-                )}
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+                  Recomendadas{" "}
+                  <span className="italic font-serif text-[var(--accent)]">para vos</span>
+                </h2>
+              </div>
+              <Link
+                href="/tiendas"
+                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:text-[var(--accent)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] transition-all"
+              >
+                Descubrir más
+                <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
               </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
+            </div>
+
+            {/* Rail con scroll horizontal — snap suave, cards de ancho fijo */}
+            <ul
+              role="list"
+              aria-label="Tiendas recomendadas"
+              className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {recommended.slice(0, 12).map((s) => (
+                <li
+                  key={s.id}
+                  className="snap-start shrink-0 w-[150px] sm:w-[190px]"
+                >
+                  <StoreCard s={s} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+    </>
   );
 }
 
