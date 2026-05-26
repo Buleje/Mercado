@@ -4276,6 +4276,10 @@ model Document {
   aiCategory  String?
   aiTags      String[] @default([])
 
+  // ADR-119 — anti-spam del cron de vencimiento. Se setea al enviar el aviso
+  // de WhatsApp y se limpia al cambiar expiresAt para re-armar el ciclo.
+  expiryReminderSentAt DateTime?
+
   uploadedById String
   uploadedAt   DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -4290,6 +4294,7 @@ model Document {
   @@index([tenantId, category])
   @@index([tenantId, favorite])
   @@index([tenantId, uploadedAt])
+  @@index([tenantId, expiresAt]) // ADR-119 — query "por vencer"
 }
 
 model DocumentFolder {

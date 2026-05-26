@@ -135,12 +135,18 @@ export interface DocumentListFilters {
   folderId?: string | null;
   category?: string;
   q?: string;
+  /** ADR-119 — búsqueda semántica: OR de términos contra name/ocrText/tags. */
+  qAny?: string[];
   tags?: string[];
   favorite?: boolean;
   customerId?: string;
   orderId?: string;
   supplierId?: string;
   includeDeleted?: boolean;
+  /** ADR-119 — vista "Por vencer": documentos que vencen dentro de N días. */
+  expiring?: number;
+  /** ADR-119 — activar expansión semántica IA de la query `q`. */
+  semantic?: boolean;
 }
 
 export const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50 MB hard limit en bucket

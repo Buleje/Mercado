@@ -23,6 +23,7 @@ import {
   Upload, Search, Grid3x3, List, FolderArchive, FileText, Image as ImageIcon,
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
+  Camera, AlarmClock, Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -53,7 +54,7 @@ function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: s
 }
 
 interface BuiltinCategory {
-  id: "all" | "favorites" | "recent" | "trash";
+  id: "all" | "favorites" | "recent" | "expiring" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -63,7 +64,18 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "all", label: "Todos", icon: FolderArchive, color: "text-primary" },
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-slate-500" },
+  { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-red-500" },
 ];
+
+// ADR-119 — almacenamiento orientativo por plan (bytes). Sin gate duro: solo
+// para el anillo visual. El límite real lo aplica el bucket (50 MB/archivo).
+const STORAGE_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
+
+/** Días hasta el vencimiento (negativo = ya venció). null si no vence. */
+function daysUntil(iso: string | null): number | null {
+  if (!iso) return null;
+  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Componente principal
@@ -73,8 +85,10 @@ export default function DocumentosModule() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
-  const [filterMode, setFilterMode] = useState<"all" | "favorites" | "recent" | "folder">("all");
+  const [semantic, setSemantic] = useState(false);
+  const [filterMode, setFilterMode] = useState<"all" | "favorites" | "recent" | "expiring" | "folder">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<DbDocument | null>(null);
@@ -86,6 +100,7 @@ export default function DocumentosModule() {
   const [newFolderName, setNewFolderName] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scanInputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search
   useEffect(() => {
@@ -98,14 +113,37 @@ export default function DocumentosModule() {
       folderId: filterMode === "folder" ? activeFolderId : undefined,
       q: searchDebounced.trim() || undefined,
       favorite: filterMode === "favorites" ? true : undefined,
+      expiring: filterMode === "expiring" ? 30 : undefined,
+      semantic: semantic && !!searchDebounced.trim(),
     }),
-    [filterMode, activeFolderId, searchDebounced]
+    [filterMode, activeFolderId, searchDebounced, semantic]
   );
 
   const {
     documents, folders, loading, error, refresh,
-    upload, patch, bulk, createFolder, deleteFolder,
+    upload, scan, patch, bulk, createFolder, deleteFolder,
   } = useDocuments(filters);
+
+  // ── Escaneo desde cámara (móvil) ──
+  const handleScan = useCallback(
+    async (files: FileList | File[]) => {
+      const file = Array.from(files)[0];
+      if (!file) return;
+      setUploadProgress({ done: 0, total: 1 });
+      try {
+        const r = await scan(file, { folderId: activeFolderId });
+        if (r.scan?.ok) {
+          setScanResult({ name: r.document.name, expiresAt: r.scan.expiresAt ?? null });
+          setTimeout(() => setScanResult(null), 8000);
+        }
+      } catch (e) {
+        console.error("scan_fail", e);
+      } finally {
+        setUploadProgress(null);
+      }
+    },
+    [scan, activeFolderId]
+  );
 
   // ── Filtrado client-side adicional (recent) ──
   const displayDocs = useMemo(() => {
@@ -119,7 +157,10 @@ export default function DocumentosModule() {
 
   const totalSize = useMemo(() => documents.reduce((s, d) => s + d.size, 0), [documents]);
   const favCount = useMemo(() => documents.filter((d) => d.favorite).length, [documents]);
-  const lastUpload = documents[0]?.uploadedAt;
+  const expiringSoonCount = useMemo(
+    () => documents.filter((d) => { const n = daysUntil(d.expiresAt); return n !== null && n <= 30; }).length,
+    [documents]
+  );
 
   // ── Selection ──
   const toggleSelect = (id: string) => {
@@ -249,12 +290,19 @@ export default function DocumentosModule() {
 
       <AdminModuleHeader
         title="Documentación"
-        description="Drive interno multi-tenant: contratos, facturas, manuales, plantillas, firma digital y audit."
+        description="Drive del negocio: contratos, licencias, facturas. Te avisa antes de que venzan."
         icon={FolderArchive}
       >
         <button
-          onClick={() => setShowTemplates(true)}
+          onClick={() => scanInputRef.current?.click()}
           className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+          title="Tomá una foto de un documento — la IA lo nombra, clasifica y detecta su vencimiento"
+        >
+          <Camera className="h-4 w-4" /> Escanear
+        </button>
+        <button
+          onClick={() => setShowTemplates(true)}
+          className="hidden sm:inline-flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
         >
           <Sparkles className="h-4 w-4" /> Generar plantilla
         </button>
@@ -265,7 +313,7 @@ export default function DocumentosModule() {
           {uploadProgress ? (
             <>
               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Subiendo {uploadProgress.done}/{uploadProgress.total}…
+              {uploadProgress.total === 1 ? "Procesando…" : `Subiendo ${uploadProgress.done}/${uploadProgress.total}…`}
             </>
           ) : (
             <>
@@ -280,7 +328,35 @@ export default function DocumentosModule() {
           className="hidden"
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
         />
+        <input
+          ref={scanInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => e.target.files && handleScan(e.target.files)}
+        />
       </AdminModuleHeader>
+
+      {/* Resultado del escaneo IA */}
+      {scanResult && (
+        <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-emerald-800">
+          <Wand2 className="h-5 w-5 shrink-0 mt-0.5 text-emerald-600" />
+          <div className="min-w-0 text-sm">
+            <p className="font-extrabold">Escaneado: {scanResult.name}</p>
+            {scanResult.expiresAt ? (
+              <p className="mt-0.5">
+                📅 Detecté vencimiento el{" "}
+                <strong>{new Date(scanResult.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}</strong>
+                {" "}— te avisaré por WhatsApp antes.
+              </p>
+            ) : (
+              <p className="mt-0.5 text-emerald-700">La IA lo nombró y clasificó. Si vence, agregá la fecha desde el documento.</p>
+            )}
+          </div>
+          <button onClick={() => setScanResult(null)} className="ml-auto p-1 rounded-md hover:bg-emerald-100" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
@@ -292,14 +368,23 @@ export default function DocumentosModule() {
       {/* Hero stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatBlock label="Total archivos" value={documents.length.toString()} icon={FileIcon} tint="text-primary" />
-        <StatBlock label="Espacio usado" value={formatBytes(totalSize)} icon={HardDrive} tint="text-blue-500" />
+        <StorageRing usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />
+        <button
+          onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
+          className={cn(
+            "text-left bg-white border rounded-2xl p-4 transition-all hover:shadow-md",
+            expiringSoonCount > 0 ? "border-red-200 hover:border-red-400" : "border-[var(--rule-base)] hover:border-primary/40"
+          )}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Por vencer (30d)</p>
+              <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringSoonCount > 0 ? "text-red-500" : "text-[var(--text-tertiary)]")}>{expiringSoonCount}</p>
+            </div>
+            <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringSoonCount > 0 ? "text-red-500" : "text-[var(--text-tertiary)]")} />
+          </div>
+        </button>
         <StatBlock label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />
-        <StatBlock
-          label="Último upload"
-          value={lastUpload ? new Date(lastUpload).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) : "—"}
-          icon={Clock}
-          tint="text-slate-500"
-        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5">
@@ -410,12 +495,22 @@ export default function DocumentosModule() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input
                 type="text"
-                placeholder="Buscar por nombre, tag o contenido OCR…"
+                placeholder={semantic ? "Describí lo que buscás… ej: el contrato del local" : "Buscar por nombre, tag o contenido OCR…"}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
+            <button
+              onClick={() => setSemantic((s) => !s)}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-colors",
+                semantic ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]" : "bg-white border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"
+              )}
+              title="Búsqueda inteligente: entiende lo que querés decir, no solo palabras exactas"
+            >
+              <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">IA</span>
+            </button>
             <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-white overflow-hidden">
               <button
                 onClick={() => setView("grid")}
@@ -525,6 +620,7 @@ export default function DocumentosModule() {
                             {doc.versionCount && doc.versionCount > 0 && (
                               <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">v{doc.versionCount + 1}</span>
                             )}
+                            <ExpiryBadge expiresAt={doc.expiresAt} />
                           </button>
                         </td>
                         <td className="px-4 py-3 hidden sm:table-cell">
@@ -591,6 +687,52 @@ function StatBlock({ label, value, icon: Icon, tint }: { label: string; value: s
         <Icon className={cn("h-5 w-5 shrink-0 mt-0.5", tint)} />
       </div>
     </div>
+  );
+}
+
+/** ADR-119 — anillo de almacenamiento usado vs cuota orientativa del plan. */
+function StorageRing({ usedBytes, quotaBytes }: { usedBytes: number; quotaBytes: number }) {
+  const pct = Math.min(100, Math.round((usedBytes / quotaBytes) * 100));
+  const r = 18;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  const color = pct >= 90 ? "var(--color-danger, #ef4444)" : pct >= 70 ? "var(--color-warning, #f59e0b)" : "var(--color-primary)";
+  return (
+    <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-4 flex items-center gap-3">
+      <div className="relative h-12 w-12 shrink-0">
+        <svg viewBox="0 0 44 44" className="h-12 w-12 -rotate-90">
+          <circle cx="22" cy="22" r={r} fill="none" stroke="var(--surface-sunken)" strokeWidth="4" />
+          <circle cx="22" cy="22" r={r} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${dash} ${circ}`} />
+        </svg>
+        <HardDrive className="absolute inset-0 m-auto h-4 w-4" style={{ color }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Espacio usado</p>
+        <p className="text-xl font-extrabold tabular-nums leading-tight" style={{ color }}>{formatBytes(usedBytes)}</p>
+        <p className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)] tabular-nums">{pct}% de {formatBytes(quotaBytes)}</p>
+      </div>
+    </div>
+  );
+}
+
+/** ADR-119 — badge de vencimiento con semáforo (rojo/ámbar/verde). */
+function ExpiryBadge({ expiresAt, className }: { expiresAt: string | null; className?: string }) {
+  const n = daysUntil(expiresAt);
+  if (n === null) return null;
+  const { label, cls } =
+    n < 0
+      ? { label: "Vencido", cls: "bg-red-100 text-red-700 border-red-200" }
+      : n === 0
+      ? { label: "Vence hoy", cls: "bg-red-100 text-red-700 border-red-200" }
+      : n <= 7
+      ? { label: `Vence en ${n}d`, cls: "bg-red-50 text-red-600 border-red-200" }
+      : n <= 30
+      ? { label: `Vence en ${n}d`, cls: "bg-amber-50 text-amber-700 border-amber-200" }
+      : { label: new Date(expiresAt!).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" }), cls: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  return (
+    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[length:var(--ts-2xs,11px)] font-bold", cls, className)}>
+      <AlarmClock className="h-3 w-3" /> {label}
+    </span>
   );
 }
 
@@ -684,6 +826,7 @@ function DocCard({
           <span className="capitalize text-[var(--text-tertiary)]">{doc.category}</span>
           <span className="tabular-nums text-[var(--text-tertiary)]">{formatBytes(doc.size)}</span>
         </div>
+        <ExpiryBadge expiresAt={doc.expiresAt} className="mt-2" />
         {(doc.tags.length > 0 || doc.aiTags.length > 0) && (
           <div className="flex flex-wrap gap-1 mt-2">
             {doc.tags.slice(0, 2).map((t) => (

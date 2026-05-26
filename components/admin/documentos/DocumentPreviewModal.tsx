@@ -3,18 +3,18 @@
 import { useState, useEffect, useRef } from "react";
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check,
-  PencilLine, Sparkles,
+  PencilLine, Sparkles, AlarmClock, Link2, Users, Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getDocumentDetail, fetchVersions, fetchAudit, fetchShares, createShare, revokeShare,
-  uploadVersion, signDocument,
+  uploadVersion, signDocument, patchDocument,
 } from "@/hooks/use-documents";
 import type {
   DbDocument, DbDocumentVersion, DbDocumentAuditLog, DbDocumentShare,
 } from "@/lib/types/documents";
 
-type Tab = "preview" | "versions" | "audit" | "share" | "sign";
+type Tab = "preview" | "details" | "versions" | "audit" | "share" | "sign";
 
 interface Props {
   docId: string;
@@ -131,6 +131,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
         {/* Tabs */}
         <nav className="flex items-center gap-1 px-5 pt-3 border-b border-slate-200 shrink-0 overflow-x-auto">
           <TabBtn icon={Eye} active={tab === "preview"} onClick={() => setTab("preview")}>Vista previa</TabBtn>
+          <TabBtn icon={Link2} active={tab === "details"} onClick={() => setTab("details")}>Detalles{doc.expiresAt || doc.customerId || doc.supplierId ? " •" : ""}</TabBtn>
           <TabBtn icon={History} active={tab === "versions"} onClick={() => setTab("versions")}>Versiones{doc.versionCount ? ` (${(doc.versionCount ?? 0) + 1})` : ""}</TabBtn>
           <TabBtn icon={Share2} active={tab === "share"} onClick={() => setTab("share")}>Compartir{doc.shareCount ? ` (${doc.shareCount})` : ""}</TabBtn>
           {isPdf && <TabBtn icon={PencilLine} active={tab === "sign"} onClick={() => setTab("sign")}>Firmar</TabBtn>}
@@ -156,6 +157,10 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
                 </div>
               )}
             </div>
+          )}
+
+          {tab === "details" && (
+            <DetailsTab doc={doc} onPatched={(d) => { setDoc(d); onRefresh?.(); }} />
           )}
 
           {tab === "versions" && (
@@ -265,6 +270,140 @@ function VersionsTab({
   );
 }
 
+// ─────────── Details tab (ADR-119) ───────────
+
+interface EntityOpt { id: string; name: string }
+
+function DetailsTab({ doc, onPatched }: { doc: DbDocument; onPatched: (d: DbDocument) => void }) {
+  const [saving, setSaving] = useState<string | null>(null);
+  const [customers, setCustomers] = useState<EntityOpt[]>([]);
+  const [suppliers, setSuppliers] = useState<EntityOpt[]>([]);
+
+  const expiryValue = doc.expiresAt ? doc.expiresAt.slice(0, 10) : "";
+
+  useEffect(() => {
+    fetch("/api/customers?limit=200", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const arr = Array.isArray(data) ? data : data?.customers ?? [];
+        // Customer.@id es `phone` (no hay campo id) — Document.customerId guarda el phone.
+        setCustomers(
+          arr
+            .map((c: { phone?: string; name?: string }) => ({ id: c.phone ?? "", name: c.name || c.phone || "Cliente" }))
+            .filter((c: EntityOpt) => c.id)
+        );
+      })
+      .catch(() => {/* picker opcional: si falla, queda sin opciones de cliente */});
+    fetch("/api/suppliers", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const arr = Array.isArray(data) ? data : data?.suppliers ?? [];
+        setSuppliers(arr.map((s: { id: string; name: string }) => ({ id: s.id, name: s.name })));
+      })
+      .catch(() => {/* picker opcional: si falla, queda sin opciones de proveedor */});
+  }, []);
+
+  async function save(field: string, body: Record<string, unknown>) {
+    setSaving(field);
+    try {
+      const d = await patchDocument(doc.id, body);
+      onPatched(d);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  const dias = doc.expiresAt
+    ? Math.ceil((new Date(doc.expiresAt).getTime() - Date.now()) / 86_400_000)
+    : null;
+
+  return (
+    <div className="p-5 space-y-4 max-w-2xl mx-auto">
+      {/* Vencimiento */}
+      <section className="bg-white rounded-2xl border border-slate-200 p-4">
+        <p className="text-sm font-bold text-slate-900 mb-1 inline-flex items-center gap-1.5">
+          <AlarmClock className="h-4 w-4 text-red-500" /> Fecha de vencimiento
+        </p>
+        <p className="text-xs text-slate-500 mb-3">
+          Para licencias, certificados o contratos. Te avisamos por WhatsApp 7 días antes.
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="date"
+            defaultValue={expiryValue}
+            onChange={(e) => save("expiry", { expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
+            className="px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary"
+          />
+          {doc.expiresAt && (
+            <button
+              onClick={() => save("expiry", { expiresAt: null })}
+              className="px-2.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-600"
+            >
+              Quitar
+            </button>
+          )}
+          {saving === "expiry" && <span className="text-xs text-slate-400">Guardando…</span>}
+          {dias !== null && (
+            <span className={cn(
+              "text-xs font-bold px-2 py-1 rounded-md",
+              dias < 0 ? "bg-red-100 text-red-700" : dias <= 7 ? "bg-red-50 text-red-600" : dias <= 30 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+            )}>
+              {dias < 0 ? "Ya venció" : dias === 0 ? "Vence hoy" : `Faltan ${dias} días`}
+            </span>
+          )}
+        </div>
+      </section>
+
+      {/* Vincular a entidad */}
+      <section className="bg-white rounded-2xl border border-slate-200 p-4">
+        <p className="text-sm font-bold text-slate-900 mb-1 inline-flex items-center gap-1.5">
+          <Link2 className="h-4 w-4 text-primary" /> Vincular a
+        </p>
+        <p className="text-xs text-slate-500 mb-3">
+          Conectá este documento con un cliente o proveedor para encontrarlo desde su ficha.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="block">
+            <span className="text-xs font-bold text-slate-600 inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Cliente</span>
+            <select
+              value={doc.customerId ?? ""}
+              onChange={(e) => save("customer", { customerId: e.target.value || null })}
+              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary bg-white"
+            >
+              <option value="">— Ninguno —</option>
+              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-slate-600 inline-flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Proveedor</span>
+            <select
+              value={doc.supplierId ?? ""}
+              onChange={(e) => save("supplier", { supplierId: e.target.value || null })}
+              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary bg-white"
+            >
+              <option value="">— Ninguno —</option>
+              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </label>
+        </div>
+        {saving && (saving === "customer" || saving === "supplier") && (
+          <p className="text-xs text-slate-400 mt-2">Guardando…</p>
+        )}
+      </section>
+
+      {/* Texto OCR detectado */}
+      {doc.ocrText && (
+        <section className="bg-white rounded-2xl border border-slate-200 p-4">
+          <p className="text-sm font-bold text-slate-900 mb-2 inline-flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4 text-[var(--accent)]" /> Texto detectado (OCR)
+          </p>
+          <p className="text-xs text-slate-600 whitespace-pre-wrap line-clamp-6 leading-relaxed">{doc.ocrText.slice(0, 800)}</p>
+        </section>
+      )}
+    </div>
+  );
+}
+
 // ─────────── Share tab ───────────
 
 function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocumentShare[]; reload: () => void }) {
@@ -368,6 +507,17 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
                       {copied === s.token ? "Copiado" : "Copiar"}
                     </button>
                     {active && (
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(`Te comparto este documento: ${url}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold inline-flex items-center gap-1"
+                        title="Enviar por WhatsApp"
+                      >
+                        <Share2 className="h-3 w-3" /> WhatsApp
+                      </a>
+                    )}
+                    {active && (
                       <button
                         onClick={async () => { await revokeShare(s.id); await reload(); }}
                         className="px-2 py-1.5 rounded-md bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold"
@@ -376,7 +526,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
                       </button>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-1.5 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-3 mt-1.5 text-[length:var(--ts-2xs)] text-slate-500">
                     <span>Expira: {new Date(s.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</span>
                     <span>Accesos: {s.accessCount}</span>
                     {s.hasPassword && <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> protegido</span>}
@@ -527,7 +677,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
               <Sparkles className="h-3.5 w-3.5" /> Firmado correctamente
             </p>
             <p className="text-emerald-700 mt-1 tabular-nums">Nueva versión: v{result.versionNumber}</p>
-            <p className="text-emerald-700 mt-0.5 font-mono break-all text-[10px]">SHA-256: {result.sha}</p>
+            <p className="text-emerald-700 mt-0.5 font-mono break-all text-[length:var(--ts-2xs)]">SHA-256: {result.sha}</p>
           </div>
         )}
       </div>
@@ -544,7 +694,7 @@ const ACTION_META: Record<string, { color: string; label: string }> = {
   rename: { color: "bg-amber-100 text-amber-700", label: "Renombrado" },
   delete: { color: "bg-red-100 text-red-700", label: "Eliminado" },
   restore: { color: "bg-emerald-100 text-emerald-700", label: "Restaurado" },
-  share: { color: "bg-violet-100 text-violet-700", label: "Compartido" },
+  share: { color: "bg-[var(--accent)]/15 text-[var(--accent)]", label: "Compartido" },
   share_revoke: { color: "bg-red-100 text-red-700", label: "Share revocado" },
   sign: { color: "bg-primary/15 text-primary", label: "Firmado" },
   version: { color: "bg-blue-100 text-blue-700", label: "Nueva versión" },
@@ -565,7 +715,7 @@ function AuditTab({ logs }: { logs: DbDocumentAuditLog[] }) {
               const meta = ACTION_META[l.action] ?? { color: "bg-slate-100 text-slate-600", label: l.action };
               return (
                 <li key={l.id} className="px-4 py-3 flex items-start gap-3">
-                  <span className={cn("text-[11px] font-bold px-2 py-0.5 rounded-md shrink-0", meta.color)}>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-md shrink-0", meta.color)}>
                     {meta.label}
                   </span>
                   <div className="flex-1 min-w-0">

@@ -52,6 +52,10 @@
   ],
   "crons": [
     {
+      "path": "/api/cron/documentos-vencimiento",
+      "schedule": "0 9 * * *"
+    },
+    {
       "path": "/api/cron/adelantos-recordatorios",
       "schedule": "0 8 * * *"
     },

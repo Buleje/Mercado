@@ -15,6 +15,10 @@ const PatchBody = z.object({
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   favorite: z.boolean().optional(),
   expiresAt: z.string().nullable().optional(),
+  // ADR-119 — vincular el documento a una entidad del negocio.
+  customerId: z.string().nullable().optional(),
+  orderId: z.string().nullable().optional(),
+  supplierId: z.string().nullable().optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -84,6 +88,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       tags: parsed.data.tags,
       favorite: parsed.data.favorite,
       expiresAt: expiresAtDate,
+      customerId: parsed.data.customerId,
+      orderId: parsed.data.orderId,
+      supplierId: parsed.data.supplierId,
     });
 
     if (!updated) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -93,6 +100,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (parsed.data.name && parsed.data.name !== before.name) changes.push("rename");
     if (parsed.data.folderId !== undefined && parsed.data.folderId !== before.folderId) changes.push("move");
     if (parsed.data.tags) changes.push("tag");
+    if (parsed.data.expiresAt !== undefined && parsed.data.expiresAt !== before.expiresAt) changes.push("tag");
+    if (
+      (parsed.data.customerId !== undefined && parsed.data.customerId !== before.customerId) ||
+      (parsed.data.orderId !== undefined && parsed.data.orderId !== before.orderId) ||
+      (parsed.data.supplierId !== undefined && parsed.data.supplierId !== before.supplierId)
+    ) changes.push("tag");
     for (const action of changes) {
       DocumentsDB.log(auth.tenantId, {
         documentId: id,

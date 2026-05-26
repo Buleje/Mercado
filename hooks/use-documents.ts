@@ -10,13 +10,17 @@ import type {
   DbDocumentTemplate,
   DocumentListFilters,
 } from "@/lib/types/documents";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const BASE = "/api/admin/documents";
 
 async function http<T>(url: string, init?: RequestInit): Promise<T> {
+  // CSRF: los endpoints de documentos validan x-csrf-token en mutaciones.
+  // csrfHeaders lee la cookie csrf-token y la mergea; en GET es inofensivo.
+  const isJson = init?.body && !(init.body instanceof FormData);
   const res = await fetch(url, {
     credentials: "include",
-    headers: init?.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {},
+    headers: csrfHeaders(isJson ? { "Content-Type": "application/json" } : {}),
     ...init,
   });
   if (!res.ok) {
@@ -33,7 +37,8 @@ export interface UseDocumentsResult {
   error: string | null;
   refresh: () => Promise<void>;
   upload: (files: File[], opts?: { folderId?: string | null; onProgress?: (done: number, total: number) => void }) => Promise<DbDocument[]>;
-  patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; expiresAt: string | null }>) => Promise<void>;
+  scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
+  patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; expiresAt: string | null; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
   remove: (id: string) => Promise<void>;
   bulk: (action: "delete" | "move" | "tag" | "favorite", ids: string[], extra?: Record<string, unknown>) => Promise<number>;
   createFolder: (input: { name: string; parentId?: string | null; color?: string; icon?: string }) => Promise<DbDocumentFolder>;
@@ -61,6 +66,12 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       if (f.q) qs.set("q", f.q);
       if (f.tags?.length) qs.set("tags", f.tags.join(","));
       if (f.favorite !== undefined) qs.set("favorite", f.favorite ? "1" : "0");
+      if (f.customerId) qs.set("customerId", f.customerId);
+      if (f.supplierId) qs.set("supplierId", f.supplierId);
+      if (f.orderId) qs.set("orderId", f.orderId);
+      // ADR-119 — vista "Por vencer" + búsqueda semántica
+      if (f.expiring) qs.set("expiring", String(f.expiring));
+      if (f.semantic && f.q) qs.set("semantic", "1");
 
       const [docsResp, foldersResp] = await Promise.all([
         http<{ documents: DbDocument[] }>(`${BASE}?${qs.toString()}`),
@@ -85,6 +96,11 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     filters.category,
     filters.q,
     filters.favorite,
+    filters.customerId,
+    filters.supplierId,
+    filters.orderId,
+    filters.expiring,
+    filters.semantic,
     tagsKey,
   ]);
 
@@ -109,6 +125,21 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       }
       await fetchAll();
       return out;
+    },
+    [fetchAll]
+  );
+
+  const scan = useCallback(
+    async (file: File, opts?: { folderId?: string | null }) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (opts?.folderId) fd.append("folderId", opts.folderId);
+      const r = await http<{
+        document: DbDocument;
+        scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null };
+      }>(`${BASE}/scan`, { method: "POST", body: fd });
+      await fetchAll();
+      return r;
     },
     [fetchAll]
   );
@@ -153,7 +184,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     await fetchAll();
   }, [fetchAll]);
 
-  return { documents, folders, loading, error, refresh: fetchAll, upload, patch, remove, bulk, createFolder, deleteFolder };
+  return { documents, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, bulk, createFolder, deleteFolder };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────
@@ -213,6 +244,24 @@ export async function generateFromTemplate(input: {
 
 export async function getSignedDownloadUrl(id: string): Promise<{ url: string; filename: string }> {
   return http(`${BASE}/${id}/download`);
+}
+
+/** ADR-119 — patch standalone (vencimiento, links de entidad) desde el modal. */
+export async function patchDocument(
+  id: string,
+  body: Partial<{
+    name: string;
+    expiresAt: string | null;
+    customerId: string | null;
+    supplierId: string | null;
+    orderId: string | null;
+  }>
+): Promise<DbDocument> {
+  const r = await http<{ document: DbDocument }>(`${BASE}/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+  return r.document;
 }
 
 export async function getDocumentDetail(id: string): Promise<{ document: DbDocument; signedUrl: string | null }> {

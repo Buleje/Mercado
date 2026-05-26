@@ -179,6 +179,15 @@ export class DocumentsDB {
         { ocrText: { contains: q, mode: "insensitive" } },
         { tags: { hasSome: [q.toLowerCase()] } },
       ];
+    } else if (filters.qAny?.length) {
+      // ADR-119 — búsqueda semántica: cualquier término matchea.
+      const terms = filters.qAny.filter((t) => t.trim().length > 1).slice(0, 12);
+      where.OR = terms.flatMap((t) => [
+        { name: { contains: t, mode: "insensitive" } },
+        { originalName: { contains: t, mode: "insensitive" } },
+        { ocrText: { contains: t, mode: "insensitive" } },
+        { tags: { hasSome: [t.toLowerCase()] } },
+      ]);
     }
 
     const docs = await prisma.document.findMany({
@@ -260,6 +269,9 @@ export class DocumentsDB {
       tags?: string[];
       favorite?: boolean;
       expiresAt?: Date | null;
+      customerId?: string | null;
+      orderId?: string | null;
+      supplierId?: string | null;
       ocrText?: string;
       ocrMetadata?: Record<string, unknown>;
       aiCategory?: string;
@@ -271,12 +283,77 @@ export class DocumentsDB {
     });
     if (!existing) return null;
 
+    // ADR-119 — al mover/cambiar la fecha de vencimiento, re-armamos el ciclo
+    // de recordatorios: limpiamos la marca para que el cron vuelva a avisar.
+    const data: Record<string, unknown> = { ...patch };
+    if (
+      Object.prototype.hasOwnProperty.call(patch, "expiresAt") &&
+      patch.expiresAt?.getTime() !== existing.expiresAt?.getTime()
+    ) {
+      data.expiryReminderSentAt = null;
+    }
+
     const doc = await prisma.document.update({
       where: { id },
-      data: patch as Record<string, unknown>,
+      data,
       include: { _count: { select: { versions: true, shares: true } } },
     });
     return mapDoc(doc);
+  }
+
+  /**
+   * ADR-119 — documentos cuyo vencimiento cae dentro de `withinDays` (incluye
+   * ya vencidos). Ordenados por urgencia. Para la vista "Por vencer" del UI.
+   */
+  static async listExpiring(
+    tenantId: string,
+    withinDays = 30
+  ): Promise<DbDocument[]> {
+    const limit = new Date();
+    limit.setDate(limit.getDate() + withinDays);
+    const docs = await prisma.document.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        expiresAt: { not: null, lte: limit },
+      },
+      orderBy: [{ expiresAt: "asc" }],
+      include: { _count: { select: { versions: true, shares: true } } },
+      take: 200,
+    });
+    return docs.map(mapDoc);
+  }
+
+  /**
+   * ADR-119 — usado por el cron. Trae documentos que vencen dentro de la
+   * ventana y aún no recibieron aviso (o cuyo aviso quedó obsoleto). Cross-
+   * tenant: el caller agrupa por tenantId para resolver el teléfono destino.
+   */
+  static async listPendingExpiryReminders(
+    withinDays: number
+  ): Promise<DbDocument[]> {
+    const limit = new Date();
+    limit.setDate(limit.getDate() + withinDays);
+    const docs = await prisma.document.findMany({
+      where: {
+        deletedAt: null,
+        expiresAt: { not: null, lte: limit, gte: new Date(Date.now() - 86400000) },
+        expiryReminderSentAt: null,
+      },
+      orderBy: [{ expiresAt: "asc" }],
+      take: 1000,
+    });
+    return docs.map(mapDoc);
+  }
+
+  /** ADR-119 — marca el aviso de vencimiento como enviado (anti-spam).
+   * Scopeado por tenant (CRIT-1): el cron agrupa por tenant antes de sellar. */
+  static async markExpiryReminderSent(tenantId: string, ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    await prisma.document.updateMany({
+      where: { tenantId, id: { in: ids } },
+      data: { expiryReminderSentAt: new Date() },
+    });
   }
 
   static async softDelete(tenantId: string, id: string): Promise<boolean> {

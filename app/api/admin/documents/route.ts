@@ -23,6 +23,10 @@ const ListQuery = z.object({
   customerId: z.string().optional(),
   orderId: z.string().optional(),
   supplierId: z.string().optional(),
+  // ADR-119 — "por vencer": documentos que vencen dentro de N días (def. 30).
+  expiring: z.coerce.number().int().min(1).max(365).optional(),
+  // ADR-119 — búsqueda semántica IA (expande la query antes de buscar).
+  semantic: z.enum(["1", "true"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -40,10 +44,26 @@ export async function GET(req: NextRequest) {
   }
   const f = parsed.data;
 
+  // ADR-119 — vista "Por vencer": atajo dedicado, ignora el resto de filtros.
+  if (f.expiring) {
+    const expiring = await DocumentsDB.listExpiring(auth.tenantId, f.expiring);
+    return NextResponse.json({ documents: expiring });
+  }
+
+  // ADR-119 — búsqueda semántica: expandimos la query a términos y los OR-eamos.
+  let qAny: string[] | undefined;
+  let semanticTerms: string[] | undefined;
+  if (f.semantic && f.q?.trim()) {
+    const { expandSearchTerms } = await import("@/lib/documents/ai-search");
+    qAny = await expandSearchTerms(f.q);
+    semanticTerms = qAny;
+  }
+
   const docs = await DocumentsDB.list(auth.tenantId, {
     folderId: f.folderId === "null" ? null : f.folderId,
     category: f.category,
-    q: f.q,
+    q: qAny ? undefined : f.q,
+    qAny,
     tags: f.tags?.split(",").map((s) => s.trim()).filter(Boolean),
     favorite: f.favorite ? f.favorite === "1" || f.favorite === "true" : undefined,
     customerId: f.customerId,
@@ -51,7 +71,7 @@ export async function GET(req: NextRequest) {
     supplierId: f.supplierId,
   });
 
-  return NextResponse.json({ documents: docs });
+  return NextResponse.json({ documents: docs, ...(semanticTerms ? { semanticTerms } : {}) });
 }
 
 export async function POST(req: NextRequest) {
