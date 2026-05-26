@@ -1033,21 +1033,21 @@ export default async function Home() {
       <RappiStyleHero />
 
       {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas */}
-      <Suspense fallback={<SectionSkeleton />}>
+      <Suspense fallback={<SectionSkeleton minH="min-h-[640px]" />}>
         <Reveal>
           <CategoriesGrid />
         </Reveal>
       </Suspense>
 
       {/* 3. Tiendas destacadas — cards con rating + categoría + zona */}
-      <Suspense fallback={<SectionSkeleton />}>
+      <Suspense fallback={<SectionSkeleton minH="min-h-[760px]" />}>
         <Reveal>
           <TopStoresSection />
         </Reveal>
       </Suspense>
 
       {/* 4. Cómo funciona — 4 pasos + stats + CTA */}
-      <Suspense fallback={<SectionSkeleton />}>
+      <Suspense fallback={<SectionSkeleton minH="min-h-[620px]" />}>
         <Reveal>
           <ComoFuncionaSection />
         </Reveal>
@@ -1061,6 +1061,12 @@ export default async function Home() {
   );
 }
 
-function SectionSkeleton() {
-  return <PaicheLoading variant="section" />;
+// Reserva la altura aproximada de la sección que carga, para que al swapear
+// el contenido real NO salte la página (fix CLS 0.315 → objetivo <0.1).
+function SectionSkeleton({ minH = "min-h-[600px]" }: { minH?: string }) {
+  return (
+    <div className={`${minH} flex items-center justify-center`}>
+      <PaicheLoading variant="section" />
+    </div>
+  );
 }
