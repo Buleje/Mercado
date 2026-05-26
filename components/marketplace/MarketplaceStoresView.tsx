@@ -315,7 +315,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
                 className="object-cover w-full h-full"
               />
             ) : (
-              <span className="text-sm sm:text-base font-black text-white bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 h-full w-full flex items-center justify-center">
+              <span className="text-sm sm:text-base font-black text-[var(--text-secondary)] bg-[var(--surface-sunken)] h-full w-full flex items-center justify-center">
                 {store.name.trim().charAt(0).toUpperCase()}
               </span>
             )}
@@ -334,16 +334,15 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
             // Brandon 2026-05-20 perf:
             // · quality=65 → cards de listing son thumbnails 50vw mobile, no
             //   pierden nitidez visible y ahorra ~25% bytes vs default 75.
-            // · sizes ajustado: en mobile 1 columna del grid (no 50vw), en
-            //   tablet 2 cols, desktop 3 cols (~360px máx) — Next escoge la
-            //   variante de imagen más chica que sirva.
-            // · Los 2 primeros cards (index 0,1) = LCP candidates → priority
-            //   + fetchPriority high. Resto lazy con fetchPriority low para
-            //   no competir con el LCP por bandwidth.
-            sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 360px"
+            // · sizes ajustado: mobile 1 col (100vw), tablet 2 cols (50vw),
+            //   desktop lg con sidebar 280px → disponible ~(100vw-280px)/2,
+            //   desktop xl con sidebar → (100vw-280px)/3 ≈ 320px máx.
+            // · Los 3 primeros cards = LCP candidates → priority + fetchPriority high.
+            //   Resto lazy con fetchPriority low para no competir con LCP.
+            sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, (max-width:1280px) calc((100vw - 280px - 64px) / 2), 360px"
             quality={70}
-            priority={index < 2}
-            fetchPriority={index < 2 ? "high" : "low"}
+            priority={index < 3}
+            fetchPriority={index < 3 ? "high" : "low"}
           />
         )}
         renderImageFallback={() => (
@@ -551,12 +550,12 @@ export default function MarketplaceStoresView({
         </div>
       )}
 
-      {/* Loading state — skeleton matched al grid final (1 col mobile, 2/3/4 desktop) */}
+      {/* Loading state — skeleton matched al grid final (1 col mobile, 2/3 desktop con sidebar) */}
       {loading && (
         <div
           aria-busy="true"
           aria-label="Cargando tiendas..."
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-4 mt-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-6"
         >
           {Array.from({ length: 6 }).map((_, i) => (
             <div
@@ -640,9 +639,9 @@ export default function MarketplaceStoresView({
           // - nombre tienda completo sin truncate
           // - rating + zona + tiempo de entrega legibles
           // - mejor tap target para conversión
-          // Desktop sin cambios significativos (sm:2, md:3, xl:4 sigue
-          // teniendo density útil cuando hay más viewport).
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-4 mt-6"
+          // Desktop v2 (2026-05-26): sidebar ocupa 280px → el grid principal
+          // usa 2 cols en lg (~720px disponibles) y 3 cols en xl (~960px+).
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-6"
         >
           {filteredStores.map((store, i) => (
             <div key={store.id} role="listitem">

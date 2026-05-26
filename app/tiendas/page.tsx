@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import TiendasClient from "./TiendasClient";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -222,13 +223,16 @@ export default async function TiendasPage() {
 
   return (
     <>
+      {/* SEC 2026-05-26: safeJsonLdStringify escapa < > & U+2028/2029 — evita
+          que un nombre/descripción de tienda (dato de vendor) con "</script>"
+          rompa el tag e inyecte XSS. Antes usaba JSON.stringify crudo. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(itemListSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqSchema) }}
       />
       <TiendasClient initialStores={initialStores} />
     </>
