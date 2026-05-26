@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   BadgeCheck,
   Truck,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 
@@ -46,6 +47,7 @@ const BADGE_MAP: Record<string, { label: string; Icon: LucideIcon; intent: Badge
   "low-stock": { label: "Solo {count}", Icon: AlertTriangle, intent: "urgency" },
   verified: { label: "Verificado", Icon: BadgeCheck, intent: "verified" },
   "fast-shipping": { label: "Envío rápido", Icon: Truck, intent: "shipping" },
+  featured: { label: "Destacado", Icon: Star, intent: "trending" },
 };
 
 export default function ProductBadges({ badges, details }: ProductBadgesProps) {

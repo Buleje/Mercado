@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { AdminStoreAnalyticsDB } from "@/lib/db/admin-store-analytics.db";
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/admin/store-analytics
@@ -45,6 +46,24 @@ export async function GET(req: NextRequest) {
     const { totals, topByViews, topByRevenue, dailyTrend } =
       await AdminStoreAnalyticsDB.getAnalytics(tenantId, since);
 
+    // Beneficio "Analytics avanzado" (superadmin > Beneficios): desbloquea
+    // funnel + tendencia diaria + tabla de ingresos. El flag vive en la columna
+    // jsonb benefits de Store (fuera de schema.prisma — zona peligrosa) →
+    // raw SQL parametrizado. Fail-safe: si falla, queda bloqueado (false).
+    let advancedAnalytics = false;
+    try {
+      const rows = await prisma.$queryRawUnsafe<Array<{ one: number }>>(
+        `SELECT 1 AS one FROM "Store"
+         WHERE "tenantId" = $1
+           AND COALESCE((benefits->>'advancedAnalytics')::boolean, false) = true
+         LIMIT 1`,
+        tenantId,
+      );
+      advancedAnalytics = rows.length > 0;
+    } catch {
+      /* sin beneficio detectable → bloqueado */
+    }
+
     const conversionRate =
       totals.views > 0 ? totals.conversions / totals.views : 0;
     const cartAbandonRate =
@@ -66,6 +85,7 @@ export async function GET(req: NextRequest) {
       topByViews,
       topByRevenue,
       dailyTrend,
+      advancedAnalytics,
     });
   } catch (err) {
     logger.error("[store-analytics] error", { error: String(err), tenantId });

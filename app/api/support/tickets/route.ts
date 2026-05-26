@@ -73,11 +73,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Beneficio "Soporte VIP" (superadmin > Beneficios): si la tienda del
+    // tenant lo tiene activo, todo ticket entra como prioridad ALTA — así el
+    // superadmin los ve arriba. El flag vive en la columna jsonb benefits
+    // (fuera de schema.prisma — zona peligrosa) → raw SQL parametrizado.
+    // Fail-safe: si la query falla, se respeta la prioridad enviada.
+    let priority = parsed.data.priority;
+    try {
+      const vip = await prisma.$queryRawUnsafe<Array<{ one: number }>>(
+        `SELECT 1 AS one FROM "Store"
+         WHERE "tenantId" = $1
+           AND COALESCE((benefits->>'prioritySupport')::boolean, false) = true
+         LIMIT 1`,
+        auth.tenantId,
+      );
+      if (vip.length > 0) priority = "high";
+    } catch {
+      /* sin beneficio detectable → prioridad enviada por el usuario */
+    }
+
     const ticket = await prisma.supportTicket.create({
       data: {
         subject: parsed.data.subject,
         message: parsed.data.message,
-        priority: parsed.data.priority,
+        priority,
         tenantId: auth.tenantId,
         createdBy: auth.username,
         status: "open",

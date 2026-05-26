@@ -10,6 +10,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { SearchSuggestionsDB } from "@/lib/db/search-suggestions.db";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
+import { applyFeaturedStoreBoost } from "@/lib/marketplace/featured-products-ranker";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 
@@ -210,8 +211,11 @@ export async function GET(req: NextRequest) {
         }
       }
     } else {
-      // Con resultados → aplicar sponsored ranking
-      finalData = await applyBoostsToProducts(tenantId, data);
+      // Con resultados → primero boost de tiendas con beneficio "Productos
+      // destacados" (badge + sube en orden), luego sponsored ranking pagado
+      // (flota a lo más alto). Así: pagados > destacados por beneficio > orgánicos.
+      const boosted = await applyFeaturedStoreBoost(data);
+      finalData = await applyBoostsToProducts(tenantId, boosted);
     }
 
     return NextResponse.json(

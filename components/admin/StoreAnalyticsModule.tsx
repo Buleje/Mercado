@@ -23,6 +23,8 @@ import {
   AlertTriangle,
   Loader2,
   RefreshCw,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +44,8 @@ interface AnalyticsData {
   topByViews: TopRow[];
   topByRevenue: TopRow[];
   dailyTrend: Array<{ date: string; views: number; addsToCart: number; conversions: number; revenue: number }>;
+  /** Beneficio superadmin: desbloquea funnel + tendencia diaria + tabla ingresos. */
+  advancedAnalytics?: boolean;
 }
 
 interface TopRow {
@@ -239,6 +243,7 @@ export default function StoreAnalyticsModule() {
   if (!data) return null;
 
   const { kpis, topByViews, topByRevenue, dailyTrend } = data;
+  const advanced = data.advancedAnalytics ?? false;
   const isEmpty = kpis.views === 0 && kpis.conversions === 0 && kpis.revenue === 0;
 
   // Funnel max para escalar las barras visualmente
@@ -300,39 +305,46 @@ export default function StoreAnalyticsModule() {
         <KpiCard label="Ingresos" value={fmtPen.format(kpis.revenue)} hint={`${pct(kpis.cartAbandonRate)} abandono carrito`} Icon={TrendingUp} accent />
       </div>
 
-      {/* Sparkline + Funnel */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-          <CardTitle className="text-sm mb-3">Ingresos diarios</CardTitle>
-          <div className="text-[var(--accent)] h-12 mb-2">
-            <Sparkline values={revenueSeries} height={48} />
+      {/* Sparkline + Funnel — AVANZADO (beneficio superadmin) */}
+      {advanced ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
+            <CardTitle className="text-sm mb-3">Ingresos diarios</CardTitle>
+            <div className="text-[var(--accent)] h-12 mb-2">
+              <Sparkline values={revenueSeries} height={48} />
+            </div>
+            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
+              {dailyTrend[0]?.date ?? "—"} → {dailyTrend[dailyTrend.length - 1]?.date ?? "—"}
+            </p>
           </div>
-          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
-            {dailyTrend[0]?.date ?? "—"} → {dailyTrend[dailyTrend.length - 1]?.date ?? "—"}
-          </p>
-        </div>
 
-        <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-          <CardTitle className="text-sm mb-4">Funnel de conversión</CardTitle>
-          <div className="space-y-3">
-            <FunnelBar label="Vistas" value={kpis.views} max={funnelMax} pctTotal={1} color="bg-[var(--text-secondary)]" />
-            <FunnelBar
-              label="Agregaron al carrito"
-              value={kpis.addsToCart}
-              max={funnelMax}
-              pctTotal={kpis.views > 0 ? kpis.addsToCart / kpis.views : 0}
-              color="bg-[var(--data-warning-500)]"
-            />
-            <FunnelBar
-              label="Compraron"
-              value={kpis.conversions}
-              max={funnelMax}
-              pctTotal={kpis.views > 0 ? kpis.conversions / kpis.views : 0}
-              color="bg-[var(--data-success-500)]"
-            />
+          <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
+            <CardTitle className="text-sm mb-4">Funnel de conversión</CardTitle>
+            <div className="space-y-3">
+              <FunnelBar label="Vistas" value={kpis.views} max={funnelMax} pctTotal={1} color="bg-[var(--text-secondary)]" />
+              <FunnelBar
+                label="Agregaron al carrito"
+                value={kpis.addsToCart}
+                max={funnelMax}
+                pctTotal={kpis.views > 0 ? kpis.addsToCart / kpis.views : 0}
+                color="bg-[var(--data-warning-500)]"
+              />
+              <FunnelBar
+                label="Compraron"
+                value={kpis.conversions}
+                max={funnelMax}
+                pctTotal={kpis.views > 0 ? kpis.conversions / kpis.views : 0}
+                color="bg-[var(--data-success-500)]"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <LockedAdvanced
+          title="Funnel de conversión y tendencia diaria"
+          desc="Mirá dónde se caen tus ventas (vistas → carrito → compra) y la curva de ingresos día a día."
+        />
+      )}
 
       {/* Top tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -347,16 +359,46 @@ export default function StoreAnalyticsModule() {
           )}
         </div>
 
-        <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-          <CardTitle className="text-sm mb-3">Más ingresos</CardTitle>
-          {topByRevenue.length === 0 ? (
-            <p className="text-sm text-[var(--text-tertiary)]">Sin datos.</p>
-          ) : (
-            <div className="space-y-1">
-              {topByRevenue.map((r) => <TopProductRow key={`r-${r.productId}`} row={r} metric="revenue" />)}
-            </div>
-          )}
-        </div>
+        {advanced ? (
+          <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
+            <CardTitle className="text-sm mb-3">Más ingresos</CardTitle>
+            {topByRevenue.length === 0 ? (
+              <p className="text-sm text-[var(--text-tertiary)]">Sin datos.</p>
+            ) : (
+              <div className="space-y-1">
+                {topByRevenue.map((r) => <TopProductRow key={`r-${r.productId}`} row={r} metric="revenue" />)}
+              </div>
+            )}
+          </div>
+        ) : (
+          <LockedAdvanced
+            title="Productos que más facturan"
+            desc="Ranking de tus productos por ingresos, no solo por vistas."
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Placeholder de sección bloqueada — beneficio "Analytics avanzado". */
+function LockedAdvanced({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+        <Lock className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+      </div>
+      <div className="flex-1">
+        <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+          {title}
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white">
+            <Sparkles className="h-2.5 w-2.5" strokeWidth={2.4} aria-hidden="true" /> Avanzado
+          </span>
+        </p>
+        <p className="text-sm text-[var(--text-secondary)] mt-1">{desc}</p>
+        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-1.5">
+          Pedile a Buleje activar <b>Analytics avanzado</b> para tu tienda.
+        </p>
       </div>
     </div>
   );
