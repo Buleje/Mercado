@@ -338,9 +338,23 @@ export const CommissionsDB = {
     // P0 schema fix 2026-05-24: Store.commission ahora es Decimal — normalizamos.
     const overrideRate = store?.commission ? store.commission.toNumber() : null;
 
+    // Beneficio "comisión reducida" (superadmin) — jsonb fuera del schema
+    // Prisma → raw SQL. Si está activo, la tienda NO paga comisión (rate 0).
+    // Fail-safe: si la query falla, cae al rate normal (nunca cobra de más).
+    let reducedCommission = false;
+    try {
+      const brows = await prisma.$queryRawUnsafe<Array<{ rc: boolean | null }>>(
+        `SELECT COALESCE((benefits->>'reducedCommission')::boolean, false) AS rc FROM "Store" WHERE id = $1`,
+        params.storeId,
+      );
+      reducedCommission = Boolean(brows[0]?.rc);
+    } catch {
+      /* sin columna benefits → beneficio no aplica */
+    }
+
     // 2. Tier dinámico (con posible override de Store.commission)
     const tierInfo = await this.computeVendorTier(tenantId, params.storeId, overrideRate);
-    const rate = tierInfo.rate;
+    const rate = reducedCommission ? 0 : tierInfo.rate;
 
     // 3. Comisión marketplace
     const marketplaceFee = round2((params.orderTotal * rate) / 100);
