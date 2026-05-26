@@ -353,8 +353,14 @@ export default function RootLayout({
             },
           }}
         />
-        <SpeedInsights />
-        <Analytics />
+        {/* Solo en producción: en dev local pegan a /_vercel/insights/* que no
+            existe → 403 rojo en consola. En Vercel funcionan normal. */}
+        {process.env.NODE_ENV === "production" && (
+          <>
+            <SpeedInsights />
+            <Analytics />
+          </>
+        )}
         </ErrorBoundary>
         </CurrencyProvider>
         </LocaleProvider>
