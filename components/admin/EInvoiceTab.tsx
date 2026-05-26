@@ -8,6 +8,10 @@ import {
   XCircle, Clock, Send, AlertTriangle, Receipt, Loader2,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+// Estado del Modo SUNAT Oficial (read-only para el admin). Toggle = superadmin.
+const SunatModoOficialCard = dynamic(() => import("@/components/admin/sunat/SunatModoOficialCard"), { ssr: false });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -236,6 +240,9 @@ export default function EInvoiceTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
+      {/* Estado del Modo SUNAT Oficial — el admin ve si está activo + requisitos */}
+      <SunatModoOficialCard />
+
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-[var(--accent-soft)] text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">

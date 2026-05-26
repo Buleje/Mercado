@@ -5,19 +5,28 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
-import { emitirBoleta } from "@/lib/integrations/sunat-nubefact";
-import { calculateIGV } from "@/lib/sunat";
+import { emitirBoleta, emitirFactura } from "@/lib/integrations/sunat";
+import { isSunatOficial } from "@/lib/sunat/modo-oficial";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { assertCsrf } from "@/lib/auth/csrf";
 
 // ── POST /api/admin/sunat/generate-invoice — Emitir boleta/factura ─────────
+//
+// F0 (2026-05-26): unificado al facade robusto `lib/integrations/sunat.ts`.
+// Antes usaba el cliente legacy `lib/integrations/sunat-nubefact.ts` (token
+// global, URL formato viejo → 401/404) y manejaba series/correlativo/persistencia
+// a mano (race condition). Ahora delega TODO al facade: idempotencia por orderId,
+// correlativo atómico, persistencia, retry-on-fail. Respuesta `{ ok, invoice }`
+// alineada con el contrato que espera EInvoiceTab.
 
 const InvoiceSchema = z.object({
   orderId: z.string().min(1),
   tipo: z.enum(["boleta", "factura"]),
   clienteNombre: z.string().min(2).max(200),
-  clienteDocumento: z.string().min(8).max(11),
-  clienteTipoDocumento: z.enum(["1", "6"]).optional(), // 1=DNI, 6=RUC
+  clienteDocumento: z.string().min(8).max(11).optional(),
+  // La UI manda "RUC"/"DNI" o "1"/"6" — lo derivamos de `tipo` + longitud, así
+  // que lo aceptamos laxo para no rechazar la request.
+  clienteTipoDocumento: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -49,133 +58,60 @@ async function generateInvoice(
     const parsed = InvoiceSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues },
+        { ok: false, error: "Datos inválidos", issues: parsed.error.issues },
         { status: 400 },
       );
     }
 
-    // 1. Get SUNAT config for this tenant
-    const config = await prisma.tenantSunatConfig.findUnique({
-      where: { tenantId: auth.tenantId },
-    });
-    if (!config) {
+    // F1 gate: solo emite si el tenant tiene "Modo SUNAT Oficial" activado.
+    if (!(await isSunatOficial(auth.tenantId))) {
       return NextResponse.json(
-        { error: "Configuración SUNAT no encontrada. Configura tus datos de facturación primero." },
-        { status: 422 },
+        { ok: false, error: "El Modo SUNAT Oficial está desactivado para esta tienda. Actívalo para emitir comprobantes electrónicos." },
+        { status: 403 },
       );
     }
 
-    // 2. Get order with items
+    // Orden con items (necesarios para construir el comprobante).
     const order = await prisma.order.findFirst({
       where: { id: parsed.data.orderId, tenantId: auth.tenantId, deletedAt: null },
       include: { items: true },
     });
     if (!order) {
-      return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+      return NextResponse.json({ ok: false, error: "Orden no encontrada" }, { status: 404 });
     }
 
-    // 3. Check if invoice already exists for this order
-    const existing = await prisma.sunatInvoice.findFirst({
-      where: {
-        tenantId: auth.tenantId,
-        orderId: order.id,
-        sunatStatus: { in: ["pending", "accepted"] },
-      },
-    });
-    if (existing) {
-      return NextResponse.json(
-        { error: `Ya existe un comprobante ${existing.series}-${existing.number} para esta orden` },
-        { status: 409 },
-      );
-    }
+    // Items en el formato del facade — precio CON IGV (precio al público).
+    const items = order.items.map((item) => ({
+      codigo: String(item.productId),
+      descripcion: item.name,
+      cantidad: item.quantity,
+      precioConIgv: Number(item.price),
+      unidad: "NIU",
+    }));
 
-    // 4. Determine series and get next number
-    const isBoleta = parsed.data.tipo === "boleta";
-    const series = isBoleta ? config.boletaSeries : config.facturaSeries;
-    const nextNum = isBoleta ? config.lastBoletaNum + 1 : config.lastFacturaNum + 1;
+    const doc = parsed.data.clienteDocumento ?? "";
+    const esFactura = parsed.data.tipo === "factura";
 
-    // 5. Build items for NubeFact
-    const nubefactItems = order.items.map((item) => {
-      const totalItem = Number(item.price) * item.quantity;
-      const igvCalc = calculateIGV(totalItem);
-      const valorUnitario = +(Number(item.price) / 1.18).toFixed(6);
-      return {
-        unidad_de_medida: "NIU",
-        codigo: String(item.productId),
-        descripcion: item.name,
-        cantidad: item.quantity,
-        valor_unitario: valorUnitario,
-        precio_unitario: Number(item.price),
-        subtotal: igvCalc.gravado,
-        tipo_de_igv: 1,
-        igv: igvCalc.igv,
-        total: igvCalc.total,
-        anticipo_regularizacion: false,
-      };
-    });
-
-    const totalCalc = calculateIGV(Number(order.total));
-
-    // Detect document type from length
-    const tipoDoc = parsed.data.clienteTipoDocumento
-      ?? (parsed.data.clienteDocumento.length === 11 ? "6" : "1");
-
-    // 6. Call NubeFact API
-    const result = await emitirBoleta({
-      tenantId: auth.tenantId,
-      serie: series,
-      numero: nextNum,
-      cliente_tipo_documento: tipoDoc as "1" | "6",
-      cliente_numero_documento: parsed.data.clienteDocumento,
-      cliente_denominacion: parsed.data.clienteNombre,
-      total_gravada: totalCalc.gravado,
-      total_igv: totalCalc.igv,
-      total: totalCalc.total,
-      items: nubefactItems,
-    });
-
-    // 7. Save invoice record to DB
-    const invoice = await prisma.sunatInvoice.create({
-      data: {
-        tenantId: auth.tenantId,
-        orderId: order.id,
-        type: parsed.data.tipo,
-        series,
-        number: nextNum,
-        customerRuc: tipoDoc === "6" ? parsed.data.clienteDocumento : null,
-        customerName: parsed.data.clienteNombre,
-        subtotal: totalCalc.gravado,
-        igv: totalCalc.igv,
-        total: totalCalc.total,
-        sunatStatus: result.success ? "accepted" : "rejected",
-        pdfUrl: result.success ? result.pdf_url ?? null : null,
-        nubefactId: result.success && "hash" in result ? result.hash ?? null : null,
-        errorMessage: result.success ? null : String(result.error),
-        sentAt: new Date(),
-        acceptedAt: result.success ? new Date() : null,
-      },
-    });
-
-    // 8. Update correlativo counter
-    if (result.success) {
-      await prisma.tenantSunatConfig.update({
-        where: { tenantId: auth.tenantId },
-        data: isBoleta
-          ? { lastBoletaNum: nextNum }
-          : { lastFacturaNum: nextNum },
-      });
-    }
+    // Delegar al facade robusto (correlativo atómico + idempotencia + retry).
+    const result = esFactura
+      ? await emitirFactura(auth.tenantId, {
+          orderId: order.id,
+          clienteRuc: doc,
+          clienteRazonSocial: parsed.data.clienteNombre,
+          items,
+        })
+      : await emitirBoleta(auth.tenantId, {
+          orderId: order.id,
+          clienteNombre: parsed.data.clienteNombre,
+          clienteDni: doc.length === 8 ? doc : undefined,
+          items,
+        });
 
     logActivity(
       result.success ? "sunat_invoice_emitted" : "sunat_invoice_failed",
       "SunatInvoice",
-      JSON.stringify({
-        orderId: order.id,
-        tipo: parsed.data.tipo,
-        numero: `${series}-${nextNum}`,
-        success: result.success,
-      }),
-      invoice.id,
+      JSON.stringify({ orderId: order.id, tipo: parsed.data.tipo, success: result.success, status: result.status }),
+      result.invoiceId ?? order.id,
       auth.name ?? "admin",
       undefined,
       auth.tenantId,
@@ -184,29 +120,43 @@ async function generateInvoice(
     });
 
     if (!result.success) {
+      // status "retrying" → encolado (202); resto → error gateway (502).
       return NextResponse.json(
-        {
-          error: "Error al emitir comprobante en NubeFact",
-          detail: result.error,
-          invoiceId: invoice.id,
-        },
-        { status: 502 },
+        { ok: false, error: result.error ?? "Error al emitir comprobante", invoiceId: result.invoiceId, status: result.status },
+        { status: result.status === "retrying" ? 202 : 502 },
       );
     }
 
+    // Releer el registro persistido para devolver serie/número/totales a la UI.
+    const saved = result.invoiceId
+      ? await prisma.sunatInvoice.findFirst({
+          where: { id: result.invoiceId, tenantId: auth.tenantId },
+          select: { id: true, series: true, number: true, total: true, subtotal: true, igv: true },
+        })
+      : null;
+
     return NextResponse.json({
-      data: {
-        invoiceId: invoice.id,
-        tipo: parsed.data.tipo,
-        numero: `${series}-${nextNum}`,
-        pdfUrl: result.pdf_url,
-        total: totalCalc.total,
-        sunatAccepted: result.sunat_accepted,
-      },
-      message: `Comprobante ${series}-${nextNum} emitido exitosamente`,
+      ok: true,
+      pdfUrl: result.pdf_url ?? null,
+      xmlUrl: result.xml_url ?? null,
+      hash: result.hash ?? null,
+      sunatAccepted: result.sunat_accepted,
+      invoice: saved
+        ? {
+            id: saved.id,
+            serie: saved.series,
+            número: String(saved.number),
+            total: Number(saved.total),
+            subtotal: Number(saved.subtotal),
+            igv: Number(saved.igv),
+          }
+        : undefined,
+      message: saved
+        ? `Comprobante ${saved.series}-${saved.number} emitido exitosamente`
+        : "Comprobante emitido",
     });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
-    return NextResponse.json(payload, { status });
+    return NextResponse.json({ ok: false, ...payload }, { status });
   }
 }
