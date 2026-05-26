@@ -263,11 +263,59 @@ async function BulejeJsonLd() {
     ],
   };
 
+  // SEO local (2026-05-26): LocalBusiness con geo + horario + contacto.
+  // Es el schema que activa el "pack local" de Google y las búsquedas
+  // "cerca de mí" / Google Maps en Pucallpa. El Organization de arriba es
+  // genérico; este aporta coordenadas, horario y teléfono reales.
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": "https://www.buleje.pe/#localbusiness",
+    name: "Buleje",
+    description:
+      "Marketplace de bodegas, restaurantes y farmacias de Pucallpa con delivery rápido. Pago con Yape, Plin o efectivo.",
+    url: "https://www.buleje.pe",
+    image: "https://www.buleje.pe/brand/buleje-logo.png",
+    logo: "https://www.buleje.pe/brand/buleje-logo.png",
+    telephone: "+51929340532",
+    priceRange: "S/",
+    currenciesAccepted: "PEN",
+    paymentAccepted: "Yape, Plin, Efectivo, Tarjeta",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Pucallpa",
+      addressRegion: "Ucayali",
+      addressCountry: "PE",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: -8.3791,
+      longitude: -74.5539,
+    },
+    areaServed: [
+      { "@type": "City", name: "Pucallpa" },
+      { "@type": "AdministrativeArea", name: "Ucayali" },
+    ],
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+        opens: "07:00",
+        closes: "22:00",
+      },
+    ],
+    sameAs: ["https://instagram.com/buleje"],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
       />
       <script
         type="application/ld+json"
