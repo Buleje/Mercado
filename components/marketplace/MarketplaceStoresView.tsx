@@ -19,6 +19,7 @@ import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGe
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { StoreCardCanonical } from "@buleje/design-system";
 import PremiumStoreCard from "./PremiumStoreCard";
+import StorePromoBanner from "./StorePromoBanner";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
 import {
@@ -679,6 +680,25 @@ export default function MarketplaceStoresView({
         >
           {`Mostrando ${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""}`}
         </p>
+      )}
+
+      {/* Banners propios (beneficio superadmin "Banner propio") — arriba del
+          listado, full-width. Máx 2 para no saturar. */}
+      {!loading && !error && filteredStores.some((s) => s.ownBanner) && (
+        <div className="mt-6 space-y-3">
+          {filteredStores.filter((s) => s.ownBanner).slice(0, 2).map((s) => (
+            <StorePromoBanner
+              key={`banner-${s.id}`}
+              slug={s.slug}
+              name={s.name}
+              banner={s.banner}
+              cover={s.cover}
+              logo={s.logo}
+              category={s.category}
+              zone={s.zone}
+            />
+          ))}
+        </div>
       )}
 
       {/* Store grid */}

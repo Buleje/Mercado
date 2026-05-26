@@ -49,6 +49,8 @@ export interface InitialStore {
   /** Beneficios activos (superadmin). Se usan para badge/orden/etc. en /tiendas. */
   verified?: boolean;
   searchBoost?: boolean;
+  /** Beneficio "Banner propio" → muestra un banner promocional en /tiendas. */
+  ownBanner?: boolean;
 }
 
 export type StoreDisplayTier = "standard" | "featured" | "premium";
@@ -181,6 +183,7 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         displayTier: tierMap.get(s.id) ?? "standard",
         verified: Boolean(benefitsMap.get(s.id)?.verified),
         searchBoost: Boolean(benefitsMap.get(s.id)?.searchBoost),
+        ownBanner: Boolean(benefitsMap.get(s.id)?.ownBanner),
       };
     });
 

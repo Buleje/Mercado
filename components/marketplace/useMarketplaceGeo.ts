@@ -56,6 +56,8 @@ export interface MarketplaceStore {
   /** Beneficios (superadmin): sello verificado + boost de orden en /tiendas. */
   verified?: boolean;
   searchBoost?: boolean;
+  /** Beneficio "Banner propio" → promo banner de la tienda en /tiendas. */
+  ownBanner?: boolean;
   // ── Backfill marketplace (TS-Sprint5) — opcionales para no romper consumers ──
   paymentMethods?: string[];
   minOrderAmount?: number;

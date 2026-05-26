@@ -304,6 +304,7 @@ export async function GET(req: NextRequest) {
             const b = row?.benefits ?? {};
             (s as Record<string, unknown>).verified = Boolean(b.verified);
             (s as Record<string, unknown>).searchBoost = Boolean(b.searchBoost);
+            (s as Record<string, unknown>).ownBanner = Boolean(b.ownBanner);
           }
         } catch {
           // sin cover/hours/tier → marketplace sigue funcionando
@@ -638,6 +639,7 @@ export async function GET(req: NextRequest) {
         displayTier: (s as { displayTier?: string }).displayTier ?? "standard",
         verified: Boolean((s as { verified?: boolean }).verified),
         searchBoost: Boolean((s as { searchBoost?: boolean }).searchBoost),
+        ownBanner: Boolean((s as { ownBanner?: boolean }).ownBanner),
         category: s.category,
         zone: finalZone,
         rating: s.rating,
