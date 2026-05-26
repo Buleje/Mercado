@@ -39,7 +39,23 @@ export interface InitialStore {
   isOpenNow?: boolean;
   /** ISO timestamp de la próxima apertura — null si todos los días closed. */
   nextOpeningAt?: string | null;
+  /**
+   * Nivel de visibilidad en /tiendas (controlado por superadmin):
+   *   - "standard": card normal
+   *   - "featured": card más grande + badge + prioridad
+   *   - "premium":  card de fila completa con preview de productos + tope
+   */
+  displayTier?: StoreDisplayTier;
 }
+
+export type StoreDisplayTier = "standard" | "featured" | "premium";
+
+/** Orden de prioridad: premium primero, luego featured, luego standard. */
+export const TIER_RANK: Record<StoreDisplayTier, number> = {
+  premium: 0,
+  featured: 1,
+  standard: 2,
+};
 
 /**
  * Fetches top published stores para el first paint del marketplace.
@@ -92,19 +108,29 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
     const ids = rows.map((r) => r.id);
     let coverMap = new Map<string, string | null>();
     let hoursMap = new Map<string, unknown>();
+    let tierMap = new Map<string, StoreDisplayTier>();
     if (ids.length > 0) {
       try {
-        // Patch cover y hoursJson juntos — ambas columnas viven fuera del schema Prisma.
+        // Patch cover + hoursJson + displayTier — columnas que viven fuera del
+        // schema Prisma (zona peligrosa). Mismo patrón raw-SQL para no migrar.
         const patches = await prisma.$queryRawUnsafe<
-          Array<{ id: string; cover: string | null; hoursJson: unknown }>
+          Array<{ id: string; cover: string | null; hoursJson: unknown; displayTier: string | null }>
         >(
-          `SELECT id, cover, "hoursJson" FROM "Store" WHERE id = ANY($1::text[])`,
+          `SELECT id, cover, "hoursJson", "displayTier" FROM "Store" WHERE id = ANY($1::text[])`,
           ids,
         );
         coverMap = new Map(patches.map((c) => [c.id, c.cover]));
         hoursMap = new Map(patches.map((c) => [c.id, c.hoursJson]));
+        tierMap = new Map(
+          patches.map((c) => [
+            c.id,
+            (c.displayTier === "premium" || c.displayTier === "featured"
+              ? c.displayTier
+              : "standard") as StoreDisplayTier,
+          ]),
+        );
       } catch {
-        // sin cover/hours → fallback al render sin overlay closed
+        // sin cover/hours/tier → fallback al render normal
       }
     }
 
@@ -121,7 +147,7 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
     );
     const NOW = new Date();
 
-    return rows.map((s) => {
+    const mapped = rows.map((s) => {
       const construction = constructionMap[s.slug];
       const hoursJson = hoursMap.get(s.id);
       const hasOwnHours = hoursJson && typeof hoursJson === "object";
@@ -147,8 +173,15 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         openHours: hasOwnHours ? (hoursJson as never) : null,
         isOpenNow: isOpenNowVal,
         nextOpeningAt: nextOpenAt ? nextOpenAt.toISOString() : null,
+        displayTier: tierMap.get(s.id) ?? "standard",
       };
     });
+
+    // Orden final: premium → featured → standard (estable, preserva el orden
+    // por rating dentro de cada nivel). Las tiendas con beneficio van arriba.
+    return mapped.sort(
+      (a, b) => TIER_RANK[a.displayTier] - TIER_RANK[b.displayTier],
+    );
   } catch {
     // Graceful degrade: devuelve [] y el cliente hace fetch en useEffect.
     return [];
