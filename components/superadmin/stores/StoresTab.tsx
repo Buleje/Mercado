@@ -9,6 +9,7 @@ import type { SAColumn } from "@/components/superadmin/_shared/SADataTable";
 import { StatCard } from "./StatCard";
 import type { StoreRow } from "./types";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { TierLegend, TierSelector, type DisplayTier } from "./StoreTierControls";
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
@@ -17,6 +18,8 @@ function fmtDate(d: string) {
 function buildColumns(
   togglingId: string | null,
   onTogglePublish: (row: StoreRow) => void,
+  tierBusyId: string | null,
+  onSetTier: (row: StoreRow, tier: DisplayTier) => void,
 ): SAColumn<StoreRow>[] {
   return [
   {
@@ -113,6 +116,17 @@ function buildColumns(
     ),
   },
   {
+    key: "displayTier",
+    label: "Nivel en /tiendas",
+    render: (row) => (
+      <TierSelector
+        value={(row.displayTier ?? "standard") as DisplayTier}
+        busy={tierBusyId === row.id}
+        onChange={(tier) => onSetTier(row, tier)}
+      />
+    ),
+  },
+  {
     key: "actions",
     label: "Acción",
     render: (row) => {
@@ -163,6 +177,24 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "published" | "draft">("all");
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [tierBusyId, setTierBusyId] = useState<string | null>(null);
+
+  const handleSetTier = useCallback(async (row: StoreRow, tier: DisplayTier) => {
+    setTierBusyId(row.id);
+    try {
+      const res = await fetch("/api/superadmin/stores", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ storeId: row.id, displayTier: tier }),
+      });
+      if (res.ok) onRefresh();
+    } catch {
+      // silent
+    } finally {
+      setTierBusyId(null);
+    }
+  }, [onRefresh]);
 
   const handleTogglePublish = useCallback(async (row: StoreRow) => {
     setTogglingId(row.id);
@@ -185,8 +217,8 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
   }, [onRefresh]);
 
   const columns = useMemo(
-    () => buildColumns(togglingId, handleTogglePublish),
-    [togglingId, handleTogglePublish],
+    () => buildColumns(togglingId, handleTogglePublish, tierBusyId, handleSetTier),
+    [togglingId, handleTogglePublish, tierBusyId, handleSetTier],
   );
 
   const filtered = useMemo(() => {
@@ -298,6 +330,10 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
           {error}
         </div>
       )}
+
+      {/* Previsualización: cómo se verá cada nivel en /tiendas. */}
+      <TierLegend />
+
       {loading && <TableSkeleton count={6} />}
       {!loading && filtered.length === 0 && (
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-16 text-center">
@@ -394,6 +430,18 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                 <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
                   <span className="capitalize">{row.category}</span>
                   <span className="tabular-nums">{fmtDate(row.createdAt)}</span>
+                </div>
+
+                {/* Nivel en /tiendas */}
+                <div className="flex items-center justify-between gap-2 border-t border-[var(--rule-soft)] pt-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Nivel en /tiendas
+                  </span>
+                  <TierSelector
+                    value={(row.displayTier ?? "standard") as DisplayTier}
+                    busy={tierBusyId === row.id}
+                    onChange={(tier) => handleSetTier(row, tier)}
+                  />
                 </div>
 
                 {/* CTA principal: publish/unpublish */}
