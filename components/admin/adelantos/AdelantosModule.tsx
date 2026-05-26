@@ -74,6 +74,26 @@ const TABS = [
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
 
+// ── Multi-moneda (ADR-118): formato por moneda + totales segmentados ───────────
+const MONEDAS = ["PEN", "USD"] as const;
+/** Formatea un monto con el símbolo de su moneda (PEN = S/ vía formatCurrency, USD = $). */
+function fmtMon(n: number, moneda?: string | null): string {
+  if (moneda === "USD") return `$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatCurrency(n);
+}
+/** Suma montos agrupados por moneda → { PEN: x, USD: y }. */
+function sumByMoneda(items: { monto: number; moneda?: string | null }[]): Record<string, number> {
+  const acc: Record<string, number> = {};
+  for (const it of items) { const cur = it.moneda || "PEN"; acc[cur] = (acc[cur] ?? 0) + it.monto; }
+  return acc;
+}
+/** Renderiza un mapa de montos por moneda → "S/ X · $ Y" (solo monedas presentes). */
+function fmtMonedas(map: Record<string, number>): string {
+  const keys = Object.keys(map).filter((k) => map[k] !== 0);
+  if (keys.length === 0) return formatCurrency(0);
+  return keys.map((k) => fmtMon(map[k], k)).join(" · ");
+}
+
 export default function AdelantosModule() {
   const [tab, setTab] = useState("resumen");
   const [resumen, setResumen] = useState<Resumen | null>(null);
@@ -211,14 +231,21 @@ function ResumenView({
   const abiertos = adelantos
     .filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0)
     .sort((a, b) => b.saldoPendiente - a.saldoPendiente);
-  const totalPorRecuperar = abiertos.reduce((s, a) => s + a.saldoPendiente, 0);
+
+  // Cifras segmentadas por moneda (ADR-118) — desde el listado (que trae moneda)
+  const activos = adelantos.filter((a) => a.status !== "CANCELADO");
+  const saldoMap = sumByMoneda(abiertos.map((a) => ({ monto: a.saldoPendiente, moneda: a.moneda })));
+  const adelantadoMap = sumByMoneda(activos.map((a) => ({ monto: a.montoAdelantado, moneda: a.moneda })));
+  const liquidadoMap = sumByMoneda(activos.map((a) => ({ monto: Math.max(0, a.montoAdelantado - a.saldoPendiente), moneda: a.moneda })));
+  const excedenteMap = sumByMoneda(adelantos.filter((a) => a.status === "EXCEDIDO").map((a) => ({ monto: -a.saldoPendiente, moneda: a.moneda })));
+  const hayExcedente = Object.values(excedenteMap).some((v) => v > 0);
 
   // Mensaje de salud: prioriza lo que te deben; si nada, todo al día; si excedente, a favor de ellos.
   const health =
     resumen.saldoPendiente > 0
-      ? { cls: "text-[var(--data-warning)]", Icon: Clock, text: `Te faltan ${formatCurrency(resumen.saldoPendiente)} por recuperar.` }
-      : resumen.excedente > 0
-        ? { cls: "text-[var(--data-info)]", Icon: Coins, text: `Te entregaron ${formatCurrency(resumen.excedente)} de más.` }
+      ? { cls: "text-[var(--data-warning)]", Icon: Clock, text: `Te faltan ${fmtMonedas(saldoMap)} por recuperar.` }
+      : hayExcedente
+        ? { cls: "text-[var(--data-info)]", Icon: Coins, text: `Te entregaron ${fmtMonedas(excedenteMap)} de más.` }
         : { cls: "text-[var(--data-success)]", Icon: CheckCircle, text: "Todo al día — nadie te debe nada." };
 
   return (
@@ -227,7 +254,7 @@ function ResumenView({
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
           <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Saldo pendiente</p>
-          <p className="mt-1 text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(resumen.saldoPendiente)}</p>
+          <p className="mt-1 text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{fmtMonedas(saldoMap)}</p>
           <div className={`mt-3 flex items-center gap-2 text-base font-semibold ${health.cls}`}>
             <health.Icon className="h-5 w-5 shrink-0" />
             <span>{health.text}</span>
@@ -242,8 +269,8 @@ function ResumenView({
             <div className="h-full rounded-full bg-[var(--data-success)] transition-all" style={{ width: `${pct}%` }} />
           </div>
           <p className="mt-3 text-base text-[var(--text-secondary)]">
-            Recuperaste <span className="font-bold text-[var(--text-primary)]">{formatCurrency(liquidado)}</span> de{" "}
-            <span className="font-bold text-[var(--text-primary)]">{formatCurrency(adelantado)}</span> adelantados.
+            Recuperaste <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(liquidadoMap)}</span> de{" "}
+            <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(adelantadoMap)}</span> adelantados.
           </p>
         </div>
       </div>
@@ -265,7 +292,7 @@ function ResumenView({
                     {(a.beneficiario?.nombre ?? "?").charAt(0).toUpperCase()}
                   </span>
                   <span className="flex-1 text-base font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</span>
-                  <span className="tabular-nums text-base font-extrabold text-[var(--data-warning)]">{formatCurrency(a.saldoPendiente)}</span>
+                  <span className="tabular-nums text-base font-extrabold text-[var(--data-warning)]">{fmtMon(a.saldoPendiente, a.moneda)}</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" />
                 </button>
               </li>
@@ -273,16 +300,16 @@ function ResumenView({
           </ul>
           <div className="mt-2 flex items-center justify-between border-t-2 border-[var(--rule-base)] pt-3">
             <span className="text-base font-bold text-[var(--text-secondary)]">Total por recuperar</span>
-            <span className="tabular-nums text-lg font-extrabold text-[var(--data-warning)]">{formatCurrency(totalPorRecuperar)}</span>
+            <span className="tabular-nums text-lg font-extrabold text-[var(--data-warning)]">{fmtMonedas(saldoMap)}</span>
           </div>
         </div>
       )}
 
       {/* Plata (secundario) */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total adelantado" value={formatCurrency(adelantado)} icon={TrendingDown} subValue="Plata que diste" />
-        <StatCard label="Total liquidado" value={formatCurrency(liquidado)} icon={TrendingUp} emphasis="success" subValue="Recuperado en entregas" />
-        <StatCard label="A favor de ellos" value={formatCurrency(resumen.excedente)} icon={Coins} emphasis={resumen.excedente > 0 ? "error" : "neutral"} subValue="Entregaron de más" />
+        <StatCard label="Total adelantado" value={fmtMonedas(adelantadoMap)} icon={TrendingDown} subValue="Plata que diste" />
+        <StatCard label="Total liquidado" value={fmtMonedas(liquidadoMap)} icon={TrendingUp} emphasis="success" subValue="Recuperado en entregas" />
+        <StatCard label="A favor de ellos" value={fmtMonedas(excedenteMap)} icon={Coins} emphasis={hayExcedente ? "error" : "neutral"} subValue="Entregaron de más" />
       </div>
 
       {/* Contadores clickeables → llevan a la lista/personas filtrada */}
@@ -324,15 +351,16 @@ function AdelantosView({
     return okEstado && okQ;
   });
 
-  // Totales de la vista filtrada
+  // Totales de la vista filtrada — segmentados por moneda (ADR-118)
   const tot = filtrados.reduce(
     (acc, a) => {
-      acc.adelantado += a.montoAdelantado;
-      acc.liquidado += Math.max(0, a.montoAdelantado - a.saldoPendiente);
-      acc.porRecuperar += a.status === "ABIERTO" ? a.saldoPendiente : 0;
+      const cur = a.moneda || "PEN";
+      acc.adelantado[cur] = (acc.adelantado[cur] ?? 0) + a.montoAdelantado;
+      acc.liquidado[cur] = (acc.liquidado[cur] ?? 0) + Math.max(0, a.montoAdelantado - a.saldoPendiente);
+      if (a.status === "ABIERTO") acc.porRecuperar[cur] = (acc.porRecuperar[cur] ?? 0) + a.saldoPendiente;
       return acc;
     },
-    { adelantado: 0, liquidado: 0, porRecuperar: 0 },
+    { adelantado: {} as Record<string, number>, liquidado: {} as Record<string, number>, porRecuperar: {} as Record<string, number> },
   );
 
   const chipCls = (active: boolean) =>
@@ -381,9 +409,9 @@ function AdelantosView({
 
           {/* Totales de la vista filtrada */}
           <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
-            <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(tot.adelantado)}</strong></span>
-            <span>Liquidado <strong className="tabular-nums text-[var(--data-success)]">{formatCurrency(tot.liquidado)}</strong></span>
-            <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{formatCurrency(tot.porRecuperar)}</strong></span>
+            <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{fmtMonedas(tot.adelantado)}</strong></span>
+            <span>Liquidado <strong className="tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.liquidado)}</strong></span>
+            <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
           </div>
         </>
       )}
@@ -414,7 +442,7 @@ function AdelantosView({
                 return (
                   <tr key={a.id} onClick={() => setDetalle(a)} className="cursor-pointer hover:bg-[var(--surface-sunken)]/50 transition-colors">
                     <td className="px-4 py-3 font-bold text-[var(--text-primary)]">{a.beneficiario?.nombre ?? "—"}</td>
-                    <td className="px-4 py-3 tabular-nums text-[var(--text-secondary)]">{formatCurrency(a.montoAdelantado)}</td>
+                    <td className="px-4 py-3 tabular-nums text-[var(--text-secondary)]">{fmtMon(a.montoAdelantado, a.moneda)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="h-2.5 w-24 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
@@ -423,7 +451,7 @@ function AdelantosView({
                         <span className="tabular-nums text-sm font-semibold text-[var(--text-tertiary)]">{pct}%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 tabular-nums font-bold text-[var(--text-primary)]">{formatCurrency(a.saldoPendiente)}</td>
+                    <td className="px-4 py-3 tabular-nums font-bold text-[var(--text-primary)]">{fmtMon(a.saldoPendiente, a.moneda)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label ?? a.status}</span>
                     </td>
@@ -480,6 +508,7 @@ function CrearAdelantoModal({
   const [beneficiarioId, setBeneficiarioId] = useState(initialBeneficiarioId ?? beneficiarios[0]?.id ?? "");
   const [modalidad, setModalidad] = useState<AdelantoModalidad>("CUENTA_CORRIENTE");
   const [monto, setMonto] = useState("");
+  const [moneda, setMoneda] = useState<"PEN" | "USD">("PEN");
   const [notas, setNotas] = useState("");
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -497,7 +526,7 @@ function CrearAdelantoModal({
       method: "POST",
       headers: jsonHeaders(),
       credentials: "include",
-      body: JSON.stringify({ beneficiarioId, modalidad, montoAdelantado: m, notas: notas.trim() || undefined, comprobanteUrl: comprobante || undefined }),
+      body: JSON.stringify({ beneficiarioId, modalidad, montoAdelantado: m, moneda, notas: notas.trim() || undefined, comprobanteUrl: comprobante || undefined }),
     });
     setSaving(false);
     if (res.ok) onCreated();
@@ -530,9 +559,18 @@ function CrearAdelantoModal({
           ))}
         </div>
       </Field>
-      <Field label="Monto adelantado (S/)">
-        <input type="number" min={1} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="500.00" className={inputCls + " tabular-nums"} />
-      </Field>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="col-span-2">
+          <Field label="Monto adelantado">
+            <input type="number" min={1} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="500.00" className={inputCls + " tabular-nums"} />
+          </Field>
+        </div>
+        <Field label="Moneda">
+          <select value={moneda} onChange={(e) => setMoneda(e.target.value as "PEN" | "USD")} className={inputCls}>
+            {MONEDAS.map((m) => <option key={m} value={m}>{m === "PEN" ? "S/ Soles" : "$ Dólares"}</option>)}
+          </select>
+        </Field>
+      </div>
       <Field label="Notas (opcional)">
         <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className={inputCls + " py-3"} />
       </Field>
@@ -634,9 +672,9 @@ function DetalleAdelantoModal({
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-3 gap-3">
-            <MiniStat label="Adelantado" value={formatCurrency(a.montoAdelantado)} />
-            <MiniStat label="Entregado" value={formatCurrency(a.totalEntregado)} tone="success" />
-            <MiniStat label="Saldo" value={formatCurrency(a.saldoPendiente)} tone={a.saldoPendiente > 0 ? "warning" : "neutral"} />
+            <MiniStat label="Adelantado" value={fmtMon(a.montoAdelantado, a.moneda)} />
+            <MiniStat label="Entregado" value={fmtMon(a.totalEntregado, a.moneda)} tone="success" />
+            <MiniStat label="Saldo" value={fmtMon(a.saldoPendiente, a.moneda)} tone={a.saldoPendiente > 0 ? "warning" : "neutral"} />
           </div>
           <div className="flex items-center gap-2">
             <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label}</span>
@@ -714,7 +752,7 @@ function DetalleAdelantoModal({
                         <img src={e.comprobanteUrl} alt="comprobante" className="h-9 w-9 rounded-lg object-cover border border-[var(--rule-base)]" />
                       </a>
                     )}
-                    <span className="text-base font-extrabold tabular-nums text-[var(--data-success)] shrink-0">{formatCurrency(e.valor)}</span>
+                    <span className="text-base font-extrabold tabular-nums text-[var(--data-success)] shrink-0">{fmtMon(e.valor, a.moneda)}</span>
                   </li>
                 ))}
               </ul>
@@ -1278,7 +1316,7 @@ function CobranzaView({ adelantos, loading, onGoTab }: { adelantos: DbAdelanto[]
 }
 
 // ── Actividad ────────────────────────────────────────────────────────────────
-type ActEvento = { fecha: string; tipo: "adelanto" | "entrega"; persona: string; monto: number; desc?: string };
+type ActEvento = { fecha: string; tipo: "adelanto" | "entrega"; persona: string; monto: number; moneda?: string | null; desc?: string };
 
 function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
   const [tipo, setTipo] = useState<"todo" | "adelanto" | "entrega">("todo");
@@ -1288,8 +1326,8 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
   const eventos: ActEvento[] = [];
   for (const a of adelantos) {
     const persona = a.beneficiario?.nombre ?? "—";
-    if (a.status !== "CANCELADO") eventos.push({ fecha: a.fechaAdelanto, tipo: "adelanto", persona, monto: a.montoAdelantado });
-    for (const e of a.entregas) eventos.push({ fecha: e.fecha, tipo: "entrega", persona, monto: e.valor, desc: e.descripcion ?? undefined });
+    if (a.status !== "CANCELADO") eventos.push({ fecha: a.fechaAdelanto, tipo: "adelanto", persona, monto: a.montoAdelantado, moneda: a.moneda });
+    for (const e of a.entregas) eventos.push({ fecha: e.fecha, tipo: "entrega", persona, monto: e.valor, moneda: a.moneda, desc: e.descripcion ?? undefined });
   }
   eventos.sort((x, y) => new Date(y.fecha).getTime() - new Date(x.fecha).getTime());
 
@@ -1330,7 +1368,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
     autoTable(doc, {
       startY: 31,
       head: [["Fecha", "Tipo", "Persona", "Detalle", "Monto"]],
-      body: filtrados.map((e) => [new Date(e.fecha).toLocaleDateString("es-PE"), e.tipo === "adelanto" ? "Adelanto" : "Entrega", e.persona, e.desc ?? "", `${e.tipo === "adelanto" ? "+" : "-"}${formatCurrency(e.monto)}`]),
+      body: filtrados.map((e) => [new Date(e.fecha).toLocaleDateString("es-PE"), e.tipo === "adelanto" ? "Adelanto" : "Entrega", e.persona, e.desc ?? "", `${e.tipo === "adelanto" ? "+" : "-"}${fmtMon(e.monto, e.moneda)}`]),
     });
     doc.save(`actividad-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
@@ -1400,7 +1438,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
                         <p className="text-base font-bold text-[var(--text-primary)] truncate">{esAdelanto ? "Adelanto" : "Entrega"} · {e.persona}</p>
                         {e.desc && <p className="text-sm text-[var(--text-tertiary)] truncate">{e.desc}</p>}
                       </div>
-                      <span className={`tabular-nums text-base font-extrabold ${esAdelanto ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{esAdelanto ? "+" : "−"}{formatCurrency(e.monto)}</span>
+                      <span className={`tabular-nums text-base font-extrabold ${esAdelanto ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{esAdelanto ? "+" : "−"}{fmtMon(e.monto, e.moneda)}</span>
                     </li>
                   );
                 })}
