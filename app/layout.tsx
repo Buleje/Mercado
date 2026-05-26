@@ -46,6 +46,7 @@ import { CurrencyProvider } from "@/contexts/currency-context";
 // del root layout en ~100-150kb.
 import RootDeferredWidgets from "@/components/RootDeferredWidgets";
 import { SkipLink } from "@/components/ui-system/SkipLink";
+import NavProgress from "@/components/NavProgress";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -330,6 +331,9 @@ export default function RootLayout({
       <body className={`antialiased ${GeistSans.className}`}>
         {/* Skip-link WCAG 2.4.1 — primer tabulable del body (ADR-075 tokens DS). */}
         <SkipLink />
+        {/* Barra de progreso de navegación — feedback instantáneo al hacer
+            clic en cualquier link (cubre el micro-gap antes de loading.tsx). */}
+        <NavProgress />
         <ThemeProvider>
         <LocaleProvider>
         <CurrencyProvider>
