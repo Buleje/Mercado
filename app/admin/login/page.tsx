@@ -76,6 +76,9 @@ export default function AdminLoginPage() {
   const [bypassLoading, setBypassLoading] = useState(false);
   const [activeTenant, setActiveTenant] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
+  // ADR-120 login unificado: si la credencial existe en varias tiendas, el
+  // backend devuelve la lista y mostramos un selector en vez de adivinar.
+  const [tenantChoices, setTenantChoices] = useState<Array<{ slug: string; name: string }> | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -124,13 +127,14 @@ export default function AdminLoginPage() {
     setTimeout(() => setError(null), 3500);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: FormEvent, chosenSlug?: string) => {
+    e?.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      // El backend resuelve el tenant por username globalmente. Igual mandamos
-      // el slug de la URL/cookie como hint para el caso fallback Settings.
+      // ADR-120: el backend resuelve el tenant por la credencial (login global).
+      // `chosenSlug` solo se envía cuando el usuario eligió en el selector de
+      // tiendas (credencial duplicada). Igual mandamos el hint para fallbacks.
       const slugFromUrl = typeof window !== "undefined"
         ? window.location.pathname.match(/^\/t\/([^/]+)\/admin/)?.[1]
         : null;
@@ -147,18 +151,31 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers,
-        body: JSON.stringify({ username: username || undefined, password: pw }),
+        body: JSON.stringify({
+          username: username || undefined,
+          password: pw,
+          ...(chosenSlug ? { tenantSlug: chosenSlug } : {}),
+        }),
       });
 
       if (res.ok) {
         const data = (await res.json()) as {
           ok: boolean;
           requires2FA?: boolean;
+          requiresTenantChoice?: boolean;
+          options?: Array<{ slug: string; name: string }>;
           role?: string;
           onboardingPending?: boolean;
           tenantId?: string;
           tenantSlug?: string;
         };
+
+        // ── Credencial en varias tiendas: mostrar selector ──────────────
+        if (data.requiresTenantChoice && data.options && data.options.length > 0) {
+          setTenantChoices(data.options);
+          setLoading(false);
+          return;
+        }
 
         // ── 2FA requerido: redirigir sin mostrar error ──────────────────
         if (data.requires2FA) {
@@ -303,7 +320,33 @@ export default function AdminLoginPage() {
             </p>
           )}
 
-          {/* Form */}
+          {/* ADR-120: selector de tienda cuando la credencial existe en varias */}
+          {tenantChoices ? (
+            <div className="mt-10 space-y-3">
+              <p className="text-sm text-[var(--text-secondary)] max-w-sm">
+                Tu cuenta existe en varias tiendas. Elegí a cuál querés entrar:
+              </p>
+              {tenantChoices.map((t) => (
+                <button
+                  key={t.slug}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handleSubmit(undefined, t.slug)}
+                  className="w-full flex items-center justify-between gap-3 h-14 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-left font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/8 disabled:opacity-50 transition-all"
+                >
+                  <span className="truncate">{t.name}</span>
+                  <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] shrink-0">{t.slug}</span>
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => { setTenantChoices(null); setError(null); }}
+                className="text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors pt-1"
+              >
+                ← Volver
+              </button>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="mt-10 space-y-4">
             <div className="space-y-2">
               <label
@@ -440,6 +483,7 @@ export default function AdminLoginPage() {
               </button>
             )}
           </form>
+          )}
 
           {/* Switches a otros paneles — disclosure colapsado por defecto */}
           <details className="mt-10 group">

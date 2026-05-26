@@ -6,7 +6,6 @@ import type { AdminRole } from "@/lib/session";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { resolveTenantSlug } from "@/lib/resolve-tenant";
 import fs from "fs/promises";
 import path from "path";
 import { logger } from "@/lib/logger";
@@ -83,15 +82,11 @@ export async function POST(req: Request) {
     return rateLimitResponse;
   }
 
-  /** Tenant resolved by edge middleware from the subdomain header. */
-  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  let resolvedSlug = (await resolveTenantSlug(rawTenantId)) ?? "main";
-
   try {
   // Round 27 (security hardening): req.json() puede throw si body no es JSON
   // válido — devolver 400 explícito en lugar de fallar al catch externo (500).
   // Test descubrió que payloads malformados producían 500 (DoS signal).
-  const body = await req.json().catch(() => null) as { username?: string; password?: string } | null;
+  const body = await req.json().catch(() => null) as { username?: string; password?: string; tenantSlug?: string } | null;
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
@@ -101,51 +96,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "username and password required" }, { status: 400 });
   }
 
-  // Step 1: Resolve slug → tenant ID (CUID).
-  // Audit 2026-05-17 05-P1-4: si el slug NO resuelve a tenant DB → 400.
-  // Antes, sin resolver, el findMany seguía buscando sin scope y dos tenants
-  // con `qaadmin` + misma password permitían entrar al primer match.
-  // Fail-closed: si el slug no existe, rechazar sin tocar el directorio de usuarios.
-  let tenantId = resolvedSlug;
-  let tenantResolvedToDb = false;
-  try {
-    // El hint (x-tenant-id) puede venir como slug ("mi-pollo") O como CUID
-    // (cmoe...) si el middleware resolvió el subdominio a un ID. Probamos por
-    // slug y, si no resuelve, por id. Fail-closed igual abajo.
-    let tenant = await prisma.tenant.findUnique({
-      where: { slug: resolvedSlug },
-      select: { id: true, slug: true },
-    });
-    if (!tenant && rawTenantId && rawTenantId !== resolvedSlug) {
-      tenant = await prisma.tenant.findUnique({
-        where: { id: rawTenantId },
-        select: { id: true, slug: true },
-      });
-    }
-    if (tenant) {
-      tenantId = tenant.id;
-      // Normalizamos resolvedSlug al slug real → así `tenantResolved` (id !== slug)
-      // queda TRUE y el findMany scopea correctamente al tenant (evita matchear
-      // un username duplicado de otro tenant cuando el hint vino como CUID).
-      resolvedSlug = tenant.slug;
-      tenantResolvedToDb = true;
-    }
-  } catch { /* DB unavailable — keep slug as-is, validate below */ }
-
-  if (!tenantResolvedToDb) {
-    logger.warn("[auth/login] Refusing login — slug does not resolve to tenant DB", {
-      resolvedSlug,
-      ip: req.headers.get("x-forwarded-for") ?? "unknown",
-    });
-    return NextResponse.json(
-      { error: "tenant_invalid", message: "El tenant indicado no existe o no está disponible." },
-      { status: 400 },
-    );
+  // ── Login unificado (ADR-120) ───────────────────────────────────────────────
+  // Modo GLOBAL por defecto: la credencial decide la tienda. Si user+pass matchea
+  // 1 sola tienda → entra; si matchea VARIAS → el front muestra picker y reenvía
+  // con `tenantSlug` (modo SCOPED). Mantiene el espíritu de 05-P1-4: NUNCA se
+  // auto-entra a una tienda en caso ambiguo (solo se entra directo si es único).
+  const explicitSlug = typeof body.tenantSlug === "string" ? body.tenantSlug.trim() : "";
+  let scopeTenantId: string | null = null;
+  if (explicitSlug) {
+    try {
+      const t = await prisma.tenant.findUnique({ where: { slug: explicitSlug }, select: { id: true } });
+      if (!t) {
+        return NextResponse.json(
+          { error: "tenant_invalid", message: "La tienda indicada no existe o no está disponible." },
+          { status: 400 },
+        );
+      }
+      scopeTenantId = t.id;
+    } catch { /* DB unavailable — se valida abajo (sin match → 401) */ }
   }
+  // Para el fallback legacy (LEGACY_LOGIN=1) y logs: tenant de referencia.
+  const tenantId = scopeTenantId ?? "main";
 
   // F1 — SECURITY 2026-05-07: lockout per-username (brute-force con IP rotation).
-  // El counter se almacena en cacheStore con TTL 900s (15 min).
-  const lockKey = `loginAttempts:${username}:${tenantId}`;
+  // El counter se almacena en cacheStore con TTL 900s (15 min). Global por
+  // username (el scope no cambia el riesgo de fuerza bruta sobre esa cuenta).
+  const lockKey = `loginAttempts:${username}`;
   const currentAttempts = cacheStore.get<number>(lockKey) ?? 0;
   if (currentAttempts >= LOGIN_LOCKOUT_MAX) {
     logger.warn("[auth/login] Username locked out", { username, tenantId, attempts: currentAttempts });
@@ -155,43 +131,21 @@ export async function POST(req: Request) {
     );
   }
 
-  // SECURITY 2026-05-06 (pentest H005): scope tenant siempre que sea posible.
-  // Si tenemos tenantId resuelto del header/slug, BUSCAR SOLO en ese tenant.
-  // Antes: findMany global → primer match ganaba aunque viniera de otro
-  // tenant (race entre N hashes que matcheaban con la misma contraseña).
+  // ADR-120 login unificado: lookup por username. Global (la credencial decide
+  // la tienda) salvo que el front haya reenviado con `tenantSlug` (scopeTenantId).
   type DbUser = { username: string; passwordHash: string; role: string; name: string; tenantId: string; onboardingCompletedAt: Date | null };
   let dbUsers: DbUser[] = [];
-  const tenantResolved = tenantId !== resolvedSlug; // CUID vs slug literal
   try {
     dbUsers = await prisma.adminUser.findMany({
       where: {
         active: true,
-        ...(username ? { username } : {}),
-        ...(tenantResolved ? { tenantId } : {}),
+        username,
+        ...(scopeTenantId ? { tenantId: scopeTenantId } : {}),
       },
       select: { username: true, passwordHash: true, role: true, name: true, tenantId: true, onboardingCompletedAt: true },
-      take: tenantResolved ? 5 : 50, // si scopeado, basta poco; sin scope, cap genérico
+      take: 50,
     });
   } catch { /* DB unavailable */ }
-
-  // BUG FIX 2026-05-05: si el cliente envió hint slug (x-tenant-id) y existe
-  // un usuario para ESE tenant, lo priorizamos. Antes el primer match ganaba
-  // y si qaadmin existía en "main" Y en "mi-pollo", el login desde
-  // /t/mi-pollo/admin/login devolvía JWT con tenantId="main" → admin no veía
-  // sus propios pedidos.
-  if (dbUsers.length > 1 && tenantId !== resolvedSlug) {
-    // tenantId aquí es el CUID del slug hint
-    dbUsers = [
-      ...dbUsers.filter((u) => u.tenantId === tenantId),
-      ...dbUsers.filter((u) => u.tenantId !== tenantId),
-    ];
-  } else if (dbUsers.length > 1) {
-    // tenantId === resolvedSlug (no se encontró tenant en DB) — match por slug
-    dbUsers = [
-      ...dbUsers.filter((u) => u.tenantId === resolvedSlug),
-      ...dbUsers.filter((u) => u.tenantId !== resolvedSlug),
-    ];
-  }
 
   // F2 — SECURITY 2026-05-07: timing-constant con Promise.all + padding de dummies.
   // Siempre comparamos contra TARGET_USERS hashes en paralelo para que el
@@ -215,8 +169,25 @@ export async function POST(req: Request) {
   const compareResults = await Promise.all(
     padded.map((u) => checkPassword(password, u.passwordHash, u.username).catch(() => false)),
   );
-  const matchIdx = compareResults.findIndex((r, i) => r && !padded[i].__dummy);
-  const matchedUser: PaddedUser | null = matchIdx >= 0 ? padded[matchIdx] : null;
+  // TODAS las coincidencias reales (credencial completa válida), no solo la 1ra.
+  const realMatches: DbUser[] = padded.filter((u, i) => compareResults[i] && !u.__dummy);
+
+  // ADR-120: credencial válida en VARIAS tiendas y sin scope explícito → el
+  // front debe elegir. Solo listamos tiendas donde la CONTRASEÑA matcheó (no
+  // revela la mera existencia del username). Nunca auto-entramos (anti 05-P1-4).
+  if (realMatches.length > 1 && !scopeTenantId) {
+    cacheStore.del(lockKey); // credencial válida en ≥1 tienda → no es brute-force
+    const ids = Array.from(new Set(realMatches.map((u) => u.tenantId)));
+    let options: Array<{ slug: string; name: string }> = [];
+    try {
+      const tenants = await prisma.tenant.findMany({ where: { id: { in: ids } }, select: { slug: true, name: true } });
+      options = tenants.map((t) => ({ slug: t.slug, name: t.name }));
+    } catch { /* DB down — devolvemos lista vacía, el front muestra error suave */ }
+    logger.info("[auth/login] Credencial en múltiples tiendas — requiere elección", { username, count: options.length });
+    return NextResponse.json({ requiresTenantChoice: true, options });
+  }
+
+  const matchedUser: PaddedUser | null = realMatches[0] ?? null;
 
   if (matchedUser) {
     const u = matchedUser;
@@ -258,14 +229,14 @@ export async function POST(req: Request) {
     ]);
     const onboardingPending = !u.onboardingCompletedAt;
     // Buscar el slug del tenant matcheado (para active-tenant-slug cookie y redirect)
-    let tenantSlug = resolvedSlug;
+    let tenantSlug = matchedTenantId;
     try {
       const t = await prisma.tenant.findFirst({
         where: { OR: [{ id: matchedTenantId }, { slug: matchedTenantId }] },
         select: { slug: true },
       });
       if (t) tenantSlug = t.slug;
-    } catch { /* use resolvedSlug */ }
+    } catch { /* fallback: usar matchedTenantId como slug */ }
 
     const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId: matchedTenantId, tenantSlug });
     response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());

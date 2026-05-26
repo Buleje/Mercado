@@ -38,15 +38,16 @@ vi.mock("@/lib/jsondb", () => ({
 }));
 
 // ── Mock: prisma ──────────────────────────────────────────────────────────────
-const { mockFindMany, mockTenantFindFirst, mockTenantFindUnique } = vi.hoisted(() => ({
+const { mockFindMany, mockTenantFindFirst, mockTenantFindUnique, mockTenantFindMany } = vi.hoisted(() => ({
   mockFindMany:        vi.fn(),
   mockTenantFindFirst: vi.fn(),
   mockTenantFindUnique: vi.fn(),
+  mockTenantFindMany:  vi.fn(),
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     adminUser: { findMany: mockFindMany },
-    tenant:    { findFirst: mockTenantFindFirst, findUnique: mockTenantFindUnique },
+    tenant:    { findFirst: mockTenantFindFirst, findUnique: mockTenantFindUnique, findMany: mockTenantFindMany },
   },
 }));
 
@@ -119,6 +120,7 @@ describe("POST /api/auth/login", () => {
     // para que los demás tests (que validan otros aspectos) sigan corriendo.
     // Tests específicos del fix pueden override esto a null para validar 400.
     mockTenantFindUnique.mockResolvedValue({ id: "main-tenant-cuid", slug: "main" });
+    mockTenantFindMany.mockResolvedValue([]);
     mockSettingsGet.mockResolvedValue({ adminPassword: null });
     mockCompare.mockResolvedValue(false);
   });
@@ -357,5 +359,95 @@ describe("POST /api/auth/login", () => {
       expect([401, 200]).toContain(res.status);
       expect(res.status).not.toBe(500);
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADR-120 — Login unificado (la credencial decide la tienda + picker)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("POST /api/auth/login — login unificado (ADR-120)", () => {
+  const HASH = "$2b$10$fakehashforunifiedlogin";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFindMany.mockResolvedValue([]);
+    mockTenantFindFirst.mockResolvedValue(null);
+    mockTenantFindUnique.mockResolvedValue({ id: "main-tenant-cuid", slug: "main" });
+    mockTenantFindMany.mockResolvedValue([]);
+    mockSettingsGet.mockResolvedValue({ adminPassword: null });
+    mockCompare.mockResolvedValue(false);
+  });
+
+  it("1 sola coincidencia → entra directo a esa tienda (200)", async () => {
+    mockFindMany.mockResolvedValue([
+      { username: "pizzaadmin", passwordHash: HASH, role: "admin", name: "Admin Pizza", tenantId: "pizza-cuid", onboardingCompletedAt: new Date() },
+    ]);
+    mockCompare.mockResolvedValue(true);
+    mockTenantFindFirst.mockResolvedValue({ slug: "pizza-pucallpa" });
+
+    const res = await POST(makeReq({ username: "pizzaadmin", password: "secret" }));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.tenantSlug).toBe("pizza-pucallpa");
+    expect(body.requiresTenantChoice).toBeUndefined();
+  });
+
+  it("credencial en VARIAS tiendas → requiresTenantChoice (sin sesión, anti auto-entrada)", async () => {
+    mockFindMany.mockResolvedValue([
+      { username: "qaadmin", passwordHash: HASH, role: "admin", name: "QA Main", tenantId: "main", onboardingCompletedAt: new Date() },
+      { username: "qaadmin", passwordHash: HASH, role: "admin", name: "QA Pollo", tenantId: "pollo-cuid", onboardingCompletedAt: new Date() },
+    ]);
+    mockCompare.mockResolvedValue(true);
+    mockTenantFindMany.mockResolvedValue([
+      { slug: "main", name: "Buleje" },
+      { slug: "mi-pollo", name: "Pollería El Dorado" },
+    ]);
+
+    const res = await POST(makeReq({ username: "qaadmin", password: "secret" }));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.requiresTenantChoice).toBe(true);
+    expect(body.options).toHaveLength(2);
+    expect(body.options.map((o: { slug: string }) => o.slug)).toEqual(["main", "mi-pollo"]);
+    // SEGURIDAD: no debe emitir sesión en caso ambiguo
+    const setCookie = res.headers.get("set-cookie") ?? "";
+    expect(setCookie).not.toContain("bsm-admin-sess");
+    expect(body.ok).toBeUndefined();
+  });
+
+  it("re-submit con tenantSlug → scopea el lookup a esa tienda y entra", async () => {
+    mockTenantFindUnique.mockResolvedValue({ id: "pollo-cuid", slug: "mi-pollo" });
+    mockFindMany.mockResolvedValue([
+      { username: "qaadmin", passwordHash: HASH, role: "admin", name: "QA Pollo", tenantId: "pollo-cuid", onboardingCompletedAt: new Date() },
+    ]);
+    mockCompare.mockResolvedValue(true);
+    mockTenantFindFirst.mockResolvedValue({ slug: "mi-pollo" });
+
+    const res = await POST(makeReq({ username: "qaadmin", password: "secret", tenantSlug: "mi-pollo" }));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.tenantSlug).toBe("mi-pollo");
+    // el findMany debe haberse scopeado al tenant elegido
+    const whereArg = mockFindMany.mock.calls[0][0].where;
+    expect(whereArg.tenantId).toBe("pollo-cuid");
+  });
+
+  it("tenantSlug inexistente → 400 tenant_invalid", async () => {
+    mockTenantFindUnique.mockResolvedValue(null); // slug no existe
+    const res = await POST(makeReq({ username: "x", password: "y", tenantSlug: "no-existe" }));
+    const body = await res.json();
+    expect(res.status).toBe(400);
+    expect(body.error).toBe("tenant_invalid");
+  });
+
+  it("credencial incorrecta sigue dando 401 (no se cuela)", async () => {
+    mockFindMany.mockResolvedValue([
+      { username: "pizzaadmin", passwordHash: HASH, role: "admin", name: "Admin", tenantId: "pizza-cuid", onboardingCompletedAt: new Date() },
+    ]);
+    mockCompare.mockResolvedValue(false); // password no matchea
+    const res = await POST(makeReq({ username: "pizzaadmin", password: "wrong" }));
+    expect(res.status).toBe(401);
   });
 });
