@@ -1369,29 +1369,55 @@ export const MarketplaceStatsDB = {
       zone: string | null;
       rating: number;
       reviewCount: number;
+      /** Beneficio "Destacar en Home" (superadmin): aparece y sube en el home. */
+      featuredHome: boolean;
     }>
   > {
     "use cache";
     cacheLife({ revalidate: 600, stale: 120, expire: 1800 });
     cacheTag("marketplace-top-stores");
+    const SELECT = {
+      id: true, slug: true, name: true, logo: true,
+      category: true, zone: true, rating: true, reviewCount: true,
+    } as const;
     try {
       // eslint-disable-next-line no-restricted-properties -- top stores publico marketplace cross-tenant.
-      const stores = await prisma.store.findMany({
+      const top = await prisma.store.findMany({
         where: { isPublished: true },
         orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
         take: limit,
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          logo: true,
-          category: true,
-          zone: true,
-          rating: true,
-          reviewCount: true,
-        },
+        select: SELECT,
       });
-      return stores;
+
+      // IDs con beneficio "Destacar en Home" (jsonb fuera del schema Prisma).
+      let featuredIds: string[] = [];
+      try {
+        const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+          `SELECT id FROM "Store" WHERE "isPublished"=true AND COALESCE((benefits->>'featuredHome')::boolean, false)=true`,
+        );
+        featuredIds = rows.map((r) => r.id);
+      } catch { /* sin columna benefits → ninguno destacado */ }
+
+      // Traer las destacadas que no estén ya en el top (para que SIEMPRE aparezcan).
+      const topIds = new Set(top.map((s) => s.id));
+      const missing = featuredIds.filter((id) => !topIds.has(id));
+      let extra: typeof top = [];
+      if (missing.length > 0) {
+        // eslint-disable-next-line no-restricted-properties -- featured-home stores cross-tenant público.
+        extra = await prisma.store.findMany({
+          where: { id: { in: missing }, isPublished: true },
+          select: SELECT,
+        });
+      }
+
+      const featuredSet = new Set(featuredIds);
+      const all = [...top, ...extra].map((s) => ({ ...s, featuredHome: featuredSet.has(s.id) }));
+      // Destacadas primero, luego por rating.
+      all.sort((a, b) => {
+        if (a.featuredHome !== b.featuredHome) return a.featuredHome ? -1 : 1;
+        return b.rating - a.rating;
+      });
+      return all.slice(0, limit + extra.length);
     } catch {
       return [];
     }

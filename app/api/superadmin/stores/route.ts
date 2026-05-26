@@ -179,6 +179,8 @@ export async function PATCH(req: NextRequest) {
       storeId,
     );
     revalidateTag("marketplace:stores", "max");
+    // "Destacar en Home" afecta el listado del home → invalidar su cache.
+    revalidateTag("marketplace-top-stores", "max");
   }
 
   // Notify store owner via WhatsApp + email when their store gets published.

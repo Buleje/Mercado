@@ -163,6 +163,8 @@ interface TopStore {
   zone: string | null;
   rating: number;
   reviewCount: number;
+  /** Beneficio "Destacar en Home" (superadmin) → badge + prioridad. */
+  featuredHome?: boolean;
 }
 
 async function getTopStores(): Promise<TopStore[]> {
@@ -176,6 +178,7 @@ async function getTopStores(): Promise<TopStore[]> {
     zone: s.zone,
     rating: s.rating,
     reviewCount: s.reviewCount,
+    featuredHome: s.featuredHome,
   }));
 }
 
@@ -706,9 +709,17 @@ function StoreCard({ s, priority = false }: { s: TopStore; priority?: boolean })
   return (
     <Link
       href={`/marketplace/${s.slug}`}
-      aria-label={`${s.name}${s.rating > 0 ? `, ${s.rating.toFixed(1)} estrellas` : ""}${s.category ? `, ${s.category}` : ""}${s.zone ? `, ${s.zone}` : ""}`}
-      className="group flex h-full flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-xl transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      aria-label={`${s.name}${s.featuredHome ? ", destacada" : ""}${s.rating > 0 ? `, ${s.rating.toFixed(1)} estrellas` : ""}${s.category ? `, ${s.category}` : ""}${s.zone ? `, ${s.zone}` : ""}`}
+      className={`group relative flex h-full flex-col rounded-2xl border-2 bg-[var(--surface-raised)] p-4 sm:p-5 hover:-translate-y-1 hover:shadow-xl transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${s.featuredHome ? "border-[var(--accent)] shadow-md shadow-[var(--accent)]/15" : "border-[var(--rule-base)] hover:border-[var(--accent)]"}`}
     >
+      {/* Badge Destacada (beneficio superadmin "Destacar en Home") */}
+      {s.featuredHome && (
+        <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white shadow">
+          <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
+          Destacada
+        </span>
+      )}
+
       {/* Logo grande centrado */}
       <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] overflow-hidden shadow-sm group-hover:scale-[1.04] transition-transform mx-auto mb-3 shrink-0">
         {s.logo ? (
