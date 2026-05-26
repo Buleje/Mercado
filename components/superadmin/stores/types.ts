@@ -14,6 +14,8 @@ export interface StoreRow {
   zone: string;
   commission: number;
   createdAt: string;
+  /** Nivel de beneficio/visibilidad en /tiendas. Default "standard". */
+  displayTier?: "standard" | "featured" | "premium";
   tenant: {
     id: string;
     slug: string;

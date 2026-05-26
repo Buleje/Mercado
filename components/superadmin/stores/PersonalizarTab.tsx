@@ -28,7 +28,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const { togglePublished, saveCommission } = useStoreActions({
+  const { togglePublished, saveCommission, setDisplayTier } = useStoreActions({
     setSaving,
     showToast,
     onRefresh,
@@ -137,6 +137,32 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                     </span>
                     <span className="text-xs text-gray-400">{store._count.products} productos</span>
                   </div>
+                </div>
+
+                {/* Nivel de visibilidad en /tiendas (beneficio por plan) */}
+                <div className="shrink-0 hidden md:flex items-center gap-0.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
+                  {([
+                    { key: "standard", label: "Estándar" },
+                    { key: "featured", label: "Destacada" },
+                    { key: "premium", label: "Premium" },
+                  ] as const).map((t) => {
+                    const active = (store.displayTier ?? "standard") === t.key;
+                    return (
+                      <button
+                        key={t.key}
+                        onClick={() => void setDisplayTier(store, t.key)}
+                        disabled={saving === store.id}
+                        title={`Nivel: ${t.label}`}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors disabled:opacity-40 ${
+                          active
+                            ? "bg-[var(--accent)] text-white shadow-sm"
+                            : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Commission */}

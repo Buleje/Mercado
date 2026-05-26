@@ -1,6 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
@@ -61,11 +61,28 @@ async function getStoresData() {
     countMap.set(row.tenantId, row._count.id);
   }
 
+  // displayTier vive fuera del schema Prisma → patch por raw SQL (mismo patrón
+  // que cover/hoursJson en initial-stores). Permite mostrar/editar el nivel
+  // de beneficio de cada tienda desde superadmin.
+  const tierMap = new Map<string, string>();
+  try {
+    const tierRows = await prisma.$queryRawUnsafe<
+      Array<{ id: string; displayTier: string | null }>
+    >(`SELECT id, "displayTier" FROM "Store"`);
+    for (const r of tierRows) tierMap.set(r.id, r.displayTier ?? "standard");
+  } catch {
+    /* columna ausente → todos standard */
+  }
+
   const stores = storesRaw.map((store) => {
     const count =
       (countMap.get(store.tenant.id) ?? 0) +
       (countMap.get(store.tenant.slug) ?? 0);
-    return { ...store, _count: { products: count } };
+    return {
+      ...store,
+      _count: { products: count },
+      displayTier: tierMap.get(store.id) ?? "standard",
+    };
   });
 
   return stores;
@@ -89,6 +106,8 @@ const PatchSchema = z.object({
   commission: z.number().min(0).max(100).optional(),
   category: z.string().min(1).optional(),
   zone: z.string().optional(),
+  // Nivel de visibilidad en /tiendas (beneficio controlado por superadmin).
+  displayTier: z.enum(["standard", "featured", "premium"]).optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -115,6 +134,18 @@ export async function PATCH(req: NextRequest) {
     where: { id: storeId },
     data: updateData,
   });
+
+  // displayTier vive fuera del schema Prisma (columna parcheada en DB, mismo
+  // patrón que cover/hoursJson) → update por raw SQL parametrizado. Invalida
+  // el cache de /tiendas para que el cambio se refleje al instante.
+  if (data.displayTier !== undefined) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Store" SET "displayTier" = $1 WHERE id = $2`,
+      data.displayTier,
+      storeId,
+    );
+    revalidateTag("marketplace:stores", "max");
+  }
 
   // Notify store owner via WhatsApp + email when their store gets published.
   // Ambos canales son fire-and-forget: el HTTP response no espera el envio.

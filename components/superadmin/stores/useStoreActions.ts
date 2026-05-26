@@ -70,5 +70,30 @@ export function useStoreActions({
     [editCommission, setSaving, showToast, setEditCommission, onRefresh],
   );
 
-  return { togglePublished, saveCommission };
+  // Beneficio de visibilidad en /tiendas: standard | featured | premium.
+  const setDisplayTier = useCallback(
+    async (store: StoreRow, displayTier: "standard" | "featured" | "premium") => {
+      setSaving(store.id);
+      try {
+        const res = await fetch("/api/superadmin/stores", {
+          method: "PATCH",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify({ storeId: store.id, displayTier }),
+        });
+        if (!res.ok) throw new Error();
+        const label =
+          displayTier === "premium" ? "Premium" : displayTier === "featured" ? "Destacada" : "Estándar";
+        showToast(`${store.name} → ${label}`, true);
+        onRefresh();
+      } catch {
+        showToast("Error al cambiar el nivel", false);
+      } finally {
+        setSaving(null);
+      }
+    },
+    [setSaving, showToast, onRefresh],
+  );
+
+  return { togglePublished, saveCommission, setDisplayTier };
 }
