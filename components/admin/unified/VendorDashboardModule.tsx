@@ -62,6 +62,13 @@ const InicioDashboardV2 = dynamic(
   { ssr: false, loading: DashboardLoading },
 );
 
+// 2026-05-26 — briefing accionable embebido (reemplaza el modal "¡Buenos días!"
+// bloqueante). Solo aparece si hay fiados/stock/pedidos por resolver.
+const MorningBriefingCard = dynamic(
+  () => import("@/components/admin/inicio/MorningBriefingCard"),
+  { ssr: false },
+);
+
 const MODULE_ID = "vendor-dashboard";
 
 type InicioTab = "general" | "ventas" | "caja" | "inventario" | "compras" | "clientes" | "marketplace";
@@ -204,6 +211,9 @@ export default function VendorDashboardModule() {
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
+            {/* Briefing accionable del día (reemplaza el modal bloqueante).
+                Se auto-oculta si no hay nada que resolver. */}
+            <MorningBriefingCard />
             {/* Hub "Hoy" — saludo dinámico + hero KPI scoped al rango activo.
                 hideAlerts=true porque InicioDashboardV2 las renderea side-by-side
                 con la Meta del mes (v2 mayo 2026). */}

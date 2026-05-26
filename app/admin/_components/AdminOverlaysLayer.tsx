@@ -24,10 +24,9 @@ const AIStatusBanner = dynamic(() => import("@/components/admin/AIStatusBanner")
 import type { useOnboarding } from "@/hooks/use-onboarding";
 import type { Tab } from "../_lib/tabs.types";
 
-const MorningSummaryModal = dynamic(
-  () => import("@/components/admin/MorningSummaryModal"),
-  { ssr: false },
-);
+// 2026-05-26: MorningSummaryModal (overlay bloqueante "¡Buenos días!") removido.
+// Reemplazado por MorningBriefingCard embebido en el tab Inicio — no bloquea la
+// pantalla y solo aparece si hay algo accionable. Ver InicioDashboard.
 const OnboardingWizard = dynamic(
   () => import("@/components/admin/OnboardingWizard"),
   { ssr: false },
@@ -100,7 +99,6 @@ export function AdminOverlaysLayer({
 
       <AIStatusBanner />
       <SSEListener />
-      <MorningSummaryModal />
 
       {showOnboarding && (
         <OnboardingWizard
