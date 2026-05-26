@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useOrdersData } from "./hooks/useOrdersData";
 import { useOrdersFilters } from "./hooks/useOrdersFilters";
@@ -159,18 +160,9 @@ export default function OrdersTab() {
         }
         icon={Package}
       >
-        <button
-          type="button"
-          onClick={() => setFilterByDelivery((prev) => !prev)}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors border",
-            filterByDelivery
-              ? "bg-primary text-white border-primary"
-              : "bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent",
-          )}
-        >
-          <Bike className="h-4 w-4" /> Por motorizado
-        </button>
+        {/* #2 (2026-05-26): Filtros queda como acción primaria visible; las
+            secundarias (Por motorizado, Imprimir, Archivados) se agrupan en un
+            menú "Más" para descargar el header de 4 botones a 2. */}
         <button
           type="button"
           onClick={() => setShowAdvancedFilters(true)}
@@ -183,25 +175,28 @@ export default function OrdersTab() {
             </span>
           )}
         </button>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
-        >
-          <Printer className="h-4 w-4" /> Imprimir
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowArchive(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
-        >
-          <FileText className="h-4 w-4" /> Archivados
-          {archivedOrders.length > 0 && (
-            <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] tabular-nums">
-              {archivedOrders.length}
-            </span>
-          )}
-        </button>
+        <ModuleActionMenu
+          label="Más"
+          items={[
+            {
+              label: filterByDelivery ? "Quitar filtro por motorizado" : "Filtrar por motorizado",
+              icon: Bike,
+              onClick: () => setFilterByDelivery((prev) => !prev),
+            },
+            {
+              label: "Imprimir",
+              icon: Printer,
+              onClick: () => window.print(),
+            },
+            {
+              label: "Archivados",
+              icon: FileText,
+              onClick: () => setShowArchive(true),
+              description: archivedOrders.length > 0 ? `${archivedOrders.length} archivado${archivedOrders.length === 1 ? "" : "s"}` : undefined,
+              dividerBefore: true,
+            },
+          ]}
+        />
       </AdminModuleHeader>
 
       {/* #1 (2026-05-26): stat cards removidas — los conteos por estado ya viven

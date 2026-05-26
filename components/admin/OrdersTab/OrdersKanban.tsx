@@ -107,9 +107,14 @@ const COLUMNS: Array<ColumnConfig & { Icon: React.ElementType; iconColor: string
 ];
 
 function urgency(o: DbOrder, nowMs: number): "u2h" | "u1h" | null {
-  const ageH = (nowMs - new Date(o.createdAt).getTime()) / 3_600_000;
-  if (ageH >= 2) return "u2h";
-  if (ageH >= 1) return "u1h";
+  // #5 (2026-05-26): "sin avanzar" = tiempo en el ESTADO actual, no edad total.
+  // Antes usaba createdAt → un pedido viejo recién movido a "preparando" salía
+  // flagueado aunque acababa de avanzar (todos los pedidos de seed se marcaban).
+  // updatedAt cambia con cada transición de estado → mide el estancamiento real.
+  const ref = o.updatedAt ?? o.createdAt;
+  const stuckH = (nowMs - new Date(ref).getTime()) / 3_600_000;
+  if (stuckH >= 2) return "u2h";
+  if (stuckH >= 1) return "u1h";
   return null;
 }
 
