@@ -57,10 +57,55 @@ const KIND_META: Record<NotifKind, { Icon: LucideIcon; label: string; tone: stri
  * Agrupa por recencia leyendo el `timeAgo` ("2m", "15 min", "3h", "1 sem", "2d").
  * Minutos/horas/"ahora"/"hoy" → Hoy; el resto (días en adelante) → Antes.
  */
-function isToday(timeAgo: string): boolean {
+function isToday(timeAgo: string | undefined | null): boolean {
+  if (!timeAgo) return true; // sin dato → tratar como reciente (va a "Hoy")
   const t = timeAgo.trim().toLowerCase();
-  if (/ahora|reci[eé]n|hoy/.test(t)) return true;
-  return /^\d+\s*(s|seg|m|min|h|hora)/.test(t);
+  if (/^(ahora|reci[eé]n|hoy)/.test(t)) return true;
+  // Solo minutos u horas = hoy. Días/semanas/meses ("d"/"sem"/"mes") → Antes.
+  // (segundos no aplican: relativeTime devuelve "ahora" cuando <1 min.)
+  return /^\d+\s*(min|h|hora)\b/.test(t);
+}
+
+// Shape REAL que devuelve /api/marketplace/notifications (migración 2026-05-19
+// a CustomerNotificationsDB). Los nombres NO coinciden con el tipo del
+// componente — se mapean abajo. Antes el componente leía campos inexistentes
+// (timeAgo/kind/desc/href/unread = undefined) → notifs en blanco + crash.
+type ApiNotification = {
+  id: string;
+  type?: string;
+  title?: string;
+  body?: string;
+  link?: string;
+  read?: boolean;
+  createdAt?: string;
+};
+
+/** Tiempo relativo en español desde una fecha ISO. */
+function relativeTime(iso: string | undefined): string {
+  if (!iso) return "";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const diff = Math.max(0, Date.now() - then);
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "ahora";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} d`;
+  const sem = Math.floor(d / 7);
+  if (sem < 5) return `${sem} sem`;
+  return `${Math.floor(d / 30)} mes`;
+}
+
+/** Mapea el `type` del API a un NotifKind conocido (fallback "system"). */
+function toKind(type: string | undefined): NotifKind {
+  const t = (type ?? "").toLowerCase();
+  if (t.includes("order") || t.includes("pedido")) return "order";
+  if (t.includes("promo") || t.includes("oferta") || t.includes("cupon")) return "promo";
+  if (t.includes("deliver") || t.includes("envio") || t.includes("envío")) return "delivery";
+  if (t.includes("chat") || t.includes("mensaje") || t.includes("message")) return "chat";
+  return "system";
 }
 
 async function fetchNotificationsForCustomer(
@@ -72,8 +117,16 @@ async function fetchNotificationsForCustomer(
       { cache: "no-store", credentials: "include" },
     );
     if (!res.ok) return [];
-    const json = (await res.json()) as { data?: Notification[] };
-    return json.data ?? [];
+    const json = (await res.json()) as { data?: ApiNotification[] };
+    return (json.data ?? []).map((n) => ({
+      id: n.id,
+      kind: toKind(n.type),
+      title: n.title ?? "Notificación",
+      desc: n.body ?? "",
+      timeAgo: relativeTime(n.createdAt),
+      href: n.link ?? "",
+      unread: n.read === false, // read=false → sin leer
+    }));
   } catch {
     return [];
   }
