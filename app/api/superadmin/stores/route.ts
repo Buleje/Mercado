@@ -65,13 +65,17 @@ async function getStoresData() {
   // que cover/hoursJson en initial-stores). Permite mostrar/editar el nivel
   // de beneficio de cada tienda desde superadmin.
   const tierMap = new Map<string, string>();
+  const benefitsMap = new Map<string, Record<string, boolean>>();
   try {
     const tierRows = await prisma.$queryRawUnsafe<
-      Array<{ id: string; displayTier: string | null }>
-    >(`SELECT id, "displayTier" FROM "Store"`);
-    for (const r of tierRows) tierMap.set(r.id, r.displayTier ?? "standard");
+      Array<{ id: string; displayTier: string | null; benefits: Record<string, boolean> | null }>
+    >(`SELECT id, "displayTier", benefits FROM "Store"`);
+    for (const r of tierRows) {
+      tierMap.set(r.id, r.displayTier ?? "standard");
+      benefitsMap.set(r.id, (r.benefits ?? {}) as Record<string, boolean>);
+    }
   } catch {
-    /* columna ausente → todos standard */
+    /* columnas ausentes → defaults */
   }
 
   const stores = storesRaw.map((store) => {
@@ -82,6 +86,7 @@ async function getStoresData() {
       ...store,
       _count: { products: count },
       displayTier: tierMap.get(store.id) ?? "standard",
+      benefits: benefitsMap.get(store.id) ?? {},
     };
   });
 
@@ -108,6 +113,20 @@ const PatchSchema = z.object({
   zone: z.string().optional(),
   // Nivel de visibilidad en /tiendas (beneficio controlado por superadmin).
   displayTier: z.enum(["standard", "featured", "premium"]).optional(),
+  // Beneficios por tienda — parcial (se mergea con los existentes en JSONB).
+  benefits: z
+    .object({
+      verified: z.boolean(),
+      searchBoost: z.boolean(),
+      featuredHome: z.boolean(),
+      ownBanner: z.boolean(),
+      reducedCommission: z.boolean(),
+      featuredProducts: z.boolean(),
+      prioritySupport: z.boolean(),
+      advancedAnalytics: z.boolean(),
+    })
+    .partial()
+    .optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -142,6 +161,16 @@ export async function PATCH(req: NextRequest) {
     await prisma.$executeRawUnsafe(
       `UPDATE "Store" SET "displayTier" = $1 WHERE id = $2`,
       data.displayTier,
+      storeId,
+    );
+    revalidateTag("marketplace:stores", "max");
+  }
+
+  // Beneficios: merge JSONB (solo las claves enviadas se sobreescriben).
+  if (data.benefits !== undefined) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Store" SET benefits = COALESCE(benefits, '{}'::jsonb) || $1::jsonb WHERE id = $2`,
+      JSON.stringify(data.benefits),
       storeId,
     );
     revalidateTag("marketplace:stores", "max");

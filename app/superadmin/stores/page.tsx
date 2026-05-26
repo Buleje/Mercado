@@ -11,9 +11,11 @@ import {
   Image as ImageIcon,
   Layers,
   RefreshCw,
+  Sparkles,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { StoresTab } from "@/components/superadmin/stores/StoresTab";
+import { BeneficiosTab } from "@/components/superadmin/stores/BeneficiosTab";
 import { CouponsTab } from "@/components/superadmin/stores/CouponsTab";
 import { AnalyticsTab } from "@/components/superadmin/stores/AnalyticsTab";
 import { NavegacionTab } from "@/components/superadmin/stores/NavegacionTab";
@@ -34,6 +36,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { key: "stores", label: "Tiendas", icon: ShoppingBag },
+  { key: "beneficios", label: "Beneficios", icon: Sparkles },
   { key: "health", label: "Salud", icon: ShieldCheck },
   { key: "operations", label: "Operaciones", icon: Activity },
   { key: "categories", label: "Categorías", icon: ImageIcon },
@@ -211,6 +214,9 @@ export default function StoresPage() {
           onRefresh={handleRefresh}
           refreshing={refreshing}
         />
+      )}
+      {tab === "beneficios" && (
+        <BeneficiosTab stores={stores} onRefresh={handleRefresh} />
       )}
       {tab === "health" && <HealthTab />}
       {tab === "operations" && <OperationsTab />}

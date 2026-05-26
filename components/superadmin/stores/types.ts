@@ -1,5 +1,15 @@
 // ─── Tipos locales del módulo Stores / Marketplace ───────────────────────────
 
+export type StoreBenefitKey =
+  | "verified"
+  | "searchBoost"
+  | "featuredHome"
+  | "ownBanner"
+  | "reducedCommission"
+  | "featuredProducts"
+  | "prioritySupport"
+  | "advancedAnalytics";
+
 export interface StoreRow {
   id: string;
   slug: string;
@@ -16,6 +26,8 @@ export interface StoreRow {
   createdAt: string;
   /** Nivel de beneficio/visibilidad en /tiendas. Default "standard". */
   displayTier?: "standard" | "featured" | "premium";
+  /** Beneficios por tienda (superadmin). Claves booleanas, default {}. */
+  benefits?: Partial<Record<StoreBenefitKey, boolean>>;
   tenant: {
     id: string;
     slug: string;
@@ -55,6 +67,7 @@ export interface MarketplaceCoupon {
 
 export type StoreTab =
   | "stores"
+  | "beneficios"
   | "orders"
   | "coupons"
   | "analytics"
