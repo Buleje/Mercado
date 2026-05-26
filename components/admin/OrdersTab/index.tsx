@@ -2,7 +2,7 @@
 
 import { PageTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign } from "@buleje/design-system/icons";
+import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
@@ -112,7 +112,8 @@ export default function OrdersTab() {
     const q = filters.customerSearch.toLowerCase();
     activeOrders = activeOrders.filter(o =>
       o.customer.name.toLowerCase().includes(q) ||
-      (o.customer.phone ?? "").includes(q)
+      (o.customer.phone ?? "").includes(q) ||
+      o.id.toLowerCase().includes(q)
     );
   }
   if (filters.hasDebt) {
@@ -253,6 +254,20 @@ export default function OrdersTab() {
           </button>
         </div>
       )}
+
+      {/* #7 (2026-05-26): búsqueda inline en el board — antes solo vivía dentro
+          del modal de Filtros avanzados. Busca por cliente, teléfono o #pedido. */}
+      <div className="relative w-full sm:max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+        <input
+          type="search"
+          value={filters.customerSearch}
+          onChange={(e) => filtersDispatch({ type: "SET_CUSTOMER_SEARCH", value: e.target.value })}
+          placeholder="Buscar por cliente, teléfono o #pedido…"
+          aria-label="Buscar pedidos por cliente, teléfono o número"
+          className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+        />
+      </div>
 
       {/* Quick filter chips por status — atajo visual sin abrir filtros avanzados */}
       <div role="group" aria-label="Filtros rapidos por estado" className="flex items-center gap-2 flex-wrap">

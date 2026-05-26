@@ -276,6 +276,7 @@ export {
   Grid3X3,
   Grid3x3,
   GripVertical,
+  GripHorizontal,
   HardDrive,
   HeartPulse,
   History,

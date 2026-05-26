@@ -26,7 +26,7 @@ export function OrdersBulkActions({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-primary text-white rounded-xl px-5 py-3 flex items-center gap-3 animate-[slideUp_0.2s_ease-out]">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--text-primary)] text-[var(--surface-canvas)] rounded-xl px-5 py-3 flex items-center gap-3 shadow-xl animate-[slideUp_0.2s_ease-out]">
       <span className="text-sm font-bold">
         {selectedCount} pedido{selectedCount > 1 ? "s" : ""}
       </span>

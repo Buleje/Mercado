@@ -16,7 +16,7 @@
 import { useMemo, useState, useEffect, memo } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import {
-  Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat,
+  Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat, GripHorizontal,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -241,13 +241,17 @@ const OrderCard = memo(function OrderCard({
         </div>
       )}
 
-      <div
-        className="p-4 cursor-pointer"
-        onClick={onSelect}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter") onSelect(); }}
-      >
+      {/* #10 (2026-05-26): a11y — antes era un <div role="button"> que contenía
+          el checkbox y los botones de acción (interactive anidado en interactive).
+          Ahora el área de "abrir detalle" es un <button> real que envuelve SOLO
+          contenido no interactivo; checkbox y acciones quedan como hermanos. */}
+      <div className="p-4">
+        {/* #8 (2026-05-26): pista de arrastre — grip que aparece en hover para
+            comunicar que la card se arrastra entre columnas. pointer-events-none
+            para no interferir con el drag real ni con los clics. */}
+        <div aria-hidden className="flex justify-center -mt-1.5 mb-1 opacity-0 transition-opacity group-hover:opacity-40 pointer-events-none motion-reduce:transition-none">
+          <GripHorizontal className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={2} />
+        </div>
         <div className="flex items-start gap-3">
           <input
             type="checkbox"
@@ -257,35 +261,42 @@ const OrderCard = memo(function OrderCard({
             aria-label={`Seleccionar pedido de ${order.customer.name}`}
             className="mt-1.5 rounded border-[var(--rule-base)] text-[var(--accent)] focus:ring-[var(--accent)]/30 shrink-0"
           />
-          <span
-            aria-hidden
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base font-bold tracking-tight"
+          <button
+            type="button"
+            onClick={onSelect}
+            aria-label={`Ver detalle del pedido de ${order.customer.name}`}
+            className="flex flex-1 items-start gap-3 min-w-0 text-left cursor-pointer rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
           >
-            {initial}
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-[var(--text-primary)] text-sm leading-tight line-clamp-2">
-              {order.customer.name}
-            </p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
-              <span className="font-mono">#{order.id.slice(-6)}</span>
-              <span aria-hidden> · </span>
-              <span className="whitespace-nowrap">{formatDate(order.createdAt)}</span>
-            </p>
-            {order.customer.phone && (
-              <p className="text-xs font-mono text-[var(--text-tertiary)] mt-0.5 truncate">
-                {order.customer.phone}
+            <span
+              aria-hidden
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base font-bold tracking-tight"
+            >
+              {initial}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-[var(--text-primary)] text-sm leading-tight line-clamp-2">
+                {order.customer.name}
               </p>
-            )}
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
-              S/{Number(order.total).toFixed(2)}
-            </p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">
-              {order.items.length} {order.items.length === 1 ? "ítem" : "ítems"}
-            </p>
-          </div>
+              <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
+                <span className="font-mono">#{order.id.slice(-6)}</span>
+                <span aria-hidden> · </span>
+                <span className="whitespace-nowrap">{formatDate(order.createdAt)}</span>
+              </p>
+              {order.customer.phone && (
+                <p className="text-xs font-mono text-[var(--text-tertiary)] mt-0.5 truncate">
+                  {order.customer.phone}
+                </p>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
+                S/{Number(order.total).toFixed(2)}
+              </p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                {order.items.length} {order.items.length === 1 ? "ítem" : "ítems"}
+              </p>
+            </div>
+          </button>
         </div>
 
         {/* Meta chips */}
