@@ -265,14 +265,19 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     </div>
   );
 
+  // Destacada: anillo teal + leve realce para distinguirla de las estándar
+  // sin ocupar fila completa (premium usa su propia card).
+  const isFeatured = store.displayTier === "featured";
   return (
     <m.div
       ref={cardRef}
       initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: index * 0.04 }}
-      className="relative"
+      className={`relative ${isFeatured ? "rounded-2xl p-0.5 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] shadow-lg shadow-[var(--accent)]/20" : ""}`}
     >
+      {/* Wrapper interno para que el anillo teal envuelva la card en Destacada */}
+      <div className={isFeatured ? "rounded-[14px] overflow-hidden bg-[var(--surface-raised)]" : "contents"}>
       {/* Badge de nivel (superadmin): Destacada / Premium. z-20 sobre overlays. */}
       {(store.displayTier === "featured" || store.displayTier === "premium") && (
         <span className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-md">
@@ -382,6 +387,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       {/* TS-15 follow store — fuera del Link para no anidar interactivos */}
       <div className="absolute top-3 right-3 z-10">
         <FollowStoreButton slug={store.slug} storeName={store.name} />
+      </div>
       </div>
     </m.div>
   );

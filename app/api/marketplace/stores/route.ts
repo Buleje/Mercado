@@ -284,21 +284,29 @@ export async function GET(req: NextRequest) {
       if (stores.length > 0) {
         try {
           const rows = await prisma.$queryRawUnsafe<
-            Array<{ id: string; cover: string | null; hoursJson: unknown }>
+            Array<{ id: string; cover: string | null; hoursJson: unknown; displayTier: string | null; benefits: Record<string, boolean> | null }>
           >(
-            `SELECT id, cover, "hoursJson" FROM "Store" WHERE id = ANY($1::text[])`,
+            `SELECT id, cover, "hoursJson", "displayTier", benefits FROM "Store" WHERE id = ANY($1::text[])`,
             stores.map((s) => s.id as string),
           ).catch(
-            () => [] as Array<{ id: string; cover: string | null; hoursJson: unknown }>,
+            () => [] as Array<{ id: string; cover: string | null; hoursJson: unknown; displayTier: string | null; benefits: Record<string, boolean> | null }>,
           );
           const map = new Map(rows.map((r) => [r.id, r]));
           for (const s of stores) {
             const row = map.get(s.id as string);
             (s as Record<string, unknown>).cover = row?.cover ?? null;
             (s as Record<string, unknown>).hoursJson = row?.hoursJson ?? null;
+            // Beneficios (superadmin): sobreviven al refetch cliente → los
+            // badges/orden de /tiendas no se pierden al filtrar.
+            const tier = row?.displayTier;
+            (s as Record<string, unknown>).displayTier =
+              tier === "premium" || tier === "featured" ? tier : "standard";
+            const b = row?.benefits ?? {};
+            (s as Record<string, unknown>).verified = Boolean(b.verified);
+            (s as Record<string, unknown>).searchBoost = Boolean(b.searchBoost);
           }
         } catch {
-          // sin cover/hours → marketplace sigue funcionando
+          // sin cover/hours/tier → marketplace sigue funcionando
         }
       }
     } catch (dbErr) {
@@ -625,6 +633,11 @@ export async function GET(req: NextRequest) {
         logo: s.logo,
         cover: (s as { cover?: string | null }).cover ?? null, // Portada — patched arriba via raw query
         banner: (s as { banner?: string | null }).banner ?? null, // Hero del storefront
+        // Beneficios superadmin (patched arriba) — para que badges/orden de
+        // /tiendas sobrevivan al refetch cliente.
+        displayTier: (s as { displayTier?: string }).displayTier ?? "standard",
+        verified: Boolean((s as { verified?: boolean }).verified),
+        searchBoost: Boolean((s as { searchBoost?: boolean }).searchBoost),
         category: s.category,
         zone: finalZone,
         rating: s.rating,

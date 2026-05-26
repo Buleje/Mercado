@@ -21,8 +21,8 @@ interface Props {
 }
 
 const SIZES: Record<NonNullable<Props["variant"]>, number> = {
-  page: 280,
-  section: 160,
+  page: 360,
+  section: 200,
   inline: 72,
 };
 
@@ -58,7 +58,7 @@ export function PaicheLoading({
   if (variant === "page") {
     return (
       <div
-        className={`relative min-h-[80vh] flex flex-col items-center justify-center bg-[var(--surface-canvas)] overflow-hidden ${className}`}
+        className={`relative min-h-screen flex flex-col items-center justify-center bg-[var(--surface-canvas)] overflow-hidden ${className}`}
         role="status"
         aria-label={label ?? defaultLabel}
       >

@@ -130,23 +130,30 @@ export default function NavProgress() {
       )}
 
       {/* Overlay del Paiche nadando — solo si la navegación tarda >400ms.
-          Backdrop tenue con blur para no tapar de golpe; el paiche centrado. */}
+          Fondo blanco OPACO (antes era translúcido) + paiche grande centrado. */}
       {showPaiche && (
         <div
           role="status"
           aria-label="Cargando"
           className="fixed inset-0 z-[9998] flex flex-col items-center justify-center"
           style={{
-            background: "color-mix(in oklab, var(--surface-canvas) 78%, transparent)",
-            backdropFilter: "blur(4px)",
-            WebkitBackdropFilter: "blur(4px)",
+            background: "var(--surface-canvas)",
             animation: "navp-fade-in .2s ease both",
           }}
         >
-          <div className="text-[var(--accent)]">
-            <PaicheMascot size={160} animated strokeWidth={1.75} />
+          {/* Aura radial teal sutil detrás del paiche */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse at center, color-mix(in oklab, var(--accent) 10%, transparent) 0%, transparent 60%)",
+            }}
+          />
+          <div className="relative text-[var(--accent)]">
+            <PaicheMascot size={300} animated strokeWidth={1.75} />
           </div>
-          <p className="mt-4 text-lg font-black tracking-[-0.02em] text-[var(--text-primary)]">
+          <p className="relative mt-6 text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
             Un toque
             <span className="ml-1.5 italic font-serif text-[var(--accent)]">ya viene</span>
           </p>
