@@ -1,6 +1,7 @@
 import { AdminProviders } from "./providers";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import DesignTokensProvider from "@/components/admin/DesignTokensProvider";
+import { TenantSlugProvider } from "@/contexts/tenant-context";
 import { cookies } from "next/headers";
 import "./print.css";
 
@@ -79,11 +80,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         dangerouslySetInnerHTML={{ __html: TENANT_CACHE_GUARD_SCRIPT }}
       />
       <AdminProviders>
-        {/* Skip-link WCAG 2.4.1 — apunta al <main id="main-content"> en AdminMainContent. */}
-        <SkipLink />
-        <DesignTokensProvider tenantId={tenantSlug}>
-          {children}
-        </DesignTokensProvider>
+        {/* TenantSlugProvider: sin esto, useTenant() en el admin caía al default
+            industry:"bodega" → TODO admin (pizzería, farmacia, etc.) mostraba
+            "Bodega/Minimarket". Resuelve el vertical real por slug. */}
+        <TenantSlugProvider slug={tenantSlug ?? undefined}>
+          {/* Skip-link WCAG 2.4.1 — apunta al <main id="main-content"> en AdminMainContent. */}
+          <SkipLink />
+          <DesignTokensProvider tenantId={tenantSlug}>
+            {children}
+          </DesignTokensProvider>
+        </TenantSlugProvider>
       </AdminProviders>
     </>
   );

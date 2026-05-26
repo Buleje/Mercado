@@ -90,8 +90,10 @@ export function TenantSlugProvider({
       };
     }
 
-    // Fetch tenant info (tenantFetch auto-injects x-tenant-id header)
-    tenantFetch(`/api/tenants/resolve?slug=${encodeURIComponent(slug)}`)
+    // Fetch tenant info (tenantFetch auto-injects x-tenant-id header).
+    // no-store: industry/branding son config del dueño — al cambiarlas debe
+    // verse al instante, no esperar el SWR (s-maxage=60/SWR=300) del endpoint.
+    tenantFetch(`/api/tenants/resolve?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.id) {

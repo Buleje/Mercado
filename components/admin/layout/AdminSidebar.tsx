@@ -828,7 +828,7 @@ export function AdminSidebar({
                     ? "text-white"
                     : "text-[var(--text-primary)] dark:text-[var(--text-primary)]",
                 )}>
-                  {verticalConfig.branding?.sidebarTitle ?? activeTenantName ?? "Buleje"}
+                  {activeTenantName ?? verticalConfig.branding?.sidebarTitle ?? "Buleje"}
                 </p>
                 {/* Industry badge — clickable para owner/admin */}
                 <button

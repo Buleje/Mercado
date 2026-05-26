@@ -489,7 +489,7 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
         <Sparkles className="h-7 w-7 text-[color:var(--data-success)]" />
       </span>
       <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
-        Asistente de tu bodega
+        Asistente de tu negocio
       </h2>
       <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
         Te ayudo a entender qué pasa en tu negocio, qué hacer ahora y cómo vender más.
