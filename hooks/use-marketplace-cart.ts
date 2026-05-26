@@ -87,6 +87,13 @@ function writeStorage(state: CartState) {
   }
 }
 
+// PERF 2026-05-26: el hook lo consumen ~50 componentes (cada UnifiedProductCard,
+// navbar, mini-cart, etc.). Antes CADA instancia validaba el carrito completo
+// vía /check-exists en su mount → 80+ requests idénticas por página + ráfagas de
+// ERR_ABORTED al re-renderizar carruseles. Este flag a nivel de módulo deduplica
+// la validación a 1 sola vez por carga de página (se resetea en full reload).
+let cartValidatedThisSession = false;
+
 // ---------- hook ----------
 
 export function useMarketplaceCart() {
@@ -114,8 +121,11 @@ export function useMarketplaceCart() {
   // Guard: si por alguna razon la respuesta no es confiable (empty, error,
   // cleaned.length === 0), NUNCA borrar el carrito entero. Preservamos como-esta.
   useEffect(() => {
+    // Dedup global: solo la primera instancia que monta con items valida.
+    if (cartValidatedThisSession) return;
     const stored = readStorage().items;
-    if (stored.length === 0) return;
+    if (stored.length === 0) return; // no marcar: revalidar cuando haya items
+    cartValidatedThisSession = true;
     const idsQuery = stored.map(i => i.productId).join(",");
     const controller = new AbortController();
     fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}`, { signal: controller.signal })
