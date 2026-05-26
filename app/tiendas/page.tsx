@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import TiendasClient from "./TiendasClient";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
+import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db";
+import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
 const BASE_URL = "https://www.buleje.pe";
@@ -107,6 +109,36 @@ export const metadata: Metadata = {
  */
 export default async function TiendasPage() {
   const initialStores = await getInitialMarketplaceStores();
+
+  // Productos para las cards Premium (beneficio superadmin): solo se necesitan
+  // para las tiendas con displayTier "premium". Reusa el helper que ya embebe
+  // productos; mapeamos por slug. Fire-and-forget — si falla, premium muestra
+  // su card sin preview (degrade elegante).
+  const premiumSlugs = new Set(
+    initialStores.filter((s) => s.displayTier === "premium").map((s) => s.slug),
+  );
+  let productsBySlug: Record<string, PremiumProduct[]> = {};
+  if (premiumSlugs.size > 0) {
+    try {
+      const withProducts = await getFeaturedStoresWithProducts({ limit: 30, productsPerStore: 4 });
+      productsBySlug = Object.fromEntries(
+        withProducts
+          .filter((s) => premiumSlugs.has(s.slug))
+          .map((s) => [
+            s.slug,
+            s.productosDestacados.map((p) => ({
+              productId: p.productId,
+              name: p.name,
+              image: p.image,
+              retailPrice: p.retailPrice,
+              discountPrice: p.discountPrice,
+            })),
+          ]),
+      );
+    } catch {
+      productsBySlug = {};
+    }
+  }
 
   // ── JSON-LD: CollectionPage + ItemList con las tiendas top ──
   // Brandon 2026-05-25 SEO/IA: 12 → 24 tiendas + priceRange/pagos por tienda
@@ -234,7 +266,7 @@ export default async function TiendasPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqSchema) }}
       />
-      <TiendasClient initialStores={initialStores} />
+      <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
     </>
   );
 }

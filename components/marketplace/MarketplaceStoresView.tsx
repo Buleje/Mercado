@@ -17,6 +17,7 @@ import { m } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { StoreCardCanonical } from "@buleje/design-system";
+import PremiumStoreCard from "./PremiumStoreCard";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
 import {
@@ -385,6 +386,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
 
 interface MarketplaceStoresViewProps {
   stores: MarketplaceStore[];
+  /** Productos por slug para las cards Premium (beneficio superadmin). */
+  premiumProducts?: Record<string, import("./PremiumStoreCard").PremiumProduct[]>;
   loading: boolean;
   error: string | null;
   search: string;
@@ -515,6 +518,7 @@ interface StoreChipFields {
 
 export default function MarketplaceStoresView({
   stores: _stores,
+  premiumProducts = {},
   loading,
   error,
   search,
@@ -651,24 +655,36 @@ export default function MarketplaceStoresView({
           // usa 2 cols en lg (~720px disponibles) y 3 cols en xl (~960px+).
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-6"
         >
-          {filteredStores.map((store, i) => (
-            <div
-              key={store.id}
-              role="listitem"
-              // Premium ocupa la fila completa para destacar (beneficio superadmin).
-              className={
-                store.displayTier === "premium"
-                  ? "sm:col-span-2 xl:col-span-3"
-                  : undefined
-              }
-            >
-              <StoreCardWrapper
-                store={store}
-                index={i}
-                lastOrder={lastOrdersByStore[store.slug]}
-              />
-            </div>
-          ))}
+          {filteredStores.map((store, i) => {
+            // Premium: card de fila completa con preview de productos (no la
+            // card estándar agrandada). Si no hay productos igual se muestra.
+            if (store.displayTier === "premium") {
+              return (
+                <div key={store.id} role="listitem" className="sm:col-span-2 xl:col-span-3">
+                  <PremiumStoreCard
+                    slug={store.slug}
+                    name={store.name}
+                    logo={store.logo}
+                    cover={store.cover}
+                    category={store.category}
+                    zone={store.zone}
+                    rating={store.rating}
+                    reviewCount={store.reviewCount}
+                    products={premiumProducts[store.slug] ?? []}
+                  />
+                </div>
+              );
+            }
+            return (
+              <div key={store.id} role="listitem">
+                <StoreCardWrapper
+                  store={store}
+                  index={i}
+                  lastOrder={lastOrdersByStore[store.slug]}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 

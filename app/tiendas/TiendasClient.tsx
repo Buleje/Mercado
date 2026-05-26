@@ -202,9 +202,11 @@ interface TiendasClientProps {
    *  la hidratación cliente quede frozen tras un back nav, los items siguen
    *  visibles. El client useEffect refresca/filtra normalmente. */
   initialStores?: MarketplaceStore[];
+  /** Productos por slug para las cards Premium (beneficio superadmin). */
+  premiumProducts?: Record<string, import("@/components/marketplace/PremiumStoreCard").PremiumProduct[]>;
 }
 
-export default function TiendasClient({ initialZone, initialStores = [] }: TiendasClientProps = {}) {
+export default function TiendasClient({ initialZone, initialStores = [], premiumProducts = {} }: TiendasClientProps = {}) {
   // ── TS-26 URL sync — leer estado inicial de query params ──
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -1465,6 +1467,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           {/* Listado de tiendas — vista mapa removida (Brandon 2026-05-18 v3). */}
           <MarketplaceStoresView
             stores={stores}
+            premiumProducts={premiumProducts}
             loading={loading}
             error={error}
             search={search}
