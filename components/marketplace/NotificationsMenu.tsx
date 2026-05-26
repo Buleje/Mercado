@@ -250,8 +250,12 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                   return (
                     <li key={n.id}>
                       <Link
-                        href={n.href}
-                        onClick={() => {
+                        // El API puede entregar notificaciones sin href (el tipo
+                        // dice string pero llega undefined) → fallback "#" para no
+                        // romper <Link>, y prevenimos el salto si no hay destino.
+                        href={n.href || "#"}
+                        onClick={(e) => {
+                          if (!n.href) e.preventDefault();
                           markOneRead(n.id);
                           setOpen(false);
                         }}

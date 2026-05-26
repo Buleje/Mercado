@@ -140,6 +140,11 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // Lead capture público desde /demo landing — prospect anónimo sin sesión.
     // El endpoint usa rate-limit MODERATE + Zod safeParse + WhatsApp regex.
     "/api/lead/capture",
+    // Beacon de analítica de banners (impresiones/clicks): navigator.sendBeacon
+    // no permite headers custom → no envía X-CSRF-Token. El endpoint valida
+    // IDs con regex, rate-limit GENEROUS y solo incrementa contadores (sin
+    // datos sensibles ni mutación de estado de usuario).
+    "/api/marketplace/promo-banners/track",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;
