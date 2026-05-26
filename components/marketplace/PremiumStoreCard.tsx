@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ArrowRight, MapPin, Bike } from "@buleje/design-system/icons";
+import { Star, ArrowRight, MapPin, Bike, ShieldCheck } from "@buleje/design-system/icons";
 
 export interface PremiumProduct {
   productId: number;
@@ -30,6 +30,7 @@ interface Props {
   zone?: string | null;
   rating?: number;
   reviewCount?: number;
+  verified?: boolean;
   products: PremiumProduct[];
 }
 
@@ -67,6 +68,7 @@ export default function PremiumStoreCard({
   zone,
   rating,
   reviewCount,
+  verified,
   products,
 }: Props) {
   const shown = products.slice(0, 6);
@@ -94,8 +96,15 @@ export default function PremiumStoreCard({
           )}
         </div>
         <div className="min-w-0">
-          <p className="text-base font-extrabold leading-tight tracking-tight text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors sm:text-lg">
+          <p className="flex items-center gap-1 text-base font-extrabold leading-tight tracking-tight text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors sm:text-lg">
             {name}
+            {verified && (
+              <ShieldCheck
+                className="h-4 w-4 shrink-0 text-[var(--data-info-500,#0ea5e9)]"
+                strokeWidth={2.5}
+                aria-label="Verificada"
+              />
+            )}
           </p>
           <div className="mt-1">
             <Stars rating={rating} reviewCount={reviewCount} />

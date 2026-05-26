@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, memo } from "react";
+import { useRef, memo, useMemo } from "react";
 import {
   MapPin,
   Star,
   Package,
   LocateFixed,
+  ShieldCheck,
   Plane,
   HardHat,
   Moon,
@@ -272,11 +273,21 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       transition={{ duration: 0.25, delay: index * 0.04 }}
       className="relative"
     >
-      {/* Badge de beneficio (superadmin): Destacada / Premium. z-20 sobre overlays. */}
+      {/* Badge de nivel (superadmin): Destacada / Premium. z-20 sobre overlays. */}
       {(store.displayTier === "featured" || store.displayTier === "premium") && (
         <span className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-md">
           <Star className="h-3 w-3 fill-current" aria-hidden="true" />
           {store.displayTier === "premium" ? "Premium" : "Destacada"}
+        </span>
+      )}
+      {/* Badge Verificada (beneficio superadmin) — top-left, no choca con nivel. */}
+      {store.verified && (
+        <span
+          className="absolute top-2 left-2 z-20 inline-flex items-center gap-1 rounded-full bg-[var(--data-info-500,#0ea5e9)] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-md"
+          title="Tienda verificada por Buleje"
+        >
+          <ShieldCheck className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+          Verificada
         </span>
       )}
 
@@ -543,6 +554,32 @@ export default function MarketplaceStoresView({
           passesChips(s as MarketplaceStore & Partial<StoreChipFields>, chips),
         );
 
+  // Orden por beneficio (superadmin):
+  //  - Destacada (featured) primero, ancho normal → la acompañan estándar.
+  //  - searchBoost sube dentro de su grupo.
+  //  - Premium full-width intercalado (1 arriba, luego cada ~6 cards) para que
+  //    no se amontonen y dejen respirar la grilla.
+  const orderedStores = useMemo(() => {
+    const premiums = filteredStores.filter((s) => s.displayTier === "premium");
+    const rest = [...filteredStores.filter((s) => s.displayTier !== "premium")].sort((a, b) => {
+      const ta = a.displayTier === "featured" ? 0 : 1;
+      const tb = b.displayTier === "featured" ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      const ba = a.searchBoost ? 0 : 1;
+      const bb = b.searchBoost ? 0 : 1;
+      return ba - bb;
+    });
+    const out: MarketplaceStore[] = [];
+    let pi = 0;
+    if (premiums[pi]) out.push(premiums[pi++]); // primer premium arriba
+    rest.forEach((s, i) => {
+      out.push(s);
+      if ((i + 1) % 6 === 0 && premiums[pi]) out.push(premiums[pi++]);
+    });
+    while (premiums[pi]) out.push(premiums[pi++]);
+    return out;
+  }, [filteredStores]);
+
   return (
     <>
       {/* Error state */}
@@ -655,7 +692,7 @@ export default function MarketplaceStoresView({
           // usa 2 cols en lg (~720px disponibles) y 3 cols en xl (~960px+).
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-6"
         >
-          {filteredStores.map((store, i) => {
+          {orderedStores.map((store, i) => {
             // Premium: card de fila completa con preview de productos (no la
             // card estándar agrandada). Si no hay productos igual se muestra.
             if (store.displayTier === "premium") {
@@ -670,6 +707,7 @@ export default function MarketplaceStoresView({
                     zone={store.zone}
                     rating={store.rating}
                     reviewCount={store.reviewCount}
+                    verified={store.verified}
                     products={premiumProducts[store.slug] ?? []}
                   />
                 </div>

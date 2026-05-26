@@ -154,6 +154,11 @@ export async function PATCH(req: NextRequest) {
     data: updateData,
   });
 
+  // FIX 2026-05-26: el GET (getStoresData) es "use cache" con tag
+  // "superadmin:stores". Sin invalidar acá, el refetch tras un PATCH devolvía
+  // data vieja → "el cambio no se aplica". Invalida SIEMPRE.
+  revalidateTag("superadmin:stores", "max");
+
   // displayTier vive fuera del schema Prisma (columna parcheada en DB, mismo
   // patrón que cover/hoursJson) → update por raw SQL parametrizado. Invalida
   // el cache de /tiendas para que el cambio se refleje al instante.

@@ -53,13 +53,31 @@ interface BeneficiosTabProps {
   onRefresh: () => void;
 }
 
+type Override = { displayTier?: DisplayTier; benefits?: Partial<Record<StoreBenefitKey, boolean>> };
+
 export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Override optimista: refleja el cambio AL INSTANTE sin esperar el refetch.
+  const [overrides, setOverrides] = useState<Record<string, Override>>({});
 
   const patchStore = useCallback(
-    async (storeId: string, body: Record<string, unknown>) => {
+    async (
+      storeId: string,
+      body: { displayTier?: DisplayTier; benefits?: Partial<Record<StoreBenefitKey, boolean>> },
+    ) => {
       setBusyId(storeId);
+      // Optimista: aplicar el cambio en UI ya.
+      setOverrides((prev) => {
+        const cur = prev[storeId] ?? {};
+        return {
+          ...prev,
+          [storeId]: {
+            displayTier: body.displayTier ?? cur.displayTier,
+            benefits: { ...(cur.benefits ?? {}), ...(body.benefits ?? {}) },
+          },
+        };
+      });
       try {
         const res = await fetch("/api/superadmin/stores", {
           method: "PATCH",
@@ -67,9 +85,17 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
           credentials: "include",
           body: JSON.stringify({ storeId, ...body }),
         });
-        if (res.ok) onRefresh();
+        if (res.ok) {
+          onRefresh();
+        } else {
+          throw new Error("patch failed");
+        }
       } catch {
-        /* silent */
+        // Revertir el override si falló.
+        setOverrides((prev) => {
+          const { [storeId]: _drop, ...rest } = prev;
+          return rest;
+        });
       } finally {
         setBusyId(null);
       }
@@ -109,7 +135,9 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
       ) : (
         <div className="space-y-4">
           {filtered.map((store) => {
-            const benefits = store.benefits ?? {};
+            const ov = overrides[store.id];
+            const tier = (ov?.displayTier ?? store.displayTier ?? "standard") as DisplayTier;
+            const benefits = { ...(store.benefits ?? {}), ...(ov?.benefits ?? {}) };
             const busy = busyId === store.id;
             const activeCount = BENEFITS.filter((b) => benefits[b.key]).length;
             return (
@@ -145,10 +173,10 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
                     </div>
                   </div>
                   <TierSelector
-                    value={(store.displayTier ?? "standard") as DisplayTier}
+                    value={tier}
                     busy={busy}
                     size="md"
-                    onChange={(tier) => patchStore(store.id, { displayTier: tier })}
+                    onChange={(t) => patchStore(store.id, { displayTier: t })}
                   />
                 </div>
 

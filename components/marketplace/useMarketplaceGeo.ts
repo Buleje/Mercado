@@ -53,6 +53,9 @@ export interface MarketplaceStore {
   underConstructionMessage?: string | null;
   /** Nivel de beneficio/visibilidad (superadmin): standard | featured | premium. */
   displayTier?: "standard" | "featured" | "premium";
+  /** Beneficios (superadmin): sello verificado + boost de orden en /tiendas. */
+  verified?: boolean;
+  searchBoost?: boolean;
   // ── Backfill marketplace (TS-Sprint5) — opcionales para no romper consumers ──
   paymentMethods?: string[];
   minOrderAmount?: number;

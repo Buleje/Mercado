@@ -46,6 +46,9 @@ export interface InitialStore {
    *   - "premium":  card de fila completa con preview de productos + tope
    */
   displayTier?: StoreDisplayTier;
+  /** Beneficios activos (superadmin). Se usan para badge/orden/etc. en /tiendas. */
+  verified?: boolean;
+  searchBoost?: boolean;
 }
 
 export type StoreDisplayTier = "standard" | "featured" | "premium";
@@ -109,14 +112,15 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
     let coverMap = new Map<string, string | null>();
     let hoursMap = new Map<string, unknown>();
     let tierMap = new Map<string, StoreDisplayTier>();
+    const benefitsMap = new Map<string, Record<string, boolean>>();
     if (ids.length > 0) {
       try {
-        // Patch cover + hoursJson + displayTier — columnas que viven fuera del
+        // Patch cover + hoursJson + displayTier + benefits — columnas fuera del
         // schema Prisma (zona peligrosa). Mismo patrón raw-SQL para no migrar.
         const patches = await prisma.$queryRawUnsafe<
-          Array<{ id: string; cover: string | null; hoursJson: unknown; displayTier: string | null }>
+          Array<{ id: string; cover: string | null; hoursJson: unknown; displayTier: string | null; benefits: Record<string, boolean> | null }>
         >(
-          `SELECT id, cover, "hoursJson", "displayTier" FROM "Store" WHERE id = ANY($1::text[])`,
+          `SELECT id, cover, "hoursJson", "displayTier", benefits FROM "Store" WHERE id = ANY($1::text[])`,
           ids,
         );
         coverMap = new Map(patches.map((c) => [c.id, c.cover]));
@@ -129,8 +133,9 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
               : "standard") as StoreDisplayTier,
           ]),
         );
+        for (const c of patches) benefitsMap.set(c.id, (c.benefits ?? {}) as Record<string, boolean>);
       } catch {
-        // sin cover/hours/tier → fallback al render normal
+        // sin cover/hours/tier/benefits → fallback al render normal
       }
     }
 
@@ -174,6 +179,8 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         isOpenNow: isOpenNowVal,
         nextOpeningAt: nextOpenAt ? nextOpenAt.toISOString() : null,
         displayTier: tierMap.get(s.id) ?? "standard",
+        verified: Boolean(benefitsMap.get(s.id)?.verified),
+        searchBoost: Boolean(benefitsMap.get(s.id)?.searchBoost),
       };
     });
 
