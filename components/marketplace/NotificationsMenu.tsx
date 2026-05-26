@@ -14,7 +14,7 @@
  *     Si la API falla o devuelve vacío, muestra empty state.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { AnimatePresence, m as motion } from "framer-motion";
 import {
@@ -45,13 +45,23 @@ type Notification = {
   unread: boolean;
 };
 
-const KIND_META: Record<NotifKind, { Icon: LucideIcon; label: string; tone: string }> = {
-  order: { Icon: Package, label: "Pedido", tone: "text-blue-500 bg-blue-500/10" },
-  promo: { Icon: Tag, label: "Oferta", tone: "text-[var(--accent)] bg-[var(--accent-soft)]" },
-  delivery: { Icon: Truck, label: "Envío", tone: "text-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10" },
-  chat: { Icon: MessageCircle, label: "Mensaje", tone: "text-violet-500 bg-violet-500/10" },
-  system: { Icon: Sparkles, label: "Sistema", tone: "text-[var(--data-success-500)] bg-[var(--data-success-500)]/10" },
+const KIND_META: Record<NotifKind, { Icon: LucideIcon; label: string; tone: string; dot: string }> = {
+  order: { Icon: Package, label: "Pedido", tone: "text-blue-500 bg-blue-500/10", dot: "bg-blue-500" },
+  promo: { Icon: Tag, label: "Oferta", tone: "text-[var(--accent)] bg-[var(--accent-soft)]", dot: "bg-[var(--accent)]" },
+  delivery: { Icon: Truck, label: "Envío", tone: "text-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10", dot: "bg-[var(--data-warning-500)]" },
+  chat: { Icon: MessageCircle, label: "Mensaje", tone: "text-violet-500 bg-violet-500/10", dot: "bg-violet-500" },
+  system: { Icon: Sparkles, label: "Sistema", tone: "text-[var(--data-success-500)] bg-[var(--data-success-500)]/10", dot: "bg-[var(--data-success-500)]" },
 };
+
+/**
+ * Agrupa por recencia leyendo el `timeAgo` ("2m", "15 min", "3h", "1 sem", "2d").
+ * Minutos/horas/"ahora"/"hoy" → Hoy; el resto (días en adelante) → Antes.
+ */
+function isToday(timeAgo: string): boolean {
+  const t = timeAgo.trim().toLowerCase();
+  if (/ahora|reci[eé]n|hoy/.test(t)) return true;
+  return /^\d+\s*(s|seg|m|min|h|hora)/.test(t);
+}
 
 async function fetchNotificationsForCustomer(
   phone: string,
@@ -132,6 +142,69 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
       prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
     );
   }, []);
+
+  // Render de una fila (reusado por los grupos Hoy / Antes).
+  const renderNotifRow = (n: Notification) => {
+    // Fallback a "system" si llega un kind desconocido desde el API
+    // (antes meta=undefined → crash "Cannot read 'Icon' of undefined").
+    const meta = KIND_META[n.kind] ?? KIND_META.system;
+    const Icon = meta.Icon;
+    return (
+      <li key={n.id}>
+        <Link
+          // El API puede entregar notificaciones sin href (el tipo dice string
+          // pero llega undefined) → fallback "#" y prevenimos el salto.
+          href={n.href || "#"}
+          onClick={(e) => {
+            if (!n.href) e.preventDefault();
+            markOneRead(n.id);
+            setOpen(false);
+          }}
+          className={cn(
+            "group flex items-start gap-3 px-5 py-3.5 transition-colors",
+            n.unread
+              ? "bg-[var(--accent-soft)]/40 hover:bg-[var(--accent-soft)]"
+              : "hover:bg-[var(--surface-sunken)]",
+          )}
+        >
+          <span
+            className={cn(
+              "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+              meta.tone,
+            )}
+          >
+            <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            {/* Dot de color por tipo cuando está sin leer */}
+            {n.unread && (
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--surface-raised)]",
+                  meta.dot,
+                )}
+              />
+            )}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p
+              className={cn(
+                "text-sm tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-snug",
+                n.unread ? "font-black" : "font-bold",
+              )}
+            >
+              {n.title}
+            </p>
+            <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-2">
+              {n.desc}
+            </p>
+            <p className="mt-1.5 text-[length:var(--ts-xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+              {meta.label} · {n.timeAgo}
+            </p>
+          </div>
+        </Link>
+      </li>
+    );
+  };
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
@@ -241,63 +314,35 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                 </p>
               </div>
             ) : (
-              <ul className="max-h-[420px] overflow-y-auto divide-y divide-[var(--rule-soft)]">
-                {notifs.map((n) => {
-                  // Fallback a "system" si llega un kind desconocido desde el API
-                  // (antes meta=undefined → crash "Cannot read 'Icon' of undefined").
-                  const meta = KIND_META[n.kind] ?? KIND_META.system;
-                  const Icon = meta.Icon;
-                  return (
-                    <li key={n.id}>
-                      <Link
-                        // El API puede entregar notificaciones sin href (el tipo
-                        // dice string pero llega undefined) → fallback "#" para no
-                        // romper <Link>, y prevenimos el salto si no hay destino.
-                        href={n.href || "#"}
-                        onClick={(e) => {
-                          if (!n.href) e.preventDefault();
-                          markOneRead(n.id);
-                          setOpen(false);
-                        }}
-                        className={cn(
-                          "group flex items-start gap-3 px-5 py-4 transition-colors",
-                          n.unread
-                            ? "bg-[var(--accent-soft)]/40 hover:bg-[var(--accent-soft)]"
-                            : "hover:bg-[var(--surface-sunken)]",
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                            meta.tone,
-                          )}
-                        >
-                          <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-snug">
-                              {n.title}
-                            </p>
-                            {n.unread && (
-                              <span
-                                aria-hidden
-                                className="mt-1.5 inline-flex h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]"
-                              />
-                            )}
-                          </div>
-                          <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-2">
-                            {n.desc}
-                          </p>
-                          <p className="mt-2 text-[length:var(--ts-xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-                            {meta.label} · {n.timeAgo}
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+              (() => {
+                const hoy = notifs.filter((n) => isToday(n.timeAgo));
+                const antes = notifs.filter((n) => !isToday(n.timeAgo));
+                const GroupLabel = ({ children }: { children: ReactNode }) => (
+                  <p className="sticky top-0 z-10 bg-[var(--surface-raised)]/95 backdrop-blur px-5 pt-3 pb-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    {children}
+                  </p>
+                );
+                return (
+                  <div className="max-h-[440px] overflow-y-auto">
+                    {hoy.length > 0 && (
+                      <>
+                        <GroupLabel>Hoy</GroupLabel>
+                        <ul className="divide-y divide-[var(--rule-soft)]">
+                          {hoy.map(renderNotifRow)}
+                        </ul>
+                      </>
+                    )}
+                    {antes.length > 0 && (
+                      <>
+                        <GroupLabel>Antes</GroupLabel>
+                        <ul className="divide-y divide-[var(--rule-soft)]">
+                          {antes.map(renderNotifRow)}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                );
+              })()
             )}
 
             {/* Footer — solo si está logueado */}
