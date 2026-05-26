@@ -5,7 +5,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
 import {
   FileText, Plus, X, Download, Search, Printer,
-  CheckCircle, Clock, AlertTriangle, Send, Loader2,
+  CheckCircle, Clock, Send, Loader2, Percent, Receipt,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -194,26 +194,21 @@ export default function InvoicingTab() {
         </button>
       </div>
 
-      {/* KPIs — uniform surface; intent sólo en value cuando está activo */}
+      {/* KPIs — superficie uniforme, monocromo. El color queda como señal en
+          los badges de estado de la tabla, no en los KPIs (profesional/minimal). */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {([
-          { label: "Total facturado", value: fmt(totalEmitted), icon: FileText, tone: "neutral" as const },
-          { label: "IGV generado", value: fmt(totalIGV), icon: AlertTriangle, tone: (totalIGV > 0 ? "warning" : "neutral") as "neutral" | "warning" },
-          { label: "En borrador", value: String(countDraft), icon: Clock, tone: "neutral" as const },
-          { label: "Comprobantes emitidos", value: String(invoices.filter(i => i.status === "emitida" || i.status === "pagada").length), icon: CheckCircle, tone: "neutral" as const },
-        ]).map(({ label, value, icon: Icon, tone }) => {
-          const iconCls =
-            tone === "warning" ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]";
-          const valueCls =
-            tone === "warning" ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]";
-          return (
-            <div key={label} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4">
-              <Icon className={cn("h-5 w-5 mb-2", iconCls)} />
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">{label}</p>
-              <p className={cn("text-xl font-extrabold tabular-nums", valueCls)}>{value}</p>
-            </div>
-          );
-        })}
+          { label: "Total facturado", value: fmt(totalEmitted), icon: FileText },
+          { label: "IGV generado", value: fmt(totalIGV), icon: Percent },
+          { label: "En borrador", value: String(countDraft), icon: Clock },
+          { label: "Comprobantes emitidos", value: String(invoices.filter(i => i.status === "emitida" || i.status === "pagada").length), icon: CheckCircle },
+        ]).map(({ label, value, icon: Icon }) => (
+          <div key={label} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4">
+            <Icon className="h-5 w-5 mb-2 text-[var(--text-tertiary)]" />
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">{label}</p>
+            <p className="text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{value}</p>
+          </div>
+        ))}
       </div>
 
       {/* New invoice form */}
@@ -378,7 +373,7 @@ export default function InvoicingTab() {
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmtDate(inv.issueDate)}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   {fmt(inv.total)}
-                  <div className="text-xs font-normal text-[var(--data-warning-500)]">IGV {fmt(inv.igv)}</div>
+                  <div className="text-xs font-normal text-[var(--text-tertiary)]">IGV {fmt(inv.igv)}</div>
                 </td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                   <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", STATUS_COLOR[inv.status])}>{STATUS_LABEL[inv.status]}</span>
@@ -401,7 +396,32 @@ export default function InvoicingTab() {
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <p className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted text-sm">Sin comprobantes encontrados.</p>}
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center gap-3 py-14 px-4 text-center">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+              <Receipt className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+            </span>
+            {invoices.length === 0 ? (
+              <>
+                <p className="text-sm font-bold text-[var(--text-primary)]">Todavía no emitiste comprobantes</p>
+                <p className="max-w-sm text-sm text-[var(--text-secondary)]">Acá vas a ver tus boletas y facturas electrónicas. Emití la primera para empezar.</p>
+                <button onClick={() => setShowForm(true)} className="mt-1 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-extrabold text-white transition-colors hover:bg-primary/90">
+                  <Plus className="h-4 w-4" /> Nuevo comprobante
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-bold text-[var(--text-primary)]">Sin resultados</p>
+                <p className="max-w-sm text-sm text-[var(--text-secondary)]">Ningún comprobante coincide con tu búsqueda o filtro.</p>
+                {(search || typeFilter !== "all") && (
+                  <button onClick={() => { setSearch(""); setTypeFilter("all"); }} className="mt-1 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
+                    Limpiar filtros
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Detail panel */}
