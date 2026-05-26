@@ -5,6 +5,7 @@ import { Zap, ClipboardList, ChevronDown, ChevronUp, Loader2, Check } from "@bul
 import { cn } from '@/lib/utils';
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
 
@@ -649,6 +650,13 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                 />
               </div>
             </Section>
+          </div>
+        )}
+
+        {/* ADR-119: Documentos vinculados a este proveedor (solo en edición) */}
+        {isEdit && typeof supplier?.id === "string" && (
+          <div className="mt-4">
+            <LinkedDocumentsSection entity="supplier" id={supplier.id as string} />
           </div>
         )}
 

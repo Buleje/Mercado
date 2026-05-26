@@ -13,6 +13,7 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import EstadoCuentaModal from "./EstadoCuentaModal";
 import ClienteFormModal from "./clientes/ClienteFormModal";
+import { LinkedDocumentsSection } from "./documentos/LinkedDocumentsSection";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -1091,6 +1092,9 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
       {/* Mejora 11: Productos Favoritos (datos del servidor) */}
       <FavoriteProductsSection phone={phone} />
+
+      {/* ADR-119: Documentos vinculados a este cliente */}
+      <LinkedDocumentsSection entity="customer" id={phone} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
