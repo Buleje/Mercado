@@ -815,7 +815,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
            mobile — el cliente quiere ir directo a categorías y tiendas. */}
       {search.trim().length === 0 && (
         <div className="hidden sm:block">
-          <TiendasHeroAds />
+          <TiendasHeroAds zone={zone || null} />
         </div>
       )}
 

@@ -79,6 +79,8 @@ export type PromoBanner = {
   /** banners v2 F2: ventana de programación (ISO). Vacío = sin límite. */
   startsAt?: string | null;
   endsAt?: string | null;
+  /** banners v2 F4: zonas donde se muestra. Vacío = todas. */
+  targetZones?: string[];
   type?: BannerType;
   promo?: PromoEmbed;
   imageAdjust?: ImageAdjust;

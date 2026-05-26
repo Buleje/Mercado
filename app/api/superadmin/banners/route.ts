@@ -131,6 +131,8 @@ const BannerSchema = z
     // banners v2 F2: programación opcional (ISO date string o null).
     startsAt: z.string().datetime().nullable().optional(),
     endsAt: z.string().datetime().nullable().optional(),
+    // banners v2 F4: segmentación por zona (vacío = todas).
+    targetZones: z.array(z.string().max(60)).max(20).optional(),
     type: BannerTypeSchema,
     imageAdjust: ImageAdjustSchema,
     promo: PromoEmbedSchema,

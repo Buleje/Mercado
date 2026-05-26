@@ -19,6 +19,22 @@ import PromoBannerRenderer, { type PromoBanner } from "./PromoBannerRenderer";
 
 const ROTATE_MS = 6000;
 
+// banners v2 F3: tracking fire-and-forget (sendBeacon, no bloquea navegación).
+function trackBanner(event: "impression" | "click", ids: string[]) {
+  if (typeof navigator === "undefined" || ids.length === 0) return;
+  const body = JSON.stringify(
+    event === "impression" ? { event, bannerIds: ids } : { event, bannerId: ids[0] },
+  );
+  try {
+    const url = "/api/marketplace/promo-banners/track";
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
+    } else {
+      void fetch(url, { method: "POST", body, headers: { "Content-Type": "application/json" }, keepalive: true });
+    }
+  } catch { /* fire-and-forget */ }
+}
+
 /**
  * PromoMiniCard — tarjeta compacta de oferta para la grilla "Más ofertas".
  * Reusa los datos del PromoBanner (imageUrl o gradiente bgFrom→bgTo + título +
@@ -29,6 +45,7 @@ function PromoMiniCard({ banner }: { banner: PromoBanner }) {
     <Link
       href={banner.ctaHref || "#"}
       aria-label={banner.title || "Oferta"}
+      onClick={() => trackBanner("click", [banner.id])}
       className="group block overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
     >
       <div
@@ -60,7 +77,16 @@ function PromoMiniCard({ banner }: { banner: PromoBanner }) {
   );
 }
 
-export default function TiendasHeroAds() {
+interface TiendasHeroAdsProps {
+  /** Slot de banners (banners v2 F4 multi-slot). Default "tiendas-hero". */
+  slot?: string;
+  /** Zona del cliente para segmentación (banners v2 F4). */
+  zone?: string | null;
+  /** Título de la sección de ofertas secundarias. */
+  moreLabel?: string;
+}
+
+export default function TiendasHeroAds({ slot = "tiendas-hero", zone = null, moreLabel = "Más ofertas" }: TiendasHeroAdsProps = {}) {
   const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -68,17 +94,21 @@ export default function TiendasHeroAds() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/marketplace/promo-banners?slot=tiendas-hero", { cache: "no-store" })
+    const qs = new URLSearchParams({ slot });
+    if (zone) qs.set("zone", zone);
+    fetch(`/api/marketplace/promo-banners?${qs.toString()}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((json) => {
         if (cancelled) return;
         const list = (json?.banners ?? []) as PromoBanner[];
         const filtered = list.filter((b) => b.active).sort((a, b) => a.order - b.order);
         setBanners(filtered);
+        // F3: una impresión batch por los banners servidos (1 vez por carga).
+        trackBanner("impression", filtered.map((b) => b.id));
       })
       .catch(() => setBanners([]));
     return () => { cancelled = true; };
-  }, []);
+  }, [slot, zone]);
 
   useEffect(() => {
     if (paused || banners.length <= 1) return;
@@ -104,6 +134,7 @@ export default function TiendasHeroAds() {
         onMouseLeave={() => setPaused(false)}
         role="region"
         aria-label="Promociones destacadas"
+        onClickCapture={() => trackBanner("click", [current.id])}
       >
         <PromoBannerRenderer banner={current} />
 
@@ -147,7 +178,7 @@ export default function TiendasHeroAds() {
       {secondary.length > 0 && (
         <div className="mt-5">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-base font-extrabold text-[var(--text-primary)]">Más ofertas</h2>
+            <h2 className="text-base font-extrabold text-[var(--text-primary)]">{moreLabel}</h2>
             <span className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               {banners.length} promos activas
             </span>

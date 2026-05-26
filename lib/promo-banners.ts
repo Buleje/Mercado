@@ -115,6 +115,8 @@ export type PromoBanner = {
    *  El banner se muestra solo si now ∈ [startsAt, endsAt] y active=true. */
   startsAt?: string | null;
   endsAt?: string | null;
+  /** Segmentación (banners v2 F4): zonas donde se muestra. Vacío/ausente = todas. */
+  targetZones?: string[];
   /** Default "classic" — back-compat con banners legacy sin tipo. */
   type?: BannerType;
   /** Datos de la promo embebida (solo si type==="promo"). */

@@ -2493,6 +2493,18 @@ function StateTab({
   onDuplicate: () => void;
   onRemove: () => void;
 }) {
+  // banners v2 F3: rendimiento (impresiones/clicks) del banner actual.
+  const [stats, setStats] = useState<{ impressions: number; clicks: number } | null>(null);
+  useEffect(() => {
+    let cancel = false;
+    fetch("/api/superadmin/banners/stats", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!cancel && j?.stats) setStats(j.stats[banner.id] ?? { impressions: 0, clicks: 0 }); })
+      .catch(() => { /* sin stats */ });
+    return () => { cancel = true; };
+  }, [banner.id]);
+  const ctr = stats && stats.impressions > 0 ? Math.round((stats.clicks / stats.impressions) * 1000) / 10 : 0;
+
   return (
     <div className="space-y-3 text-[rgb(var(--st-fg))]">
       <Section title="Visibilidad">
@@ -2543,6 +2555,38 @@ function StateTab({
           )}
         </div>
       </Section>
+      {/* banners v2 F4: segmentación por zona. Sin selección = todas las zonas. */}
+      <Section title="Segmentación por zona">
+        <div className="flex flex-wrap gap-1.5">
+          {BANNER_ZONES.map((z) => {
+            const sel = (banner.targetZones ?? []).includes(z);
+            return (
+              <button
+                key={z}
+                type="button"
+                onClick={() => {
+                  const cur = banner.targetZones ?? [];
+                  const next = sel ? cur.filter((x) => x !== z) : [...cur, z];
+                  onPatch({ targetZones: next });
+                }}
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition-colors",
+                  sel
+                    ? "bg-[var(--accent)] text-white"
+                    : "bg-[rgb(var(--st-fg)/0.06)] text-[rgb(var(--st-fg)/0.7)] hover:bg-[rgb(var(--st-fg)/0.12)]",
+                )}
+              >
+                {z}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.5)]">
+          {(banner.targetZones ?? []).length === 0
+            ? "Se muestra en todas las zonas."
+            : `Solo en: ${(banner.targetZones ?? []).join(", ")}`}
+        </p>
+      </Section>
       <Section title={`Orden (${index + 1} de ${total})`}>
         <div className="grid grid-cols-2 gap-1.5">
           <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className={STATE_BTN_CLS}>
@@ -2567,6 +2611,22 @@ function StateTab({
           </button>
         </div>
       </Section>
+      <Section title="Rendimiento">
+        <div className="grid grid-cols-3 gap-1.5 text-center">
+          <div className="rounded-lg bg-[rgb(var(--st-fg)/0.06)] px-2 py-2">
+            <p className="text-sm font-extrabold tabular-nums text-[rgb(var(--st-fg))]">{stats?.impressions ?? "—"}</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[rgb(var(--st-fg)/0.5)]">Vistas</p>
+          </div>
+          <div className="rounded-lg bg-[rgb(var(--st-fg)/0.06)] px-2 py-2">
+            <p className="text-sm font-extrabold tabular-nums text-[rgb(var(--st-fg))]">{stats?.clicks ?? "—"}</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[rgb(var(--st-fg)/0.5)]">Clicks</p>
+          </div>
+          <div className="rounded-lg bg-[rgb(var(--st-fg)/0.06)] px-2 py-2">
+            <p className="text-sm font-extrabold tabular-nums text-[rgb(var(--st-fg))]">{stats ? `${ctr}%` : "—"}</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[rgb(var(--st-fg)/0.5)]">CTR</p>
+          </div>
+        </div>
+      </Section>
       <Section title="Identificador interno">
         <code className="block px-2 py-1 rounded bg-[rgb(var(--st-fg)/0.05)] text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.5)] font-mono">{banner.id}</code>
       </Section>
@@ -2582,6 +2642,9 @@ function StateTab({
 
 const STATE_BTN_CLS =
   "inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-extrabold text-[rgb(var(--st-fg)/0.85)] transition-all hover:bg-[rgb(var(--st-fg)/0.12)] hover:border-[rgb(var(--st-fg)/0.25)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[rgb(var(--st-fg)/0.06)] disabled:hover:border-[rgb(var(--st-fg)/0.1)]";
+
+// banners v2 F4: zonas de Pucallpa para segmentación.
+const BANNER_ZONES = ["Centro", "Yarinacocha", "Manantay", "Callería", "Campo Verde"] as const;
 
 // banners v2 F2: conversión ISO ↔ valor de <input type="datetime-local">.
 function isoToLocalInput(iso?: string | null): string {
