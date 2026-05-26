@@ -287,77 +287,62 @@ async function RappiStyleHero() {
       aria-label="Inicio"
       className="relative overflow-hidden"
       style={{
-        // Gradiente de marca: teal oscuro → teal Buleje (#00B4A6) → teal medio.
-        // Color de marca, sin verdes. Profundidad sin imágenes externas.
+        // Hero CLARO y limpio (Brandon 2026-05-26): fondo crema-blanco con
+        // un velo teal muy sutil arriba para dar vida sin oscurecer. Texto
+        // oscuro, acentos teal + naranja de marca. Estilo marketplace moderno.
         background:
-          "linear-gradient(135deg, #00302c 0%, #005249 25%, #007a6e 55%, #00B4A6 88%, #008b7f 100%)",
+          "linear-gradient(180deg, rgba(0,180,166,0.07) 0%, rgba(0,180,166,0.02) 35%, var(--surface-canvas) 100%)",
       }}
     >
-      {/* Textura sutil: puntos blancos muy transparentes (patrón selvático) */}
+      {/* Textura sutil: puntos teal muy transparentes (patrón delicado) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.045]"
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
         style={{
           backgroundImage:
-            "radial-gradient(circle, white 1px, transparent 1px)",
+            "radial-gradient(circle, #00B4A6 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Líneas diagonales muy finas — refuerzan textura premium */}
+      {/* Orbs de luz suaves: teal claro en esquinas para profundidad tenue */}
       <div
         aria-hidden
-        className="hidden sm:block pointer-events-none absolute inset-0 opacity-[0.025]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, white 0px, white 1px, transparent 1px, transparent 40px)",
-        }}
-      />
-
-      {/* Orbs de luz: calidez teal en esquinas para profundidad 3D */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-30"
+        className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-[0.18]"
         style={{ background: "radial-gradient(circle, #33C4B8 0%, transparent 70%)" }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-40 -left-20 h-[400px] w-[400px] rounded-full opacity-20"
-        style={{ background: "radial-gradient(circle, #5fd6cb 0%, transparent 70%)" }}
-      />
-      {/* Orb naranja cálido tenue — acento secundario de marca */}
-      <div
-        aria-hidden
-        className="hidden sm:block pointer-events-none absolute top-1/2 -translate-y-1/2 right-[8%] h-[280px] w-[280px] rounded-full opacity-10"
+        className="pointer-events-none absolute -bottom-40 -left-20 h-[400px] w-[400px] rounded-full opacity-[0.12]"
         style={{ background: "radial-gradient(circle, #f97316 0%, transparent 70%)" }}
       />
 
       {/* Borde inferior sutil para separación de sección */}
       <div
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-white/10"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-[var(--rule-soft)]"
       />
 
       <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-24 pb-10 sm:pb-20 text-center">
-        {/* Eyebrow badge */}
-        <p className="inline-flex items-center gap-2 mb-4 sm:mb-6 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/75">
+        {/* Eyebrow badge — teal de marca sobre fondo claro */}
+        <p className="inline-flex items-center gap-2 mb-4 sm:mb-6 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
           <span
             aria-hidden
-            className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-white/50"
+            className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-[var(--accent)]/40"
           />
           <span aria-hidden className="relative inline-flex h-2 w-2">
-            <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[#34d4be] opacity-70 sm:animate-ping" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#34d4be]" />
+            <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 sm:animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
           </span>
           Pedí online en Pucallpa
           <span
             aria-hidden
-            className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-white/50"
+            className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-[var(--accent)]/40"
           />
         </p>
 
-        {/* H1 principal — tipografía grande, contraste blanco sobre verde oscuro */}
-        <h1 className="text-[clamp(2.25rem,8.5vw,5.5rem)] font-extrabold leading-[1.0] tracking-[-0.035em] text-white max-w-4xl mx-auto drop-shadow-sm">
+        {/* H1 principal — tipografía grande, texto oscuro sobre fondo claro */}
+        <h1 className="text-[clamp(2.25rem,8.5vw,5.5rem)] font-extrabold leading-[1.0] tracking-[-0.035em] text-[var(--text-primary)] max-w-4xl mx-auto">
           ¿Qué se te{" "}
           <span
             className="italic font-serif"
@@ -367,8 +352,8 @@ async function RappiStyleHero() {
           </span>
         </h1>
 
-        {/* Subtítulo — texto claro con opacidad */}
-        <p className="mt-4 sm:mt-6 max-w-2xl mx-auto text-sm sm:text-xl text-white/70 leading-snug sm:leading-[1.45]">
+        {/* Subtítulo — texto secundario sobre fondo claro */}
+        <p className="mt-4 sm:mt-6 max-w-2xl mx-auto text-sm sm:text-xl text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
           <span className="sm:hidden">
             El marketplace de Pucallpa — delivery rápido, Yape o efectivo.
           </span>
@@ -398,7 +383,7 @@ async function RappiStyleHero() {
               placeholder="Buscá tu tienda, restaurante o producto…"
               aria-label="Buscar tienda o producto"
               autoComplete="off"
-              className="w-full h-14 sm:h-[4.5rem] rounded-2xl sm:rounded-full bg-white border-0 pl-14 sm:pl-16 pr-[5.5rem] sm:pr-44 text-base sm:text-lg font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all shadow-2xl shadow-black/30 focus:shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus:ring-4 focus:ring-white/30"
+              className="w-full h-14 sm:h-[4.5rem] rounded-2xl sm:rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] pl-14 sm:pl-16 pr-[5.5rem] sm:pr-44 text-base sm:text-lg font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all shadow-lg shadow-black/5 focus:border-[var(--accent)] focus:shadow-[0_8px_30px_rgba(0,180,166,0.18)] focus:ring-4 focus:ring-[var(--accent)]/15"
             />
             <button
               type="submit"
@@ -414,27 +399,24 @@ async function RappiStyleHero() {
 
         {/* Stats reales + trust pill Yape */}
         {(storeCount > 0 || productCount > 0) && (
-          <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-white/65 flex-wrap">
+          <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
             {storeCount > 0 && (
               <span className="inline-flex items-center gap-1.5">
                 <span className="relative inline-flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#34d4be] opacity-70 animate-ping" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#34d4be]" />
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
                 </span>
-                <span className="text-white/80">{storeCount} tiendas activas</span>
+                <span className="text-[var(--text-primary)]">{storeCount} tiendas activas</span>
               </span>
             )}
             {productCount > 0 && (
               <>
-                <span aria-hidden className="text-white/30">·</span>
-                <span className="text-white/80">{productCount.toLocaleString("es-PE")}+ productos</span>
+                <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
+                <span className="text-[var(--text-primary)]">{productCount.toLocaleString("es-PE")}+ productos</span>
               </>
             )}
-            <span aria-hidden className="text-white/30">·</span>
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-white"
-              style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)" }}
-            >
+            <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20">
               Yape · Plin · efectivo
             </span>
           </div>
@@ -444,7 +426,7 @@ async function RappiStyleHero() {
         <div className="mt-6 sm:mt-8 flex items-center justify-center gap-3 flex-wrap">
           <Link
             href="/tiendas"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-white/90 text-white hover:bg-white hover:text-[var(--accent)] px-6 h-11 sm:h-12 text-sm font-extrabold transition-all shadow-md hover:shadow-lg"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white px-6 h-11 sm:h-12 text-sm font-extrabold transition-all shadow-sm hover:shadow-md"
           >
             <Store className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Ver todas las tiendas
