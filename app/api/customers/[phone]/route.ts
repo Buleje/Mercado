@@ -73,10 +73,12 @@ export async function GET(
       else healthScore = "PERDIDO";
     }
 
-    // Fetch all fields directly from prisma (CustomersDB may not expose them)
+    // Fetch all fields directly from prisma (CustomersDB may not expose them).
+    // Usamos customer.phone (valor real almacenado, ya resuelto por getByPhone
+    // tolerante) en vez de `normalized` — así matchea filas legacy con prefijo.
     // eslint-disable-next-line no-restricted-properties
     const fullCustomer = await prisma.customer.findFirst({
-      where: { phone: normalized, tenantId: auth.tenantId },
+      where: { phone: customer.phone, tenantId: auth.tenantId },
     });
 
     return NextResponse.json({

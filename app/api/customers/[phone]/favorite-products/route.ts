@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { normalizePhone } from "@/lib/jsondb";
+import { CustomersDB } from "@/lib/db/customers.db";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
@@ -22,20 +22,19 @@ export async function GET(
   if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
 
   const { phone } = await params;
-  const normalized = normalizePhone(phone);
   const tenantId = auth.tenantId;
 
   try {
     // Oracle defense: verificar que el customer existe en este tenant antes de exponer datos.
     // Devuelve 404 uniforme tanto si no existe como si pertenece a otro tenant (no revela existencia).
-    // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped; migration a lib/db pendiente.
-    const customer = await prisma.customer.findFirst({
-      where: { phone: normalized, tenantId },
-      select: { phone: true },
-    });
+    // ADR-119 fix: getByPhone es tolerante a formatos legacy (+51/51/9 dígitos),
+    // antes el findFirst con phone normalizado daba 404 en clientes con prefijo.
+    const customer = await CustomersDB.getByPhone(phone, tenantId);
     if (!customer) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+    // Usar el phone realmente almacenado para matchear ventas/pedidos.
+    const normalized = customer.phone;
 
     // Aggregate from SaleItems (POS sales) — filtrado por tenantId
     // eslint-disable-next-line no-restricted-properties -- nested where filter por sale.tenantId; migration pendiente.

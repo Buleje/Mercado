@@ -106,6 +106,22 @@ function computePoints(amount: number): number {
   return Math.floor(amount);
 }
 
+/**
+ * ADR-119 fix — Datos legacy: `upsert` escribe `data.phone` SIN normalizar, así
+ * que conviven clientes guardados como "999111222", "51999111222" y
+ * "+51999111222". Los lectores normalizan a 9 dígitos y nunca matcheaban las
+ * filas con prefijo → 404 en Customer 360. Este helper arma los candidatos de
+ * formato comunes (Perú) para una lectura tolerante. NO cambia writes ni
+ * normalizePhone (blast radius). Root-cause real (normalizar-al-escribir +
+ * migración) queda como follow-up de su propio sprint.
+ */
+function phoneMatchCandidates(phone: string): string[] {
+  const normalized = normalizePhone(phone); // últimos 9 dígitos
+  return Array.from(
+    new Set([normalized, `51${normalized}`, `+51${normalized}`, phone.trim()].filter(Boolean))
+  );
+}
+
 // ── CustomersDB ───────────────────────────────────────────────────────────────
 
 export const CustomersDB = {
@@ -158,9 +174,9 @@ export const CustomersDB = {
     // caller que omitía resolvía customer cross-tenant porque Customer.phone
     // tiene unique global. Phone se reusa entre tenants = fuga.
     if (!tenantId) throw new Error("CustomersDB.getByPhone: tenantId requerido");
-    const normalized = normalizePhone(phone);
+    // Lectura tolerante a formatos legacy (999.../51.../+51...). Ver phoneMatchCandidates.
     const row = await prisma.customer.findFirst({
-      where: { phone: normalized, tenantId },
+      where: { phone: { in: phoneMatchCandidates(phone) }, tenantId },
       include: { locations: true },
     });
     return row ? mapCustomer(row) : null;
