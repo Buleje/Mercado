@@ -127,7 +127,7 @@ export default function TiendasHeroAds({ slot = "tiendas-hero", zone = null, mor
   const secondary = banners.filter((_, i) => i !== active).slice(0, 6);
 
   return (
-    <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-5">
+    <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-5">
       <div
         className="relative"
         onMouseEnter={() => setPaused(true)}

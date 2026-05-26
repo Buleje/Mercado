@@ -464,7 +464,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
             : "bg-[var(--surface-raised)] shadow-sm border-b border-[var(--rule-base)]",
         )}
       >
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8">
           {/* Brandon 2026-05-20 v6 — navbar mobile minimalista:
               h-16 (64px) → h-14 (56px) en mobile, h-16 desktop.
               Reduce el real-estate ocupado above-the-fold y se siente más

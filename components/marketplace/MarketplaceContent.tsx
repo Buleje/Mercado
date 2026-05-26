@@ -187,7 +187,7 @@ export default function MarketplaceContent({
       <PromoBannerCarousel slot="bodegas" />
 
       {/* Panel de fidelidad — solo visible para clientes con sesión. */}
-      <div className="mx-auto max-w-[1600px] px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
+      <div className="mx-auto max-w-[1760px] px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
         <div className="w-full lg:max-w-sm">
           <MyFidelidadCard />
         </div>
@@ -200,7 +200,7 @@ export default function MarketplaceContent({
           NO hay categorias/marcas/productos inventados.
           ══════════════════════════════════════════════════════════════════ */}
       <div className="bg-[var(--surface-sunken)] py-4 sm:py-6">
-        <div className="mx-auto max-w-[1600px] space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-6">
+        <div className="mx-auto max-w-[1760px] space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-6">
           {/* ── Above-fold (montaje inmediato) ── */}
           {/* Tiendas reales publicadas — SSR con data del servidor (SEO) */}
           <BodegasSectionBox><TiendasDestacadas initialStores={initialStores} /></BodegasSectionBox>

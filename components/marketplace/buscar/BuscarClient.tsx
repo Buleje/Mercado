@@ -163,7 +163,7 @@ export default function BuscarClient({
 
       {/* Cuerpo principal */}
       {/* max-w-[1600px] (Ola 7) — secciones amplias para mas productos visibles */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         {!hasQuery ? (
           /* Sin query: sugerencias editoriales */
           <SearchSuggestions />

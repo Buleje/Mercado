@@ -20,7 +20,7 @@ import { getProductCategoryIcon } from "@/components/marketplace/_category-icons
 // vertical multi-columna desde sm. No reusa MARKETPLACE_GRID (que arranca en
 // 2-col) porque el card list horizontal necesita el ancho completo en mobile.
 const CATALOG_GRID =
-  "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4";
+  "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 

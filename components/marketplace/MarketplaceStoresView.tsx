@@ -611,7 +611,7 @@ export default function MarketplaceStoresView({
         <div
           aria-busy="true"
           aria-label="Cargando tiendas..."
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mt-6"
         >
           {Array.from({ length: 6 }).map((_, i) => (
             <div
@@ -716,14 +716,14 @@ export default function MarketplaceStoresView({
           // - mejor tap target para conversión
           // Desktop v2 (2026-05-26): sidebar ocupa 280px → el grid principal
           // usa 2 cols en lg (~720px disponibles) y 3 cols en xl (~960px+).
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mt-6"
         >
           {orderedStores.map((store, i) => {
             // Premium: card de fila completa con preview de productos (no la
             // card estándar agrandada). Si no hay productos igual se muestra.
             if (store.displayTier === "premium") {
               return (
-                <div key={store.id} role="listitem" className="sm:col-span-2 xl:col-span-3">
+                <div key={store.id} role="listitem" className="sm:col-span-2 xl:col-span-3 2xl:col-span-4">
                   <PremiumStoreCard
                     slug={store.slug}
                     name={store.name}

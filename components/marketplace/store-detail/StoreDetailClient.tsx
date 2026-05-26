@@ -418,7 +418,7 @@ export default function StoreDetailClient({
         )}
         style={{ contain: "layout paint" }}
       >
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2.5">
+        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2.5">
           {/* ── Desktop only: Row de Search + View toggle ── */}
           <div className="hidden lg:flex items-center gap-2">
             {/* Search bar grande + prominente */}
@@ -629,7 +629,7 @@ export default function StoreDetailClient({
       </div>
 
       {/* ── Layout: SIDEBAR (lg+) + CATALOG ─────────────────────────────── */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
         <div className="flex gap-6 lg:gap-8">
           {/* Sidebar desktop — sticky, vertical, scroll interno si hay muchas categorias */}
           <aside className="hidden lg:block w-64 shrink-0">
@@ -734,27 +734,27 @@ export default function StoreDetailClient({
       )}
 
       {/* ── Divider ────────────────────────────────────────────────────────── */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="border-t border-gray-100 dark:border-gray-800" />
       </div>
 
       {/* ── Reviews ────────────────────────────────────────────────────────── */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <StoreReviews summary={reviewSummary} reviews={reviews} storeSlug={store.slug} storeName={store.name} />
       </div>
 
       {/* ── Divider ────────────────────────────────────────────────────────── */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="border-t border-gray-100 dark:border-gray-800" />
       </div>
 
       {/* ── Policies ───────────────────────────────────────────────────────── */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <StorePoliciesBlock />
       </div>
 
       {/* ── Final CTA ──────────────────────────────────────────────────────── */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-[var(--surface-alt)] dark:bg-gray-900 p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-white mb-1">
@@ -1231,7 +1231,7 @@ function BackToTiendasButton({
   void scrollToCatalog;
 
   return (
-    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+    <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
       <div className="flex items-center gap-3">
         <button
           type="button"

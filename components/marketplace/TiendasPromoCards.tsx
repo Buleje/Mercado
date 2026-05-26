@@ -62,7 +62,7 @@ export default function TiendasPromoCards({ hasOffers }: { hasOffers?: boolean }
   const singleCard = visibleCards.length === 1;
 
   return (
-    <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+    <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
       <div
         className={
           singleCard

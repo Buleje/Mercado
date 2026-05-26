@@ -128,7 +128,7 @@ const TiendasHeroAds = dynamic(
     loading: () => (
       <div
         aria-hidden
-        className="max-w-[1400px] mx-auto mt-4 px-4 sm:px-6 lg:px-8"
+        className="max-w-[1760px] mx-auto mt-4 px-4 sm:px-6 lg:px-8"
       >
         <div className="h-32 w-full rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)]" />
       </div>
@@ -825,7 +825,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
            Da prioridad visual a la tienda buscada antes de las secciones
            promocionales. Especialmente útil en modo tiendas-only. */}
       {search.trim().length > 0 && stores.length > 0 && (
-        <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-5 sm:p-6">
             <div className="flex items-end justify-between gap-4 mb-4">
               <div>
@@ -971,9 +971,9 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
               Top 6 dentro del radio (default 50 km — radio actúa como
               filtro automático multi-ciudad CC ↔ Pucallpa). Hover →
               drawer lateral con productos destacados + comprar rápido.
-              Wrap con max-w-[1280px] para alinear con el resto de
+              Wrap con max-w-[1760px] para alinear con el resto de
               secciones del directorio. */}
-          <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
+          <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
             <FeaturedStoresNearby userCoords={userCoords} />
           </section>
         </div>
@@ -994,7 +994,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
            - h1 sr-only en mobile para SEO.
            Desktop v2 (2026-05-26): sidebar de filtros (izquierda, 280px sticky)
            + grid de tiendas (derecha) vía lg:grid-cols-[280px_1fr]. */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-8 pb-6 sm:pb-8">
+      <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-8 pb-6 sm:pb-8">
         {/* ── MOBILE TOP STACK (Rappi-style) — sin padding extra
              1. LocationBar (1 línea, tap → modal customer profile)
              2. WelcomeBanner (compacto, solo si NO logueado) */}

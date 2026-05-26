@@ -19,7 +19,7 @@
 
 export default function TiendasLoading() {
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
+    <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
       {/* Filter bar — chips + sort + estrellas + filtros (1 fila mobile) */}
       <div
         aria-hidden="true"

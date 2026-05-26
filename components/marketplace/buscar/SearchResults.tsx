@@ -92,7 +92,7 @@ export default function SearchResults({
           card aparece con fade+slide y delay incremental (60ms por card,
           cap 600ms para grids grandes). Sensación premium ML/iFood. */}
       <div
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4"
         aria-label={`Resultados de busqueda: ${total} productos`}
       >
         {products.map((p, idx) => (

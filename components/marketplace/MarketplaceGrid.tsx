@@ -209,7 +209,7 @@ export default function MarketplaceGrid() {
   }, [fetchStores]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1760px] px-4 py-8 sm:px-6 lg:px-8">
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-black text-[var(--text-primary)] sm:text-4xl">
@@ -306,7 +306,7 @@ export default function MarketplaceGrid() {
         <div
           aria-busy="true"
           aria-label="Cargando tiendas..."
-          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {[...Array(6)].map((_, i) => <StoreCardSkeleton key={i} />)}
         </div>
@@ -347,7 +347,7 @@ export default function MarketplaceGrid() {
           <div
             role="list"
             aria-label={`${stores.length} ${stores.length === 1 ? "tienda encontrada" : "tiendas encontradas"}`}
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           >
             {stores.map((s, idx) => (
               <div key={s.id} role="listitem">
