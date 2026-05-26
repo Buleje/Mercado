@@ -98,6 +98,16 @@ function relativeTime(iso: string | undefined): string {
   return `${Math.floor(d / 30)} mes`;
 }
 
+/**
+ * Quita emojis al inicio del título (el backend los antepone: "✅ Pedido…").
+ * En la UI web el ícono Lucide ya indica el tipo, así que el emoji es ruido
+ * (regla del proyecto: cero emojis genéricos en UI). WhatsApp/email los
+ * conservan porque ahí sí aportan — esto solo limpia el render del storefront.
+ */
+function stripLeadingEmoji(s: string): string {
+  return s.replace(/^[\p{Extended_Pictographic}‍️←-⇿☀-➿\s]+/u, "").trim();
+}
+
 /** Mapea el `type` del API a un NotifKind conocido (fallback "system"). */
 function toKind(type: string | undefined): NotifKind {
   const t = (type ?? "").toLowerCase();
@@ -121,7 +131,7 @@ async function fetchNotificationsForCustomer(
     return (json.data ?? []).map((n) => ({
       id: n.id,
       kind: toKind(n.type),
-      title: n.title ?? "Notificación",
+      title: stripLeadingEmoji(n.title ?? "") || "Notificación",
       desc: n.body ?? "",
       timeAgo: relativeTime(n.createdAt),
       href: n.link ?? "",
