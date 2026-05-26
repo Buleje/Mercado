@@ -402,6 +402,11 @@ export {
   MailOpen,
   ReceiptText,
 
+  // ── Additional pass 5 (marketplace category icons 2026-05-26) ──
+  Wine,
+  WineOff,
+  Pill,
+
   // ── Types ────────────────────────────────────────────────────
   type LucideIcon,
   type LucideProps,

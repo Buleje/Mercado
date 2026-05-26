@@ -46,6 +46,18 @@ import {
   Building2,
   Sparkles,
   Star,
+  UtensilsCrossed,
+  ShoppingCart,
+  Apple,
+  Pill,
+  Wrench,
+  Drumstick,
+  Croissant,
+  Wine,
+  Beef,
+  Smartphone,
+  ShoppingBag,
+  MapPin,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -147,11 +159,24 @@ interface TopStore {
   slug: string;
   name: string;
   logo: string | null;
+  category: string;
+  zone: string | null;
+  rating: number;
+  reviewCount: number;
 }
 
 async function getTopStores(): Promise<TopStore[]> {
   const stores = await MarketplaceStatsDB.getTopMarketplaceStores(10);
-  return stores.map((s) => ({ id: s.id, slug: s.slug, name: s.name, logo: s.logo }));
+  return stores.map((s) => ({
+    id: s.id,
+    slug: s.slug,
+    name: s.name,
+    logo: s.logo,
+    category: s.category,
+    zone: s.zone,
+    rating: s.rating,
+    reviewCount: s.reviewCount,
+  }));
 }
 
 // ── JSON-LD B2C marketplace ──────────────────────────────────────────────────
@@ -252,91 +277,114 @@ async function BulejeJsonLd() {
   );
 }
 
-// ── 1. Hero Rappi-style — buscador centrado + tagline corto ──────────────────
-// Q1 2026-05-20: async para consumir getMarketplaceStats (cached "use cache").
-// Renderiza stats reales debajo del search + trust-pill Yape/efectivo +
-// subtítulo VISIBLE en mobile (antes hidden sm:block — invisible al usuario
-// Pucallpa que no sabía que Buleje hace delivery con Yape).
+// ── 1. Hero Premium — gradiente rico + textura amazónica + buscador protagonista
+// v3 2026-05-26: fondo visual con gradiente teal/verde + textura sutil (sin
+// imagen rota). Buscador visualmente más grande. Stats y CTAs mantenidos.
 async function RappiStyleHero() {
   const { storeCount, productCount } = await getMarketplaceStats();
   return (
     <section
       aria-label="Inicio"
-      className="relative overflow-hidden border-b-2 border-[var(--accent)]/15 bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-canvas)] to-[var(--accent-soft)]"
+      className="relative overflow-hidden"
+      style={{
+        // Gradiente rico amazónico: teal oscuro → verde bosque → verde medio
+        // Genera profundidad sin depender de imágenes externas.
+        background:
+          "linear-gradient(135deg, #0d4f3c 0%, #1a5c47 25%, #2d6a4f 55%, #3d7a5e 80%, #1e5c47 100%)",
+      }}
     >
-      {/* Brandon 2026-05-20 v8: orbs decorativos y dotted grid solo en sm+
-          (mobile pintaba 2 blurs grandes + radial-gradient inset-0 = ~40%
-          del paint time del above-the-fold). Mobile mantiene el gradiente
-          liso del bg + border-b accent — diseño igual de claro, paint
-          instantáneo. */}
+      {/* Textura sutil: puntos blancos muy transparentes (patrón selvático) */}
       <div
         aria-hidden
-        className="hidden sm:block pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/15 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="hidden sm:block pointer-events-none absolute -bottom-32 -left-32 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/10 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="hidden sm:block pointer-events-none absolute inset-0 opacity-[0.07]"
+        className="pointer-events-none absolute inset-0 opacity-[0.045]"
         style={{
           backgroundImage:
-            "radial-gradient(var(--accent) 1.5px, transparent 1.5px)",
-          backgroundSize: "24px 24px",
+            "radial-gradient(circle, white 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Brandon 2026-05-20 v8: hero mobile mas profesional —
-          · padding pt-12→pt-8 sm:pt-20 (mas compacto, igual sentido aire desktop)
-          · animate-ping gated a sm+ (mobile evita re-paint GPU)
-          · `pointer-events-none` en blur overlays para no bloquear scroll */}
-      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-20 pb-8 sm:pb-16 text-center">
-        <p className="inline-flex items-center gap-2 mb-3 sm:mb-5 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+      {/* Líneas diagonales muy finas — refuerzan textura premium */}
+      <div
+        aria-hidden
+        className="hidden sm:block pointer-events-none absolute inset-0 opacity-[0.025]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg, white 0px, white 1px, transparent 1px, transparent 40px)",
+        }}
+      />
+
+      {/* Orbs de luz: calidez teal en esquinas para profundidad 3D */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-30"
+        style={{ background: "radial-gradient(circle, #52b788 0%, transparent 70%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-40 -left-20 h-[400px] w-[400px] rounded-full opacity-20"
+        style={{ background: "radial-gradient(circle, #74c69d 0%, transparent 70%)" }}
+      />
+      {/* Orb naranja cálido tenue — acento secundario de marca */}
+      <div
+        aria-hidden
+        className="hidden sm:block pointer-events-none absolute top-1/2 -translate-y-1/2 right-[8%] h-[280px] w-[280px] rounded-full opacity-10"
+        style={{ background: "radial-gradient(circle, #f4a261 0%, transparent 70%)" }}
+      />
+
+      {/* Borde inferior sutil para separación de sección */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-white/10"
+      />
+
+      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-24 pb-10 sm:pb-20 text-center">
+        {/* Eyebrow badge */}
+        <p className="inline-flex items-center gap-2 mb-4 sm:mb-6 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/75">
           <span
             aria-hidden
-            className="inline-block h-[3px] w-8 sm:w-10 rounded-full bg-[var(--accent)]"
+            className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-white/50"
           />
-          <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-            <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 sm:animate-ping" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+          <span aria-hidden className="relative inline-flex h-2 w-2">
+            <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[#74c69d] opacity-70 sm:animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#74c69d]" />
           </span>
           Pedí online en Pucallpa
           <span
             aria-hidden
-            className="inline-block h-[3px] w-8 sm:w-10 rounded-full bg-[var(--accent)]"
+            className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-white/50"
           />
         </p>
 
-        <h1 className="text-[clamp(2rem,8vw,5rem)] font-extrabold leading-[1.02] sm:leading-[0.96] tracking-[-0.03em] sm:tracking-[-0.04em] text-[var(--text-primary)] max-w-4xl mx-auto">
-          ¿Qué se te <span className="italic font-serif text-[var(--accent)]">antoja hoy?</span>
+        {/* H1 principal — tipografía grande, contraste blanco sobre verde oscuro */}
+        <h1 className="text-[clamp(2.25rem,8.5vw,5.5rem)] font-extrabold leading-[1.0] tracking-[-0.035em] text-white max-w-4xl mx-auto drop-shadow-sm">
+          ¿Qué se te{" "}
+          <span
+            className="italic font-serif"
+            style={{ color: "#f4a261" }}
+          >
+            antoja hoy?
+          </span>
         </h1>
-        {/* Brandon 2026-05-20 v12 audit F2 SEO: inyectadas keywords
-            "marketplace", "Pucallpa", "Ucayali", "Amazonía peruana" en
-            copy visible (audit reportó count=0 en hero text). Útil para
-            Googlebot que da más peso al texto visible que a metadata.
-            Q1 2026-05-20: subtítulo VISIBLE en mobile (era hidden sm:block). */}
-        <p className="mt-3 sm:mt-5 max-w-2xl mx-auto text-sm sm:text-xl text-[var(--text-secondary)] leading-snug sm:leading-[1.4]">
+
+        {/* Subtítulo — texto claro con opacidad */}
+        <p className="mt-4 sm:mt-6 max-w-2xl mx-auto text-sm sm:text-xl text-white/70 leading-snug sm:leading-[1.45]">
           <span className="sm:hidden">
-            El marketplace de Pucallpa, Ucayali — delivery rápido en 2 minutos.
+            El marketplace de Pucallpa — delivery rápido, Yape o efectivo.
           </span>
           <span className="hidden sm:inline">
             El marketplace #1 de Pucallpa, Ucayali. Bodegas, restaurantes y
-            farmacias de tus vecinos en la Amazonía peruana, con delivery
-            rápido y pagos en Yape, Plin o efectivo.
+            farmacias de tus vecinos en la Amazonía peruana — delivery rápido
+            con Yape, Plin o efectivo.
           </span>
         </p>
 
-        {/* Form GET → /tiendas?q=... — sin JS, navegación nativa.
-            Brandon 2026-05-20 v8: oculto en mobile (md:block). El cliente
-            ya tiene un search pill en el navbar arriba — duplicarlo aquí en
-            mobile saturaba el viewport y el hero no se sentía profesional.
-            En desktop sí se muestra porque el hero es protagonista visual. */}
+        {/* Buscador protagonista — visible en todos los tamaños de pantalla */}
         <form
           role="search"
           action="/tiendas"
           method="get"
-          className="hidden md:block mt-6 sm:mt-8 max-w-2xl mx-auto"
+          className="mt-8 sm:mt-10 max-w-2xl mx-auto"
         >
           <div className="group relative">
             <Search
@@ -350,59 +398,61 @@ async function RappiStyleHero() {
               placeholder="Buscá tu tienda, restaurante o producto…"
               aria-label="Buscar tienda o producto"
               autoComplete="off"
-              className="w-full h-14 sm:h-16 rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] pl-14 sm:pl-16 pr-32 sm:pr-40 text-base sm:text-lg font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all hover:border-[var(--accent)]/40 hover:shadow-md focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:shadow-lg focus:shadow-[var(--accent)]/15 focus:ring-4 focus:ring-[var(--accent)]/10 shadow-md"
+              className="w-full h-14 sm:h-[4.5rem] rounded-2xl sm:rounded-full bg-white border-0 pl-14 sm:pl-16 pr-[5.5rem] sm:pr-44 text-base sm:text-lg font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all shadow-2xl shadow-black/30 focus:shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus:ring-4 focus:ring-white/30"
             />
             <button
               type="submit"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 h-11 sm:h-12 px-4 sm:px-6 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-sm sm:text-base font-extrabold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 h-11 sm:h-14 px-4 sm:px-7 rounded-xl sm:rounded-full text-white text-sm sm:text-base font-extrabold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+              style={{ background: "#f4a261" }}
             >
               <span className="hidden sm:inline">Buscar</span>
-              <Search className="h-4 w-4 sm:h-5 sm:w-5 sm:hidden" strokeWidth={2.5} />
-              <ArrowUpRight className="hidden sm:inline-block h-4 w-4" strokeWidth={2.5} />
+              <Search className="h-4 w-4 sm:hidden" strokeWidth={2.5} aria-hidden />
+              <ArrowUpRight className="hidden sm:inline-block h-4 w-4" strokeWidth={2.5} aria-hidden />
             </button>
           </div>
         </form>
 
-        {/* Q1 2026-05-20: Trust signals — stats reales + Yape pill.
-            UX audit detectó: el vecino nuevo no sabe que Buleje funciona
-            (sin reviews visibles ni números). storeCount/productCount
-            ya vienen cacheados de getMarketplaceStats. */}
+        {/* Stats reales + trust pill Yape */}
         {(storeCount > 0 || productCount > 0) && (
-          <div className="mt-4 sm:mt-5 flex items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
+          <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-white/65 flex-wrap">
             {storeCount > 0 && (
               <span className="inline-flex items-center gap-1.5">
                 <span className="relative inline-flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-60 animate-ping" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#74c69d] opacity-70 animate-ping" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#74c69d]" />
                 </span>
-                <span>{storeCount} tiendas activas</span>
+                <span className="text-white/80">{storeCount} tiendas activas</span>
               </span>
             )}
             {productCount > 0 && (
               <>
-                <span aria-hidden className="text-[var(--rule-base)]">·</span>
-                <span>{productCount.toLocaleString("es-PE")}+ productos</span>
+                <span aria-hidden className="text-white/30">·</span>
+                <span className="text-white/80">{productCount.toLocaleString("es-PE")}+ productos</span>
               </>
             )}
-            <span aria-hidden className="text-[var(--rule-base)]">·</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[var(--accent)]">
+            <span aria-hidden className="text-white/30">·</span>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-white"
+              style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)" }}
+            >
               Yape · Plin · efectivo
             </span>
           </div>
         )}
 
-        {/* Chips sub-CTA — atajos */}
-        <div className="mt-5 sm:mt-7 flex items-center justify-center gap-2 flex-wrap">
+        {/* CTAs */}
+        <div className="mt-6 sm:mt-8 flex items-center justify-center gap-3 flex-wrap">
           <Link
             href="/tiendas"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white border-2 border-transparent hover:bg-[var(--accent)] hover:shadow-md px-5 h-10 sm:h-11 text-sm font-extrabold transition-all shadow-sm"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-white/90 text-white hover:bg-white hover:text-[var(--accent)] px-6 h-11 sm:h-12 text-sm font-extrabold transition-all shadow-md hover:shadow-lg"
           >
             <Store className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Ver todas las tiendas
           </Link>
           <Link
             href="/marketplace/ofertas"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]/40 px-4 h-10 sm:h-11 text-sm font-extrabold text-[var(--text-primary)] transition-all shadow-sm"
+            className="inline-flex items-center gap-2 rounded-full px-6 h-11 sm:h-12 text-sm font-extrabold text-white transition-all shadow-md hover:shadow-lg hover:scale-[1.02]"
+            style={{ background: "#f4a261" }}
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Ofertas del día
@@ -421,18 +471,20 @@ async function RappiStyleHero() {
 // los destacados (los primeros en orden), el resto va al grid chico.
 // Emojis de fallback por slug si la imagen no está subida aún.
 
-const EMOJI_FALLBACK: Record<string, string> = {
-  restaurante: "🍱",
-  bodega: "🛒",
-  fruteria: "🥬",
-  farmacia: "💊",
-  ferreteria: "🛠️",
-  polleria: "🍗",
-  panaderia: "🥐",
-  licoreria: "🍷",
-  carniceria: "🥩",
-  minimarket: "🏪",
-  tecnologia: "📱",
+// Mapa de iconos Lucide por slug de categoría (reemplaza emojis).
+// Regla: CERO emojis literales en UI — todo Lucide desde @buleje/design-system/icons.
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  restaurante: UtensilsCrossed,
+  bodega:      ShoppingCart,
+  fruteria:    Apple,
+  farmacia:    Pill,
+  ferreteria:  Wrench,
+  polleria:    Drumstick,
+  panaderia:   Croissant,
+  licoreria:   Wine,
+  carniceria:  Beef,
+  minimarket:  Store,
+  tecnologia:  Smartphone,
 };
 
 const FEATURED_SLUGS = ["restaurante", "bodega"] as const;
@@ -498,7 +550,7 @@ async function CategoriesGrid() {
                   // gradiente b.tone original — más ligero y consistente.
                   className="hidden sm:block pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[var(--accent)]/15 blur-2xl group-hover:bg-[var(--accent)]/25 transition-colors"
                 />
-                {/* Imagen superadmin si existe, sino emoji fallback */}
+                {/* Imagen superadmin si existe, sino icono Lucide como fallback */}
                 <span
                   className="relative inline-flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-[var(--surface-canvas)] shrink-0 shadow-md ring-4 ring-[var(--accent)]/10 group-hover:scale-110 transition-transform overflow-hidden"
                 >
@@ -513,11 +565,16 @@ async function CategoriesGrid() {
                       // candidate above-the-fold mobile. priority elimina ~200ms.
                       priority={idx === 0}
                     />
-                  ) : (
-                    <span className="text-5xl sm:text-7xl">
-                      {EMOJI_FALLBACK[c.id] ?? "🛍️"}
-                    </span>
-                  )}
+                  ) : (() => {
+                    const CatIcon = CATEGORY_ICONS[c.id] ?? ShoppingBag;
+                    return (
+                      <CatIcon
+                        className="h-10 w-10 sm:h-14 sm:w-14 text-[var(--accent)]"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                    );
+                  })()}
                 </span>
                 <div className="relative min-w-0 flex-1">
                   <h3 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
@@ -558,11 +615,16 @@ async function CategoriesGrid() {
                       height={64}
                       className="object-cover w-full h-full"
                     />
-                  ) : (
-                    <span className="text-3xl sm:text-4xl">
-                      {EMOJI_FALLBACK[c.id] ?? "🛍️"}
-                    </span>
-                  )}
+                  ) : (() => {
+                    const CatIcon = CATEGORY_ICONS[c.id] ?? ShoppingBag;
+                    return (
+                      <CatIcon
+                        className="h-7 w-7 sm:h-8 sm:w-8 text-[var(--accent)]"
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
+                    );
+                  })()}
                 </span>
                 <span className="text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2">
                   {c.label}
@@ -576,11 +638,34 @@ async function CategoriesGrid() {
   );
 }
 
-// ── 3. Top stores — SOLO logo + nombre grande (Brandon mayo 14 v2) ───────────
-// Antes era FeaturedStoresCarousel con rating, productos, zona, categoría.
-// Ahora minimal: avatar grande del logo + nombre debajo. Estilo "marcas"
-// como Rappi en su sección de top 10. Grid responsive en lugar de carrusel
-// para mostrar más limpio y sin JS de embla.
+// ── 3. Tiendas destacadas — carrusel pro con rating, categoría y zona ──────────
+// v3 2026-05-26: cards enriquecidas (antes solo logo+nombre). Agrega rating
+// (estrellas), categoría y zona cuando la fuente los trae. Sin fetch nuevo:
+// getTopStores() ya devuelve category/zone/rating/reviewCount desde MarketplaceStatsDB.
+
+/** Renderiza las estrellas de rating (0–5). Solo muestra si rating > 0. */
+function StoreRatingStars({ rating, reviewCount }: { rating: number; reviewCount: number }) {
+  if (rating <= 0) return null;
+  const full = Math.floor(rating);
+  const partial = rating % 1 >= 0.5 ? 1 : 0;
+  return (
+    <span className="inline-flex items-center gap-1" aria-label={`${rating.toFixed(1)} de 5 estrellas`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          className={`h-3 w-3 shrink-0 ${i < full ? "fill-[var(--accent)] text-[var(--accent)]" : i === full && partial ? "fill-[var(--accent)]/50 text-[var(--accent)]/50" : "fill-none text-[var(--rule-base)]"}`}
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      ))}
+      {reviewCount > 0 && (
+        <span className="text-[10px] font-bold text-[var(--text-tertiary)] tabular-nums ml-0.5">
+          ({reviewCount})
+        </span>
+      )}
+    </span>
+  );
+}
 
 async function TopStoresSection() {
   const stores = await getTopStores();
@@ -589,7 +674,7 @@ async function TopStoresSection() {
   }
   return (
     <section
-      aria-label="Tiendas más elegidas"
+      aria-label="Tiendas destacadas"
       className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-12 sm:py-20"
     >
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -597,7 +682,7 @@ async function TopStoresSection() {
           <div>
             <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
               <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
-              Top elegidos
+              Tiendas destacadas
             </p>
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
               Las más elegidas{" "}
@@ -613,42 +698,65 @@ async function TopStoresSection() {
           </Link>
         </div>
 
-        {/* Grid de logos: 3 cols mobile / 5 desktop. Solo logo redondo +
-            nombre debajo. Hover = lift + ring accent. */}
+        {/* Grid de cards: 2 cols mobile / 3 tablet / 5 desktop.
+            Cada card: logo + nombre + rating + categoría + zona. */}
         <ul
           role="list"
           aria-label={`${stores.length} tiendas destacadas`}
-          className="grid grid-cols-3 sm:grid-cols-5 gap-4 sm:gap-6"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"
         >
           {stores.slice(0, 10).map((s, idx) => (
             <li key={s.id}>
               <Link
                 href={`/marketplace/${s.slug}`}
-                className="group flex flex-col items-center gap-3 sm:gap-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] rounded-2xl"
+                aria-label={`${s.name}${s.rating > 0 ? `, ${s.rating.toFixed(1)} estrellas` : ""}${s.category ? `, ${s.category}` : ""}${s.zone ? `, ${s.zone}` : ""}`}
+                className="group flex flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-xl transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
               >
-                {/* Logo grande circular */}
-                <div className="relative h-24 w-24 sm:h-32 sm:w-32 rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] overflow-hidden shadow-md ring-4 ring-transparent group-hover:ring-[var(--accent)]/30 group-hover:border-[var(--accent)] group-hover:scale-[1.04] transition-all">
+                {/* Logo */}
+                <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] overflow-hidden shadow-sm group-hover:scale-[1.04] transition-transform mx-auto mb-3 shrink-0">
                   {s.logo ? (
                     <Image
                       src={s.logo}
-                      alt={s.name}
+                      alt=""
                       fill
-                      sizes="(min-width: 640px) 128px, 96px"
+                      sizes="(min-width: 640px) 80px, 64px"
                       className="object-cover"
-                      // Audit 2026-05-17 02-P1-01: primeras 3 logos son LCP candidate
-                      // en mobile (above-the-fold). priority elimina ~300ms de LCP en 3G.
+                      // Primeras 3 logos = LCP candidate
                       priority={idx < 3}
                     />
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white font-black text-3xl sm:text-5xl">
+                    <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white font-black text-2xl sm:text-3xl">
                       {s.name.trim().charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
-                {/* Nombre debajo, con buen tamaño */}
-                <p className="text-sm sm:text-base font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors max-w-[140px]">
+
+                {/* Nombre */}
+                <p className="text-sm font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors mb-1.5">
                   {s.name}
                 </p>
+
+                {/* Rating */}
+                <div className="flex justify-center mb-1.5">
+                  <StoreRatingStars rating={s.rating} reviewCount={s.reviewCount} />
+                </div>
+
+                {/* Categoría + zona */}
+                {(s.category || s.zone) && (
+                  <div className="flex flex-col items-center gap-0.5">
+                    {s.category && (
+                      <span className="text-[10px] sm:text-xs font-semibold text-[var(--text-tertiary)] line-clamp-1 text-center">
+                        {s.category}
+                      </span>
+                    )}
+                    {s.zone && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs font-medium text-[var(--text-tertiary)] line-clamp-1">
+                        <MapPin className="h-2.5 w-2.5 shrink-0" strokeWidth={2} aria-hidden />
+                        {s.zone}
+                      </span>
+                    )}
+                  </div>
+                )}
               </Link>
             </li>
           ))}
@@ -833,14 +941,21 @@ export default async function Home() {
         </Reveal>
       </Suspense>
 
-      {/* 3. Top elegidos — solo logo + nombre */}
+      {/* 3. Tiendas destacadas — cards con rating + categoría + zona */}
       <Suspense fallback={<SectionSkeleton />}>
         <Reveal>
           <TopStoresSection />
         </Reveal>
       </Suspense>
 
-      {/* 4. Trabajá con nosotros — paleta del proyecto */}
+      {/* 4. Cómo funciona — 4 pasos + stats + CTA */}
+      <Suspense fallback={<SectionSkeleton />}>
+        <Reveal>
+          <ComoFuncionaSection />
+        </Reveal>
+      </Suspense>
+
+      {/* 5. Trabajá con nosotros — paleta del proyecto */}
       <Reveal>
         <JoinUsSection />
       </Reveal>
