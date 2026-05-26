@@ -8,6 +8,7 @@ import { BulejeHeatmap, type HeatmapCell } from "@/components/ui-system/charts";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { usePersonalizedGreeting } from "@/hooks/use-personalized-greeting";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
+import { useTenant } from "@/contexts/tenant-context";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "@/components/admin/inicio/DashboardDateRange";
 
@@ -94,10 +95,12 @@ const PRESET_ORDERS_LABEL: Record<string, string> = {
 
 export function TodayHub({ userName, greeting: greetingOverride, dateRange, hideAlerts = false, className }: Props) {
   // Brandon mayo 2026 v4: si no se pasa userName, usamos el nombre del
-  // negocio en lugar de "bodeguero" — "Buenas tardes, Mi Pollo" se siente
-  // más personal y refuerza la marca propia del dueño.
+  // negocio — "Buenas tardes, Mi Pollo" se siente más personal.
+  // Fix 2026-05-25: priorizar el nombre del TENANT (tienda real) sobre el de
+  // la plataforma ("Buleje"), que aparecía como saludo en todos los admin.
   const { brand } = usePlatformBrand();
-  const businessName = brand?.identity.name?.trim() || "bodeguero";
+  const { branding } = useTenant();
+  const businessName = branding?.name?.trim() || brand?.identity.name?.trim() || "tu negocio";
   const dynamicGreeting = usePersonalizedGreeting(userName ?? businessName);
   const greeting = greetingOverride ?? dynamicGreeting;
 

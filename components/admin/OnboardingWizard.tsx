@@ -31,7 +31,7 @@ interface WizardStep {
 const STEPS: ReadonlyArray<WizardStep> = [
   {
     id: "settingsDone",
-    title: "Personaliza tu bodega",
+    title: "Personaliza tu tienda",
     description: "Nombre, logo y datos de contacto.",
     Icon: Store,
     href: "/admin#config",
@@ -423,7 +423,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
                   id={titleId}
                   className="text-base font-bold text-[var(--text-primary)] leading-tight truncate"
                 >
-                  {allDone ? "¡Tu bodega está lista!" : "Configura tu bodega"}
+                  {allDone ? "¡Tu tienda está lista!" : "Configura tu tienda"}
                 </SectionTitle>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
                   {allDone ? "Todo completado." : "5 pasos para empezar a vender."}

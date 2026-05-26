@@ -465,7 +465,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
             Panel de control · {periodLabel}
           </p>
           <PageTitle className="font-display tracking-[var(--ls-tight)] leading-[1.05]">
-            {greeting}, <span className="text-[var(--accent)]">tu bodega</span>
+            {greeting}, <span className="text-[var(--accent)]">tu negocio</span>
           </PageTitle>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
             {lastUpdated

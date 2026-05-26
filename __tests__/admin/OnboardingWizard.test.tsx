@@ -201,7 +201,7 @@ describe("OnboardingWizard", () => {
 
     const title = document.getElementById(labelledBy!);
     expect(title).toBeInTheDocument();
-    expect(title?.textContent).toMatch(/Configura tu bodega/);
+    expect(title?.textContent).toMatch(/Configura tu tienda/);
   });
 
   it("Escape cierra el modal y persiste el flag", async () => {
@@ -272,7 +272,7 @@ describe("OnboardingWizard", () => {
     render(<OnboardingWizard tenantSlug="main" onClose={vi.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Tu bodega está lista/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tu tienda está lista/i)).toBeInTheDocument();
     });
     expect(screen.getByText(/Empezar a vender/i)).toBeInTheDocument();
     expect(screen.getByText("100%")).toBeInTheDocument();
