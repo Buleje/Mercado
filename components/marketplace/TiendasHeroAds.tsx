@@ -12,10 +12,53 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, ArrowRight } from "@buleje/design-system/icons";
 import PromoBannerRenderer, { type PromoBanner } from "./PromoBannerRenderer";
 
 const ROTATE_MS = 6000;
+
+/**
+ * PromoMiniCard — tarjeta compacta de oferta para la grilla "Más ofertas".
+ * Reusa los datos del PromoBanner (imageUrl o gradiente bgFrom→bgTo + título +
+ * CTA). Permite ver varias ofertas de un vistazo sin esperar la rotación del hero.
+ */
+function PromoMiniCard({ banner }: { banner: PromoBanner }) {
+  return (
+    <Link
+      href={banner.ctaHref || "#"}
+      aria-label={banner.title || "Oferta"}
+      className="group block overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+    >
+      <div
+        className="relative aspect-[16/9] w-full overflow-hidden"
+        style={banner.imageUrl ? undefined : { background: `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})` }}
+      >
+        {banner.imageUrl && (
+          <Image
+            src={banner.imageUrl}
+            alt={banner.title || "Oferta"}
+            fill
+            sizes="(min-width: 1024px) 280px, (min-width: 640px) 33vw, 50vw"
+            loading="lazy"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        )}
+      </div>
+      <div className="p-3.5">
+        <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{banner.title}</p>
+        {banner.subtitle && (
+          <p className="mt-0.5 truncate text-xs text-[var(--text-tertiary)]">{banner.subtitle}</p>
+        )}
+        <span className="mt-2 inline-flex items-center gap-1 text-xs font-extrabold text-[var(--accent)]">
+          {banner.ctaLabel || "Ver oferta"}
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+        </span>
+      </div>
+    </Link>
+  );
+}
 
 export default function TiendasHeroAds() {
   const [banners, setBanners] = useState<PromoBanner[]>([]);
@@ -49,6 +92,9 @@ export default function TiendasHeroAds() {
 
   if (banners.length === 0) return null;
   const current = banners[active];
+  // Grid de "Más ofertas": el resto de banners (excluye el que está en el hero)
+  // para no duplicar. Solo se muestra si hay 2+ banners.
+  const secondary = banners.filter((_, i) => i !== active).slice(0, 6);
 
   return (
     <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-5">
@@ -96,6 +142,23 @@ export default function TiendasHeroAds() {
           </>
         )}
       </div>
+
+      {/* Grid "Más ofertas" — ver varias promos de un vistazo (Fase 1 banners v2) */}
+      {secondary.length > 0 && (
+        <div className="mt-5">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-base font-extrabold text-[var(--text-primary)]">Más ofertas</h2>
+            <span className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              {banners.length} promos activas
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:gap-4">
+            {secondary.map((b) => (
+              <PromoMiniCard key={b.id} banner={b} />
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
