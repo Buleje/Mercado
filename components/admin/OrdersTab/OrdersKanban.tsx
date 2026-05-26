@@ -259,7 +259,7 @@ const OrderCard = memo(function OrderCard({
             {initial}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-[var(--text-primary)] text-sm truncate leading-tight">
+            <p className="font-bold text-[var(--text-primary)] text-sm leading-tight line-clamp-2">
               {order.customer.name}
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
@@ -355,7 +355,7 @@ const OrderCard = memo(function OrderCard({
             <button
               type="button"
               onClick={onMarkDeudaPaid}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/20 border border-[var(--data-success-500)]/30 transition-colors"
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
               title="Marcar deuda como cobrada"
             >
               <Check className="h-3.5 w-3.5" /> Cobrado
@@ -365,7 +365,7 @@ const OrderCard = memo(function OrderCard({
             <button
               type="button"
               onClick={manualDeliverAction.onClick}
-              className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/20 border border-[var(--data-success-500)]/30 transition-colors"
+              className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
               title="Marcar entregado (entrega manual sin delivery)"
               aria-label="Marcar como entregado manualmente"
             >
@@ -490,7 +490,7 @@ const KanbanColumn = memo(function KanbanColumn({
         </span>
         <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--rule-base)]" />
         <span className="text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)] leading-none">
-          S/{total.toFixed(0)}
+          S/{total.toFixed(2)}
         </span>
       </div>
 

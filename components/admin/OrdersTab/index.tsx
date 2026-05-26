@@ -138,7 +138,6 @@ export default function OrdersTab() {
   const total = activeOrders.reduce((s, o) => s + o.total, 0);
 
   // Stats agregados
-  const pendingOrders = activeOrders.filter(o => o.status === "pendiente").length;
   const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado" || o.status === "preparando").length;
   const todayDelivered = orders.filter(o => {
     if (o.status !== "entregado") return false;
@@ -156,7 +155,7 @@ export default function OrdersTab() {
         description={
           activeOrders.length === 0
             ? "Sin pedidos activos. Aparecerán acá en tiempo real."
-            : `${activeOrders.length} ${activeOrders.length === 1 ? "pedido" : "pedidos"} en marcha. ${inDeliveryOrders > 0 ? `${inDeliveryOrders} en preparación o delivery.` : ""}`
+            : `${activeOrders.length} ${activeOrders.length === 1 ? "pedido" : "pedidos"} en marcha.${inDeliveryOrders > 0 ? ` ${inDeliveryOrders} en preparación o delivery.` : ""}${todayDelivered > 0 ? ` ${todayDelivered} entregado${todayDelivered === 1 ? "" : "s"} hoy.` : ""}`
         }
         icon={Package}
       >
@@ -205,39 +204,10 @@ export default function OrdersTab() {
         </button>
       </AdminModuleHeader>
 
-      {/* KPIs uniformes (patrón EInvoice/Inventario): label uppercase 2xs +
-          value text-xl font-extrabold tabular-nums. Sin tipografía editorial. */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Activos", value: String(activeOrders.length), intent: "neutral" as const },
-          {
-            label: "Por confirmar",
-            value: String(pendingOrders),
-            intent: pendingOrders > 0 ? ("warning" as const) : ("neutral" as const),
-          },
-          { label: "En preparación · ruta", value: String(inDeliveryOrders), intent: "neutral" as const },
-          { label: "Entregados hoy", value: String(todayDelivered), intent: "neutral" as const },
-        ].map(({ label, value, intent }) => (
-          <div
-            key={label}
-            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
-          >
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-              {label}
-            </p>
-            <p
-              className={cn(
-                "text-xl font-extrabold tabular-nums",
-                intent === "warning"
-                  ? "text-[var(--data-warning-500)]"
-                  : "text-[var(--text-primary)]",
-              )}
-            >
-              {value}
-            </p>
-          </div>
-        ))}
-      </div>
+      {/* #1 (2026-05-26): stat cards removidas — los conteos por estado ya viven
+          en los chips de filtro (interactivos) y en los headers de columna del
+          kanban. Triple redundancia eliminada; "Entregados hoy" se movió al
+          subtítulo del header. */}
 
       {/* Delivery driver filter */}
       {filterByDelivery && (
