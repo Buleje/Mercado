@@ -19,12 +19,19 @@ import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 
 // ── Snapshot cache (5 min TTL) ────────────────────────────────────────────────
 
-let cachedSnapshot: { text: string; metrics: Record<string, unknown>; ts: number } | null = null;
+type BusinessSnapshot = { text: string; metrics: Record<string, unknown>; ts: number };
+// SECURITY 2026-05-26 (P0-3): el cache era una variable global ÚNICA, no keyed
+// por tenant → el 1er tenant en llamar llenaba la cache y los demás recibían SUS
+// datos de negocio en el contexto del asistente IA durante 5min (fuga cross-tenant
+// + cache miss garantizado por tenant = los 7 full-scans / timeout 15s). Map por
+// tenantId cierra ambos: aislamiento real + cache hit efectivo por tienda.
+const snapshotByTenant = new Map<string, BusinessSnapshot>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 async function getBusinessSnapshot(tenantId: string) {
   const now = Date.now();
-  if (cachedSnapshot && now - cachedSnapshot.ts < CACHE_TTL) return cachedSnapshot;
+  const cached = snapshotByTenant.get(tenantId);
+  if (cached && now - cached.ts < CACHE_TTL) return cached;
 
   const [products, orders, customers, sales, payables, purchases, reviews] = await Promise.all([
     ProductsDB.getAll(tenantId), OrdersDB.getAll(tenantId), CustomersDB.getAll(tenantId),
@@ -131,8 +138,9 @@ COMPRAS:
     overdueCount,
     topProductName: top10[0]?.name ?? "N/A",
   };
-  cachedSnapshot = { text, metrics, ts: now };
-  return cachedSnapshot;
+  const snapshot: BusinessSnapshot = { text, metrics, ts: now };
+  snapshotByTenant.set(tenantId, snapshot);
+  return snapshot;
 }
 
 const SYSTEM_PROMPT_TEMPLATE = (snapshot: string) => `Eres el Asistente Ejecutivo IA de "Buleje", una tienda de abarrotes premium en Pucallpa, Perú.

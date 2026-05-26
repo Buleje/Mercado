@@ -530,11 +530,14 @@ export const AdelantosDB = {
     const pendientes = await prisma.adelantoRecurrente.findMany({
       where: { activo: true, proximaEjecucion: { lte: now } },
     });
-    let creados = 0;
-    for (const r of pendientes) {
-      await prisma.$transaction(async (tx) => {
-        const monto = Number(r.monto);
-        await tx.adelanto.create({
+    if (pendientes.length === 0) return { creados: 0 };
+    // Perf 2026-05-26 (P0-6): una sola transacción batched en vez de abrir 1
+    // $transaction por fila (N transacciones). $transaction([...]) ejecuta
+    // todas las ops atómicamente: o se materializan todas o ninguna.
+    const ops = pendientes.flatMap((r) => {
+      const monto = Number(r.monto);
+      return [
+        prisma.adelanto.create({
           data: {
             tenantId: r.tenantId,
             beneficiarioId: r.beneficiarioId,
@@ -545,15 +548,15 @@ export const AdelantosDB = {
             saldoPendiente: monto,
             notas: `Adelanto recurrente (${r.frecuencia})`,
           },
-        });
-        await tx.adelantoRecurrente.update({
+        }),
+        prisma.adelantoRecurrente.update({
           where: { id: r.id },
           data: { ultimaEjecucion: now, proximaEjecucion: nextProxima(r.frecuencia as RecurrenteFrecuencia, r.diaMes, now) },
-        });
-      });
-      creados += 1;
-    }
-    return { creados };
+        }),
+      ];
+    });
+    await prisma.$transaction(ops);
+    return { creados: pendientes.length };
   },
 };
 

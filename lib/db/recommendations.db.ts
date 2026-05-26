@@ -47,6 +47,10 @@ export const RecommendationsDB = {
         unit: true,
         stock: true,
       },
+      // Perf 2026-05-26 (P0-4): cap defensivo al catálogo cargado en RAM por
+      // request. Un tenant patológico con miles de productos activos no debe
+      // hacer crecer el productMap sin techo. 2000 cubre cualquier bodega real.
+      take: 2000,
     });
     const productMap = new Map(allProducts.map((p) => [p.id, p]));
 
@@ -93,18 +97,23 @@ export const RecommendationsDB = {
         for (const i of coSales) if (i.sale.customerPhone) coPhones.add(i.sale.customerPhone);
 
         if (coPhones.size > 0) {
+          // Perf 2026-05-26 (P0-4): acotar el fan-out. Un producto muy popular
+          // puede tener miles de co-compradores → el `IN [...coPhones]` del paso
+          // 3 explotaba O(N²). 200 co-clientes son más que suficientes para una
+          // señal colaborativa robusta y mantienen la query acotada.
+          const coPhonesArr = [...coPhones].slice(0, 200);
           // 3. Productos que esos co-clientes compraron y el cliente actual no
           const [coOrderItems, coSaleItems] = await Promise.all([
             prisma.orderItem.findMany({
               where: {
-                order: { tenantId, customerPhone: { in: [...coPhones] }, status: { not: "cancelado" } },
+                order: { tenantId, customerPhone: { in: coPhonesArr }, status: { not: "cancelado" } },
                 productId: { notIn: [...boughtIds] },
               },
               select: { productId: true },
             }),
             prisma.saleItem.findMany({
               where: {
-                sale: { tenantId, customerPhone: { in: [...coPhones] } },
+                sale: { tenantId, customerPhone: { in: coPhonesArr } },
                 productId: { notIn: [...boughtIds] },
               },
               select: { productId: true },

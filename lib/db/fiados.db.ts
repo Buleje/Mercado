@@ -449,10 +449,16 @@ export const FiadosDB = {
 
     try {
       await prisma.$transaction(async (tx) => {
+        // Perf 2026-05-26 (P0-5): pre-fetch de todos los fiados en 1 sola query
+        // en vez de un findFirst por payment (N+1). La lectura sigue DENTRO de
+        // la tx → atomicidad preservada. tenantId en where: aislamiento.
+        const fiadoIds = payments.map((p) => p.fiadoId);
+        const fiadosPrefetched = await tx.fiado.findMany({
+          where: { id: { in: fiadoIds }, tenantId },
+        });
+        const fiadoById = new Map(fiadosPrefetched.map((f) => [f.id, f]));
         for (const payment of payments) {
-          const fiado = await tx.fiado.findFirst({
-            where: { id: payment.fiadoId, tenantId },
-          });
+          const fiado = fiadoById.get(payment.fiadoId);
           if (!fiado) {
             throw new Error(`Fiado ${payment.fiadoId.slice(-6)} no encontrado`);
           }

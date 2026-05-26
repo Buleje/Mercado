@@ -257,23 +257,31 @@ export async function POST(req: Request) {
         ?? req.headers.get("x-real-ip")
         ?? null;
       const ip = ipRaw ? ipRaw.slice(0, 45) : null;
+      // COMPLIANCE 2026-05-26 (P0-2): incluir IP en el detalle (Ley 29733 Art.18
+      // "quién accedió desde dónde") y pasar matchedTenantId como 7º arg — sin
+      // él el log caía al tenant "main" con WARN, dejando el audit incompleto.
       logActivity(
         "login_success",
         "admin",
-        `Login exitoso (${u.role}) desde tenant ${tenantSlug}`,
+        `Login exitoso (${u.role}) desde tenant ${tenantSlug} · IP ${ip ?? "desconocida"}`,
         u.username,
         u.username,
+        undefined,
+        matchedTenantId,
       ).catch((err: unknown) => {
         logger.error("[auth/login] logActivity failed", { err: err instanceof Error ? err.message : String(err) });
       });
-      void ip;
     } catch { /* logger not available in edge */ }
 
     return response;
   }
 
   // Falló el compare: incrementar lockout counter (solo si username es real, no dummy relleno)
-  if (dbUsers.length > 0) {
+  // SECURITY 2026-05-26 (P0-1): en modo LEGACY_LOGIN un username que existe SOLO
+  // en admin-users.json (dbUsers vacío) nunca incrementaba el contador → fuerza
+  // bruta ilimitada contra cuentas legacy. Incluir LEGACY_LOGIN cierra el bypass;
+  // en producción (sin la flag) el comportamiento queda idéntico.
+  if (dbUsers.length > 0 || process.env.LEGACY_LOGIN === "1") {
     cacheStore.set(lockKey, currentAttempts + 1, LOGIN_LOCKOUT_TTL);
   }
 
