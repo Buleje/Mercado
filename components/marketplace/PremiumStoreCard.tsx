@@ -17,6 +17,8 @@ export interface PremiumProduct {
   image: string;
   retailPrice: number;
   discountPrice?: number | null;
+  /** Categoría del producto — para mostrar la variedad de la tienda. */
+  category?: string;
 }
 
 interface Props {
@@ -67,7 +69,7 @@ export default function PremiumStoreCard({
   reviewCount,
   products,
 }: Props) {
-  const shown = products.slice(0, 4);
+  const shown = products.slice(0, 6);
   return (
     <Link
       href={`/marketplace/${slug}`}
@@ -122,10 +124,10 @@ export default function PremiumStoreCard({
       {/* ── Preview de productos ── */}
       <div className="min-w-0 flex-1">
         <p className="mb-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Algunos de sus productos
+          Variedad de la tienda · 1 por categoría
         </p>
         {shown.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {shown.map((p) => (
               <li
                 key={p.productId}
@@ -133,8 +135,13 @@ export default function PremiumStoreCard({
               >
                 <div className="relative aspect-square w-full bg-[var(--surface-sunken)]">
                   {p.image ? (
-                    <Image src={p.image} alt="" fill sizes="(min-width:640px) 140px, 45vw" className="object-cover" />
+                    <Image src={p.image} alt="" fill sizes="(min-width:640px) 110px, 30vw" className="object-cover" />
                   ) : null}
+                  {p.category && (
+                    <span className="absolute left-1 top-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+                      {p.category}
+                    </span>
+                  )}
                 </div>
                 <div className="p-1.5">
                   <p className="truncate text-[11px] font-semibold text-[var(--text-secondary)]">{p.name}</p>

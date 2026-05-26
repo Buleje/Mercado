@@ -167,6 +167,71 @@ export interface FeaturedStoreWithProducts {
  * home cuando no hay coords del usuario. Misma estrategia de embeber productos
  * en UNA sola query (sin N+1), ordenadas por rating + reseñas. Cacheado.
  */
+/** Producto para el showcase Premium: incluye su categoría para mostrar variedad. */
+export interface ShowcaseProduct {
+  productId: number;
+  name: string;
+  image: string;
+  retailPrice: number;
+  discountPrice: number | null;
+  category: string;
+}
+
+/**
+ * Para las cards Premium de /tiendas: devuelve, por cada slug, UN producto de
+ * cada categoría (hasta `maxCategories`) → el cliente ve la variedad de la
+ * tienda, no 4 productos de lo mismo. Map slug → ShowcaseProduct[].
+ */
+export async function getStoreShowcaseByCategory(
+  slugs: string[],
+  maxCategories = 6,
+): Promise<Record<string, ShowcaseProduct[]>> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("marketplace:featured-stores");
+
+  if (slugs.length === 0) return {};
+  const stores = await prisma.store.findMany({
+    where: { slug: { in: slugs } },
+    select: {
+      slug: true,
+      products: {
+        where: { isActive: true },
+        orderBy: [{ id: "desc" }],
+        take: 60, // suficiente para cubrir todas las categorías
+        select: {
+          productId: true,
+          retailPrice: true,
+          discountPrice: true,
+          product: { select: { name: true, image: true, category: true } },
+        },
+      },
+    },
+  });
+
+  const out: Record<string, ShowcaseProduct[]> = {};
+  for (const s of stores) {
+    const seen = new Set<string>();
+    const picked: ShowcaseProduct[] = [];
+    for (const p of s.products) {
+      const cat = p.product.category || "Otros";
+      if (seen.has(cat)) continue;
+      seen.add(cat);
+      picked.push({
+        productId: p.productId,
+        name: p.product.name,
+        image: p.product.image ?? "",
+        retailPrice: Number(p.retailPrice),
+        discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+        category: cat,
+      });
+      if (picked.length >= maxCategories) break;
+    }
+    out[s.slug] = picked;
+  }
+  return out;
+}
+
 export async function getFeaturedStoresWithProducts(opts: {
   limit: number;
   productsPerStore: number;

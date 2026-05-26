@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   ShieldCheck,
   TrendingUp,
@@ -114,23 +115,34 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
             return (
               <div
                 key={store.id}
-                className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+                className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow hover:shadow-md"
               >
-                {/* Header tienda + nivel */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-extrabold text-[var(--text-primary)] truncate">
-                        {store.name}
-                      </span>
-                      <PlanBadge plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
-                      {activeCount > 0 && (
-                        <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
-                          {activeCount} beneficio{activeCount === 1 ? "" : "s"}
+                {/* Header tienda + nivel (franja superior) */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+                      {store.logo ? (
+                        <Image src={store.logo} alt="" fill sizes="44px" className="object-cover" />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center text-base font-black text-[var(--text-tertiary)]">
+                          {store.name.trim().charAt(0).toUpperCase()}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-[var(--text-tertiary)] font-mono">{store.slug}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-extrabold text-[var(--text-primary)] truncate">
+                          {store.name}
+                        </span>
+                        <PlanBadge plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
+                        {activeCount > 0 && (
+                          <span className="rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-black text-white">
+                            {activeCount} activo{activeCount === 1 ? "" : "s"}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-[var(--text-tertiary)] font-mono">{store.slug}</span>
+                    </div>
                   </div>
                   <TierSelector
                     value={(store.displayTier ?? "standard") as DisplayTier}
@@ -141,7 +153,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
                 </div>
 
                 {/* Beneficios por grupo */}
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 p-4 sm:grid-cols-2">
                   {GROUPS.map((group) => (
                     <div key={group}>
                       <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">

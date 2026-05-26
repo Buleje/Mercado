@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import TiendasClient from "./TiendasClient";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
-import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db";
+import { getStoreShowcaseByCategory } from "@/lib/db/marketplace-featured.db";
 import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
@@ -120,20 +120,20 @@ export default async function TiendasPage() {
   let productsBySlug: Record<string, PremiumProduct[]> = {};
   if (premiumSlugs.size > 0) {
     try {
-      const withProducts = await getFeaturedStoresWithProducts({ limit: 30, productsPerStore: 4 });
+      // 1 producto por categoría → el cliente ve la variedad de la tienda.
+      const showcase = await getStoreShowcaseByCategory([...premiumSlugs], 6);
       productsBySlug = Object.fromEntries(
-        withProducts
-          .filter((s) => premiumSlugs.has(s.slug))
-          .map((s) => [
-            s.slug,
-            s.productosDestacados.map((p) => ({
-              productId: p.productId,
-              name: p.name,
-              image: p.image,
-              retailPrice: p.retailPrice,
-              discountPrice: p.discountPrice,
-            })),
-          ]),
+        Object.entries(showcase).map(([slug, items]) => [
+          slug,
+          items.map((p) => ({
+            productId: p.productId,
+            name: p.name,
+            image: p.image,
+            retailPrice: p.retailPrice,
+            discountPrice: p.discountPrice,
+            category: p.category,
+          })),
+        ]),
       );
     } catch {
       productsBySlug = {};
