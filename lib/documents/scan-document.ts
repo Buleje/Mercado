@@ -1,6 +1,10 @@
 import "server-only";
 import { logger } from "@/lib/logger";
 import { DOC_CATEGORIES } from "@/lib/types/documents";
+import { fetchGroqWithRetry } from "@/lib/groq-fetch";
+
+/** Modelo de visión Groq (multimodal). Mismo que el tier "premium" del router. */
+const GROQ_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 /**
  * ADR-119 — Escáner de documentos desde cámara móvil.
@@ -37,18 +41,22 @@ Devuelve SOLO un JSON valido:
 Reglas: tags en minuscula sin tildes (max 5). Si ves una fecha de vencimiento/caducidad/"valido hasta", ponla en expiresAt. No pongas texto fuera del JSON.`;
 
 export async function scanDocument(imageUrl: string): Promise<ScanResult> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return { ok: false, error: "scan deshabilitado — falta OPENAI_API_KEY" };
+  const apiKey = process.env.GROQ_API_KEY;
+  const hasGateway = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN;
+  if (!apiKey && !hasGateway) {
+    return { ok: false, error: "scan deshabilitado — falta GROQ_API_KEY o AI_GATEWAY" };
+  }
   if (!imageUrl || !/^https?:\/\//.test(imageUrl)) {
     return { ok: false, error: "imageUrl invalida" };
   }
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
+    // Visión vía infra LLM del proyecto (Gateway / Groq directo). Llama-4-Scout
+    // es multimodal y acepta image_url en el payload OpenAI-compatible.
+    const resp = await fetchGroqWithRetry(
+      apiKey ?? "",
+      {
+        model: GROQ_VISION_MODEL,
         messages: [
           {
             role: "user",
@@ -60,13 +68,13 @@ export async function scanDocument(imageUrl: string): Promise<ScanResult> {
         ],
         max_tokens: 1200,
         temperature: 0.1,
-      }),
-      signal: AbortSignal.timeout(20000),
-    });
+      },
+      "doc-scan"
+    );
 
-    if (!res.ok) return { ok: false, error: `OpenAI returned ${res.status}` };
+    if (!resp.ok || !resp.data) return { ok: false, error: resp.error ?? "vision call failed" };
 
-    const payload = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    const payload = resp.data as { choices?: { message?: { content?: string } }[] };
     const content = payload.choices?.[0]?.message?.content ?? "";
     const match = content.match(/\{[\s\S]*\}/);
     if (!match) return { ok: false, error: "no JSON in response" };

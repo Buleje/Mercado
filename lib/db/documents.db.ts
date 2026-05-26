@@ -325,6 +325,19 @@ export class DocumentsDB {
   }
 
   /**
+   * ADR-119 — count barato de documentos por vencer dentro de `withinDays`
+   * (incluye vencidos). Usa el índice [tenantId, expiresAt]. Para el widget
+   * de alertas del home (/api/admin/overview).
+   */
+  static async countExpiring(tenantId: string, withinDays = 30): Promise<number> {
+    const limit = new Date();
+    limit.setDate(limit.getDate() + withinDays);
+    return prisma.document.count({
+      where: { tenantId, deletedAt: null, expiresAt: { not: null, lte: limit } },
+    });
+  }
+
+  /**
    * ADR-119 — usado por el cron. Trae documentos que vencen dentro de la
    * ventana y aún no recibieron aviso (o cuyo aviso quedó obsoleto). Cross-
    * tenant: el caller agrupa por tenantId para resolver el teléfono destino.

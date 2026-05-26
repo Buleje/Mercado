@@ -281,6 +281,22 @@ export async function GET(req: NextRequest) {
         href: "/admin?tab=inventario&filter=expiring",
       });
     }
+    // ADR-119 — documentos del negocio por vencer (licencias, contratos).
+    // Query barata cacheada 5 min aparte para no acoplar a fetchOverview.
+    const { DocumentsDB } = await import("@/lib/db/documents.db");
+    const expiringDocsCount = await getOrSet(
+      `admin:overview:expdocs:${tenantId}`,
+      300,
+      () => DocumentsDB.countExpiring(tenantId, 30)
+    ).catch(() => 0);
+    if (expiringDocsCount > 0) {
+      alerts.push({
+        id: "docs-expiring",
+        severity: "warning",
+        text: `${expiringDocsCount} ${expiringDocsCount === 1 ? "documento vence" : "documentos vencen"} pronto`,
+        href: "/admin?tab=documentos",
+      });
+    }
     if (overdueCreditCount > 0) {
       alerts.push({
         id: "overdue",
