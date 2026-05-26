@@ -19,6 +19,7 @@
 
 import { Star } from "@buleje/design-system/icons";
 import type { CategoriaDef } from "@/lib/constants/marketplace-categories";
+import { cn } from "@/lib/utils";
 
 export type CategoryFiltersState = {
   subCategoria: string | null;
@@ -46,6 +47,49 @@ interface CategoryFiltersProps {
   filters: CategoryFiltersState;
   onChange: (next: CategoryFiltersState) => void;
   onReset: () => void;
+  /** Conteo de productos por subcategoría (para los chips). Opcional. */
+  subCategoryCounts?: Record<string, number>;
+  /** Total de productos de la categoría (chip "Todas"). */
+  totalCount?: number;
+}
+
+/** Chip-pill destacado para subcategorías (énfasis visual sobre el resto). */
+function SubCatChip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border-2 px-3 h-9 text-sm font-bold capitalize transition-all",
+        active
+          ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
+      )}
+    >
+      <span className="truncate max-w-[140px]">{label}</span>
+      {count != null && (
+        <span
+          className={cn(
+            "text-xs font-extrabold tabular-nums",
+            active ? "text-white/85" : "text-[var(--text-tertiary)]",
+          )}
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  );
 }
 
 const ZONES = ["Calleria", "Manantay", "Yarinacocha"];
@@ -182,6 +226,8 @@ export default function CategoryFilters({
   filters,
   onChange,
   onReset,
+  subCategoryCounts,
+  totalCount,
 }: CategoryFiltersProps) {
   const toggleStore = (storeId: string) => {
     const exists = filters.stores.includes(storeId);
@@ -193,34 +239,50 @@ export default function CategoryFilters({
     });
   };
 
-  const hasActive =
-    filters.subCategoria !== null ||
-    filters.stores.length > 0 ||
-    filters.priceMin !== null ||
-    filters.priceMax !== null ||
-    filters.availability !== "all" ||
-    filters.minStoreRating > 0 ||
-    filters.zone !== null ||
-    filters.deliveryTime !== "any";
+  const activeCount =
+    (filters.subCategoria !== null ? 1 : 0) +
+    (filters.stores.length > 0 ? 1 : 0) +
+    (filters.priceMin !== null || filters.priceMax !== null ? 1 : 0) +
+    (filters.availability !== "all" ? 1 : 0) +
+    (filters.minStoreRating > 0 ? 1 : 0) +
+    (filters.zone !== null ? 1 : 0) +
+    (filters.deliveryTime !== "any" ? 1 : 0);
+  const hasActive = activeCount > 0;
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 space-y-6 lg:sticky lg:top-24">
-      {/* Sub-categoria */}
-      <FilterGroup title="Sub-categoria">
-        <RadioRow
-          label="Todas"
-          checked={filters.subCategoria === null}
-          onChange={() => onChange({ ...filters, subCategoria: null })}
-        />
-        {categoria.subCategorias.map((sub) => (
-          <RadioRow
-            key={sub}
-            label={sub}
-            checked={filters.subCategoria === sub}
-            onChange={() => onChange({ ...filters, subCategoria: sub })}
+      {/* Sub-categoria — DESTACADA: chips visuales con conteo (no radios).
+          Es el filtro #1 que usa la gente; va arriba y con más peso visual. */}
+      <div>
+        <h3 className="mb-3 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+          Subcategorías
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          <SubCatChip
+            label="Todas"
+            count={totalCount}
+            active={filters.subCategoria === null}
+            onClick={() => onChange({ ...filters, subCategoria: null })}
           />
-        ))}
-      </FilterGroup>
+          {categoria.subCategorias
+            // Si tenemos conteos, ocultamos las subcategorías sin productos —
+            // un chip que filtra a 0 resultados es ruido. Sin conteos (undefined)
+            // mostramos todas.
+            .filter((sub) => subCategoryCounts == null || (subCategoryCounts[sub] ?? 0) > 0)
+            .map((sub) => (
+              <SubCatChip
+                key={sub}
+                label={sub}
+                count={subCategoryCounts?.[sub]}
+                active={filters.subCategoria === sub}
+                onClick={() => onChange({ ...filters, subCategoria: sub })}
+              />
+            ))}
+        </div>
+      </div>
+
+      <div className="h-px bg-[var(--rule-soft)]" aria-hidden />
+
 
       {/* Tiendas */}
       {storesFacet.length > 0 && (
@@ -362,7 +424,7 @@ export default function CategoryFilters({
           onClick={onReset}
           className="w-full rounded-full border border-gray-300 dark:border-gray-700 px-4 py-2 text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
-          Limpiar filtros
+          Limpiar filtros ({activeCount})
         </button>
       )}
     </div>

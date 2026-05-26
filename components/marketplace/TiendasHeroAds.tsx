@@ -49,7 +49,7 @@ function PromoMiniCard({ banner }: { banner: PromoBanner }) {
       className="group block overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
     >
       <div
-        className="relative aspect-[16/9] w-full overflow-hidden"
+        className="relative aspect-[2/1] w-full overflow-hidden"
         style={banner.imageUrl ? undefined : { background: `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})` }}
       >
         {banner.imageUrl && (
@@ -183,7 +183,7 @@ export default function TiendasHeroAds({ slot = "tiendas-hero", zone = null, mor
               {banners.length} promos activas
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 lg:gap-4">
             {secondary.map((b) => (
               <PromoMiniCard key={b.id} banner={b} />
             ))}

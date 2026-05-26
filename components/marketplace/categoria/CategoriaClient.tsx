@@ -56,7 +56,7 @@ function CategoryBreadcrumb({ label }: { label: string }) {
   return (
     <nav
       aria-label="Ruta de navegacion"
-      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6"
+      className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6"
     >
       <ol className="flex items-center gap-1.5 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
         <li>
@@ -203,6 +203,22 @@ export default function CategoriaClient({
     return out;
   }, [initialProducts, filters, sort, query]);
 
+  // Conteo de productos por subcategoría (mismo match que applyFilters) — para
+  // los chips destacados del sidebar. Se calcula sobre el set completo, no el
+  // filtrado, para que el usuario vea cuántos hay en cada una.
+  const subCategoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const sub of categoria.subCategorias) {
+      const needle = sub.toLowerCase();
+      counts[sub] = initialProducts.filter(
+        (p) =>
+          p.category.toLowerCase().includes(needle) ||
+          p.name.toLowerCase().includes(needle),
+      ).length;
+    }
+    return counts;
+  }, [initialProducts, categoria.subCategorias]);
+
   const uniqueStoreCount = useMemo(() => {
     return new Set(initialProducts.map((p) => p.storeId)).size;
   }, [initialProducts]);
@@ -220,7 +236,7 @@ export default function CategoriaClient({
 
       {/* Chip "Buscando: <query>" — visible si el usuario llegó con ?q=  */}
       {query.length > 0 && (
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 mt-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm">
             <span className="text-[var(--text-tertiary)]">Buscando:</span>
             <strong className="text-[var(--accent)]">&ldquo;{query}&rdquo;</strong>
@@ -237,12 +253,12 @@ export default function CategoriaClient({
       )}
 
       {/* Layout 2 columnas (sidebar + main) */}
-      {/* max-w-[1600px] (Ola 7) — secciones amplias para mas productos visibles */}
+      {/* max-w-[1760px] (Ola 7) — secciones amplias para mas productos visibles */}
       <section
         aria-label={`Productos de ${categoria.label}`}
-        className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-16"
+        className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pb-16"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 lg:gap-8">
           {/* Sidebar desktop — MK-03: sticky para que no se pierdan al scroll */}
           <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
             <CategoryFilters
@@ -252,6 +268,8 @@ export default function CategoriaClient({
               filters={filters}
               onChange={setFilters}
               onReset={() => setFilters(INITIAL_FILTERS)}
+              subCategoryCounts={subCategoryCounts}
+              totalCount={initialProducts.length}
             />
           </aside>
 
@@ -327,6 +345,8 @@ export default function CategoriaClient({
               filters={filters}
               onChange={setFilters}
               onReset={() => setFilters(INITIAL_FILTERS)}
+              subCategoryCounts={subCategoryCounts}
+              totalCount={initialProducts.length}
             />
           </div>
         </div>

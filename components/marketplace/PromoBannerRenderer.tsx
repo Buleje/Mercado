@@ -154,7 +154,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
 
     return (
       <div
-        className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-[4/1] flex items-stretch px-4 sm:px-6 gap-3 sm:gap-4 border border-[var(--rule-soft)]"
+        className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-auto sm:h-[180px] lg:h-[200px] xl:h-[210px] flex items-stretch px-4 sm:px-6 gap-3 sm:gap-4 border border-[var(--rule-soft)]"
         style={{ background: bgGradient }}
       >
         {hasImage && banner.imageUrl && (
@@ -192,7 +192,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
   if (type === "image") {
     return (
       <div
-        className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-[4/1] flex items-center justify-center border border-[var(--rule-soft)]"
+        className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-auto sm:h-[180px] lg:h-[200px] xl:h-[210px] flex items-center justify-center border border-[var(--rule-soft)]"
         style={{ background: bgGradient }}
       >
         {hasImage && banner.imageUrl && (
@@ -224,7 +224,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
   // ── CLASSIC (default): texto + CTA chip ───────────────────────────────────
   return (
     <div
-      className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-[4/1] flex items-center justify-between px-6 sm:px-10 border border-[var(--rule-soft)]"
+      className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-auto sm:h-[180px] lg:h-[200px] xl:h-[210px] flex items-center justify-between px-6 sm:px-10 border border-[var(--rule-soft)]"
       style={{ background: bgGradient }}
     >
       {hasImage && banner.imageUrl && (
