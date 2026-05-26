@@ -221,15 +221,16 @@ const OrderCard = memo(function OrderCard({
         "motion-reduce:hover:translate-y-0",
       )}
     >
-      {/* Top stripe — urgencia */}
+      {/* Indicador de urgencia minimalista — texto muteado sobre fondo tenue,
+          sin barra saturada full-color ni animate-pulse (ruido visual). */}
       {u === "u2h" && (
-        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--data-error-500)] text-white text-xs font-extrabold uppercase tracking-[var(--ls-wider)] animate-pulse">
+        <div className="flex items-center gap-1.5 px-4 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error-600)] bg-[var(--data-error-500)]/8 border-b border-[var(--data-error-500)]/20">
           <AlertTriangle className="h-3 w-3" strokeWidth={2.5} />
           +2h sin avanzar
         </div>
       )}
       {u === "u1h" && (
-        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--data-warning-500)] text-white text-xs font-extrabold uppercase tracking-[var(--ls-wider)]">
+        <div className="flex items-center gap-1.5 px-4 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] bg-[var(--data-warning-500)]/8 border-b border-[var(--data-warning-500)]/20">
           <Clock className="h-3 w-3" strokeWidth={2.5} />
           +1h sin avanzar
         </div>
@@ -261,10 +262,10 @@ const OrderCard = memo(function OrderCard({
             <p className="font-bold text-[var(--text-primary)] text-sm truncate leading-tight">
               {order.customer.name}
             </p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1.5">
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
               <span className="font-mono">#{order.id.slice(-6)}</span>
-              <span aria-hidden>·</span>
-              <span>{formatDate(order.createdAt)}</span>
+              <span aria-hidden> · </span>
+              <span className="whitespace-nowrap">{formatDate(order.createdAt)}</span>
             </p>
             {order.customer.phone && (
               <p className="text-xs font-mono text-[var(--text-tertiary)] mt-0.5 truncate">
@@ -284,37 +285,19 @@ const OrderCard = memo(function OrderCard({
 
         {/* Meta chips */}
         <div className="flex items-center gap-1.5 flex-wrap mt-3">
-          {/* Chip origen */}
+          {/* Chip origen — outline neutral (sin relleno saturado). El ícono
+              distingue marketplace vs tienda; el color queda fuera del card. */}
           {(order as DbOrder & { source?: string }).source === "marketplace" ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border"
-              style={{
-                background: "color-mix(in oklab, var(--color-secondary, #f4a261) 12%, transparent)",
-                color: "var(--color-secondary, #f4a261)",
-                borderColor: "color-mix(in oklab, var(--color-secondary, #f4a261) 30%, transparent)",
-              }}
-            >
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border border-[var(--rule-base)] text-[var(--text-secondary)]">
               <Boxes className="h-3 w-3" strokeWidth={2} aria-hidden /> MKT
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border"
-              style={{
-                background: "color-mix(in oklab, var(--color-primary, #2d6a4f) 12%, transparent)",
-                color: "var(--color-primary-dark, #1b4332)",
-                borderColor: "color-mix(in oklab, var(--color-primary, #2d6a4f) 30%, transparent)",
-              }}
-            >
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border border-[var(--rule-base)] text-[var(--text-secondary)]">
               <Store className="h-3 w-3" strokeWidth={2} aria-hidden /> TIENDA
             </span>
           )}
           {order.paymentMethod && (
-            <span
-              className={cn(
-                "inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider",
-                order.paymentMethod === "yape"
-                  ? "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]"
-                  : "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/25",
-              )}
-            >
+            <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border border-[var(--rule-base)] text-[var(--text-secondary)]">
               {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
             </span>
           )}
@@ -324,7 +307,7 @@ const OrderCard = memo(function OrderCard({
             </span>
           )}
           {distanceLabel && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)]/60">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border border-[var(--rule-base)] text-[var(--text-secondary)]">
               <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden />
               {distanceLabel}
             </span>
@@ -349,8 +332,8 @@ const OrderCard = memo(function OrderCard({
               type="button"
               onClick={primaryAction.onClick}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-all",
-                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-[var(--shadow-sm)] shadow-[var(--accent)]/25 hover:shadow-[var(--shadow-md)] hover:shadow-[var(--accent)]/35 active:scale-[0.99]",
+                "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-colors",
+                "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90 active:scale-[0.99]",
               )}
             >
               <primaryAction.icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
@@ -476,50 +459,39 @@ const KanbanColumn = memo(function KanbanColumn({
           : undefined
       }
       className={cn(
-        "flex flex-col min-h-0 rounded-2xl border-2 p-3 transition-all",
+        "flex flex-col min-h-0 rounded-2xl border p-3 transition-all",
         isOver
-          ? "scale-[1.01] shadow-[var(--shadow-lg)] ring-4 ring-offset-0"
+          ? "scale-[1.005] shadow-[var(--shadow-md)] ring-2 ring-offset-0"
           : isActiveTarget
           ? "border-dashed"
-          : "border-[var(--rule-base)] bg-[var(--surface-sunken)]",
+          : "border-[var(--rule-soft)] bg-[var(--surface-sunken)]",
       )}
     >
-      {/* Header editorial Buleje — bloque centrado: icono → label → contadores.
-          Layout simétrico que se ve igual de bien en columnas estrechas (4 al
-          mismo tiempo en lg) que anchas. Antes era flex horizontal con icono
-          + label/descripción + count/total a la derecha — a 1440px el texto
-          quedaba apretado contra el badge y la descripción no se leía. */}
+      {/* Header minimalista: punto de estado (único acento) + label + contadores
+          en una sola línea con regla inferior. Sin anillos ni cajas tintadas —
+          el color queda como señal sutil, no como relleno saturado. */}
       <div
-        className="flex flex-col items-center justify-center text-center px-3 py-3 rounded-xl bg-[var(--surface-raised)] border-2 mb-3 shrink-0"
-        style={{ borderColor: `color-mix(in oklab, ${accentVar} 35%, transparent)` }}
+        className="flex items-center gap-2.5 px-1 pb-2.5 mb-3 border-b border-[var(--rule-soft)] shrink-0"
         title={description}
       >
         <span
           aria-hidden
-          className="inline-flex items-center justify-center h-9 w-9 rounded-lg shrink-0 mb-2"
-          style={{ backgroundColor: `color-mix(in oklab, ${accentVar} 15%, transparent)` }}
-        >
-          <Icon className={cn("h-4 w-4", iconColor)} strokeWidth={2.5} />
-        </span>
-        <p className="text-[length:var(--ts-sm)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] leading-tight">
+          className="h-2.5 w-2.5 rounded-full shrink-0"
+          style={{ backgroundColor: accentVar }}
+        />
+        <p className="flex-1 truncate text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] leading-none">
           {label}
         </p>
-        <div className="mt-2 inline-flex items-center gap-2 leading-none">
-          <span
-            className="inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full font-mono tabular-nums text-[length:var(--ts-2xs)] font-extrabold"
-            style={{
-              backgroundColor: `color-mix(in oklab, ${accentVar} 12%, transparent)`,
-              color: accentVar,
-            }}
-            aria-label={`${orders.length} pedidos en ${label}`}
-          >
-            {orders.length}
-          </span>
-          <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--rule-base)]" />
-          <span className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--text-secondary)]">
-            S/{total.toFixed(0)}
-          </span>
-        </div>
+        <span
+          className="font-mono tabular-nums text-[length:var(--ts-sm)] font-extrabold text-[var(--text-primary)] leading-none"
+          aria-label={`${orders.length} pedidos en ${label}`}
+        >
+          {orders.length}
+        </span>
+        <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--rule-base)]" />
+        <span className="text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)] leading-none">
+          S/{total.toFixed(0)}
+        </span>
       </div>
 
       {/* Cards */}
