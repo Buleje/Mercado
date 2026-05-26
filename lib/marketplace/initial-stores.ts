@@ -61,16 +61,16 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
   cacheTag("marketplace:stores");
 
   try {
-    // Brandon 2026-05-20 v11 audit P0: filtramos tiendas de prueba/demo
-    // del listado público — audit detectó "Tienda 3 Pruebas" y "buleje"
-    // en minúscula apareciendo en home + /tiendas + JSON-LD + sitemap,
-    // dañando credibilidad del marketplace y diluyendo el index Google.
-    const TEST_SLUG_BLOCKLIST = new Set(["tienda-3", "buleje", "main", "demo"]);
-    const TEST_PATTERN = /(test|prueba|demo|sandbox|pruebas)/i;
+    // 2026-05-26: visibilidad 100% por `isPublished` (controlada por el
+    // SUPERADMIN en /superadmin/stores). Antes había un blocklist hardcodeado
+    // (tienda-3/buleje/main/demo + patrón test/prueba/demo/sandbox) que ocultaba
+    // "internamente" tiendas de prueba aunque estuvieran publicadas — Brandon
+    // pidió que ese control viva SOLO en superadmin. Para ocultar una tienda,
+    // el superadmin la despublica (botón Ocultar). Ver public-store-filter.ts.
     const rowsRaw = await prisma.store.findMany({
       where: { isPublished: true },
       orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-      take: 60, // pedimos más para compensar las que filtremos abajo
+      take: 30,
       select: {
         id: true,
         slug: true,
@@ -84,14 +84,7 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         description: true,
       },
     });
-    const rows = rowsRaw
-      .filter(
-        (s) =>
-          !TEST_SLUG_BLOCKLIST.has(s.slug.toLowerCase()) &&
-          !TEST_PATTERN.test(s.slug) &&
-          !TEST_PATTERN.test(s.name ?? ""),
-      )
-      .slice(0, 30);
+    const rows = rowsRaw;
 
     // Patch cover via raw SQL — la columna existe en DB pero schema.prisma
     // no se actualiza (zona peligrosa). Sin esto, la portada nunca llega
