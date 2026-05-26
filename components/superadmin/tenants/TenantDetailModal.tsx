@@ -9,6 +9,7 @@ import {
 } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
+import { SunatOficialToggle } from "@/components/superadmin/tenants/SunatOficialToggle";
 
 interface TenantDetailModalProps {
   tenant: TenantRow;
@@ -288,6 +289,9 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
             </div>
           )}
         </div>
+
+        {/* Modo SUNAT Oficial — toggle controlado por superadmin (ADR-123) */}
+        <SunatOficialToggle slug={t.slug} />
 
         {/* Custom domain */}
         {t.customDomain && (
