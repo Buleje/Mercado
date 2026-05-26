@@ -20,16 +20,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
+
+// Si la navegación tarda más que esto, mostramos el overlay del Paiche nadando.
+const PAICHE_DELAY_MS = 400;
 
 export default function NavProgress() {
   const pathname = usePathname();
   const [width, setWidth] = useState(0);
   const [active, setActive] = useState(false);
+  const [showPaiche, setShowPaiche] = useState(false);
   const rafRef = useRef<number | null>(null);
   const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paicheTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Arranca la barra (con trickle hacia 90%).
+  // Arranca la barra (con trickle hacia 90%) + arma el overlay del Paiche
+  // para navegaciones que tarden >400ms.
   const start = () => {
     if (hideRef.current) clearTimeout(hideRef.current);
     setActive(true);
@@ -38,11 +45,15 @@ export default function NavProgress() {
     trickleRef.current = setInterval(() => {
       setWidth((w) => (w < 90 ? w + Math.max(0.5, (90 - w) * 0.08) : w));
     }, 200);
+    if (paicheTimerRef.current) clearTimeout(paicheTimerRef.current);
+    paicheTimerRef.current = setTimeout(() => setShowPaiche(true), PAICHE_DELAY_MS);
   };
 
-  // Completa: 100% y fade out.
+  // Completa: 100% y fade out + oculta el Paiche.
   const done = () => {
     if (trickleRef.current) clearInterval(trickleRef.current);
+    if (paicheTimerRef.current) clearTimeout(paicheTimerRef.current);
+    setShowPaiche(false);
     setWidth(100);
     hideRef.current = setTimeout(() => {
       setActive(false);
@@ -91,28 +102,57 @@ export default function NavProgress() {
       document.removeEventListener("click", onClick, { capture: true });
       if (trickleRef.current) clearInterval(trickleRef.current);
       if (hideRef.current) clearTimeout(hideRef.current);
+      if (paicheTimerRef.current) clearTimeout(paicheTimerRef.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
-  if (!active && width === 0) return null;
-
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-x-0 top-0 z-[9999] h-[3px]"
-      style={{ opacity: active ? 1 : 0, transition: "opacity .25s ease" }}
-    >
-      <div
-        className="h-full rounded-r-full"
-        style={{
-          width: `${width}%`,
-          background:
-            "linear-gradient(90deg, var(--accent), var(--accent-dark, var(--accent)))",
-          boxShadow: "0 0 8px var(--accent), 0 0 4px var(--accent)",
-          transition: "width .2s ease",
-        }}
-      />
-    </div>
+    <>
+      {/* Barra de progreso superior */}
+      {(active || width > 0) && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 top-0 z-[9999] h-[3px]"
+          style={{ opacity: active ? 1 : 0, transition: "opacity .25s ease" }}
+        >
+          <div
+            className="h-full rounded-r-full"
+            style={{
+              width: `${width}%`,
+              background:
+                "linear-gradient(90deg, var(--accent), var(--accent-dark, var(--accent)))",
+              boxShadow: "0 0 8px var(--accent), 0 0 4px var(--accent)",
+              transition: "width .2s ease",
+            }}
+          />
+        </div>
+      )}
+
+      {/* Overlay del Paiche nadando — solo si la navegación tarda >400ms.
+          Backdrop tenue con blur para no tapar de golpe; el paiche centrado. */}
+      {showPaiche && (
+        <div
+          role="status"
+          aria-label="Cargando"
+          className="fixed inset-0 z-[9998] flex flex-col items-center justify-center"
+          style={{
+            background: "color-mix(in oklab, var(--surface-canvas) 78%, transparent)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            animation: "navp-fade-in .2s ease both",
+          }}
+        >
+          <div className="text-[var(--accent)]">
+            <PaicheMascot size={160} animated strokeWidth={1.75} />
+          </div>
+          <p className="mt-4 text-lg font-black tracking-[-0.02em] text-[var(--text-primary)]">
+            Un toque
+            <span className="ml-1.5 italic font-serif text-[var(--accent)]">ya viene</span>
+          </p>
+          <style>{`@keyframes navp-fade-in { from { opacity: 0 } to { opacity: 1 } }`}</style>
+        </div>
+      )}
+    </>
   );
 }

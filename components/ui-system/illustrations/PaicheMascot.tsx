@@ -57,7 +57,10 @@ export function PaicheMascot({
       {...rest}
     >
       {/* ── Cuerpo — 3 capas de tono para profundidad ───────────────────── */}
-      <g className={animated ? "paiche-body" : undefined}>
+      <g
+        className={animated ? "paiche-body" : undefined}
+        style={animated ? { transformOrigin: "120px 70px" } : undefined}
+      >
         {/* Capa ventral (mas clara) */}
         <path
           d="M34 78q18 -28 86 -28q50 0 84 22q-4 14 -22 20q-32 8 -64 8q-36 0 -62 -6q-18 -4 -22 -16z"
@@ -205,16 +208,23 @@ export function PaicheMascot({
 
       <style>
         {`@keyframes paiche-swim {
-          0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
-          25%      { transform: translateX(-4px) translateY(-2px) rotate(-1.5deg); }
-          50%      { transform: translateX(0) translateY(0) rotate(0deg); }
-          75%      { transform: translateX(4px) translateY(2px) rotate(1.5deg); }
+          0%, 100% { transform: translateX(0) translateY(0) rotate(0deg) scaleX(1); }
+          25%      { transform: translateX(-6px) translateY(-3px) rotate(-2.5deg) scaleX(0.98); }
+          50%      { transform: translateX(0) translateY(0) rotate(0deg) scaleX(1); }
+          75%      { transform: translateX(6px) translateY(3px) rotate(2.5deg) scaleX(0.98); }
+        }
+        /* Ondulación del cuerpo: un ripple que viaja como pez nadando */
+        @keyframes paiche-undulate {
+          0%, 100% { transform: skewX(0deg) scaleY(1); }
+          25%      { transform: skewX(-3deg) scaleY(1.02); }
+          50%      { transform: skewX(0deg) scaleY(1); }
+          75%      { transform: skewX(3deg) scaleY(0.98); }
         }
         @keyframes paiche-tail-wag {
           0%, 100% { transform: rotate(0deg); }
-          25%      { transform: rotate(-8deg); }
+          25%      { transform: rotate(-14deg); }
           50%      { transform: rotate(0deg); }
-          75%      { transform: rotate(8deg); }
+          75%      { transform: rotate(14deg); }
         }
         @keyframes paiche-fin-flap {
           0%, 100% { transform: rotate(0deg) scaleY(1); }
@@ -243,8 +253,11 @@ export function PaicheMascot({
           50%      { opacity: 0.6; }
         }
 
+        .paiche-body {
+          animation: paiche-undulate 1.3s ease-in-out infinite;
+        }
         .paiche-tail {
-          animation: paiche-tail-wag 1.4s ease-in-out infinite;
+          animation: paiche-tail-wag 1.1s ease-in-out infinite;
         }
         .paiche-fin-dorsal {
           animation: paiche-fin-flap 2.2s ease-in-out infinite;
@@ -279,6 +292,7 @@ export function PaicheMascot({
 
         @media (prefers-reduced-motion: reduce) {
           svg[style*="paiche-swim"] { animation: none !important; }
+          .paiche-body,
           .paiche-tail,
           .paiche-fin-dorsal,
           .paiche-fin-pectoral,
