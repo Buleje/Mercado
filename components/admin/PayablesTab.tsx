@@ -204,10 +204,12 @@ export default function PayablesTab() {
                       <span>Restante: <span className="font-bold text-[var(--data-error-500)]">S/{remaining.toFixed(2)}</span></span>
                       <span>Vence: {formatDate(p.dueDate)}</span>
                     </div>
-                    {/* Progress bar */}
-                    <div className="w-full bg-gray-100 dark:bg-accent rounded-full h-1.5 mt-2">
+                    {/* Progress bar — fill sólido y diferenciado: verde cuando
+                        está 100% pagado, teal cuando es pago parcial. Antes usaba
+                        --accent-soft (pálido) para ambos → invisible y sin distinción. */}
+                    <div className="w-full bg-[var(--surface-sunken)] rounded-full h-1.5 mt-2">
                       <div
-                        className={cn("h-1.5 rounded-full transition-all", pct >= 100 ? "bg-[var(--accent-soft)]" : pct > 0 ? "bg-[var(--accent-soft)]" : "bg-gray-200")}
+                        className={cn("h-1.5 rounded-full transition-all", pct >= 100 ? "bg-[var(--data-success-500)]" : "bg-primary")}
                         style={{ width: `${Math.min(pct, 100)}%` }}
                       />
                     </div>
@@ -217,7 +219,7 @@ export default function PayablesTab() {
                     {p.status !== "pagado" && (
                       <button
                         onClick={() => { setShowPayment(showPayment === p.id ? null : p.id); setPayForm({ amount: String(remaining.toFixed(2)), method: "efectivo", reference: "" }); }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] text-xs font-bold transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 text-xs font-bold transition-colors"
                       >
                         <DollarSign className="h-3.5 w-3.5" /> Pagar
                       </button>
@@ -264,7 +266,7 @@ export default function PayablesTab() {
                         className="w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                       />
                     </div>
-                    <button type="submit" disabled={saving} className="px-4 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors flex items-center gap-1 disabled:opacity-60">
+                    <button type="submit" disabled={saving} className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1 disabled:opacity-60">
                       <Check className="h-3.5 w-3.5" /> Registrar pago
                     </button>
                     <button type="button" onClick={() => setShowPayment(null)} className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted text-xs font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
