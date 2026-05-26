@@ -29,7 +29,14 @@ export async function computeBlockers(tenantId: string): Promise<{
 }> {
   const config = await SunatDB.getConfig(tenantId);
   if (!config) {
-    return { bloqueos: ["sin_config"], configReady: false, rucVerificado: false, ambiente: "beta" };
+    // Sin config no se puede evaluar token ni RUC → todos pendientes (no marcar
+    // los otros como "resueltos" en el checklist, sería engañoso).
+    return {
+      bloqueos: ["sin_config", "sin_token", "ruc_invalido"],
+      configReady: false,
+      rucVerificado: false,
+      ambiente: "beta",
+    };
   }
 
   const bloqueos: SunatActivationBlocker[] = [];
