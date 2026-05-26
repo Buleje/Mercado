@@ -20,7 +20,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Store, Tag } from "@buleje/design-system/icons";
-import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
+import PromoHeroSlot from "@/components/marketplace/TiendasHeroAds";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import SectionDivider from "@/components/marketplace/home/SectionDivider";
 import ExplorarErrorBoundary from "@/components/marketplace/explorar/ExplorarErrorBoundary";
@@ -302,7 +302,7 @@ export default function OfertasClient() {
       {/* Designer audit P0: el PromoBannerCarousel mostraba "Ofertas
           relámpago — hasta -40%" aunque la página estuviera vacía. Ocultar
           cuando no hay deals reales — no le mentimos al usuario. */}
-      {allDeals.length > 0 && <PromoBannerCarousel slot="ofertas" />}
+      {allDeals.length > 0 && <PromoHeroSlot slot="ofertas" moreLabel="Más ofertas" />}
 
       {error && (
         <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">

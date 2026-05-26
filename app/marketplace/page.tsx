@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import MarketplaceContent from "@/components/marketplace/MarketplaceContent";
 import MarketplaceHomeHeader from "@/components/marketplace/home/MarketplaceHomeHeader";
+
+// banners v2 F4 multi-slot: el carrusel pro (hero + grid + tracking) en la home
+// del marketplace, slot "explorar". Client island en página server.
+const PromoHeroSlot = dynamic(() => import("@/components/marketplace/TiendasHeroAds"));
 import JsonLd from "@/components/JsonLd";
 import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
 import {
@@ -197,6 +202,9 @@ export default async function MarketplacePage(props: {
 
       {/* Header SSR — <h1> + propuesta de valor + trust strip (crawlable). */}
       <MarketplaceHomeHeader storeCount={storeCount} />
+
+      {/* Banners v2 — slot "explorar" (hero + grid de ofertas + tracking). */}
+      <PromoHeroSlot slot="explorar" moreLabel="Ofertas destacadas" />
 
       <MarketplaceContent
         initialStores={featuredStores}
