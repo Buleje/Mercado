@@ -107,8 +107,10 @@ export const metadata: Metadata = {
 export default async function TiendasPage() {
   const initialStores = await getInitialMarketplaceStores();
 
-  // ── JSON-LD: CollectionPage + ItemList con primeras 12 tiendas ──
-  const topStores = initialStores.slice(0, 12);
+  // ── JSON-LD: CollectionPage + ItemList con las tiendas top ──
+  // Brandon 2026-05-25 SEO/IA: 12 → 24 tiendas + priceRange/pagos por tienda
+  // (rich results + citabilidad en IA de Google).
+  const topStores = initialStores.slice(0, 24);
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -137,6 +139,10 @@ export default async function TiendasPage() {
           url: `${BASE_URL}/marketplace/${s.slug}`,
           image: s.logo ?? s.cover ?? undefined,
           description: s.description ?? undefined,
+          priceRange: "S/",
+          currenciesAccepted: "PEN",
+          paymentAccepted: "Yape, Plin, Efectivo, Tarjeta",
+          areaServed: { "@type": "City", name: s.zone ?? "Pucallpa" },
           address: {
             "@type": "PostalAddress",
             addressLocality: s.zone ?? "Pucallpa",
@@ -163,11 +169,66 @@ export default async function TiendasPage() {
   // dentro del TiendasClient (con item URL siempre presente — audit P0).
   // No emitimos otro aquí para evitar duplicación.
 
+  // ── JSON-LD: FAQPage (Brandon 2026-05-25 SEO/IA) ──
+  // Respuestas extraíbles por Google (rich result de FAQ) y por la IA
+  // (AI Overviews / Gemini citan respuestas directas). Preguntas reales del
+  // comprador de Pucallpa.
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "¿Cómo pido delivery en las tiendas de Pucallpa por Buleje?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Elegí una bodega o restaurante del directorio, agregá productos al carrito y confirmá. La tienda recibe tu pedido al instante por WhatsApp y coordina el delivery a tu dirección en Pucallpa.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Puedo pagar con Yape o Plin?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Sí. Las tiendas en Buleje aceptan Yape, Plin, efectivo y tarjeta. Pagás directo a la tienda al recibir tu pedido o por transferencia, según lo que ofrezca cada negocio.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Cuánto cuesta el delivery?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "El costo de envío lo define cada tienda según tu zona en Pucallpa (Centro, Yarinacocha, Manantay, Callería, Campo Verde). Lo ves antes de confirmar el pedido, sin sorpresas.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Qué tipos de tiendas hay en Buleje?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Bodegas y minimarkets, farmacias, restaurantes y pizzerías, panaderías y ferreterías locales de Pucallpa y Ciudad Constitución, todas con catálogo online y delivery.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Tener mi tienda en Buleje cuesta algo?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Podés empezar gratis. Buleje te da catálogo online, bot de WhatsApp, POS e inventario. Hay planes pagos con más funciones para negocios que crecen.",
+        },
+      },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <TiendasClient initialStores={initialStores} />
     </>

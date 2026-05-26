@@ -42,3 +42,16 @@ Next.js 16, React 19, TypeScript 5.7, Prisma 7, PostgreSQL (Supabase), Tailwind 
 - Landing SaaS: https://buleje.pe/saas
 - Registro gratuito: https://buleje.pe/registro
 - Planes y precios: https://buleje.pe/pricing
+
+## Marketplace de tiendas (lado consumidor)
+Buleje también es un marketplace donde vecinos de Pucallpa (Ucayali, Perú) compran con delivery a bodegas, farmacias, restaurantes, pizzerías, panaderías y ferreterías locales.
+- Directorio de tiendas: https://buleje.pe/tiendas
+- Cómo comprar: elegís tienda → armás carrito → confirmás → la tienda recibe el pedido por WhatsApp y coordina el delivery.
+- Pagos: Yape, Plin, efectivo y tarjeta (directo a cada tienda).
+- Cobertura por zonas: Centro, Yarinacocha, Manantay, Callería, Campo Verde, Ciudad Constitución.
+- El costo de envío lo define cada tienda según la zona y se ve antes de confirmar.
+
+## Preguntas frecuentes
+- ¿Cómo pido delivery? Elegís una tienda del directorio, armás el carrito y confirmás; la tienda coordina el envío.
+- ¿Puedo pagar con Yape? Sí — Yape, Plin, efectivo y tarjeta.
+- ¿Cuánto cuesta tener mi tienda? Empezás gratis (plan Free); hay planes pagos con más funciones.

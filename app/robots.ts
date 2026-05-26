@@ -53,9 +53,17 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
       },
-      // Block AI training crawlers — they scrape content without linking back
+      // Brandon 2026-05-25: Google-Extended PERMITIDO — alimenta Google AI
+      // Overviews + Gemini (lo más usado en Perú) y Google sí cita la fuente.
+      // Objetivo: ser referente en búsqueda IA de Google.
       {
-        userAgent: ["CCBot", "GPTBot", "anthropic-ai", "Google-Extended", "Bytespider"],
+        userAgent: "Google-Extended",
+        allow: "/",
+        disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
+      },
+      // Bloqueamos training puro de terceros que no citan ni mandan tráfico.
+      {
+        userAgent: ["CCBot", "GPTBot", "anthropic-ai", "Bytespider"],
         disallow: "/",
       },
       // Allow AI discovery bots (these send traffic back via citations)
