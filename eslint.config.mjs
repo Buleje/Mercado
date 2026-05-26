@@ -27,7 +27,26 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 2026-05-26: .eslintignore quedó deprecado en ESLint 9 y sus entries
+    // dejaron de aplicarse → ESLint rastreaba `.claude/worktrees/**` (copias
+    // completas del repo de agentes) y crasheaba con ENOENT en archivos
+    // transitorios. Migrado aquí para que el ignore vuelva a tener efecto.
+    ".claude/**",
+    "worktree-*/**",
+    "coverage/**",
+    "storybook-static/**",
+    "**/*.config.js",
+    "**/*.config.mjs",
   ]),
+  // 2026-05-26: los archivos .cjs son CommonJS por definición — `require()` es
+  // la sintaxis correcta. El override de rules de abajo usa `files` sin `.cjs`,
+  // así que sin esto caen al `error` de next-config. Permitir require en .cjs.
+  {
+    files: ["**/*.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
   // CI 2026-05-19: registrar eslint-plugin-react-hooks v7.x + scope `files`.
   //
   // Root cause de CI fail: eslint-config-next (v16.1.6) registra sus plugins

@@ -23,8 +23,6 @@ type Story = StoryObj<typeof ErrorBoundary>;
 // Componente que lanza un error intencionalmente para mostrar el boundary
 function ComponenteConError(): ReactElement {
   throw new Error("Error de ejemplo: módulo de inventario no disponible");
-  // eslint-disable-next-line no-unreachable
-  return null as never;
 }
 
 // Componente que renderiza correctamente (para mostrar el estado normal)
