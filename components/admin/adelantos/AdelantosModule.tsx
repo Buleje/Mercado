@@ -23,6 +23,7 @@ import {
   Activity,
   AlertTriangle,
   FileText,
+  Repeat,
 } from "@buleje/design-system/icons";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -36,6 +37,8 @@ import type {
   DbAdelanto,
   DbBeneficiario,
   AdelantoModalidad,
+  DbRecurrente,
+  RecurrenteFrecuencia,
 } from "@/lib/db/adelantos.db";
 
 type BeneficiarioConSaldo = DbBeneficiario & {
@@ -68,6 +71,7 @@ const TABS = [
   { id: "lista", label: "Adelantos", icon: Coins },
   { id: "personas", label: "Personas", icon: Users },
   { id: "cobranza", label: "Cobranza", icon: AlertTriangle },
+  { id: "recurrentes", label: "Recurrentes", icon: Repeat },
   { id: "actividad", label: "Actividad", icon: Activity },
   { id: "analisis", label: "Análisis", icon: BarChart3 },
 ];
@@ -164,6 +168,7 @@ export default function AdelantosModule() {
             <PersonasView beneficiarios={beneficiarios} adelantos={adelantos} loading={loading} onChange={reload} />
           )}
           {tab === "cobranza" && <CobranzaView adelantos={adelantos} loading={loading} onGoTab={setTab} />}
+          {tab === "recurrentes" && <RecurrentesView beneficiarios={beneficiarios} onChange={reload} />}
           {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
           {tab === "analisis" && <AnalisisView adelantos={adelantos} loading={loading} />}
         </div>
@@ -1558,6 +1563,129 @@ function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Recurrentes (ADR-118): plantillas de adelantos automáticos ────────────────
+const FREC_LABEL: Record<RecurrenteFrecuencia, string> = { semanal: "Semanal", quincenal: "Quincenal", mensual: "Mensual" };
+
+function RecurrentesView({ beneficiarios, onChange }: { beneficiarios: BeneficiarioConSaldo[]; onChange: () => void }) {
+  const [recs, setRecs] = useState<DbRecurrente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    const r = await fetch("/api/adelantos/recurrentes", { credentials: "include" }).then((x) => (x.ok ? x.json() : [])).catch(() => []);
+    setRecs(Array.isArray(r) ? r : []);
+    setLoading(false);
+  }, []);
+  useEffect(() => { reload(); }, [reload]);
+
+  const toggle = async (r: DbRecurrente) => {
+    await fetch(`/api/adelantos/recurrentes/${r.id}`, { method: "PATCH", headers: jsonHeaders(), credentials: "include", body: JSON.stringify({ activo: !r.activo }) });
+    reload();
+  };
+  const borrar = async (r: DbRecurrente) => {
+    await fetch(`/api/adelantos/recurrentes/${r.id}`, { method: "DELETE", headers: jsonHeaders(), credentials: "include" });
+    reload();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">{recs.length} recurrente{recs.length === 1 ? "" : "s"}</CardTitle>
+        <button onClick={() => setShowCreate(true)} disabled={beneficiarios.length === 0} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors disabled:opacity-50">
+          <Plus className="h-5 w-5" /> Nueva recurrente
+        </button>
+      </div>
+      <p className="text-base text-[var(--text-secondary)]">Plantillas que crean un adelanto automáticamente cada cierto tiempo (un cron diario las materializa).</p>
+
+      {loading ? (
+        <SkeletonGrid />
+      ) : recs.length === 0 ? (
+        <EmptyState icon={Repeat} title="Sin recurrentes" hint={beneficiarios.length === 0 ? "Primero creá una persona." : "Programá un adelanto que se repita solo."} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {recs.map((r) => (
+            <div key={r.id} className={`rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ${!r.activo ? "opacity-60" : ""}`}>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{r.beneficiarioNombre ?? "—"}</p>
+                <button onClick={() => borrar(r)} title="Eliminar" className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><Trash2 className="h-4 w-4" /></button>
+              </div>
+              <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{fmtMon(r.monto, r.moneda)}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-bold text-primary"><Repeat className="h-3.5 w-3.5" /> {FREC_LABEL[r.frecuencia]}</span>
+                {r.proximaEjecucion && <span className="text-[var(--text-tertiary)]">Próx.: {new Date(r.proximaEjecucion).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>}
+              </div>
+              <button onClick={() => toggle(r)} className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${r.activo ? "bg-[var(--data-success)]/15 text-[var(--data-success)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
+                {r.activo ? <><CheckCircle className="h-4 w-4" /> Activo</> : <><Ban className="h-4 w-4" /> Pausado</>}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showCreate && (
+        <CrearRecurrenteModal beneficiarios={beneficiarios} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); reload(); onChange(); }} />
+      )}
+    </div>
+  );
+}
+
+function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficiarios: BeneficiarioConSaldo[]; onClose: () => void; onCreated: () => void }) {
+  const [beneficiarioId, setBeneficiarioId] = useState(beneficiarios[0]?.id ?? "");
+  const [monto, setMonto] = useState("");
+  const [moneda, setMoneda] = useState<"PEN" | "USD">("PEN");
+  const [frecuencia, setFrecuencia] = useState<RecurrenteFrecuencia>("mensual");
+  const [diaMes, setDiaMes] = useState("1");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const submit = async () => {
+    setErr(null);
+    const m = Number(monto);
+    if (!beneficiarioId || !m || m <= 0) { setErr("Elegí persona y un monto válido."); return; }
+    setSaving(true);
+    const res = await fetch("/api/adelantos/recurrentes", {
+      method: "POST", headers: jsonHeaders(), credentials: "include",
+      body: JSON.stringify({ beneficiarioId, monto: m, moneda, frecuencia, diaMes: frecuencia === "mensual" ? Number(diaMes) : undefined }),
+    });
+    setSaving(false);
+    if (res.ok) onCreated();
+    else { const j = await res.json().catch(() => null); setErr(j?.error ?? "No se pudo crear la recurrente."); }
+  };
+
+  return (
+    <ModalShell title="Nueva recurrente" onClose={onClose}>
+      <Field label="Persona">
+        <select value={beneficiarioId} onChange={(e) => setBeneficiarioId(e.target.value)} className={inputCls}>
+          {beneficiarios.map((b) => <option key={b.id} value={b.id}>{b.nombre}</option>)}
+        </select>
+      </Field>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="col-span-2">
+          <Field label="Monto"><input type="number" min={1} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="200.00" className={inputCls + " tabular-nums"} /></Field>
+        </div>
+        <Field label="Moneda">
+          <select value={moneda} onChange={(e) => setMoneda(e.target.value as "PEN" | "USD")} className={inputCls}>
+            {MONEDAS.map((m) => <option key={m} value={m}>{m === "PEN" ? "S/" : "$"}</option>)}
+          </select>
+        </Field>
+      </div>
+      <Field label="Frecuencia">
+        <div className="grid grid-cols-3 gap-2">
+          {(["semanal", "quincenal", "mensual"] as const).map((f) => (
+            <button key={f} type="button" onClick={() => setFrecuencia(f)} className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${frecuencia === f ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>{FREC_LABEL[f]}</button>
+          ))}
+        </div>
+      </Field>
+      {frecuencia === "mensual" && (
+        <Field label="Día del mes (1-28)"><input type="number" min={1} max={28} value={diaMes} onChange={(e) => setDiaMes(e.target.value)} className={inputCls + " tabular-nums"} /></Field>
+      )}
+      {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
+      <ModalActions onClose={onClose} onSubmit={submit} saving={saving} label="Crear recurrente" />
+    </ModalShell>
   );
 }
 

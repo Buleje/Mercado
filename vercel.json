@@ -52,6 +52,14 @@
   ],
   "crons": [
     {
+      "path": "/api/cron/adelantos-recordatorios",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/adelantos-recurrentes",
+      "schedule": "30 6 * * *"
+    },
+    {
       "path": "/api/cron/dlq-retry",
       "schedule": "0 7 * * *"
     },

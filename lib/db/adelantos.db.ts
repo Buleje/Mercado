@@ -28,6 +28,32 @@ export type DbBeneficiario = {
   createdAt: string;
 };
 
+export type RecurrenteFrecuencia = "semanal" | "quincenal" | "mensual";
+export type DbRecurrente = {
+  id: string;
+  beneficiarioId: string;
+  beneficiarioNombre?: string;
+  modalidad: AdelantoModalidad;
+  monto: number;
+  moneda: string;
+  frecuencia: RecurrenteFrecuencia;
+  diaMes?: number | null;
+  activo: boolean;
+  proximaEjecucion?: string | null;
+  ultimaEjecucion?: string | null;
+  notas?: string | null;
+  createdAt: string;
+};
+export type RecurrenteInput = {
+  beneficiarioId: string;
+  modalidad?: AdelantoModalidad;
+  monto: number;
+  moneda?: string;
+  frecuencia: RecurrenteFrecuencia;
+  diaMes?: number | null;
+  notas?: string;
+};
+
 export type DbAdelantoEntrega = {
   id: string;
   adelantoId: string;
@@ -459,4 +485,100 @@ export const AdelantosDB = {
     await prisma.adelantoBeneficiario.deleteMany({ where: { id, tenantId } });
     return { ok: true };
   },
+
+  // ── Adelantos recurrentes (ADR-118) ──
+  async listRecurrentes(tenantId: string): Promise<DbRecurrente[]> {
+    const rows = await prisma.adelantoRecurrente.findMany({
+      where: { tenantId },
+      include: { beneficiario: { select: { nombre: true } } },
+      orderBy: [{ activo: "desc" }, { proximaEjecucion: "asc" }],
+    });
+    return rows.map(mapRecurrente);
+  },
+
+  async createRecurrente(tenantId: string, data: RecurrenteInput): Promise<DbRecurrente> {
+    const proxima = nextProxima(data.frecuencia, data.diaMes ?? null, new Date());
+    const row = await prisma.adelantoRecurrente.create({
+      data: {
+        tenantId,
+        beneficiarioId: data.beneficiarioId,
+        modalidad: data.modalidad ?? "CUENTA_CORRIENTE",
+        monto: Math.round(data.monto * 100) / 100,
+        moneda: data.moneda ?? "PEN",
+        frecuencia: data.frecuencia,
+        diaMes: data.frecuencia === "mensual" ? data.diaMes ?? null : null,
+        notas: data.notas?.trim() || null,
+        proximaEjecucion: proxima,
+      },
+      include: { beneficiario: { select: { nombre: true } } },
+    });
+    return mapRecurrente(row);
+  },
+
+  async setRecurrenteActivo(tenantId: string, id: string, activo: boolean): Promise<boolean> {
+    const r = await prisma.adelantoRecurrente.updateMany({ where: { id, tenantId }, data: { activo } });
+    return r.count > 0;
+  },
+
+  async deleteRecurrente(tenantId: string, id: string): Promise<boolean> {
+    const r = await prisma.adelantoRecurrente.deleteMany({ where: { id, tenantId } });
+    return r.count > 0;
+  },
+
+  /** Cron: materializa los recurrentes activos vencidos → crea adelantos reales. */
+  async materializeRecurrentes(now = new Date()): Promise<{ creados: number }> {
+    const pendientes = await prisma.adelantoRecurrente.findMany({
+      where: { activo: true, proximaEjecucion: { lte: now } },
+    });
+    let creados = 0;
+    for (const r of pendientes) {
+      await prisma.$transaction(async (tx) => {
+        const monto = Number(r.monto);
+        await tx.adelanto.create({
+          data: {
+            tenantId: r.tenantId,
+            beneficiarioId: r.beneficiarioId,
+            modalidad: r.modalidad,
+            montoAdelantado: monto,
+            moneda: r.moneda,
+            status: "ABIERTO",
+            saldoPendiente: monto,
+            notas: `Adelanto recurrente (${r.frecuencia})`,
+          },
+        });
+        await tx.adelantoRecurrente.update({
+          where: { id: r.id },
+          data: { ultimaEjecucion: now, proximaEjecucion: nextProxima(r.frecuencia as RecurrenteFrecuencia, r.diaMes, now) },
+        });
+      });
+      creados += 1;
+    }
+    return { creados };
+  },
 };
+
+function mapRecurrente(r: {
+  id: string; beneficiarioId: string; modalidad: string; monto: Prisma.Decimal | number;
+  moneda: string; frecuencia: string; diaMes: number | null; activo: boolean;
+  proximaEjecucion: Date | null; ultimaEjecucion: Date | null; notas: string | null; createdAt: Date;
+  beneficiario?: { nombre: string } | null;
+}): DbRecurrente {
+  return {
+    id: r.id, beneficiarioId: r.beneficiarioId, beneficiarioNombre: r.beneficiario?.nombre,
+    modalidad: r.modalidad as AdelantoModalidad, monto: toNum(r.monto), moneda: r.moneda,
+    frecuencia: r.frecuencia as RecurrenteFrecuencia, diaMes: r.diaMes, activo: r.activo,
+    proximaEjecucion: iso(r.proximaEjecucion), ultimaEjecucion: iso(r.ultimaEjecucion),
+    notas: r.notas, createdAt: r.createdAt.toISOString(),
+  };
+}
+
+/** Calcula la próxima ejecución según frecuencia (mensual respeta diaMes 1-28). */
+function nextProxima(frecuencia: RecurrenteFrecuencia, diaMes: number | null, from: Date): Date {
+  const d = new Date(from);
+  if (frecuencia === "semanal") { d.setDate(d.getDate() + 7); return d; }
+  if (frecuencia === "quincenal") { d.setDate(d.getDate() + 14); return d; }
+  // mensual: próximo mes, día diaMes (default mismo día, cap 28)
+  const dia = Math.min(Math.max(diaMes ?? d.getDate(), 1), 28);
+  d.setMonth(d.getMonth() + 1, dia);
+  return d;
+}
