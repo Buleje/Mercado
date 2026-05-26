@@ -29,6 +29,7 @@ import type { CategoriaDef, CatalogProduct } from "@/lib/constants/marketplace-c
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
 import CategoryHero from "./CategoryHero";
 import CategoryFilters, { type CategoryFiltersState } from "./CategoryFilters";
+import CategoryQuickChips from "./CategoryQuickChips";
 import CategoryToolbar, { type CategorySortKey } from "./CategoryToolbar";
 import CategoryProductGrid from "./CategoryProductGrid";
 import CrossSellFooter from "./CrossSellFooter";
@@ -280,6 +281,14 @@ export default function CategoriaClient({
               sort={sort}
               onSortChange={setSort}
               onOpenFilters={() => setMobileFiltersOpen(true)}
+            />
+
+            {/* Filtros rápidos de 1 toque (mapean a filtros/orden reales). */}
+            <CategoryQuickChips
+              filters={filters}
+              onChange={setFilters}
+              sort={sort}
+              onSortChange={setSort}
             />
 
             <CategoryProductGrid

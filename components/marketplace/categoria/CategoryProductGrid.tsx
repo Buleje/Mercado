@@ -15,6 +15,7 @@
  * Cuando no hay resultados: EmptyState con CanastaVacia + CTA reset.
  */
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ProductCardGrid } from "@buleje/design-system";
@@ -27,6 +28,7 @@ import { CanastaVacia } from "@/components/ui-system/illustrations";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCartQuantityMap } from "@/hooks/use-cart-quantity-map";
 import { useAddedToCartDrawer } from "@/components/marketplace/AddedToCartDrawer";
+import ProductQuickView from "@/components/marketplace/ProductQuickView";
 
 interface CategoryProductGridProps {
   products: CatalogProduct[];
@@ -85,14 +87,16 @@ export default function CategoryProductGrid({
   const { addItem } = useMarketplaceCart();
   const { open: openAddedModal } = useAddedToCartDrawer();
   const cartQty = useCartQuantityMap();
+  const [quickView, setQuickView] = useState<CatalogProduct | null>(null);
 
   if (products.length === 0) {
     return <EmptyState categoria={categoria} />;
   }
 
   return (
-    /* ProductCardGrid (Ola 7) — grid catalogo principal de categoria */
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+    <>
+    {/* ProductCardGrid (Ola 7) — grid catalogo principal de categoria */}
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4">
       {products.map((p) => (
         <ProductCardGrid
           key={p.storeProductId}
@@ -102,6 +106,7 @@ export default function CategoryProductGrid({
           })}
           renderImage={p.image ? nextImage : undefined}
           quantityInCart={cartQty.get(p.storeProductId) ?? 0}
+          onQuickView={() => setQuickView(p)}
           onAddToCart={() => {
             // Mismo flujo que en la página de bodegas: agrega 1 al carrito +
             // dispara el MODAL CENTRAL (no un drawer lateral) con resumen.
@@ -131,5 +136,12 @@ export default function CategoryProductGrid({
         />
       ))}
     </div>
+
+    {/* Modal de vista rápida — abierto desde el hover de cada card. */}
+    <ProductQuickView
+      product={quickView ? { ...quickView, stock: quickView.stock ?? 0 } : null}
+      onClose={() => setQuickView(null)}
+    />
+    </>
   );
 }

@@ -12,7 +12,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ShoppingCart, Heart, Star } from "../icons";
+import { ShoppingCart, Heart, Star, Eye } from "../icons";
 import { CardTitle, Caption } from "../typography";
 import { ProductBadge, ProductPrice } from "../store";
 import { cn } from "../utils";
@@ -47,6 +47,7 @@ export function ProductCardGrid({
   renderImage,
   onAddToCart,
   onAddToFavorites,
+  onQuickView,
   quantityInCart = 0,
   className,
 }: ProductCardGridProps) {
@@ -72,15 +73,43 @@ export function ProductCardGrid({
       )}
     >
       {/* Imagen */}
-      <a href={href} aria-label={product.name} className="block">
-        <ProductImage
-          src={product.image}
-          alt={alt}
-          aspect="aspect-square"
-          hoverZoom
-          renderImage={renderImage}
-        />
-      </a>
+      <div className="relative">
+        <a href={href} aria-label={product.name} className="block">
+          <ProductImage
+            src={product.image}
+            alt={alt}
+            aspect="aspect-square"
+            hoverZoom
+            renderImage={renderImage}
+          />
+        </a>
+
+        {/* Vista rápida — revelada al hover (desktop). Abre un modal sin salir
+            del listado. En touch no hay hover → la card sigue navegando al tap. */}
+        {onQuickView && !outOfStock && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onQuickView(product);
+            }}
+            aria-label={`Vista rápida de ${product.name}`}
+            className={cn(
+              "absolute inset-x-2 bottom-2 z-10 hidden sm:inline-flex items-center justify-center gap-1.5",
+              "h-9 rounded-full bg-[var(--surface-raised)]/95 backdrop-blur",
+              "border border-[var(--rule-base)] shadow-[var(--shadow-md)]",
+              "text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)]",
+              "opacity-0 translate-y-1 transition-all duration-[var(--dur-fast)]",
+              "group-hover:opacity-100 group-hover:translate-y-0 focus-visible:opacity-100 focus-visible:translate-y-0",
+              "hover:bg-[var(--surface-raised)]",
+            )}
+          >
+            <Eye className="h-4 w-4" aria-hidden strokeWidth={2} />
+            Vista rápida
+          </button>
+        )}
+      </div>
 
       {/* Badge (top-left) */}
       {badgeMeta && (
