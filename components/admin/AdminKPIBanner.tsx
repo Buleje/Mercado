@@ -82,7 +82,9 @@ export function AdminKPIBanner({ onNavigate, className }: Props) {
       }
     };
     load();
-    const id = setInterval(load, 30_000);
+    // Perf 2026-05-26 (P1-8): no pollear con la pestaña en background (ahorra
+    // red/CPU en móvil). El load de mount/acción manual no se ve afectado.
+    const id = setInterval(() => { if (!document.hidden) load(); }, 30_000);
     return () => {
       cancelled = true;
       clearInterval(id);

@@ -126,7 +126,10 @@ export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id?: string; phone: string }> }
 ) {
-  const auth = await requireAdmin(req);
+  // SECURITY 2026-05-26 (P2-1): antes requireAdmin(req) sin roles → cualquier
+  // rol autenticado podía editar creditLimit/creditBalance/documento/ruc.
+  // Restringido a los mismos 3 roles que el GET (admin/cajero/manager).
+  const auth = await requireAdmin(req, ["admin", "cajero", "manager"]);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "MODERATE", "customers-patch");
   if (rl) return rl;

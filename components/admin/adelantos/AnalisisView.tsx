@@ -132,8 +132,11 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
     const rows: (string | number)[][] = [["Fecha", "Tipo", "Persona", "Modalidad", "Detalle", "Monto", "Moneda"]];
     for (const a of adelantos) {
       const persona = a.beneficiario?.nombre ?? "—";
-      if (a.status !== "CANCELADO") rows.push([a.fechaAdelanto.slice(0, 10), "Adelanto", persona, a.modalidad === "CUENTA_CORRIENTE" ? "Cuenta corriente" : "Entregas pactadas", a.notas ?? "", a.montoAdelantado.toFixed(2), a.moneda]);
-      for (const e of a.entregas) rows.push([e.fecha.slice(0, 10), "Entrega", persona, "", e.descripcion ?? "", (-e.valor).toFixed(2), a.moneda]);
+      // 2026-05-26 (P2-3): fallback PEN si una fila antigua tiene moneda null —
+      // evita el literal "null" en la columna Moneda del CSV.
+      const mon = a.moneda || "PEN";
+      if (a.status !== "CANCELADO") rows.push([a.fechaAdelanto.slice(0, 10), "Adelanto", persona, a.modalidad === "CUENTA_CORRIENTE" ? "Cuenta corriente" : "Entregas pactadas", a.notas ?? "", a.montoAdelantado.toFixed(2), mon]);
+      for (const e of a.entregas) rows.push([e.fecha.slice(0, 10), "Entrega", persona, "", e.descripcion ?? "", (-e.valor).toFixed(2), mon]);
     }
     const csv = "﻿" + rows.map((r) => r.map(esc).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));

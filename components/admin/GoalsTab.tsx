@@ -424,7 +424,8 @@ export default function GoalsTab() {
 
     const start = () => {
       if (intervalId) return;
-      intervalId = setInterval(() => { void loadAutoStats(); }, REFRESH_MS);
+      // Perf 2026-05-26 (P1-8): no pollear con la pestaña en background.
+      intervalId = setInterval(() => { if (!document.hidden) void loadAutoStats(); }, REFRESH_MS);
     };
     const stop = () => {
       if (intervalId) { clearInterval(intervalId); intervalId = null; }

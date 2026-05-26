@@ -260,13 +260,10 @@ export async function GET(req: NextRequest) {
   // Rotate token if past halfway point (silent refresh)
   const freshToken = await maybeRotateToken(token, { ua });
   if (freshToken) {
-    res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, freshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: PLATFORM_SESSION.MAX_AGE,
-    });
+    // SECURITY 2026-05-26 (P1-1): usar cookieOpts (sameSite:strict) igual que el
+    // login. La rotación quedaba en lax — inconsistente y más débil ante CSRF
+    // en la superficie de máximo privilegio (superadmin).
+    res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, freshToken, cookieOpts(PLATFORM_SESSION.MAX_AGE));
   }
 
   return res;

@@ -63,7 +63,8 @@ export default function ShipmentTrackingTab() {
   // Auto-refresh cada 30 segundos
   useEffect(() => {
     if (!autoRefresh) return;
-    const id = setInterval(fetchOrders, 30_000);
+    // Perf 2026-05-26 (P1-8): no pollear con la pestaña en background.
+    const id = setInterval(() => { if (!document.hidden) fetchOrders(); }, 30_000);
     return () => clearInterval(id);
   }, [autoRefresh, fetchOrders]);
 
