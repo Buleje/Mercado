@@ -271,6 +271,14 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       transition={{ duration: 0.25, delay: index * 0.04 }}
       className="relative"
     >
+      {/* Badge de beneficio (superadmin): Destacada / Premium. z-20 sobre overlays. */}
+      {(store.displayTier === "featured" || store.displayTier === "premium") && (
+        <span className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-md">
+          <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+          {store.displayTier === "premium" ? "Premium" : "Destacada"}
+        </span>
+      )}
+
       {/* Overlay status (cerrado / construcción) — sobrepuesto al canonical
           card limitado al área del cover (aspect-[16/9] mobile, [4/3] desktop)
           via posicionamiento absoluto. El aspect-ratio debe matchear el del
@@ -644,7 +652,16 @@ export default function MarketplaceStoresView({
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-6"
         >
           {filteredStores.map((store, i) => (
-            <div key={store.id} role="listitem">
+            <div
+              key={store.id}
+              role="listitem"
+              // Premium ocupa la fila completa para destacar (beneficio superadmin).
+              className={
+                store.displayTier === "premium"
+                  ? "sm:col-span-2 xl:col-span-3"
+                  : undefined
+              }
+            >
               <StoreCardWrapper
                 store={store}
                 index={i}

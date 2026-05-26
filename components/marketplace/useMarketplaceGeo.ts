@@ -51,6 +51,8 @@ export interface MarketplaceStore {
   /** Flag "Tienda en construccion" — pinta overlay sobre la portada en /tiendas. */
   underConstruction?: boolean;
   underConstructionMessage?: string | null;
+  /** Nivel de beneficio/visibilidad (superadmin): standard | featured | premium. */
+  displayTier?: "standard" | "featured" | "premium";
   // ── Backfill marketplace (TS-Sprint5) — opcionales para no romper consumers ──
   paymentMethods?: string[];
   minOrderAmount?: number;
