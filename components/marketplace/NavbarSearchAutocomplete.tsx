@@ -34,10 +34,12 @@ import {
   Sparkles,
   HeartPulse,
   Clock,
+  Star,
   X,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import SearchSuggestionThumb, { type ThumbVariant } from "@/components/marketplace/SearchSuggestionThumb";
 import { useMarketplaceStores } from "@/hooks/useMarketplaceStores";
 import {
   CATEGORIAS,
@@ -62,6 +64,9 @@ type Suggestion = {
   searchCount?: number;
   categorySlug?: string;
   storeSlug?: string;
+  price?: number | null;
+  rating?: number | null;
+  reviewCount?: number | null;
 };
 
 type StoreLite = { id: string; slug: string; name: string };
@@ -100,8 +105,12 @@ function useTopStores(): Suggestion[] {
     id: `ts:${s.id}`,
     type: "store",
     label: s.name,
+    subtitle: s.zone ?? s.category ?? undefined,
     href: `/marketplace/${s.slug}`,
     storeSlug: s.slug,
+    image: s.logo ?? null,
+    rating: typeof s.rating === "number" ? s.rating : null,
+    reviewCount: typeof s.reviewCount === "number" ? s.reviewCount : null,
   }));
 }
 
@@ -438,19 +447,30 @@ export default function NavbarSearchAutocomplete({
                     {g.items.map((s, i) => {
                       const idx = runningIdx + i;
                       const active = idx === activeIdx;
-                      const Icon =
-                        s.id.startsWith("recent:")
-                          ? Clock
-                          : s.type === "store"
-                            ? Store
-                            : s.type === "category"
-                              ? POPULAR_CATEGORY_ICONS[s.id.replace(/^c:|^pc:/, "")] ?? Tag
-                              : s.type === "product"
-                                ? Package
-                                : Search;
+                      const isRecent = s.id.startsWith("recent:");
+                      const variant: ThumbVariant = isRecent
+                        ? "recent"
+                        : s.type === "store"
+                          ? "store"
+                          : s.type === "category"
+                            ? "category"
+                            : s.type === "product"
+                              ? "product"
+                              : "query";
+                      const Icon = isRecent
+                        ? Clock
+                        : s.type === "store"
+                          ? Store
+                          : s.type === "category"
+                            ? POPULAR_CATEGORY_ICONS[s.id.replace(/^c:|^pc:/, "")] ?? Tag
+                            : s.type === "product"
+                              ? Package
+                              : Search;
                       const targetHref = storesOnly && s.type !== "store"
                         ? `/tiendas?q=${encodeURIComponent(s.label)}`
                         : s.href;
+                      const hasRating = s.type === "store" && typeof s.rating === "number" && s.rating > 0;
+                      const hasPrice = s.type === "product" && typeof s.price === "number" && s.price > 0;
                       return (
                         <li key={s.id}>
                           <Link
@@ -463,39 +483,33 @@ export default function NavbarSearchAutocomplete({
                             }}
                             onMouseEnter={() => setActiveIdx(idx)}
                             className={cn(
-                              "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
+                              "flex items-center gap-3 px-4 py-2 text-sm transition-colors",
                               active
                                 ? "bg-[var(--accent-soft)] text-[var(--text-primary)]"
                                 : "hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                             )}
                           >
-                            <span
-                              className={cn(
-                                "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                                s.type === "store"
-                                  ? "bg-blue-500/10 text-blue-500"
-                                  : s.type === "category"
-                                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                                    : s.type === "product"
-                                      ? "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-600)]"
-                                      : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                              )}
-                            >
-                              <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                            </span>
+                            <SearchSuggestionThumb variant={variant} image={s.image} Icon={Icon} size={40} />
                             <div className="min-w-0 flex-1">
                               <p className="font-bold text-[var(--text-primary)] truncate">
                                 {s.label}
                               </p>
-                              {s.subtitle && (
-                                <p className="text-xs text-[var(--text-tertiary)] truncate">
-                                  {s.subtitle}
+                              {(s.subtitle || hasRating) && (
+                                <p className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] truncate">
+                                  {hasRating && (
+                                    <span className="inline-flex items-center gap-0.5 font-bold text-[var(--text-secondary)]">
+                                      <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={0} aria-hidden />
+                                      {s.rating!.toFixed(1)}
+                                    </span>
+                                  )}
+                                  {hasRating && s.subtitle && <span aria-hidden>·</span>}
+                                  {s.subtitle && <span className="truncate capitalize">{s.subtitle}</span>}
                                 </p>
                               )}
                             </div>
-                            {s.type === "product" && (
-                              <span className="hidden sm:inline-flex items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] opacity-0 group-hover:opacity-100">
-                                Ver similares →
+                            {hasPrice && (
+                              <span className="shrink-0 text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+                                S/ {s.price!.toFixed(2)}
                               </span>
                             )}
                           </Link>

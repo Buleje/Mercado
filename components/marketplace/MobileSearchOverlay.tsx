@@ -17,7 +17,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   Search,
   ArrowLeft,
@@ -32,8 +31,11 @@ import {
   ChefHat,
   Truck,
   ChevronRight,
+  Search as SearchIcon,
+  Star,
 } from "@buleje/design-system/icons";
 import { useMarketplaceStores } from "@/hooks/useMarketplaceStores";
+import SearchSuggestionThumb, { type ThumbVariant } from "@/components/marketplace/SearchSuggestionThumb";
 import { CATEGORIAS, type CategoriaDef } from "@/lib/constants/marketplace-categories";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 import {
@@ -51,6 +53,9 @@ type Suggestion = {
   subtitle?: string;
   href: string;
   image?: string | null;
+  price?: number | null;
+  rating?: number | null;
+  reviewCount?: number | null;
 };
 
 interface Props {
@@ -336,6 +341,7 @@ export default function MobileSearchOverlay({ open, onClose, storesOnly = false 
                   {stores.slice(0, 6).map((s) => {
                     const logo = (s.logo as string | null) ?? null;
                     const category = (s.category as string | null) ?? null;
+                    const zone = (s.zone as string | null) ?? null;
                     const rating = typeof s.rating === "number" ? s.rating : 0;
                     return (
                       <li key={s.id}>
@@ -345,18 +351,18 @@ export default function MobileSearchOverlay({ open, onClose, storesOnly = false 
                           className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left active:bg-[var(--surface-sunken)]"
                         >
                           {/* Logo real de la tienda (su imagen característica) */}
-                          <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                            {logo ? (
-                              <Image src={logo} alt="" fill sizes="44px" className="object-cover" />
-                            ) : (
-                              <StoreIcon className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
-                            )}
-                          </span>
+                          <SearchSuggestionThumb variant="store" image={logo} Icon={StoreIcon} size={44} />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-bold text-[var(--text-primary)]">{s.name}</span>
-                            <span className="block truncate text-xs text-[var(--text-tertiary)]">
-                              {category ?? "Tienda"}
-                              {rating > 0 && ` · ★ ${rating.toFixed(1)}`}
+                            <span className="flex items-center gap-1 truncate text-xs text-[var(--text-tertiary)]">
+                              {rating > 0 && (
+                                <span className="inline-flex items-center gap-0.5 font-bold text-[var(--text-secondary)]">
+                                  <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={0} aria-hidden />
+                                  {rating.toFixed(1)}
+                                </span>
+                              )}
+                              {rating > 0 && (zone || category) && <span aria-hidden>·</span>}
+                              <span className="truncate capitalize">{zone ?? category ?? "Tienda"}</span>
                             </span>
                           </span>
                           <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} aria-hidden />
@@ -395,25 +401,57 @@ export default function MobileSearchOverlay({ open, onClose, storesOnly = false 
                     {g.title}
                   </h2>
                   <ul>
-                    {g.items.map((s) => (
-                      <li key={s.id}>
-                        <button
-                          type="button"
-                          onClick={() => selectSuggestion(s)}
-                          className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left active:bg-[var(--surface-sunken)]"
-                        >
-                          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
-                            <g.Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate font-bold text-[var(--text-primary)]">{s.label}</span>
-                            {s.subtitle && (
-                              <span className="block truncate text-xs text-[var(--text-tertiary)]">{s.subtitle}</span>
+                    {g.items.map((s) => {
+                      const variant: ThumbVariant =
+                        s.type === "store"
+                          ? "store"
+                          : s.type === "product"
+                            ? "product"
+                            : s.type === "category"
+                              ? "category"
+                              : "query";
+                      const ItemIcon =
+                        s.type === "store"
+                          ? StoreIcon
+                          : s.type === "product"
+                            ? Package
+                            : s.type === "category"
+                              ? Tag
+                              : SearchIcon;
+                      const hasRating = s.type === "store" && typeof s.rating === "number" && s.rating > 0;
+                      const hasPrice = s.type === "product" && typeof s.price === "number" && s.price > 0;
+                      return (
+                        <li key={s.id}>
+                          <button
+                            type="button"
+                            onClick={() => selectSuggestion(s)}
+                            className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left active:bg-[var(--surface-sunken)]"
+                          >
+                            <SearchSuggestionThumb variant={variant} image={s.image} Icon={ItemIcon} size={44} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-bold text-[var(--text-primary)]">{s.label}</span>
+                              {(s.subtitle || hasRating) && (
+                                <span className="flex items-center gap-1 truncate text-xs text-[var(--text-tertiary)]">
+                                  {hasRating && (
+                                    <span className="inline-flex items-center gap-0.5 font-bold text-[var(--text-secondary)]">
+                                      <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={0} aria-hidden />
+                                      {s.rating!.toFixed(1)}
+                                    </span>
+                                  )}
+                                  {hasRating && s.subtitle && <span aria-hidden>·</span>}
+                                  {s.subtitle && <span className="truncate capitalize">{s.subtitle}</span>}
+                                </span>
+                              )}
+                            </span>
+                            {hasPrice && (
+                              <span className="shrink-0 text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+                                S/ {s.price!.toFixed(2)}
+                              </span>
                             )}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
               ))}

@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     // Cache 30s por tenant + prefix — corto porque el catálogo cambia y el
     // autocomplete debe reflejar nuevos productos rápido. Suficiente para
     // amortiguar bursts de typing pero sin servir resultados muy stale.
-    const cacheKey = `search-suggestions:v2:${tenantId}:${prefix.toLowerCase()}:${limit}`;
+    const cacheKey = `search-suggestions:v3:${tenantId}:${prefix.toLowerCase()}:${limit}`;
     const suggestions = await getOrSet(cacheKey, 30, () =>
       SearchSuggestionsDB.getMarketplaceAutocomplete(tenantId, prefix, limit),
     );

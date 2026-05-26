@@ -25,6 +25,8 @@ export type DbFuzzyProduct = {
   productName: string;
   category: string;
   image: string | null;
+  /** Precio de venta (S/) — para mostrar en el autocomplete. */
+  price?: number | null;
   similarity: number;
 };
 
@@ -42,6 +44,11 @@ export type MarketplaceAutocompleteItem = {
   categorySlug?: string;
   /** Para `type: "store"` — slug de la tienda. */
   storeSlug?: string;
+  /** Para `type: "product"` — precio de venta (S/). */
+  price?: number | null;
+  /** Para `type: "store"` — rating promedio + nº de reseñas (badge ⭐). */
+  rating?: number | null;
+  reviewCount?: number | null;
 };
 
 // ─── Normalización ────────────────────────────────────────────────────────────
@@ -183,6 +190,7 @@ export const SearchSuggestionsDB = {
       name: string;
       category: string;
       image: string | null;
+      price: unknown;
       sim: number;
     };
 
@@ -192,6 +200,7 @@ export const SearchSuggestionsDB = {
         p.name,
         p.category,
         p.image,
+        p.price,
         GREATEST(
           similarity(lower(p.name), ${normalizedQuery}),
           similarity(lower(p.description), ${normalizedQuery})
@@ -213,6 +222,7 @@ export const SearchSuggestionsDB = {
       productName: r.name,
       category: r.category,
       image: r.image,
+      price: r.price != null ? Number(r.price) : null,
       similarity: typeof r.sim === "number" ? r.sim : Number(r.sim),
     }));
   },
@@ -272,6 +282,7 @@ export const SearchSuggestionsDB = {
           : `/marketplace/buscar?q=${encodeURIComponent(p.productName)}`,
         image: p.image,
         categorySlug: slug ?? undefined,
+        price: p.price ?? null,
       };
     });
 
@@ -279,10 +290,13 @@ export const SearchSuggestionsDB = {
       id: `s:${s.id}`,
       type: "store",
       label: s.name,
-      subtitle: s.zone ?? undefined,
+      // Subtítulo: zona si existe, si no la categoría de la tienda.
+      subtitle: s.zone ?? s.category ?? undefined,
       href: `/marketplace/${s.slug}`,
       image: s.logo ?? null,
       storeSlug: s.slug,
+      rating: s.rating ?? null,
+      reviewCount: s.reviewCount ?? null,
     }));
 
     const categoryItems: MarketplaceAutocompleteItem[] = categories.map((c) => ({
@@ -326,7 +340,7 @@ export const SearchSuggestionsDB = {
             { category: { contains: needle, mode: "insensitive" } },
           ],
         },
-        select: { id: true, name: true, category: true, image: true },
+        select: { id: true, name: true, category: true, image: true, price: true },
         take: limit,
       });
       return rows.map((r) => ({
@@ -334,6 +348,7 @@ export const SearchSuggestionsDB = {
         productName: r.name,
         category: r.category,
         image: r.image,
+        price: r.price != null ? Number(r.price) : null,
         similarity: 1, // exact substring match
       }));
     } catch (e) {
@@ -350,7 +365,7 @@ export const SearchSuggestionsDB = {
     _tenantId: string,
     prefix: string,
     limit: number,
-  ): Promise<Array<{ id: string; slug: string; name: string; zone: string | null; logo: string | null }>> {
+  ): Promise<Array<{ id: string; slug: string; name: string; zone: string | null; logo: string | null; rating: number; reviewCount: number; category: string }>> {
     const needle = prefix.trim().toLowerCase();
     if (!needle) return [];
     try {
@@ -362,7 +377,7 @@ export const SearchSuggestionsDB = {
             { slug: { contains: needle, mode: "insensitive" } },
           ],
         },
-        select: { id: true, slug: true, name: true, zone: true, logo: true },
+        select: { id: true, slug: true, name: true, zone: true, logo: true, rating: true, reviewCount: true, category: true },
         take: limit,
         orderBy: { reviewCount: "desc" },
       });
