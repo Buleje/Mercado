@@ -287,10 +287,10 @@ async function RappiStyleHero() {
       aria-label="Inicio"
       className="relative overflow-hidden"
       style={{
-        // Gradiente rico amazónico: teal oscuro → verde bosque → verde medio
-        // Genera profundidad sin depender de imágenes externas.
+        // Gradiente de marca: teal oscuro → teal Buleje (#00B4A6) → teal medio.
+        // Color de marca, sin verdes. Profundidad sin imágenes externas.
         background:
-          "linear-gradient(135deg, #0d4f3c 0%, #1a5c47 25%, #2d6a4f 55%, #3d7a5e 80%, #1e5c47 100%)",
+          "linear-gradient(135deg, #00302c 0%, #005249 25%, #007a6e 55%, #00B4A6 88%, #008b7f 100%)",
       }}
     >
       {/* Textura sutil: puntos blancos muy transparentes (patrón selvático) */}
@@ -318,18 +318,18 @@ async function RappiStyleHero() {
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-30"
-        style={{ background: "radial-gradient(circle, #52b788 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, #33C4B8 0%, transparent 70%)" }}
       />
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-40 -left-20 h-[400px] w-[400px] rounded-full opacity-20"
-        style={{ background: "radial-gradient(circle, #74c69d 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, #5fd6cb 0%, transparent 70%)" }}
       />
       {/* Orb naranja cálido tenue — acento secundario de marca */}
       <div
         aria-hidden
         className="hidden sm:block pointer-events-none absolute top-1/2 -translate-y-1/2 right-[8%] h-[280px] w-[280px] rounded-full opacity-10"
-        style={{ background: "radial-gradient(circle, #f4a261 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, #f97316 0%, transparent 70%)" }}
       />
 
       {/* Borde inferior sutil para separación de sección */}
@@ -346,8 +346,8 @@ async function RappiStyleHero() {
             className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-white/50"
           />
           <span aria-hidden className="relative inline-flex h-2 w-2">
-            <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[#74c69d] opacity-70 sm:animate-ping" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#74c69d]" />
+            <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[#34d4be] opacity-70 sm:animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#34d4be]" />
           </span>
           Pedí online en Pucallpa
           <span
@@ -361,7 +361,7 @@ async function RappiStyleHero() {
           ¿Qué se te{" "}
           <span
             className="italic font-serif"
-            style={{ color: "#f4a261" }}
+            style={{ color: "#f97316" }}
           >
             antoja hoy?
           </span>
@@ -403,7 +403,7 @@ async function RappiStyleHero() {
             <button
               type="submit"
               className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 h-11 sm:h-14 px-4 sm:px-7 rounded-xl sm:rounded-full text-white text-sm sm:text-base font-extrabold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-              style={{ background: "#f4a261" }}
+              style={{ background: "#f97316" }}
             >
               <span className="hidden sm:inline">Buscar</span>
               <Search className="h-4 w-4 sm:hidden" strokeWidth={2.5} aria-hidden />
@@ -418,8 +418,8 @@ async function RappiStyleHero() {
             {storeCount > 0 && (
               <span className="inline-flex items-center gap-1.5">
                 <span className="relative inline-flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#74c69d] opacity-70 animate-ping" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#74c69d]" />
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#34d4be] opacity-70 animate-ping" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#34d4be]" />
                 </span>
                 <span className="text-white/80">{storeCount} tiendas activas</span>
               </span>
@@ -452,7 +452,7 @@ async function RappiStyleHero() {
           <Link
             href="/marketplace/ofertas"
             className="inline-flex items-center gap-2 rounded-full px-6 h-11 sm:h-12 text-sm font-extrabold text-white transition-all shadow-md hover:shadow-lg hover:scale-[1.02]"
-            style={{ background: "#f4a261" }}
+            style={{ background: "#f97316" }}
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Ofertas del día

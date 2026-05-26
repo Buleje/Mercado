@@ -243,7 +243,9 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
             ) : (
               <ul className="max-h-[420px] overflow-y-auto divide-y divide-[var(--rule-soft)]">
                 {notifs.map((n) => {
-                  const meta = KIND_META[n.kind];
+                  // Fallback a "system" si llega un kind desconocido desde el API
+                  // (antes meta=undefined → crash "Cannot read 'Icon' of undefined").
+                  const meta = KIND_META[n.kind] ?? KIND_META.system;
                   const Icon = meta.Icon;
                   return (
                     <li key={n.id}>
