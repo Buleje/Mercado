@@ -128,6 +128,9 @@ const BannerSchema = z
     bgTo: z.string().regex(/^#[0-9a-f]{6}$/i),
     active: z.boolean(),
     order: z.number().int().min(0).max(999),
+    // banners v2 F2: programación opcional (ISO date string o null).
+    startsAt: z.string().datetime().nullable().optional(),
+    endsAt: z.string().datetime().nullable().optional(),
     type: BannerTypeSchema,
     imageAdjust: ImageAdjustSchema,
     promo: PromoEmbedSchema,

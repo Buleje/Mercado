@@ -111,6 +111,10 @@ export type PromoBanner = {
   bgTo: string;
   active: boolean;
   order: number;
+  /** Programación (banners v2 F2): ISO date. Si falta, sin límite por ese lado.
+   *  El banner se muestra solo si now ∈ [startsAt, endsAt] y active=true. */
+  startsAt?: string | null;
+  endsAt?: string | null;
   /** Default "classic" — back-compat con banners legacy sin tipo. */
   type?: BannerType;
   /** Datos de la promo embebida (solo si type==="promo"). */
@@ -123,10 +127,28 @@ type BannerStore = Record<PromoBannerSlot, PromoBanner[]>;
 
 const STORE = data as BannerStore;
 
-/** Devuelve los banners activos del slot, ordenados por `order`. */
+/**
+ * ¿El banner está vigente ahora? (banners v2 F2). Activo + dentro de la ventana
+ * de programación [startsAt, endsAt]. Fechas ausentes/ inválidas = sin límite.
+ */
+export function isBannerLive(b: PromoBanner, nowMs: number = Date.now()): boolean {
+  if (!b.active) return false;
+  if (b.startsAt) {
+    const s = Date.parse(b.startsAt);
+    if (!Number.isNaN(s) && nowMs < s) return false;
+  }
+  if (b.endsAt) {
+    const e = Date.parse(b.endsAt);
+    if (!Number.isNaN(e) && nowMs > e) return false;
+  }
+  return true;
+}
+
+/** Devuelve los banners vigentes del slot (activos + en ventana), ordenados. */
 export function getBannersForSlot(slot: PromoBannerSlot): PromoBanner[] {
+  const now = Date.now();
   return (STORE[slot] ?? [])
-    .filter((b) => b.active)
+    .filter((b) => isBannerLive(b, now))
     .sort((a, b) => a.order - b.order);
 }
 

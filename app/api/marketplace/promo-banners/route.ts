@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { logger } from "@/lib/logger";
+import { isBannerLive, type PromoBanner } from "@/lib/promo-banners";
 
 /**
  * GET /api/marketplace/promo-banners?slot=tiendas-hero
@@ -19,7 +20,12 @@ export async function GET(req: NextRequest) {
   try {
     const raw = await readFile(STORE_PATH, "utf8");
     const all = JSON.parse(raw) as Record<string, unknown>;
-    const banners = Array.isArray(all[slot]) ? all[slot] : [];
+    const list = (Array.isArray(all[slot]) ? all[slot] : []) as PromoBanner[];
+    // banners v2 F2: el GET público solo entrega banners VIGENTES (activos +
+    // dentro de la ventana de programación). El editor superadmin usa otro
+    // endpoint que devuelve todos. Así la programación se respeta en cualquier
+    // display sin lógica duplicada por slot.
+    const banners = list.filter((b) => isBannerLive(b));
     return NextResponse.json(
       { slot, banners },
       {

@@ -2510,6 +2510,39 @@ function StateTab({
           {banner.active ? "Activo · visible al público" : "Oculto · solo visible acá"}
         </button>
       </Section>
+      {/* banners v2 F2: programación. Vacío = sin límite por ese lado. El banner
+          se muestra al público solo si está activo Y dentro de la ventana. */}
+      <Section title="Programación (opcional)">
+        <div className="grid grid-cols-1 gap-2">
+          <label className="text-[length:var(--ts-2xs)] font-bold text-[rgb(var(--st-fg)/0.6)]">
+            Desde
+            <input
+              type="datetime-local"
+              value={isoToLocalInput(banner.startsAt)}
+              onChange={(e) => onPatch({ startsAt: localInputToIso(e.target.value) })}
+              className="mt-1 w-full rounded-lg bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.12)] px-2 py-1.5 text-xs text-[rgb(var(--st-fg))]"
+            />
+          </label>
+          <label className="text-[length:var(--ts-2xs)] font-bold text-[rgb(var(--st-fg)/0.6)]">
+            Hasta
+            <input
+              type="datetime-local"
+              value={isoToLocalInput(banner.endsAt)}
+              onChange={(e) => onPatch({ endsAt: localInputToIso(e.target.value) })}
+              className="mt-1 w-full rounded-lg bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.12)] px-2 py-1.5 text-xs text-[rgb(var(--st-fg))]"
+            />
+          </label>
+          {(banner.startsAt || banner.endsAt) && (
+            <button
+              type="button"
+              onClick={() => onPatch({ startsAt: null, endsAt: null })}
+              className="text-[length:var(--ts-2xs)] font-bold text-[rgb(var(--st-fg)/0.5)] hover:text-[rgb(var(--st-fg)/0.8)] text-left"
+            >
+              Quitar programación (mostrar siempre)
+            </button>
+          )}
+        </div>
+      </Section>
       <Section title={`Orden (${index + 1} de ${total})`}>
         <div className="grid grid-cols-2 gap-1.5">
           <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className={STATE_BTN_CLS}>
@@ -2549,6 +2582,21 @@ function StateTab({
 
 const STATE_BTN_CLS =
   "inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-extrabold text-[rgb(var(--st-fg)/0.85)] transition-all hover:bg-[rgb(var(--st-fg)/0.12)] hover:border-[rgb(var(--st-fg)/0.25)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[rgb(var(--st-fg)/0.06)] disabled:hover:border-[rgb(var(--st-fg)/0.1)]";
+
+// banners v2 F2: conversión ISO ↔ valor de <input type="datetime-local">.
+function isoToLocalInput(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  // YYYY-MM-DDTHH:mm en hora local (datetime-local no maneja timezone).
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function localInputToIso(val: string): string | null {
+  if (!val) return null;
+  const d = new Date(val);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-bits

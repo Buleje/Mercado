@@ -76,6 +76,9 @@ export type PromoBanner = {
   bgTo: string;
   active: boolean;
   order: number;
+  /** banners v2 F2: ventana de programación (ISO). Vacío = sin límite. */
+  startsAt?: string | null;
+  endsAt?: string | null;
   type?: BannerType;
   promo?: PromoEmbed;
   imageAdjust?: ImageAdjust;
