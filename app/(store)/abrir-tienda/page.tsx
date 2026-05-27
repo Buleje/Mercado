@@ -443,62 +443,89 @@ function SocialProofSection() {
   return (
     <section className="py-20 sm:py-28 bg-[var(--surface-canvas)]">
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-7 sm:p-10 grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 lg:gap-12 items-center">
-          <div>
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
-              <span aria-hidden className="relative inline-flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
-              </span>
-              Plan Fundador · Pucallpa
-            </p>
-            <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1]">
-              Sé de los primeros{" "}
-              <span className="italic font-serif text-[var(--accent)]">{CUPOS_TOTAL} negocios.</span>
-            </h2>
-            <p className="mt-4 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-lg">
-              Setup 1-a-1, 90 días de acompañamiento por WhatsApp, sesión de fotos
-              sin costo y 0% comisión los primeros 90 días.
-            </p>
-            <div className="mt-7 flex items-center gap-3">
-              <div className="flex -space-x-2" aria-hidden>
+        <div className="relative overflow-hidden rounded-3xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-7 sm:p-10">
+          <div aria-hidden className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-[var(--accent)]/15 blur-3xl" />
+          <div className="relative grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-8 lg:gap-12 items-center">
+            {/* Izquierda — qué te llevás como fundador */}
+            <div>
+              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
+                <span aria-hidden className="relative inline-flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
+                </span>
+                Plan Fundador · Pucallpa
+              </p>
+              <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1]">
+                Sé de los primeros{" "}
+                <span className="italic font-serif text-[var(--accent)]">{CUPOS_TOTAL} negocios.</span>
+              </h2>
+              <p className="mt-4 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-lg">
+                Estamos eligiendo a las primeras bodegas de Pucallpa para arrancar
+                juntos. Si entrás ahora, te llevás todo esto <strong className="text-[var(--text-primary)]">sin pagar de más</strong>:
+              </p>
+              <ul className="mt-6 space-y-2.5">
                 {[
-                  { l: "D", c: "var(--accent)" },
-                  { l: "P", c: "#722EAB" },
-                  { l: "L", c: "#f97316" },
-                ].map(({ l, c }) => (
-                  <span key={l} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-extrabold text-sm ring-3 ring-[var(--surface-canvas)]" style={{ background: c }}>
-                    {l}
-                  </span>
+                  "Te armamos tu tienda 1-a-1, sin que toques nada",
+                  "90 días de acompañamiento por WhatsApp",
+                  "Sesión de fotos de tus productos, gratis",
+                  "0% comisión los primeros 90 días",
+                  "Tu negocio en el mapa de Pucallpa desde el día 1",
+                ].map((perk) => (
+                  <li key={perk} className="flex items-start gap-3 text-sm sm:text-base text-[var(--text-primary)] font-medium leading-snug">
+                    <span aria-hidden className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white">
+                      <Check className="h-3 w-3" strokeWidth={3.25} />
+                    </span>
+                    {perk}
+                  </li>
                 ))}
+              </ul>
+            </div>
+
+            {/* Derecha — cupos + prueba social + CTA */}
+            <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-7 shadow-[var(--shadow-lg)]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Cupos disponibles</p>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+                  <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Quedan pocos
+                </span>
               </div>
-              <p className="text-sm text-[var(--text-secondary)] leading-snug">
-                <strong className="font-extrabold text-[var(--text-primary)]">Don Lucho, Pòlleria El Dorado</strong> y otros ya están vendiendo con Buleje.
+              <p className="text-5xl font-extrabold tracking-[-0.04em] tabular-nums leading-none mt-1">
+                <span className="text-[var(--accent)]">{libres}</span>
+                <span className="text-[var(--text-tertiary)] text-2xl font-extrabold ml-1">/ {CUPOS_TOTAL}</span>
+              </p>
+              <div className="mt-5 h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+                <span className="block h-full rounded-full bg-linear-to-r from-[var(--accent)] to-[var(--accent-600,var(--accent))]" style={{ width: `${(CUPOS_TOMADOS / CUPOS_TOTAL) * 100}%` }} />
+              </div>
+
+              {/* Prueba social */}
+              <div className="mt-6 flex items-center gap-3 pt-5 border-t border-[var(--rule-soft)]">
+                <div className="flex -space-x-2" aria-hidden>
+                  {[
+                    { l: "D", c: "var(--accent)" },
+                    { l: "P", c: "#722EAB" },
+                    { l: "L", c: "#f97316" },
+                  ].map(({ l, c }) => (
+                    <span key={l} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white font-extrabold text-sm ring-3 ring-[var(--surface-raised)]" style={{ background: c }}>
+                      {l}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] leading-snug">
+                  <strong className="font-extrabold text-[var(--text-primary)]">Don Lucho</strong> y {CUPOS_TOMADOS} bodegas más ya entraron.
+                </p>
+              </div>
+
+              <Link
+                href="/marketplace/registrar"
+                className="group mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-6 py-3.5 text-sm font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+              >
+                Reservar mi cupo gratis
+                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
+              </Link>
+              <p className="mt-3 text-center text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)]">
+                Sin tarjeta · te contactamos por WhatsApp
               </p>
             </div>
-          </div>
-
-          <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-7 shadow-[var(--shadow-lg)]">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Cupos disponibles</p>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
-                <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Limitado
-              </span>
-            </div>
-            <p className="text-5xl font-extrabold tracking-[-0.04em] tabular-nums leading-none mt-1">
-              <span className="text-[var(--accent)]">{libres}</span>
-              <span className="text-[var(--text-tertiary)] text-2xl font-extrabold ml-1">/ {CUPOS_TOTAL}</span>
-            </p>
-            <div className="mt-5 h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-              <span className="block h-full rounded-full bg-linear-to-r from-[var(--accent)] to-[var(--accent-600,var(--accent))]" style={{ width: `${(CUPOS_TOMADOS / CUPOS_TOTAL) * 100}%` }} />
-            </div>
-            <Link
-              href="/marketplace/registrar"
-              className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-6 py-3.5 text-sm font-extrabold shadow-md hover:shadow-lg transition-all"
-            >
-              Reservar mi cupo gratis
-              <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
-            </Link>
           </div>
         </div>
       </div>
