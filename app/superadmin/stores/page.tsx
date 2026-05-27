@@ -16,6 +16,7 @@ import {
 } from "@buleje/design-system/icons";
 import { StoresTab } from "@/components/superadmin/stores/StoresTab";
 import { BeneficiosTab } from "@/components/superadmin/stores/BeneficiosTab";
+import TestCustomerPanel from "@/components/superadmin/stores/TestCustomerPanel";
 import { CouponsTab } from "@/components/superadmin/stores/CouponsTab";
 import { AnalyticsTab } from "@/components/superadmin/stores/AnalyticsTab";
 import { NavegacionTab } from "@/components/superadmin/stores/NavegacionTab";
@@ -204,6 +205,9 @@ export default function StoresPage() {
           </button>
         </div>
       )}
+
+      {/* Panel de usuario de prueba — SOLO desarrollo local (no en prod). */}
+      <TestCustomerPanel />
 
       {/* ─── Tab content ─────────────────────────────────────────── */}
       {tab === "stores" && (

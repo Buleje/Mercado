@@ -29,8 +29,12 @@ const TestSessionSchema = z.object({
 export async function POST(req: NextRequest) {
   // Gate duro — evaluar en runtime para respetar hot-reload de env vars.
   // En producción este endpoint devuelve 404 (oculta su propia existencia).
+  // Habilitado en tests, flag E2E explícita y DESARROLLO LOCAL
+  // (NODE_ENV=development) para probar el flujo de compra sin registrarse.
+  // En producción (NODE_ENV=production) SIEMPRE 404 — fail-closed.
   const e2eAllowed =
     process.env.NODE_ENV === "test" ||
+    process.env.NODE_ENV === "development" ||
     process.env.ALLOW_E2E_TEST_AUTH === "1";
   if (!e2eAllowed) {
     return NextResponse.json(null, { status: 404 });
