@@ -309,8 +309,23 @@ export function AdminMobileDrawer({
             </div>
           )}
 
-          {/* All tabs */}
-          {filteredTabs.map(({ id, label, icon: Icon }) => (
+          {/* All tabs — agrupadas por categoría (como en desktop).
+              Brandon 2026-05-27: antes era lista plana; ahora cada categoría
+              es una sección con header + ícono. filteredTabs ya viene filtrado
+              por rol/búsqueda/categoría, así que respeta el dropdown de arriba. */}
+          {visibleCategories.map((category) => {
+            const CategoryIcon = category.icon;
+            const catTabs = filteredTabs.filter((t) =>
+              (category.tabs as readonly Tab[]).includes(t.id as Tab),
+            );
+            if (catTabs.length === 0) return null;
+            return (
+              <div key={`cat-${category.id}`} className="mb-2">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1.5">
+                  <CategoryIcon className="h-3 w-3 shrink-0" />
+                  {category.label}
+                </p>
+                {catTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => { navigateTab(id as Tab); onClose(); }}
@@ -352,7 +367,10 @@ export function AdminMobileDrawer({
                 )}
               />
             </button>
-          ))}
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Footer */}
