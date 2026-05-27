@@ -8,33 +8,15 @@ import { cacheLife, cacheTag } from "next/cache";
 // en app/(store)/layout.tsx (mismo que /tiendas y /marketplace).
 
 // ── Dynamic imports — Brandon 2026-05-20 audit-sprint perf:
-// reducen initial bundle (Framer Motion + setInterval del hero, carousel cliente,
-// scroll listeners del CTA mobile) y paralelizan compile. SSR se mantiene en
-// los que aportan SEO above-the-fold (LandingHero, PopularCategoriesTiles,
-// ComoFuncionaSection); below-fold (ReviewsCarousel) y mobile-only
-// (StickyMobileCTA) van con ssr:false.
-const LandingHero = dynamic(() => import("@/components/landing/LandingHero"), {
-  ssr: true,
-  loading: () => <div className="min-h-[600px] bg-[var(--surface-canvas)]" aria-hidden />,
-});
-// Brandon 2026-05-20: en Server Components Next 16 NO se permite `ssr: false`.
-// Mantenemos `ssr: true` (default) — dynamic igual aporta code-splitting del
-// chunk y permite paralelizar el compile. Los componentes pesados client-side
-// se hidratarán post-LCP de todos modos por React Server Components streaming.
-const ReviewsCarousel = dynamic(
-  () => import("@/components/landing/LandingClientSections").then((m) => ({ default: m.ReviewsCarousel })),
-  { loading: () => <div className="min-h-[300px]" aria-hidden /> },
-);
-const PopularCategoriesTiles = dynamic(
-  () => import("@/components/landing/PopularCategoriesTiles"),
-  { loading: () => <div className="min-h-[400px] bg-[var(--surface-sunken)]" aria-hidden /> },
-);
+// code-splitting de la sección cliente pesada (ComoFuncionaSection con i18n).
+// 2026-05-27 optimización: removidos LandingHero / ReviewsCarousel /
+// PopularCategoriesTiles / StickyMobileCTA — eran imports muertos (la home
+// B2C v2 ya no los renderiza). Menos código que parsear + 0 lint noise.
+// Next 16 Server Components: NO se permite `ssr: false`; dynamic igual aporta
+// code-splitting del chunk y paraleliza el compile.
 const ComoFuncionaSection = dynamic(
   () => import("@/components/landing/sections/ComoFuncionaSection"),
   { loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
-);
-const StickyMobileCTA = dynamic(
-  () => import("@/components/landing/StickyMobileCTA"),
 );
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
@@ -76,10 +58,25 @@ import {
 // explícito ("Buleje") + twitter card. Antes faltaba siteName → Facebook/
 // LinkedIn no podían armar el snippet con el sitio.
 export const metadata: Metadata = {
-  title: "Pide lo que quieras, te lo llevamos",
+  title: "Delivery de bodegas, restaurantes y farmacias en Pucallpa",
   description:
-    "Bodegas, restaurantes y farmacias de Pucallpa con delivery rápido. Paga con Yape, Plin o efectivo. Tu marketplace local en la Amazonía peruana.",
-  alternates: { canonical: "https://www.buleje.pe" },
+    "Pedí online en Pucallpa: bodegas, restaurantes y farmacias de tus vecinos con delivery rápido. Paga con Yape, Plin o efectivo. El marketplace local de la Amazonía peruana.",
+  keywords: [
+    "delivery Pucallpa",
+    "marketplace Pucallpa",
+    "bodegas Pucallpa",
+    "restaurantes Pucallpa delivery",
+    "farmacias delivery Pucallpa",
+    "comida a domicilio Pucallpa",
+    "pagar con Yape",
+    "Plin delivery",
+    "comprar online Ucayali",
+    "tiendas cerca de mí Pucallpa",
+  ],
+  alternates: {
+    canonical: "https://www.buleje.pe",
+    languages: { "es-PE": "https://www.buleje.pe", es: "https://www.buleje.pe" },
+  },
   openGraph: {
     title: "Pide lo que quieras, te lo llevamos | Buleje",
     description:
@@ -188,6 +185,10 @@ async function BulejeJsonLd() {
   // removido por falta de reviewCount real). Mantener la función por si
   // futuras Schema.org entries necesitan stats.
   await getMarketplaceStats();
+  // SEO 2026-05-27: ItemList de tiendas reales destacadas. Ayuda a Google
+  // a entender el catálogo del marketplace y habilita carrusel de entidades.
+  // Datos verídicos (top stores de la DB) — no sintéticos.
+  const topStores = await getTopStores();
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -310,6 +311,24 @@ async function BulejeJsonLd() {
     sameAs: ["https://instagram.com/buleje"],
   };
 
+  // ItemList de tiendas destacadas reales (solo si hay datos).
+  const itemListSchema =
+    topStores.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: "Tiendas destacadas en Buleje Pucallpa",
+          itemListOrder: "https://schema.org/ItemListOrderDescending",
+          numberOfItems: topStores.length,
+          itemListElement: topStores.map((s, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: `https://www.buleje.pe/marketplace/${s.slug}`,
+            name: s.name,
+          })),
+        }
+      : null;
+
   return (
     <>
       <script
@@ -324,6 +343,12 @@ async function BulejeJsonLd() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      {itemListSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+        />
+      )}
     </>
   );
 }
@@ -392,15 +417,17 @@ async function RappiStyleHero() {
           />
         </p>
 
-        {/* H1 principal — tipografía grande, texto oscuro sobre fondo claro */}
+        {/* H1 híbrido (Brandon 2026-05-27): gancho emocional + keyword geo
+            "Pucallpa" dentro del propio H1 (Google pesa mucho el H1 de la home). */}
         <h1 className="text-[clamp(2.25rem,8.5vw,5.5rem)] font-extrabold leading-[1.0] tracking-[-0.035em] text-[var(--text-primary)] max-w-4xl mx-auto">
           ¿Qué se te{" "}
           <span
             className="italic font-serif"
             style={{ color: "var(--accent)" }}
           >
-            antoja hoy?
-          </span>
+            antoja hoy
+          </span>{" "}
+          en Pucallpa?
         </h1>
 
         {/* Subtítulo — texto secundario sobre fondo claro */}
@@ -447,6 +474,28 @@ async function RappiStyleHero() {
             </button>
           </div>
         </form>
+
+        {/* Chips de categorías rápidas — navegación instantánea + links
+            internos con anchor-text keyword (SEO). Brandon 2026-05-27. */}
+        <nav aria-label="Categorías populares" className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-2">
+          {[
+            { label: "Restaurantes", cat: "restaurante", Icon: UtensilsCrossed },
+            { label: "Bodegas", cat: "bodega", Icon: ShoppingCart },
+            { label: "Farmacias", cat: "farmacia", Icon: Pill },
+            { label: "Pollerías", cat: "polleria", Icon: Drumstick },
+            { label: "Panaderías", cat: "panaderia", Icon: Croissant },
+            { label: "Licorerías", cat: "licoreria", Icon: Wine },
+          ].map(({ label, cat, Icon }) => (
+            <Link
+              key={cat}
+              href={`/tiendas?cat=${cat}`}
+              className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md hover:-translate-y-0.5"
+            >
+              <Icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+              {label}
+            </Link>
+          ))}
+        </nav>
 
         {/* Stats reales + trust pill Yape */}
         {(storeCount > 0 || productCount > 0) && (
