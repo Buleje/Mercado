@@ -271,7 +271,7 @@ export default function AICommandCenter() {
     >
       {/* ── Toolbar superior: tabs horizontales + acciones ──────────── */}
       <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
-        <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+        <nav className="flex flex-1 min-w-0 items-center gap-1 overflow-x-auto scrollbar-hide">
           {SECTIONS.map((s) => {
             const Icon = s.icon;
             const isActive = activeSection === s.id;
@@ -290,7 +290,7 @@ export default function AICommandCenter() {
                 title={`${s.label} (Alt+${SECTIONS.indexOf(s) + 1})`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span>{s.label}</span>
+                <span className={cn(!isActive && "hidden sm:inline")}>{s.label}</span>
                 {badge != null && badge > 0 && (
                   <span
                     className={cn(
