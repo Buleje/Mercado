@@ -27,10 +27,15 @@ import { signInCustomer } from "./helpers/sign-in-customer";
 
 // ── Customer de prueba ───────────────────────────────────────────────────────
 
+// El flujo (store) /tienda muestra el catálogo de un VENDOR. En localhost sin
+// subdominio el tenant resuelve a "main" (la plataforma marketplace, sin
+// catálogo de bodega) → no hay botones "Agregar". Para el flujo completo hay
+// que apuntar a un subdominio vendor (ej. E2E_BASE_URL=http://mi-pollo.localhost:3100)
+// y alinear el tenant del customer con E2E_CUSTOMER_TENANT.
 const CUSTOMER_QA = {
   phone: "999000111",
   name: "Ana QA Test",
-  tenantId: "main",
+  tenantId: process.env.E2E_CUSTOMER_TENANT ?? "main",
   email: "qa-test@buleje.pe",
 };
 
