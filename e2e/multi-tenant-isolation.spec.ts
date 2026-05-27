@@ -28,12 +28,16 @@ const TENANT_B_SLUG = process.env.E2E_TENANT_B_SLUG ?? "mi-pollo";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function loginTenantA(request: APIRequestContext): Promise<string | null> {
+  // ADR-120 login unificado: qaadmin existe en varias tiendas → sin tenantSlug
+  // el endpoint responde { requiresTenantChoice } SIN cookie. Pasamos el slug
+  // explícito para entrar SCOPED al tenant A.
   const res = await request.post("/api/auth/login", {
-    data: { password: ADMIN_PASS_A, username: ADMIN_USER_A },
+    data: { password: ADMIN_PASS_A, username: ADMIN_USER_A, tenantSlug: TENANT_A_SLUG },
   });
   if (!res.ok()) return null;
+  // El cookie de sesión admin es `buleje-admin-sess` (lib/session.ts COOKIE_NAME).
   const setCookie = res.headers()["set-cookie"] ?? "";
-  const match = setCookie.match(/bsm-admin-sess=[^;]+/);
+  const match = setCookie.match(/buleje-admin-sess=[^;]+/);
   return match ? match[0] : null;
 }
 
@@ -132,15 +136,17 @@ test.describe("Multi-tenant aislamiento — cross-tenant access control", () => 
     const urlB = `/t/${TENANT_B_SLUG}/tienda`;
 
     await test.step("cargar storefront tenant A", async () => {
-      await page.goto(urlA, { waitUntil: "domcontentloaded", timeout: 20_000 });
-      await expect(page.locator("body")).not.toContainText("500");
+      // Detectar error de SERVIDOR por el status HTTP, no por la cadena "500"
+      // en el body — los productos contienen "500g"/"500ml" y promos "S/50".
+      const res = await page.goto(urlA, { waitUntil: "domcontentloaded", timeout: 20_000 });
+      expect(res?.status() ?? 200).toBeLessThan(500);
     });
 
     const textA = await page.locator("main").first().textContent().catch(() => "");
 
     await test.step("cargar storefront tenant B", async () => {
-      await page.goto(urlB, { waitUntil: "domcontentloaded", timeout: 20_000 });
-      await expect(page.locator("body")).not.toContainText("500");
+      const res = await page.goto(urlB, { waitUntil: "domcontentloaded", timeout: 20_000 });
+      expect(res?.status() ?? 200).toBeLessThan(500);
     });
 
     const textB = await page.locator("main").first().textContent().catch(() => "");
