@@ -8,9 +8,7 @@ import {
   Check,
   Minus,
   Receipt,
-  MessageCircle,
   CreditCard,
-  Wallet,
   ShieldCheck,
   Download,
   Database,
@@ -130,43 +128,85 @@ function SectionSkeleton({ h = "400px" }: { h?: string }) {
   );
 }
 
-// ── Integraciones — strip de logos de lo que el negocio ya usa ──
-function IntegrationsStrip() {
-  const items = [
-    { mark: "Y", name: "Yape", brand: "#722EAB" },
-    { mark: "P", name: "Plin", brand: "#00BFB3" },
-    { icon: Receipt, name: "SUNAT" },
-    { icon: MessageCircle, name: "WhatsApp" },
-    { icon: CreditCard, name: "Tarjeta · Stripe" },
-    { icon: Wallet, name: "Mercado Pago" },
-  ];
+// ── Integraciones — marquee animado con logos reales (Simple Icons CDN) ──
+// Brandon 2026-05-27: mas impacto + movimiento. Logos de marca via
+// cdn.simpleicons.org (los que existen) + marcas de color para los peruanos
+// (Yape, Plin) y SUNAT. Loop infinito con la utility .marquee de globals.css.
+type LogoItem =
+  | { kind: "img"; src: string; name: string }
+  | { kind: "mark"; mark: string; name: string; color: string }
+  | { kind: "text"; name: string };
+
+const INTEGRATION_LOGOS: LogoItem[] = [
+  { kind: "mark", mark: "Y", name: "Yape", color: "#722EAB" },
+  { kind: "mark", mark: "P", name: "Plin", color: "#00BFB3" },
+  { kind: "img", src: "https://cdn.simpleicons.org/whatsapp", name: "WhatsApp" },
+  { kind: "img", src: "https://cdn.simpleicons.org/mercadopago", name: "Mercado Pago" },
+  { kind: "img", src: "https://cdn.simpleicons.org/stripe", name: "Stripe" },
+  { kind: "img", src: "https://cdn.simpleicons.org/visa", name: "Visa" },
+  { kind: "img", src: "https://cdn.simpleicons.org/mastercard", name: "Mastercard" },
+  { kind: "text", name: "SUNAT" },
+];
+
+function LogoChip({ item }: { item: LogoItem }) {
   return (
-    <section className="py-12 sm:py-14 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)]">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <p className="text-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-7">
-          Ya conectado a lo que tu negocio usa todos los días
+    <div className="inline-flex shrink-0 items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-6 py-4 shadow-sm">
+      {item.kind === "img" ? (
+        // Tile blanco: los logos de marca (Visa/Mastercard navy) necesitan fondo
+        // claro para tener contraste tanto en light como en dark.
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+          {/* eslint-disable-next-line @next/next/no-img-element -- logo de marca via CDN */}
+          <img
+            src={item.src}
+            alt={`Logo ${item.name}`}
+            width={24}
+            height={24}
+            loading="lazy"
+            className="h-6 w-6 object-contain"
+          />
+        </span>
+      ) : item.kind === "mark" ? (
+        <span
+          aria-hidden
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white text-lg font-extrabold shadow-sm"
+          style={{ background: item.color }}
+        >
+          {item.mark}
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
+        >
+          <Receipt className="h-5 w-5" strokeWidth={2} />
+        </span>
+      )}
+      <span className="text-base font-extrabold text-[var(--text-primary)] whitespace-nowrap">
+        {item.name}
+      </span>
+    </div>
+  );
+}
+
+function IntegrationsStrip() {
+  return (
+    <section className="py-16 sm:py-20 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] overflow-hidden">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 text-center mb-10 sm:mb-12">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
+          <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+          Sin instalar nada
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
-          {items.map((it) => (
-            <div
-              key={it.name}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-2.5"
-            >
-              {it.mark ? (
-                <span
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-white text-sm font-extrabold"
-                  style={{ background: it.brand }}
-                  aria-hidden
-                >
-                  {it.mark}
-                </span>
-              ) : it.icon ? (
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]" aria-hidden>
-                  <it.icon className="h-4 w-4" strokeWidth={2} />
-                </span>
-              ) : null}
-              <span className="text-sm font-extrabold text-[var(--text-primary)]">{it.name}</span>
-            </div>
+        <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1.02]">
+          Ya conectado a lo que{" "}
+          <span className="italic font-serif text-[var(--accent)]">tu negocio usa</span> cada día.
+        </h2>
+      </div>
+
+      {/* Marquee infinito — items duplicados para loop sin corte */}
+      <div className="marquee">
+        <div className="marquee-track py-1">
+          {[...INTEGRATION_LOGOS, ...INTEGRATION_LOGOS].map((item, i) => (
+            <LogoChip key={`${item.name}-${i}`} item={item} />
           ))}
         </div>
       </div>
