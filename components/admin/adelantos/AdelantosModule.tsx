@@ -546,7 +546,7 @@ function CrearAdelantoModal({
           ))}
         </div>
       </Field>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div className="col-span-2">
           <Field label="Monto adelantado">
             <input type="number" min={1} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="500.00" className={inputCls + " tabular-nums"} />
@@ -1536,7 +1536,7 @@ function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficia
           {beneficiarios.map((b) => <option key={b.id} value={b.id}>{b.nombre}</option>)}
         </select>
       </Field>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div className="col-span-2">
           <Field label="Monto"><input type="number" min={1} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="200.00" className={inputCls + " tabular-nums"} /></Field>
         </div>
@@ -1547,7 +1547,7 @@ function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficia
         </Field>
       </div>
       <Field label="Frecuencia">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {(["semanal", "quincenal", "mensual"] as const).map((f) => (
             <button key={f} type="button" onClick={() => setFrecuencia(f)} className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${frecuencia === f ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>{FREC_LABEL[f]}</button>
           ))}

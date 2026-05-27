@@ -2543,7 +2543,7 @@ ${cuotas.map(c => { const row = `<tr>
                     </div>
 
                     {/* Moneda + Monto */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Moneda</label>
                         <select
@@ -2570,7 +2570,7 @@ ${cuotas.map(c => { const row = `<tr>
                     </div>
 
                     {/* Tasa mensual + TEA + Mora */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tasa mensual %</label>
                         <input
@@ -2613,7 +2613,7 @@ ${cuotas.map(c => { const row = `<tr>
                     </div>
 
                     {/* Cuotas + Sistema + Periodo gracia */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label>
                         <input
