@@ -479,14 +479,14 @@ export default function CRMTab() {
 
       {/* ── Toolbar estandar ───────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Busqueda */}
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        {/* Busqueda — full-width en móvil (fila propia), flex-1 en desktop */}
+        <div className="relative w-full sm:flex-1 sm:w-auto min-w-[200px] sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Nombre o teléfono..."
-            className="w-full pl-10 pr-9 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
+            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
