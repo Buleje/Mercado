@@ -276,7 +276,6 @@ export default function CajaCharts({ data }: { data: CajaData }) {
           defaultVisible={false}
           kicker="Salud financiera · periodo"
           title="Ratio líquido (balance / ingresos)"
-          description="Balance sobre ingresos. Arriba de 30% es salud buena."
           kpis={[
             { label: "Balance", value: fmtS(data.balance), tone: data.balance >= 0 ? "success" : "warning" },
             { label: "Ingresos", value: fmtS(data.ingresos), tone: "primary" },

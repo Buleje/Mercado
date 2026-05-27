@@ -243,7 +243,6 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
           defaultVisible
           kicker="Funnel · rango activo"
           title="De pedido recibido a entregado"
-          description="Cuántos pedidos te llegan y a cuántos les das salida. Si la mayoría se cae antes de confirmar, fijate qué está pasando en ese paso."
           kpis={[
             { label: "Recibidos", value: String(funnel.recibidos), tone: "primary" },
             { label: "Entregados", value: String(funnel.entregados), tone: "success" },
@@ -309,7 +308,6 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
           defaultVisible
           kicker="Ingresos · últimos 6 meses"
           title="Cómo viene tu facturación mensual"
-          description="La plata que entró por marketplace los últimos 6 meses. Si sube mes a mes, estás sumando clientes nuevos. Si baja, revisá promos o stock."
           kpis={[
             { label: "Total 6m", value: fmtS(monthly.total), tone: "primary" },
             { label: "Promedio mes", value: fmtS(monthly.prom), tone: "neutral" },
@@ -345,7 +343,6 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
           defaultVisible
           kicker="Top 10 productos · rango activo"
           title="Los productos que más venden en marketplace"
-          description="Tus 10 productos estrella. Acá enfocá tu stock y tus promos — son los que te hacen plata todos los días."
           kpis={[
             {
               label: "Líder",
@@ -398,7 +395,6 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
           defaultVisible
           kicker="Satisfacción · todos los periodos"
           title="Qué nota te dan tus clientes"
-          description="Si el promedio está en 4★ o más, la gente vuelve a comprarte. Si ves 1★ o 2★, llamalos para entender qué falló — un cliente bien tratado vale por diez."
           kpis={[
             { label: "Total reseñas", value: String(ratings.total), tone: "primary" },
             { label: "Promedio", value: Number(ratings.promedio).toFixed(1), tone: "success" },
@@ -438,7 +434,6 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
           defaultVisible
           kicker="Comparativa · ingresos semana a semana"
           title="Esta semana vs la pasada"
-          description="Compará día por día contra la semana anterior. Si la línea de esta semana va arriba, estás creciendo; si va abajo, hay que revisar qué cambió."
         >
           <BulejeComparisonOverlay
             data={comp}
@@ -467,7 +462,6 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
             defaultVisible
             kicker="Heatmap · franja × día · 30d"
             title="Cuándo entran más pedidos"
-            description="En qué hora y día caen los pedidos. Reforzá personal o stock en la franja pico — perder un pedido en hora alta cuesta mucho más que en la calma."
             kpis={[
               {
                 label: "Total pedidos 30d",

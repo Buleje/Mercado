@@ -348,7 +348,6 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
           defaultVisible={false}
           kicker="Cohort analysis · retención mes a mes"
           title="Cuántos vuelven después de la 1ra compra"
-          description="Agrupá clientes por el mes en que llegaron (cohorte) y mirá cuántos siguieron comprando 1, 2 y 3 meses después. Si los porcentajes caen mucho, perdés clientes rápido."
           kpis={[
             { label: "Cohortes", value: String(cohort.length), tone: "neutral" },
             {
@@ -458,7 +457,6 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
           defaultVisible={false}
 kicker="RFM · recency × frequency · monetary = tamaño"
           title="Segmentación estratégica de clientes"
-          description="Cada punto es un cliente. Arriba a la derecha (Champions) son los que vuelven seguido y gastan mucho. Abajo a la izquierda (En riesgo) son los que ya casi no vuelven. Cuidá los de arriba a la derecha primero."
           kpis={[
             { label: "🏆 Champions", value: String(rfm.counts.champions), tone: "success" },
             { label: "💙 Leales", value: String(rfm.counts.loyal), tone: "primary" },
@@ -544,7 +542,6 @@ kicker="RFM · recency × frequency · monetary = tamaño"
           defaultVisible={false}
 kicker="Satisfacción · todos los periodos"
           title="Distribución de reseñas por rating"
-          description="Cuántas reseñas tenés en cada nivel de estrellas. Las 1★ y 2★ son alertas — responde rápido en público para mostrar que te importa. Las 4★ y 5★ pedile que las compartan en redes."
           kpis={[
             { label: "Total reseñas", value: String(ratingChart.total), tone: "primary" },
             { label: "Promedio", value: Number(ratingChart.promedio).toFixed(1), tone: "success" },
@@ -588,7 +585,6 @@ kicker="Satisfacción · todos los periodos"
           defaultVisible={false}
 kicker="Comparativa · nuevos clientes semana a semana"
           title="Adquisición · esta semana vs pasada"
-          description="Compará cuánta gente nueva entró esta semana vs la semana pasada, día por día. Si ves caída, revisá si pasó algo (clima, competencia, promo terminada) y reaccioná esa misma semana."
         >
           <BulejeComparisonOverlay
             data={comp}
@@ -619,7 +615,6 @@ kicker="Comparativa · nuevos clientes semana a semana"
             defaultVisible={false}
             kicker="Heatmap · franja × día · rango activo"
             title="Cuándo compran tus clientes"
-            description="Cuadritos más oscuros = más compras. Encontrá tu hora pico (ej. martes a la noche) y reforzá personal en esa franja. Las zonas casi blancas son momentos perfectos para tirar una promo flash."
             kpis={[
               { label: "Total compras 30d", value: String(heatmap.matrix.flat().reduce((s, v) => s + v, 0)), tone: "primary" },
               { label: "Franja pico", value: peakLabel, tone: "success" },
@@ -684,7 +679,6 @@ kicker="Comparativa · nuevos clientes semana a semana"
           defaultVisible={false}
           kicker="Churn risk · clientes en peligro de abandono"
           title="Clientes valiosos que no vuelven"
-          description="Lista de clientes que antes compraban seguido y ahora desaparecieron. Llamálos uno por uno con un descuento personal — recuperar un cliente cuesta 5× menos que conseguir uno nuevo."
           kpis={[
             {
               label: "Alto riesgo (>60d)",

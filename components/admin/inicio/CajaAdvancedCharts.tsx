@@ -352,7 +352,6 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
           defaultVisible={false}
 kicker="Cash runway · rango activo"
           title="Días de operación con balance actual"
-          description="Si parara hoy de vender, cuántos días aguantarías pagando gastos fijos con tu balance actual. Menos de 30 días = riesgo — recortá costos o levantá caja YA."
           kpis={[
             {
               label: "Runway",
@@ -399,7 +398,6 @@ kicker="Cash runway · rango activo"
           defaultVisible={false}
 kicker="Pareto · métodos de pago · rango activo"
           title="Qué métodos concentran el cash"
-          description="Los métodos de pago ordenados por monto. Si un solo medio (ej. Yape) trae el 80% de tu cash, dependés de él — preparate si se cae el sistema y tené alternativa lista."
           kpis={[
             { label: "Total 30d", value: fmtS(pareto.total), tone: "primary" },
             { label: "Métodos para 80%", value: String(pareto.metodosFor80), tone: "success" },
@@ -440,7 +438,6 @@ kicker="Pareto · métodos de pago · rango activo"
           defaultVisible={false}
 kicker="Evolución de métodos · rango activo"
           title="Composición diaria de cobros por método"
-          description="Cada barra es un día y los colores son los métodos de pago. Si el efectivo sigue siendo gigante, prepará un objetivo: «pasar de 60% efectivo a 30% efectivo» en 3 meses."
           kpis={[
             { label: "Días con data", value: String(metodosStacked.rows.length), tone: "neutral" },
             { label: "Métodos", value: String(metodosStacked.methods.length), tone: "neutral" },
@@ -489,7 +486,6 @@ kicker="Evolución de métodos · rango activo"
           defaultVisible={false}
 kicker="Comparativa · semana a semana"
           title="Balance neto — esta semana vs pasada"
-          description="Compará el balance (ingresos menos egresos) de esta semana contra la pasada, día por día. Si esta semana cae, identificá qué día fue y por qué — ese aprendizaje vale oro."
         >
           <BulejeComparisonOverlay
             data={compSemana}
@@ -514,7 +510,6 @@ kicker="Comparativa · semana a semana"
           defaultVisible={false}
 kicker="Evolución del margen · rango activo"
           title="Utilidad neta y margen día a día"
-          description="Cuánta ganancia limpia (después de gastos) sacaste cada día. Si la barra sube pero el margen % baja, vendés más pero ganás peor — revisá precios o costos."
           kpis={[
             {
               label: "Margen prom.",
@@ -566,7 +561,6 @@ kicker="Evolución del margen · rango activo"
           defaultVisible={false}
 kicker="Balance acumulado · rango activo"
           title="Trayectoria de caja (running total)"
-          description="Cómo evoluciona tu balance día tras día sumando todo. La línea siempre debería subir; si baja días seguidos significa que estás consumiendo el capital del negocio."
           kpis={[
             { label: "Final", value: fmtS(runningBalance.finalAcc), tone: runningBalance.finalAcc >= 0 ? "success" : "warning" },
             { label: "Máximo", value: fmtS(runningBalance.maxAcc), tone: "success" },

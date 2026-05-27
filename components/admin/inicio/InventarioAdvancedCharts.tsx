@@ -396,7 +396,6 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
           defaultVisible={false}
           kicker="ABC analysis · concentración del valor"
           title="Top 15 SKUs y curva 80/20"
-          description="El 20% de tus productos genera el 80% del valor (regla 80/20). Los clase A son tus joyas — no podés quedarte sin stock; los clase C casi ni mover, ocupan plata sin generar."
           kpis={[
             { label: "Valor total", value: `S/ ${abc.total.toLocaleString("es-PE")}`, tone: "primary" },
             { label: "SKUs clase A", value: String(abc.aCount), tone: "success" },
@@ -433,7 +432,6 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
           defaultVisible={false}
 kicker="Salud general · % SKUs sin problema"
           title="Estado actual del inventario"
-          description="Un termómetro general: qué porcentaje de tus productos están sanos (con stock razonable). Si baja de 75%, tenés mucho agotado o sobrante — toca limpieza."
           rightSlot={
             <button
               type="button"
@@ -494,7 +492,6 @@ kicker="Salud general · % SKUs sin problema"
           defaultVisible={false}
 kicker="Rotación · rango activo"
           title="Velocidad y cobertura por categoría"
-          description="Qué tan rápido se vacía y se reemplaza el stock de cada rubro. Alta rotación = stock fresco que mueve; baja rotación = plata estancada — bajá el precio o probá combos."
           kpis={[
             {
               label: "Cat más rotación",
@@ -548,7 +545,6 @@ kicker="Rotación · rango activo"
           defaultVisible={false}
           kicker="Salidas por categoría · rango activo"
           title="Composición diaria de unidades salidas"
-          description="Cada barra es un día y los colores son las categorías. Vés cuál rubro empuja las ventas cada día — si una sola categoría sostiene todo, dependés mucho de ella."
           kpis={[
             { label: "Días con data", value: String(salidasStacked.rows.length), tone: "neutral" },
             {
@@ -594,7 +590,6 @@ kicker="Rotación · rango activo"
           defaultVisible={false}
 kicker="Δ Inventario · rango activo"
           title="De stock inicio a stock actual"
-          description="Empezamos el periodo con X unidades, entraron tantas, salieron tantas y quedaste con Y. Es la cuenta clara de movimiento — si el final es menor al inicio, estás vendiendo más rápido de lo que compras."
           kpis={[
             { label: "Stock inicio", value: fmtU(waterfall.stockInicio), tone: "neutral" },
             { label: "Entradas", value: fmtU(waterfall.entradas), tone: "success" },
@@ -624,7 +619,6 @@ kicker="Δ Inventario · rango activo"
             defaultVisible={false}
             kicker="Heatmap · categoría × día · rango activo"
             title="Cuándo rota cada categoría"
-            description="Mapa de calor: rubro vs día de la semana. Cuadritos oscuros = mucho movimiento. Reforzá stock antes del día pico de cada rubro y evitá quedarte sin nada."
             kpis={[
               { label: "Categorías", value: String(heatmapCatDia.cats.length), tone: "neutral" },
               { label: "Pico categoría", value: peakName, tone: "success" },
@@ -707,7 +701,6 @@ kicker="Δ Inventario · rango activo"
           defaultVisible={false}
 kicker="Comparativa · salidas semana a semana"
           title="Unidades salidas · esta semana vs pasada"
-          description="Compará cuánto vendiste esta semana contra la pasada, día por día. Si una semana es muy distinta a la otra (clima, feriado, promo), entendés qué movió la aguja."
         >
           <BulejeComparisonOverlay
             data={comp}
