@@ -45,8 +45,8 @@ const SHORTCUTS: { label: string; tab: string; icon: LucideIcon; tint: string }[
   { label: "Productos", tab: "productos", icon: Store, tint: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
 ];
 
-// Sparkline SVG minimalista — sin dependencias de chart lib.
-function Sparkline({ values, className = "" }: { values: number[]; className?: string }) {
+// Sparkline SVG minimalista — sin dependencias de chart lib. Color configurable.
+function Sparkline({ values, color = "var(--accent)", className = "" }: { values: number[]; color?: string; className?: string }) {
   if (values.length < 2) return null;
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
@@ -62,8 +62,8 @@ function Sparkline({ values, className = "" }: { values: number[]; className?: s
   const area = `0,${H} ${line} ${W},${H}`;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={className} aria-hidden>
-      <polygon points={area} fill="var(--accent)" opacity="0.12" />
-      <polyline points={line} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <polygon points={area} fill={color} opacity="0.12" />
+      <polyline points={line} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -84,17 +84,33 @@ export default function VendorCommandCenter() {
 
   const stats = useMemo(() => {
     const daily = (data?.dailyRevenue ?? []) as DailyRev[];
-    const purchases = (data?.purchases ?? []) as { total?: number }[];
-    const ingresos = daily.reduce((s, d) => s + (d.total || 0), 0);
+    const purchases = (data?.purchases ?? []) as { total?: number; createdAt?: string }[];
+
+    // Gastos por día (alineado a las fechas YYYY-MM-DD de dailyRevenue).
+    const gastosByDay = new Map<string, number>();
+    for (const p of purchases) {
+      const day = (p.createdAt ?? "").slice(0, 10);
+      if (!day) continue;
+      gastosByDay.set(day, (gastosByDay.get(day) ?? 0) + (p.total || 0));
+    }
+
+    const sparkIngresos = daily.map((d) => d.total || 0);
+    const sparkGastos = daily.map((d) => gastosByDay.get(d.date) ?? 0);
+    const sparkGanancia = daily.map((d, i) => (sparkIngresos[i] ?? 0) - (sparkGastos[i] ?? 0));
+
+    const ingresos = sparkIngresos.reduce((s, v) => s + v, 0);
+    // Gastos totales: suma de TODAS las compras (algunas pueden caer fuera de
+    // las fechas con ventas); el sparkline usa solo las alineadas por día.
     const gastos = purchases.reduce((s, p) => s + (p.total || 0), 0);
     const ganancia = ingresos - gastos;
     const margen = ingresos > 0 ? (ganancia / ingresos) * 100 : 0;
     const pedidos = daily.reduce((s, d) => s + (d.count || 0), 0);
-    const sparkline = daily.map((d) => d.total || 0);
+
     // Tendencia ingresos: último día vs día anterior
-    const lastTwo = sparkline.slice(-2);
+    const lastTwo = sparkIngresos.slice(-2);
     const trend = lastTwo.length === 2 && lastTwo[0] > 0 ? ((lastTwo[1] - lastTwo[0]) / lastTwo[0]) * 100 : 0;
-    return { ingresos, gastos, ganancia, margen, pedidos, sparkline, trend, days: daily.length };
+
+    return { ingresos, gastos, ganancia, margen, pedidos, sparkIngresos, sparkGastos, sparkGanancia, trend, days: daily.length };
   }, [data]);
 
   const greeting = useMemo(() => {
@@ -108,23 +124,25 @@ export default function VendorCommandCenter() {
     <section aria-label="Inicio del panel" className="mb-2">
       {/* ── Marco de computadora (browser frame) ─────────────────────── */}
       <div className="overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]">
-        {/* Chrome bar */}
-        <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5">
-          <div className="flex gap-1.5" aria-hidden>
-            <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-            <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-            <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+        {/* Chrome bar (compacto en mobile) */}
+        <div className="flex items-center gap-2 sm:gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2 sm:px-4 sm:py-2.5">
+          <div className="flex gap-1 sm:gap-1.5" aria-hidden>
+            <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-[#ff5f57]" />
+            <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-[#febc2e]" />
+            <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-[#28c840]" />
           </div>
-          <div className="mx-auto flex max-w-xs flex-1 items-center justify-center gap-2 rounded-full bg-[var(--surface-raised)] px-3 py-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] ring-1 ring-[var(--rule-soft)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
-            panel.buleje.pe/{slug}
+          <div className="mx-auto flex min-w-0 max-w-[60%] sm:max-w-xs flex-1 items-center justify-center gap-1.5 sm:gap-2 rounded-full bg-[var(--surface-raised)] px-3 py-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] ring-1 ring-[var(--rule-soft)]">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--data-success-500)]" />
+            <span className="truncate">
+              <span className="hidden sm:inline">panel.buleje.pe/</span>{slug}
+            </span>
           </div>
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
             <span className="relative inline-flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
             </span>
-            En vivo
+            <span className="hidden sm:inline">En vivo</span>
           </span>
         </div>
 
@@ -149,10 +167,12 @@ export default function VendorCommandCenter() {
             <div className="py-10"><BulejeLoader variant="card" size={40} label="Cargando tu resumen…" /></div>
           ) : (
             <>
-              {/* ── Mini-resúmenes financieros ───────────────────────── */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {/* Ingresos — con sparkline */}
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+              {/* ── Mini-resúmenes financieros ───────────────────────────
+                  Mobile: Ingresos full-width arriba (con sparkline grande),
+                  Gastos + Ganancia lado a lado debajo. Desktop: 3 en fila. */}
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+                {/* Ingresos — destacada full-width en mobile */}
+                <div className="col-span-2 relative overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:col-span-1">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                       <Wallet className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.25} /> Ingresos
@@ -164,45 +184,52 @@ export default function VendorCommandCenter() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+                  <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
                     {formatSoles(stats.ingresos)}
                   </p>
                   <div className="mt-2 h-8">
-                    <Sparkline values={stats.sparkline} className="h-full w-full" />
+                    <Sparkline values={stats.sparkIngresos} className="h-full w-full" />
                   </div>
                 </div>
 
-                {/* Gastos */}
-                <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+                {/* Gastos — con sparkline */}
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
                   <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    <Receipt className="h-3.5 w-3.5 text-[var(--data-warning-600,#b45309)]" strokeWidth={2.25} /> Gastos (compras)
+                    <Receipt className="h-3.5 w-3.5 text-[var(--data-warning-600,#b45309)]" strokeWidth={2.25} /> Gastos
                   </span>
-                  <p className="mt-1 text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+                  <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
                     {formatSoles(stats.gastos)}
                   </p>
-                  <p className="mt-2 text-xs text-[var(--text-tertiary)]">Órdenes de compra registradas</p>
+                  <div className="mt-2 h-8">
+                    <Sparkline values={stats.sparkGastos} color="var(--data-warning-600,#b45309)" className="h-full w-full" />
+                  </div>
                 </div>
 
-                {/* Ganancia */}
-                <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4">
-                  <div className="flex items-center justify-between">
+                {/* Ganancia — con sparkline */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4">
+                  <div className="flex items-center justify-between gap-1">
                     <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
                       <Coins className="h-3.5 w-3.5" strokeWidth={2.25} /> Ganancia
                     </span>
                     {stats.ingresos > 0 && (
-                      <span className="rounded-full bg-[var(--accent-600,var(--accent))] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white tabular-nums">
-                        {Number(stats.margen).toFixed(0)}% margen
+                      <span className="shrink-0 rounded-full bg-[var(--accent-600,var(--accent))] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white tabular-nums">
+                        {Number(stats.margen).toFixed(0)}%
                       </span>
                     )}
                   </div>
-                  <p className={`mt-1 text-2xl font-extrabold tabular-nums tracking-[-0.02em] ${stats.ganancia >= 0 ? "text-[var(--text-primary)]" : "text-[var(--data-danger-600,#dc2626)]"}`}>
+                  <p className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] ${stats.ganancia >= 0 ? "text-[var(--text-primary)]" : "text-[var(--data-danger-600,#dc2626)]"}`}>
                     {formatSoles(stats.ganancia)}
                   </p>
-                  <p className="mt-2 text-xs text-[var(--text-secondary)]">
-                    {stats.pedidos} pedido{stats.pedidos === 1 ? "" : "s"} en el período
-                  </p>
+                  <div className="mt-2 h-8">
+                    <Sparkline values={stats.sparkGanancia} color="var(--accent)" className="h-full w-full" />
+                  </div>
                 </div>
               </div>
+              {stats.pedidos > 0 && (
+                <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+                  {stats.pedidos} pedido{stats.pedidos === 1 ? "" : "s"} en el período · gastos = órdenes de compra
+                </p>
+              )}
 
               {/* ── Accesos directos a módulos ───────────────────────── */}
               <div className="mt-5">
