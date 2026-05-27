@@ -963,6 +963,8 @@ interface JoinCard {
   eyebrow: string;
   title: string;
   desc: string;
+  /** Beneficio principal en chip — gancho de un vistazo. */
+  highlight: string;
   cta: string;
   Icon: LucideIcon;
 }
@@ -972,7 +974,8 @@ const JOIN_CARDS: JoinCard[] = [
     href: "/negocios",
     eyebrow: "Para tiendas",
     title: "Registrá tu tienda",
-    desc: "Bodega, minimarket o tienda de barrio. Sin comisión los primeros 90 días.",
+    desc: "Bodega, minimarket o tienda de barrio. Vendé online sin que te toque la tecnología.",
+    highlight: "0% comisión · 90 días",
     cta: "Abrir mi tienda",
     Icon: Store,
   },
@@ -980,7 +983,8 @@ const JOIN_CARDS: JoinCard[] = [
     href: "/negocios?tipo=comercio",
     eyebrow: "Para comercios",
     title: "Registrá tu comercio",
-    desc: "Restaurante, farmacia o licorería. Llegá a más clientes hoy.",
+    desc: "Restaurante, farmacia o licorería. Llegá a miles de vecinos que ya compran en Buleje.",
+    highlight: "Más clientes hoy",
     cta: "Registrar comercio",
     Icon: Building2,
   },
@@ -988,7 +992,8 @@ const JOIN_CARDS: JoinCard[] = [
     href: "/marketplace/repartidor",
     eyebrow: "Para repartidores",
     title: "Unite como repartidor",
-    desc: "Generá ingresos extra con tu moto. Cobrás por pedido + 100% propinas.",
+    desc: "Generá ingresos extra con tu moto, en los horarios que vos elijas.",
+    highlight: "100% de las propinas",
     cta: "Quiero repartir",
     Icon: Bike,
   },
@@ -1066,6 +1071,17 @@ function JoinUsSection() {
                 <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed flex-1">
                   {c.desc}
                 </p>
+                {/* Chip de beneficio — gancho de un vistazo */}
+                <span
+                  className={`mt-4 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
+                    isFeatured
+                      ? "bg-[var(--accent-600,var(--accent))] text-white"
+                      : "bg-[var(--accent-soft)] text-[var(--accent)]"
+                  }`}
+                >
+                  <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  {c.highlight}
+                </span>
                 <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
                   {c.cta}
                   <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
