@@ -1427,7 +1427,7 @@ export default function Header() {
                               }).catch((err) => {
                                 // Fire-and-forget — UI ya se actualizó optimista
                                 if (typeof console !== "undefined") {
-                                  // eslint-disable-next-line no-console
+                                   
                                   console.warn("[notif] markAllRead failed", String(err));
                                 }
                               });

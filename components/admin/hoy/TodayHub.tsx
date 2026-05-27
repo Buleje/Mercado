@@ -321,7 +321,7 @@ export function DashboardAlertsList({ dateRange, className }: { dateRange?: Date
   // TodayHub principal — el optional chaining en deps hace que React
   // Compiler no pueda preservar la memoización, pero es intencional para
   // evitar re-fetch cuando dateRange cambia de referencia pero no de valor.
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+   
   const rangeQuery = useMemo(() => {
     if (!dateRange) return "";
     const params = new URLSearchParams();

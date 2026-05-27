@@ -46,7 +46,7 @@ async function handler() {
   const since = new Date(Date.now() - DAY_MS);
 
   // @prisma-direct ok — cron system-wide, sin tenantId scope
-  // eslint-disable-next-line no-restricted-properties
+   
   const approvals = await prisma.paymentApproval.findMany({
     where: {
       status: "approved",

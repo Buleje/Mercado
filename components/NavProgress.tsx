@@ -64,7 +64,7 @@ export default function NavProgress() {
   // Completar en cada cambio de ruta.
   useEffect(() => {
     done();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [pathname]);
 
   // Interceptar clics en links internos.

@@ -167,7 +167,7 @@ export const OrderTrackingDB = {
     try {
       // 1. Order base + items (Prisma TS no admite todas las relations
       //    en un solo select — separamos las accesorias en queries paralelas).
-      // eslint-disable-next-line no-restricted-properties -- tenant scope explícito en where.
+       
       const order = await prisma.order.findFirst({
         where: { id: orderId, tenantId },
         select: {
@@ -204,15 +204,15 @@ export const OrderTrackingDB = {
 
       // 2. Datos accesorios en paralelo (reducen latencia vs serial).
       const [tenantRow, statusHistory, deliveryAssignmentRow, lastTrackingRow] = await Promise.all([
-        // eslint-disable-next-line no-restricted-properties -- lookup atomico por id.
+         
         prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
-        // eslint-disable-next-line no-restricted-properties -- timeline tenant-scoped.
+         
         prisma.orderStatusHistory.findMany({
           where: { orderId, tenantId },
           orderBy: { createdAt: "asc" },
           select: { fromStatus: true, toStatus: true, createdAt: true },
         }),
-        // eslint-disable-next-line no-restricted-properties -- assignment 1:1 con orderId.
+         
         prisma.deliveryAssignment.findUnique({
           where: { orderId },
           select: {
@@ -221,7 +221,7 @@ export const OrderTrackingDB = {
             },
           },
         }),
-        // eslint-disable-next-line no-restricted-properties -- ultimo tracking event para driver loc + ETA.
+         
         prisma.deliveryTracking.findFirst({
           where: { orderId, tenantId },
           orderBy: { createdAt: "desc" },

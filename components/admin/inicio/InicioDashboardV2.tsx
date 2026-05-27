@@ -85,11 +85,11 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   // (Date.now es impure en render body). El ref se setea UNA vez al mount
   // y es estable para fallback de daysInRange calculation.
   const nowRef = useRef<number | null>(null);
-  // eslint-disable-next-line react-hooks/purity -- lazy-init estable, solo 1ra render
+   
   if (nowRef.current === null) nowRef.current = Date.now();
   // dayOfMonth idem — estable dentro del lifecycle del componente.
   const dayOfMonthRef = useRef<number | null>(null);
-  // eslint-disable-next-line react-hooks/purity -- lazy-init estable, solo 1ra render
+   
   if (dayOfMonthRef.current === null) dayOfMonthRef.current = new Date().getDate();
 
   const rangeQuery = useMemo(() => {

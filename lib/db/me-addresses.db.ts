@@ -27,7 +27,7 @@ export const MeAddressesDB = {
    * @param customerPhone teléfono ya validado contra el tenant de la sesión
    */
   async list(customerPhone: string) {
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId; cross-tenant guard en route handler.
+     
     return prisma.savedLocation.findMany({
       where: { customerPhone },
       orderBy: { id: "desc" },
@@ -45,7 +45,7 @@ export const MeAddressesDB = {
    * @param customerPhone teléfono ya validado contra el tenant de la sesión
    */
   async count(customerPhone: string): Promise<number> {
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId; cross-tenant guard en route handler.
+     
     return prisma.savedLocation.count({ where: { customerPhone } });
   },
 
@@ -63,7 +63,7 @@ export const MeAddressesDB = {
     location: string,
     reference: string,
   ) {
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId; cross-tenant guard en route handler.
+     
     const address = await prisma.savedLocation.create({
       data: { customerPhone, location, reference },
       select: { id: true, location: true, reference: true },
@@ -80,7 +80,7 @@ export const MeAddressesDB = {
    * @param customerPhone teléfono ya validado contra el tenant de la sesión
    */
   async findOwned(id: string, customerPhone: string) {
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId; cross-tenant guard en route handler.
+     
     return prisma.savedLocation.findFirst({
       where: { id, customerPhone },
     });
@@ -93,7 +93,7 @@ export const MeAddressesDB = {
    * @param id id de la dirección
    */
   async delete(id: string) {
-    // eslint-disable-next-line no-restricted-properties -- SavedLocation sin tenantId; ownership verificado por caller via findOwned.
+     
     return prisma.savedLocation.delete({ where: { id } });
   },
 };

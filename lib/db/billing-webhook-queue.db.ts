@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
  * El access queda gated por requireAdmin/requirePlatformAPI en el caller.
  */
 
-/* eslint-disable no-restricted-syntax */
+ 
 // ADR-101: StripeWebhookQueue es platform-wide. Access gated por
 // requireAdmin (GET) y requirePlatformAPI (DELETE) en el caller.
 export const BillingWebhookQueueDB = {
@@ -41,4 +41,4 @@ export const BillingWebhookQueueDB = {
     await prisma.stripeWebhookQueue.delete({ where: { id } });
   },
 };
-/* eslint-enable no-restricted-syntax */
+ 

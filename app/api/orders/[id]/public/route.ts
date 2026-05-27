@@ -30,7 +30,7 @@ export async function GET(
   try {
     // Step 1: lightweight lookup that leaks nothing — only tenantId and the
     // stored (already normalized) customer phone. No PII returned yet.
-    // eslint-disable-next-line no-restricted-properties -- public IDOR-protected lookup; phone match guard antes de devolver datos.
+     
     const orderMeta = await prisma.order.findUnique({
       where: { id },
       select: { tenantId: true, customerPhone: true },

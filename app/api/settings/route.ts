@@ -249,7 +249,7 @@ export async function PUT(req: NextRequest) {
       }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
-    // eslint-disable-next-line no-restricted-syntax -- activity log fire-and-forget; no debe bloquear la respuesta de Settings
+     
     enqueueActivityLog({ action: "Editar", resource: "configuracion", userId: "admin", tenantId, details: { description: `Configuración actualizada: ${changed || "general"}` }, timestamp: new Date().toISOString() }).catch((err) => logger.warn("[settings] activity enqueue failed", { error: String(err) }));
     const saved = await SettingsDB.set(updated, tenantId);
 

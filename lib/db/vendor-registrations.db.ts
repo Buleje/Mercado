@@ -43,7 +43,7 @@ let warnedOnce = false;
 function warnDeprecated(method: string) {
   if (warnedOnce) return;
   warnedOnce = true;
-  // eslint-disable-next-line no-console
+   
   console.warn(
     `[deprecated] VendorRegistrationsDB.${method} — migrar a VendorApplicationsDB (ADR-079)`,
   );

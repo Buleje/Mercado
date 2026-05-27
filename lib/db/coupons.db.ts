@@ -163,7 +163,7 @@ export const CouponsDB = {
    * over-use bajo concurrencia.
    */
   async reserveUsage(tenantId: string, id: string): Promise<boolean> {
-    // eslint-disable-next-line no-restricted-properties -- guard atómico contra TOCTOU
+     
     const result = await prisma.$executeRawUnsafe(
       `UPDATE "Coupon"
           SET "usedCount" = "usedCount" + 1

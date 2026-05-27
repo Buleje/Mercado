@@ -17,7 +17,7 @@ import { NextRequest } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { secureJson, secureError } from "@/lib/superadmin-response";
-// eslint-disable-next-line no-restricted-imports
+ 
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";

@@ -117,7 +117,7 @@ export default function POSSearchBar({
   // Highlight first result for 1 second when new results appear
   useEffect(() => {
     if (results.length > 0 && prevResultCountRef.current === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate timed UI flash: highlightFirst is a transient visual effect (1s) driven by a transition (empty → populated results), not derivable during render
+       
       setHighlightFirst(true);
       const timer = setTimeout(() => setHighlightFirst(false), 1000);
       return () => clearTimeout(timer);

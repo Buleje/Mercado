@@ -42,7 +42,7 @@ export async function POST(
     }
 
     // Deduct ingredient stock in a transaction
-    // eslint-disable-next-line no-restricted-properties -- $transaction legítima: lookup + update + insert atómico multi-tabla con tenantId en cada WHERE. Refactor a RecetasDB.producirAtomic pendiente.
+     
     const costoReal = await prisma.$transaction(async (tx) => {
       let totalCosto = 0;
 
@@ -110,19 +110,19 @@ export async function POST(
       // SECURITY 2026-05-05 (audit cross-tenant #high): scope tenantId.
       // Antes si receta.productoId apuntaba a producto de otro tenant
       // (configuración corrupta), incrementaba stock ajeno.
-      // eslint-disable-next-line no-restricted-properties -- post-transaction lookup scoped por tenantId. Refactor a ProductsDB pendiente.
+       
       const prod = await prisma.product.findFirst({
         where: { id: receta.productoId, tenantId: auth.tenantId },
       });
       if (prod) {
         const prevStock = prod.stock ?? 0;
         const newStock = prevStock + parsed.data.cantidad;
-        // eslint-disable-next-line no-restricted-properties -- updateMany con tenantId obligatorio. Refactor a ProductsDB pendiente.
+         
         await prisma.product.updateMany({
           where: { id: receta.productoId, tenantId: auth.tenantId },
           data: { stock: newStock },
         });
-        // eslint-disable-next-line no-restricted-properties -- create scoped a tenantId del auth. Refactor a InventoryMovementsDB pendiente.
+         
         await prisma.inventoryMovement.create({
           data: {
             tenantId: auth.tenantId,

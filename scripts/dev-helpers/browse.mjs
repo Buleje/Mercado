@@ -150,7 +150,7 @@ async function main() {
       case "eval": {
         const expr = positional.join(" ");
         const res = await page.evaluate((e) => {
-          // eslint-disable-next-line no-new-func
+           
           return new Function("return (" + e + ")")();
         }, expr);
         console.log(JSON.stringify({ ok: true, result: res }));

@@ -60,7 +60,7 @@ export default function QuickActionsDock({
 
   useEffect(() => {
     if (alwaysVisible) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setVisible(true);
       return;
     }

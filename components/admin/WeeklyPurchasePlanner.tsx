@@ -2,7 +2,7 @@
 
 import { SectionTitle } from "@buleje/design-system";
 
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
+ 
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";

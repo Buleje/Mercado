@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   try {
     const cutoff = new Date(Date.now() - MAX_TURNO_HOURS * 60 * 60 * 1000);
 
-    // eslint-disable-next-line no-restricted-properties -- cron multi-tenant: corre sobre todos los tenants en una sola pasada.
+     
     const zombies = await prisma.turno.findMany({
       where: {
         status: "ABIERTO",
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     for (const turno of zombies) {
       try {
-        // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por tenantId+cashierId; refactor a SalesDB.aggregateByCashierShift pendiente.
+         
         const ventasAgg = await prisma.sale.aggregate({
           where: {
             tenantId: turno.tenantId,

@@ -198,7 +198,7 @@ function SearchHistory() {
   const [history, setHistory] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+   
   useEffect(() => {
     setHistory(loadHistory());
     setHydrated(true);

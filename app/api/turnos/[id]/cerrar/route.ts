@@ -37,7 +37,7 @@ export async function POST(
     }
 
     // Verify turno exists and belongs to tenant
-    // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing turno lookup; refactor a TurnosDB pendiente.
+     
     const existing = await prisma.turno.findUnique({ where: { id } });
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Turno no encontrado" }, { status: 404 });
@@ -73,7 +73,7 @@ export async function POST(
     // Antes sumaba ventas de TODOS los cajeros del tenant durante el periodo →
     // ventasTotal incorrecto en multi-cajero, podia ocultar/fabricar diferencias.
     // Sale.cashierId guarda el adminUserId del cajero que cobro.
-    // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por tenantId+cashierId; refactor a SalesDB.aggregateByCashierShift pendiente.
+     
     const ventasTotal = await prisma.sale.aggregate({
       where: {
         tenantId: auth.tenantId,

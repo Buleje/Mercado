@@ -412,7 +412,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
     .map(p => ({ id: p.id, name: p.name, stock: p.stock ?? 0, price: p.price, costPrice: p.costPrice, category: p.category }));
 
   // Stock critico con projection
-  // eslint-disable-next-line react-hooks/purity -- Date.now() es intencional para ventana de 30 días
+   
   const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const productSales30 = new Map<number | string, number>();
   orders

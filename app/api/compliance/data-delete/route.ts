@@ -146,11 +146,11 @@ async function deleteHandler(
         });
 
         // 2. Delete saved locations
-        /* eslint-disable no-restricted-syntax -- SavedLocation no tiene tenantId (TD-040 phase pending). Customer.phone es @unique global, scope efectivo por phone. TODO: agregar tenantId a SavedLocation y refactor. */
+         
         const dLocations = await tx.savedLocation.deleteMany({
           where: { customerPhone: customer.phone },
         });
-        /* eslint-enable no-restricted-syntax */
+         
 
         // 3. Delete customer notifications
         const dNotifs = await tx.customerNotification.deleteMany({

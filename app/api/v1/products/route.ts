@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
       String(product.id),
       "admin",
       requestId
-      // eslint-disable-next-line no-restricted-syntax -- audit log fire-and-forget; failure ya está logueado dentro del helper
+       
     ).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });

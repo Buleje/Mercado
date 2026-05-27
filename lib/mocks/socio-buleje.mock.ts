@@ -10,7 +10,7 @@
 // evalúa módulos en collect-page-data y rompía el build estático.
 // ADR futuro: migrar a prisma.membership + stripe customer.
 if (process.env.NODE_ENV === "production") {
-  // eslint-disable-next-line no-console
+   
   console.warn("[mock] socio-buleje.mock.ts cargado en prod — pendiente Stripe + prisma.membership.");
 }
 

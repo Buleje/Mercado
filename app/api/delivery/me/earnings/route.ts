@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     // TODO(deuda-tecnica-2026-05-08): migrar a lib/db/delivery.db.ts (regla #1
     // CLAUDE.md). Este file ya tenia prisma directo antes del cambio de cache;
     // el lint lo detecto al re-evaluar al modificar.
-    // eslint-disable-next-line no-restricted-properties
+     
     const assignments = await prisma.deliveryAssignment.findMany({
       where: {
         partnerId: session.partnerId,

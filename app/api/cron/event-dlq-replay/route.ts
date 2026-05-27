@@ -39,7 +39,7 @@ const BATCH_SIZE = 30;
 async function handler() {
   const retryThreshold = new Date(Date.now() - RETRY_AFTER_MS);
 
-  // eslint-disable-next-line no-restricted-properties -- cron cross-tenant system level (DLQ es platform-wide)
+   
   const pending = await prisma.eventDeadLetter.findMany({
     where: {
       resolvedAt: null,
@@ -69,7 +69,7 @@ async function handler() {
       // termina sin lanzar excepción y nosotros marcamos resolvedAt.
       const { emitDomainEvent } = await import("@/lib/domain-events/domain-events");
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- replay genérico, recibimos eventType+payload del DLQ sin type-narrowing
+       
       await emitDomainEvent({
         type: entry.eventType,
         tenantId: entry.tenantId,
@@ -80,7 +80,7 @@ async function handler() {
         },
       } as any);
 
-      // eslint-disable-next-line no-restricted-properties -- cron cross-tenant system level
+       
       await prisma.eventDeadLetter.update({
         where: { id: entry.id },
         data: {
@@ -92,7 +92,7 @@ async function handler() {
     } catch (err) {
       stillFailing++;
       const errMsg = err instanceof Error ? err.message : String(err);
-      // eslint-disable-next-line no-restricted-properties -- cron cross-tenant system level
+       
       await prisma.eventDeadLetter
         .update({
           where: { id: entry.id },

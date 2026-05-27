@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
     // como hardening info-level: el endpoint /admin/health solo es
     // útil para diagnóstico, no expone PII ni nombres de tenants.
     // Si en el futuro queremos restringir más, mover a /api/superadmin/health.
-    // eslint-disable-next-line no-restricted-properties -- platform-wide health probe; tenantId scoping no aplica.
+     
     const recentOrderCount = await prisma.order
       .count({ where: { createdAt: { gte: new Date(Date.now() - 3_600_000) } } })
       .catch(() => -1);

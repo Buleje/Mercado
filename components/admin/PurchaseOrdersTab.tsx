@@ -204,7 +204,7 @@ export default function PurchaseOrdersTab() {
 
   // Upcoming recurring orders — Date.now() intencional.
   const upcomingRecurring = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- snapshot del tiempo al renderizar es intencional
+     
     const now = Date.now();
     return recurringOrders
       .map(r => {
@@ -216,7 +216,7 @@ export default function PurchaseOrdersTab() {
 
   // Fecha del próximo pedido recurrente para el modal
   const nextRecurringDateLabel = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- snapshot del tiempo al abrir el modal es intencional
+     
     const baseMs = Date.now();
     return new Date(baseMs + recurringInterval * 86400000).toLocaleDateString("es-PE", {
       day: "2-digit",
@@ -249,7 +249,7 @@ export default function PurchaseOrdersTab() {
     setLoading(false);
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+   
   useEffect(() => { void load(); }, [load]);
 
   const addItemFromProduct = (p: DbProduct) => {

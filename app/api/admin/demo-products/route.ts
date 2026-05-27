@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
   try {
     // SECURITY: count scoped al tenant. Sin esto, un tenant nuevo veía
     // currentCount=30 (de otro tenant) y nunca se sembraban sus demos.
-    // eslint-disable-next-line no-restricted-properties -- count scoped por tenantId. Refactor a ProductsDB pendiente.
+     
     const currentCount = await prisma.product.count({ where: { tenantId: auth.tenantId } });
     if (currentCount >= 10) {
       return NextResponse.json({
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     let created = 0;
     for (const p of PRODUCTOS_BODEGA) {
-      // eslint-disable-next-line no-restricted-properties -- create scoped por tenantId del auth. Refactor a ProductsDB.create pendiente.
+       
       await prisma.product.create({
         data: {
           tenantId: auth.tenantId,
@@ -132,7 +132,7 @@ export async function DELETE(req: NextRequest) {
     // Fix: filtrar primero por (id IN DEMO_IDS AND tenantId = auth.tenantId)
     // y usar el set resultante en los borrados de children. Tablas con
     // tenantId propio reciben filtro doble.
-    // eslint-disable-next-line no-restricted-properties -- ownership lookup scoped por tenantId. Refactor a ProductsDB pendiente.
+     
     const ownedProducts = await prisma.product.findMany({
       where: { id: { in: DEMO_IDS }, tenantId: auth.tenantId },
       select: { id: true },
@@ -142,7 +142,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ ok: true, deleted: 0 });
     }
 
-    /* eslint-disable no-restricted-properties, no-restricted-syntax -- $transaction cascada de borrado para FK-dependientes (ADR-101 modelos indirectos). productIds pre-filtrados al tenantId arriba; los modelos sin tenantId propio se borran solo para los IDs del tenant del autorizador. */
+    /* eslint-disable no-restricted-syntax -- $transaction cascada de borrado para FK-dependientes (ADR-101 modelos indirectos). productIds pre-filtrados al tenantId arriba; los modelos sin tenantId propio se borran solo para los IDs del tenant del autorizador. */
     await prisma.$transaction([
       // BundleItem / SaleItem / PurchaseItem / OrderItem: no tienen tenantId
       // directo (ADR-101), pero los productIds vienen pre-filtrados al tenant.
@@ -156,7 +156,7 @@ export async function DELETE(req: NextRequest) {
     const { count } = await prisma.product.deleteMany({
       where: { id: { in: ownedIds }, tenantId: auth.tenantId },
     });
-    /* eslint-enable no-restricted-properties, no-restricted-syntax */
+    /* eslint-enable no-restricted-syntax */
     return NextResponse.json({ ok: true, deleted: count });
   } catch (e) {
     logger.error("[demo-products] DELETE error", { error: (e as Error).message, tenantId: auth.tenantId });

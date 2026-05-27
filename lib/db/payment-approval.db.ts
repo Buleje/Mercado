@@ -104,7 +104,7 @@ let bootstrapDone = false;
 async function bootstrap(): Promise<void> {
   if (bootstrapDone) return;
   try {
-    // eslint-disable-next-line no-restricted-properties -- bootstrap pre-migration (global, no tenant)
+     
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "PaymentApproval" (
         "id"              TEXT PRIMARY KEY,
@@ -191,7 +191,7 @@ export const PaymentApprovalDb = {
     // Math.random (~41 bits entropy → predecible). randomUUID = 122 bits.
     const { randomUUID } = await import("crypto");
     const id = `pap_${randomUUID()}`;
-    // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+     
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PaymentApproval" (
         id, "tenantId", "conversationId", "customerPhone", "expectedAmount", "imageUrl"
@@ -216,7 +216,7 @@ export const PaymentApprovalDb = {
 
   async getById(id: string): Promise<PaymentApproval | null> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+     
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT * FROM "PaymentApproval" WHERE id = $1 LIMIT 1`,
       id,
@@ -239,7 +239,7 @@ export const PaymentApprovalDb = {
     // CRITICAL FIX 2026-05-11 (P0-2): scope al tenantId. Antes el customer
     // con phone X en tenant A veía la approval pending del MISMO phone en
     // tenant B → confusión + posible aprobación cross-tenant.
-    // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+     
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT * FROM "PaymentApproval"
         WHERE "customerPhone" = $1
@@ -306,7 +306,7 @@ export const PaymentApprovalDb = {
     // auto-aprobar. Antes el atacante podía reusar 1 captura real para
     // 5 órdenes — ahora la 2da+ entra en revisión manual.
     if (result.yapeOpCode && nextStatus === "pending") {
-      // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+       
       const dupes = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
         `SELECT id FROM "PaymentApproval"
           WHERE "yapeOpCode" = $1 AND status = 'approved' AND id <> $2
@@ -324,7 +324,7 @@ export const PaymentApprovalDb = {
       }
     }
 
-    // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+     
     await prisma.$executeRawUnsafe(
       `UPDATE "PaymentApproval"
         SET "detectedAmount"  = $2,
@@ -367,7 +367,7 @@ export const PaymentApprovalDb = {
    */
   async approve(id: string, reviewerUsername: string): Promise<boolean> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+     
     const affected = await prisma.$executeRawUnsafe(
       `UPDATE "PaymentApproval"
         SET status      = 'approved',
@@ -401,7 +401,7 @@ export const PaymentApprovalDb = {
     reason: string,
   ): Promise<boolean> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+     
     const affected = await prisma.$executeRawUnsafe(
       `UPDATE "PaymentApproval"
         SET status            = 'rejected',
@@ -458,7 +458,7 @@ export const PaymentApprovalDb = {
               AND "createdAt" >= $1
             ORDER BY "createdAt" DESC
             LIMIT $2`;
-      // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+       
       const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
         sql,
         ...(filterTenant
@@ -478,7 +478,7 @@ export const PaymentApprovalDb = {
           WHERE status IN ('pending', 'review_required')
           ORDER BY "createdAt" DESC
           LIMIT $1`;
-    // eslint-disable-next-line no-restricted-properties -- pre-migration self-bootstrap
+     
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       sql,
       ...(filterTenant ? [opts.tenantId as string, limit] : [limit]),

@@ -26,7 +26,7 @@
  *   - Resumable: usa `--after-id` si se cortó a mitad
  */
 
-/* eslint-disable no-console */
+ 
 import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 import {

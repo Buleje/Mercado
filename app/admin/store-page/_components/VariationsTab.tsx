@@ -151,7 +151,7 @@ export default function VariationsTab() {
 
   useEffect(() => {
     void loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [refreshKey]);
 
   async function loadProducts() {
@@ -491,7 +491,7 @@ function ProductModifierEditor({
                     body: JSON.stringify({ ids }),
                   },
                 ).catch((err) => {
-                  // eslint-disable-next-line no-console
+                   
                   console.warn("[reorder-groups] silent fail", err);
                 });
               }}
@@ -512,7 +512,7 @@ function ProductModifierEditor({
                         body: JSON.stringify({ ids: optionIds }),
                       },
                     ).catch((err) => {
-                      // eslint-disable-next-line no-console
+                       
                       console.warn("[reorder-options] silent fail", err);
                     });
                   }}

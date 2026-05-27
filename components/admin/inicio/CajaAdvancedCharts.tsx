@@ -89,7 +89,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 1. CASH RUNWAY — días de operación ───────────────────────────────────
   const runway = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const ingresos30d =
       orders
@@ -124,7 +124,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 2. PARETO DE MÉTODOS DE PAGO ─────────────────────────────────────────
   const pareto = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<string, number>();
     orders
@@ -157,7 +157,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 3. EVOLUCIÓN MÉTODOS DE PAGO — stacked 14d ──────────────────────────
   const metodosStacked = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, Map<string, number>>();
     const add = (iso: string, method: string, amount: number) => {
@@ -197,7 +197,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 4. COMPARATIVA SEMANAL INGRESOS + EGRESOS ───────────────────────────
   const compSemana = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map(() => ({
@@ -253,7 +253,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 5. EVOLUCIÓN DEL MARGEN NETO 14d ─────────────────────────────────────
   const margenTrend = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, { ingresos: number; costo: number; egresos: number }>();
     const ensure = (k: string) => {
@@ -307,7 +307,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 6. BALANCE ACUMULADO (running total) últimos 30d ─────────────────────
   const runningBalance = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, number>();
     const add = (iso: string, delta: number) => {

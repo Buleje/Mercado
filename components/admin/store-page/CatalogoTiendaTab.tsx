@@ -207,7 +207,7 @@ export default function CatalogoTiendaTab() {
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       setError("No se pudo cargar el catálogo. Verifica tu conexión e intenta de nuevo.");
-      // eslint-disable-next-line no-console
+       
       console.error("[CatalogoTiendaTab] load error", err);
     } finally {
       setLoading(false);
@@ -315,7 +315,7 @@ export default function CatalogoTiendaTab() {
           ),
         );
         setToast("Error al guardar. Intenta de nuevo.");
-        // eslint-disable-next-line no-console
+         
         console.error("[CatalogoTiendaTab] toggleOne error", err);
       } finally {
         setSavingIds((prev) => {
@@ -356,7 +356,7 @@ export default function CatalogoTiendaTab() {
       } catch (err) {
         await loadCatalog();
         setToast("Error en la operación. Revirtiendo.");
-        // eslint-disable-next-line no-console
+         
         console.error("[CatalogoTiendaTab] applyBulk error", err);
       } finally {
         setBulkSaving(false);

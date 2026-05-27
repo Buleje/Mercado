@@ -22,7 +22,7 @@ export async function GET(
       session: Record<string, unknown>;
       [key: string]: unknown;
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { tenantId: _tid, ...safeSession } = session;
     const safeResult = { ...restResult, session: safeSession };
 

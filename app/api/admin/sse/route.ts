@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     writer.close().catch((err) => {
       // Stream ya cerrado por el cliente — esperado en abort/disconnect.
       if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console -- dev-only diagnostic
+         
         console.debug("[admin/sse] writer close (stream already terminated)", String(err));
       }
     });

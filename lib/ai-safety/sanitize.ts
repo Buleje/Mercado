@@ -39,7 +39,7 @@ export function processSafeInput(raw: string): string {
   const truncated = raw.slice(0, MAX_INPUT_LENGTH);
 
   // 2. Strip control chars salvo \n y \t
-  // eslint-disable-next-line no-control-regex
+   
   const stripped = truncated.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
 
   // 3. Escapar comillas dobles

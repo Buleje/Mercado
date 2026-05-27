@@ -168,7 +168,7 @@ async function writeTransaction(
     });
     if (signedAmount < 0) {
       // Debit con guard atómico: solo descuenta si hay saldo suficiente.
-      // eslint-disable-next-line no-restricted-properties -- guard atómico TOCTOU
+       
       const updated = await tx.$executeRawUnsafe(
         `UPDATE "Customer"
             SET "loyaltyPoints" = "loyaltyPoints" + $1

@@ -72,7 +72,7 @@ class SunatEventBus extends EventEmitter {
 const GLOBAL_KEY = "__sunat_event_bus__";
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __sunat_event_bus__: SunatEventBus | undefined;
 }
 

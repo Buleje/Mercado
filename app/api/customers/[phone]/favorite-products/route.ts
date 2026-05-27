@@ -37,7 +37,7 @@ export async function GET(
     const normalized = customer.phone;
 
     // Aggregate from SaleItems (POS sales) — filtrado por tenantId
-    // eslint-disable-next-line no-restricted-properties -- nested where filter por sale.tenantId; migration pendiente.
+     
     const saleItems = await prisma.saleItem.findMany({
       where: {
         sale: { customerPhone: normalized, tenantId },
@@ -52,7 +52,7 @@ export async function GET(
     });
 
     // Aggregate from OrderItems (online orders) — filtrado por tenantId, excluir cancelados
-    // eslint-disable-next-line no-restricted-properties -- nested where filter por order.tenantId; migration pendiente.
+     
     const orderItems = await prisma.orderItem.findMany({
       where: {
         order: {

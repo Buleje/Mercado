@@ -72,7 +72,7 @@ export default function AddressAutocomplete({
   useEffect(() => {
     if (!fetchSuggestions) return;
     if (debouncedValue.length < 3) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setAsync([]);
       return;
     }

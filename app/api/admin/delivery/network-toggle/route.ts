@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     // Brandon mayo 2026 v7: raw SQL para evitar dependencia del cache de
     // Prisma Client cuando el campo es nuevo (caso post-migración con dev
     // server corriendo desde antes). Más robusto que findUnique.
-    // eslint-disable-next-line no-restricted-properties
+     
     const rows = await prisma.$queryRaw<Array<{ useThirdPartyDelivery: boolean }>>`
       SELECT "useThirdPartyDelivery" FROM "Tenant" WHERE id = ${auth.tenantId} LIMIT 1
     `;
@@ -74,7 +74,7 @@ export async function PATCH(req: NextRequest) {
 
   try {
     // raw SQL — mismo motivo que el GET (Prisma Client cache en dev).
-    // eslint-disable-next-line no-restricted-properties
+     
     const rows = await prisma.$queryRaw<Array<{ useThirdPartyDelivery: boolean }>>`
       UPDATE "Tenant"
       SET "useThirdPartyDelivery" = ${parsed.data.enabled}, "updatedAt" = NOW()

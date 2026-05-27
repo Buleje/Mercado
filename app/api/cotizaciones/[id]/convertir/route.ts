@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     // de status. Antes 2 POST paralelos pasaban el check ACEPTADA y creaban
     // 2 órdenes desde la misma cotización. Ahora updateMany con
     // `status:"ACEPTADA"` solo gana 1 transición; el otro recibe count=0.
-    // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped por auth.tenantId guard arriba.
+     
     const result = await prisma.$transaction(async (tx) => {
       const claimed = await tx.cotizacion.updateMany({
         where: { id, tenantId: auth.tenantId, status: "ACEPTADA" },

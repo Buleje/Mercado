@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     let stockUpdated = 0;
     let allComplete = true;
 
-    // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped via tenantId en WHERE.
+     
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
         if (item.receivedQty <= 0) {

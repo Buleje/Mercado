@@ -60,7 +60,7 @@ export async function GET(
     }
     // Compute health score based on last order
     let healthScore: HealthScore = "SIN_HISTORIAL";
-    // eslint-disable-next-line no-restricted-properties
+     
     const lastOrder = await prisma.order.findFirst({
       where: { customerPhone: normalized, tenantId: auth.tenantId },
       orderBy: { createdAt: "desc" },
@@ -76,7 +76,7 @@ export async function GET(
     // Fetch all fields directly from prisma (CustomersDB may not expose them).
     // Usamos customer.phone (valor real almacenado, ya resuelto por getByPhone
     // tolerante) en vez de `normalized` — así matchea filas legacy con prefijo.
-    // eslint-disable-next-line no-restricted-properties
+     
     const fullCustomer = await prisma.customer.findFirst({
       where: { phone: customer.phone, tenantId: auth.tenantId },
     });
@@ -192,7 +192,7 @@ async function patchCustomer(
     if (parsed.data.observaciones !== undefined) prismaUpdate.observaciones = parsed.data.observaciones;
 
     if (Object.keys(prismaUpdate).length > 0) {
-      // eslint-disable-next-line no-restricted-properties
+       
       await prisma.customer.updateMany({
         where: { phone: normalized, tenantId: auth.tenantId },
         data: prismaUpdate,
@@ -211,7 +211,7 @@ async function patchCustomer(
       .filter((k) => (parsed.data as Record<string, unknown>)[k] !== undefined)
       .map((k) => (PII_FIELDS.has(k) ? `${k}=[REDACTED]` : `${k}=${String((parsed.data as Record<string, unknown>)[k])}`))
       .join(", ");
-    // eslint-disable-next-line no-restricted-properties
+     
     prisma.activityLog.create({
       data: { action: "update", entity: "customer", entityId: normalized, detail: `Campos actualizados: ${safeDetail}`, user: auth.username, tenantId: auth.tenantId },
     }).catch((err) => logger.error("[customers PATCH] activityLog failed", { error: String(err) }));
@@ -246,7 +246,7 @@ async function deleteCustomer(
   }
   try {
     await CustomersDB.delete(auth.tenantId, normalized);
-    // eslint-disable-next-line no-restricted-properties
+     
     prisma.activityLog.create({
       data: { action: "delete", entity: "customer", entityId: normalized, detail: `Cliente eliminado: ${normalized}`, user: auth.username, tenantId: auth.tenantId },
     }).catch((err) => logger.error("[customers DELETE] activityLog failed", { error: String(err) }));

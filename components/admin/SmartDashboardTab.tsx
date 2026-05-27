@@ -292,7 +292,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
         }
       }
     } catch { /* use default */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);

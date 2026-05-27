@@ -1,6 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 
 import { useState, useEffect } from "react";
 import { Send, CheckCheck, Clock, Trash2, Bell } from "@buleje/design-system/icons";

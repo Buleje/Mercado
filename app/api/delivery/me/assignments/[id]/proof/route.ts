@@ -39,7 +39,7 @@ export async function POST(
   const { id: assignmentId } = await params;
 
   // Verificar ownership. TODO: extraer a DeliveryAssignmentsDB en lib/db/delivery.db.ts.
-  // eslint-disable-next-line no-restricted-properties
+   
   const assignment = await prisma.deliveryAssignment.findUnique({
     where: { id: assignmentId },
     select: { partnerId: true, tenantId: true, status: true, notes: true },
@@ -140,7 +140,7 @@ export async function POST(
   nextNotesObj.proofTakenAt = new Date().toISOString();
 
   // Ownership validado arriba. TODO: extraer a DeliveryAssignmentsDB.
-  // eslint-disable-next-line no-restricted-properties
+   
   await prisma.deliveryAssignment.update({
     where: { id: assignmentId },
     data: { notes: JSON.stringify(nextNotesObj) },

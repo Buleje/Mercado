@@ -1,5 +1,5 @@
 import "server-only";
-/* eslint-disable no-restricted-syntax */
+ 
 import { prisma } from "@/lib/prisma";
 
 /**

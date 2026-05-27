@@ -1,6 +1,6 @@
 "use client";
 import { CardTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {

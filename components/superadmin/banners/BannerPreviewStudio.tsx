@@ -2177,7 +2177,7 @@ function ProductCatalogModal({
         }
       })
       .catch((err) => {
-        // eslint-disable-next-line no-console
+         
         console.warn("[CatalogModal] stores", err);
       })
       .finally(() => setLoadingStores(false));
@@ -2201,7 +2201,7 @@ function ProductCatalogModal({
         setProducts(list);
       })
       .catch((err) => {
-        // eslint-disable-next-line no-console
+         
         console.warn("[CatalogModal] products", err);
       })
       .finally(() => setLoadingProducts(false));

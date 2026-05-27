@@ -152,7 +152,7 @@ export const MarketplaceOrdersDB = {
           select: { phone: true },
         });
         if (!existingCustomer) {
-          // eslint-disable-next-line no-restricted-properties -- aggregate: create scoped a tenantId; refactor a CustomersDB pendiente.
+           
           await prisma.customer.create({
             data: {
               phone:    params.customerPhone,
@@ -175,7 +175,7 @@ export const MarketplaceOrdersDB = {
     let couponDiscount = 0;
     let resolvedCouponId: string | null = null;
     if (params.couponCode) {
-      // eslint-disable-next-line no-restricted-properties -- aggregate: findFirst scoped a tenantId+active; migracion a CouponsDB pendiente.
+       
       const coupon = await prisma.coupon.findFirst({
         where: {
           code:     params.couponCode,
@@ -221,7 +221,7 @@ export const MarketplaceOrdersDB = {
     let loyaltyDiscount = 0;
     const redeemPoints = params.loyaltyRedeemPoints ?? 0;
     if (redeemPoints > 0 && params.customerPhone) {
-      // eslint-disable-next-line no-restricted-properties -- aggregate: findFirst scoped a phone+tenantId; migracion a CustomersDB pendiente.
+       
       const cust = await prisma.customer.findFirst({
         where: { phone: params.customerPhone, tenantId: store.tenantId },
         select: { loyaltyPoints: true },
@@ -296,7 +296,7 @@ export const MarketplaceOrdersDB = {
 
     const productIdsForStock = itemsNeedingStock.map((x) => x.productId);
 
-    // eslint-disable-next-line no-restricted-properties -- aggregate: batch pre-fetch de stocks antes de tx para eliminar N+1 en checkout.
+     
     const stockSnapshot = productIdsForStock.length > 0
       ? await prisma.product.findMany({
           where: { id: { in: productIdsForStock }, tenantId: store.tenantId, deletedAt: null },
@@ -315,7 +315,7 @@ export const MarketplaceOrdersDB = {
     }
 
     // 4. Transacción atómica: stock + order + commission + cupón + loyalty (F4, F1)
-    // eslint-disable-next-line no-restricted-properties -- $transaction legítima: operaciones atómicas multi-tabla en marketplace checkout.
+     
     await prisma.$transaction(async (tx) => {
       // F4: decrementar stock con decrements paralelos (stocks pre-validados arriba).
       // El guard atomico `stock: { gte: quantity }` en updateMany cierra la race window
@@ -328,7 +328,7 @@ export const MarketplaceOrdersDB = {
             return snap && snap.stock !== null;
           })
           .map(async ({ item, productId }) => {
-            // eslint-disable-next-line no-restricted-properties -- $transaction interna: decrement con guard atomico para cerrar race window.
+             
             const upd = await tx.product.updateMany({
               where: {
                 id:        productId,
@@ -351,7 +351,7 @@ export const MarketplaceOrdersDB = {
       // protección PENTEST-003 estaba muerta. Ahora: check + write atómicos.
       if (resolvedCouponId && params.customerPhone && params.couponCode) {
         const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-        // eslint-disable-next-line no-restricted-properties -- $transaction interna: count scoped a tenantId+phone+coupon.
+         
         const prevUses = await tx.order.count({
           where: {
             tenantId:          store.tenantId,
@@ -368,7 +368,7 @@ export const MarketplaceOrdersDB = {
       }
 
       // Crear Order
-      // eslint-disable-next-line no-restricted-properties -- $transaction interna: order.create scoped a tenantId del vendedor.
+       
       await tx.order.create({
         data: {
           id:               fullOrderId,
@@ -402,7 +402,7 @@ export const MarketplaceOrdersDB = {
       // settle cron. Ver lib/db/commissions.db.ts → CommissionType.
       // P0-1 fix: `rate` ahora refleja el tier dinámico calculado arriba (no el
       // legacy `store.commission` que era fijo en 5%).
-      // eslint-disable-next-line no-restricted-properties -- $transaction interna: commissionLedger.create scoped a tenantId.
+       
       await tx.commissionLedger.create({
         data: {
           id:       crypto.randomUUID(),
@@ -420,7 +420,7 @@ export const MarketplaceOrdersDB = {
       // El check pre-tx validó el cupo; aquí hacemos el increment dentro de la
       // tx y re-verificamos para cerrar la race window entre check y write.
       if (resolvedCouponId) {
-        // eslint-disable-next-line no-restricted-properties -- $transaction interna: coupon.update+findUnique atómico para usedCount; refactor a CouponsDB pendiente.
+         
         await tx.coupon.update({
           where: { id: resolvedCouponId },
           data:  { usedCount: { increment: 1 } },
@@ -442,7 +442,7 @@ export const MarketplaceOrdersDB = {
 
       // F1: decrementar loyalty points del customer
       if (redeemPoints > 0 && params.customerPhone) {
-        // eslint-disable-next-line no-restricted-properties -- $transaction interna: customer.updateMany scoped a phone+tenantId.
+         
         await tx.customer.updateMany({
           where: { phone: params.customerPhone, tenantId: store.tenantId },
           data:  { loyaltyPoints: { decrement: redeemPoints } },
@@ -485,7 +485,7 @@ export const MarketplaceOrdersDB = {
     reason: string,
   ): Promise<void> {
     // Load order + items scoped to tenantId — cross-tenant guard.
-    // eslint-disable-next-line no-restricted-properties -- aggregate: findUnique scoped a tenantId+id antes de la tx.
+     
     const order = await prisma.order.findUnique({
       where:  { id: orderId, tenantId },
       select: {
@@ -498,10 +498,10 @@ export const MarketplaceOrdersDB = {
     if (!order || order.status === "cancelado") return;
 
     try {
-      // eslint-disable-next-line no-restricted-properties -- $transaction legítima: atomicidad order.update + stock restore para cerrar PENTEST-001 stock drift.
+       
       await prisma.$transaction(async (tx) => {
         // 1. Marcar orden cancelada con audit tag en notes.
-        // eslint-disable-next-line no-restricted-properties -- $transaction interna: order.update scoped a id+tenantId.
+         
         await tx.order.update({
           where: { id: orderId, tenantId },
           data: {
@@ -516,7 +516,7 @@ export const MarketplaceOrdersDB = {
         // sin FK) no tienen fila en Product → skip.
         for (const item of order.items) {
           if (!item.productId) continue;
-          // eslint-disable-next-line no-restricted-properties -- $transaction interna: product.updateMany scoped a id+tenantId para restore atomico.
+           
           await tx.product.updateMany({
             where: { id: item.productId, tenantId, deletedAt: null },
             data:  { stock: { increment: item.quantity } },
@@ -566,7 +566,7 @@ export const MarketplaceOrdersDB = {
       yapeOpCode: string | null;
     },
   ): Promise<{ approvalId: string }> {
-    // eslint-disable-next-line no-restricted-properties -- $transaction legítima: atomicidad paymentApproval.create + order.update para cerrar CR-2.2.
+     
     await prisma.$transaction([
       prisma.paymentApproval.create({
         data: {

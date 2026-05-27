@@ -20,7 +20,7 @@ export const AdminUsersDB = {
    * mientras la sesion sigue activa).
    */
   async resolveIdByUsername(tenantId: string, username: string): Promise<string | null> {
-    // eslint-disable-next-line no-restricted-properties -- helper centralizado escoped por tenantId+username; punto canonico de lookup desde session payload.
+     
     const row = await prisma.adminUser.findFirst({
       where: { tenantId, username },
       select: { id: true },
@@ -34,7 +34,7 @@ export const AdminUsersDB = {
    * existente del propio tenant (no de otro).
    */
   async verifyActiveInTenant(tenantId: string, adminUserId: string): Promise<boolean> {
-    // eslint-disable-next-line no-restricted-properties -- helper centralizado scoped por tenantId+id+active.
+     
     const row = await prisma.adminUser.findFirst({
       where: { tenantId, id: adminUserId, active: true },
       select: { id: true },
@@ -50,7 +50,7 @@ export const AdminUsersDB = {
     tenantId: string,
     username: string,
   ): Promise<{ passwordHash: string } | null> {
-    // eslint-disable-next-line no-restricted-properties -- helper centralizado scoped por tenantId+username+active.
+     
     const row = await prisma.adminUser.findFirst({
       where: { tenantId, username, active: true },
       select: { passwordHash: true },
@@ -66,7 +66,7 @@ export const AdminUsersDB = {
     tenantId: string,
     username: string,
   ): Promise<{ id: string; name: string | null; role: string; active: boolean } | null> {
-    // eslint-disable-next-line no-restricted-properties -- helper centralizado scoped por tenantId+username.
+     
     const row = await prisma.adminUser.findFirst({
       where: { tenantId, username },
       select: { id: true, name: true, role: true, active: true },

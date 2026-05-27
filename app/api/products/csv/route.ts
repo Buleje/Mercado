@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
 
       const existingId = row.id ? parseInt(row.id) : null;
       if (existingId && !isNaN(existingId)) {
-        // eslint-disable-next-line no-restricted-properties -- legacy CSV import; updateMany con tenantId previene IDOR cross-tenant.
+         
         const result = await prisma.product.updateMany({ where: { id: existingId, tenantId: auth.tenantId }, data });
         if (result.count === 0) {
           errors++;
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
         }
         updated++;
       } else {
-        // eslint-disable-next-line no-restricted-properties -- legacy CSV import; ProductsDB.create no expone bulk upsert.
+         
         await prisma.product.create({ data });
         created++;
       }

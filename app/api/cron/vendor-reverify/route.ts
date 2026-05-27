@@ -75,7 +75,7 @@ const SUMMARY_CACHE_KEY = "vendor-health:summary";
 const SUMMARY_TTL_SEC = 25 * 60 * 60;
 
 // Prisma sin scope de tenant — cron tiene acceso plataforma.
-// eslint-disable-next-line no-restricted-properties
+ 
 const prismaUnscoped = prisma;
 
 // ── Handler ──────────────────────────────────────────────────────────────────

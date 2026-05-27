@@ -38,7 +38,7 @@ export const OrderPaymentLinkDb = {
    */
   async findByApprovalId(approvalId: string): Promise<LinkedOrder[]> {
     try {
-      // eslint-disable-next-line no-restricted-properties -- cross-tenant lookup by paymentApprovalId; PaymentApproval es entidad platform-level (sin tenantId).
+       
       const orders = await prisma.order.findMany({
         where: { paymentApprovalId: approvalId },
         orderBy: { createdAt: "asc" },
@@ -56,7 +56,7 @@ export const OrderPaymentLinkDb = {
 
       // Lookup nombres de tenant en una sola query
       const tenantIds = Array.from(new Set(orders.map((o) => o.tenantId)));
-      // eslint-disable-next-line no-restricted-properties -- platform-level lookup limitado a los tenantIds del approval; sin riesgo cross-tenant porque el approvalId es el filtro principal.
+       
       const tenants = await prisma.tenant.findMany({
         where: { id: { in: tenantIds } },
         select: { id: true, name: true },

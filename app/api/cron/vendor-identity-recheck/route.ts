@@ -52,7 +52,7 @@ interface VendorSnapshot {
 const SNAPSHOT_TTL_SEC = 7 * 24 * 60 * 60; // 7 días (>>> cron diario)
 const MAX_VENDORS_PER_RUN = 200; // safety cap — apisperu tier free 100/día
 
-// eslint-disable-next-line no-restricted-properties -- cron platform-level, scope all tenants
+ 
 const prismaUnscoped = prisma;
 
 export const GET = withCronHealth(

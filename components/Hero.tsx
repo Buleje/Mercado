@@ -54,7 +54,7 @@ export default function Hero() {
     const remaining = cH * 60 + cM - nowMin;
     if (remaining <= 30) setStoreStatus({ open: true, label: `Cierra en ${remaining}min` });
     else setStoreStatus({ open: true, label: "Abierto ahora" });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [deliveryConfig.hours]);
 
   const displayCategories = useMemo(

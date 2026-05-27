@@ -109,7 +109,7 @@ function CategoryCard({
   zoneName: string;
   zoneSlug: string;
 }) {
-  // eslint-disable-next-line react-hooks/purity -- getCatalogCategoryIcon retorna un componente lucide ya creado (lookup no factory)
+   
   const CatIcon = getCatalogCategoryIcon(category.id);
   return (
     <Link

@@ -116,7 +116,7 @@ export default function CheckoutConfirmarPage() {
 
   const storeIds = Object.keys(byStore);
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- legacy useCallback, ok hasta refactor a React Compiler-only
+   
   const handleConfirm = useCallback(async () => {
     if (storeIds.length === 0) return;
     setSubmitting(true);
@@ -196,13 +196,13 @@ export default function CheckoutConfirmarPage() {
             // muestre completos sin tener que expandir objetos.
             const bodyStr = JSON.stringify(requestBody);
             const respStr = JSON.stringify(data);
-            // eslint-disable-next-line no-console
+             
             console.error(
               `[orders ${r.status}] storeSlug="${g.storeSlug}"\n  sentBody = ${bodyStr}\n  serverResponse = ${respStr}`,
             );
-            // eslint-disable-next-line no-console
+             
             console.error("[orders] sentBody object:", requestBody);
-            // eslint-disable-next-line no-console
+             
             console.error("[orders] server response object:", data);
             const detail: string =
               typeof data?.message === "string"

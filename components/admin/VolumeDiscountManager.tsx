@@ -2,7 +2,7 @@
 
 import { SectionTitle } from "@buleje/design-system";
 
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
+ 
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Edit3, Save, X, Tag } from "@buleje/design-system/icons";

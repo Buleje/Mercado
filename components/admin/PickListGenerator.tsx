@@ -1,6 +1,6 @@
 "use client";
 import { LoadingState, SectionTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 
 import { useState, useEffect } from "react";
 import {

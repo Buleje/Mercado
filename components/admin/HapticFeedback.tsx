@@ -1,6 +1,6 @@
 "use client";
 import { SectionTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import { Vibrate, VolumeX, Volume2, Check, Settings } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";

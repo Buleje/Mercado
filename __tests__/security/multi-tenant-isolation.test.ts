@@ -204,7 +204,7 @@ afterAll(async () => {
     try {
       await p;
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.warn(`[mti cleanup] ${label} failed:`, String(err).slice(0, 200));
     }
   };

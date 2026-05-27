@@ -68,14 +68,14 @@ export const OverviewDB = {
     ] = await Promise.all([
       // 1. Pedidos entregados en el rango — para revenue, ticket promedio, uniqueCustomers.
       // Brandon mayo 2026 v7: solo `entregado` cuenta como venta real.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.order.findMany({
         where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: "entregado" },
         select: { total: true, customerPhone: true, createdAt: true },
       }),
 
       // 2. Pedidos entregados en la ventana previa equivalente — delta vs anterior.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.order.findMany({
         where: { tenantId, createdAt: { gte: prevFrom, lte: prevTo }, status: "entregado" },
         select: { total: true },
@@ -83,7 +83,7 @@ export const OverviewDB = {
 
       // 3. Activos = pedidos vivos que aún no se cerraron. Incluye preparando
       // (operativo, no contable — un pedido en preparación NO es venta hasta entregar).
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.order.count({
         where: {
           tenantId,
@@ -94,7 +94,7 @@ export const OverviewDB = {
       // 4. Últimos 30 días (no depende del rango) — para heatmap hora×día.
       // take:5000 cap defensivo para tenants muy activos. Migrar a SQL
       // GROUP BY EXTRACT(...) cuando el cap se quede corto (P2 perf).
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.order.findMany({
         where: { tenantId, createdAt: { gte: startOf30dAgo, lte: rangeTo }, status: "entregado" },
         select: { createdAt: true },
@@ -102,13 +102,13 @@ export const OverviewDB = {
       }),
 
       // 5. Stock crítico — productos activos entre 1 y 5 unidades.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.product.count({
         where: { tenantId, stock: { lte: 5, gt: 0 }, active: true },
       }),
 
       // 6. Vencimientos próximos — productos cuyo expiresAt está dentro de 7 días.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.product.count({
         where: {
           tenantId,
@@ -121,7 +121,7 @@ export const OverviewDB = {
       }),
 
       // 7. Fiados vencidos del tenant.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.fiado.count({
         where: { tenantId, status: "VENCIDO" },
       }),
@@ -129,7 +129,7 @@ export const OverviewDB = {
       // 8. Top 5 productos por unidades entregadas en el rango.
       // Filtro `order.tenantId` mantiene el aislamiento — un ataque no puede
       // contar items de otro tenant.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId via order relation; centralizado en lib/db.
+       
       prisma.orderItem.groupBy({
         by: ["productId"],
         where: {
@@ -141,7 +141,7 @@ export const OverviewDB = {
       }),
 
       // 9. Nuevos clientes registrados en el rango.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.customer.count({
         where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo } },
       }),

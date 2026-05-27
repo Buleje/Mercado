@@ -1,6 +1,6 @@
 "use client";
 import { SectionTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 import { useState, useEffect, useMemo } from "react";
 import { AlertTriangle, TrendingUp, Search, Loader2, RefreshCw, ShieldAlert } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";

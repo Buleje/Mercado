@@ -43,7 +43,7 @@ async function handler() {
 
   // @prisma-direct ok — query de admin/superadmin scope, busca por prefix
   // mpmkt_ del stripeId. No hay clase DB dedicada para webhook queue.
-  // eslint-disable-next-line no-restricted-properties -- cron cross-tenant system level
+   
   const pending = await prisma.stripeWebhookQueue.findMany({
     where: {
       stripeId: { startsWith: "mpmkt_" },
@@ -82,7 +82,7 @@ async function handler() {
 
       if (!terminal) {
         // Re-incrementar attempts pero mantener processedAt=null
-        // eslint-disable-next-line no-restricted-properties -- cron cross-tenant system level
+         
         await prisma.stripeWebhookQueue.update({
           where: { id: entry.id },
           data: {
@@ -113,7 +113,7 @@ async function handler() {
     } catch (err) {
       failed++;
       const errMsg = err instanceof Error ? err.message : String(err);
-      // eslint-disable-next-line no-restricted-properties -- cron cross-tenant system level
+       
       await prisma.stripeWebhookQueue
         .update({
           where: { id: entry.id },

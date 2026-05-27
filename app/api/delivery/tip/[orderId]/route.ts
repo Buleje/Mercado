@@ -73,7 +73,7 @@ export async function POST(
     });
   }
 
-  // eslint-disable-next-line no-restricted-properties -- legacy: lookup publico por orderId; verifyRatingToken arriba garantiza ownership.
+   
   const assignment = await prisma.deliveryAssignment.findUnique({
     where: { orderId },
     select: {
@@ -98,7 +98,7 @@ export async function POST(
     );
   }
 
-  // eslint-disable-next-line no-restricted-properties -- update por id ya validado por findUnique anterior con orderId+token.
+   
   await prisma.deliveryAssignment.update({
     where: { id: assignment.id },
     data: {

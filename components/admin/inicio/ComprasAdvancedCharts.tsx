@@ -62,7 +62,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 1. PARETO DE PROVEEDORES ─────────────────────────────────────────────
   const pareto = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<string, number>();
     purchases
@@ -89,7 +89,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 2. SALUD DE CUENTAS (Gauge) ──────────────────────────────────────────
   const salud = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const now = Date.now();
     const active = payables.filter((p) => p.status !== "pagado");
     if (active.length === 0) return { pct: 100, ok: 0, urgente: 0, vencidas: 0, total: 0 };
@@ -134,7 +134,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 4. MIX DE COMPRAS POR PROVEEDOR (stacked 14d) ──────────────────────
   const mixProv = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, Map<string, number>>();
     const add = (iso: string, prov: string, amount: number) => {
@@ -172,7 +172,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 5. WATERFALL DE DEUDA ────────────────────────────────────────────────
   const waterfall = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const deudaActual = payables
       .filter((p) => p.status !== "pagado")
@@ -206,7 +206,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
 
   // ── 6. COMPARATIVA SEMANAL COMPRAS ───────────────────────────────────────
   const comp = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map(() => ({ day: "", current: 0, previous: 0 }));

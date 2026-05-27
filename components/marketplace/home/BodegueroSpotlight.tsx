@@ -87,7 +87,7 @@ export default function BodegueroSpotlight() {
   // Cuando exista /api/marketplace/featured-bodeguero, cambiar el return
   // null arriba por: const [bodeguero, setBodeguero] = useState(null);
   // useEffect(fetch + setBodeguero); if (!bodeguero) return null;
-  /* eslint-disable @typescript-eslint/no-unused-vars */
+   
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export default function BodegueroSpotlight() {
   }, []);
 
   const b = BODEGUEROS[idx];
-  /* eslint-enable @typescript-eslint/no-unused-vars */
+   
 
   return (
     <section

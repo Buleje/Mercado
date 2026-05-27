@@ -93,7 +93,7 @@ export default function POSCustomerSearch({
   // Debounced search
   useEffect(() => {
     if (query.trim().length < 3) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate sync: clearing stale results when query falls below min length is the core responsibility of this debounced search effect
+       
       setResults([]);
       return;
     }
@@ -135,7 +135,7 @@ export default function POSCustomerSearch({
   // Mejora 2: Fetch payment history
   useEffect(() => {
     if (!selectedPhone) {
-      /* eslint-disable react-hooks/set-state-in-effect -- legitimate sync: clearing dependent customer data (fiado, loyalty, reliability) when selected customer changes is the core responsibility of this effect */
+       
       setLastPurchase(undefined);
       setPaymentHistory([]);
       setCustomerNotes("");
@@ -145,7 +145,7 @@ export default function POSCustomerSearch({
       setReliabilityScore(null);
       setFiadoSaldo(0);
       setShowAbonoRapido(false);
-      /* eslint-enable react-hooks/set-state-in-effect */
+       
       return;
     }
     // Mejora M-3: Fetch fiado balance

@@ -41,7 +41,7 @@ export default function ImageZoomViewer({ images, initialIndex = 0, open, onClos
 
   // Reset al cambiar imagen
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [index]);
@@ -49,7 +49,7 @@ export default function ImageZoomViewer({ images, initialIndex = 0, open, onClos
   // Reset al abrir
   useEffect(() => {
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setIndex(initialIndex);
       setZoom(1);
       setPan({ x: 0, y: 0 });

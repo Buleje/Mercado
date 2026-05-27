@@ -46,7 +46,7 @@ async function assertCustomerBelongsToTenant(
   customerPhone: string,
   sessionTenantId: string,
 ): Promise<NextResponse | null> {
-  // eslint-disable-next-line no-restricted-properties -- lookup global por phone (PK), guard cross-tenant explícito.
+   
   const c = await prisma.customer.findUnique({
     where: { phone: customerPhone },
     select: { tenantId: true },

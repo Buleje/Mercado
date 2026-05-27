@@ -49,7 +49,7 @@ export async function GET(
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
     // Get full record with new fields from prisma — findFirst con tenantId para evitar IDOR cross-tenant.
-    // eslint-disable-next-line no-restricted-properties -- legacy: SuppliersDB no expone campos extendidos; findFirst con tenantId+id garantiza aislamiento.
+     
     const full = await prisma.supplier.findFirst({ where: { id, tenantId: auth.tenantId } });
     return NextResponse.json({ ...supplier, ...full });
   } catch (e) {
@@ -105,12 +105,12 @@ export async function PATCH(
       return NextResponse.json({ ok: true });
     }
 
-    // eslint-disable-next-line no-restricted-properties -- legacy: updateMany con tenantId+id previene IDOR cross-tenant.
+     
     const result = await prisma.supplier.updateMany({ where: { id, tenantId: auth.tenantId }, data });
     if (result.count === 0) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
-    // eslint-disable-next-line no-restricted-properties -- legacy: re-fetch tras update para devolver registro actualizado.
+     
     const updated = await prisma.supplier.findFirst({ where: { id, tenantId: auth.tenantId } });
     return NextResponse.json(updated);
   } catch (e) {

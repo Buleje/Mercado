@@ -51,36 +51,36 @@ export const AdminStatsDB = {
     ] = await withDbRetry(() =>
       Promise.all([
         // Pedidos activos en estado pendiente
-        // eslint-disable-next-line no-restricted-properties -- AdminStatsDB canonica, tenantId en where
+         
         prisma.order.count({ where: { tenantId, status: "pendiente" } }),
 
         // Pedidos pendientes esperando > 30 minutos
-        // eslint-disable-next-line no-restricted-properties -- AdminStatsDB canonica, tenantId en where
+         
         prisma.order.count({
           where: { tenantId, status: "pendiente", createdAt: { lt: thirtyMinutesAgo } },
         }),
 
         // Pedidos del dia
-        // eslint-disable-next-line no-restricted-properties -- AdminStatsDB canonica, tenantId en where
+         
         prisma.order.count({ where: { tenantId, createdAt: { gte: startOfToday } } }),
 
         // Ingresos de pedidos ENTREGADOS hoy (no contabilizar revertibles)
-        // eslint-disable-next-line no-restricted-properties -- AdminStatsDB canonica, tenantId en where
+         
         prisma.order.aggregate({
           _sum: { total: true },
           where: { tenantId, createdAt: { gte: startOfToday }, status: "entregado" },
         }),
 
         // Pedidos ultimos 7 dias
-        // eslint-disable-next-line no-restricted-properties -- AdminStatsDB canonica, tenantId en where
+         
         prisma.order.count({ where: { tenantId, createdAt: { gte: startOfWeek } } }),
 
         // Total clientes
-        // eslint-disable-next-line no-restricted-properties -- AdminStatsDB canonica, tenantId en where
+         
         prisma.customer.count({ where: { tenantId } }),
 
         // Cuentas por pagar vencidas (dueDate < ahora, no pagadas)
-        // eslint-disable-next-line no-restricted-properties -- AdminStatsDB canonica, tenantId en where
+         
         prisma.payable.count({
           where: { tenantId, dueDate: { lt: now }, status: { not: "pagado" } },
         }),
@@ -89,7 +89,7 @@ export const AdminStatsDB = {
 
     // Productos bajo stock minimo: Prisma no soporta comparacion columna-columna,
     // se usa raw SQL parametrizado (regla #11 CLAUDE.md: $1/$2, no interpolacion).
-    // eslint-disable-next-line no-restricted-properties -- raw SQL necesario para stock<=stockMin; no hay API ORM equivalente
+     
     const lowStockResult = await withDbRetry(() =>
       prisma.$queryRaw<{ count: bigint }[]>`
         SELECT COUNT(*)::bigint AS count

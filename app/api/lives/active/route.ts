@@ -15,7 +15,7 @@ function stripTenantId<T extends Record<string, unknown>>(
   arr: T[],
 ): Omit<T, "tenantId">[] {
   return arr.map((s) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { tenantId: _tid, ...rest } = s;
     return rest as Omit<T, "tenantId">;
   });

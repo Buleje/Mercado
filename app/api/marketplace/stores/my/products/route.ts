@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
       impressionsCount: number;
       clicksCount: number;
     };
-    // eslint-disable-next-line no-restricted-properties
+     
     const boosts = await prisma.$queryRaw<BoostRow[]>`
       SELECT id, "productId", status,
              "bidAmount"::text, "startDate", "endDate",
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     );
     const competitionMap = new Map<string, { avg: number; count: number }>();
     if (barcodes.length > 0) {
-      // eslint-disable-next-line no-restricted-properties
+       
       const others = await prisma.storeProduct.findMany({
         where: {
           isActive: true,

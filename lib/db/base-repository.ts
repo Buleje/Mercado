@@ -102,7 +102,7 @@ export abstract class BaseRepository<
    * Transform a raw Prisma row into the public TEntity shape.
    * Default: identity cast (suitable when TEntity === TPrismaRow).
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional: override in subclass
+   
   protected mapRow(row: TPrismaRow): TEntity {
     return row as unknown as TEntity;
   }

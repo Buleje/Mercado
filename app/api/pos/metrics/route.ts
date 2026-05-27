@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     const adminUserId = await AdminUsersDB.resolveIdByUsername(tenantId, auth.username);
     const isManagement = auth.role === "admin" || auth.role === "owner" || auth.role === "manager";
 
-    // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing turno lookup; refactor a TurnosDB.getActivoForUser pendiente.
+     
     const turno = await prisma.turno.findFirst({
       where: {
         tenantId,
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     const ahora = new Date();
     const turnoMinutos = Math.floor((ahora.getTime() - turno.abrioEn.getTime()) / 60000);
 
-    // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId+cashierId; refactor a SalesDB.summarizeShift pendiente.
+     
     const sales = await prisma.sale.findMany({
       where: {
         tenantId,

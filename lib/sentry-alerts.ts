@@ -141,7 +141,7 @@ export function setupAlertRules(): AlertRule[] {
     },
   ];
 
-  /* eslint-disable no-console */
+   
   console.log("\n=== Recommended Sentry Alert Rules ===\n");
   for (const rule of rules) {
     console.log(`[${rule.severity.toUpperCase()}] ${rule.name}`);
@@ -153,7 +153,7 @@ export function setupAlertRules(): AlertRule[] {
     "Configure these in https://sentry.io → Project Settings → Alerts",
   );
   console.log("======================================\n");
-  /* eslint-enable no-console */
+   
 
   return rules;
 }

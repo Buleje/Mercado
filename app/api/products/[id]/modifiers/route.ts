@@ -1,5 +1,5 @@
 import "server-only";
-/* eslint-disable no-restricted-properties */
+ 
 // Legacy: este endpoint fue escrito antes de la regla MULTI-TENANT (lib/db/*).
 // Mantenemos prisma directo porque la transacción $transaction y el delete-then-
 // create necesitan acceso bajo nivel. Refactor a DB layer queda como deuda

@@ -25,7 +25,7 @@ export async function GET(
     const { orderId } = await params;
 
     // 1. Validar order existe.
-    // eslint-disable-next-line no-restricted-properties -- Tracking público read-only; tenantId se valida vía session vs order.tenantId más abajo.
+     
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       select: { id: true, tenantId: true, customerPhone: true },
@@ -60,7 +60,7 @@ export async function GET(
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
-    // eslint-disable-next-line no-restricted-properties -- Tracking público read-only; tenant ya autorizado arriba contra order.tenantId.
+     
     const assignment = await prisma.deliveryAssignment.findUnique({
       where: { orderId },
       include: {

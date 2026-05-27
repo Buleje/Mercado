@@ -241,7 +241,7 @@ describe("SagaRunner", () => {
     const stepThrowString: SagaStep<TestCtx> = {
       name: "StringThrow",
       async execute() {
-        // eslint-disable-next-line @typescript-eslint/only-throw-error
+         
         throw "raw string error";
       },
     };

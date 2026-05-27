@@ -112,7 +112,7 @@ export function buildOrdersSeries(targetTotal: number): OrdersSeriesPoint[] {
  */
 export function buildSparkline(current: number, trend: "up" | "flat" | "down" = "up"): number[] {
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
+     
     console.warn(
       "[buildSparkline] DEPRECATED: usá series reales del endpoint widgets. " +
         "Esta función fabrica curvas sintéticas que engañan con tendencias falsas.",

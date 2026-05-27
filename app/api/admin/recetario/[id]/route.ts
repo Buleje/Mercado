@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     // post-hoc creaba un timing oracle (200ms si id existe en otro tenant vs
     // 404 si no existe). Si alguien quitaba el guard, IDOR completo. Ahora
     // findFirst con tenantId en el WHERE elimina ambos riesgos.
-    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio en WHERE.
+     
     const note = await prisma.note.findFirst({
       where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
     });
@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     // post-hoc creaba un timing oracle (200ms si id existe en otro tenant vs
     // 404 si no existe). Si alguien quitaba el guard, IDOR completo. Ahora
     // findFirst con tenantId en el WHERE elimina ambos riesgos.
-    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio en WHERE.
+     
     const note = await prisma.note.findFirst({
       where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
     });
@@ -105,7 +105,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       }));
     }
 
-    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio.
+     
     await prisma.note.updateMany({
       where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
       data: { content: JSON.stringify(updated) },
@@ -134,7 +134,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     // post-hoc creaba un timing oracle (200ms si id existe en otro tenant vs
     // 404 si no existe). Si alguien quitaba el guard, IDOR completo. Ahora
     // findFirst con tenantId en el WHERE elimina ambos riesgos.
-    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio en WHERE.
+     
     const note = await prisma.note.findFirst({
       where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
     });
@@ -142,7 +142,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 
-    // eslint-disable-next-line no-restricted-properties -- recetario usa Note como contenedor JSON (no hay NoteDB todavía). tenantId obligatorio.
+     
     await prisma.note.deleteMany({
       where: { id, tenantId: auth.tenantId, title: "__RECETARIO__" },
     });

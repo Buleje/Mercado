@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-properties -- deuda existente: ConteoFisico/ConteoFisicoItem sin clase lib/db dedicada todavía. Todas las queries de este archivo son tenant-scoped via auth.tenantId guard. */
+ 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";

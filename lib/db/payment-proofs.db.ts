@@ -55,7 +55,7 @@ let bootstrapDone = false;
 async function bootstrap(): Promise<void> {
   if (bootstrapDone) return;
   try {
-    // eslint-disable-next-line no-restricted-properties -- bootstrap pre-tenant
+     
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "PaymentProof" (
         id              TEXT PRIMARY KEY,
@@ -121,7 +121,7 @@ export const PaymentProofsDB = {
     // SECURITY 2026-05-06 (audit WhatsApp #12): IDs con CSPRNG.
     const { randomUUID } = await import("crypto");
     const id = `pmp_${randomUUID()}`;
-    // eslint-disable-next-line no-restricted-properties -- pre-tenant
+     
     await prisma.$executeRawUnsafe(
       `INSERT INTO "PaymentProof" (
         id, "tenantSlug", "ownerName", "ownerPhone", "ownerEmail",
@@ -153,7 +153,7 @@ export const PaymentProofsDB = {
 
   async getById(id: string): Promise<PaymentProof | null> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-tenant
+     
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT * FROM "PaymentProof" WHERE id = $1 LIMIT 1`,
       id,
@@ -164,7 +164,7 @@ export const PaymentProofsDB = {
 
   async listPending(): Promise<PaymentProof[]> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-tenant
+     
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT * FROM "PaymentProof" WHERE status = 'pending' ORDER BY "createdAt" DESC LIMIT 200`,
     );
@@ -173,7 +173,7 @@ export const PaymentProofsDB = {
 
   async listAll(limit = 200): Promise<PaymentProof[]> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-tenant
+     
     const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT * FROM "PaymentProof" ORDER BY "createdAt" DESC LIMIT $1`,
       limit,
@@ -187,7 +187,7 @@ export const PaymentProofsDB = {
     createdTenantId: string,
   ): Promise<void> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-tenant
+     
     await prisma.$executeRawUnsafe(
       `UPDATE "PaymentProof"
         SET status = 'approved',
@@ -208,7 +208,7 @@ export const PaymentProofsDB = {
     reason: string,
   ): Promise<void> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-tenant
+     
     await prisma.$executeRawUnsafe(
       `UPDATE "PaymentProof"
         SET status = 'rejected',
@@ -225,7 +225,7 @@ export const PaymentProofsDB = {
 
   async markWhatsappSent(id: string): Promise<void> {
     await bootstrap();
-    // eslint-disable-next-line no-restricted-properties -- pre-tenant
+     
     await prisma.$executeRawUnsafe(
       `UPDATE "PaymentProof" SET "whatsappSentAt" = NOW(), "updatedAt" = NOW() WHERE id = $1`,
       id,

@@ -69,7 +69,7 @@ export default function ConfettiBurst({ trigger, origin = "center", durationMs =
     if (!trigger) return;
     // Particulas generadas en effect (no durante render) para respetar
     // react-hooks/purity y que Math.random no corra en SSR.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setParticles(generateParticles());
     setActive(true);
     const timer = setTimeout(() => {

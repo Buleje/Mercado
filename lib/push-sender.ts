@@ -54,7 +54,7 @@ export async function broadcastPush(payload: PushPayload, tenantId?: string): Pr
     ? await PushSubscriptionsStore.getAllByTenant(tenantId)
     : await PushSubscriptionsStore.getAll();
   if (!tenantId) {
-    // eslint-disable-next-line no-console -- deprecation warning durante migración
+     
     console.warn("[push-sender] broadcastPush() sin tenantId — deprecated, pasar tenantId explícito");
   }
   await Promise.allSettled(

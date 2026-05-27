@@ -68,7 +68,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
   // ── 1. PARETO 80/20 ─────────────────────────────────────────────────────
   // Top 15 productos por ingresos últimos 30d + curva acumulada %.
   const pareto = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const byId = new Map<string | number, { name: string; ingresos: number }>();
     const priceCost = (id: string | number) => {
@@ -116,7 +116,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
 
   // ── 2. HEATMAP hora × día (últimos 30d) ─────────────────────────────────
   const heatmap = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const cells: HeatmapCell[] = [];
     const m = new Map<string, number>();
@@ -146,7 +146,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
   // ── 3. WATERFALL — descomposición del cambio semanal ────────────────────
   // Semana actual vs semana pasada: Δ = Δ volumen (# tickets) + Δ ticket prom.
   const waterfall = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const now = Date.now();
     const wkA_start = now - 7 * 24 * 60 * 60 * 1000;
     const wkB_start = now - 14 * 24 * 60 * 60 * 1000;
@@ -181,7 +181,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
 
   // ── 4. MIX POR CATEGORÍA — stacked 100% últimos 14d ─────────────────────
   const mix = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, Map<string, number>>();
     const priceCost = (id: string | number) => {
@@ -233,7 +233,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
 
   // ── 5. COMPARATIVA — esta semana vs semana pasada ───────────────────────
   const comparison = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map((_, i) => ({

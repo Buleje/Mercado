@@ -33,13 +33,13 @@ export async function GET(
       OrdersDB.getByCustomerPhone(auth.tenantId, normalized),
       NotificationLogsDB.getByRecipient(normalized, auth.tenantId),
       ReviewsDB.getAll(auth.tenantId).then(all => all.filter(r => r.phone === normalized)),
-      // eslint-disable-next-line no-restricted-properties -- legacy: timeline aggregate de 5 fuentes; refactor a CustomersTimelineDB pendiente.
+       
       prisma.sale.findMany({
         where: { tenantId: auth.tenantId, customerPhone: normalized },
         include: { items: true },
         orderBy: { createdAt: "desc" },
       }),
-      // eslint-disable-next-line no-restricted-properties -- legacy: idem aggregate timeline.
+       
       prisma.customerNotification.findMany({
         where: { tenantId: auth.tenantId, customerPhone: normalized },
         orderBy: { createdAt: "desc" },

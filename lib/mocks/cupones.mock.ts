@@ -12,7 +12,7 @@
 // Sprint B debe conectar data real con prisma.userCoupon.
 const MOCK_PROD_DISABLED = process.env.NODE_ENV === "production";
 if (MOCK_PROD_DISABLED && typeof process !== "undefined") {
-  // eslint-disable-next-line no-console
+   
   console.warn("[mock] cupones.mock.ts cargado en prod — exports vacíos. Migrar a prisma.userCoupon.");
 }
 

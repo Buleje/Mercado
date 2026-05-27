@@ -104,7 +104,7 @@ export async function guardSuperadminApi(
  *
  * Mismo patrón que safeRedirectPath() en app/admin/login/page.tsx.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- preventivo, exportable cuando se implemente ?next=
+ 
 export function safeSuperadminNext(raw: string | null | undefined, fallback: string): string {
   if (!raw) return fallback;
   let dest: string;

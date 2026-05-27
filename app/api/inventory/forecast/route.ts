@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-properties -- deuda existente: forecast lee Product+SaleItem direct. Tenant-scoped via auth.tenantId. */
+ 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";

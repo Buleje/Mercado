@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-// eslint-disable-next-line no-restricted-properties -- legacy: ProductsDB no expone bulk id-list select; migrar en sprint posterior.
+ 
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";

@@ -131,7 +131,7 @@ function reportToSentry(Sentry, endpoint, status, errorMsg) {
 // ---------------------------------------------------------------------------
 
 (async () => {
-  // eslint-disable-next-line no-console
+   
   console.log(`[health-probe] Probing ${BASE_URL} …`);
   const Sentry = await loadSentry();
 
@@ -161,7 +161,7 @@ function reportToSentry(Sentry, endpoint, status, errorMsg) {
   const padPath = Math.max(...results.map((r) => r.path.length));
   for (const r of results) {
     const flag = r.ok ? "OK " : "FAIL";
-    // eslint-disable-next-line no-console
+     
     console.log(
       `  [${flag}] ${r.path.padEnd(padPath)}  ${String(r.status).padStart(3)}  ${r.ms}ms${
         r.reason ? `  — ${r.reason}` : ""
@@ -175,18 +175,18 @@ function reportToSentry(Sentry, endpoint, status, errorMsg) {
 
   const failures = results.filter((r) => !r.ok);
   if (failures.length > 0) {
-    // eslint-disable-next-line no-console
+     
     console.error(
       `[health-probe] ${failures.length}/${results.length} endpoint(s) failed`,
     );
     process.exit(1);
   }
 
-  // eslint-disable-next-line no-console
+   
   console.log(`[health-probe] All ${results.length} endpoints healthy.`);
   process.exit(0);
 })().catch((err) => {
-  // eslint-disable-next-line no-console
+   
   console.error("[health-probe] Script-level error:", err);
   process.exit(2);
 });

@@ -55,7 +55,7 @@ export async function POST(
   // Antes findUnique solo validaba partnerId; si por bug del flow un partner
   // obtuviera un assignmentId de otro tenant donde tiene mismo partnerId
   // (improbable pero posible), podría operar sobre assignment ajeno.
-  // eslint-disable-next-line no-restricted-properties -- DeliveryAssignmentsDB pendiente
+   
   const assignment = await prisma.deliveryAssignment.findFirst({
     where: { id: assignmentId, tenantId: session.tenantId },
     select: {

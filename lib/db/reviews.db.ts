@@ -154,7 +154,7 @@ export const ReviewsMarketplaceDB = {
       String(s ?? "")
         // SECURITY: strip HTML + control chars (audit reviews #11)
         .replace(/<[^>]*>/g, "")
-        // eslint-disable-next-line no-control-regex
+         
         .replace(/[\u0000-\u001F\u007F]/g, "")
         .trim();
     params.name = stripHtml(params.name).slice(0, 100);

@@ -40,7 +40,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
+     
     const nota = await prisma.note.findFirst({
       where: {
         id,
@@ -101,7 +101,7 @@ export async function PUT(
   const updates = parsed.data;
 
   try {
-    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
+     
     const nota = await prisma.note.findFirst({
       where: {
         id,
@@ -142,7 +142,7 @@ export async function PUT(
     // Update the title to reflect potential name/type changes
     const titulo = `CONTRATO: ${mergedData.numero} — ${mergedData.tipo} — ${mergedData.clienteNombre}`;
 
-    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
+     
     const updated = await prisma.note.update({
       where: { id },
       data: {
@@ -188,7 +188,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
+     
     const nota = await prisma.note.findFirst({
       where: {
         id,
@@ -220,7 +220,7 @@ export async function DELETE(
     existingData.fechaAnulacion = new Date().toISOString();
     existingData.anuladoPor = auth.username;
 
-    // eslint-disable-next-line no-restricted-properties -- contratos almacenados como Note tenant-scoped por auth guard.
+     
     const updated = await prisma.note.update({
       where: { id },
       data: {

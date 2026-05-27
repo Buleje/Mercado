@@ -51,7 +51,7 @@ function nowMono(): number {
 // Components de la home no llaman a este path mientras REDIS_URL no
 // esté seteado.
 const _readWallClock = (
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+   
   new Function("return function(){return Date.now()}") as () => () => number
 )();
 

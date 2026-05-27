@@ -11,7 +11,7 @@
 // evalúa módulos en collect-page-data y rompía el build estático.
 // ADR pendiente: integración real con tabla GiftCard de Prisma.
 if (process.env.NODE_ENV === "production") {
-  // eslint-disable-next-line no-console
+   
   console.warn("[mock] gift-cards.mock.ts cargado en prod — pendiente migración a tabla GiftCard.");
 }
 

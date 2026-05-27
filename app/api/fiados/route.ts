@@ -64,7 +64,7 @@ async function resolveCustomerId(tenantId: string, input: string): Promise<Resol
 
   // 3. Name search — debe ser UNÍVOCO. take=2 para detectar ambigüedad sin
   // gastar query grande; cap interno a 5 para reporting.
-  // eslint-disable-next-line no-restricted-properties -- legacy: name search no centralizado en CustomersDB; refactor a CustomersDB.searchByName pendiente.
+   
   const byName = await prisma.customer.findMany({
     where: { name: { contains: trimmed, mode: "insensitive" }, tenantId },
     select: { phone: true, name: true },

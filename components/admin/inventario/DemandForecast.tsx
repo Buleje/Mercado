@@ -36,7 +36,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -52,7 +52,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [productId]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   if (loading) {
     return (

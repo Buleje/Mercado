@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     // OrderItem/SaleItem no tienen tenantId propio — el guard real es el filtro
     // anidado por la entidad padre (Order, Sale) que sí lo tiene.
     const [orderItems, saleItems] = await Promise.all([
-      // eslint-disable-next-line no-restricted-properties -- aggregate read scoped: order.tenantId guard cierra cross-tenant + filtro por productIds del tenant.
+       
       prisma.orderItem.findMany({
         where: {
           productId: { in: productIds },
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         },
         select: { productId: true, quantity: true },
       }),
-      // eslint-disable-next-line no-restricted-properties -- aggregate read scoped: sale.tenantId guard cierra cross-tenant + filtro por productIds del tenant.
+       
       prisma.saleItem.findMany({
         where: {
           productId: { in: productIds },

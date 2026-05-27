@@ -39,7 +39,7 @@ export async function GET(
 
   try {
     // Try Sale first (POS sales)
-    // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped en where; migration a lib/db pendiente.
+     
     const lastSale = await prisma.sale.findFirst({
       where: { customerPhone: safePhone, tenantId },
       orderBy: { createdAt: "desc" },
@@ -80,7 +80,7 @@ export async function GET(
     }
 
     // Fallback: try Order
-    // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped en where; migration a lib/db pendiente.
+     
     const lastOrder = await prisma.order.findFirst({
       where: { customerPhone: safePhone, tenantId },
       orderBy: { createdAt: "desc" },

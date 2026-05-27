@@ -76,7 +76,7 @@ export default function DeliveryPage() {
   }, []);
 
   // Load orders and auto-refresh (loadOrders is async — setState happens after await, not synchronously)
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+   
   useEffect(() => {
     if (!loggedIn) return;
     loadOrders();

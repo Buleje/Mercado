@@ -75,7 +75,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 1. MATRIZ MARGEN × VOLUMEN (BCG-like) ───────────────────────────────
   const quadrant = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<
       string | number,
@@ -148,7 +148,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 2. ROTACIÓN VS MARGEN POR CATEGORÍA ──────────────────────────────────
   const rotMargen = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const catMap = new Map<
       string,
@@ -209,7 +209,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 3. EVOLUCIÓN TOP-5 PRODUCTOS (stacked 14d) ──────────────────────────
   const topEvolution = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     // First find top-5 products by revenue in last 14d
     const totals = new Map<string | number, { name: string; rev: number }>();
@@ -286,7 +286,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 4. COMPARATIVA UNIDADES SEM ACTUAL VS PREVIA ─────────────────────────
   const comp = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map(() => ({
@@ -336,7 +336,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
 
   // ── 5. HEATMAP categoría × día (30d) ─────────────────────────────────────
   const heatmap = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
+     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const productToCat = new Map<string | number, string>(
       active.map((p) => [p.id, p.category ?? "otros"]),

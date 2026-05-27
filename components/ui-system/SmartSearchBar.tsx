@@ -94,7 +94,7 @@ export default function SmartSearchBar({
 
   // Hidratar history
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setHistory(readHistory());
   }, []);
 
@@ -102,7 +102,7 @@ export default function SmartSearchBar({
   useEffect(() => {
     if (!fetchSuggestions) return;
     if (debouncedQuery.length < 2) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setSuggestions([]);
       return;
     }

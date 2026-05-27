@@ -496,7 +496,7 @@ export default function VendorApplicationsModule() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [reload, selected, searchRaw]);
 
   // ── Derive filter options from data ──────────────────────────────────

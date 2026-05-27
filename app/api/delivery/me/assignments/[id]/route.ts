@@ -20,7 +20,7 @@ export async function GET(
   if (session instanceof NextResponse) return session;
 
   const { id } = await params;
-  // eslint-disable-next-line no-restricted-properties -- TODO: extraer a DeliveryAssignmentsDB
+   
   const assignment = await prisma.deliveryAssignment.findUnique({
     where: { id },
     include: {
@@ -113,7 +113,7 @@ export async function PATCH(
   }
 
   try {
-    // eslint-disable-next-line no-restricted-properties -- TODO: extraer a DeliveryAssignmentsDB
+     
     const result = await prisma.$transaction(async (tx) => {
       const assignment = await tx.deliveryAssignment.findUnique({
         where: { id },

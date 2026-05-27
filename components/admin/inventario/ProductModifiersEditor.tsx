@@ -95,7 +95,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
       .finally(() => setLoading(false));
   }, [productId]);
 
-  useEffect(() => { reload(); }, [reload]); // eslint-disable-line react-hooks/set-state-in-effect
+  useEffect(() => { reload(); }, [reload]);  
 
   const addGroup = () => {
     setGroups((g) => [...g, {

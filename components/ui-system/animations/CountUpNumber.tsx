@@ -45,7 +45,7 @@ export function CountUpNumber({
     if (typeof window === "undefined") return;
     // Respeta reduced-motion
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- setValue al target es intencional para usuarios con reduced-motion
+       
       setValue(target);
       return;
     }

@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
     clearInterval(interval);
     writer.close().catch((err) => {
       if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console -- dev-only diagnostic
+         
         console.debug("[notifications/stream] writer close (already terminated)", String(err));
       }
     });

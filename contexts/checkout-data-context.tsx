@@ -159,7 +159,7 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
 
   // Hidratación inicial — un único pase tras montar. setState sync acá es
   // legítimo: SSR arranca con defaults y leemos localStorage al hidratar.
-  /* eslint-disable react-hooks/set-state-in-effect -- hidratación SSR-safe */
+   
   useEffect(() => {
     setCustomerState(read(KEY_CUSTOMER, DEFAULT_CUSTOMER));
     setAddressState(read(KEY_ADDRESS, DEFAULT_ADDRESS));
@@ -169,7 +169,7 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
     setPaymentProofsState(read(KEY_PROOFS, DEFAULT_PROOFS));
     setHydrated(true);
   }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   // Sync entre pestañas
   useEffect(() => {

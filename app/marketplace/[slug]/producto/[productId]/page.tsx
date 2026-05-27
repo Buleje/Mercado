@@ -315,8 +315,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   return (
     <>
-      {/* eslint-disable-next-line react-hooks/purity -- Server Component:
-          Date.now() en RSC es seguro (no está en client render path). */}
       <ProductJsonLd product={product} slug={slug} productId={productId} now={Date.now()} />
 
       {/* Botón Volver — más limpio que breadcrumbs, vuelve a la tienda. */}

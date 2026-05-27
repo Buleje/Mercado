@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
 
       try {
-        // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped via auth guard arriba.
+         
         await prisma.$transaction(async (tx) => {
           for (const item of updated.items) {
             const product = await tx.product.findUnique({ where: { id: item.productId } });

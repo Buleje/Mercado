@@ -1337,11 +1337,11 @@ export const MarketplaceStatsDB = {
     cacheTag("marketplace-stats");
 
     const [storeCount, productCount, avgRatingRaw] = await Promise.all([
-      // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
+       
       prisma.store.count({ where: { isPublished: true } }).catch(() => 0),
-      // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
+       
       prisma.product.count({ where: { active: true } }).catch(() => 0),
-      // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
+       
       prisma.review
         .aggregate({ _avg: { rating: true }, where: { status: "approved" } })
         .then((r) => r._avg.rating ?? 4.8)
@@ -1381,7 +1381,7 @@ export const MarketplaceStatsDB = {
       category: true, zone: true, rating: true, reviewCount: true,
     } as const;
     try {
-      // eslint-disable-next-line no-restricted-properties -- top stores publico marketplace cross-tenant.
+       
       const top = await prisma.store.findMany({
         where: { isPublished: true },
         orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
@@ -1403,7 +1403,7 @@ export const MarketplaceStatsDB = {
       const missing = featuredIds.filter((id) => !topIds.has(id));
       let extra: typeof top = [];
       if (missing.length > 0) {
-        // eslint-disable-next-line no-restricted-properties -- featured-home stores cross-tenant público.
+         
         extra = await prisma.store.findMany({
           where: { id: { in: missing }, isPublished: true },
           select: SELECT,
@@ -1434,7 +1434,7 @@ export const MarketplaceStatsDB = {
     cacheLife({ revalidate: 600, stale: 120, expire: 1800 });
     cacheTag("marketplace-reviews");
     try {
-      // eslint-disable-next-line no-restricted-properties -- reviews publicas marketplace cross-tenant.
+       
       return await prisma.review.findMany({
         where: { status: "approved", rating: { gte: 4 }, storeId: { not: null } },
         orderBy: { date: "desc" },

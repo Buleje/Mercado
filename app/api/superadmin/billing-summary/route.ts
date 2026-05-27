@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-// eslint-disable-next-line no-restricted-imports
+ 
 import { prisma } from "@/lib/prisma";
 
 // ── Tabla de precios PEN (ADR-076 / pricing 2026-05) ────────────────────────

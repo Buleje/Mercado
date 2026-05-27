@@ -1,6 +1,6 @@
 "use client";
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 
 import { useState, useEffect } from "react";
 import { MapPin, Loader2, AlertCircle, TrendingUp } from "@buleje/design-system/icons";

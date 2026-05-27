@@ -30,7 +30,7 @@ export const DashboardDB = {
   async fetchAll(tenantId: string) {
     return Promise.all([
       // 1. Products — fields used por dashboard (stock projection, charts, cost calc)
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId; centralizado en lib/db.
+       
       prisma.product.findMany({
         where: { tenantId, deletedAt: null },
         select: {
@@ -52,7 +52,7 @@ export const DashboardDB = {
       // 15s de polling. Esto causaba OOM en serverless workers y latencia
       // de 2-3s. 500 cubre ~3-6 meses de actividad típica, suficiente para
       // todos los charts del dashboard.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
+       
       prisma.order.findMany({
         where: { tenantId, deletedAt: null },
         select: {
@@ -78,7 +78,7 @@ export const DashboardDB = {
       // Brandon 2026-05-16 P0 (perf audit): `take: 1000` agregado. Sales
       // POS son más volumétricas que orders marketplace — 1000 cubre ~1-3
       // meses de un tenant activo. Charts solo usan últimos 30d/90d.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
+       
       prisma.sale.findMany({
         where: { tenantId },
         select: {
@@ -105,7 +105,7 @@ export const DashboardDB = {
       // ordenados por `updatedAt desc` — los 2000 más recientemente activos
       // cubren CRM dashboard sin OOM. Tenants con 10k+ customers requieren
       // paginación dedicada en módulo Clientes (no en dashboard general).
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
+       
       prisma.customer.findMany({
         where: { tenantId },
         select: {
@@ -124,7 +124,7 @@ export const DashboardDB = {
       }),
 
       // 5. Purchases — items necesarios para purchase analysis
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
+       
       prisma.purchaseOrder.findMany({
         where: { tenantId },
         select: {
@@ -144,7 +144,7 @@ export const DashboardDB = {
       }),
 
       // 6. Payables — sin relation `payments` (no la usa el dashboard)
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
+       
       prisma.payable.findMany({
         where: { tenantId },
         select: {
@@ -157,7 +157,7 @@ export const DashboardDB = {
       }),
 
       // 7. Suppliers — campos mínimos
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
+       
       prisma.supplier.findMany({
         where: { tenantId },
         select: {
@@ -171,7 +171,7 @@ export const DashboardDB = {
       // Round 7 fix: cap a 1000. Tenants con muchos reviews evitan OOM en dashboard load.
       // Round 28 P0 (DB profundo audit): faltaba `deletedAt: null` — reseñas
       // soft-deleted por moderación volvían a aparecer en KPIs.
-      // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
+       
       prisma.review.findMany({
         where: { tenantId, deletedAt: null },
         select: {

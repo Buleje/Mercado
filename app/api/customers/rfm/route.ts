@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const cacheKey = `customers:rfm:${auth.tenantId}`;
 
-    // eslint-disable-next-line no-restricted-properties -- analytics RFM tenant-scoped.
+     
     const orders = await getOrSet(cacheKey, 300, () =>
       prisma.order.findMany({
         where: { customerPhone: { not: null }, tenantId: auth.tenantId },

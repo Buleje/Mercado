@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 
 import { useState, useEffect, useCallback } from "react";
 import { Gift, Plus, Check, Copy, Search, Tag, Clock, AlertCircle } from "@buleje/design-system/icons";

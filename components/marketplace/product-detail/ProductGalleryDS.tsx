@@ -83,7 +83,7 @@ export function ProductGalleryDS({ images, productName, category, badge }: Produ
   // getCategoryIllustration retorna uno de 5 componentes stateless del DS —
   // el rule react-hooks/static-components detecta un falso positivo porque
   // es un patron de switch dinamico, no una creacion en render con closure.
-  // eslint-disable-next-line react-hooks/static-components
+   
   const FallbackIllustration = getCategoryIllustration(category);
 
   const prev = useCallback(() => {
@@ -147,7 +147,6 @@ export function ProductGalleryDS({ images, productName, category, badge }: Produ
           ) : FallbackIllustration ? (
             /* Ilustración DS por categoría */
             <div className="flex h-full w-full items-center justify-center">
-              {/* eslint-disable-next-line react-hooks/static-components */}
               <FallbackIllustration
                 size={140}
                 className="text-[var(--text-tertiary)] opacity-60"

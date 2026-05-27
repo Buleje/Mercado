@@ -50,7 +50,7 @@ async function startRouteHandler(
 ): Promise<NextResponse> {
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // eslint-disable-next-line no-restricted-properties -- DeliveryAssignmentsDB pendiente
+       
       const assignment = await tx.deliveryAssignment.findUnique({
         where: { id: assignmentId },
         select: {
@@ -76,7 +76,7 @@ async function startRouteHandler(
 
       const now = new Date();
 
-      // eslint-disable-next-line no-restricted-properties -- DeliveryAssignmentsDB pendiente
+       
       await tx.deliveryAssignment.update({
         where: { id: assignmentId },
         data: {
@@ -86,7 +86,7 @@ async function startRouteHandler(
       });
 
       // Sincronizar Order.status → "en_camino"
-      // eslint-disable-next-line no-restricted-properties -- OrdersDB.updateStatus no expone delivery transitions
+       
       await tx.order.update({
         where: { id: assignment.orderId },
         data: { status: "en_camino" },

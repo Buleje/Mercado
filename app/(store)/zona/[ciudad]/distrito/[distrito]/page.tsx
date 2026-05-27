@@ -100,7 +100,7 @@ function CategoryCard({
   citySlug: string;
   districtSlug: string;
 }) {
-  // eslint-disable-next-line react-hooks/purity -- lookup de componente lucide, no factory
+   
   const CatIcon = getCatalogCategoryIcon(category.id);
   return (
     <Link

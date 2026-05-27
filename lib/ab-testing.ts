@@ -29,7 +29,7 @@ export const ABTestDB = {
     // TODO: eliminar fallback cuando todos los callers pasen tenantId.
     const effectiveTenantId = tenantId ?? "main";
     if (!tenantId) {
-      // eslint-disable-next-line no-console -- ab-testing no importa logger para evitar ciclo
+       
       console.warn("[ab-testing] create missing tenantId — falling back to 'main'", { name });
     }
     const row = await prisma.aBTest.create({ data: { name, description, variants, tenantId: effectiveTenantId } });
@@ -79,7 +79,7 @@ export const ABTestDB = {
   async trackEvent(testId: string, variantId: string, visitorId: string, event: "impression" | "conversion", value?: number, tenantId?: string): Promise<void> {
     const effectiveTenantId = tenantId ?? "main";
     if (!tenantId) {
-      // eslint-disable-next-line no-console
+       
       console.warn("[ab-testing] trackEvent missing tenantId — falling back to 'main'", { testId, event });
     }
     await prisma.aBTestEvent.create({ data: { testId, variantId, visitorId, event, value, tenantId: effectiveTenantId } });

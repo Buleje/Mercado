@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-properties -- deuda existente: Batch sin clase lib/db wrapper completa. Tenant-scoped via auth.tenantId. */
+ 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";

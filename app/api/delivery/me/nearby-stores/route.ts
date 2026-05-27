@@ -45,7 +45,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     // Brandon mayo 2026 v7: respetar el flag `useThirdPartyDelivery` del
     // tenant. Si está desactivado, la tienda NO aparece en el mapa del rider.
     // Raw SQL para evitar dependencia del cache del Prisma Client en dev.
-    // eslint-disable-next-line no-restricted-properties
+     
     const tenantRows = await prisma.$queryRaw<Array<{ useThirdPartyDelivery: boolean }>>`
       SELECT "useThirdPartyDelivery" FROM "Tenant" WHERE id = ${session.tenantId} LIMIT 1
     `;
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     // 1) Tiendas publicadas del tenant con geo válida.
-    // eslint-disable-next-line no-restricted-properties
+     
     const stores = await prisma.store.findMany({
       where: {
         tenantId: session.tenantId,

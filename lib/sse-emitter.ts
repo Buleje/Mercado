@@ -65,7 +65,7 @@ export function emitAdminSSE(arg1: string, arg2: unknown, arg3?: unknown): void 
   // event name, entonces es la firma legacy. Para simplificar: si solo hay
   // 2 args, es legacy.
   if (arguments.length === 2) {
-    // eslint-disable-next-line no-console -- deprecation warning durante migración
+     
     console.warn(
       `[sse-emitter] DEPRECATED: emitAdminSSE("${arg1}") sin tenantId — ` +
       `evento NO emitido. Migrar caller a emitAdminSSE(tenantId, event, data).`,

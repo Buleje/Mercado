@@ -16,7 +16,7 @@ export async function GET(
 
   try {
     // 1. Fetch all purchase orders for this supplier
-    // eslint-disable-next-line no-restricted-properties -- scorecard tenant-scoped en where.
+     
     const orders = await prisma.purchaseOrder.findMany({
       where: { tenantId, supplierId: id },
       include: { items: true },

@@ -354,7 +354,7 @@ function SuperadminBannersPageInner() {
     if (!data) return;
     const orig = data[slot][idx];
     if (!orig) return;
-    // eslint-disable-next-line react-hooks/purity -- event-handler-only path; id only needs uniqueness within session
+     
     const newId = `${slot}-${Date.now()}`;
     const copy: Banner = {
       ...orig,
@@ -403,7 +403,7 @@ function SuperadminBannersPageInner() {
         const text = detail ? `${err.error ?? `Error ${res.status}`} — ${detail}` : err.error ?? `Error ${res.status}`;
         setSavedMsg({ kind: "err", text });
         if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
+           
           console.error("[banners save] 400 issues", issues);
         }
       } else {

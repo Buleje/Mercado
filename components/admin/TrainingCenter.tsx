@@ -1,6 +1,6 @@
 "use client";
 import { SectionTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 
 import { useState, useEffect } from "react";
 import { CheckCircle, Circle, ChevronDown, ChevronRight, Award } from "@buleje/design-system/icons";

@@ -86,7 +86,7 @@ export const ProductAnalyticsDB = {
       });
     } catch (err) {
       // Analytics nunca debe romper el flujo del usuario.
-      // eslint-disable-next-line no-console
+       
       console.warn("[product-analytics] track failed", { error: String(err).slice(0, 300) });
     }
   },

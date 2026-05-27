@@ -183,7 +183,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   // dateRange?.to (acceso opcional) — la memoización manual es intencional
   // para evitar re-renders en cascada cuando dateRange cambia de referencia
   // pero no de valor real.
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+   
   const { from: rangeFrom, to: rangeTo } = useMemo(() => {
     if (dateRange) return { from: dateRange.from, to: dateRange.to };
     return defaultLast7Range();

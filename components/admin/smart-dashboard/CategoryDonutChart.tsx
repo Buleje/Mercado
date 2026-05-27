@@ -71,7 +71,6 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
       <div className="relative w-full sm:w-[200px] h-[200px] shrink-0">
         <ResponsiveContainer minWidth={0} width="100%" height="100%">
           <PieChart>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Pie
               data={filteredData}
               innerRadius={55}

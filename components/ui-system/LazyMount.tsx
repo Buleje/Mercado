@@ -45,7 +45,7 @@ export default function LazyMount({
   const [hasBeenInView, setHasBeenInView] = useState(false);
 
   // Sticky mount — una vez visible, queda visible (a menos que unmountOnExit).
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+   
   useEffect(() => {
     if (isInView && !hasBeenInView) setHasBeenInView(true);
   }, [isInView, hasBeenInView]);

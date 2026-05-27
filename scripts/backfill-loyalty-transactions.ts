@@ -39,7 +39,7 @@ export async function backfillLoyaltyTransactions(): Promise<BackfillStats> {
   const PAGE = 200;
   let cursor: string | undefined;
 
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
     const batch = await prisma.customer.findMany({
       take: PAGE,

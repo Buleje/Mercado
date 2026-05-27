@@ -214,7 +214,7 @@ async function patchHandler(
   if (parsed.data.status === "entregado" && phone) {
     const suffix = id.slice(-5).toUpperCase();
     const couponCode = `VUELVE${suffix}`;
-    // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing coupon insert con tenantId en payload; migracion a CouponsDB pendiente.
+     
     prisma.coupon.create({
       data: {
         id: crypto.randomUUID(),

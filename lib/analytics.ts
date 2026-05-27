@@ -128,7 +128,7 @@ export function trackEvent(
   if (!isAnalyticsLoaded()) {
     if (process.env.NODE_ENV === "development") {
       // Dev-only debug log — analytics globals no cargados (ad-block o local).
-      // eslint-disable-next-line no-console -- dev visibility, no logger import (analytics es client-side)
+       
       console.debug("[Analytics] Event would be tracked:", eventName, params);
     }
     return;
@@ -148,14 +148,14 @@ export function trackEvent(
     }
 
     if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console -- dev visibility
+       
       console.debug(`[Analytics] ${eventName}`, params);
     }
   } catch (error) {
     // Analytics es opcional — error en tracking NO debe romper UX.
     // Reportamos vía Sentry (browser SDK auto-capture window.onerror).
     if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console -- dev visibility for analytics errors
+       
       console.warn("[Analytics] tracking event failed (non-critical):", String(error).slice(0, 200));
     }
   }
@@ -177,7 +177,7 @@ export function trackPageView(url: string, title?: string): void {
   } catch (error) {
     // Page view tracking falla → no crítico (Sentry browser captura window.onerror).
     if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console -- dev visibility
+       
       console.warn("[Analytics] page view tracking failed:", String(error).slice(0, 200));
     }
   }

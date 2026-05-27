@@ -182,7 +182,10 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ## Deuda detectada 2026-05-20 (post Ola 1/2/3 deps upgrade)
 
-### [pending] 60/4491 tests fallando — sprint dedicado de mocks
+### [applied] 60/4491 tests fallando — RESUELTO (re-verificado 2026-05-26)
+- marketplace-tier-discount 8/8, api-marketplace-products + advanced-search + notification-center 57/57 → TODOS PASAN. Fix llegó con 0639a39b (20-may). Entry duplicado/stale, cerrado.
+
+### [historico] 60/4491 tests fallando — sprint dedicado de mocks
 - `npx vitest run` reporta 60 tests fallando (1.3% del total).
 - **NO causados por upgrade de deps**: `prisma.product.findMany` se llama desde `lib/db/marketplace/orders.db.ts:282` pero el mock del test (`__tests__/lib/db/marketplace-tier-discount.test.ts`) NO incluye `product.findMany`. Fue agregado en `lib/db/marketplace/orders.db.ts` (commit 7eeeb1d0 batch 5) sin actualizar el mock.
 - **Distribución de fallas:**

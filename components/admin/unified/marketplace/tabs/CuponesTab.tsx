@@ -345,7 +345,7 @@ export default function CuponesTab() {
         <div className="space-y-2">
           {coupons.map((c) => {
             const m = couponMetrics(c);
-            // eslint-disable-next-line react-hooks/purity -- expiry comparison is allowed to drift across renders
+             
             const expired = c.expiresAt && new Date(c.expiresAt).getTime() < Date.now();
             return (
               <div key={c.id} className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4", !c.active && "opacity-60")}>

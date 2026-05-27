@@ -475,7 +475,7 @@ export default function SidebarConfigurator({
     // baselineRef is a stable mutable container kept in sync via useEffect;
     // its identity never changes so reading it inside the memo is safe.
     // The react-hooks/refs lint disagrees — disable for this block only.
-    /* eslint-disable react-hooks/refs */
+     
     const base = baselineRef.current;
     // Normalizar alias legacy "shaded" → "cristal" para evitar falsos positivos
     // cuando initial llega como "shaded" y el preset setea "cristal".
@@ -491,7 +491,7 @@ export default function SidebarConfigurator({
     for (const k of draftHidden) if (!base.hiddenCategories.has(k)) return true;
     for (const k of draftHiddenSubs) if (!base.hiddenSubTabs.has(k)) return true;
     return false;
-    /* eslint-enable react-hooks/refs */
+     
   }, [
     draftHidden, draftHiddenSubs, draftOrder, draftTheme, draftAccent, draftDensity,
     draftIconStyle, draftApplyToHeader,

@@ -346,7 +346,7 @@ export default function PagosPendientesClient() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [active, load, searchRaw, methodFilter, planFilter]);
 
   // ── Single actions ───────────────────────────────────────────────────

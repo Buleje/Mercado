@@ -40,12 +40,12 @@ export function useAutoRefresh({ intervalSeconds, onRefresh, enabled = true }: U
     }, intervalSeconds * 1000);
   }, [enabled, paused, intervalSeconds, clearTimers]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
   useEffect(() => {
     restart();
     return clearTimers;
   }, [restart, clearTimers]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const togglePause = useCallback(() => setPaused(p => !p), []);
 

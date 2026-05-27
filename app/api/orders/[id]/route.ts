@@ -258,7 +258,7 @@ async function patchOrder(
     let custPrefs: { notifOrderUpdates: boolean | null } | null = null;
     if (statusChanged && updated.customer.phone) {
       try {
-        // eslint-disable-next-line no-restricted-properties -- pre-existing: deuda pendiente migrar a lib/db/customers.db.ts.
+         
         custPrefs = await prisma.customer.findFirst({
           where: { phone: updated.customer.phone, tenantId: auth.tenantId },
           select: { notifOrderUpdates: true },
@@ -375,7 +375,7 @@ async function patchOrder(
       };
       const msg = statusMsgs[parsed.data.status!];
       if (msg) {
-        // eslint-disable-next-line no-restricted-properties -- pre-existing direct prisma access, scheduled for migration to lib/db/customer-notifications.db.ts. Tenant guard explicit via tenantId field.
+         
         prisma.customerNotification.create({
           data: {
             tenantId: auth.tenantId,

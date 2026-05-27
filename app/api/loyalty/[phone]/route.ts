@@ -45,10 +45,10 @@ export async function GET(
     if (!data) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
 
     // Count total orders for auto-discount calculation
-    // eslint-disable-next-line no-restricted-properties
+     
     const totalOrders = await prisma.order.count({
       where: { tenantId, customerPhone: requestedPhone },
-      // eslint-disable-next-line no-restricted-syntax
+       
     }).catch((err) => { logger.error("[loyalty] totalOrders count failed", { error: String(err), phone: requestedPhone }); return 0; });
 
     // Find current and next auto-discount tier

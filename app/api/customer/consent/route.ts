@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Fire-and-forget: sync Customer.notif fields si aplica (CLAUDE.md rule #7)
-    // eslint-disable-next-line no-restricted-properties -- deuda legacy: migrar a CustomersDB cuando PR-COMPLIANCE-3 aterrice
+     
     if (consentType === "marketing") {
       // eslint-disable-next-line no-restricted-properties -- fire-and-forget sync notif prefs, ver comentario arriba
       prisma.customer

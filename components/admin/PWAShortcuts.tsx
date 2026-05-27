@@ -1,6 +1,6 @@
 "use client";
 import { SectionTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 import { useState, useEffect } from "react";
 import { Smartphone, Copy, Check, Info } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";

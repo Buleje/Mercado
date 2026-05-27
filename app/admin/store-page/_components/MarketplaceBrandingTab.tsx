@@ -92,7 +92,7 @@ export default function MarketplaceBrandingTab() {
       if (!res.ok) {
         const body = await res.json().catch((err) => {
           // body no es JSON valido — caemos al status code generico
-          // eslint-disable-next-line no-console
+           
           console.warn("[branding] error response is not json", err);
           return null;
         });

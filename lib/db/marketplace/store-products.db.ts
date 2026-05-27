@@ -399,9 +399,7 @@ export const MarketplaceStoreProductsDB = {
       ...(opts.search && { name: { contains: opts.search, mode: "insensitive" as const } }),
     };
 
-    /* eslint-disable no-restricted-syntax -- query publica del marketplace,
-       scope por storeId pre-resuelto desde el slug (que ya filtra
-       isPublished:true en MarketplaceStoresDB.getBySlug). */
+     
     const raw = await prisma.storeProduct.findMany({
       where: {
         storeId,
@@ -427,7 +425,7 @@ export const MarketplaceStoreProductsDB = {
       take: limit + 1,
       ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
     });
-    /* eslint-enable no-restricted-syntax */
+     
 
     const hasMore = raw.length > limit;
     const items = hasMore ? raw.slice(0, limit) : raw;

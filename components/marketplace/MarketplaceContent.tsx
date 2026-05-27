@@ -94,7 +94,7 @@ const LiveOrderCounter = dynamic(
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
 // MAX_PRICE_LIMIT reservado para ronda B (product filter bar)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const _MAX_PRICE_LIMIT = 500;
 
 /* ── Props ──────────────────────────────────────────────────────────────────── */
