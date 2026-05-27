@@ -17,6 +17,61 @@ import { FlaskConical, Check, ArrowRight, LogOut, Loader2 } from "@buleje/design
 
 const TEST_CUSTOMER = { phone: "999000111", name: "Cliente Prueba", tenantId: "main" };
 
+// El CustomerContext PREFIERE localStorage sobre la cookie. Si hay un cliente
+// viejo guardado (de pruebas manuales), gana sobre la sesión de prueba y el
+// checkout se confunde. Por eso al activar escribimos el cliente de prueba en
+// las claves que leen el context + el checkout, y limpiamos las conflictivas.
+const TEST_CUSTOMER_LS = {
+  id: TEST_CUSTOMER.phone,
+  phone: TEST_CUSTOMER.phone,
+  name: TEST_CUSTOMER.name,
+  location: "Jr. Ucayali 450, Pucallpa",
+  reference: "Frente a la plaza",
+};
+// Claves de identidad de cliente que pueden tener data vieja conflictiva.
+const STALE_CUSTOMER_KEYS = [
+  "buleje-customer",
+  "marketplace-customer",
+  "marketplace-checkout-customer",
+  "buleje-checkout-data",
+  "buleje-customer-mi-pollo",
+];
+
+/** Borra TODA identidad de cliente vieja (cualquier tenant) + las claves de
+ *  checkout. El context lee `buleje-{tenant}-customer` y el tenant activo puede
+ *  apuntar a otro negocio por logins previos — por eso limpiamos todas. */
+function clearAllCustomerIdentities() {
+  try {
+    for (const k of Object.keys(localStorage)) {
+      if (/-customer$/.test(k) || /^(marketplace-customer|marketplace-checkout-customer|buleje-checkout-data)$/.test(k)) {
+        localStorage.removeItem(k);
+      }
+    }
+    for (const k of STALE_CUSTOMER_KEYS) localStorage.removeItem(k);
+  } catch {
+    /* sin localStorage */
+  }
+}
+
+function writeTestCustomerToStorage() {
+  clearAllCustomerIdentities();
+  try {
+    // Forzar tenant "main" para que getStorageKey() del context apunte a
+    // buleje-main-customer (cookie httpOnly:false → escribible desde JS).
+    document.cookie = "active-tenant=main; path=/; max-age=604800; samesite=lax";
+    document.cookie = "active-tenant-slug=main; path=/; max-age=604800; samesite=lax";
+    const v = JSON.stringify(TEST_CUSTOMER_LS);
+    localStorage.setItem("buleje-main-customer", v);
+    localStorage.setItem("buleje-customer", v);
+  } catch {
+    /* localStorage no disponible — la cookie de sesión igual sirve */
+  }
+}
+
+function clearTestCustomerFromStorage() {
+  clearAllCustomerIdentities();
+}
+
 export default function TestCustomerPanel() {
   const [state, setState] = useState<"idle" | "loading" | "active" | "error">("idle");
   const [msg, setMsg] = useState("");
@@ -38,6 +93,9 @@ export default function TestCustomerPanel() {
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Cookie + localStorage sincronizados → el context y el checkout usan
+      // al cliente de prueba sin race ni conflicto con identidades viejas.
+      writeTestCustomerToStorage();
       setState("active");
       setMsg("Sesión activa como «Cliente Prueba». Andá a Tiendas, agregá productos y al continuar irás directo al checkout — sin login.");
     } catch (e) {
@@ -51,6 +109,7 @@ export default function TestCustomerPanel() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {
       /* best-effort: en dev no bloqueamos la UI si el logout falla */
     });
+    clearTestCustomerFromStorage();
     setState("idle");
     setMsg("Sesión de prueba cerrada.");
   };
