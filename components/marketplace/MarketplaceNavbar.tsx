@@ -225,11 +225,22 @@ function useActiveLivePoll(): boolean {
         /* fire-and-forget, sin ruido */
       }
     };
+    // Brandon 2026-05-27 (audit perf): guard de visibilidad — no pollear
+    // /api/lives/active con la pestaña en background.
+    let id: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!id) id = setInterval(fetchActive, 60_000); };
+    const stop = () => { if (id) { clearInterval(id); id = null; } };
+    const onVis = () => {
+      if (document.visibilityState === "visible") { fetchActive(); start(); }
+      else stop();
+    };
     fetchActive();
-    const id = setInterval(fetchActive, 60_000);
+    if (typeof document === "undefined" || document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelled = true;
-      clearInterval(id);
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, []);
   return hasActive;

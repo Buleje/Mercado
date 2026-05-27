@@ -330,12 +330,21 @@ export default function Header() {
       } catch { /* silent — error red transitorio */ }
     };
 
+    // Brandon 2026-05-27 (audit perf): guard de visibilidad — sin polleo en background.
+    const start = () => { if (!interval) interval = setInterval(fetchNotifs, 60000); };
+    const stop = () => { if (interval) { clearInterval(interval); interval = null; } };
+    const onVis = () => {
+      if (document.visibilityState === "visible") { fetchNotifs(); start(); }
+      else stop();
+    };
     fetchNotifs();
-    interval = setInterval(fetchNotifs, 60000); // poll every 60s
+    if (typeof document === "undefined" || document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
       stopped = true;
-      if (interval) clearInterval(interval);
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, [customer?.phone]);
 
@@ -455,11 +464,21 @@ export default function Header() {
         setHasActiveOrder(true);
       } catch { setHasActiveOrder(false); }
     };
+    // Brandon 2026-05-27 (audit perf): guard de visibilidad — sin polleo en background.
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!interval) interval = setInterval(checkOrder, 30_000); };
+    const stop = () => { if (interval) { clearInterval(interval); interval = null; } };
+    const onVis = () => {
+      if (document.visibilityState === "visible") { checkOrder(); start(); }
+      else stop();
+    };
     checkOrder();
-    const interval = setInterval(checkOrder, 30_000);
+    if (typeof document === "undefined" || document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVis);
     window.addEventListener("buleje:orderCreated", checkOrder);
     return () => {
-      clearInterval(interval);
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("buleje:orderCreated", checkOrder);
     };
   }, []);

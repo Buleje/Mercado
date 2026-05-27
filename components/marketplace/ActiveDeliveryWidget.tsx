@@ -103,13 +103,24 @@ export default function ActiveDeliveryWidget({
       }
     };
 
+    // Brandon 2026-05-27 (audit perf): guard de visibilidad — pausa el poll
+    // con la pestaña en background y reanuda (con fetch) al volver.
+    let id: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!id) id = setInterval(fetchOrder, pollMs); };
+    const stop = () => { if (id) { clearInterval(id); id = null; } };
+    const onVis = () => {
+      if (document.visibilityState === "visible") { fetchOrder(); start(); }
+      else stop();
+    };
     fetchOrder();
-    const id = setInterval(fetchOrder, pollMs);
+    if (typeof document === "undefined" || document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
       active = false;
       controller.abort();
-      clearInterval(id);
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, [customerPhone, endpoint, pollMs, dismissed]);
 
