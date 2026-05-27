@@ -14,6 +14,11 @@ import {
   Download,
   RefreshCcw,
   Sparkles,
+  Wrench,
+  MessageCircle,
+  Camera,
+  Percent,
+  MapPin,
 } from "@buleje/design-system/icons";
 
 // LandingHeader + Footer removidos — chrome unificado vive en
@@ -436,69 +441,169 @@ function GuaranteeSection() {
 }
 
 // ── Prueba social honesta — Plan Fundador (sin reseñas inventadas) ──
+// v3 (2026-05-27): value-stacking con anclaje de precio. Cada beneficio
+// del Plan Fundador es un servicio que normalmente se cobra aparte; al
+// sumar su valor real (S/ 690+) y ponerlo contra "Hoy: S/ 0" se ancla
+// la percepción de ganga. Honesto: son servicios que de verdad damos.
+const FOUNDER_PERKS = [
+  {
+    icon: Wrench,
+    title: "Te armamos tu tienda completa, 1-a-1",
+    sub: "Cargamos productos, fotos y precios contigo. No tocás nada.",
+    value: "S/ 300",
+  },
+  {
+    icon: MessageCircle,
+    title: "90 días de soporte directo por WhatsApp",
+    sub: "Una persona real te responde, no un bot ni un ticket.",
+    value: "S/ 240",
+  },
+  {
+    icon: Camera,
+    title: "Sesión de fotos de tus productos",
+    sub: "Fotos que venden, listas para tu catálogo y el marketplace.",
+    value: "S/ 150",
+  },
+  {
+    icon: Percent,
+    title: "0% comisión tus primeros 90 días",
+    sub: "Cada sol de tus ventas llega completo a tu bolsillo.",
+    value: "según ventas",
+  },
+  {
+    icon: MapPin,
+    title: "En el mapa de Pucallpa desde el día 1",
+    sub: "Miles de vecinos te encuentran apenas abrís.",
+    value: "incluido",
+  },
+] as const;
+
 function SocialProofSection() {
   const CUPOS_TOTAL = 10;
   const CUPOS_TOMADOS = 3;
   const libres = CUPOS_TOTAL - CUPOS_TOMADOS;
   return (
     <section className="py-20 sm:py-28 bg-[var(--surface-canvas)]">
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-7 sm:p-10">
-          <div aria-hidden className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-[var(--accent)]/15 blur-3xl" />
-          <div className="relative grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-8 lg:gap-12 items-center">
-            {/* Izquierda — qué te llevás como fundador */}
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Encabezado centrado — momento de "oferta final" */}
+        <div className="text-center mb-12 sm:mb-14">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
+            <span aria-hidden className="relative inline-flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
+            </span>
+            Plan Fundador · Pucallpa
+          </p>
+          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1]">
+            Sé de las primeras{" "}
+            <span className="italic font-serif text-[var(--accent)]">{CUPOS_TOTAL} bodegas</span>
+            <br className="hidden sm:block" /> y arrancá con todo gratis.
+          </h2>
+          <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-2xl mx-auto">
+            Elegimos a los primeros negocios de Pucallpa para crecer juntos.
+            Lo que normalmente se cobra aparte, hoy lo hacés{" "}
+            <strong className="text-[var(--text-primary)]">sin pagar un sol</strong>.
+          </p>
+        </div>
+
+        <div className="relative overflow-hidden rounded-[2rem] border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-6 sm:p-8 lg:p-10">
+          <div aria-hidden className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/15 blur-3xl" />
+          <div className="relative grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-8 lg:gap-12 items-start">
+            {/* Izquierda — value stack con anclaje de precio */}
             <div>
-              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
-                <span aria-hidden className="relative inline-flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
-                </span>
-                Plan Fundador · Pucallpa
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-4">
+                Lo que te llevás como fundador
               </p>
-              <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1]">
-                Sé de los primeros{" "}
-                <span className="italic font-serif text-[var(--accent)]">{CUPOS_TOTAL} negocios.</span>
-              </h2>
-              <p className="mt-4 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-lg">
-                Estamos eligiendo a las primeras bodegas de Pucallpa para arrancar
-                juntos. Si entrás ahora, te llevás todo esto <strong className="text-[var(--text-primary)]">sin pagar de más</strong>:
-              </p>
-              <ul className="mt-6 space-y-2.5">
-                {[
-                  "Te armamos tu tienda 1-a-1, sin que toques nada",
-                  "90 días de acompañamiento por WhatsApp",
-                  "Sesión de fotos de tus productos, gratis",
-                  "0% comisión los primeros 90 días",
-                  "Tu negocio en el mapa de Pucallpa desde el día 1",
-                ].map((perk) => (
-                  <li key={perk} className="flex items-start gap-3 text-sm sm:text-base text-[var(--text-primary)] font-medium leading-snug">
-                    <span aria-hidden className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white">
-                      <Check className="h-3 w-3" strokeWidth={3.25} />
-                    </span>
-                    {perk}
-                  </li>
-                ))}
+              <ul className="space-y-2.5">
+                {FOUNDER_PERKS.map((perk) => {
+                  const Icon = perk.icon;
+                  return (
+                    <li
+                      key={perk.title}
+                      className="group flex items-center gap-4 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3.5 sm:p-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-sm)]"
+                    >
+                      <span aria-hidden className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] ring-1 ring-[var(--accent)]/20">
+                        <Icon className="h-5 w-5" strokeWidth={2} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] leading-snug">
+                          {perk.title}
+                        </p>
+                        <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-snug mt-0.5">
+                          {perk.sub}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] line-through tabular-nums">
+                          {perk.value}
+                        </p>
+                        <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                          Gratis
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
+
+              {/* Total anclado — valor real vs hoy S/0 */}
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--surface-raised)] px-5 py-4">
+                <div>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Valor real del arranque
+                  </p>
+                  <p className="text-xl font-extrabold text-[var(--text-tertiary)] line-through tabular-nums leading-none mt-0.5">
+                    S/ 690+
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+                    Hoy pagás
+                  </p>
+                  <p className="text-3xl sm:text-4xl font-extrabold text-[var(--accent)] tabular-nums leading-none mt-0.5">
+                    S/ 0
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* Derecha — cupos + prueba social + CTA */}
-            <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-7 shadow-[var(--shadow-lg)]">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Cupos disponibles</p>
+            {/* Derecha — cupos tangibles + prueba social + CTA */}
+            <div className="rounded-[1.75rem] border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7 shadow-[var(--shadow-lg)]">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Cupos del mes</p>
                 <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
                   <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Quedan pocos
                 </span>
               </div>
-              <p className="text-5xl font-extrabold tracking-[-0.04em] tabular-nums leading-none mt-1">
-                <span className="text-[var(--accent)]">{libres}</span>
-                <span className="text-[var(--text-tertiary)] text-2xl font-extrabold ml-1">/ {CUPOS_TOTAL}</span>
-              </p>
-              <div className="mt-5 h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-                <span className="block h-full rounded-full bg-linear-to-r from-[var(--accent)] to-[var(--accent-600,var(--accent))]" style={{ width: `${(CUPOS_TOMADOS / CUPOS_TOTAL) * 100}%` }} />
+
+              {/* Casilleros — 10 cupos, ocupados vs libres (más tangible que barra) */}
+              <div className="grid grid-cols-5 gap-2" aria-hidden>
+                {Array.from({ length: CUPOS_TOTAL }).map((_, i) => {
+                  const tomado = i < CUPOS_TOMADOS;
+                  return (
+                    <span
+                      key={i}
+                      className={`h-9 rounded-lg border-2 flex items-center justify-center transition-colors ${
+                        tomado
+                          ? "bg-[var(--accent)] border-[var(--accent)] text-white"
+                          : "border-dashed border-[var(--accent)]/40 bg-[var(--accent-soft)]/40 text-[var(--accent)]"
+                      }`}
+                    >
+                      {tomado ? (
+                        <Check className="h-4 w-4" strokeWidth={3} />
+                      ) : (
+                        <span className="text-[10px] font-extrabold uppercase">libre</span>
+                      )}
+                    </span>
+                  );
+                })}
               </div>
+              <p className="mt-3 text-sm text-[var(--text-secondary)]">
+                <strong className="text-[var(--text-primary)] font-extrabold tabular-nums">{libres} de {CUPOS_TOTAL}</strong> cupos libres este mes en Pucallpa.
+              </p>
 
               {/* Prueba social */}
-              <div className="mt-6 flex items-center gap-3 pt-5 border-t border-[var(--rule-soft)]">
+              <div className="mt-5 flex items-center gap-3 pt-5 border-t border-[var(--rule-soft)]">
                 <div className="flex -space-x-2" aria-hidden>
                   {[
                     { l: "D", c: "var(--accent)" },
@@ -522,9 +627,12 @@ function SocialProofSection() {
                 Reservar mi cupo gratis
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
               </Link>
-              <p className="mt-3 text-center text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)]">
-                Sin tarjeta · te contactamos por WhatsApp
-              </p>
+
+              {/* Sello de garantía */}
+              <div className="mt-4 flex items-center justify-center gap-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)]">
+                <ShieldCheck className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} />
+                Sin tarjeta · sin permanencia · te contactamos por WhatsApp
+              </div>
             </div>
           </div>
         </div>
