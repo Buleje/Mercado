@@ -81,10 +81,11 @@ export default function ComoFuncionaSection() {
                 key={num}
                 className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 lg:p-7 transition-all duration-[var(--dur-base)] hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
               >
-                {/* Número grande en esquina top-right como elemento de jerarquía. */}
+                {/* Número fantasma editorial — watermark grande que ancla la
+                    card y aporta jerarquía premium. Se tiñe de accent en hover. */}
                 <span
                   aria-hidden
-                  className="absolute top-5 right-5 text-3xl font-extrabold tabular-nums tracking-[-0.04em] text-[var(--rule-base)] leading-none select-none transition-colors group-hover:text-[var(--accent)]/30"
+                  className="absolute -top-2 right-3 text-[4.5rem] lg:text-[5.5rem] font-black tabular-nums tracking-[-0.05em] text-[var(--rule-base)]/70 leading-none select-none transition-colors duration-[var(--dur-base)] group-hover:text-[var(--accent)]/25"
                 >
                   {num}
                 </span>
