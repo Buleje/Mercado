@@ -812,50 +812,76 @@ export default function AbrirTiendaPage() {
           </div>
         </section>
 
-        {/* ── Final CTA ───────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-canvas)]">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.08] blur-3xl"
-          />
-          <div className="relative max-w-4xl mx-auto px-4 text-center">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
-              <span
-                aria-hidden
-                className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
-              />
-              Última llamada
-            </p>
-            {/* Heading reducido: antes 5rem en 3 líneas competía con el CTA.
-                Ahora clamp 4rem max + 2 líneas exactas. */}
-            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95] max-w-3xl mx-auto">
-              Tu negocio merece <span className="text-[var(--accent)]">vender más</span>.
-            </h2>
-            <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-              5 minutos para activarlo. Sin tarjeta, sin compromiso. En la primera
-              semana ya estás vendiendo.
-            </p>
-            <div className="mt-8 flex justify-center">
-              <LiveSignupTicker />
-            </div>
-            <div className="mt-10 flex flex-wrap justify-center gap-3">
-              <Link
-                href="/marketplace/registrar"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
-              >
-                <Store className="h-4 w-4" strokeWidth={2.25} />
-                Activar gratis por 1 mes
-                <ArrowUpRight
-                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  strokeWidth={2.5}
-                />
-              </Link>
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-8 py-4 text-base font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-              >
-                Volver al inicio
-              </Link>
+        {/* ── Final CTA — cierre con panel teal full-bleed ──────────────
+            v2 (2026-05-27): antes era texto sobre canvas (se diluía con
+            las secciones previas). Ahora un panel teal de alto contraste
+            funciona como "punto final" visual: chips de tranquilidad,
+            CTA blanco prominente y microcopy que elimina la última excusa. */}
+        <section className="bg-[var(--surface-canvas)] py-16 sm:py-24">
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] px-6 py-14 sm:px-12 sm:py-20 text-center shadow-2xl shadow-[var(--accent)]/30">
+              {/* Glows decorativos */}
+              <div aria-hidden className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+              <div aria-hidden className="pointer-events-none absolute -bottom-28 -right-12 h-80 w-80 rounded-full bg-black/10 blur-3xl" />
+
+              <div className="relative">
+                <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-white/85 mb-6">
+                  <span aria-hidden className="relative inline-flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-70 animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                  </span>
+                  Última llamada
+                </p>
+                <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-extrabold tracking-[-0.035em] text-white leading-[0.95] max-w-3xl mx-auto">
+                  Tu negocio merece{" "}
+                  <span className="italic font-serif">vender más</span>.
+                </h2>
+                <p className="mt-6 text-lg sm:text-xl text-white/85 max-w-2xl mx-auto leading-[1.4]">
+                  5 minutos para activarlo. Sin tarjeta, sin compromiso. En la
+                  primera semana ya estás vendiendo.
+                </p>
+
+                {/* Chips de tranquilidad — última barrera psicológica */}
+                <div className="mt-8 flex flex-wrap justify-center gap-2.5">
+                  {[
+                    { icon: Sparkles, label: "Listo en 5 minutos" },
+                    { icon: CreditCard, label: "Sin tarjeta" },
+                    { icon: RefreshCcw, label: "Cancelás cuando quieras" },
+                  ].map((c) => (
+                    <span
+                      key={c.label}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-white ring-1 ring-white/25 backdrop-blur-sm"
+                    >
+                      <c.icon className="h-4 w-4" strokeWidth={2.25} />
+                      {c.label}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    href="/marketplace/registrar"
+                    className="group inline-flex items-center justify-center gap-2 rounded-full bg-white text-[var(--accent-600,var(--accent))] px-9 py-4 text-base font-extrabold shadow-xl hover:gap-3 hover:shadow-2xl transition-all"
+                  >
+                    <Store className="h-4 w-4" strokeWidth={2.25} />
+                    Activar gratis por 1 mes
+                    <ArrowUpRight
+                      className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      strokeWidth={2.5}
+                    />
+                  </Link>
+                  <a
+                    href="#planes"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/40 px-9 py-4 text-base font-extrabold text-white hover:bg-white/10 hover:border-white/60 transition-colors"
+                  >
+                    Ver planes y precios
+                  </a>
+                </div>
+
+                <p className="mt-6 text-sm font-medium text-white/70">
+                  Te acompañamos en el setup · respondemos por WhatsApp el mismo día
+                </p>
+              </div>
             </div>
           </div>
         </section>
