@@ -138,8 +138,8 @@ function ConnectionQualityCard() {
 
   return (
     <div className={cn("rounded-xl border border-[var(--rule-base)] p-4", style.bg)}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="h-10 w-10 rounded-xl bg-white dark:bg-[var(--color-card)] flex items-center justify-center ">
             <Wifi className={cn("h-5 w-5", style.color)} />
           </div>
@@ -269,8 +269,8 @@ function PerformanceHistoryTab() {
     <div className="space-y-6">
       {/* Record button */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+          <div className="min-w-0 flex-1">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-primary" />
               Historial de Rendimiento
@@ -279,11 +279,11 @@ function PerformanceHistoryTab() {
               Como un diario de salud de tu tienda — registra una medición cada vez que quieras ver cómo va
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {history.length > 0 && (
               <button
                 onClick={clearHistory}
-                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title="Borrar historial"
               >
                 <Trash2 className="h-4 w-4" />
@@ -292,7 +292,7 @@ function PerformanceHistoryTab() {
             <button
               onClick={recordNow}
               disabled={recording}
-              className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="px-3 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 min-h-[44px]"
             >
               {recording ? "Midiendo..." : <><BarChart3 className="h-3.5 w-3.5 inline -mt-0.5" /> Medir ahora</>}
             </button>

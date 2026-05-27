@@ -286,7 +286,7 @@ export default function ScoringCrediticioTab() {
       )}
 
       {/* Filtros de nivel */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap overflow-x-auto pb-1">
         {(["TODOS", "EXCELENTE", "BUENO", "REGULAR", "RIESGOSO", "BLOQUEADO"] as (ScoreLevel | "TODOS")[]).map(lvl => {
           const isActive = filterLevel === lvl;
           const cfg = lvl !== "TODOS" ? LEVEL_CONFIG[lvl] : null;
@@ -295,7 +295,7 @@ export default function ScoringCrediticioTab() {
               key={lvl}
               onClick={() => setFilterLevel(lvl)}
               className={cn(
-                "px-3 h-8 rounded-full text-xs font-medium transition-all",
+                "px-3 min-h-[44px] rounded-full text-xs font-medium transition-all",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 isActive
                   ? cfg ? cfg.badge + " ring-1 ring-current" : "bg-primary text-white"
@@ -317,7 +317,7 @@ export default function ScoringCrediticioTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full pl-9 pr-4 h-10 rounded-lg text-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+          className="w-full pl-9 pr-4 h-12 rounded-lg text-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
         />
       </div>
 
@@ -341,7 +341,7 @@ export default function ScoringCrediticioTab() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+          <div className="hidden sm:block bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-x-auto ">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-800/30">

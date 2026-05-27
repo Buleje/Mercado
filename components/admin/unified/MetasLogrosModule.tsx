@@ -410,7 +410,7 @@ function SemaMesTab() {
       <WeeklyGoalCard sales={sales as never} />
 
       {/* KPIs del mes */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <KPISimple label="Total mes"       value={formatCurrency(stats.monthTotal)} delta={stats.deltaVsLastMonth} sub="vs mes anterior al día" icon={TrendingUp} />
         <KPISimple label="Ticket promedio" value={stats.aov > 0 ? formatCurrency(stats.aov) : "Sin ventas"}            sub={`${stats.monthCount} transacciones`}        icon={ShoppingCart} />
         <KPISimple label="Mejor día"       value={bestDayLabel}                       sub={stats.bestDayValue > 0 ? formatCurrency(stats.bestDayValue) : "—"} icon={Star}       />
@@ -431,7 +431,7 @@ function SemaMesTab() {
       )}
 
       {/* Card mensual */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -907,7 +907,7 @@ function LogrosTab() {
               <NextIcon className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-[var(--text-primary)]">{nextAchievement.def.name}</p>
+              <p className="font-bold text-[var(--text-primary)] break-words">{nextAchievement.def.name}</p>
               <p className="text-xs text-[var(--text-tertiary)] mb-2">{nextAchievement.def.desc}</p>
               <div className="h-2 rounded-full bg-white dark:bg-[var(--color-card)] overflow-hidden">
                 <div
@@ -937,7 +937,7 @@ function LogrosTab() {
             key={p.id}
             onClick={() => setFilter(p.id)}
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border min-h-[44px]",
               filter === p.id
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
                 : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
@@ -991,7 +991,7 @@ function LogrosTab() {
             <p className="text-[var(--text-secondary)] font-semibold">No hay logros en este filtro</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
             {visible.map((a) => {
               const isUnlocked = Boolean(unlocked[a.id]);
               const progress = a.computeProgress?.(ctx);
@@ -1000,7 +1000,7 @@ function LogrosTab() {
                 <div
                   key={a.id}
                   className={cn(
-                    "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-[var(--dur-base)]",
+                    "relative rounded-xl border p-3 sm:p-4 flex flex-col items-center text-center gap-2 transition-all duration-[var(--dur-base)]",
                     isUnlocked
                       ? "border-[var(--data-warning-500)]/40 bg-white dark:bg-[var(--color-card)] elev-1"
                       : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"

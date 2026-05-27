@@ -420,7 +420,7 @@ export default function ForecastingDashboard() {
       </AdminModuleHeader>
 
       {/* ── Grid principal (2 columnas en desktop) ───────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
 
         {/* ════════════════════════════════════════════════════════════════
             PANEL A — Resumen de ventas proyectadas (7 días)
@@ -460,7 +460,7 @@ export default function ForecastingDashboard() {
               </div>
 
               {/* Métricas secundarias */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                 <MetricChip
                   label="Promedio/dia"
                   value={formatCurrency(state.forecast.dailyAvg)}
@@ -710,7 +710,7 @@ export default function ForecastingDashboard() {
             emptyMsg="Sin sugerencias de ajuste de precio en este momento"
           >
             {state.prices.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 overflow-x-hidden">
                 {state.prices.map((s) => {
                   const isApplied = appliedPrices.has(s.productId);
                   const isApplying = applyingPrice === s.productId;
@@ -768,7 +768,7 @@ function PanelCard({
   return (
     <AdminCard padding="md">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-2">
           <span className="text-primary">{icon}</span>
           <h3 className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">

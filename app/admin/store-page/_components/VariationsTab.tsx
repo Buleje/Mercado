@@ -525,7 +525,7 @@ function ProductModifierEditor({
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                 Agregar grupo desde preset
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {PRESETS.map((p) => (
                   <button
                     key={p.label}
@@ -650,7 +650,7 @@ function GroupCard({
       </div>
 
       {/* Configuracion del grupo */}
-      <div className="px-4 py-3 grid grid-cols-3 gap-3 text-sm border-b border-[var(--rule-soft)]">
+      <div className="px-4 py-3 flex flex-wrap gap-3 text-sm border-b border-[var(--rule-soft)]">
         <label className="inline-flex items-center gap-2">
           <input
             type="checkbox"
@@ -821,7 +821,7 @@ function OptionRow({
   }
 
   return (
-    <div className="grid grid-cols-[44px_1fr_90px_auto] items-center gap-2 rounded-lg border border-[var(--rule-soft)] px-2 py-2">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--rule-soft)] px-2 py-2 sm:grid sm:grid-cols-[44px_1fr_90px_auto]">
       <label
         className="relative h-10 w-10 rounded-md overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-[var(--accent)]/40 transition"
         title="Subir imagen"

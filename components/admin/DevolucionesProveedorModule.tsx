@@ -316,7 +316,7 @@ export default function DevolucionesProveedorModule() {
         const mesActual = new Date().toISOString().slice(0, 7);
         const totalMes = devoluciones.filter(d => d.createdAt.startsWith(mesActual)).length;
         return (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
@@ -668,7 +668,7 @@ export default function DevolucionesProveedorModule() {
         {showReportes && (
           <div className="p-4 space-y-6">
             {/* Tarjetas resumen */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {[
                 { label: "Total", value: devoluciones.length, color: "text-[var(--text-primary)]" },
                 { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-[var(--data-warning-500)]" },

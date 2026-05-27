@@ -143,7 +143,7 @@ export default function DeliveryTab() {
       className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden flex flex-col"
       aria-labelledby="routes-heading"
     >
-      <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
+      <div className="px-4 py-4 sm:px-5 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
         <div>
           <p
             id="routes-heading"
@@ -179,7 +179,7 @@ export default function DeliveryTab() {
       className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden flex flex-col"
       aria-labelledby="stops-heading"
     >
-      <div className="px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+      <div className="px-4 py-4 sm:px-5 border-b border-[var(--rule-base)] shrink-0">
         <p
           id="stops-heading"
           className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
@@ -222,7 +222,7 @@ export default function DeliveryTab() {
       className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden flex flex-col"
       aria-labelledby="map-heading"
     >
-      <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
+      <div className="px-4 py-4 sm:px-5 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
             <MapPin className="h-5 w-5" />
@@ -325,7 +325,7 @@ export default function DeliveryTab() {
   return (
     <div className="space-y-6">
       {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-[var(--shadow-sm)]">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 sm:p-6 lg:p-8 shadow-[var(--shadow-sm)]">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
@@ -532,7 +532,7 @@ export default function DeliveryTab() {
       {/* ── 4. Órdenes en vivo (Uber Eats style) ───────────────────── */}
       {trackingState.events.length > 0 && (
         <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
+          <div className="px-4 py-4 sm:px-6 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
                 <Truck className="h-5 w-5" />
@@ -561,7 +561,7 @@ export default function DeliveryTab() {
         className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden"
         aria-labelledby="feed-heading"
       >
-        <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
+        <div className="px-4 py-4 sm:px-6 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
               <Activity className="h-5 w-5" />
@@ -610,7 +610,7 @@ export default function DeliveryTab() {
             })}
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {filteredEvents.length === 0 ? (
             <div className="text-center py-8">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-3">

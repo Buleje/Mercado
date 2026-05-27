@@ -98,7 +98,7 @@ export default function StorePageAdminPage() {
   }, []);
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-6 overflow-x-hidden">
       <AdminModuleHeader
         eyebrow="Mi tienda pública"
         title="Qué ve el cliente cuando entra a tu storefront"

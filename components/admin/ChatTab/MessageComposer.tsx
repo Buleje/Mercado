@@ -82,7 +82,7 @@ export function MessageComposer({
           onClick={handleSend}
           disabled={disabled || sending || !body.trim()}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full transition",
+            "flex h-11 w-11 items-center justify-center rounded-full transition",
             "bg-primary text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40",
             "disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700",
           )}

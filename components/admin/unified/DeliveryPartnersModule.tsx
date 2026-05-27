@@ -2102,7 +2102,7 @@ function RankingTab() {
           </div>
 
           {/* Period pills */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {PERIODS.map((p) => (
               <button
                 key={p.id}

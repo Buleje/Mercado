@@ -175,14 +175,14 @@ export default function ChatIAModule() {
   }, [maximized]);
 
   const toolbar = (
-    <div className="flex items-center gap-2 shrink-0">
+    <div className="flex items-center gap-1 sm:gap-2 shrink-0 flex-wrap">
       <button
         type="button"
         onClick={() => setSettingsOpen((s) => !s)}
         aria-label="Configuración"
         title="Configuración del asistente"
         className={cn(
-          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors",
+          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors min-h-[44px]",
           settingsOpen
             ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-primary)]"
             : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
@@ -196,7 +196,7 @@ export default function ChatIAModule() {
         onClick={() => setMaximized((m) => !m)}
         aria-label={maximized ? "Minimizar" : "Maximizar"}
         title={maximized ? "Volver al panel" : "Pantalla completa (Esc para salir)"}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]"
       >
         {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
         <span>{maximized ? "Salir" : "Maximizar"}</span>
@@ -244,7 +244,7 @@ export default function ChatIAModule() {
       )}
     >
       {/* Barra superior: progress + toolbar */}
-      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 px-4 sm:px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
             <Sparkles className="h-4 w-4 text-[var(--data-success-500)]" />
@@ -258,14 +258,14 @@ export default function ChatIAModule() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0 flex-wrap">
           {usageBar}
           {toolbar}
         </div>
       </div>
 
       {/* Layout chat + settings side panel */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
         <div className="flex-1 overflow-hidden transition-all">
           <ChatIAClean
             tone={settings.tone}
@@ -276,7 +276,7 @@ export default function ChatIAModule() {
 
         {/* Settings panel (slide-in from right) */}
         {settingsOpen && (
-          <aside className="w-[320px] shrink-0 border-l border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-y-auto">
+          <aside className="w-full sm:w-[320px] shrink-0 border-t sm:border-t-0 sm:border-l border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-y-auto">
             <SettingsPanel
               settings={settings}
               onUpdate={update}
@@ -318,7 +318,7 @@ function SettingsPanel({
   onClose: () => void;
 }) {
   return (
-    <div className="p-5 space-y-6">
+    <div className="p-4 sm:p-5 space-y-6">
       <header className="flex items-center justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">

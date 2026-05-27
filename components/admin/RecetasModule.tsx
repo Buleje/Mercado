@@ -39,7 +39,7 @@ function RecetasDashboard() {
   if (loading || !data) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-xl" />)}
         </div>
         <div className="h-64 bg-gray-200 rounded-xl" />
@@ -104,7 +104,7 @@ function RecetasDashboard() {
     <div className="space-y-6">
       {/* KPIs */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#2563EB]" },
           { label: "Lotes del mes", value: String(lotesMes), border: "border-b-4 border-secondary" },
@@ -121,7 +121,7 @@ function RecetasDashboard() {
 
       {/* Lotes producidos por semana */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Lotes producidos por semana</CardTitle>
         {weeklyData.some(d => d.lotes > 0) ? (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -140,9 +140,9 @@ function RecetasDashboard() {
       </m.div>
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* PieChart: recetas por categoria */}
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Recetas por tipo</CardTitle>
           {categoryData.length > 0 ? (
             <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -159,7 +159,7 @@ function RecetasDashboard() {
         </div>
 
         {/* Top 5 recetas más producidas */}
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 5 recetas más producidas</CardTitle>
           {top5Recetas.length > 0 ? (
             <div className="space-y-3">
@@ -505,7 +505,7 @@ export default function RecetasModule() {
       </AdminModuleHeader>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto">
+      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto scrollbar-none">
         {(["dashboard", "recetas", "produccion", "recetario"] as const).map(t => (
           <button
             key={t}
@@ -566,7 +566,7 @@ export default function RecetasModule() {
             return (
               <>
                 {/* Mejora 6: Barra de busqueda y filtros */}
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                     <input
@@ -574,13 +574,13 @@ export default function RecetasModule() {
                       placeholder="Buscar receta..."
                       value={recetaSearch}
                       onChange={e => setRecetaSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full pl-9 pr-3 h-12 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 flex-wrap">
                     {(["todas", "activas", "inactivas"] as const).map(f => (
                       <button key={f} onClick={() => setRecetaFilter(f)} className={cn(
-                        "shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
+                        "shrink-0 px-3 min-h-[44px] rounded-xl text-xs font-bold transition-colors",
                         recetaFilter === f ? "bg-[#2563EB] text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
                       )}>
                         {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -590,7 +590,7 @@ export default function RecetasModule() {
                   <select
                     value={recetaSort}
                     onChange={e => setRecetaSort(e.target.value as typeof recetaSort)}
-                    className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                    className="px-3 h-12 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                   >
                     <option value="nombre">Nombre A-Z</option>
                     <option value="costo-asc">Costo menor</option>
@@ -605,7 +605,7 @@ export default function RecetasModule() {
                     <p className="text-sm text-[var(--text-secondary)]">No se encontraron recetas con &apos;{recetaSearchDebounced}&apos;</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.map(r => {
                       const productoFinal = r.productoId ? productsMap[r.productoId] : null;
                       const precioVenta = productoFinal?.price ?? 0;
@@ -1362,7 +1362,7 @@ function ProducciónTab() {
       {/* Mejora M6: KPIs de produccion */}
       {lotes.length > 0 && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-x-auto">
             <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Lotes este mes</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{lotesEsteMes.length}</p>
@@ -1401,7 +1401,7 @@ function ProducciónTab() {
         </>
       )}
 
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-x-auto ">
         {lotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <Layers className="h-8 w-8 text-[var(--text-tertiary)]" />

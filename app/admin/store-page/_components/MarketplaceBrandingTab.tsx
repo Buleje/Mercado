@@ -138,7 +138,7 @@ export default function MarketplaceBrandingTab() {
       icon={Sparkles}
     >
       {/* Preview lado a lado */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <PreviewCard label="Banner de la tienda" subLabel="Aparece arriba del catálogo y en cards del directorio">
           <div className="relative aspect-[16/9] rounded-lg overflow-hidden border border-[var(--rule-soft)]">
             {bannerInput ? (
@@ -283,14 +283,14 @@ function UrlField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://ejemplo.com/banner.jpg"
-          className="flex-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+          className="flex-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 h-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
         />
         {value && (
           <button
             type="button"
             onClick={onClear}
             aria-label="Limpiar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>

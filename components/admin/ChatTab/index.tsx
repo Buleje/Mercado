@@ -61,7 +61,7 @@ export default function ChatTab() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-slate-700">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 sm:p-5 dark:border-slate-700">
         <div>
           <PageTitle className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
             <MessageCircle className="h-6 w-6 text-primary" />
