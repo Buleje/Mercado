@@ -750,76 +750,98 @@ function StoreRatingStars({ rating, reviewCount }: { rating: number; reviewCount
 }
 
 /**
- * StoreCard — card pro de tienda: logo grande + nombre + rating + chips de
- * categoría/zona + pie de delivery. Reusada por Tiendas destacadas (grid) y
- * Recomendadas para vos (rail). `priority` solo para las primeras (LCP).
+ * StoreCard — card estilo marketplace app (Rappi/Uber Eats): cover con
+ * textura de marca + logo solapado tipo avatar + contenido alineado a la
+ * izquierda (nombre, rating, chips categoría/zona, pie delivery).
+ * v4 2026-05-27: rediseño de card centrada → listado pro con cover.
+ * Reusada por Tiendas destacadas (grid) y Recomendadas para vos (rail).
  */
 function StoreCard({ s, priority = false }: { s: TopStore; priority?: boolean }) {
+  const initial = s.name.trim().charAt(0).toUpperCase();
   return (
     <Link
       href={`/marketplace/${s.slug}`}
       aria-label={`${s.name}${s.featuredHome ? ", destacada" : ""}${s.rating > 0 ? `, ${s.rating.toFixed(1)} estrellas` : ""}${s.category ? `, ${s.category}` : ""}${s.zone ? `, ${s.zone}` : ""}`}
-      className={`group relative flex h-full flex-col rounded-2xl border-2 bg-[var(--surface-raised)] p-4 sm:p-5 hover:-translate-y-1 hover:shadow-xl transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${s.featuredHome ? "border-[var(--accent)] shadow-md shadow-[var(--accent)]/15" : "border-[var(--rule-base)] hover:border-[var(--accent)]"}`}
+      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--surface-raised)] hover:-translate-y-1 hover:shadow-xl transition-all duration-[var(--dur-base)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${s.featuredHome ? "border-[var(--accent)] shadow-md shadow-[var(--accent)]/15" : "border-[var(--rule-base)] hover:border-[var(--accent)]"}`}
     >
-      {/* Badge Destacada (beneficio superadmin "Destacar en Home") */}
-      {s.featuredHome && (
-        <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white shadow">
-          <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
-          Destacada
-        </span>
-      )}
-
-      {/* Logo grande centrado */}
-      <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] overflow-hidden shadow-sm group-hover:scale-[1.04] transition-transform mx-auto mb-3 shrink-0">
-        {s.logo ? (
-          <Image
-            src={s.logo}
-            alt=""
-            fill
-            sizes="(min-width: 640px) 96px, 80px"
-            className="object-cover"
-            priority={priority}
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-white font-black text-3xl sm:text-4xl">
-            {s.name.trim().charAt(0).toUpperCase()}
-          </div>
+      {/* Cover de marca — gradiente teal + textura sutil de puntos */}
+      <div className="relative h-14 sm:h-16 bg-linear-to-br from-[var(--accent)]/20 via-[var(--accent)]/10 to-[var(--surface-sunken)]">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.6]"
+          style={{
+            backgroundImage: "radial-gradient(circle, var(--accent) 1px, transparent 1px)",
+            backgroundSize: "14px 14px",
+            maskImage: "linear-gradient(to bottom, black, transparent)",
+            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+            opacity: 0.12,
+          }}
+        />
+        {/* Badge Destacada (beneficio superadmin "Destacar en Home") */}
+        {s.featuredHome && (
+          <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white shadow">
+            <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
+            Destacada
+          </span>
         )}
       </div>
 
-      {/* Nombre */}
-      <p className="text-sm sm:text-base font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors mb-1.5">
-        {s.name}
-      </p>
-
-      {/* Rating */}
-      {s.rating > 0 && (
-        <div className="flex justify-center mb-2.5">
-          <StoreRatingStars rating={s.rating} reviewCount={s.reviewCount} />
-        </div>
-      )}
-
-      {/* Chips categoría + zona */}
-      {(s.category || s.zone) && (
-        <div className="mt-auto flex flex-wrap items-center justify-center gap-1.5 mb-2.5">
-          {s.category && (
-            <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[10px] sm:text-xs font-bold text-[var(--accent)] line-clamp-1 max-w-full">
-              {s.category}
-            </span>
-          )}
-          {s.zone && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-[var(--text-secondary)] line-clamp-1 max-w-full">
-              <MapPin className="h-2.5 w-2.5 shrink-0" strokeWidth={2} aria-hidden />
-              {s.zone}
-            </span>
+      {/* Logo avatar solapando el cover */}
+      <div className="px-3 sm:px-4 -mt-7 sm:-mt-8">
+        <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-[var(--surface-canvas)] ring-4 ring-[var(--surface-raised)] overflow-hidden shadow-md group-hover:scale-[1.05] transition-transform shrink-0">
+          {s.logo ? (
+            <Image
+              src={s.logo}
+              alt=""
+              fill
+              sizes="(min-width: 640px) 64px, 56px"
+              className="object-cover"
+              priority={priority}
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-white font-black text-2xl sm:text-3xl">
+              {initial}
+            </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* Pie: delivery disponible (honesto — sin minutos inventados) */}
-      <div className="flex items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5 text-[10px] sm:text-xs font-bold text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors">
-        <Bike className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        Delivery a domicilio
+      {/* Body alineado a la izquierda */}
+      <div className="flex flex-1 flex-col px-3 sm:px-4 pt-2 pb-3">
+        {/* Nombre */}
+        <p className="text-sm sm:text-base font-extrabold tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+          {s.name}
+        </p>
+
+        {/* Rating */}
+        {s.rating > 0 && (
+          <div className="mt-1">
+            <StoreRatingStars rating={s.rating} reviewCount={s.reviewCount} />
+          </div>
+        )}
+
+        {/* Chips categoría + zona */}
+        {(s.category || s.zone) && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {s.category && (
+              <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] sm:text-xs font-bold text-[var(--accent)] line-clamp-1 max-w-full">
+                {s.category}
+              </span>
+            )}
+            {s.zone && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-[var(--text-secondary)] line-clamp-1 max-w-full">
+                <MapPin className="h-2.5 w-2.5 shrink-0" strokeWidth={2} aria-hidden />
+                {s.zone}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Pie: delivery disponible (honesto — sin minutos inventados) */}
+        <div className="mt-auto flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5 text-[10px] sm:text-xs font-bold text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors">
+          <Bike className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+          Delivery a domicilio
+        </div>
       </div>
     </Link>
   );
