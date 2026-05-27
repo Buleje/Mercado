@@ -465,11 +465,11 @@ function SemaMesTab() {
                     editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                   )}
                 />
-                <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
-                  <Check className="w-3.5 h-3.5" />
+                <button onClick={handleSave} aria-label="Guardar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                  <Check className="w-4 h-4" />
                 </button>
-                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
-                  <X className="w-3.5 h-3.5" />
+                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               {editError && (
