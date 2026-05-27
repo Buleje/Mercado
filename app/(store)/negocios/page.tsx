@@ -1,45 +1,14 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { cacheLife, cacheTag } from "next/cache";
-// Brandon 2026-05-20 v8 — audit perf P0: secciones below-the-fold convertidas
-// a dynamic() para reducir bundle inicial de /negocios (~40-60KB ahorro).
-// LandingHero queda con SSR true (es above-fold para SEO + LCP).
-const LandingHero = dynamic(() => import("@/components/landing/LandingHero"), {
-  loading: () => <div className="min-h-[600px] bg-[var(--surface-canvas)]" aria-hidden />,
-});
-const ReviewsCarousel = dynamic(
-  () => import("@/components/landing/LandingClientSections").then((m) => ({ default: m.ReviewsCarousel })),
-  { loading: () => <div className="min-h-[300px]" aria-hidden /> },
-);
-const PopularCategoriesTiles = dynamic(
-  () => import("@/components/landing/PopularCategoriesTiles"),
-  { loading: () => <div className="min-h-[400px] bg-[var(--surface-sunken)]" aria-hidden /> },
-);
+// Brandon 2026-05-27 — rediseño B2B: /negocios deja de reusar el home B2C
+// (LandingHero "Más clientes", categorías de productos, reseñas de clientes,
+// bodeguero spotlight). Ahora es una landing de SOFTWARE clara y distinta de
+// /abrir-tienda: hero B2B propio + grid de MÓDULOS del software. Las secciones
+// de apoyo (cómo funciona, planes, plan fundador, FAQ) se conservan.
 const ComoFuncionaSection = dynamic(
   () => import("@/components/landing/sections/ComoFuncionaSection"),
   { loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
-);
-// LandingHeader removido — chrome unificado vive en app/(store)/layout.tsx (v5).
-const StickyMobileCTA = dynamic(
-  () => import("@/components/landing/StickyMobileCTA"),
-);
-import { Reveal } from "@/components/landing/Reveal";
-import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
-import T from "@/components/T";
-import {
-  Store,
-  ArrowUpRight,
-  Banknote,
-  CreditCard,
-} from "@buleje/design-system/icons";
-// Below-fold — dynamic con skeleton para reducir initial bundle en prod y
-// parallelizar compile en dev. Combinacion warm-routes (ver scripts/) +
-// dynamic es ideal: cada chunk se compila una vez, luego navegacion es <1s.
-const BodegueroSpotlight = dynamic(
-  () => import("@/components/marketplace/home/BodegueroSpotlight"),
-  { ssr: true, loading: () => <SectionSkeleton /> },
 );
 const NosotrosSection = dynamic(
   () => import("@/components/landing/sections/NosotrosSection"),
@@ -49,6 +18,25 @@ const FAQSection = dynamic(
   () => import("@/components/landing/sections/FAQSection"),
   { ssr: true, loading: () => <SectionSkeleton /> },
 );
+const StickyMobileCTA = dynamic(() => import("@/components/landing/StickyMobileCTA"));
+import { Reveal } from "@/components/landing/Reveal";
+import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
+import T from "@/components/T";
+import {
+  Store,
+  ArrowUpRight,
+  Banknote,
+  CreditCard,
+  Smartphone,
+  Package,
+  Truck,
+  Wallet,
+  Receipt,
+  MessageCircle,
+  BarChart3,
+  ShieldCheck,
+  Sparkles,
+} from "@buleje/design-system/icons";
 // Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
 // Brandon 2026-05-27: /negocios es 100% informativa/SEO. El selector
 // interactivo de planes + signup vive SOLO en /abrir-tienda (página de
@@ -126,45 +114,6 @@ export const metadata: Metadata = {
     images: ["/api/og/negocios"],
   },
 };
-
-// ── Cached marketplace stats from DB ──
-async function getMarketplaceStats() {
-  "use cache";
-  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
-  cacheTag("marketplace-stats");
-  const { prisma } = await import("@/lib/prisma");
-  const [storeCount, productCount, avgRating] = await Promise.all([
-    // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
-    prisma.store.count({ where: { isPublished: true } }).catch(() => 0),
-    // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
-    prisma.product.count({ where: { active: true } }).catch(() => 0),
-    // eslint-disable-next-line no-restricted-properties -- agregacion publica marketplace cross-tenant.
-    prisma.review
-      .aggregate({ _avg: { rating: true }, where: { status: "approved" } })
-      .then((r) => r._avg.rating ?? 4.8)
-      .catch(() => 4.8),
-  ]);
-  return { storeCount, productCount, avgRating: Number(avgRating.toFixed(1)) };
-}
-
-// ── Cached reviews from DB ──
-async function getMarketplaceReviews() {
-  "use cache";
-  cacheLife({ revalidate: 600, stale: 120, expire: 1800 });
-  cacheTag("marketplace-reviews");
-  const { prisma } = await import("@/lib/prisma");
-  try {
-    // eslint-disable-next-line no-restricted-properties -- reviews publicas marketplace cross-tenant.
-    return await prisma.review.findMany({
-      where: { status: "approved", rating: { gte: 4 }, storeId: { not: null } },
-      orderBy: { date: "desc" },
-      take: 6,
-      select: { id: true, name: true, text: true, rating: true, date: true },
-    });
-  } catch {
-    return [];
-  }
-}
 
 // ── JSON-LD structured data (B2B landing) ──
 // Brandon 2026-05-20 v11 audit Bloque C — 3 schemas para /negocios:
@@ -337,28 +286,165 @@ async function BulejeJsonLd() {
   );
 }
 
-// ── Hero — 2-column layout con ilustraciones locales + diferenciador
-// cualitativo. Audit P9: removida la query de stats que era descartada
-// dentro del componente (LandingHero ya no usa numbers desde mayo).
-function HeroSection() {
+// ── Hero B2B — propio de /negocios (NO el LandingHero del home B2C). ──
+// Mensaje de software para el dueño: titular grande estilo editorial + panel
+// de módulos estilizado a la derecha (distinto del BodegaScene de /abrir-tienda).
+function B2BHero() {
   return (
-    <LandingHero />
+    <section className="relative overflow-hidden bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -right-32 h-[520px] w-[520px] rounded-full bg-[var(--accent)]/[0.08] blur-3xl"
+      />
+      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-center">
+          {/* Texto */}
+          <div>
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+              <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+              <Store className="h-4 w-4" strokeWidth={2} />
+              Software para tu negocio
+            </p>
+            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+              Un solo sistema para{" "}
+              <span className="italic font-serif text-[var(--accent)]">vender, cobrar y crecer.</span>
+            </h2>
+            <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed max-w-xl">
+              POS, inventario, delivery, fiado digital y boletas SUNAT — todo
+              integrado, desde tu celular. Sin sistemas caros ni técnicos.
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Link
+                href="/abrir-tienda"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+              >
+                Probar gratis 1 mes
+                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
+              </Link>
+              <a
+                href="#modulos"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-7 py-4 text-base font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+              >
+                Ver qué incluye
+              </a>
+            </div>
+
+            <div className="mt-7 flex flex-wrap gap-2">
+              {[
+                { icon: ShieldCheck, label: "0% comisión por venta" },
+                { icon: Sparkles, label: "Listo en 5 minutos" },
+                { icon: Wallet, label: "Cobrás con Yape/Plin" },
+              ].map((c) => (
+                <span
+                  key={c.label}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--text-secondary)]"
+                >
+                  <c.icon className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={1.75} />
+                  {c.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Panel de módulos estilizado (visual B2B distinto del BodegaScene) */}
+          <div className="relative">
+            <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 shadow-[var(--shadow-lg)]">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  Tu panel · Buleje
+                </p>
+                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                  <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                  </span>
+                  En vivo
+                </span>
+              </div>
+              <div className="rounded-2xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] p-4 mb-3">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Vendido hoy</p>
+                <p className="mt-1 text-3xl font-extrabold tracking-[-0.03em] tabular-nums text-[var(--text-primary)] leading-none">
+                  S/ 2,840 <span className="text-sm font-bold text-[var(--accent)] align-middle">+18%</span>
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { icon: Smartphone, l: "POS" },
+                  { icon: Package, l: "Stock" },
+                  { icon: Truck, l: "Delivery" },
+                  { icon: Wallet, l: "Fiado" },
+                  { icon: Receipt, l: "SUNAT" },
+                  { icon: BarChart3, l: "Reportes" },
+                ].map((m) => (
+                  <div key={m.l} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-center">
+                    <m.icon className="h-5 w-5 mx-auto text-[var(--accent)]" strokeWidth={1.75} />
+                    <p className="mt-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{m.l}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
-// StatsMarquee section eliminada (mayo 2026): mostraba "6+ tiendas / 147+
-// productos" como métricas prominentes — números bajos minan credibilidad.
-// La home volverá a tener una sección "en números" cuando superemos 500
-// tiendas activas. Mientras tanto: diferenciador regional honesto en hero.
+// ── Módulos del software — la sección que define a /negocios como landing B2B.
+// Reemplaza a las "categorías populares de productos" (eso es B2C/marketplace).
+const MODULES = [
+  { icon: Smartphone, title: "Punto de venta (POS)", desc: "Cobrá en mostrador o por celular. Yape, Plin, efectivo y tarjeta, con ticket al instante." },
+  { icon: Package, title: "Inventario inteligente", desc: "Stock en tiempo real, alertas de quiebre y vencimiento, y control de mermas." },
+  { icon: Truck, title: "Delivery propio", desc: "Zonas, tarifas y tracking. Tus repartidores o los nuestros — vos decidís." },
+  { icon: Wallet, title: "Fiado digital", desc: "Cuentas por cobrar con historial, recordatorios y semáforo de riesgo. Adiós cuaderno." },
+  { icon: Receipt, title: "Facturación SUNAT", desc: "Boletas, facturas, cotizaciones y guías de remisión electrónicas, integradas." },
+  { icon: MessageCircle, title: "WhatsApp + IA", desc: "Recibí pedidos y confirmá pagos por WhatsApp, con asistente que responde solo." },
+];
 
-// ── Reviews section (real DB data) o placeholder honesto pre-launch ──
-// UX Strategy P1-5 fix 2026-04-30: si no hay reviews reales, NO mostramos
-// fallbackReviews falsos. Mayo 2026: agregamos un placeholder honesto
-// "Únete a los primeros 10 negocios" cuando la sección está vacía.
-async function ReviewsSection() {
-  const reviews = await getMarketplaceReviews();
-  if (reviews.length > 0) return <ReviewsCarousel reviews={reviews} />;
-  return <EarlyAdopterPlaceholder />;
+function FeaturesGrid() {
+  return (
+    <section id="modulos" className="bg-[var(--surface-sunken)]/60 border-y border-[var(--rule-soft)] py-20 sm:py-28 scroll-mt-20">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mb-12 sm:mb-16">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+            <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+            Todo lo que incluye
+          </p>
+          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
+            Seis módulos.{" "}
+            <span className="italic font-serif text-[var(--accent)]">Una sola plataforma.</span>
+          </h2>
+          <p className="mt-5 text-lg text-[var(--text-secondary)] leading-relaxed">
+            Lo que antes necesitaba cuaderno, calculadora y tres apps distintas
+            — ahora en un solo lugar, hecho para bodegas del Perú.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {MODULES.map((m) => (
+            <article
+              key={m.title}
+              className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 transition-all hover:border-[var(--accent)]/40 hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <span
+                aria-hidden
+                className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4"
+              >
+                <m.icon className="h-6 w-6" strokeWidth={1.75} />
+              </span>
+              <h3 className="font-display text-xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+                {m.title}
+              </h3>
+              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
+                {m.desc}
+              </p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 // ── Placeholder honesto para fase pre-launch ──
@@ -523,163 +609,6 @@ function EarlyAdopterPlaceholder() {
   );
 }
 
-// ── Business CTA banner — 2 columnas editorial ──
-// v2 (2026-05-10): antes era un card grande con el lado derecho vacío
-// (gradient blob solo). Ahora 2-col: izquierda pitch + CTA, derecha card
-// oscuro con dashboard mock + numbers que respalden la promesa.
-function PromoBanners() {
-  return (
-    <section
-      aria-label="Sumate a Buleje"
-      className="py-20 sm:py-28 bg-[var(--surface-canvas)]"
-    >
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        <div className="group relative bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-3xl overflow-hidden transition-all hover:border-[var(--accent)] hover:shadow-[var(--shadow-lg)]">
-          {/* Gradient accent decorativo */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-32 -right-20 h-[440px] w-[440px] rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] opacity-[0.10] blur-3xl group-hover:opacity-[0.18] transition-opacity"
-          />
-
-          <div className="relative grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-12 p-8 sm:p-10 lg:p-12 items-center">
-            {/* ── Izquierda: pitch + CTA ────────────────────────────────── */}
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-md">
-                  <Store className="h-5 w-5" strokeWidth={2.25} />
-                </span>
-                <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <T k="landing.promo.business.kicker" fallback="Para dueños" />
-                </p>
-              </div>
-
-              <h3 className="text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.04]">
-                <T k="landing.promo.business.title1" fallback="Vendé sin comisión" />
-                <br />
-                <span className="text-[var(--accent)]">
-                  <T k="landing.promo.business.titleAccent" fallback="los primeros 90 días." />
-                </span>
-              </h3>
-
-              <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-lg">
-                <T
-                  k="landing.promo.business.desc"
-                  fallback="Tu bodega online en 5 minutos. Yape, efectivo, delivery propio. Cero costo fijo."
-                />
-              </p>
-
-              {/* Bullet list compacto */}
-              <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 max-w-xl">
-                {[
-                  "Setup en 5 minutos",
-                  "Yape · Plin · Efectivo · Tarjeta",
-                  "Delivery propio o nuestros repartidores",
-                  "Soporte WhatsApp 24/7",
-                ].map((b) => (
-                  <li key={b} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-                    <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] shrink-0 mt-0.5">
-                      <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 8.5 6.5 12 13 4" />
-                      </svg>
-                    </span>
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link
-                  href="/abrir-tienda"
-                  className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] px-7 py-4 text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
-                >
-                  <T k="landing.promo.business.cta" fallback="Abrir mi tienda gratis" />
-                  <ArrowUpRight
-                    className="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5"
-                    strokeWidth={2.5}
-                  />
-                </Link>
-                <Link
-                  href="#planes"
-                  className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-transparent px-6 py-3.5 text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-                >
-                  Ver planes
-                </Link>
-              </div>
-            </div>
-
-            {/* ── Derecha: dashboard mock con stats que respaldan ─────────── */}
-            <aside className="relative">
-              <div className="rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] p-6 sm:p-7 shadow-[var(--shadow-xl)]">
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60">
-                    Tu panel · Hoy
-                  </p>
-                  <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-                    <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                    </span>
-                    En vivo
-                  </span>
-                </div>
-                <p className="text-4xl sm:text-5xl font-extrabold tracking-[-0.04em] tabular-nums leading-none">
-                  S/ 2,887
-                </p>
-                <p className="mt-1 text-sm text-white/60">
-                  vendido hoy · 23 pedidos
-                </p>
-
-                {/* Mini stats grid */}
-                <div className="mt-6 grid grid-cols-3 gap-3">
-                  {[
-                    { v: "0%",    l: "comisión" },
-                    { v: "5 min", l: "setup" },
-                    { v: "24/7",  l: "soporte" },
-                  ].map(({ v, l }) => (
-                    <div key={l} className="rounded-xl bg-white/[0.06] backdrop-blur px-3 py-3">
-                      <p className="text-lg sm:text-xl font-extrabold tabular-nums leading-none tracking-tight">
-                        {v === "0%" ? (
-                          <>
-                            <span className="text-[var(--accent)]">0</span>
-                            <span className="text-white/50">%</span>
-                          </>
-                        ) : (
-                          <span className="text-white">{v}</span>
-                        )}
-                      </p>
-                      <p className="mt-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/55">
-                        {l}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Eventos recientes */}
-                <ul className="mt-5 space-y-1.5">
-                  {[
-                    { who: "Doña Marta", what: "pidió pollo broaster · S/ 28.50", t: "hace 2 min" },
-                    { who: "Carlos S.", what: "Yape confirmado · S/ 15.00", t: "hace 5 min" },
-                    { who: "Lucía P.", what: "armó carrito de S/ 42.30", t: "hace 7 min" },
-                  ].map((e) => (
-                    <li key={e.t} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.04] px-3 py-2">
-                      <p className="text-xs text-white/85 leading-snug truncate min-w-0">
-                        <strong className="font-extrabold text-white">{e.who}</strong>{" "}
-                        <span className="text-white/60">·</span> {e.what}
-                      </p>
-                      <p className="text-[length:var(--ts-2xs)] text-white/45 tabular-nums shrink-0">
-                        {e.t}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ── Planes snapshot — fuente única plan-tiers.ts ──
 // Brandon mayo 2026 v2: 4 planes alineados con /abrir-tienda y superadmin.
@@ -961,68 +890,49 @@ export default async function Home() {
   return (
     <main id="main-content">
       <BulejeJsonLd />
-      {/* Brandon 2026-05-20 v11 audit Bloque C — h1 SEO sr-only.
-          LandingHero arranca con h2 ("Más clientes. Más pedidos.")
-          → audit detectó heading hierarchy rota sin h1 visible.
-          h1 sr-only mantiene el flow visual del hero intacto pero
-          le da a Googlebot la jerarquía semántica correcta. */}
+      {/* h1 SEO sr-only — jerarquía semántica para Googlebot. El B2BHero usa h2
+          para mantener el flujo visual editorial. */}
       <h1 className="sr-only">
         Software para bodega y tienda en Perú — Buleje. Abrí tu tienda
         online en 5 minutos con POS, delivery, fiado, SUNAT y Yape.
       </h1>
-      {/* DiscountBanner (10% nuevos compradores) movido a /marketplace —
-          no debe aparecer en la home de vendedores. */}
 
-      {/* Hero — presentación del marketplace */}
-      <Suspense fallback={<HeroSkeleton />}>
-        <HeroSection />
-      </Suspense>
+      {/* Flujo B2B: hero software → módulos → cómo funciona → planes →
+          plan fundador → pagos → nosotros → FAQ → CTA. */}
+      <B2BHero />
 
-      {/* Categorías populares — grid unico 6 categorias con ilustraciones */}
       <Reveal>
-        <PopularCategoriesTiles />
+        <FeaturesGrid />
       </Reveal>
 
-      {/* Cómo funciona — 4 pasos + stats + CTA (reemplaza /como-funciona) */}
+      {/* Cómo funciona — 4 pasos */}
       <Reveal>
         <ComoFuncionaSection />
       </Reveal>
 
-      {/* Conoce a tu bodeguero — humanos detrás (movida desde /tiendas) */}
-      <Reveal>
-        <BodegueroSpotlight />
-      </Reveal>
-
-      {/* Nosotros — historia + valores (stats viven en hero, no se duplican) */}
-      <Reveal>
-        <NosotrosSection />
-      </Reveal>
-
-      {/* Voz de la comunidad — reviews reales de DB */}
-      <Suspense fallback={<SectionSkeleton />}>
-        <Reveal>
-          <ReviewsSection />
-        </Reveal>
-      </Suspense>
-
-      {/* Planes snapshot (el bloque de Nosotros ya vive arriba en NosotrosSection) */}
+      {/* Planes (teaser informativo → /abrir-tienda para activar) */}
       <Reveal>
         <AboutAndPricingSnapshot />
       </Reveal>
 
-      {/* FAQ — sección editorial consolidada (reemplaza /faq) */}
+      {/* Plan Fundador — primeros 10 negocios (antes era fallback de reviews) */}
       <Reveal>
-        <FAQSection />
+        <EarlyAdopterPlaceholder />
       </Reveal>
 
-      {/* Ser parte — negocio + repartidor */}
-      <Reveal>
-        <PromoBanners />
-      </Reveal>
-
-      {/* Info confianza */}
+      {/* Formas de pago de tus clientes */}
       <Reveal>
         <PaymentMethods />
+      </Reveal>
+
+      {/* Nosotros — historia + valores */}
+      <Reveal>
+        <NosotrosSection />
+      </Reveal>
+
+      {/* FAQ */}
+      <Reveal>
+        <FAQSection />
       </Reveal>
 
       {/* CTA final */}
@@ -1033,10 +943,6 @@ export default async function Home() {
       <StickyMobileCTA />
     </main>
   );
-}
-
-function HeroSkeleton() {
-  return <PaicheLoading variant="page" label="Preparando tu marketplace…" />;
 }
 
 function SectionSkeleton() {
