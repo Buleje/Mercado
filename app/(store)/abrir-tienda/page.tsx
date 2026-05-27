@@ -98,41 +98,54 @@ const FAQS = [
 ];
 
 // ── Por qué Buleje — los 3 caminos (cuaderno / POS caro / Buleje) ──
-const PATHS = [
+// Copy simple para cualquier bodeguero + psicología: aversión a la pérdida
+// (cuaderno/POS = lo que perdés), anclaje (S/300 vs S/0) y reversión de riesgo
+// (sin tarjeta, cancelás cuando quieras) en Buleje.
+const PATHS: {
+  name: string;
+  verdict: string;
+  cost: string;
+  points: string[];
+  reassurance?: string;
+  positive: boolean;
+}[] = [
   {
     name: "El cuaderno",
-    verdict: "Te cuesta tiempo",
-    cost: "Gratis, pero perdés plata",
+    verdict: "Te roba tiempo y plata",
+    cost: "Gratis… pero te sale caro",
     points: [
-      "Anotás a mano y a veces no cuadra",
-      "Sin stock real ni reportes",
-      "Cobrás solo con efectivo o Yape suelto",
-      "Cada cierre de caja te roba la noche",
+      "Sumás a mano y a veces no te cuadra la caja",
+      "No sabés qué se vende ni qué se te está acabando",
+      "Si te olvidás de un fiado, esa plata se pierde",
+      "Cierras de noche, cansado y sin saber cómo te fue",
     ],
     positive: false,
   },
   {
-    name: "POS caro",
-    verdict: "Te cuesta plata",
-    cost: "S/ 300+/mes + instalación",
+    name: "Un sistema caro",
+    verdict: "Te cobra todos los meses",
+    cost: "S/ 300 o más al mes",
     points: [
-      "Pagás licencia cara todos los meses",
-      "Necesitás un técnico para configurarlo",
-      "No recibe pedidos por WhatsApp ni delivery",
-      "Atado a una caja física, no al celular",
+      "Pagás caro aunque ese mes vendas poco",
+      "Necesitás un técnico para instalarlo y arreglarlo",
+      "No te trae clientes nuevos, solo cobra",
+      "Atado a una máquina en el mostrador, no a tu celular",
     ],
     positive: false,
   },
   {
     name: "Buleje",
-    verdict: "No te cuesta ninguno",
-    cost: "Desde S/ 0 · sin tarjeta",
+    verdict: "Te hace vender más",
+    cost: "Gratis para empezar · sin tarjeta",
     points: [
-      "Todo en una app: POS, stock, delivery y SUNAT",
-      "Cobrás con Yape, Plin, efectivo y tarjeta",
-      "Pedidos por WhatsApp + delivery integrado",
-      "Listo en 5 minutos, sin técnico ni instalación",
+      "Cobrás con Yape, Plin, efectivo o tarjeta — la plata llega directo a vos",
+      "Tus clientes te piden por WhatsApp y tú despachás con delivery",
+      "Sabés al instante qué vendiste, qué falta y a quién le fiaste",
+      "Emite boletas y facturas SUNAT sin que te compliques",
+      "Apareces en el mapa de Pucallpa: te llegan clientes nuevos",
+      "Lo abrís en tu celular en 5 minutos, sin técnico",
     ],
+    reassurance: "0% comisión · sin tarjeta · cancelás cuando quieras",
     positive: true,
   },
 ];
@@ -349,6 +362,11 @@ function CompareSection() {
                       Empezar gratis
                       <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
                     </Link>
+                    {p.reassurance && (
+                      <p className="mt-3 text-center text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)]">
+                        {p.reassurance}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
