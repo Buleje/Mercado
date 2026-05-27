@@ -282,21 +282,23 @@ export default function AICommandCenter() {
                 onClick={() => changeSection(s.id)}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "relative inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap",
+                  // Brandon 2026-05-27: tabs subrayadas scrollables, igual que
+                  // AdminTabBar del resto del admin (en vez de píldoras).
+                  "relative inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] -mb-px px-3 sm:px-4 py-2.5 text-sm font-semibold transition-colors",
                   isActive
-                    ? "bg-[var(--accent)] text-white dark:bg-[var(--accent)] dark:text-[var(--surface-canvas)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+                    ? "border-[var(--accent)] text-[var(--accent)]"
+                    : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                 )}
                 title={`${s.label} (Alt+${SECTIONS.indexOf(s) + 1})`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className={cn(!isActive && "hidden sm:inline")}>{s.label}</span>
+                <span>{s.label}</span>
                 {badge != null && badge > 0 && (
                   <span
                     className={cn(
                       "text-xs font-extrabold rounded-full px-1.5 py-0.5 min-w-[20px] text-center",
                       isActive
-                        ? "bg-white/25 text-white"
+                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                         : "bg-[var(--data-error-500)] text-white",
                     )}
                   >
@@ -408,7 +410,9 @@ export default function AICommandCenter() {
         ref={contentAreaRef}
         className="flex-1 overflow-auto [&_.text-xs]:text-sm [&_p]:leading-relaxed"
       >
-        <div className="p-5 sm:p-6">
+        {/* Brandon 2026-05-27: pb extra en móvil — este main scrollea interno,
+            así el contenido no queda bajo el bottom nav fijo. */}
+        <div className="p-5 pb-[calc(88px+env(safe-area-inset-bottom))] sm:p-6">
           {loading && !data ? (
             <LoadingSkeleton />
           ) : !data ? (
