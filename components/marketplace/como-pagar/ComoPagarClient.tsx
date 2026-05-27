@@ -3,17 +3,14 @@
 /**
  * ComoPagarClient — Pagina informativa de metodos de pago.
  *
- * Estructura (v2 - rediseno mayo 2026):
- *   1. Hero con social proof (87% paga con Yape, <30s, cifrado)
- *   2. Featured Yape — card grande con QR mockup + 4 pasos visuales
- *   3. Tabla comparativa — "¿Cual me conviene?" en 1 vistazo
- *   4. Grid de otros metodos (Plin, Efectivo, Transferencia, Tarjeta)
- *   5. "Primera vez con Yape?" — tutorial de activacion
- *   6. FAQ categorizado
- *   7. CTA final con copy concreto
+ * Rediseno 2026-05-27 (Brandon): alineado al formato editorial de /negocios.
+ *   - Tipografia sobria (sin titulos gigantes), copy corto y directo.
+ *   - Bloque Yape limpio en tokens del sitio (sin gradiente morado ni mockup).
+ *   - Menos scroll: removida la seccion "Primera vez con Yape" (redundante).
+ *   - Mismos patrones que /negocios: kicker + titulo + acento serif, tarjetas
+ *     sobrias, acento teal, secciones limpias.
  *
  * Sin mocks de pago: solo metodos REALES que la app soporta hoy.
- * Tono: Feynman, lenguaje Pucallpa, sin jerga, sin emojis decorativos.
  */
 
 import Link from "next/link";
@@ -21,18 +18,15 @@ import {
   Smartphone,
   Banknote,
   Building2,
-  Truck,
   CreditCard,
   ShieldCheck,
   ArrowRight,
   Check,
-  Clock,
   Zap,
   QrCode,
-  Sparkles,
-  Receipt,
   Wallet,
-  Users,
+  Truck,
+  Receipt,
 } from "@buleje/design-system/icons";
 
 // ── Metodos secundarios (Yape va destacado en su propia seccion) ──────────
@@ -43,69 +37,40 @@ type Method = {
   description: string;
   steps: string[];
   icon: typeof Smartphone;
-  variant: "ink" | "soft" | "warm";
 };
 
 const OTHER_METHODS: Method[] = [
   {
     id: "efectivo",
-    eyebrow: "Paga al recibir",
+    eyebrow: "Pagás al recibir",
     title: "Efectivo",
-    description:
-      "Le pagas al motorizado cuando llega a tu puerta. Si necesitas vuelto, lo indicas al confirmar y la bodega prepara el cambio exacto.",
-    steps: [
-      "Pide normalmente desde la app",
-      "Elige 'Efectivo' al confirmar",
-      "Indica si necesitas vuelto",
-      "Paga al motorizado al recibir",
-    ],
+    description: "Le pagás al motorizado cuando llega. Indicás si necesitás vuelto al confirmar.",
+    steps: ["Pedí desde la app", "Elegí 'Efectivo'", "Indicá tu vuelto", "Pagá al recibir"],
     icon: Banknote,
-    variant: "ink",
   },
   {
     id: "plin",
-    eyebrow: "Alternativa rapida",
+    eyebrow: "Alternativa rápida",
     title: "Plin",
-    description:
-      "Si tu banco es BCP, Interbank, BBVA o Scotiabank, podes pagar desde la app de tu banco. Funciona igual que Yape: solo necesitas el numero de la bodega.",
-    steps: [
-      "Elige Plin en el checkout",
-      "Busca el numero de la bodega",
-      "Envia el pago desde tu app bancaria",
-      "Confirma con la bodega",
-    ],
+    description: "Igual que Yape, desde tu app bancaria (BCP, Interbank, BBVA, Scotiabank).",
+    steps: ["Elegí Plin", "Buscá el número", "Enviá el pago", "Confirmá con la bodega"],
     icon: Smartphone,
-    variant: "soft",
   },
   {
     id: "transferencia",
     eyebrow: "Pedidos grandes",
-    title: "Transferencia bancaria",
-    description:
-      "Ideal cuando el pedido pasa los S/500 o es mayorista. La bodega te comparte su numero de cuenta o CCI y confirma apenas recibe el deposito.",
-    steps: [
-      "Avisa a la bodega por WhatsApp",
-      "Recibe los datos de cuenta (CCI)",
-      "Transfiere desde tu app bancaria",
-      "Envia el voucher para confirmar",
-    ],
+    title: "Transferencia",
+    description: "Para pedidos sobre S/500. La bodega te pasa su CCI y confirma al recibir.",
+    steps: ["Avisá por WhatsApp", "Recibí el CCI", "Transferí", "Enviá el voucher"],
     icon: Building2,
-    variant: "warm",
   },
   {
     id: "tarjeta",
     eyebrow: "Online seguro",
-    title: "Tarjeta (Visa / Mastercard)",
-    description:
-      "Disponible en planes Buleje y en tiendas que activaron pagos online. Procesado por Stripe y Mercado Pago — la bodega nunca ve tus datos completos.",
-    steps: [
-      "Elige 'Tarjeta' al confirmar",
-      "Carga los datos en el formulario seguro",
-      "Confirma con el OTP de tu banco",
-      "Recibi el comprobante por email",
-    ],
+    title: "Tarjeta",
+    description: "Visa o Mastercard vía Stripe. La bodega nunca ve tus datos completos.",
+    steps: ["Elegí 'Tarjeta'", "Cargá los datos", "Confirmá con OTP", "Recibí tu comprobante"],
     icon: CreditCard,
-    variant: "soft",
   },
 ];
 
@@ -116,11 +81,11 @@ type Feature = {
 };
 
 const FEATURES: Feature[] = [
-  { key: "instant",       label: "Instantaneo" },
+  { key: "instant",       label: "Instantáneo" },
   { key: "noCard",        label: "Sin tarjeta" },
-  { key: "payOnDelivery", label: "Pagas al recibir" },
-  { key: "bigAmounts",    label: "Montos grandes (>S/500)" },
-  { key: "noFee",         label: "Sin comision" },
+  { key: "payOnDelivery", label: "Pagás al recibir" },
+  { key: "bigAmounts",    label: "Montos grandes" },
+  { key: "noFee",         label: "Sin comisión" },
 ];
 
 const MATRIX: Array<{ id: string; name: string } & Record<Feature["key"], boolean>> = [
@@ -131,121 +96,73 @@ const MATRIX: Array<{ id: string; name: string } & Record<Feature["key"], boolea
   { id: "tarjeta",       name: "Tarjeta",       instant: true,  noCard: false, payOnDelivery: false, bigAmounts: true,  noFee: false },
 ];
 
+const YAPE_STEPS = [
+  { icon: Wallet,     n: 1, t: "Elegí Yape",  d: "Al confirmar el pedido" },
+  { icon: QrCode,     n: 2, t: "Escaneá QR",  d: "O copiá el número" },
+  { icon: Smartphone, n: 3, t: "Yapeá",       d: "El monto exacto" },
+  { icon: Check,      n: 4, t: "Listo",       d: "La bodega empaca" },
+];
+
+const FAQ = [
+  { q: "¿La bodega cobra comisión por usar Yape?", a: "No. Pagás exactamente lo que ves en el carrito — ni un sol más." },
+  { q: "¿Puedo cambiar el método de pago después de pedir?", a: "Sí, mientras la bodega no haya despachado. Avisá por el chat del pedido." },
+  { q: "¿Y si pago en efectivo y no tengo el monto exacto?", a: "Indicás con cuánto pagás (ej. 'con S/100') y la bodega prepara tu vuelto." },
+  { q: "¿Mi tarjeta queda guardada en Buleje?", a: "Solo si lo pedís. Stripe y Mercado Pago tokenizan cada cobro; Buleje nunca ve el número completo." },
+  { q: "¿Qué hago si mi Yape no aparece en la bodega?", a: "Puede tardar hasta 30s. Si pasa de 1 minuto, enviá el comprobante por WhatsApp a la bodega." },
+  { q: "¿Aceptan Yape de empresa?", a: "Sí. Poné tu RUC en la nota del pedido para que te emitan factura electrónica." },
+];
+
 // ── Sub-componentes ───────────────────────────────────────────────────────
 
-function YapeMockup() {
-  // Mockup visual de un pago Yape — no es un QR real, es decorativo.
+// Mismo kicker que /negocios: text-xs font-bold + dash teal.
+function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative mx-auto w-full max-w-xs aspect-[9/16] rounded-3xl bg-white shadow-[var(--shadow-xl)] shadow-black/30 overflow-hidden border-[10px] border-[var(--text-primary)]">
-      {/* Status bar mockup */}
-      <div className="absolute inset-x-0 top-0 h-6 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] bg-white">
-        9:41
-      </div>
-      <div className="absolute inset-x-0 top-6 bottom-0 bg-linear-to-b from-violet-600 to-violet-700 px-5 pt-8 pb-6 flex flex-col">
-        <p className="text-xs font-bold uppercase tracking-wider text-white/70">
-          Buleje · Bodega Yarinacocha
-        </p>
-        <p className="mt-2 text-3xl font-extrabold text-white tabular-nums leading-tight">
-          S/ 24<span className="text-white/60">.50</span>
-        </p>
-        <p className="mt-1 text-xs text-white/80">
-          Pago a comerciante
-        </p>
-
-        {/* QR placeholder */}
-        <div className="mt-6 mx-auto h-32 w-32 rounded-2xl bg-white p-2 grid grid-cols-7 gap-0.5">
-          {Array.from({ length: 49 }).map((_, i) => (
-            <span
-              key={i}
-              className={
-                // patron pseudo-aleatorio pero estable
-                ((i * 7 + 3) % 5 === 0 || i % 11 === 0 || i % 13 === 0)
-                  ? "bg-violet-700 rounded-[1px]"
-                  : "bg-transparent"
-              }
-            />
-          ))}
-        </div>
-
-        <div className="mt-auto rounded-2xl bg-white/15 backdrop-blur-sm py-3 text-center">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/80">
-            Confirma con tu huella
-          </p>
-          <p className="mt-0.5 text-sm font-extrabold text-white">
-            Yapear S/ 24.50
-          </p>
-        </div>
-      </div>
-    </div>
+    <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+      <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+      {children}
+    </p>
   );
 }
 
+// Clases de titulo identicas a /negocios (sin font-display, clamp grande).
+const H2_CLS =
+  "text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]";
+
 function MethodCard({ method }: { method: Method }) {
   const Icon = method.icon;
-  const isInk = method.variant === "ink";
-  const isWarm = method.variant === "warm";
   return (
-    <article
-      className={[
-        "rounded-2xl border p-6 sm:p-7 flex flex-col gap-4 transition-all hover:shadow-md hover:-translate-y-0.5",
-        isInk
-          ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-transparent"
-          : isWarm
-            ? "bg-[var(--accent-soft)] text-[var(--text-primary)] border-[var(--accent)]/20"
-            : "bg-[var(--surface-raised)] border-[var(--rule-soft)] text-[var(--text-primary)]",
-      ].join(" ")}
-    >
-      <header className="flex items-start gap-3">
+    <article className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 flex flex-col gap-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-md">
+      <header className="flex items-center gap-3">
         <span
           aria-hidden
-          className={[
-            "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
-            isInk ? "bg-white/15" : "bg-[var(--accent-soft)] text-[var(--accent)]",
-          ].join(" ")}
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
         >
-          <Icon className="h-6 w-6" strokeWidth={1.75} />
+          <Icon className="h-5 w-5" strokeWidth={1.75} />
         </span>
-        <div className="flex-1 min-w-0">
-          <p
-            className={[
-              "text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-1",
-              isInk ? "opacity-80" : "text-[var(--text-tertiary)]",
-            ].join(" ")}
-          >
+        <div className="min-w-0">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             {method.eyebrow}
           </p>
-          <h3 className="font-display text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] leading-tight">
+          <h3 className="font-display text-lg font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
             {method.title}
           </h3>
         </div>
       </header>
 
-      <p
-        className={[
-          "text-[length:var(--ts-sm)] leading-relaxed",
-          isInk ? "text-white/90" : "text-[var(--text-secondary)]",
-        ].join(" ")}
-      >
+      <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
         {method.description}
       </p>
 
-      <ol className="space-y-2 text-sm">
+      <ol className="grid grid-cols-2 gap-2">
         {method.steps.map((s, i) => (
-          <li key={i} className="flex items-start gap-2.5">
+          <li key={i} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
             <span
               aria-hidden
-              className={[
-                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-extrabold tabular-nums",
-                isInk
-                  ? "bg-white/20 text-white"
-                  : "bg-[var(--accent-soft)] text-[var(--accent)]",
-              ].join(" ")}
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-2xs)] font-extrabold tabular-nums"
             >
               {i + 1}
             </span>
-            <span className={isInk ? "text-white/90" : "text-[var(--text-secondary)]"}>
-              {s}
-            </span>
+            <span className="leading-snug">{s}</span>
           </li>
         ))}
       </ol>
@@ -259,154 +176,90 @@ export default function ComoPagarClient() {
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       {/* ════════════════════════ HERO ════════════════════════ */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-8 sm:pb-10">
-        <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
-          <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-          Pagas como prefieras
-        </p>
-        <h1 className="font-display text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold tracking-[-0.035em] leading-[0.98] text-[var(--text-primary)] max-w-3xl">
-          5 maneras reales de pagar.<br className="hidden sm:block" />{" "}
-          <span className="italic font-serif text-[var(--accent)]">Vos elegís cuál.</span>
+      <section className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-10">
+        <Eyebrow>Pagás como prefieras</Eyebrow>
+        <h1 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] leading-[0.98] text-[var(--text-primary)] max-w-3xl">
+          5 formas de pagar.{" "}
+          <span className="italic font-serif text-[var(--accent)]">Vos elegís.</span>
         </h1>
-        <p className="mt-5 text-lg sm:text-xl text-[var(--text-secondary)] leading-[1.4] max-w-2xl">
-          Sin tarjeta obligatoria. Sin tramites. Si nunca compraste online,
-          tambien funciona — pagas en efectivo al recibir.
+        <p className="mt-5 text-lg text-[var(--text-secondary)] leading-relaxed max-w-2xl">
+          Sin tarjeta obligatoria ni trámites. Si nunca compraste online,
+          también funciona: pagás en efectivo al recibir.
         </p>
 
-        {/* Social proof stats */}
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl">
-          <div className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-4 py-3.5">
-            <p className="font-display text-2xl font-extrabold text-[var(--accent)] tabular-nums leading-none">
-              87%
-            </p>
-            <p className="mt-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]">
-              de pedidos<br />pagados con Yape
-            </p>
-          </div>
-          <div className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-4 py-3.5">
-            <p className="font-display text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none flex items-baseline gap-0.5">
-              &lt;30<span className="text-base text-[var(--text-tertiary)]">s</span>
-            </p>
-            <p className="mt-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]">
-              confirmacion<br />promedio
-            </p>
-          </div>
-          <div className="col-span-2 sm:col-span-1 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-4 py-3.5">
-            <p className="font-display text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
-              0
-            </p>
-            <p className="mt-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]">
-              comisiones<br />ocultas
-            </p>
-          </div>
-        </div>
-
+        {/* Trust chips compactos */}
         <div className="mt-6 flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--text-secondary)]">
-            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Datos cifrados
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--text-secondary)]">
-            <Truck className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Pagas al recibir si queres
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--text-secondary)]">
-            <Receipt className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Boleta o factura digital
-          </span>
+          {[
+            { icon: Zap, label: "87% paga con Yape" },
+            { icon: ShieldCheck, label: "Datos cifrados" },
+            { icon: Truck, label: "Pagás al recibir" },
+            { icon: Receipt, label: "Boleta o factura" },
+          ].map((c) => (
+            <span
+              key={c.label}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--text-secondary)]"
+            >
+              <c.icon className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={1.75} />
+              {c.label}
+            </span>
+          ))}
         </div>
       </section>
 
-      {/* ════════════════════════ FEATURED YAPE ════════════════════════ */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
-        <div className="rounded-3xl bg-linear-to-br from-violet-600 via-violet-700 to-purple-800 text-white overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 sm:gap-10 p-6 sm:p-10 md:p-12 items-center">
-            {/* Texto + pasos */}
-            <div className="md:col-span-3 order-2 md:order-1">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1 mb-4">
-                <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
-                <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)]">
-                  El mas usado en Pucallpa
-                </span>
-              </div>
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[0.95] tracking-[-0.02em]">
-                Yape. <span className="italic font-serif">Instantáneo,</span> sin comisión, desde tu celular.
+      {/* ════════════════════════ YAPE (card limpia) ════════════════════════ */}
+      <section className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-9">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-7">
+            <div className="max-w-2xl">
+              <Eyebrow>El más usado en Pucallpa</Eyebrow>
+              <h2 className={H2_CLS}>
+                Yape: <span className="italic font-serif text-[var(--accent)]">instantáneo</span> y sin comisión.
               </h2>
-              <p className="mt-4 text-base sm:text-lg text-white/85 leading-relaxed max-w-xl">
-                Si ya tenes Yape activo, pagar es escanear el QR de la bodega
-                y poner tu huella. La bodega ve el pago en segundos y empieza
-                a empacar.
+              <p className="mt-5 text-lg text-[var(--text-secondary)] leading-relaxed">
+                Escaneás el QR de la bodega y ponés tu huella. La bodega ve el pago
+                en segundos y empieza a empacar.
               </p>
+            </div>
+            <Link
+              href="/tiendas"
+              className="shrink-0 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 py-3 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-sm"
+            >
+              Probar ahora
+              <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+            </Link>
+          </div>
 
-              {/* 4 pasos en grid */}
-              <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { icon: Wallet,     n: 1, t: "Elegi Yape", d: "Al confirmar el pedido" },
-                  { icon: QrCode,     n: 2, t: "Escanea QR",  d: "O copia el numero" },
-                  { icon: Smartphone, n: 3, t: "Yapea",       d: "Monto exacto" },
-                  { icon: Check,      n: 4, t: "Listo",       d: "La bodega empaca" },
-                ].map((step) => {
-                  const Icon = step.icon;
-                  return (
-                    <div
-                      key={step.n}
-                      className="rounded-2xl bg-white/10 backdrop-blur p-4 border border-white/15"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-[length:var(--ts-xs)] font-extrabold tabular-nums">
-                          {step.n}
-                        </span>
-                        <Icon className="h-4 w-4 text-white/70" strokeWidth={1.75} />
-                      </div>
-                      <p className="text-sm font-extrabold leading-tight">{step.t}</p>
-                      <p className="mt-0.5 text-[length:var(--ts-xs)] text-white/70 leading-snug">
-                        {step.d}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Trust badges + CTA */}
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur px-3 py-1.5 text-xs font-bold">
-                  <Zap className="h-3.5 w-3.5" strokeWidth={2} />
-                  Sin comision para ti
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur px-3 py-1.5 text-xs font-bold">
-                  <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
-                  Auditado por BCP
-                </span>
-                <Link
-                  href="/tiendas"
-                  className="ml-auto inline-flex items-center gap-2 rounded-full bg-white text-[var(--accent)] px-5 py-2.5 text-sm font-extrabold hover:bg-white/95 transition-colors"
+          {/* 4 pasos limpios */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {YAPE_STEPS.map((step) => {
+              const Icon = step.icon;
+              return (
+                <div
+                  key={step.n}
+                  className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4"
                 >
-                  Probar ahora
-                  <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-                </Link>
-              </div>
-            </div>
-
-            {/* Mockup */}
-            <div className="md:col-span-2 order-1 md:order-2 flex justify-center">
-              <YapeMockup />
-            </div>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-white text-[length:var(--ts-xs)] font-extrabold tabular-nums">
+                      {step.n}
+                    </span>
+                    <Icon className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.75} />
+                  </div>
+                  <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{step.t}</p>
+                  <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-snug">{step.d}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ════════════════════════ TABLA COMPARATIVA ════════════════════════ */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
-        <div className="mb-6 sm:mb-8 max-w-2xl">
-          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            En 1 vistazo
-          </p>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
+      <section className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="mb-6 max-w-2xl">
+          <Eyebrow>En 1 vistazo</Eyebrow>
+          <h2 className={H2_CLS}>
             ¿Cuál te <span className="italic font-serif text-[var(--accent)]">conviene?</span>
           </h2>
-          <p className="mt-2 text-base text-[var(--text-secondary)]">
-            Compara las 5 opciones segun lo que necesitas hoy.
-          </p>
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
@@ -414,7 +267,7 @@ export default function ComoPagarClient() {
             <thead>
               <tr className="border-b border-[var(--rule-soft)]">
                 <th className="sticky left-0 bg-[var(--surface-raised)] px-4 sm:px-5 py-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Metodo
+                  Método
                 </th>
                 {FEATURES.map((f) => (
                   <th
@@ -428,14 +281,7 @@ export default function ComoPagarClient() {
             </thead>
             <tbody>
               {MATRIX.map((row, idx) => (
-                <tr
-                  key={row.id}
-                  className={
-                    idx % 2 === 1
-                      ? "bg-[var(--surface-sunken)]/40"
-                      : ""
-                  }
-                >
+                <tr key={row.id} className={idx % 2 === 1 ? "bg-[var(--surface-sunken)]/40" : ""}>
                   <th
                     scope="row"
                     className="sticky left-0 bg-inherit px-4 sm:px-5 py-4 font-extrabold text-[var(--text-primary)] whitespace-nowrap"
@@ -445,171 +291,62 @@ export default function ComoPagarClient() {
                     )}
                     {row.name}
                   </th>
-                  {FEATURES.map((f) => {
-                    const val = row[f.key];
-                    return (
-                      <td key={f.key} className="px-3 py-4 text-center">
-                        {val ? (
-                          <span
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-600,#059669)] dark:bg-emerald-950/40 dark:text-emerald-400"
-                            aria-label="Si"
-                          >
-                            <Check className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-                          </span>
-                        ) : (
-                          <span
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-                            aria-label="No"
-                          >
-                            <span className="h-0.5 w-3 rounded-full bg-[var(--rule-mid)]" aria-hidden />
-                          </span>
-                        )}
-                      </td>
-                    );
-                  })}
+                  {FEATURES.map((f) => (
+                    <td key={f.key} className="px-3 py-4 text-center">
+                      {row[f.key] ? (
+                        <span
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-600,#059669)] dark:bg-emerald-950/40 dark:text-emerald-400"
+                          aria-label="Sí"
+                        >
+                          <Check className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+                          aria-label="No"
+                        >
+                          <span className="h-0.5 w-3 rounded-full bg-[var(--rule-mid)]" aria-hidden />
+                        </span>
+                      )}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <p className="mt-3 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-          <strong className="text-[var(--text-secondary)]">Tip:</strong>{" "}
-          Para pedidos chicos del barrio, Yape o efectivo. Para pedidos grandes
-          de tu negocio, transferencia.
+          <strong className="text-[var(--text-secondary)]">Tip:</strong> pedidos chicos del barrio, Yape o efectivo. Pedidos grandes, transferencia.
         </p>
       </section>
 
       {/* ════════════════════════ OTROS METODOS ════════════════════════ */}
-      <section id="metodos" className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 scroll-mt-24">
-        <div className="mb-6 sm:mb-8 max-w-2xl">
-          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            Otros metodos
-          </p>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
+      <section id="metodos" className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 scroll-mt-24">
+        <div className="mb-6 max-w-2xl">
+          <Eyebrow>Otros métodos</Eyebrow>
+          <h2 className={H2_CLS}>
             Si Yape no te queda, hay{" "}
             <span className="italic font-serif text-[var(--accent)]">4 maneras más.</span>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {OTHER_METHODS.map((m) => (
             <MethodCard key={m.id} method={m} />
           ))}
         </div>
       </section>
 
-      {/* ════════════════════════ PRIMERA VEZ ════════════════════════ */}
-      <section className="bg-[var(--surface-sunken)]/60 border-y border-[var(--rule-soft)]">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-            <div className="md:col-span-1">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-                ¿Es tu primera vez?
-              </p>
-              <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-                No tienes Yape todavia?
-              </h2>
-              <p className="mt-3 text-base text-[var(--text-secondary)] leading-relaxed">
-                Te lleva 5 minutos activarlo desde tu celular. Solo necesitas
-                tu DNI y un numero de celular activo. Funciona con cualquier
-                banco peruano.
-              </p>
-              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold">
-                <Clock className="h-3.5 w-3.5" strokeWidth={2} />
-                5 minutos
-              </div>
-            </div>
-
-            <ol className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                {
-                  n: 1,
-                  t: "Descarga la app",
-                  d: "Busca 'Yape' en la Play Store o App Store y la instalas.",
-                },
-                {
-                  n: 2,
-                  t: "Registra tu DNI",
-                  d: "Toma foto de tu DNI por ambos lados y un selfie de validacion.",
-                },
-                {
-                  n: 3,
-                  t: "Vincula tu cuenta",
-                  d: "Conecta tu banco (BCP, Interbank, BBVA, etc) o usa la billetera Yape directa.",
-                },
-                {
-                  n: 4,
-                  t: "Listo, ya podes yapear",
-                  d: "Tu numero de celular es tu Yape. Ya puedes pagar en cualquier bodega de Buleje.",
-                },
-              ].map((step) => (
-                <li
-                  key={step.n}
-                  className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-white text-sm font-extrabold tabular-nums">
-                      {step.n}
-                    </span>
-                  </div>
-                  <p className="font-extrabold text-base text-[var(--text-primary)] leading-tight">
-                    {step.t}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-                    {step.d}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════ FAQ AMPLIADO ════════════════════════ */}
-      <section className="py-14 sm:py-20">
+      {/* ════════════════════════ FAQ ════════════════════════ */}
+      <section className="py-12 sm:py-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            Te aclaramos todas las dudas
-          </p>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] mb-8">
+          <Eyebrow>Dudas frecuentes</Eyebrow>
+          <h2 className={`${H2_CLS} mb-7`}>
             Preguntas frecuentes
           </h2>
 
           <div className="space-y-3">
-            {[
-              {
-                q: "¿La bodega cobra comision por usar Yape?",
-                a: "No. Yape es gratis para vos y para la bodega. El monto que ves en el carrito es exactamente lo que pagas — ni un sol mas.",
-              },
-              {
-                q: "¿Puedo cambiar el metodo de pago si ya hice el pedido?",
-                a: "Si, mientras la bodega no haya despachado el pedido. Le avisas por WhatsApp o desde el chat del pedido y te ayudan a cambiarlo en segundos.",
-              },
-              {
-                q: "¿Que pasa si pago en efectivo y no tengo el monto exacto?",
-                a: "Al confirmar el pedido indicas cuanto vas a entregar (ej. 'Pago con S/100') y la bodega te prepara el vuelto exacto en billetes y monedas. Sin sorpresas.",
-              },
-              {
-                q: "¿Mi tarjeta queda guardada en Buleje?",
-                a: "Solo si vos lo pedis explicitamente. Por defecto, los datos no se guardan — Stripe y Mercado Pago tokenizan cada cobro y Buleje nunca ve el numero completo.",
-              },
-              {
-                q: "¿Que hago si mi Yape no aparece en la bodega?",
-                a: "El sistema puede tardar hasta 30 segundos en confirmarte. Si pasa de 1 minuto, le envias el screenshot del comprobante de Yape al WhatsApp de la bodega y resuelven al toque.",
-              },
-              {
-                q: "¿Aceptan Yape de empresa o solo personal?",
-                a: "Las bodegas aceptan ambos. Si pagas con Yape Empresa, indica en la nota del pedido el RUC para que la bodega te emita factura electronica.",
-              },
-              {
-                q: "¿Puedo dividir el pago entre 2 metodos?",
-                a: "Hoy no. Cada pedido se paga con un solo metodo. Si necesitas pagar parte con Yape y parte con efectivo, escribile a la bodega antes del pedido.",
-              },
-              {
-                q: "¿Que pasa si el motorizado se va con mi dinero antes de entregar?",
-                a: "Tranqui — el motorizado es empleado/contratado de la bodega y firma recibir el monto. Si hay problema con el delivery, la bodega responde por el pedido completo.",
-              },
-            ].map((f) => (
+            {FAQ.map((f) => (
               <details
                 key={f.q}
                 className="group rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5 [&[open]_svg]:rotate-90 transition-shadow open:shadow-md open:border-[var(--accent)]/30"
@@ -630,20 +367,20 @@ export default function ComoPagarClient() {
         </div>
       </section>
 
-      {/* ════════════════════════ CTA BOTTOM ════════════════════════ */}
-      <section className="bg-[var(--text-primary)] text-[var(--surface-canvas)]">
-        <div className="max-w-3xl mx-auto px-4 py-16 sm:py-20 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/90 mb-5">
-            <Users className="h-3.5 w-3.5" strokeWidth={2} />
-            Bodegas activas en Pucallpa
-          </span>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] leading-[1]">
-            Ya sabes cómo pagar.{" "}
+      {/* ════════════════════════ CTA FINAL (estilo /negocios) ════════════════════════ */}
+      <section className="relative overflow-hidden py-16 sm:py-24 bg-[var(--surface-canvas)] border-t border-[var(--rule-soft)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+        />
+        <div className="relative max-w-3xl mx-auto px-4 text-center">
+          <Eyebrow>Empezá hoy</Eyebrow>
+          <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--text-primary)]">
+            Ya sabés cómo pagar.{" "}
             <span className="italic font-serif text-[var(--accent)]">Falta sólo el pedido.</span>
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-white/70 max-w-xl mx-auto">
-            Mira las bodegas que ya estan delivereando hoy y arma tu primer
-            pedido. Pagas como prefieras al final.
+          <p className="mt-5 text-lg text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed">
+            Mirá las bodegas que están entregando hoy y armá tu primer pedido.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
@@ -655,9 +392,9 @@ export default function ComoPagarClient() {
             </Link>
             <Link
               href="/marketplace/ofertas"
-              className="inline-flex items-center gap-2 rounded-full border-2 border-white/30 px-6 py-3.5 text-sm font-extrabold text-white hover:bg-white/10 transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-6 py-3.5 text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
-              Ver ofertas del dia
+              Ver ofertas del día
             </Link>
           </div>
         </div>
