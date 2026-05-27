@@ -12,7 +12,6 @@ import {
   CreditCard,
   ShieldCheck,
   Download,
-  Database,
   RefreshCcw,
   Sparkles,
 } from "@buleje/design-system/icons";
@@ -114,6 +113,7 @@ const PATHS: {
     verdict: "Te roba tiempo y plata",
     cost: "Gratis… pero te sale caro",
     points: [
+      "Solo te compran los que pasan por tu puerta",
       "Sumás a mano y a veces no te cuadra la caja",
       "No sabés qué se vende ni qué se te está acabando",
       "Si te olvidás de un fiado, esa plata se pierde",
@@ -127,9 +127,10 @@ const PATHS: {
     cost: "S/ 300 o más al mes",
     points: [
       "Pagás caro aunque ese mes vendas poco",
+      "Solo cobra: no te consigue ni un cliente nuevo",
       "Necesitás un técnico para instalarlo y arreglarlo",
-      "No te trae clientes nuevos, solo cobra",
       "Atado a una máquina en el mostrador, no a tu celular",
+      "Sin tienda online ni delivery para tus clientes",
     ],
     positive: false,
   },
@@ -138,12 +139,13 @@ const PATHS: {
     verdict: "Te hace vender más",
     cost: "Gratis para empezar · sin tarjeta",
     points: [
+      "Tu puesto en el marketplace de Pucallpa: miles de vecinos te ven cada día",
+      "Tu propia tienda online con tu marca — vendés aunque la bodega esté cerrada",
       "Cobrás con Yape, Plin, efectivo o tarjeta — la plata llega directo a vos",
-      "Tus clientes te piden por WhatsApp y tú despachás con delivery",
+      "Tus clientes te piden por WhatsApp y vos despachás con delivery",
       "Sabés al instante qué vendiste, qué falta y a quién le fiaste",
-      "Emite boletas y facturas SUNAT sin que te compliques",
-      "Apareces en el mapa de Pucallpa: te llegan clientes nuevos",
-      "Lo abrís en tu celular en 5 minutos, sin técnico",
+      "Boletas y facturas SUNAT, fiado digital y reportes, todo en una app",
+      "Lo abrís en tu celular en 5 minutos, sin técnico ni local",
     ],
     reassurance: "0% comisión · sin tarjeta · cancelás cuando quieras",
     positive: true,
@@ -152,10 +154,10 @@ const PATHS: {
 
 // ── Garantías de confianza ──
 const GUARANTEES = [
-  { icon: RefreshCcw, t: "Sin permanencia", d: "Cancelás con un click cuando quieras. Sin contratos ni letra chica." },
-  { icon: Download, t: "Tus datos son tuyos", d: "Exportás todo en CSV — clientes, ventas, productos — cuando quieras." },
-  { icon: Database, t: "Backups diarios", d: "Tu información respaldada cada día. Nunca perdés tu historial." },
-  { icon: ShieldCheck, t: "Protección Ley 29733", d: "Cumplimos la ley peruana de protección de datos personales." },
+  { icon: CreditCard, t: "Empezás sin pagar", d: "Probás gratis y sin dejar tu tarjeta. Si no te sirve, no perdiste ni un sol." },
+  { icon: RefreshCcw, t: "Cancelás cuando quieras", d: "Con un click, sin llamadas ni penalidad. Te quedás solo si te conviene." },
+  { icon: Download, t: "Tu plata y tus datos son tuyos", d: "El dinero llega directo a vos. Y tus clientes y ventas te los llevás cuando quieras." },
+  { icon: ShieldCheck, t: "Tu info segura", d: "Respaldos todos los días y protección de la Ley 29733 del Perú." },
 ];
 
 function SectionSkeleton({ h = "400px" }: { h?: string }) {
@@ -412,11 +414,15 @@ function GuaranteeSection() {
             Probás tranquilo.{" "}
             <span className="italic font-serif text-[var(--accent)]">Sin letra chica.</span>
           </h2>
+          <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
+            No te pedimos tarjeta ni te amarramos a un contrato. Probás, y si no
+            te sirve, te vas sin haber perdido nada.
+          </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {GUARANTEES.map((g) => (
-            <div key={g.t} className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6">
-              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+            <div key={g.t} className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 transition-all hover:border-[var(--accent)]/40 hover:shadow-md">
+              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
                 <g.icon className="h-6 w-6" strokeWidth={1.75} />
               </span>
               <h3 className="text-lg font-extrabold tracking-[-0.01em] text-[var(--text-primary)] leading-tight">{g.t}</h3>
