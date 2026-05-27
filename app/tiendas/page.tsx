@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   // Yape, Plin) + cierre con valor agregado ("tu bodega del barrio, ahora
   // online" → conecta con la audiencia local).
   description:
-    "Comprá en bodegas, restaurantes, mercados, minimarkets y farmacias de Pucallpa con delivery rápido. Paga con Yape, Plin o efectivo. Todo el barrio, ahora online.",
+    "Comprá en bodegas, restaurantes, mercados y farmacias de Pucallpa con delivery rápido. Paga con Yape, Plin o efectivo. Todo el barrio, ahora online.",
   keywords: [
     "bodegas Pucallpa",
     "restaurantes Pucallpa",
@@ -71,9 +71,12 @@ export const metadata: Metadata = {
     siteName: "Buleje",
     locale: "es_PE",
     type: "website",
+    // 2026-05-27 SEO: antes apuntaba a /brand/buleje-logo.png (512×512,
+    // cuadrado, declarado 1200×630 → mismatch + card pobre). Ahora /api/og
+    // genera una card 1200×630 real y on-brand (mismo patrón que el resto).
     images: [
       {
-        url: `${BASE_URL}/brand/buleje-logo.png`,
+        url: `${BASE_URL}/api/og`,
         width: 1200,
         height: 630,
         alt: "Buleje — tiendas y bodegas en Pucallpa con delivery",
@@ -88,7 +91,7 @@ export const metadata: Metadata = {
     // Brandon 2026-05-20 v11 audit P2: twitter:image:alt requerido por
     // X/Twitter para accesibilidad de la preview cuando se comparte.
     images: [{
-      url: `${BASE_URL}/brand/buleje-logo.png`,
+      url: `${BASE_URL}/api/og`,
       alt: "Buleje — tiendas y bodegas con delivery rápido en Pucallpa, Ucayali",
     }],
   },
