@@ -65,8 +65,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const zone = findZone(ciudad);
   if (!zone) return { title: "Zona no encontrada" };
 
-  const title = `Software para Bodegas en ${zone.name} — Buleje ERP | Inventario, POS y Delivery`;
-  const description = `Buleje: sistema ERP para bodegas y tiendas en ${zone.name}, ${zone.region}. Inventario en tiempo real, punto de venta POS, delivery, fiado digital y facturación SUNAT. Funciona con Yape y efectivo.`;
+  // Title B2C-first (Brandon 2026-05-27): lidera con la intención del COMPRADOR
+  // ("bodegas con delivery") para captar búsquedas de consumo. La cola de marca
+  // mantiene el reconocimiento; el copy B2B (software) vive en el cuerpo + FAQ.
+  const title = `Bodegas y tiendas en ${zone.name} con delivery`;
+  const description = `Comprá en bodegas y tiendas de ${zone.name}, ${zone.region} con delivery rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Digitalízalo con Buleje: inventario, POS, fiado y facturación SUNAT.`;
   const url = `${BASE_URL}/zona/${zone.slug}`;
 
   return {
@@ -88,7 +91,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary",
-      title: `Buleje — Software para Bodegas en ${zone.name}`,
+      title: `Bodegas con delivery en ${zone.name} — Buleje`,
       description,
     },
   };

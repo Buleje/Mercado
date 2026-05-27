@@ -60,8 +60,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const district = findDistrict(ciudad, distrito);
   if (!zone || !district) return { title: "Distrito no encontrado" };
 
-  const title = `Software para Bodegas en ${district.name}, ${zone.name} | Buleje ERP`;
-  const description = `Buleje: sistema ERP para bodegas y tiendas en ${district.name} (${zone.name}). Inventario en tiempo real, punto de venta POS, delivery local, fiado digital y boletas SUNAT. Funciona con Yape, Plin y efectivo.`;
+  // Title B2C-first (2026-05-27): lidera con comprar/delivery local del distrito.
+  const title = `Bodegas y delivery en ${district.name}, ${zone.name}`;
+  const description = `Comprá en bodegas y tiendas de ${district.name} (${zone.name}) con delivery local rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Llevalo al sistema Buleje: inventario, POS, fiado y boletas SUNAT.`;
   const url = `${BASE_URL}/zona/${zone.slug}/distrito/${district.slug}`;
 
   return {
@@ -81,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary",
-      title: `Buleje — Bodegas en ${district.name}`,
+      title: `Bodegas con delivery en ${district.name} — Buleje`,
       description,
     },
   };
