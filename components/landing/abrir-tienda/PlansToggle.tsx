@@ -58,9 +58,9 @@ export default function PlansToggle() {
             <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
             {t("plans.kicker")}
           </p>
-          <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+          <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
             {t("landing.plans.title")}{" "}
-            <span className="text-[var(--accent)]">
+            <span className="italic font-serif text-[var(--accent)]">
               {t("landing.plans.titleAccent")}
             </span>
           </h2>
