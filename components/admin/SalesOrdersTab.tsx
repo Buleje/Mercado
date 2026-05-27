@@ -831,8 +831,8 @@ export default function SalesOrdersTab() {
         const hasMoreHist = histPaged.length < histFiltered.length;
         return (
           <div className="space-y-2">
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">#</th>

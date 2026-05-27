@@ -47,16 +47,28 @@ import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { cn } from "@/lib/utils";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
-import DiscoverMegaMenu from "@/components/marketplace/navbar/DiscoverMegaMenu";
 // NotificationsMenu lazy — framer-motion pesado + solo aparece al click.
 // Ahorra ~50kb del bundle initial del navbar.
 const NotificationsMenu = dynamic(
   () => import("@/components/marketplace/NotificationsMenu"),
   {},
 );
+// Brandon 2026-05-27 (audit perf bundle): estos 3 viven en el navbar que está
+// en TODAS las páginas del storefront, pero solo aparecen al interactuar
+// (lupa / hamburguesa / mega-menú). Lazy → fuera del bundle del primer paint.
+const DiscoverMegaMenu = dynamic(
+  () => import("@/components/marketplace/navbar/DiscoverMegaMenu"),
+  {},
+);
+const MobileSearchOverlay = dynamic(
+  () => import("@/components/marketplace/MobileSearchOverlay"),
+  { ssr: false },
+);
+const SharedMobileNavDrawer = dynamic(
+  () => import("@/components/marketplace/SharedMobileNavDrawer"),
+  { ssr: false },
+);
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
-import MobileSearchOverlay from "@/components/marketplace/MobileSearchOverlay";
-import SharedMobileNavDrawer from "@/components/marketplace/SharedMobileNavDrawer";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";

@@ -381,7 +381,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             </div>
 
             {/* RUC + Teléfono */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>
                   RUC <span className="text-[var(--text-tertiary)] font-normal text-xs">(autocompleta SUNAT)</span>
@@ -468,7 +468,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Tipo documento</label>
                   <select value={form.tipoDocumento} onChange={e => set('tipoDocumento', e.target.value)} className={selectCls}>
@@ -586,7 +586,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
 
             {/* Seccion 4: Comercial */}
             <Section title="4. Comercial">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Categoria</label>
                   <select value={form.categoria} onChange={e => set('categoria', e.target.value)} className={selectCls}>
@@ -617,7 +617,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Cuenta bancaria</label>
                   <input value={form.cuentaBancaria} onChange={e => set('cuentaBancaria', e.target.value)} placeholder="Nro. de cuenta" className={cn(inputCls, "font-mono")} />

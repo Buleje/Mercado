@@ -429,7 +429,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
               </div>
 
               {/* DNI/RUC + Teléfono */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>{form.tipoPersona === 'juridica' ? 'RUC' : 'DNI'}</label>
                   <div className="flex gap-1.5">
@@ -514,7 +514,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>Tipo documento</label>
                     <select value={form.tipoDocumento} onChange={e => set('tipoDocumento', e.target.value)} className={selectCls}>
@@ -658,7 +658,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
 
               {/* Seccion 4: Comercial */}
               <Section title="4. Comercial">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>Categoria</label>
                     <select value={form.categoria} onChange={e => set('categoria', e.target.value)} className={selectCls}>
@@ -713,7 +713,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   </button>
                 </div>
                 {form.creditoActivo && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className={labelCls}>Limite de credito (S/)</label>
                       <input
@@ -757,7 +757,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
 
               {/* Seccion 6: Adicionales */}
               <Section title="6. Adicionales">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>Fecha de nacimiento</label>
                     <input type="date" value={form.fechaNacimiento} onChange={e => set('fechaNacimiento', e.target.value)} className={inputCls} />
