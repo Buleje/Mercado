@@ -427,25 +427,83 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
           Brandon mayo 2026: ocultar el ecosistema marketplace cuando el
           superadmin tiene activa la presentación "tiendas only". */}
       {isTiendasOnlyMode && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
-            <nav aria-label="Enlaces de tiendas" className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              {tiendasOnlyLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-sm font-bold text-white/85 transition-colors hover:text-white"
-                >
-                  {link.label}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14 pb-8">
+          {/* ── Banda de marca: identidad + contacto (formato verde-selva/ámbar) ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8 lg:gap-12 items-start lg:items-center">
+            {/* IZQ — wordmark + tagline + chips de confianza */}
+            <div>
+              <BulejeWordmark
+                size={40}
+                strokeWidth={1.75}
+                textSize={24}
+                className="text-white drop-shadow-[0_0_24px_rgba(252,211,77,0.15)]"
+              />
+              <p className="mt-3.5 max-w-xl text-sm sm:text-base leading-snug font-medium">
+                <span className="text-amber-300 font-extrabold">Tu mercado desde la selva amazónica.</span>{" "}
+                <span className="text-white/75">Bodegas y tiendas de {platformCity} con delivery, en un solo lugar.</span>
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 border border-emerald-400/30 px-3 py-1.5 text-xs font-extrabold text-emerald-200">
+                  <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                  {platformCity}, {platformRegion}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/12 border border-amber-300/30 px-3 py-1.5 text-xs font-extrabold text-amber-200">
+                  <Star className="h-3.5 w-3.5 fill-current" strokeWidth={0} aria-hidden />
+                  <span className="tabular-nums">{hp.footerRating}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/12 px-3 py-1.5 text-xs font-extrabold text-white/80">
+                  <Clock className="h-3.5 w-3.5 text-white/65" strokeWidth={2.5} aria-hidden />
+                  <span className="tabular-nums">{hoursLabel}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* DER — CTA WhatsApp + redes (compacto, idéntico al mega footer) */}
+            <div className="flex flex-col gap-3 lg:items-end">
+              {(() => {
+                const rawPhone = (storeTheme?.whatsapp || platformWa || hp.footerWhatsApp || "").replace(/\D/g, "");
+                if (!rawPhone) return null;
+                const text = encodeURIComponent(`Hola ${platformName}, quiero hacer un pedido`);
+                return (
+                  <a
+                    href={`https://wa.me/${rawPhone}?text=${text}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl bg-emerald-500 px-5 text-sm font-extrabold text-white transition-all hover:bg-emerald-400 shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)] w-full lg:w-auto"
+                  >
+                    <WhatsAppIcon className="h-5 w-5" />
+                    Pedí por WhatsApp
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} aria-hidden />
+                  </a>
+                );
+              })()}
+              <div className="flex items-center gap-2.5 justify-center lg:justify-end">
+                <span className="text-sm font-semibold text-white/50">O seguinos</span>
+                <a href={fbUrl || hp.footerFacebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors">
+                  <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
-              ))}
-            </nav>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/70">
-                Modo Solo Tiendas
-              </span>
+                <a href={igUrl || hp.footerInstagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors">
+                  <Instagram className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </a>
+              </div>
             </div>
           </div>
+
+          {/* Separador con acento verde selva */}
+          <div className="mt-8 h-px bg-gradient-to-r from-transparent via-emerald-400/25 to-transparent" />
+
+          {/* ── Links: una fila limpia, sin badge de jerga interna ── */}
+          <nav aria-label="Enlaces de tiendas" className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2.5">
+            {tiendasOnlyLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                className="text-sm font-semibold text-white/70 transition-colors hover:text-amber-200"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
         </div>
       )}
 

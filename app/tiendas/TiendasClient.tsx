@@ -50,7 +50,7 @@ const ExplorarTracker = dynamic(
 // dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
 // import estático para no romper el tipado de DEFAULT_FILTERS.
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
-import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star } from "@buleje/design-system/icons";
+import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal } from "@buleje/design-system/icons";
 // CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
 import { CupSoda } from "lucide-react";
 // Brandon 2026-05-21 v3: removido import default de QuickFilterChips (chips
@@ -445,6 +445,30 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
     },
     [setGeoActive, setUserCoords],
   );
+
+  // Reset global de filtros — compartido por el header del sidebar y el drawer.
+  const resetAllFilters = useCallback(() => {
+    setSearch("");
+    setCategory("todos");
+    setZone("");
+    setSubCategoryId(null);
+    setGeoActive(false);
+    setUserCoords(null);
+    setProductFilters(DEFAULT_FILTERS);
+    setActiveChips(new Set());
+    setSortKey("relevance");
+  }, [setGeoActive, setUserCoords]);
+
+  // Nº de filtros activos — para el badge del header y el trigger del drawer.
+  const activeFilterCount =
+    (search.trim() ? 1 : 0) +
+    (category !== "todos" ? 1 : 0) +
+    (zone ? 1 : 0) +
+    (subCategoryId ? 1 : 0) +
+    (geoActive ? 1 : 0) +
+    activeChips.size +
+    (sortKey !== "relevance" ? 1 : 0) +
+    (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0);
 
   // Retry counter — bump para re-ejecutar el useEffect del fetch
   const [retryKey, setRetryKey] = useState(0);
@@ -1048,11 +1072,27 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
           aria-label="Filtros de tiendas"
           className="space-y-4 mb-4 lg:mb-0 lg:sticky lg:top-20 lg:self-start lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-soft)] lg:p-5 lg:shadow-sm"
         >
-          {/* Encabezado sidebar — solo visible en desktop */}
+          {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
+              filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
           <div className="hidden lg:flex items-center justify-between pb-3 border-b border-[var(--rule-soft)]">
-            <h2 className="text-sm font-extrabold tracking-tight text-[var(--text-primary)]">
+            <h2 className="inline-flex items-center gap-2 text-sm font-extrabold tracking-tight text-[var(--text-primary)]">
+              <SlidersHorizontal className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
               Filtrar tiendas
+              {activeFilterCount > 0 && (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-white">
+                  {activeFilterCount}
+                </span>
+              )}
             </h2>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={resetAllFilters}
+                className="text-xs font-bold text-[var(--accent)] hover:underline"
+              >
+                Limpiar
+              </button>
+            )}
           </div>
 
           {/* "Lo más pedido" — antes label era "Subcategoría" (técnico, suena
@@ -1129,27 +1169,8 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
                   onChange: (v) => setSortKey(v as StoresSortKey),
                   options: STORES_SORT_OPTIONS,
                 }}
-                onClearAll={() => {
-                  setSearch("");
-                  setCategory("todos");
-                  setZone("");
-                  setSubCategoryId(null);
-                  setGeoActive(false);
-                  setUserCoords(null);
-                  setProductFilters(DEFAULT_FILTERS);
-                  setActiveChips(new Set());
-                  setSortKey("relevance");
-                }}
-                globalActiveCount={
-                  (search.trim() ? 1 : 0) +
-                  (category !== "todos" ? 1 : 0) +
-                  (zone ? 1 : 0) +
-                  (subCategoryId ? 1 : 0) +
-                  (geoActive ? 1 : 0) +
-                  activeChips.size +
-                  (sortKey !== "relevance" ? 1 : 0) +
-                  (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0)
-                }
+                onClearAll={resetAllFilters}
+                globalActiveCount={activeFilterCount}
                 triggerCompact
               />
             </div>
