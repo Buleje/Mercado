@@ -1372,7 +1372,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 </div>
 
                 {/* Monto Total */}
-                <div className="bg-[var(--brand-ink)] rounded-lg p-6 text-[var(--surface-canvas)]">
+                <div className="bg-[var(--brand-ink)] rounded-lg p-4 sm:p-6 text-[var(--surface-canvas)]">
                   <p className="text-sm opacity-80">Monto Total en Contratos</p>
                   <p className="text-3xl font-bold mt-1">{formatCurrency(stats.montoTotal)}</p>
                 </div>
@@ -1683,7 +1683,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Wizard Steps 0-2: Form Fields */}
                     {wizardStep < 3 && (
-                      <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
+                      <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4 sm:p-6 space-y-4">
                         <h4 className="text-sm font-bold text-[var(--text-primary)]">{wizardGroupLabels[wizardStep]}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {wizardGroups[wizardStep]?.fields.map(field => {
@@ -1883,7 +1883,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         </div>
 
                         {/* Full Document Preview — with highlighted filled fields */}
-                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
+                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4 sm:p-8 max-h-[60vh] overflow-y-auto">
                           <div className="max-w-[680px] mx-auto font-serif" ref={printRef}>
                             <SectionTitle className="text-center text-base font-bold mb-1">
                               CONTRATO DE {selectedTemplate.name.toUpperCase()}
@@ -1932,7 +1932,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     {/* Step 4: Confirm */}
                     {wizardStep === 4 && (
                       <div className="space-y-6">
-                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
+                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4 sm:p-6 space-y-4">
                           <div className="flex items-center gap-3">
                             <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-white">
                               <CheckCircle className="h-6 w-6" />
@@ -2063,7 +2063,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     </div>
 
                     {/* Preview */}
-                    <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 max-h-[70vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
                       <h4 className="text-sm font-bold text-[var(--text-primary)] mb-4">Vista Previa</h4>
                       <div className="font-serif space-y-3">
                         {editorText.split("\n\n").filter(p => p.trim()).map((para, i) => (

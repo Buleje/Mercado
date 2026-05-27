@@ -571,7 +571,7 @@ export default function CotizacionesModule() {
       </AdminModuleHeader>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-[var(--surface-sunken)] rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-[var(--surface-sunken)] rounded-xl p-1 w-full sm:w-fit overflow-x-auto">
         {([["dashboard", "Dashboard"], ["lista", "Lista"], ["nueva", "Nueva Cotización"]] as const).map(([id, label]) => (
           <button
             key={id}

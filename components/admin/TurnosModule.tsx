@@ -85,32 +85,6 @@ function cajeroColorText(name: string): string {
 
 const DIAS_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-// ── Denominaciones del Sol peruano (PEN) ────────────────────────────────────
-// Billetes y monedas circulantes 2026. Ordenado de mayor a menor para conteo
-// natural (primero billetes grandes, después sueltos).
-const DENOMINACIONES_PEN: { valor: number; label: string; tipo: "billete" | "moneda" }[] = [
-  { valor: 200, label: "S/ 200", tipo: "billete" },
-  { valor: 100, label: "S/ 100", tipo: "billete" },
-  { valor: 50,  label: "S/ 50",  tipo: "billete" },
-  { valor: 20,  label: "S/ 20",  tipo: "billete" },
-  { valor: 10,  label: "S/ 10",  tipo: "billete" },
-  { valor: 5,   label: "S/ 5",   tipo: "moneda" },
-  { valor: 2,   label: "S/ 2",   tipo: "moneda" },
-  { valor: 1,   label: "S/ 1",   tipo: "moneda" },
-  { valor: 0.5, label: "S/ 0.50", tipo: "moneda" },
-  { valor: 0.2, label: "S/ 0.20", tipo: "moneda" },
-  { valor: 0.1, label: "S/ 0.10", tipo: "moneda" },
-];
-
-function calcularDesdeDenominaciones(counts: Record<string, number>): number {
-  let total = 0;
-  for (const d of DENOMINACIONES_PEN) {
-    const c = counts[String(d.valor)] || 0;
-    total += d.valor * c;
-  }
-  return Math.round(total * 100) / 100;
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function TurnosModule() {
@@ -133,16 +107,6 @@ export default function TurnosModule() {
   const [selectedCajero, setSelectedCajero] = useState("");
   const [cajerosLoading, setCajerosLoading] = useState(false);
 
-  // Inline cashier creation — abierto desde el selector del modal de apertura.
-  // Crea AdminUser con rol "cajero" sin salir de Turnos. Auto-selecciona al
-  // recién creado para que el flujo de "abrir turno" continúe.
-  const [showCreateCajero, setShowCreateCajero] = useState(false);
-  const [newCajeroName, setNewCajeroName] = useState("");
-  const [newCajeroUsername, setNewCajeroUsername] = useState("");
-  const [newCajeroPassword, setNewCajeroPassword] = useState("");
-  const [creatingCajero, setCreatingCajero] = useState(false);
-  const [createCajeroError, setCreateCajeroError] = useState<string | null>(null);
-
   // Tab for main sections
   const [mainTab, setMainTab] = useState<"turnos" | "cajeros">(() => {
     try { return (localStorage.getItem("turnos-subtab") as "turnos" | "cajeros") || "turnos"; } catch { return "turnos"; }
@@ -154,21 +118,6 @@ export default function TurnosModule() {
   const [cierreNotas, setCierreNotas] = useState("");
   const [closing, setClosing] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
-
-  // Conteo por denominación — alternativa al input único. La cajera marca
-  // cuántos billetes/monedas tiene de cada tipo y la app calcula el total.
-  // Reduce errores de tipeo y deja evidencia auditable de la composición.
-  const [conteoMode, setConteoMode] = useState<"denominacion" | "manual">("denominacion");
-  const [denomCounts, setDenomCounts] = useState<Record<string, number>>({});
-
-  // Diferencia anormal — confirmación con nota obligatoria antes de cerrar.
-  const [showDiffConfirm, setShowDiffConfirm] = useState(false);
-  // Brandon 2026-05-17 (audit M5): nota DEDICADA al modal de diferencia
-  // anormal. Antes compartía `cierreNotas` con el modal principal — una
-  // nota genérica ≥8 chars escrita ahí pasaba la validación de "explicar la
-  // causa", rompiendo el propósito del guard. Ahora son inputs separados;
-  // ambos se concatenan al enviar al backend.
-  const [notaDiffAnormal, setNotaDiffAnormal] = useState("");
 
   // Summary modal after close
   type TurnoSummary = {
@@ -233,36 +182,17 @@ export default function TurnosModule() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Brandon 2026-05-17 (audit H1+H2): reset completo del state del modal
-  // de cierre. Antes, cancelar el modal dejaba `denomCounts`, `cierreEfectivo`,
-  // `cierreNotas` y `conteoMode` con los valores del intento previo — al
-  // reabrir, la cajera veía un total falso del intento cancelado.
-  // También se llama post-cierre exitoso (incluye reset de conteoMode al
-  // default, antes faltaba).
-  const resetCierreState = useCallback(() => {
-    setShowCierre(false);
-    setShowDiffConfirm(false);
-    setCierreEfectivo("");
-    setCierreNotas("");
-    setNotaDiffAnormal("");
-    setDenomCounts({});
-    setConteoMode("denominacion");
-    setCloseError(null);
-  }, []);
-
   // UX Mejora 13: Cerrar modales con Escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (showDiffConfirm) { setShowDiffConfirm(false); return; }
-      if (showCreateCajero && !creatingCajero) { setShowCreateCajero(false); return; }
       if (showMetaConfig) { setShowMetaConfig(false); return; }
       if (showResumen) { setShowResumen(false); return; }
-      if (showCierre) { resetCierreState(); return; }
+      if (showCierre) { setShowCierre(false); return; }
     };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [showMetaConfig, showResumen, showCierre, showCreateCajero, creatingCajero, showDiffConfirm, resetCierreState]);
+  }, [showMetaConfig, showResumen, showCierre]);
 
   // ── Open turno ─────────────────────────────────────────────────────────────
 
@@ -294,100 +224,18 @@ export default function TurnosModule() {
     }
   };
 
-  // ── Create cashier inline ───────────────────────────────────────────────────
-  // POST /api/admin-users con rol "cajero". Al éxito agrega a la lista local y
-  // auto-selecciona en el dropdown sin re-fetchear toda la pantalla.
-  const handleCreateCajero = async () => {
-    const name = newCajeroName.trim();
-    const username = newCajeroUsername.trim().toLowerCase();
-    const password = newCajeroPassword;
-    setCreateCajeroError(null);
-
-    if (name.length < 1) { setCreateCajeroError("Falta el nombre"); return; }
-    if (!/^[a-z0-9_.]{3,32}$/.test(username)) {
-      setCreateCajeroError("Usuario: 3-32 letras/números/puntos");
-      return;
-    }
-    if (password.length < 6) { setCreateCajeroError("Contraseña mínimo 6 caracteres"); return; }
-
-    setCreatingCajero(true);
-    try {
-      const res = await fetch("/api/admin-users", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ username, password, role: "cajero", name }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        // Plan-limit responde 402; conflict 409; validación 400
-        const msg = typeof data?.error === "string"
-          ? data.error
-          : data?.error?.message ?? "No se pudo crear la cajera";
-        throw new Error(msg);
-      }
-      const created = data as { id: string; username: string; name: string; role: string; active?: boolean };
-      setCajeros(prev => [...prev, { ...created, active: created.active ?? true }]);
-      setSelectedCajero(created.id);
-      setShowCreateCajero(false);
-      setNewCajeroName("");
-      setNewCajeroUsername("");
-      setNewCajeroPassword("");
-    } catch (e) {
-      setCreateCajeroError(e instanceof Error ? e.message : "Error al crear");
-    } finally {
-      setCreatingCajero(false);
-    }
-  };
-
   // ── Close turno ────────────────────────────────────────────────────────────
 
-  // Umbrales para considerar una diferencia "anormal" en el cierre. Si la
-  // diferencia absoluta supera S/ 20 o el 5% del total esperado, pedimos
-  // confirmación explícita con nota obligatoria. Ambos son intencionalmente
-  // permisivos para bodegas chicas — ajustar después si Brandon quiere.
-  const DIFF_ANORMAL_ABS = 20;
-  const DIFF_ANORMAL_PCT = 0.05;
-
-  const evaluarDiferencia = (cierreMonto: number, turno: Turno): { diff: number; anormal: boolean } => {
-    const esperado = turno.inicioEfectivo + turno.ventasTotal;
-    const diff = cierreMonto - esperado;
-    const absDiff = Math.abs(diff);
-    const pctDiff = esperado > 0 ? absDiff / esperado : 0;
-    const anormal = absDiff > DIFF_ANORMAL_ABS || pctDiff > DIFF_ANORMAL_PCT;
-    return { diff, anormal };
-  };
-
-  const handleCerrar = async (opts?: { confirmedAnormal?: boolean }) => {
+  const handleCerrar = async () => {
     if (!turnoActivo) return;
     setCloseError(null);
     const monto = parseFloat(cierreEfectivo);
     if (isNaN(monto) || monto < 0) { setCloseError("Monto inválido"); return; }
 
-    // Guard de diferencia anormal — gating en cliente. Backend sigue
-    // recibiendo cualquier monto, pero forzamos justificación en UI.
-    const { anormal } = evaluarDiferencia(monto, turnoActivo);
-    if (anormal && !opts?.confirmedAnormal) {
-      setShowDiffConfirm(true);
-      return;
-    }
-    // Validación: en diferencia anormal, la causa va en `notaDiffAnormal`
-    // (separado de `cierreNotas` por audit M5). Garantiza que la justificación
-    // del descuadre sea explícita y no una nota genérica del modal principal.
-    if (anormal && opts?.confirmedAnormal && notaDiffAnormal.trim().length < 8) {
-      setCloseError("Diferencia alta — describe brevemente la causa (mín. 8 caracteres)");
-      setShowDiffConfirm(true);
-      return;
-    }
-
     setClosing(true);
     try {
       const body: Record<string, unknown> = { cierreEfectivo: monto };
-      // Combinar notas: [Diferencia anormal] <causa> · Notas: <nota opcional>
-      // El backend recibe un solo campo `notas` con todo el contexto.
-      const notasFinal = anormal && opts?.confirmedAnormal
-        ? `[Diferencia anormal] ${notaDiffAnormal.trim()}${cierreNotas.trim() ? ` · Notas: ${cierreNotas.trim()}` : ""}`
-        : cierreNotas.trim();
-      if (notasFinal) body.notas = notasFinal;
+      if (cierreNotas.trim()) body.notas = cierreNotas.trim();
 
       const res = await fetch(`/api/turnos/${turnoActivo.id}/cerrar`, {
         method: "POST",
@@ -476,7 +324,9 @@ export default function TurnosModule() {
         ventasPorHora,
       });
 
-      resetCierreState();
+      setShowCierre(false);
+      setCierreEfectivo("");
+      setCierreNotas("");
       setShowResumen(true);
       fetchData();
     } catch (e) {
@@ -514,7 +364,7 @@ export default function TurnosModule() {
   const ultimoTurno = historial.find(t => t.cierreEfectivo != null) ?? null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <AdminModuleHeader
         eyebrow="Operaciones · Caja"
         title="Turnos"
@@ -527,13 +377,13 @@ export default function TurnosModule() {
         <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-xl p-1 w-fit">
           <button
             onClick={() => { setMainTab("turnos"); try { localStorage.setItem("turnos-subtab", "turnos"); } catch {} }}
-            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
           >
             <Clock className="h-3.5 w-3.5" /> Turnos
           </button>
           <button
             onClick={() => { setMainTab("cajeros"); try { localStorage.setItem("turnos-subtab", "cajeros"); } catch {} }}
-            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
           >
             <User className="h-3.5 w-3.5" /> Cajeros
           </button>
@@ -609,7 +459,7 @@ export default function TurnosModule() {
                 Equipo de Cajeros
               </CardTitle>
               {cajeroStats.length === 0 ? (
-                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl py-10 px-4 text-center">
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl py-10 px-4 text-center">
                   <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
                     <User className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
                   </div>
@@ -623,8 +473,8 @@ export default function TurnosModule() {
                     const barWidth = maxVentas > 0 ? Math.max(5, (c.ventasPorHora / maxVentas) * 100) : 0;
                     return (
                       <div key={c.id} className={cn(
-                        "bg-[var(--surface-raised)] border rounded-2xl p-5 transition-shadow hover:shadow-sm",
-                        isTop ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] ring-1 ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                        "bg-white dark:bg-card border rounded-2xl p-5 transition-shadow hover:shadow-sm",
+                        isTop ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] ring-1 ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border"
                       )}>
                         <div className="flex items-center gap-3 mb-4">
                           <div
@@ -687,7 +537,7 @@ export default function TurnosModule() {
                   <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                   Ranking de Cajeros
                 </CardTitle>
-                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl overflow-hidden">
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-base">
                       <thead>
@@ -749,7 +599,7 @@ export default function TurnosModule() {
                   <BarChart3 className="h-5 w-5 text-primary" />
                   Ventas por Cajero (este mes)
                 </CardTitle>
-                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-5">
+                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5">
                   <TurnosChart chartData={chartData} />
                 </div>
               </div>
@@ -793,28 +643,28 @@ export default function TurnosModule() {
         }
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-primary" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Turnos del mes</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{turnosMesCount}</p>
             </div>
-            <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Timer className="h-4 w-4 text-[var(--data-success-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Horas trabajadas</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{horasTrabajadas.toFixed(1)}h</p>
             </div>
-            <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <DollarSign className="h-4 w-4 text-[var(--data-success-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ventas/hora</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(ventasPorHora)}</p>
             </div>
-            <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Trophy className="h-4 w-4 text-[var(--data-warning-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Mejor cajero</p>
@@ -846,7 +696,7 @@ export default function TurnosModule() {
               </div>
               <button
                 onClick={() => { setShowCierre(true); setCloseError(null); }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
+                className="inline-flex items-center gap-2 min-h-11 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
               >
                 <Square className="h-4 w-4" />
                 <span className="hidden sm:inline">Cerrar turno</span>
@@ -895,7 +745,7 @@ export default function TurnosModule() {
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-6 sm:p-7">
+          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-6 sm:p-7">
             <div className="flex items-start gap-4 mb-6">
               <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
                 <Clock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
@@ -908,26 +758,16 @@ export default function TurnosModule() {
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cajero asignado</label>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedCajero}
-                    onChange={e => setSelectedCajero(e.target.value)}
-                    className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  >
-                    <option value="">Yo mismo (usuario actual)</option>
-                    {cajeros.map(c => (
-                      <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => { setCreateCajeroError(null); setShowCreateCajero(true); }}
-                    title="Crear nueva cajera (sin salir de turnos)"
-                    className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold whitespace-nowrap transition-colors"
-                  >
-                    + Nueva
-                  </button>
-                </div>
+                <select
+                  value={selectedCajero}
+                  onChange={e => setSelectedCajero(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                >
+                  <option value="">Yo mismo (usuario actual)</option>
+                  {cajeros.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
+                  ))}
+                </select>
                 {cajerosLoading && <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cargando cajeros...</p>}
               </div>
               <div>
@@ -955,7 +795,7 @@ export default function TurnosModule() {
                       type="button"
                       onClick={() => setEfectivoInicial(String(amount))}
                       className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                        "min-h-11 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
                         active
                           ? "bg-primary text-white border-primary"
                           : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
@@ -978,7 +818,7 @@ export default function TurnosModule() {
               </button>
             </div>
           </div>
-          <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-5 flex flex-col gap-5">
+          <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5 flex flex-col gap-5">
             <div>
               <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-3">Último turno cerrado</p>
               {ultimoTurno ? (
@@ -1120,7 +960,7 @@ export default function TurnosModule() {
                 <CalendarDays className="h-5 w-5 text-primary" />
                 Calendario Semanal
               </CardTitle>
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl overflow-hidden">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <div className="grid grid-cols-7 min-w-[700px]">
                     {DIAS_SEMANA.map((dia, idx) => {
@@ -1163,7 +1003,7 @@ export default function TurnosModule() {
                 <BarChart3 className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Productividad por cajero
               </CardTitle>
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
+              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                 {cajerosStats.length <= 1 && cajerosStats.length === 1 ? (
                   <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Solo hay 1 cajero registrado</div>
                 ) : cajerosStats.length === 0 ? (
@@ -1221,8 +1061,8 @@ export default function TurnosModule() {
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Historial de turnos</CardTitle>
             {historial.length > 0 && (
               <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5">
-                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
-                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
+                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
+                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
               </div>
             )}
           </div>
@@ -1254,7 +1094,7 @@ export default function TurnosModule() {
             </button>
           )}
         </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
+        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
           {historial.length === 0 ? (
             <div className="text-center py-12 px-4">
               <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
@@ -1331,14 +1171,14 @@ export default function TurnosModule() {
                     <button
                       disabled={page <= 1}
                       onClick={() => setPage(p => p - 1)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
+                      className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
                       disabled={page >= totalPages}
                       onClick={() => setPage(p => p + 1)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
+                      className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -1351,112 +1191,6 @@ export default function TurnosModule() {
       </div>
 
       </>}
-
-      {/* ── Create Cajera Modal (inline, sin salir de Turnos) ─────────────────── */}
-      <AnimatePresence>
-        {showCreateCajero && (
-          <m.div
-            key="create-cajero-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="modal-backdrop p-4"
-            onClick={e => e.target === e.currentTarget && !creatingCajero && setShowCreateCajero(false)}
-          >
-            <m.div
-              key="create-cajero-modal"
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 10 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-md bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] flex flex-col overflow-hidden"
-            >
-              <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <User className="h-5 w-5 text-primary" strokeWidth={2} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg font-bold">Nueva cajera</CardTitle>
-                    <p className="text-sm text-[var(--text-tertiary)]">Se crea con rol Cajero y queda disponible al instante</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => !creatingCajero && setShowCreateCajero(false)}
-                  aria-label="Cerrar"
-                  className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors"
-                >
-                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-                </button>
-              </div>
-
-              <div className="px-6 py-5 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Nombre completo</label>
-                  <input
-                    type="text"
-                    value={newCajeroName}
-                    onChange={e => { setNewCajeroName(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
-                    placeholder="Ej. María Quispe"
-                    autoFocus
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Usuario (para iniciar sesión)</label>
-                  <input
-                    type="text"
-                    value={newCajeroUsername}
-                    onChange={e => { setNewCajeroUsername(e.target.value.toLowerCase()); if (createCajeroError) setCreateCajeroError(null); }}
-                    placeholder="maria.cajera"
-                    autoComplete="off"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Solo letras, números, puntos y guión bajo · 3-32 caracteres</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Contraseña temporal</label>
-                  <input
-                    type="text"
-                    value={newCajeroPassword}
-                    onChange={e => { setNewCajeroPassword(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
-                    placeholder="Mínimo 6 caracteres"
-                    autoComplete="new-password"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
-                  />
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Compártela con la cajera. Ella podrá cambiarla luego en su perfil.</p>
-                </div>
-
-                {createCajeroError && (
-                  <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
-                    <p className="text-sm text-[var(--data-error-500)] font-semibold">{createCajeroError}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
-                <button
-                  onClick={() => !creatingCajero && setShowCreateCajero(false)}
-                  disabled={creatingCajero}
-                  className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCreateCajero}
-                  disabled={creatingCajero}
-                  className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
-                >
-                  {creatingCajero ? <Loader2 className="h-5 w-5 animate-spin" /> : <User className="h-5 w-5" />}
-                  Crear y seleccionar
-                </button>
-              </div>
-            </m.div>
-          </m.div>
-        )}
-      </AnimatePresence>
-
       {/* ── Close Turno Modal ─────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showCierre && turnoActivo && (
@@ -1467,17 +1201,17 @@ export default function TurnosModule() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             className="modal-backdrop p-4"
-            onClick={e => { if (e.target === e.currentTarget) resetCierreState(); }}
+            onClick={e => e.target === e.currentTarget && setShowCierre(false)}
           >
             <m.div
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
+              className="w-full max-w-lg bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
             >
               {/* Header — icono + titulo + X */}
-              <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
+              <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 flex items-center justify-center shrink-0">
                     <Square className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
@@ -1487,7 +1221,7 @@ export default function TurnosModule() {
                     <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
                   </div>
                 </div>
-                <button onClick={resetCierreState} aria-label="Cerrar" className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors">
+                <button onClick={() => setShowCierre(false)} aria-label="Cerrar" className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors">
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -1512,135 +1246,22 @@ export default function TurnosModule() {
                   </div>
                 </div>
 
-                {/* Conteo efectivo final — denominación (default) o manual */}
+                {/* Conteo efectivo final */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-[var(--text-secondary)]">Conteo de efectivo final</label>
-                    <div className="inline-flex rounded-lg bg-[var(--surface-sunken)] dark:bg-white/5 p-0.5 text-xs font-semibold">
-                      <button
-                        type="button"
-                        onClick={() => setConteoMode("denominacion")}
-                        className={cn(
-                          "px-2.5 py-1 rounded-md transition-colors",
-                          conteoMode === "denominacion"
-                            ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
-                            : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                        )}
-                      >
-                        Por denominación
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConteoMode("manual")}
-                        className={cn(
-                          "px-2.5 py-1 rounded-md transition-colors",
-                          conteoMode === "manual"
-                            ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
-                            : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                        )}
-                      >
-                        Monto directo
-                      </button>
-                    </div>
+                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Conteo de efectivo final</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={cierreEfectivo}
+                      onChange={e => { setCierreEfectivo(e.target.value); if (closeError) setCloseError(null); }}
+                      placeholder="0.00"
+                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
+                    />
                   </div>
-
-                  {conteoMode === "denominacion" ? (
-                    <div className="rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-alt)]/40 dark:bg-white/[0.03] p-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
-                        {DENOMINACIONES_PEN.map(d => {
-                          const key = String(d.valor);
-                          const count = denomCounts[key] || 0;
-                          const subtotal = d.valor * count;
-                          return (
-                            <div key={key} className="flex items-center gap-2 py-1.5 px-1 border-b border-[var(--rule-soft)] dark:border-white/5 last:border-0">
-                              <span className={cn(
-                                "inline-flex items-center justify-center text-xs font-bold rounded-md px-2 py-0.5 w-16 shrink-0",
-                                d.tipo === "billete"
-                                  ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                  : "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                              )}>
-                                {d.label}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setDenomCounts(prev => {
-                                    const next = { ...prev, [key]: Math.max(0, (prev[key] || 0) - 1) };
-                                    setCierreEfectivo(String(calcularDesdeDenominaciones(next)));
-                                    if (closeError) setCloseError(null);
-                                    return next;
-                                  });
-                                }}
-                                disabled={count === 0}
-                                className="h-7 w-7 rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-30"
-                                aria-label={`Quitar ${d.label}`}
-                              >
-                                −
-                              </button>
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min="0"
-                                value={count || ""}
-                                onChange={e => {
-                                  const raw = e.target.value;
-                                  const n = raw === "" ? 0 : Math.max(0, parseInt(raw, 10) || 0);
-                                  setDenomCounts(prev => {
-                                    const next = { ...prev, [key]: n };
-                                    setCierreEfectivo(String(calcularDesdeDenominaciones(next)));
-                                    if (closeError) setCloseError(null);
-                                    return next;
-                                  });
-                                }}
-                                placeholder="0"
-                                className="w-12 h-7 px-1 rounded-md border border-[var(--rule-base)] bg-white dark:bg-white/5 text-sm font-bold text-center tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setDenomCounts(prev => {
-                                    const next = { ...prev, [key]: (prev[key] || 0) + 1 };
-                                    setCierreEfectivo(String(calcularDesdeDenominaciones(next)));
-                                    if (closeError) setCloseError(null);
-                                    return next;
-                                  });
-                                }}
-                                className="h-7 w-7 rounded-md border border-primary/40 bg-primary/10 text-base font-bold text-primary hover:bg-primary/20"
-                                aria-label={`Agregar ${d.label}`}
-                              >
-                                +
-                              </button>
-                              <span className="ml-auto text-sm font-semibold text-[var(--text-secondary)] tabular-nums min-w-[68px] text-right">
-                                {subtotal > 0 ? formatCurrency(subtotal) : "—"}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--rule-base)] dark:border-white/10">
-                        <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Total contado</span>
-                        <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
-                          {formatCurrency(calcularDesdeDenominaciones(denomCounts))}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={cierreEfectivo}
-                          onChange={e => { setCierreEfectivo(e.target.value); if (closeError) setCloseError(null); }}
-                          placeholder="0.00"
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
-                        />
-                      </div>
-                      <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cuenta todo el dinero que queda en caja.</p>
-                    </>
-                  )}
+                  <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cuenta todo el dinero que queda en caja.</p>
                 </div>
 
                 {/* Diferencia */}
@@ -1693,15 +1314,15 @@ export default function TurnosModule() {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
+              <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 flex gap-3">
                 <button
-                  onClick={resetCierreState}
-                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
+                  onClick={() => setShowCierre(false)}
+                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-card hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={() => handleCerrar()}
+                  onClick={handleCerrar}
                   disabled={closing}
                   className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
                 >
@@ -1712,122 +1333,6 @@ export default function TurnosModule() {
             </m.div>
           </m.div>
         )}
-      </AnimatePresence>
-
-      {/* ── Diff Anormal Confirm Modal ─────────────────────────────────────────
-          Aparece encima del modal de cierre cuando la diferencia supera los
-          umbrales (|diff| > S/20 o > 5% del total esperado). Fuerza una nota
-          explicativa antes de permitir el cierre real. */}
-      <AnimatePresence>
-        {showDiffConfirm && turnoActivo && cierreEfectivo && !isNaN(parseFloat(cierreEfectivo)) && (() => {
-          const monto = parseFloat(cierreEfectivo);
-          const { diff } = evaluarDiferencia(monto, turnoActivo);
-          const sobrante = diff > 0;
-          const esperado = turnoActivo.inicioEfectivo + turnoActivo.ventasTotal;
-          const pct = esperado > 0 ? (Math.abs(diff) / esperado) * 100 : 0;
-          return (
-            <m.div
-              key="diff-confirm-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="modal-backdrop p-4 z-[60]"
-              onClick={e => e.target === e.currentTarget && !closing && setShowDiffConfirm(false)}
-            >
-              <m.div
-                key="diff-confirm-modal"
-                initial={{ scale: 0.95, y: 10 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 10 }}
-                transition={{ duration: 0.2 }}
-                className="w-full max-w-md bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--data-error-500)]/30 overflow-hidden"
-              >
-                <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-[var(--data-error-500)]/15 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
-                    <p className="text-sm text-[var(--text-secondary)]">Antes de cerrar, anotá qué pasó</p>
-                  </div>
-                </div>
-
-                <div className="px-6 py-5 space-y-4">
-                  <div className="rounded-xl bg-[var(--surface-alt)] dark:bg-white/5 p-4 space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-[var(--text-secondary)]">Total esperado</span>
-                      <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(esperado)}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-[var(--text-secondary)]">Contado en caja</span>
-                      <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(monto)}</span>
-                    </div>
-                    <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2">
-                      <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">
-                        {sobrante ? "Sobrante" : "Faltante"}
-                      </span>
-                      <span className={cn(
-                        "text-xl font-extrabold tabular-nums",
-                        sobrante ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
-                      )}>
-                        {(diff > 0 ? "+" : "") + formatCurrency(diff)}
-                        <span className="text-sm font-semibold ml-2 opacity-80">({pct.toFixed(1)}%)</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    {sobrante
-                      ? "Hay más dinero del esperado. ¿Vuelto que no se entregó, venta sin registrar, o aporte de caja chica?"
-                      : "Falta dinero en caja. ¿Devolución, propina, error de conteo, o se gastó en algo?"}
-                  </p>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                      Causa de la diferencia <span className="text-[var(--data-error-500)]">*</span>
-                    </label>
-                    <textarea
-                      value={notaDiffAnormal}
-                      onChange={e => { setNotaDiffAnormal(e.target.value); if (closeError) setCloseError(null); }}
-                      placeholder="Ej: Falta S/30 por devolución no registrada de pollo broaster a las 18:30"
-                      rows={3}
-                      autoFocus
-                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
-                    />
-                    <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
-                      Mínimo 8 caracteres. Queda en el log del turno para auditoría. <span className="opacity-70">(Distinta del campo Notas del cierre.)</span>
-                    </p>
-                  </div>
-
-                  {closeError && (
-                    <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
-                      <p className="text-sm text-[var(--data-error-500)] font-semibold">{closeError}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
-                  <button
-                    onClick={() => !closing && setShowDiffConfirm(false)}
-                    disabled={closing}
-                    className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
-                  >
-                    Volver a contar
-                  </button>
-                  <button
-                    onClick={() => handleCerrar({ confirmedAnormal: true })}
-                    disabled={closing || notaDiffAnormal.trim().length < 8}
-                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <AlertTriangle className="h-5 w-5" />}
-                    Cerrar con nota
-                  </button>
-                </div>
-              </m.div>
-            </m.div>
-          );
-        })()}
       </AnimatePresence>
 
       {/* ── Resumen del Turno Modal ────────────────────────────────────────────── */}
@@ -1847,7 +1352,7 @@ export default function TurnosModule() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
+              className="w-full max-w-lg bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
             >
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
@@ -1864,7 +1369,7 @@ export default function TurnosModule() {
                   <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                     <ShoppingCart className="h-3.5 w-3.5" /> Ventas del turno
                   </h4>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Total vendido</p>
                       <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(resumen.totalVentas)}</p>
@@ -2126,14 +1631,14 @@ export default function TurnosModule() {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 min-h-11 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Imprimir resumen
                   </button>
                   <button
                     onClick={() => setShowResumen(false)}
-                    className="flex-1 px-4 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                    className="flex-1 min-h-11 px-4 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                   >
                     Cerrar
                   </button>

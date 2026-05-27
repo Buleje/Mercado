@@ -389,8 +389,8 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
           </div>
         </div>
       )}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center">
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="bg-[var(--surface-alt)] rounded-xl p-2 sm:p-3 text-center">
           <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">Monto</p>
           <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(monto)}</p>
         </div>
@@ -877,7 +877,7 @@ export default function NotasCreditoModule() {
       {/* ── Keyboard Shortcuts Panel ───────────────────────────────────── */}
       {showShortcuts && (
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-xs text-[var(--text-secondary)]">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">N</kbd> Nueva NC</div>
             <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">F</kbd> Buscar</div>
             <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">Esc</kbd> Cerrar</div>

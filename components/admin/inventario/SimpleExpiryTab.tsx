@@ -68,7 +68,7 @@ export default function SimpleExpiryTab() {
     fetch("/api/batches")
       .then(r => r.json())
       .then((d: unknown) => setBatches(Array.isArray(d) ? d : []))
-      .catch((err) => console.warn("[SimpleExpiryTab] /api/batches failed:", err))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -128,13 +128,13 @@ export default function SimpleExpiryTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-48">
+        <div className="relative flex-1 min-w-0 basis-full sm:basis-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto o lote..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-9 pr-3 h-12 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <button
@@ -142,7 +142,7 @@ export default function SimpleExpiryTab() {
             lote: b.lote, producto: b.productName, cantidad: b.quantity,
             vence: fmtDate(b.expiryDate), dias: b.days, estado: URGENCY_CONFIG[b.urgency].label,
           })), `vencimientos_${new Date().toISOString().slice(0, 10)}.csv`)}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="flex items-center gap-1 px-3 min-h-11 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
         >
           <Download className="h-3.5 w-3.5" /> Excel
         </button>
@@ -165,10 +165,10 @@ export default function SimpleExpiryTab() {
                 key={b.id}
                 className={cn(
                   "rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 transition-all",
-                  isReviewed ? "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 opacity-60" :
+                  isReviewed ? "border-[var(--rule-base)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 opacity-60" :
                   b.urgency === "vencido" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 bg-[var(--data-error-50)]/80 dark:bg-red-950/20" :
                   b.urgency === "critico" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]/50 dark:bg-orange-950/20" :
-                  "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]"
+                  "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
                 )}
               >
                 {/* Urgency icon */}
@@ -179,7 +179,7 @@ export default function SimpleExpiryTab() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{b.productName}</span>
+                    <span className="font-bold text-[var(--text-primary)] dark:text-foreground truncate">{b.productName}</span>
                     <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", cfg.bg, cfg.color)}>
                       {b.days < 0 ? `Venció hace ${Math.abs(b.days)} días` :
                        b.days === 0 ? "Vence hoy" :
@@ -203,9 +203,9 @@ export default function SimpleExpiryTab() {
                 {/* Action */}
                 <button
                   onClick={() => markReviewed(b.id)}
-                  className={cn("shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors",
+                  className={cn("shrink-0 flex items-center gap-1.5 px-3 min-h-11 py-2 rounded-xl text-xs font-bold border transition-colors",
                     isReviewed
-                      ? "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface"
+                      ? "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface"
                       : "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"
                   )}
                 >

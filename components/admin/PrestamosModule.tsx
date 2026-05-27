@@ -174,15 +174,15 @@ function SparklineKPICard({
   const resolvedIconColor = iconColor ?? "var(--text-secondary)";
   const resolvedValueColor = valueColor ?? "var(--text-primary)";
   return (
-    <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl p-4 relative overflow-hidden">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 relative overflow-hidden">
       <div className="flex items-center gap-1.5 mb-1">
-        <Icon className="h-4 w-4" style={{ color: resolvedIconColor }} />
-        <p className="text-xs uppercase font-bold text-[var(--text-tertiary)] truncate">{title}</p>
+        <Icon className="h-3.5 w-3.5" style={{ color: resolvedIconColor }} />
+        <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] truncate">{title}</p>
       </div>
-      <p className="text-2xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
-      {sub && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{sub}</p>}
+      <p className="text-xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
+      {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
       <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
-        <ResponsiveContainer minWidth={0} width={80} height={40}>
+        <ResponsiveContainer minWidth={0} width="100%" height="100%">
           <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
@@ -303,27 +303,10 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
     { name: "Cancelados", value: statusCounts.CANCELADO, color: "var(--text-tertiary)" },
   ].filter(d => d.value > 0);
 
-  // Salud de la cartera: prioriza cuotas vencidas; si no, al día con/ sin saldo.
-  const saldoPorCobrar = resumen?.saldoDados ?? porCobrar;
-  const health =
-    cuotasVencidas > 0
-      ? { cls: "text-[var(--data-warning-500)]", border: "border-l-[var(--data-warning)]", Icon: AlertTriangle, text: `Tenés ${cuotasVencidas} cuota${cuotasVencidas === 1 ? "" : "s"} vencida${cuotasVencidas === 1 ? "" : "s"} · ${formatCurrency(saldoPorCobrar)} por cobrar.` }
-      : saldoPorCobrar > 0
-        ? { cls: "text-[var(--text-primary)]", border: "border-l-[var(--accent)]", Icon: DollarSign, text: `Cartera al día · ${formatCurrency(saldoPorCobrar)} por cobrar, sin atrasos.` }
-        : { cls: "text-[var(--data-success-500)]", border: "border-l-[var(--data-success)]", Icon: TrendingUp, text: "Cartera al día — no tenés nada por cobrar." };
-
   return (
     <div className="space-y-6">
-      {/* Mejora 0: mensaje de salud de la cartera */}
-      <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-        <div className={cn("rounded-2xl border-2 border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3", health.border)}>
-          <health.Icon className={cn("h-6 w-6 shrink-0", health.cls)} />
-          <p className={cn("text-base font-semibold", health.cls)}>{health.text}</p>
-        </div>
-      </m.div>
-
       {/* Mejora 1: KPI Cards con sparklines */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <SparklineKPICard title="Dados" value={formatCurrency(totalDados)} sub={`${resumen?.activosDados ?? prestamos.filter(p=>p.direccion==="DADO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={ArrowUpFromLine} sparkData={spark1} />
           <SparklineKPICard title="Recibidos" value={formatCurrency(totalRecibidos)} sub={`${resumen?.activosRecibidos ?? prestamos.filter(p=>p.direccion==="RECIBIDO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={ArrowDownToLine} sparkData={spark2} />
@@ -1141,13 +1124,13 @@ export default function PrestamosModule() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 h-11 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
             </div>
-            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors", showFilters ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]")}>
+            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 min-h-11 rounded-lg border text-sm font-semibold transition-colors", showFilters ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]")}>
               <Filter className="h-4 w-4" />
-              Filtros {activeFilterCount > 0 && <span className="bg-secondary text-white rounded-full text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5">{activeFilterCount}</span>}
+              <span className="hidden sm:inline">Filtros</span> {activeFilterCount > 0 && <span className="bg-secondary text-white rounded-full text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5">{activeFilterCount}</span>}
             </button>
-            <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="p-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors">
+            <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="h-11 w-11 flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors shrink-0">
               <RotateCcw className="h-4 w-4 text-[var(--text-tertiary)]" />
             </button>
           </div>
@@ -1220,7 +1203,7 @@ export default function PrestamosModule() {
               <Landmark className="h-16 w-16 mb-4 text-[var(--text-tertiary)] mx-auto" />
               <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin préstamos</CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Registra préstamos a clientes con cuotas</p>
-              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent-600,var(--accent))] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[var(--data-success-500)]">Crear préstamo</button>
+              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent-600,var(--accent))] text-white px-6 min-h-11 py-2.5 rounded-lg font-medium hover:bg-[var(--data-success-500)]">Crear préstamo</button>
             </div>
           ) : (
             <>
@@ -1327,7 +1310,7 @@ export default function PrestamosModule() {
       {activeTab === "cobros" && (
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <SectionTitle className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Bell className="h-4 w-4 text-[var(--data-warning-500)]" /> Centro de Cobros
@@ -1337,7 +1320,7 @@ export default function PrestamosModule() {
             <button
               onClick={fetchCobros}
               disabled={cobrosLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 min-h-11 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
             >
               <RefreshCcw className={cn("h-3.5 w-3.5", cobrosLoading && "animate-spin")} />
               Actualizar
@@ -1521,10 +1504,10 @@ export default function PrestamosModule() {
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 min-h-11 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-[var(--accent-soft)] text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 min-h-11 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-[var(--accent-soft)] text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>

@@ -2,10 +2,9 @@
 
 import { PageTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign, Search } from "@buleje/design-system/icons";
+import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useOrdersData } from "./hooks/useOrdersData";
 import { useOrdersFilters } from "./hooks/useOrdersFilters";
@@ -112,8 +111,7 @@ export default function OrdersTab() {
     const q = filters.customerSearch.toLowerCase();
     activeOrders = activeOrders.filter(o =>
       o.customer.name.toLowerCase().includes(q) ||
-      (o.customer.phone ?? "").includes(q) ||
-      o.id.toLowerCase().includes(q)
+      (o.customer.phone ?? "").includes(q)
     );
   }
   if (filters.hasDebt) {
@@ -140,6 +138,7 @@ export default function OrdersTab() {
   const total = activeOrders.reduce((s, o) => s + o.total, 0);
 
   // Stats agregados
+  const pendingOrders = activeOrders.filter(o => o.status === "pendiente").length;
   const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado" || o.status === "preparando").length;
   const todayDelivered = orders.filter(o => {
     if (o.status !== "entregado") return false;
@@ -157,17 +156,26 @@ export default function OrdersTab() {
         description={
           activeOrders.length === 0
             ? "Sin pedidos activos. Aparecerán acá en tiempo real."
-            : `${activeOrders.length} ${activeOrders.length === 1 ? "pedido" : "pedidos"} en marcha.${inDeliveryOrders > 0 ? ` ${inDeliveryOrders} en preparación o delivery.` : ""}${todayDelivered > 0 ? ` ${todayDelivered} entregado${todayDelivered === 1 ? "" : "s"} hoy.` : ""}`
+            : `${activeOrders.length} ${activeOrders.length === 1 ? "pedido" : "pedidos"} en marcha. ${inDeliveryOrders > 0 ? `${inDeliveryOrders} en preparación o delivery.` : ""}`
         }
         icon={Package}
       >
-        {/* #2 (2026-05-26): Filtros queda como acción primaria visible; las
-            secundarias (Por motorizado, Imprimir, Archivados) se agrupan en un
-            menú "Más" para descargar el header de 4 botones a 2. */}
+        <button
+          type="button"
+          onClick={() => setFilterByDelivery((prev) => !prev)}
+          className={cn(
+            "flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-lg text-sm font-semibold transition-colors border",
+            filterByDelivery
+              ? "bg-primary text-white border-primary"
+              : "bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent",
+          )}
+        >
+          <Bike className="h-4 w-4" /> Por motorizado
+        </button>
         <button
           type="button"
           onClick={() => setShowAdvancedFilters(true)}
-          className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="relative flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
         >
           <SlidersHorizontal className="h-4 w-4" /> Filtros
           {activeFiltersCount > 0 && (
@@ -176,34 +184,60 @@ export default function OrdersTab() {
             </span>
           )}
         </button>
-        <ModuleActionMenu
-          label="Más"
-          items={[
-            {
-              label: filterByDelivery ? "Quitar filtro por motorizado" : "Filtrar por motorizado",
-              icon: Bike,
-              onClick: () => setFilterByDelivery((prev) => !prev),
-            },
-            {
-              label: "Imprimir",
-              icon: Printer,
-              onClick: () => window.print(),
-            },
-            {
-              label: "Archivados",
-              icon: FileText,
-              onClick: () => setShowArchive(true),
-              description: archivedOrders.length > 0 ? `${archivedOrders.length} archivado${archivedOrders.length === 1 ? "" : "s"}` : undefined,
-              dividerBefore: true,
-            },
-          ]}
-        />
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+        >
+          <Printer className="h-4 w-4" /> Imprimir
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowArchive(true)}
+          className="flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+        >
+          <FileText className="h-4 w-4" /> Archivados
+          {archivedOrders.length > 0 && (
+            <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] tabular-nums">
+              {archivedOrders.length}
+            </span>
+          )}
+        </button>
       </AdminModuleHeader>
 
-      {/* #1 (2026-05-26): stat cards removidas — los conteos por estado ya viven
-          en los chips de filtro (interactivos) y en los headers de columna del
-          kanban. Triple redundancia eliminada; "Entregados hoy" se movió al
-          subtítulo del header. */}
+      {/* KPIs uniformes (patrón EInvoice/Inventario): label uppercase 2xs +
+          value text-xl font-extrabold tabular-nums. Sin tipografía editorial. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Activos", value: String(activeOrders.length), intent: "neutral" as const },
+          {
+            label: "Por confirmar",
+            value: String(pendingOrders),
+            intent: pendingOrders > 0 ? ("warning" as const) : ("neutral" as const),
+          },
+          { label: "En preparación · ruta", value: String(inDeliveryOrders), intent: "neutral" as const },
+          { label: "Entregados hoy", value: String(todayDelivered), intent: "neutral" as const },
+        ].map(({ label, value, intent }) => (
+          <div
+            key={label}
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+          >
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+              {label}
+            </p>
+            <p
+              className={cn(
+                "text-xl font-extrabold tabular-nums",
+                intent === "warning"
+                  ? "text-[var(--data-warning-500)]"
+                  : "text-[var(--text-primary)]",
+              )}
+            >
+              {value}
+            </p>
+          </div>
+        ))}
+      </div>
 
       {/* Delivery driver filter */}
       {filterByDelivery && (
@@ -213,7 +247,7 @@ export default function OrdersTab() {
             <select
               value={selectedDriverFilter}
               onChange={e => setSelectedDriverFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--surface-raised)] outline-none focus:border-primary"
+              className="px-3 py-1.5 rounded-lg border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-white dark:bg-card outline-none focus:border-primary"
             >
               <option value="">Todos los deliverys</option>
               {Array.from(new Set(
@@ -255,20 +289,6 @@ export default function OrdersTab() {
         </div>
       )}
 
-      {/* #7 (2026-05-26): búsqueda inline en el board — antes solo vivía dentro
-          del modal de Filtros avanzados. Busca por cliente, teléfono o #pedido. */}
-      <div className="relative w-full sm:max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-        <input
-          type="search"
-          value={filters.customerSearch}
-          onChange={(e) => filtersDispatch({ type: "SET_CUSTOMER_SEARCH", value: e.target.value })}
-          placeholder="Buscar por cliente, teléfono o #pedido…"
-          aria-label="Buscar pedidos por cliente, teléfono o número"
-          className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-        />
-      </div>
-
       {/* Quick filter chips por status — atajo visual sin abrir filtros avanzados */}
       <div role="group" aria-label="Filtros rapidos por estado" className="flex items-center gap-2 flex-wrap">
         {([
@@ -304,7 +324,7 @@ export default function OrdersTab() {
               {chip.label}
               <span
                 className={cn(
-                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-extrabold tabular-nums",
+                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-black tabular-nums",
                   active
                     ? "bg-[var(--surface-canvas)]/20 text-[var(--surface-canvas)]"
                     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",

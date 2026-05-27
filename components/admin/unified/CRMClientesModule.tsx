@@ -38,14 +38,14 @@ function ExpandableMapSection() {
   const [maximized, setMaximized] = useState(false);
 
   return (
-    <div className={cn("space-y-4", maximized && "fixed inset-0 z-50 bg-[var(--surface-raised)] p-4 overflow-auto")}>
+    <div className={cn("space-y-4", maximized && "fixed inset-0 z-50 bg-white dark:bg-card p-4 overflow-auto")}>
       <div className="flex items-center justify-between">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1.5">
           <MapPin className="h-4 w-4 text-primary" /> Ubicación de clientes
         </CardTitle>
         <button
           onClick={() => setMaximized(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 px-3 min-h-11 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
         >
           {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           {maximized ? "Minimizar" : "Maximizar mapa"}
@@ -66,7 +66,7 @@ export default function CRMClientesModule() {
   useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <AdminModuleHeader
         eyebrow="Relaciones · CRM"
         title="Mis Clientes"

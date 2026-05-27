@@ -267,7 +267,7 @@ function ProductsDashboard() {
 
       {/* === SECCION 2: Distribucion (RadialBarChart + PieChart inventario) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4"><FavStar id="distribucion-cat" favs={catFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Distribucion por categoria</CardTitle></div>
           <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="90%" data={radialData} startAngle={180} endAngle={-180}>
@@ -278,7 +278,7 @@ function ProductsDashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Valor del inventario por categoria</CardTitle>
             <div className="flex items-center gap-2">
@@ -316,7 +316,7 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 3: Histograma de precios === */}
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Rango de precios</CardTitle>
         <ResponsiveContainer minWidth={0} width="100%" height={240}>
           <BarChart data={priceHistogram}>
@@ -345,13 +345,13 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 4: Top 10 por valor en stock (ComposedChart) === */}
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 10 productos por valor en stock</CardTitle>
         <ResponsiveContainer minWidth={0} width="100%" height={300}>
           <ComposedChart data={top10Stock} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
-            <YAxis dataKey="name" type="category" width={130} tick={{ fontSize: 10 }} className="fill-gray-600" />
+            <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 10 }} className="fill-gray-600" />
             <Tooltip content={<ChartTooltip />} />
             <Legend />
             <Bar dataKey="valor" fill="var(--color-primary)" radius={[0, 6, 6, 0]} name="Valor stock (S/)" barSize={16} />
@@ -361,7 +361,7 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 5: Scatter de margenes === */}
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Análisis de margenes</CardTitle>
         <p className="text-xs text-[var(--text-tertiary)] mb-4">Precio venta vs margen % — tamano = stock</p>
         <ResponsiveContainer minWidth={0} width="100%" height={300}>
@@ -406,7 +406,7 @@ function ProductsDashboard() {
       </div>
 
       {/* === SECCION 6: Estado de stock (Gauge donut) === */}
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Productos por estado de stock</CardTitle>
         <ResponsiveContainer minWidth={0} width="100%" height={200}>
           <PieChart>

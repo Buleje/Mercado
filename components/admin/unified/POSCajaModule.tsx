@@ -16,7 +16,6 @@ const MODULE_ID = "ventas-caja";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const POSView                = dynamic(() => import("@/components/admin/POSView"),                { loading: S });
-const SalesHistoryTab        = dynamic(() => import("@/components/admin/SalesHistoryTab"),        { loading: S });
 const CashRegisterTab        = dynamic(() => import("@/components/admin/CashRegisterTab"),        { loading: S });
 const CashAuditTab           = dynamic(() => import("@/components/admin/CashAuditTab"),           { loading: S });
 const FiadosModule           = dynamic(() => import("@/components/admin/FiadosModule"),           { loading: S });
@@ -29,13 +28,12 @@ import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
 
 // ── Tabs reordenados en flujo lógico del día ──────────────────────────────────
 const TABS = [
-  { id: "pos"               as const, label: "Vender",            shortLabel: "POS",       hint: "Punto de venta",      icon: ShoppingCart,  desc: "Busca productos, cobra y genera comprobantes" },
-  { id: "historial"         as const, label: "Historial",         shortLabel: "Historial", hint: "Todas las ventas",    icon: History,       desc: "POS + tienda + marketplace en un solo lugar" },
-  { id: "turnos"            as const, label: "Turnos",            shortLabel: "Turnos",    hint: "Control de personal", icon: Clock,         desc: "Abre y cierra turnos de trabajo del equipo" },
-  { id: "caja-registradora" as const, label: "Caja Registradora", shortLabel: "Caja",      hint: "Gestión de efectivo", icon: Wallet,        desc: "Movimientos de efectivo, retiros e ingresos" },
-  { id: "cuentas-cobrar"    as const, label: "Me deben",          shortLabel: "Fiados",    hint: "Créditos a clientes", icon: HandCoins,     desc: "Créditos otorgados, cobros y seguimiento" },
-  { id: "arqueo"            as const, label: "Cuadrar Caja",      shortLabel: "Cuadre",    hint: "Cierre del día",      icon: Scale,         desc: "Conteo de billetes y cierre del día" },
-  { id: "comisiones"        as const, label: "Comisiones",        shortLabel: "Comisiones", hint: "Cálculo comisiones", icon: Users,         desc: "Calcula comisiones de vendedores" },
+  { id: "pos"               as const, label: "Vender",            shortLabel: "POS",     hint: "Punto de venta",      icon: ShoppingCart,  desc: "Busca productos, cobra y genera comprobantes" },
+  { id: "turnos"            as const, label: "Turnos",            shortLabel: "Turnos",  hint: "Control de personal", icon: Clock,         desc: "Abre y cierra turnos de trabajo del equipo" },
+  { id: "caja-registradora" as const, label: "Caja Registradora", shortLabel: "Caja",    hint: "Gestión de efectivo", icon: Wallet,        desc: "Movimientos de efectivo, retiros e ingresos" },
+  { id: "cuentas-cobrar"    as const, label: "Me deben",          shortLabel: "Fiados",  hint: "Créditos a clientes", icon: HandCoins,     desc: "Créditos otorgados, cobros y seguimiento" },
+  { id: "arqueo"            as const, label: "Cuadrar Caja",      shortLabel: "Cuadre",      hint: "Cierre del día",      icon: Scale,         desc: "Conteo de billetes y cierre del día" },
+  { id: "comisiones"        as const, label: "Comisiones",        shortLabel: "Comisiones",  hint: "Cálculo comisiones",  icon: Users,         desc: "Calcula comisiones de vendedores" },
 ];
 
 // Índices tras los cuales insertar separador visual (entre grupos lógicos)
@@ -132,16 +130,16 @@ function ShiftCloseModal({
   const fmt = (n: number) => `S/${n.toFixed(2)}`;
 
   return (
-    <div className="modal-backdrop flex items-center justify-center p-4">
+    <div className="modal-backdrop flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="bg-primary px-6 py-4">
+        <div className="bg-primary px-4 sm:px-6 py-4">
           <CardTitle className="text-lg font-extrabold text-white">Cerrar Turno</CardTitle>
           <p className="text-sm text-white/80">Resumen del día antes de cerrar</p>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-5">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -221,17 +219,17 @@ function ShiftCloseModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 pb-6">
+        <div className="flex gap-3 px-4 sm:px-6 pb-4 sm:pb-6">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+            className="flex-1 min-h-11 py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading || !!error || confirming}
-            className="flex-1 py-2.5 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
+            className="flex-1 min-h-11 py-2.5 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
           >
             {confirming ? "Cerrando..." : "Confirmar Cierre"}
             {!confirming && <ArrowRight className="h-4 w-4" />}
@@ -280,7 +278,7 @@ export default function POSCajaModule() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-6 px-0">
       <OfflineIndicator />
 
       <AdminModuleHeader
@@ -338,7 +336,7 @@ export default function POSCajaModule() {
         {turnoAbierto ? (
           <button
             onClick={handleOpenCloseModal}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors flex items-center gap-1.5"
+            className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors flex items-center gap-1.5"
           >
             <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" />
             Cerrar Turno
@@ -346,7 +344,7 @@ export default function POSCajaModule() {
         ) : (
           <button
             onClick={() => setSub("turnos")}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors flex items-center gap-1.5"
+            className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors flex items-center gap-1.5"
           >
             Abrir Turno
           </button>
@@ -355,7 +353,6 @@ export default function POSCajaModule() {
 
       {/* ── CAMBIO 7: Renderizado de contenido por tab ───────────────── */}
       {sub === "pos"               && <POSView />}
-      {sub === "historial"         && <SalesHistoryTab />}
       {sub === "turnos"            && <TurnosModule />}
       {sub === "caja-registradora" && <CashRegisterTab />}
       {sub === "cuentas-cobrar"    && <FiadosModule />}
