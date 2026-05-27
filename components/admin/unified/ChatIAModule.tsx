@@ -240,7 +240,10 @@ export default function ChatIAModule() {
         "flex flex-col overflow-hidden bg-[var(--surface-raised)]",
         maximized
           ? "fixed inset-0 z-[9999]"
-          : "rounded-xl border border-[var(--rule-base)] min-h-[600px] h-[calc(100dvh-220px)]",
+          // Brandon 2026-05-27: en móvil descontamos el bottom nav fijo
+          // (~96px) para que el composer no quede tapado; min-h menor para no
+          // desbordar en pantallas chicas. En desktop (sin bottom nav) queda igual.
+          : "rounded-xl border border-[var(--rule-base)] min-h-[420px] h-[calc(100dvh-260px)] sm:min-h-[600px] sm:h-[calc(100dvh-220px)]",
       )}
     >
       {/* Barra superior: progress + toolbar */}
