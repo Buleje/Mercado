@@ -148,23 +148,23 @@ const INTEGRATION_LOGOS: LogoItem[] = [
   { kind: "text", name: "SUNAT" },
 ];
 
-// Nodo circular del orbital — solo el logo (el nombre va en title/aria).
-function OrbitNode({ item }: { item: LogoItem }) {
+// Nodo del hub de red — tile con el logo (el nombre va en title/aria).
+function NodeTile({ item }: { item: LogoItem }) {
   return (
     <div
       title={item.name}
       aria-label={item.name}
-      className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--rule-soft)] shadow-md transition-transform hover:scale-110"
+      className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-[var(--rule-base)] shadow-[var(--shadow-md)] transition-transform hover:scale-110"
       style={item.kind === "img" ? { background: "#ffffff" } : item.kind === "mark" ? { background: item.color } : undefined}
     >
       {item.kind === "img" ? (
         // eslint-disable-next-line @next/next/no-img-element -- logo de marca via CDN
-        <img src={item.src} alt={`Logo ${item.name}`} width={28} height={28} loading="lazy" className="h-7 w-7 object-contain" />
+        <img src={item.src} alt={`Logo ${item.name}`} width={32} height={32} loading="lazy" className="h-6 w-6 sm:h-8 sm:w-8 object-contain" />
       ) : item.kind === "mark" ? (
-        <span aria-hidden className="text-white text-xl font-extrabold">{item.mark}</span>
+        <span aria-hidden className="text-white text-lg sm:text-2xl font-extrabold">{item.mark}</span>
       ) : (
         <span aria-hidden className="inline-flex h-full w-full items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
-          <Receipt className="h-6 w-6" strokeWidth={2} />
+          <Receipt className="h-5 w-5 sm:h-7 sm:w-7" strokeWidth={2} />
         </span>
       )}
     </div>
@@ -173,62 +173,72 @@ function OrbitNode({ item }: { item: LogoItem }) {
 
 // Un anillo de nodos que orbita. Cada nodo se posiciona en su angulo y
 // contra-gira para mantenerse derecho respecto al viewport.
-function OrbitRing({
-  items,
-  radius,
-  duration,
-  reverse = false,
-}: {
-  items: LogoItem[];
-  radius: number;
-  duration: number;
-  reverse?: boolean;
-}) {
+// Posiciones de cada logo en el viewBox 1000x600 (centro = 500,300).
+// Constelacion balanceada alrededor del hub Buleje.
+const NET_POS: Record<string, { x: number; y: number }> = {
+  Stripe: { x: 500, y: 78 },
+  WhatsApp: { x: 175, y: 158 },
+  "Mercado Pago": { x: 825, y: 158 },
+  Yape: { x: 108, y: 348 },
+  Visa: { x: 892, y: 348 },
+  Plin: { x: 268, y: 524 },
+  SUNAT: { x: 500, y: 552 },
+  Mastercard: { x: 732, y: 524 },
+};
+const NET_CX = 500;
+const NET_CY = 300;
+
+function NetworkHub() {
   return (
-    <div
-      className={`absolute inset-0 ${reverse ? "orbit-spin-rev" : "orbit-spin"}`}
-      style={{ animationDuration: `${duration}s` }}
-    >
-      {items.map((item, i) => {
-        const angle = (360 / items.length) * i;
+    <div className="net-hub relative mx-auto w-full max-w-3xl aspect-[5/3]">
+      {/* Glow de marca detras del hub */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 h-56 w-56 sm:h-72 sm:w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/15 blur-3xl"
+      />
+
+      {/* SVG: lineas de conexion (wire faint + pulso animado) */}
+      <svg
+        viewBox="0 0 1000 600"
+        preserveAspectRatio="xMidYMid meet"
+        className="absolute inset-0 h-full w-full"
+        aria-hidden
+      >
+        {INTEGRATION_LOGOS.map((item) => {
+          const p = NET_POS[item.name];
+          if (!p) return null;
+          return (
+            <g key={item.name}>
+              <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={1.5} strokeOpacity={0.18} />
+              <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={2.5} strokeLinecap="round" className="net-line" strokeOpacity={0.7} />
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Nodos de logos */}
+      {INTEGRATION_LOGOS.map((item, i) => {
+        const p = NET_POS[item.name];
+        if (!p) return null;
         return (
           <div
             key={item.name}
-            className="absolute left-1/2 top-1/2 h-14 w-14"
-            style={{ margin: "-1.75rem", transform: `rotate(${angle}deg) translate(${radius}px) rotate(${-angle}deg)` }}
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${(p.x / 1000) * 100}%`, top: `${(p.y / 600) * 100}%` }}
           >
-            {/* contra-giro: misma duracion, sentido opuesto al anillo */}
-            <div className={reverse ? "orbit-spin" : "orbit-spin-rev"} style={{ animationDuration: `${duration}s` }}>
-              <OrbitNode item={item} />
+            <div className="net-float" style={{ animationDelay: `${i * 0.45}s` }}>
+              <NodeTile item={item} />
             </div>
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function OrbitalHub() {
-  const outer = INTEGRATION_LOGOS.filter((i) => i.kind === "img"); // WhatsApp, MercadoPago, Stripe, Visa, Mastercard
-  const inner = INTEGRATION_LOGOS.filter((i) => i.kind !== "img"); // Yape, Plin, SUNAT
-  return (
-    <div className="orbit-hub relative mx-auto h-[440px] w-[440px] max-w-full scale-[0.8] sm:scale-100 -my-10 sm:my-0">
-      {/* Glow de marca */}
-      <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/15 blur-3xl" />
-      {/* Circulos de orbita (estaticos) */}
-      <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[var(--rule-soft)]" style={{ width: 184, height: 184 }} />
-      <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[var(--rule-soft)]" style={{ width: 340, height: 340 }} />
-
-      {/* Anillos que giran (sentidos opuestos) */}
-      <OrbitRing items={outer} radius={170} duration={38} />
-      <OrbitRing items={inner} radius={92} duration={26} reverse />
 
       {/* Hub central — Buleje */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        <span aria-hidden className="absolute inset-0 -m-3 rounded-full bg-[var(--accent)]/20 animate-ping" />
-        <div className="relative flex h-24 w-24 flex-col items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-[var(--shadow-xl)] shadow-[var(--accent)]/40 ring-4 ring-[var(--surface-raised)]">
-          <span className="text-3xl font-black leading-none">b</span>
-          <span className="mt-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider opacity-90">Buleje</span>
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+        <span aria-hidden className="absolute inset-0 -m-2 rounded-full bg-[var(--accent)]/25 animate-ping" />
+        <div className="relative flex h-20 w-20 sm:h-28 sm:w-28 flex-col items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-[var(--shadow-xl)] shadow-[var(--accent)]/40 ring-4 ring-[var(--surface-raised)]">
+          <span className="text-3xl sm:text-4xl font-black leading-none">b</span>
+          <span className="mt-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.15em] opacity-90">Buleje</span>
         </div>
       </div>
     </div>
@@ -253,7 +263,7 @@ function IntegrationsStrip() {
         </p>
       </div>
 
-      <OrbitalHub />
+      <NetworkHub />
     </section>
   );
 }
