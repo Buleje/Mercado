@@ -464,6 +464,32 @@ function B2BHero() {
                   ))}
                 </div>
 
+                {/* Últimos pedidos — da altura y realismo a la pantalla */}
+                <div className="px-4 mt-3">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Últimos pedidos</p>
+                  <ul className="space-y-1.5">
+                    {[
+                      { n: "Doña Marta", d: "Pollo broaster", v: "28.50", t: "2 min" },
+                      { n: "Carlos S.", d: "Yape confirmado", v: "15.00", t: "5 min" },
+                      { n: "Lucía P.", d: "Abarrotes", v: "42.30", t: "7 min" },
+                    ].map((o) => (
+                      <li key={o.n} className="flex items-center gap-2 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-2.5 py-2">
+                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
+                          {o.n.charAt(0)}
+                        </span>
+                        <div className="min-w-0 flex-1 leading-tight">
+                          <p className="text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] truncate">{o.n}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{o.d}</p>
+                        </div>
+                        <div className="text-right leading-tight shrink-0">
+                          <p className="text-[length:var(--ts-xs)] font-extrabold tabular-nums text-[var(--text-primary)]">S/ {o.v}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{o.t}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
                 {/* Footer CTA */}
                 <div className="m-3 mt-3 h-10 rounded-xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-between px-4 shadow-[var(--shadow-md)]">
                   <span className="text-xs font-extrabold">Ver todos los pedidos</span>
@@ -542,7 +568,7 @@ function FeaturesGrid() {
               >
                 <m.icon className="h-6 w-6" strokeWidth={1.75} />
               </span>
-              <h3 className="font-display text-xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+              <h3 className="text-[1.35rem] font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
                 {m.title}
               </h3>
               <ul className="mt-3 flex flex-wrap gap-1.5">
