@@ -121,7 +121,6 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
           defaultVisible={false}
           kicker="Retención · rango activo"
           title="Nuevos vs recurrentes por mes"
-          description="Nuevos vs recurrentes por mes."
           kpis={[
             { label: "Total 6m", value: String(retencionKpis.total), tone: "primary" },
             { label: "Nuevos 6m", value: String(retencionKpis.nuevos), tone: "success" },
@@ -163,7 +162,6 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
           hasData={true}
           kicker="Actividad · rango activo"
           title="Clientes nuevos y activos por día"
-          description="Clientes nuevos y activos por día."
           kpis={[
             { label: "Nuevos 14d", value: String(porDiaKpis.nuevos), tone: "success" },
             { label: "Día pico", value: porDiaKpis.pico.dia, tone: "success" },

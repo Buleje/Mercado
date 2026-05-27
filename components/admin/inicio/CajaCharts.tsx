@@ -109,7 +109,6 @@ export default function CajaCharts({ data }: { data: CajaData }) {
           hasData={(data.flujoDiario ?? []).some((d) => (d.ingresos ?? 0) > 0 || (d.egresos ?? 0) > 0)}
           kicker="Flujo diario · rango activo"
           title="Ingresos, egresos y balance"
-          description="Ingresos, egresos y balance por día."
           kpis={[
             { label: "Mejor día", value: mejorDia.best?.dia ?? "—", tone: "success" },
             { label: "Balance mejor día", value: fmtS(mejorDia.best?.balance ?? 0), tone: "success" },
@@ -143,7 +142,6 @@ export default function CajaCharts({ data }: { data: CajaData }) {
           hasData={(data.flujoMensual ?? []).length > 0}
           kicker="Tendencia · rango activo"
           title="Ingresos y egresos por mes"
-          description="Ingresos y egresos por mes."
           kpis={[
             { label: "Mejor mes", value: mesTop.top?.mes ?? "—", tone: "success" },
             { label: "Neto mejor mes", value: fmtS(mesTop.top?.neto ?? 0), tone: "success" },
