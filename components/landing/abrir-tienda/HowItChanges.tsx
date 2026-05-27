@@ -79,10 +79,10 @@ export default function HowItChanges() {
             Tu día a día
           </p>
           <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
-            Lo mismo que ya hacés,
-            <br />
-            <span className="text-[var(--accent)]">
-              pero sin perder tiempo ni plata.
+            Lo mismo que ya hacés,{" "}
+            <br className="hidden sm:block" />
+            <span className="italic font-serif text-[var(--accent)]">
+              sin perder tiempo ni plata.
             </span>
           </h2>
           <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
@@ -111,8 +111,10 @@ export default function HowItChanges() {
                   <p className="flex-1 text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] truncate">
                     {c.moment}
                   </p>
-                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider whitespace-nowrap">
-                    Ahorra <span className="line-through opacity-50">{c.beforeTime}</span> → {c.afterTime}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider whitespace-nowrap shadow-sm shadow-[var(--accent)]/20">
+                    <span className="line-through opacity-60 tabular-nums">{c.beforeTime}</span>
+                    <ArrowRight className="h-3 w-3" strokeWidth={3} />
+                    <span className="tabular-nums">{c.afterTime}</span>
                   </span>
                 </div>
 
@@ -126,19 +128,11 @@ export default function HowItChanges() {
                       <X className="h-4 w-4" strokeWidth={2.75} />
                     </span>
                     <div className="min-w-0">
-                      <div className="flex items-baseline gap-2 mb-1.5">
-                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                          Hoy sin Buleje
-                        </p>
-                        <span className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--data-error-600,var(--text-tertiary))] sm:hidden">
-                          {c.beforeTime}
-                        </span>
-                      </div>
+                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+                        Hoy sin Buleje
+                      </p>
                       <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
                         {c.before}
-                      </p>
-                      <p className="mt-2.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                        Te toma <span className="text-[var(--data-error-600,var(--text-secondary))] tabular-nums">{c.beforeTime}</span>
                       </p>
                     </div>
                   </div>
@@ -152,19 +146,11 @@ export default function HowItChanges() {
                       <Check className="h-4 w-4" strokeWidth={2.75} />
                     </span>
                     <div className="min-w-0">
-                      <div className="flex items-baseline gap-2 mb-1.5">
-                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                          Con Buleje
-                        </p>
-                        <span className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--accent)] sm:hidden">
-                          {c.afterTime}
-                        </span>
-                      </div>
+                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+                        Con Buleje
+                      </p>
                       <p className="text-sm font-semibold leading-relaxed text-[var(--text-primary)]">
                         {c.after}
-                      </p>
-                      <p className="mt-2.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-                        Te toma <span className="tabular-nums">{c.afterTime}</span>
                       </p>
                     </div>
                   </div>

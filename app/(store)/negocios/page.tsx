@@ -369,7 +369,7 @@ function B2BHero() {
                 <p className="text-xs font-extrabold text-[var(--text-primary)] tabular-nums">+ S/ 28.50</p>
               </div>
             </div>
-            <div className="absolute -right-3 bottom-24 z-20 hidden sm:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
+            <div className="absolute -left-4 bottom-20 z-20 hidden sm:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--data-success-500)]/15 text-[var(--data-success-600,#059669)]">
                 <Truck className="h-4 w-4" strokeWidth={2} />
               </span>
@@ -381,7 +381,13 @@ function B2BHero() {
 
             {/* Frame del teléfono */}
             <div className="relative w-[300px] sm:w-[340px] rounded-[3rem] bg-[var(--text-primary)] p-3 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/25 ring-1 ring-white/10">
+              {/* Botones laterales del teléfono */}
+              <span aria-hidden className="absolute -left-[3px] top-[118px] h-7 w-[3px] rounded-l-full bg-[var(--text-primary)]" />
+              <span aria-hidden className="absolute -left-[3px] top-[160px] h-11 w-[3px] rounded-l-full bg-[var(--text-primary)]" />
+              <span aria-hidden className="absolute -right-[3px] top-[150px] h-16 w-[3px] rounded-r-full bg-[var(--text-primary)]" />
               <div className="relative rounded-[2.4rem] bg-[var(--surface-canvas)] overflow-hidden">
+                {/* Reflejo sutil del vidrio */}
+                <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-28 z-10 bg-linear-to-b from-white/10 to-transparent" />
                 {/* Dynamic island */}
                 <div aria-hidden className="absolute top-3 left-1/2 -translate-x-1/2 h-6 w-24 rounded-full bg-[var(--text-primary)] z-20" />
                 {/* Status bar */}
@@ -491,10 +497,12 @@ function B2BHero() {
                 </div>
 
                 {/* Footer CTA */}
-                <div className="m-3 mt-3 h-10 rounded-xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-between px-4 shadow-[var(--shadow-md)]">
+                <div className="mx-3 mt-3 h-10 rounded-xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-between px-4 shadow-[var(--shadow-md)]">
                   <span className="text-xs font-extrabold">Ver todos los pedidos</span>
                   <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
                 </div>
+                {/* Home indicator */}
+                <div aria-hidden className="mx-auto my-2.5 h-1 w-28 rounded-full bg-[var(--text-tertiary)]/30" />
               </div>
             </div>
           </div>
