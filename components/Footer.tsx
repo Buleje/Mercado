@@ -23,7 +23,8 @@ import {
   LifeBuoy,
   Leaf,
 } from "lucide-react";
-import { useSettings } from "@/contexts/settings-context";
+import { useSettingsSafe, DEFAULT_DELIVERY } from "@/contexts/settings-context";
+import { DEFAULT_HOMEPAGE } from "@/lib/homepage-content";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
@@ -241,7 +242,15 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
     setTodayDow(d.getDay());
   }, []);
 
-  const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
+  // Brandon 2026-05-27: footer portable — usa el accessor SEGURO de settings.
+  // Antes `useSettings()` lanzaba si no había SettingsProvider (solo montado en
+  // layouts store/marketplace), lo que impedía reusar este footer en páginas
+  // fuera de ese árbol (ej. /saas). Con fallback a defaults, el MISMO footer
+  // renderiza idéntico en cualquier página del dominio Buleje.
+  const settingsCtx = useSettingsSafe();
+  const hp = settingsCtx?.homepage ?? DEFAULT_HOMEPAGE;
+  const deliveryConfig = settingsCtx?.deliveryConfig ?? DEFAULT_DELIVERY;
+  const storeTheme = settingsCtx?.storeTheme;
   const pathname = usePathname();
 
   // Brandon mayo 15 v4 2026: footer oculto en /marketplace/carrito y /checkout/*.

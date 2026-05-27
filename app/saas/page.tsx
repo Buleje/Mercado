@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import SaasNavbar from "@/components/saas/SaasNavbar";
 import SaasHero from "@/components/saas/SaasHero";
-import SaasFooter from "@/components/saas/SaasFooter";
+import Footer from "@/components/Footer";
 import SaasInteractiveDemo from "@/components/saas/SaasInteractiveDemo";
 import SaasBeforeAfter from "@/components/saas/SaasBeforeAfter";
 import SaasActivityTicker from "@/components/saas/SaasActivityTicker";
@@ -93,7 +93,7 @@ export default function SaasPage() {
         {/* 11. CTA final */}
         <SaasCTA />
       </main>
-      <SaasFooter />
+      <Footer />
       <SaasActivityTicker />
     </>
   );

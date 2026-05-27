@@ -116,7 +116,7 @@ export type DeliveryConfig = {
   freeDeliveryMin: number;
 };
 
-const DEFAULT_DELIVERY: DeliveryConfig = {
+export const DEFAULT_DELIVERY: DeliveryConfig = {
   hours: [
     { day: "Lunes", open: "07:00", close: "21:00", enabled: true },
     { day: "Martes", open: "07:00", close: "21:00", enabled: true },
