@@ -18,11 +18,29 @@ export const metadata: Metadata = {
   title: "Vende en Buleje — Abre tu tienda en Pucallpa en 5 minutos",
   description:
     "Suma tu bodega al marketplace de Ucayali. Sin letra chica, sin comisiones escondidas. Gratis el primer mes, soporte en español, pagos con Yape.",
+  keywords: [
+    "vender en Pucallpa",
+    "abrir tienda online",
+    "marketplace para bodegas",
+    "vender por internet Ucayali",
+    "software para bodega",
+    "delivery para mi negocio",
+  ],
   openGraph: {
     title: "Vende en Buleje",
     description:
       "Abre tu tienda online con la plataforma que usan las bodegas de Pucallpa. Gratis el primer mes.",
+    url: "https://www.buleje.pe/vender",
+    siteName: "Buleje",
+    locale: "es_PE",
     type: "website",
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "Vende en Buleje — tu tienda online en Pucallpa" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vende en Buleje — Abre tu tienda en 5 minutos",
+    description: "Suma tu bodega al marketplace de Ucayali. Gratis el primer mes, pagos con Yape.",
+    images: ["/api/og"],
   },
   alternates: {
     canonical: "/vender",

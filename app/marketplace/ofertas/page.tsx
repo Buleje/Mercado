@@ -22,6 +22,13 @@ export const metadata: Metadata = {
     siteName: "Buleje",
     locale: "es_PE",
     type: "website",
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "Ofertas del día en Buleje Pucallpa" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ofertas — Precios que no te puedes perder",
+    description: "Descuentos reales en bodegas de Pucallpa. Delivery rápido, pago Yape o efectivo.",
+    images: ["/api/og"],
   },
 };
 

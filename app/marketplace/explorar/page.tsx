@@ -23,6 +23,13 @@ export const metadata: Metadata = {
     siteName: "Buleje",
     locale: "es_PE",
     type: "website",
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "Explorá el catálogo de Buleje Pucallpa" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Explorar — Todo el catálogo de Buleje",
+    description: "Bodegas, ofertas y categorías de todo Pucallpa en un solo lugar. Delivery rápido, pago Yape o efectivo.",
+    images: ["/api/og"],
   },
 };
 

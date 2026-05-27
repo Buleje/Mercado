@@ -60,7 +60,7 @@ const PAGE_URL = "https://www.buleje.pe/abrir-tienda";
 export const metadata: Metadata = {
   title: "Abre tu tienda online gratis en 5 minutos — Pucallpa",
   description:
-    "Crea tu tienda online y vendé hoy: catálogo, pagos con Yape/Plin, delivery y reportes en una sola app. Empezás gratis, sin tarjeta y sin comisión. Plan Fundador para los primeros 10 negocios de Pucallpa.",
+    "Crea tu tienda online y vendé hoy: catálogo, pagos Yape/Plin, delivery y reportes en una app. Gratis para empezar, sin tarjeta ni comisión, en Pucallpa.",
   keywords: [
     "abrir tienda online",
     "crear tienda online Perú",

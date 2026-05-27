@@ -60,7 +60,7 @@ import {
 export const metadata: Metadata = {
   title: "Delivery de bodegas, restaurantes y farmacias en Pucallpa",
   description:
-    "Pedí online en Pucallpa: bodegas, restaurantes y farmacias de tus vecinos con delivery rápido. Paga con Yape, Plin o efectivo. El marketplace local de la Amazonía peruana.",
+    "Pedí online en Pucallpa: bodegas, restaurantes y farmacias con delivery rápido. Paga con Yape, Plin o efectivo. Tu marketplace local en Ucayali.",
   keywords: [
     "delivery Pucallpa",
     "marketplace Pucallpa",
