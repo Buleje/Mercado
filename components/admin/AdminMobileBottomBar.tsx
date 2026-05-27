@@ -17,7 +17,6 @@
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
-import { Menu } from "@buleje/design-system/icons";
 import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 import type { Tab } from "../../app/admin/_lib/tabs.types";
@@ -37,10 +36,21 @@ export interface AdminMobileBottomBarProps {
   onOpenMobileNav: () => void;
 }
 
+// Brandon 2026-05-27: bottom bar fija con 5 accesos directos para todos los
+// roles — Inicio, Pedidos, POS (Ventas & Caja), Adelantos, Compras.
+const FIVE_QUICK: Tab[] = ["vendor-dashboard", "pedidos", "ventas-caja", "adelantos", "compras"];
 const MOBILE_PRIORITY: Record<string, Tab[]> = {
-  admin:      ["pedidos", "fiados", "inventario", "productos"],
-  cajero:     ["pedidos", "fiados", "clientes", "inventario"],
-  almacenero: ["inventario", "compras", "pedidos", "plata"],
+  admin:      FIVE_QUICK,
+  cajero:     FIVE_QUICK,
+  almacenero: FIVE_QUICK,
+};
+// Labels cortos para que entren los 5 en la barra móvil.
+const SHORT_LABELS: Record<string, string> = {
+  "vendor-dashboard": "Inicio",
+  pedidos: "Pedidos",
+  "ventas-caja": "POS",
+  adelantos: "Adelantos",
+  compras: "Compras",
 };
 
 export function AdminMobileBottomBar({
@@ -49,16 +59,11 @@ export function AdminMobileBottomBar({
   filteredTabs,
   alerts,
   onNavigate,
-  onOpenMobileNav,
 }: AdminMobileBottomBarProps) {
   const priorityIds = MOBILE_PRIORITY[userRole] ?? MOBILE_PRIORITY.admin;
   const quickTabs = priorityIds
     .map((id) => filteredTabs.find((t) => t.id === id))
     .filter((t): t is FilteredTab => t != null);
-
-  const otherAlerts = Object.entries(alerts)
-    .filter(([id]) => !priorityIds.includes(id as Tab))
-    .reduce((sum, [, v]) => sum + v, 0);
 
   return (
     // Audit 2026-05-17 07-P2-2: touch targets ≥48px (WCAG 2.1 AA pide ≥44).
@@ -89,26 +94,10 @@ export function AdminMobileBottomBar({
           ) : (
             <Icon className="h-5 w-5" />
           )}
-          <span className="leading-tight truncate max-w-14">{label}</span>
+          <span className="leading-tight truncate max-w-16">{SHORT_LABELS[id] ?? label}</span>
           {currentTab === id && <span className="absolute top-0 inset-x-0 h-0.5 bg-primary" />}
         </button>
       ))}
-
-      <button
-        onClick={onOpenMobileNav}
-        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[48px] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted transition-colors"
-        aria-label="Más opciones"
-      >
-        <span className="relative inline-flex">
-          <Menu className="h-5 w-5" />
-          {otherAlerts > 0 && (
-            <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center px-0.5">
-              {otherAlerts}
-            </span>
-          )}
-        </span>
-        <span className="leading-tight">Más</span>
-      </button>
     </nav>
   );
 }
