@@ -263,110 +263,52 @@
   "tiendas-hero": [
     {
       "id": "tiendas-hero-1",
-      "title": "",
-      "subtitle": "Pedí ahora y recibí en 25 minutos",
-      "imageUrl": "/uploads/banners-tiendas-hero/banners-tiendas-hero_1777347063063-424.webp",
-      "ctaHref": "/marketplace/ofertas",
-      "ctaLabel": "Ver ofertas",
-      "bgFrom": "#0f766e",
-      "bgTo": "#0d9488",
+      "title": "Tu mercado de Pucallpa, a domicilio",
+      "subtitle": "Bodegas, restaurantes y mercados con delivery en 25 minutos",
+      "imageUrl": null,
+      "ctaHref": "/tiendas",
+      "ctaLabel": "Explorar tiendas",
+      "bgFrom": "#99f6e4",
+      "bgTo": "#5eead4",
       "active": true,
       "order": 1,
-      "type": "promo",
-      "imageAdjust": {
-        "position": {
-          "x": 19.8,
-          "y": 7.7
-        },
-        "scale": 50,
-        "fit": "contain"
-      },
-      "promo": {
-        "productName": "",
-        "productImage": "https://plazavea.vteximg.com.br/arquivos/ids/27188879/20201348.jpg",
-        "price": 4.8,
-        "oldPrice": null,
-        "badge": "",
-        "buyHref": "/t/main/producto/1252383",
-        "buyLabel": "Comprar ahora",
-        "imageAdjust": {
-          "position": {
-            "x": 50,
-            "y": 50
-          },
-          "scale": 105,
-          "fit": "cover"
-        },
-        "items": [
-          {
-            "id": "legacy",
-            "source": "linked",
-            "productName": "",
-            "productImage": "https://plazavea.vteximg.com.br/arquivos/ids/27188879/20201348.jpg",
-            "price": null,
-            "oldPrice": null,
-            "badge": "",
-            "buyHref": "/t/main/producto/1252383",
-            "buyLabel": "Comprar ahora",
-            "linkedStoreSlug": "main",
-            "linkedProductId": 1252383,
-            "imageAdjust": {
-              "position": {
-                "x": 50,
-                "y": 50
-              },
-              "scale": 105,
-              "fit": "cover"
-            },
-            "productAnchor": {
-              "x": 78.4,
-              "y": 50
-            },
-            "buyAnchor": {
-              "x": 78.4,
-              "y": 85.4
-            },
-            "productSize": 24,
-            "buySize": 31
-          }
-        ]
-      }
+      "type": "classic"
     },
     {
       "id": "tiendas-hero-2",
-      "title": "Compra fácil con Yape",
-      "subtitle": "Sin tarjetas, sin complicaciones",
+      "title": "Paga como prefieras",
+      "subtitle": "Yape, Plin o efectivo al recibir — sin tarjetas",
       "imageUrl": null,
-      "ctaHref": "/como-pagar",
-      "ctaLabel": "Cómo funciona",
-      "bgFrom": "#1e1b4b",
-      "bgTo": "#312e81",
+      "ctaHref": "/marketplace/como-pagar",
+      "ctaLabel": "Cómo pagar",
+      "bgFrom": "#0d9488",
+      "bgTo": "#0f766e",
       "active": true,
       "order": 2,
       "type": "classic"
     },
     {
       "id": "tiendas-hero-3",
-      "title": "Cupón BIENVENIDO10",
-      "subtitle": "10% off en tu primera compra",
+      "title": "10% OFF en tu primera compra",
+      "subtitle": "Aplicá el cupón BIENVENIDO10 al pagar",
       "imageUrl": null,
       "ctaHref": "/marketplace/ofertas",
-      "ctaLabel": "Aplicar cupón",
-      "bgFrom": "#7c2d12",
-      "bgTo": "#9a3412",
+      "ctaLabel": "Ver ofertas",
+      "bgFrom": "#0891b2",
+      "bgTo": "#0e7490",
       "active": true,
       "order": 3,
       "type": "classic"
     },
     {
       "id": "tiendas-hero-4",
-      "title": "Sumá tu tienda al marketplace",
-      "subtitle": "Gratis. En menos de 5 minutos.",
+      "title": "¿Tenés un negocio?",
+      "subtitle": "Súmate gratis al marketplace y vendé con delivery",
       "imageUrl": null,
       "ctaHref": "/abrir-tienda",
-      "ctaLabel": "Empezar",
-      "bgFrom": "#1f2937",
-      "bgTo": "#111827",
+      "ctaLabel": "Abrir mi tienda",
+      "bgFrom": "#115e59",
+      "bgTo": "#134e4a",
       "active": true,
       "order": 4,
       "type": "classic"
