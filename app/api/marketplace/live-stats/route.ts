@@ -16,7 +16,12 @@ export async function GET() {
       shoppersToday: data.shoppersToday,
       activeStores: data.activeStores,
     });
-    return NextResponse.json({ data });
+    // Brandon 2026-05-27 (audit perf): TTL server-side ya es 60s; permitimos
+    // caché de borde/navegador para que cada poll no viaje a origen.
+    return NextResponse.json(
+      { data },
+      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300" } },
+    );
   } catch (e) {
     logger.error("[live-stats] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(

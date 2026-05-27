@@ -18,7 +18,11 @@ import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 export async function GET() {
   try {
     const data = await MarketplacePublicDB.getActivityFeed();
-    return NextResponse.json({ data });
+    // Brandon 2026-05-27 (audit perf): feed público con TTL 60s → cacheable en borde.
+    return NextResponse.json(
+      { data },
+      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300" } },
+    );
   } catch (e) {
     logger.error("[activity-feed] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ data: [] }, { status: 200 });

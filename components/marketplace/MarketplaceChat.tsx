@@ -103,11 +103,28 @@ export default function MarketplaceChat({
 
   // ---------- polling ----------
 
+  // Brandon 2026-05-27 (audit perf): guard de visibilidad. Antes polleaba
+  // cada POLL_INTERVAL aunque la pestaña estuviera en background → drenaba
+  // datos/batería en móvil. Ahora pausa con la pestaña oculta y reanuda
+  // (con fetch inmediato) al volver. Sigue polleando cerrado para el badge.
   useEffect(() => {
+    const start = () => {
+      if (pollRef.current) return;
+      pollRef.current = setInterval(fetchMessages, POLL_INTERVAL);
+    };
+    const stop = () => {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") { fetchMessages(); start(); }
+      else stop();
+    };
     fetchMessages();
-    pollRef.current = setInterval(fetchMessages, POLL_INTERVAL);
+    if (typeof document === "undefined" || document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [fetchMessages]);
 
