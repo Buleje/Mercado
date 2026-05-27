@@ -56,6 +56,14 @@ const TodayHub = dynamic(
   { ssr: false, loading: DashboardLoading },
 );
 
+// Brandon 2026-05-27 — "Inicio / Principal": command center con mini-resúmenes
+// financieros (ingresos/gastos/ganancia) + accesos directos a módulos, en
+// marco de computadora (estética del mockup de /negocios adaptada a desktop).
+const VendorCommandCenter = dynamic(
+  () => import("@/components/admin/inicio/VendorCommandCenter"),
+  { ssr: false, loading: DashboardLoading },
+);
+
 // ADR-066 Ola M — InicioDashboardV2 con compound charts + multi-signal KPIs
 const InicioDashboardV2 = dynamic(
   () => import("@/components/admin/inicio/InicioDashboardV2"),
@@ -211,6 +219,9 @@ export default function VendorDashboardModule() {
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
+            {/* Inicio / Principal — lo más importante de un vistazo:
+                mini-resúmenes financieros + accesos directos a módulos. */}
+            <VendorCommandCenter />
             {/* Briefing accionable del día (reemplaza el modal bloqueante).
                 Se auto-oculta si no hay nada que resolver. */}
             <MorningBriefingCard />
