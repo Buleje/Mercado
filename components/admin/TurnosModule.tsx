@@ -1864,7 +1864,7 @@ export default function TurnosModule() {
                   <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                     <ShoppingCart className="h-3.5 w-3.5" /> Ventas del turno
                   </h4>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Total vendido</p>
                       <p className="text-lg font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(resumen.totalVentas)}</p>

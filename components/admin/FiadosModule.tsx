@@ -956,7 +956,7 @@ export default function FiadosModule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar fiado o cliente..."
-            className="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+            className="w-full h-12 sm:h-10 pl-10 pr-4 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
           />
         </div>
 
