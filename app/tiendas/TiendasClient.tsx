@@ -1113,47 +1113,32 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
               - Sin justify-end (rompía mobile: el primer chip quedaba oculto).
               - Mobile: chips h-9 compactos, scroll-x natural desde la izquierda.
               - Desktop: tamaño normal con flex-wrap, sin scroll. */}
-          <div className="flex sm:flex-wrap lg:flex-col items-center lg:items-stretch gap-2 sm:gap-3 lg:gap-2 mb-2.5 lg:mb-0 overflow-x-auto sm:overflow-visible lg:overflow-visible scrollbar-hide -mx-1 px-1 lg:mx-0 lg:px-0 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
-            {/* Sort dropdown — compact en mobile (ícono + valor, ~90px), default desktop */}
-            <div className="shrink-0 lg:shrink lg:w-full [scroll-snap-align:start]">
+          {/* ── MOBILE/TABLET: fila compacta con scroll (orden + 4+ + drawer) ── */}
+          <div className="flex lg:hidden items-center gap-2 sm:gap-3 mb-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
+            <div className="shrink-0 [scroll-snap-align:start]">
               <span className="sm:hidden">
                 <StoresSortSelector value={sortKey} onChange={setSortKey} compact />
               </span>
-              <span className="hidden sm:inline-flex lg:w-full">
+              <span className="hidden sm:inline-flex">
                 <StoresSortSelector value={sortKey} onChange={setSortKey} />
               </span>
             </div>
-
-            {/* Toggle ⭐ 4+ — h-9 mobile, h-10 desktop */}
-            {(() => {
-              const isActive = activeChips.has("top_rated");
-              return (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveChips((prev) => {
-                      const next = new Set(prev);
-                      if (next.has("top_rated")) next.delete("top_rated");
-                      else next.add("top_rated");
-                      return next;
-                    });
-                  }}
-                  aria-pressed={isActive}
-                  className={cn(
-                    "shrink-0 lg:w-full [scroll-snap-align:start] inline-flex items-center justify-center lg:justify-start gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-full lg:rounded-xl text-xs font-bold transition-all whitespace-nowrap",
-                    isActive
-                      ? "bg-[var(--accent)] text-white border border-[var(--accent)]"
-                      : "bg-[var(--surface-canvas)] lg:bg-transparent text-[var(--text-primary)] border border-[var(--rule-base)] lg:border-[var(--rule-soft)] hover:border-[var(--accent)]/50 lg:hover:bg-[var(--accent-soft)]",
-                  )}
-                  title="Solo tiendas con rating 4 estrellas o más"
-                >
-                  <Star className={cn("h-3.5 w-3.5", isActive && "fill-current")} strokeWidth={2} />
-                  <span>4+ estrellas</span>
-                </button>
-              );
-            })()}
-
-            <div className="shrink-0 lg:w-full [scroll-snap-align:start]">
+            <button
+              type="button"
+              onClick={() => setActiveChips((prev) => { const n = new Set(prev); if (n.has("top_rated")) n.delete("top_rated"); else n.add("top_rated"); return n; })}
+              aria-pressed={activeChips.has("top_rated")}
+              className={cn(
+                "shrink-0 [scroll-snap-align:start] inline-flex items-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
+                activeChips.has("top_rated")
+                  ? "bg-[var(--accent)] text-white border border-[var(--accent)]"
+                  : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border border-[var(--rule-base)] hover:border-[var(--accent)]/50",
+              )}
+              title="Solo tiendas con rating 4 estrellas o más"
+            >
+              <Star className={cn("h-3.5 w-3.5", activeChips.has("top_rated") && "fill-current")} strokeWidth={2} />
+              <span>4+ estrellas</span>
+            </button>
+            <div className="shrink-0 [scroll-snap-align:start]">
               <MarketplaceFilters
                 filters={productFilters}
                 userCoords={userCoords}
@@ -1173,6 +1158,37 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
                 globalActiveCount={activeFilterCount}
                 triggerCompact
               />
+            </div>
+          </div>
+
+          {/* ── DESKTOP: secciones limpias apiladas (sin drawer) ── */}
+          <div className="hidden lg:flex lg:flex-col lg:gap-4">
+            {/* ORDENAR */}
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+                Ordenar
+              </p>
+              <StoresSortSelector value={sortKey} onChange={setSortKey} className="w-full justify-between" />
+            </div>
+            {/* CALIFICACIÓN */}
+            <div className="border-t border-[var(--rule-soft)] pt-3">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+                Calificación
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveChips((prev) => { const n = new Set(prev); if (n.has("top_rated")) n.delete("top_rated"); else n.add("top_rated"); return n; })}
+                aria-pressed={activeChips.has("top_rated")}
+                className={cn(
+                  "w-full inline-flex items-center gap-2 h-11 px-3.5 rounded-xl text-sm font-bold transition-all border-2",
+                  activeChips.has("top_rated")
+                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50",
+                )}
+              >
+                <Star className={cn("h-4 w-4", activeChips.has("top_rated") && "fill-current")} strokeWidth={2} />
+                <span>4 estrellas o más</span>
+              </button>
             </div>
           </div>
 
