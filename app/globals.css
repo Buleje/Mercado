@@ -1612,13 +1612,15 @@ textarea:focus-visible,
   to { stroke-dashoffset: -28; }
 }
 .net-line {
-  stroke-dasharray: 2 9;
-  animation: bsm-dash-flow 1.3s linear infinite;
+  stroke-dasharray: 3 7;
+  animation: bsm-dash-flow 1.1s linear infinite;
+  /* brillo/glow para que las lineas tengan mas presencia (sobre todo en light) */
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--accent) 65%, transparent));
 }
-/* Flotacion sutil de cada nodo */
+/* Flotacion de cada nodo (mas pronunciada) */
 @keyframes bsm-float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-7px); }
+  50% { transform: translateY(-12px); }
 }
 .net-float {
   animation: bsm-float 5s ease-in-out infinite;

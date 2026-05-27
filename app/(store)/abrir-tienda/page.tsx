@@ -148,23 +148,24 @@ const INTEGRATION_LOGOS: LogoItem[] = [
   { kind: "text", name: "SUNAT" },
 ];
 
-// Nodo del hub de red — tile con el logo (el nombre va en title/aria).
+// Nodo del hub de red — tile flotante con el logo (nombre en title/aria).
+// Yape/Plin usan su wordmark de marca (lee como logo real).
 function NodeTile({ item }: { item: LogoItem }) {
   return (
     <div
       title={item.name}
       aria-label={item.name}
-      className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-[var(--rule-base)] shadow-[var(--shadow-md)] transition-transform hover:scale-110"
+      className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[1.25rem] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] ring-1 ring-black/5 transition-transform duration-300 hover:scale-110"
       style={item.kind === "img" ? { background: "#ffffff" } : item.kind === "mark" ? { background: item.color } : undefined}
     >
       {item.kind === "img" ? (
         // eslint-disable-next-line @next/next/no-img-element -- logo de marca via CDN
-        <img src={item.src} alt={`Logo ${item.name}`} width={32} height={32} loading="lazy" className="h-6 w-6 sm:h-8 sm:w-8 object-contain" />
+        <img src={item.src} alt={`Logo ${item.name}`} width={40} height={40} loading="lazy" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
       ) : item.kind === "mark" ? (
-        <span aria-hidden className="text-white text-lg sm:text-2xl font-extrabold">{item.mark}</span>
+        <span aria-hidden className="text-white text-sm sm:text-base font-black tracking-tight">{item.name}</span>
       ) : (
-        <span aria-hidden className="inline-flex h-full w-full items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
-          <Receipt className="h-5 w-5 sm:h-7 sm:w-7" strokeWidth={2} />
+        <span aria-hidden className="inline-flex h-full w-full items-center justify-center rounded-[1.25rem] bg-[var(--accent-soft)] text-[var(--accent)]">
+          <Receipt className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={2} />
         </span>
       )}
     </div>
@@ -190,14 +191,14 @@ const NET_CY = 300;
 
 function NetworkHub() {
   return (
-    <div className="net-hub relative mx-auto w-full max-w-3xl aspect-[5/3]">
+    <div className="net-hub relative mx-auto w-full max-w-4xl aspect-[5/3]">
       {/* Glow de marca detras del hub */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 h-56 w-56 sm:h-72 sm:w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/15 blur-3xl"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 sm:h-80 sm:w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/20 blur-3xl"
       />
 
-      {/* SVG: lineas de conexion (wire faint + pulso animado) */}
+      {/* SVG: lineas de conexion (wire base + pulso animado con glow) */}
       <svg
         viewBox="0 0 1000 600"
         preserveAspectRatio="xMidYMid meet"
@@ -209,8 +210,8 @@ function NetworkHub() {
           if (!p) return null;
           return (
             <g key={item.name}>
-              <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={1.5} strokeOpacity={0.18} />
-              <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={2.5} strokeLinecap="round" className="net-line" strokeOpacity={0.7} />
+              <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={3} strokeOpacity={0.28} />
+              <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={4} strokeLinecap="round" className="net-line" strokeOpacity={0.95} />
             </g>
           );
         })}
@@ -235,10 +236,11 @@ function NetworkHub() {
 
       {/* Hub central — Buleje */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-        <span aria-hidden className="absolute inset-0 -m-2 rounded-full bg-[var(--accent)]/25 animate-ping" />
-        <div className="relative flex h-20 w-20 sm:h-28 sm:w-28 flex-col items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-[var(--shadow-xl)] shadow-[var(--accent)]/40 ring-4 ring-[var(--surface-raised)]">
-          <span className="text-3xl sm:text-4xl font-black leading-none">b</span>
-          <span className="mt-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.15em] opacity-90">Buleje</span>
+        <span aria-hidden className="absolute inset-0 -m-3 rounded-full bg-[var(--accent)]/25 animate-ping" />
+        <span aria-hidden className="absolute inset-0 -m-1.5 rounded-full ring-2 ring-[var(--accent)]/30" />
+        <div className="relative flex h-24 w-24 sm:h-32 sm:w-32 flex-col items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-[var(--shadow-xl)] shadow-[var(--accent)]/50 ring-4 ring-[var(--surface-raised)]">
+          <span className="text-4xl sm:text-5xl font-black leading-none">b</span>
+          <span className="mt-1 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold uppercase tracking-[0.18em] opacity-90">Buleje</span>
         </div>
       </div>
     </div>
