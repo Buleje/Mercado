@@ -148,68 +148,112 @@ const INTEGRATION_LOGOS: LogoItem[] = [
   { kind: "text", name: "SUNAT" },
 ];
 
-function LogoChip({ item }: { item: LogoItem }) {
+// Nodo circular del orbital — solo el logo (el nombre va en title/aria).
+function OrbitNode({ item }: { item: LogoItem }) {
   return (
-    <div className="inline-flex shrink-0 items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-6 py-4 shadow-sm">
+    <div
+      title={item.name}
+      aria-label={item.name}
+      className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--rule-soft)] shadow-md transition-transform hover:scale-110"
+      style={item.kind === "img" ? { background: "#ffffff" } : item.kind === "mark" ? { background: item.color } : undefined}
+    >
       {item.kind === "img" ? (
-        // Tile blanco: los logos de marca (Visa/Mastercard navy) necesitan fondo
-        // claro para tener contraste tanto en light como en dark.
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5">
-          {/* eslint-disable-next-line @next/next/no-img-element -- logo de marca via CDN */}
-          <img
-            src={item.src}
-            alt={`Logo ${item.name}`}
-            width={24}
-            height={24}
-            loading="lazy"
-            className="h-6 w-6 object-contain"
-          />
-        </span>
+        // eslint-disable-next-line @next/next/no-img-element -- logo de marca via CDN
+        <img src={item.src} alt={`Logo ${item.name}`} width={28} height={28} loading="lazy" className="h-7 w-7 object-contain" />
       ) : item.kind === "mark" ? (
-        <span
-          aria-hidden
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white text-lg font-extrabold shadow-sm"
-          style={{ background: item.color }}
-        >
-          {item.mark}
-        </span>
+        <span aria-hidden className="text-white text-xl font-extrabold">{item.mark}</span>
       ) : (
-        <span
-          aria-hidden
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
-        >
-          <Receipt className="h-5 w-5" strokeWidth={2} />
+        <span aria-hidden className="inline-flex h-full w-full items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <Receipt className="h-6 w-6" strokeWidth={2} />
         </span>
       )}
-      <span className="text-base font-extrabold text-[var(--text-primary)] whitespace-nowrap">
-        {item.name}
-      </span>
+    </div>
+  );
+}
+
+// Un anillo de nodos que orbita. Cada nodo se posiciona en su angulo y
+// contra-gira para mantenerse derecho respecto al viewport.
+function OrbitRing({
+  items,
+  radius,
+  duration,
+  reverse = false,
+}: {
+  items: LogoItem[];
+  radius: number;
+  duration: number;
+  reverse?: boolean;
+}) {
+  return (
+    <div
+      className={`absolute inset-0 ${reverse ? "orbit-spin-rev" : "orbit-spin"}`}
+      style={{ animationDuration: `${duration}s` }}
+    >
+      {items.map((item, i) => {
+        const angle = (360 / items.length) * i;
+        return (
+          <div
+            key={item.name}
+            className="absolute left-1/2 top-1/2 h-14 w-14"
+            style={{ margin: "-1.75rem", transform: `rotate(${angle}deg) translate(${radius}px) rotate(${-angle}deg)` }}
+          >
+            {/* contra-giro: misma duracion, sentido opuesto al anillo */}
+            <div className={reverse ? "orbit-spin" : "orbit-spin-rev"} style={{ animationDuration: `${duration}s` }}>
+              <OrbitNode item={item} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function OrbitalHub() {
+  const outer = INTEGRATION_LOGOS.filter((i) => i.kind === "img"); // WhatsApp, MercadoPago, Stripe, Visa, Mastercard
+  const inner = INTEGRATION_LOGOS.filter((i) => i.kind !== "img"); // Yape, Plin, SUNAT
+  return (
+    <div className="orbit-hub relative mx-auto h-[440px] w-[440px] max-w-full scale-[0.8] sm:scale-100 -my-10 sm:my-0">
+      {/* Glow de marca */}
+      <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/15 blur-3xl" />
+      {/* Circulos de orbita (estaticos) */}
+      <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[var(--rule-soft)]" style={{ width: 184, height: 184 }} />
+      <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[var(--rule-soft)]" style={{ width: 340, height: 340 }} />
+
+      {/* Anillos que giran (sentidos opuestos) */}
+      <OrbitRing items={outer} radius={170} duration={38} />
+      <OrbitRing items={inner} radius={92} duration={26} reverse />
+
+      {/* Hub central — Buleje */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <span aria-hidden className="absolute inset-0 -m-3 rounded-full bg-[var(--accent)]/20 animate-ping" />
+        <div className="relative flex h-24 w-24 flex-col items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-[var(--shadow-xl)] shadow-[var(--accent)]/40 ring-4 ring-[var(--surface-raised)]">
+          <span className="text-3xl font-black leading-none">b</span>
+          <span className="mt-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider opacity-90">Buleje</span>
+        </div>
+      </div>
     </div>
   );
 }
 
 function IntegrationsStrip() {
   return (
-    <section className="py-16 sm:py-20 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] overflow-hidden">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 text-center mb-10 sm:mb-12">
+    <section className="py-16 sm:py-24 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] overflow-hidden">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 text-center mb-8 sm:mb-12">
         <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
           <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           Sin instalar nada
         </p>
-        <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1.02]">
-          Ya conectado a lo que{" "}
-          <span className="italic font-serif text-[var(--accent)]">tu negocio usa</span> cada día.
+        <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1.02] max-w-2xl mx-auto">
+          Todo lo que tu negocio usa,{" "}
+          <span className="italic font-serif text-[var(--accent)]">conectado a Buleje.</span>
         </h2>
+        <p className="mt-4 text-base sm:text-lg text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed">
+          Yape, Plin, WhatsApp, SUNAT y las tarjetas — ya integrados. No instalás
+          nada, no contratás a nadie.
+        </p>
       </div>
 
-      {/* Marquee infinito — items duplicados para loop sin corte */}
-      <div className="marquee">
-        <div className="marquee-track py-1">
-          {[...INTEGRATION_LOGOS, ...INTEGRATION_LOGOS].map((item, i) => (
-            <LogoChip key={`${item.name}-${i}`} item={item} />
-          ))}
-        </div>
-      </div>
+      <OrbitalHub />
     </section>
   );
 }

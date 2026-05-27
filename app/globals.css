@@ -1606,6 +1606,28 @@ textarea:focus-visible,
   animation-play-state: paused;
 }
 
+/* ── Orbital hub (integraciones — "todo conectado a Buleje") ── */
+@keyframes bsm-orbit {
+  to { transform: rotate(360deg); }
+}
+.orbit-spin {
+  animation: bsm-orbit 40s linear infinite;
+}
+.orbit-spin-rev {
+  animation: bsm-orbit 40s linear infinite reverse;
+}
+/* pausa al pasar el mouse por el hub completo */
+.orbit-hub:hover .orbit-spin,
+.orbit-hub:hover .orbit-spin-rev {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-spin,
+  .orbit-spin-rev {
+    animation: none;
+  }
+}
+
 /* ── Link underline hover (izquierda-a-derecha) ── */
 .link-underline {
   background-image: linear-gradient(currentColor, currentColor);
