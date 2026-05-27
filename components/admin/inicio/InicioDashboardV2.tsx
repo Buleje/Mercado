@@ -363,30 +363,11 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         <DashboardAlertsList dateRange={dateRange} />
       </div>
 
-      {/* ── Row 2 + 3: gráficos densos SOLO desktop (≥768px) ──────────
-          Brandon 2026-05-27: en celular estos charts (ComposedChart de 3
-          series + 5 multi-variable) saturan y no se leen los datos. En móvil
-          ya está el VendorCommandCenter arriba con la versión limpia (KPIs +
-          barras Entra/Sale + accesos). Acá se muestran solo en pantalla
-          grande, donde están diseñados para vivir. */}
-      <div className="hidden md:block space-y-4">
-        {/* Compound chart — 3 series correlacionadas (ventas + pedidos + clientes) */}
-        <ResumenVentasSection weeklyData={weeklyData} rangeTxt={rangeTxt} />
-        {/* 5 gráficos multi-variable (caja, inventario, compras, clientes, productos) */}
-        <InicioMultiCharts dateRange={dateRange} />
-      </div>
+      {/* ── Row 2: Compound chart — 3 series correlacionadas (ventas + pedidos + clientes) */}
+      <ResumenVentasSection weeklyData={weeklyData} rangeTxt={rangeTxt} />
 
-      {/* En móvil: el resumen esencial vive arriba (command center). Para el
-          detalle, las pestañas Ventas / Caja / Inventario lo abren a pantalla
-          completa sin saturar este inicio. */}
-      <div className="md:hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 px-4 py-3 text-center">
-        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-          Tenés lo esencial arriba. Para ver cada gráfico a detalle, entrá a las
-          pestañas <strong className="text-[var(--text-primary)]">Ventas</strong>,{" "}
-          <strong className="text-[var(--text-primary)]">Caja</strong> o{" "}
-          <strong className="text-[var(--text-primary)]">Inventario</strong>.
-        </p>
-      </div>
+      {/* ── Row 3: 5 gráficos multi-variable (caja, inventario, compras, clientes, productos) ── */}
+      <InicioMultiCharts dateRange={dateRange} />
 
       {/* ── Footer alerta rápida ── */}
       {criticalStock > 0 && (

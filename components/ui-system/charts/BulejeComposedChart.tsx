@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import {
   ComposedChart,
   Bar,
@@ -146,6 +146,22 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
 }: Props) {
   const hasRightAxis = [...bars, ...lines, ...areas].some((s) => s.yAxis === "right");
 
+  // Brandon 2026-05-27: en celular interval={0} amontonaba TODAS las etiquetas
+  // del eje X en un garabato ilegible. En pantallas <640px mostramos ~5 ticks
+  // espaciados (legibles) y ocultamos los data-labels arriba de cada barra
+  // (también saturaban). Desktop queda igual que siempre.
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(max-width: 640px)");
+    const onChange = () => setIsNarrow(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const xInterval = isNarrow ? Math.max(0, Math.ceil(data.length / 5) - 1) : 0;
+  const showValuesResolved = showValues && !isNarrow;
+
   if (data.length < minDataPoints) {
     return (
       <div
@@ -174,7 +190,7 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
             // showValues activo: extra top headroom para que la pill flotante
             // del label encima de la barra más alta no se corte. Bumped a 36
             // (era 28) porque la pill ahora tiene border-rect y offset=10.
-            top: showValues ? 36 : 12,
+            top: showValuesResolved ? 36 : 12,
             right: 16,
             bottom: 4,
             left: 0,
@@ -198,11 +214,12 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
             // labels (Recharts default omite cuando no caben). Rotación
             // -30° + height=60 acomoda labels largos "Lunes 10/05" sin
             // pisarse. dy=8 baja un toque para no solapar el axis line.
-            interval={0}
+            interval={xInterval}
             angle={-30}
             textAnchor="end"
-            height={60}
+            height={isNarrow ? 44 : 60}
             dy={8}
+            minTickGap={isNarrow ? 8 : 0}
           />
           <YAxis
             yAxisId="left"
@@ -303,7 +320,7 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
                 animationDuration={600}
                 maxBarSize={40}
               >
-                {showValues && (
+                {showValuesResolved && (
                   <LabelList
                     dataKey={series.key}
                     position="top"
