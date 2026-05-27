@@ -296,8 +296,8 @@ function B2BHero() {
         aria-hidden
         className="pointer-events-none absolute -top-32 -right-32 h-[520px] w-[520px] rounded-full bg-[var(--accent)]/[0.08] blur-3xl"
       />
-      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-center">
+      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-20 sm:pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-20 items-center">
           {/* Texto */}
           <div>
             <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
@@ -369,7 +369,7 @@ function B2BHero() {
                 <p className="text-xs font-extrabold text-[var(--text-primary)] tabular-nums">+ S/ 28.50</p>
               </div>
             </div>
-            <div className="absolute -right-1 bottom-16 z-20 hidden sm:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
+            <div className="absolute -right-3 bottom-24 z-20 hidden sm:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--data-success-500)]/15 text-[var(--data-success-600,#059669)]">
                 <Truck className="h-4 w-4" strokeWidth={2} />
               </span>
@@ -380,13 +380,25 @@ function B2BHero() {
             </div>
 
             {/* Frame del teléfono */}
-            <div className="relative w-[270px] sm:w-[300px] rounded-[2.75rem] bg-[var(--text-primary)] p-2.5 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/25">
-              <div className="relative rounded-[2.25rem] bg-[var(--surface-canvas)] overflow-hidden">
+            <div className="relative w-[300px] sm:w-[340px] rounded-[3rem] bg-[var(--text-primary)] p-3 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/25 ring-1 ring-white/10">
+              <div className="relative rounded-[2.4rem] bg-[var(--surface-canvas)] overflow-hidden">
                 {/* Dynamic island */}
-                <div aria-hidden className="absolute top-2.5 left-1/2 -translate-x-1/2 h-5 w-20 rounded-full bg-[var(--text-primary)] z-20" />
+                <div aria-hidden className="absolute top-3 left-1/2 -translate-x-1/2 h-6 w-24 rounded-full bg-[var(--text-primary)] z-20" />
+                {/* Status bar */}
+                <div aria-hidden className="absolute top-3.5 left-0 right-0 z-10 flex items-center justify-between px-5 text-[10px] font-bold text-[var(--text-tertiary)]">
+                  <span className="tabular-nums">9:41</span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-flex gap-0.5 items-end">
+                      <span className="h-1 w-0.5 rounded-full bg-[var(--text-tertiary)]" />
+                      <span className="h-1.5 w-0.5 rounded-full bg-[var(--text-tertiary)]" />
+                      <span className="h-2 w-0.5 rounded-full bg-[var(--text-tertiary)]" />
+                    </span>
+                    <span className="h-2 w-3 rounded-[3px] border border-[var(--text-tertiary)]" />
+                  </span>
+                </div>
 
                 {/* Header */}
-                <div className="px-4 pt-11 pb-3 bg-linear-to-b from-[var(--accent)]/10 to-transparent">
+                <div className="px-4 pt-12 pb-3 bg-linear-to-b from-[var(--accent)]/10 to-transparent">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mi negocio · hoy</p>
@@ -461,6 +473,23 @@ function B2BHero() {
             </div>
           </div>
         </div>
+
+        {/* Franja de stats — da peso al hero (Brandon: "se veía cortito"). */}
+        <div className="mt-14 sm:mt-20 grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-3xl border border-[var(--rule-soft)] bg-[var(--rule-soft)]">
+          {[
+            { v: "5 min", l: "Listo para vender" },
+            { v: "0%", l: "Comisión por venta" },
+            { v: "+20", l: "Módulos integrados" },
+            { v: "24/7", l: "Soporte por WhatsApp" },
+          ].map((s) => (
+            <div key={s.l} className="bg-[var(--surface-raised)] px-6 py-7 text-center sm:text-left">
+              <p className="text-3xl sm:text-4xl font-extrabold tracking-[-0.03em] tabular-nums text-[var(--accent)] leading-none">
+                {s.v}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[var(--text-secondary)]">{s.l}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -469,51 +498,64 @@ function B2BHero() {
 // ── Módulos del software — la sección que define a /negocios como landing B2B.
 // Reemplaza a las "categorías populares de productos" (eso es B2C/marketplace).
 const MODULES = [
-  { icon: Smartphone, title: "Punto de venta (POS)", desc: "Cobrá en mostrador o por celular. Yape, Plin, efectivo y tarjeta, con ticket al instante." },
-  { icon: Package, title: "Inventario inteligente", desc: "Stock en tiempo real, alertas de quiebre y vencimiento, y control de mermas." },
-  { icon: Truck, title: "Delivery propio", desc: "Zonas, tarifas y tracking. Tus repartidores o los nuestros — vos decidís." },
-  { icon: Wallet, title: "Fiado digital", desc: "Cuentas por cobrar con historial, recordatorios y semáforo de riesgo. Adiós cuaderno." },
-  { icon: Receipt, title: "Facturación SUNAT", desc: "Boletas, facturas, cotizaciones y guías de remisión electrónicas, integradas." },
-  { icon: MessageCircle, title: "WhatsApp + IA", desc: "Recibí pedidos y confirmá pagos por WhatsApp, con asistente que responde solo." },
+  { icon: Smartphone, title: "Punto de venta", tags: ["Yape · Plin", "Ticket al toque", "Caja del día"] },
+  { icon: Package, title: "Inventario", tags: ["Stock en vivo", "Alertas de quiebre", "Control de mermas"] },
+  { icon: Truck, title: "Delivery", tags: ["Zonas y tarifas", "Tracking en vivo", "Tus repartidores"] },
+  { icon: Wallet, title: "Fiado digital", tags: ["Historial", "Recordatorios", "Semáforo de riesgo"] },
+  { icon: Receipt, title: "Facturación SUNAT", tags: ["Boletas", "Cotizaciones", "Guías de remisión"] },
+  { icon: MessageCircle, title: "WhatsApp + IA", tags: ["Pedidos automáticos", "Confirma pagos", "Asistente 24/7"] },
 ];
 
 function FeaturesGrid() {
   return (
     <section id="modulos" className="bg-[var(--surface-sunken)]/60 border-y border-[var(--rule-soft)] py-20 sm:py-28 scroll-mt-20">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mb-12 sm:mb-16">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
-            <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-            Todo lo que incluye
-          </p>
-          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
-            Seis módulos.{" "}
-            <span className="italic font-serif text-[var(--accent)]">Una sola plataforma.</span>
-          </h2>
-          <p className="mt-5 text-lg text-[var(--text-secondary)] leading-relaxed">
-            Lo que antes necesitaba cuaderno, calculadora y tres apps distintas
-            — ahora en un solo lugar, hecho para bodegas del Perú.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12 sm:mb-16">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+              <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+              Todo lo que incluye
+            </p>
+            <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
+              Todo tu negocio,{" "}
+              <span className="italic font-serif text-[var(--accent)]">en una sola app.</span>
+            </h2>
+          </div>
+          <Link
+            href="/abrir-tienda"
+            className="shrink-0 inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3 text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          >
+            Ver todo en acción
+            <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {MODULES.map((m) => (
             <article
               key={m.title}
-              className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 transition-all hover:border-[var(--accent)]/40 hover:-translate-y-0.5 hover:shadow-md"
+              className="group rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 transition-all hover:border-[var(--accent)]/40 hover:-translate-y-0.5 hover:shadow-md"
             >
               <span
                 aria-hidden
-                className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4"
+                className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4 transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
               >
                 <m.icon className="h-6 w-6" strokeWidth={1.75} />
               </span>
               <h3 className="font-display text-xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                 {m.title}
               </h3>
-              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
-                {m.desc}
-              </p>
+              <ul className="mt-3 flex flex-wrap gap-1.5">
+                {m.tags.map((t) => (
+                  <li
+                    key={t}
+                    className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]"
+                  >
+                    <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--accent)]" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
             </article>
           ))}
         </div>
