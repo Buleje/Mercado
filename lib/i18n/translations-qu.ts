@@ -28,6 +28,7 @@ export const QU_OVERRIDES: Record<string, string> = {
   "nav.orders": "Mañakusqaykuna",
   "nav.favorites": "Munasqaykuna",
   "nav.openStore": "Qhatuykita kichay",
+  "nav.business": "Negocios",
   "nav.login": "Yaykuy",
   "nav.logout": "Lluqsiy",
   "nav.search": "Maskay",

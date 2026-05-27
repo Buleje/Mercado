@@ -27,6 +27,8 @@ import {
   Compass,
   Home as HomeIcon,
   Store,
+  Building2,
+  Rocket,
   ChefHat,
   Sparkles,
   Radio,
@@ -163,6 +165,22 @@ const PRIMARY_LINKS: readonly NavLink[] = [
     labelKey: "nav.howToPay",
     icon: Wallet,
     matchPrefix: "/marketplace/como-pagar",
+  },
+  // Links B2B — cruzan del directorio de tiendas a la oferta para negocios.
+  // Visibles también en modo "Solo Tiendas" (toggle desde superadmin → Navegación).
+  {
+    id: "negocios",
+    href: "/negocios",
+    labelKey: "nav.business",
+    icon: Building2,
+    matchPrefix: "/negocios",
+  },
+  {
+    id: "abrir-tienda",
+    href: "/abrir-tienda",
+    labelKey: "nav.openStore",
+    icon: Rocket,
+    matchPrefix: "/abrir-tienda",
   },
 ] as const;
 

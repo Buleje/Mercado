@@ -33,6 +33,8 @@ import {
   ArrowRight,
   ShoppingCart,
   MessageCircle,
+  Building2,
+  Rocket,
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
@@ -168,6 +170,13 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
         ...(hasActiveOffers === true
           ? [{ href: "/marketplace/ofertas", label: "Ofertas del día", Icon: Tag }]
           : []),
+      ],
+    },
+    {
+      title: "Para tu negocio",
+      links: [
+        { href: "/negocios", label: "Negocios", desc: "Software para bodegas", Icon: Building2 },
+        { href: "/abrir-tienda", label: "Abre tu Tienda", desc: "Planes y beneficios", Icon: Rocket },
       ],
     },
   ];

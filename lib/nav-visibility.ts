@@ -42,6 +42,10 @@ export const NAV_LINK_CATALOG: Record<NavScope, NavLinkEntry[]> = {
     { id: "descubri", label: "Descubrí", href: "#discover", description: "Mega menú", defaultVisible: false },
     { id: "en-vivo", label: "En Vivo", href: "/marketplace/en-vivo", description: "Live shopping", defaultVisible: false },
     { id: "ofertas", label: "Ofertas", href: "/marketplace/ofertas", description: "Deals del día (también en sub-nav)", defaultVisible: false },
+    // Links B2B — cruzan del directorio B2C (/tiendas) a la oferta para negocios.
+    // Visibles por defecto (también en modo "Solo Tiendas"). Toggle desde superadmin.
+    { id: "negocios", label: "Negocios", href: "/negocios", description: "Landing B2B — software para bodegas" },
+    { id: "abrir-tienda", label: "Abre tu Tienda", href: "/abrir-tienda", description: "CTA conversión bodegueros (planes + benefits)" },
   ],
   // Secciones del home /marketplace que el admin puede ocultar/mostrar.
   // Por defecto OFF para mantener el home limpio (pedido del negocio).

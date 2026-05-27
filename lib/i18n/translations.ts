@@ -53,6 +53,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "nav.orders": { es: "Mis pedidos", en: "My orders", shi: "Payowan" },
   "nav.favorites": { es: "Favoritos", en: "Favorites", shi: "Noi" },
   "nav.openStore": { es: "Abre tu tienda", en: "Open your store", shi: "Mi xobo" },
+  "nav.business": { es: "Negocios", en: "Business", shi: "Tsain" },
   "nav.socio": { es: "Socio", en: "Membership", shi: "Jawen" },
   "nav.login": { es: "Ingresar", en: "Sign in", shi: "Ichinon" },
   "nav.logout": { es: "Cerrar sesión", en: "Sign out", shi: "Kenai" },
