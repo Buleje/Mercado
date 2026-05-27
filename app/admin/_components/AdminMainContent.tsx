@@ -52,7 +52,7 @@ function AdminMainContentInner({
       role="tabpanel"
       aria-label="Contenido del modulo activo"
       className={cn(
-        "flex-1 mx-auto w-full pb-24 sm:pb-8",
+        "flex-1 mx-auto w-full pb-[calc(88px+env(safe-area-inset-bottom))] sm:pb-8",
         presentationMode
           ? "max-w-full px-4 py-4"
           : compactMode

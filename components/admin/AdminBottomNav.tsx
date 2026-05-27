@@ -21,7 +21,7 @@ export default function AdminBottomNav({ currentTab, setTab, toggleSidebar }: Ad
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white/80 dark:bg-[var(--surface-raised)]/80 backdrop-blur-xl border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] flex items-center justify-around px-2 z-50 pb-[safe-area-inset-bottom]">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 min-h-[72px] bg-white/80 dark:bg-[var(--surface-raised)]/80 backdrop-blur-xl border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] flex items-center justify-around px-2 z-50 pb-[env(safe-area-inset-bottom)]">
       {navItems.map((item) => {
         const isActive = currentTab === item.id;
         const Icon = item.icon;
