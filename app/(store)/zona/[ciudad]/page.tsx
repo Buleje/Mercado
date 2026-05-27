@@ -68,8 +68,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Title B2C-first (Brandon 2026-05-27): lidera con la intención del COMPRADOR
   // ("bodegas con delivery") para captar búsquedas de consumo. La cola de marca
   // mantiene el reconocimiento; el copy B2B (software) vive en el cuerpo + FAQ.
-  const title = `Bodegas y tiendas en ${zone.name} con delivery`;
-  const description = `Comprá en bodegas y tiendas de ${zone.name}, ${zone.region} con delivery rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Digitalízalo con Buleje: inventario, POS, fiado y facturación SUNAT.`;
+  const title = `Bodegas, restaurantes y tiendas en ${zone.name} con delivery`;
+  const description = `Pedí comida, abarrotes y productos en ${zone.name}, ${zone.region}: bodegas, restaurantes, mercados, minimarkets y tiendas con delivery rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Digitalízalo con Buleje: inventario, POS, fiado y facturación SUNAT.`;
   const url = `${BASE_URL}/zona/${zone.slug}`;
 
   return {

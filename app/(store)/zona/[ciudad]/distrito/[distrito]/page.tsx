@@ -61,8 +61,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!zone || !district) return { title: "Distrito no encontrado" };
 
   // Title B2C-first (2026-05-27): lidera con comprar/delivery local del distrito.
-  const title = `Bodegas y delivery en ${district.name}, ${zone.name}`;
-  const description = `Comprá en bodegas y tiendas de ${district.name} (${zone.name}) con delivery local rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Llevalo al sistema Buleje: inventario, POS, fiado y boletas SUNAT.`;
+  const title = `Bodegas, restaurantes y delivery en ${district.name}, ${zone.name}`;
+  const description = `Pedí comida, abarrotes y productos en ${district.name} (${zone.name}): bodegas, restaurantes, mercados y tiendas con delivery local rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Llevalo al sistema Buleje.`;
   const url = `${BASE_URL}/zona/${zone.slug}/distrito/${district.slug}`;
 
   return {

@@ -25,22 +25,25 @@ const BASE_URL = "https://www.buleje.pe";
 export const metadata: Metadata = {
   // El template del root layout agrega " | Buleje". No duplicar el sufijo
   // de marca aquí — Brandon 2026-05-20 SEO fix.
-  title: "Tiendas y bodegas en Pucallpa · Delivery con Yape",
+  title: "Bodegas, restaurantes y mercados en Pucallpa · Delivery con Yape",
   // Brandon 2026-05-20 v2: 135 chars (target 70-155). Antes 159 chars
   // dispara warning de SEO auditors (Google trunca a ~155). Mantiene las
   // keywords clave (bodegas, farmacias, restaurantes, Pucallpa, delivery,
   // Yape, Plin) + cierre con valor agregado ("tu bodega del barrio, ahora
   // online" → conecta con la audiencia local).
   description:
-    "Bodegas, farmacias y restaurantes de Pucallpa con delivery rápido. Paga con Yape, Plin o efectivo. Tu bodega del barrio, ahora online.",
+    "Comprá en bodegas, restaurantes, mercados, minimarkets y farmacias de Pucallpa con delivery rápido. Paga con Yape, Plin o efectivo. Todo el barrio, ahora online.",
   keywords: [
     "bodegas Pucallpa",
+    "restaurantes Pucallpa",
+    "mercados Pucallpa",
     "delivery Pucallpa",
+    "comprar online Pucallpa",
     "tiendas Ucayali",
     "minimarket Pucallpa",
     "Yape Pucallpa",
     "comida a domicilio Pucallpa",
-    "Ciudad Constitución",
+    "delivery Ciudad Constitución",
     "marketplace Perú",
     "Buleje",
   ],
@@ -61,9 +64,9 @@ export const metadata: Metadata = {
     "max-snippet": -1,
   },
   openGraph: {
-    title: "Tiendas y bodegas en Pucallpa | Buleje",
+    title: "Bodegas, restaurantes y mercados en Pucallpa | Buleje",
     description:
-      "Bodegas, farmacias y restaurantes de Pucallpa. Delivery rápido · Yape, Plin o efectivo.",
+      "Comprá en bodegas, restaurantes, mercados y farmacias de Pucallpa. Delivery rápido · Yape, Plin o efectivo.",
     url: `${BASE_URL}/tiendas`,
     siteName: "Buleje",
     locale: "es_PE",
@@ -79,9 +82,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tiendas y bodegas en Pucallpa | Buleje",
+    title: "Bodegas, restaurantes y mercados en Pucallpa | Buleje",
     description:
-      "Bodegas, farmacias y restaurantes de Pucallpa. Delivery rápido · Yape, Plin o efectivo.",
+      "Comprá en bodegas, restaurantes, mercados y farmacias de Pucallpa. Delivery rápido · Yape, Plin o efectivo.",
     // Brandon 2026-05-20 v11 audit P2: twitter:image:alt requerido por
     // X/Twitter para accesibilidad de la preview cuando se comparte.
     images: [{
