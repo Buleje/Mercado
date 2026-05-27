@@ -415,11 +415,8 @@ function ResumenVentasSection({ weeklyData, rangeTxt }: ResumenVentasSectionProp
           Ventas · {rangeTxt}
         </p>
         <CardTitle className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-          Cuánto vendiste, cuántos pedidos y cuántos clientes te compraron
+          Ventas, pedidos y clientes por día
         </CardTitle>
-        <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
-          Barras negras = plata que entró cada día. Línea = pedidos que recibiste. Área celeste = clientes únicos. Cuando las 3 suben juntas tu negocio crece sano; cuando solo sube la plata pero los clientes caen, dependés de pocos compradores.
-        </p>
       </header>
       <BulejeComposedChart
         data={weeklyData}

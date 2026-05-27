@@ -519,8 +519,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
           chartId="resumen.caja"
           hasData={cajaChart.length >= 2 && cajaChart.some((r) => r.ingresos > 0 || r.egresos > 0)}
           kicker={`Caja · ${rangeLabel}`}
-          title="Cuánta plata entró y salió cada día"
-          description="La barra verde es lo que entró (ventas), la naranja lo que saliste a pagar (compras + gastos), y la línea es tu saldo neto acumulado. Si la línea sube, estás ganando; si baja, gastás más de lo que vendés."
+          title="Plata que entró y salió"
           kpis={[
             { label: `Ingresos ${kpiSuffix}`, value: fmtPEN(cajaKpis.ingresos), tone: "success" },
             { label: `Egresos ${kpiSuffix}`, value: fmtPEN(cajaKpis.egresos), tone: "warning" },
@@ -558,8 +557,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
           chartId="resumen.inventario"
           hasData={invChart.length > 0 && invChart.some((r) => r.stock > 0)}
           kicker="Inventario · top 7 categorías"
-          title="Cuántas unidades tenés en cada categoría"
-          description="Las barras son cuántas unidades hay en stock por rubro y la línea es cuánta plata representa cada categoría. Si una categoría chica tiene mucha plata trabada, capaz convenga liquidar para no tenerla parada."
+          title="Stock por categoría"
           kpis={[
             { label: "Valor total", value: fmtPEN(invKpis.valor), tone: "primary" },
             { label: "SKUs activos", value: String(invKpis.skus), tone: "neutral" },
@@ -597,8 +595,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
           chartId="resumen.compras"
           hasData={compChart.length > 0 && compChart.some((r) => r.monto > 0)}
           kicker={`Compras · top 7 proveedores · ${rangeLabel}`}
-          title="Cuánto le compraste a cada proveedor"
-          description="Tus proveedores ordenados por cuánto les compraste. Los de barra grande tienen poder de negociación contigo — pedíles descuento por volumen. La sección naranja es lo que aún les debés."
+          title="Compras por proveedor"
           kpis={[
             { label: `Compras ${kpiSuffix}`, value: fmtPEN(compKpis.total), tone: "primary" },
             { label: "Órdenes", value: String(compKpis.ordenes), tone: "neutral" },
@@ -636,8 +633,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
           chartId="resumen.clientes"
           hasData={cliChart.length >= 2 && cliChart.some((r) => (r.nuevos ?? 0) > 0 || (r.recurrentes ?? 0) > 0)}
           kicker={`Clientes · ${rangeLabel}`}
-          title="Clientes nuevos vs clientes que volvieron"
-          description="Barras = clientes nuevos (primera vez) vs los que ya volvieron. La línea es lo que gastan en promedio. Si tu negocio engancha bien, las barras de Recurrentes deberían crecer con el tiempo."
+          title="Clientes nuevos vs recurrentes"
           kpis={[
             { label: "Total clientes", value: cliKpis.total.toLocaleString("es-PE"), tone: "primary" },
             { label: `Nuevos ${kpiSuffix}`, value: String(cliKpis.nuevosMes), tone: "success" },
@@ -674,8 +670,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
           chartId="resumen.productos"
           hasData={prodChart.length > 0 && prodChart.some((r) => r.unidades > 0)}
           kicker={`Productos · top 7 · ${rangeLabel}`}
-          title="Tus 7 productos más vendidos"
-          description="Tus best sellers del período. Barra alta = unidades vendidas, línea rosada = plata que generaron. Pedí más stock de los primeros 3 antes de quedarte sin nada — son tu motor de ventas."
+          title="Productos más vendidos"
           kpis={[
             { label: "SKUs activos", value: String(prodKpis.activos), tone: "neutral" },
             {
