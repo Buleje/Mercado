@@ -1,4 +1,6 @@
 "use client";
+
+import { logger } from "@/lib/logger";
 import { CardTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -32,6 +34,80 @@ import { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+
+/**
+ * Brandon 2026-05-16 (audit P1 fetch dedup): module-level cache para
+ * los endpoints más volumétricos de este módulo. Antes 3 sub-componentes
+ * fetchéaban `/api/sales?limit=5000` y `/api/expenses/summary` en paralelo
+ * al mount → 3 roundtrips con 15k filas totales de payload. Con dedupe:
+ *  - Solo 1 fetch in-flight por endpoint (resto subscribe a la misma Promise).
+ *  - TTL 30s mantiene la respuesta caliente para sub-componentes que
+ *    se montan poco después (cambio de tab dentro de Finanzas).
+ *  - invalidateFinanzasCache() expone limpieza manual si el user clickea
+ *    "Actualizar" en algún sub-tab.
+ */
+type CacheEntry<T> = { value: T; expiresAt: number };
+const finanzasCache = new Map<string, CacheEntry<unknown>>();
+const finanzasInFlight = new Map<string, Promise<unknown>>();
+const FINANZAS_TTL_MS = 30_000;
+
+async function fetchFinanzas<T>(url: string, fallback: T): Promise<T> {
+  const hit = finanzasCache.get(url) as CacheEntry<T> | undefined;
+  if (hit && Date.now() < hit.expiresAt) return hit.value;
+  const inFlight = finanzasInFlight.get(url) as Promise<T> | undefined;
+  if (inFlight) return inFlight;
+  const promise = (async () => {
+    try {
+      const res = await fetch(url);
+      const data = res.ok ? ((await res.json()) as T) : fallback;
+      finanzasCache.set(url, { value: data as unknown, expiresAt: Date.now() + FINANZAS_TTL_MS });
+      return data;
+    } catch {
+      return fallback;
+    } finally {
+      finanzasInFlight.delete(url);
+    }
+  })();
+  finanzasInFlight.set(url, promise as Promise<unknown>);
+  return promise;
+}
+
+export function invalidateFinanzasCache() {
+  finanzasCache.clear();
+  finanzasInFlight.clear();
+}
+
+// Brandon 2026-05-17 (audit tsc cleanup): helpers tipados para evitar cascada
+// de errores TS18046/TS2362 al consumir Record<string, unknown> en aritmética.
+// 47 errores tsc en este archivo + 2 en overview.db.ts venían de Prisma Decimal
+// y respuestas JSON sin shape declarado. `n()` normaliza unknown → number sin
+// excepción (NaN → 0). SaleRaw/ExpenseRaw son shapes mínimos que cubren todos
+// los campos accedidos en el módulo.
+type SaleRaw = {
+  createdAt?: string;
+  total?: number;
+  paymentMethod?: string;
+  metodoPago?: string;
+};
+type ExpenseRaw = {
+  date?: string;
+  createdAt?: string;
+  amount?: number;
+  category?: string;
+};
+type PayableRaw = {
+  amount?: number;
+  total?: number;
+  supplierName?: string;
+  supplier?: { name?: string };
+  description?: string;
+};
+type FiadoRaw = { total?: number; amount?: number };
+const n = (v: unknown): number => {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  const parsed = Number(v);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 const PLTab = dynamic(() => import("@/components/admin/PLTab"), { loading: S });
 const ExpensesTab = dynamic(() => import("@/components/admin/ExpensesTab"), { loading: S });
@@ -106,9 +182,10 @@ function HealthSemaphore() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Brandon 2026-05-16 (audit P1): usa fetchFinanzas para dedupe + cache.
     Promise.all([
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
+      fetchFinanzas<{ totalMonth?: number; total?: number; monthly?: Array<{ month: string; total: number }> } | null>("/api/expenses/summary", null),
+      fetchFinanzas<{ ventasMes?: number; salesMonth?: number; cashToday?: number; efectivoHoy?: number; fiadosVencidosMonto?: number; payablesVencidosMonto?: number } | null>("/api/analytics/kpis-v2", null),
     ])
       .then(([expenses, kpis]) => {
         const ingresos = kpis?.ventasMes ?? kpis?.salesMonth ?? 0;
@@ -118,7 +195,7 @@ function HealthSemaphore() {
         const payablesVencidos = kpis?.payablesVencidosMonto ?? 0;
         setData({ ingresos, gastos, efectivo, gastosMensuales: gastos, fiadosVencidos, payablesVencidos });
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -182,9 +259,10 @@ function ComparativoMensual() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Brandon 2026-05-16 (audit P1): dedupe + cache 30s.
     Promise.all([
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/sales?limit=5000").then(r => r.ok ? r.json() : []),
+      fetchFinanzas<{ totalMonth?: number; monthly?: Array<{ month: string; total: number }> } | null>("/api/expenses/summary", null),
+      fetchFinanzas<Array<{ createdAt?: string; total: number }>>("/api/sales?limit=5000", []),
     ])
       .then(([expenses, sales]) => {
         const now = new Date();
@@ -215,7 +293,7 @@ function ComparativoMensual() {
 
         setChartData(months);
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -279,18 +357,18 @@ function PuntoEquilibrio() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
     ])
       .then(([expenses, kpis]) => {
-        const gastosMes = expenses?.totalMonth ?? expenses?.total ?? 0;
+        const gastosMes = n(expenses?.totalMonth ?? expenses?.total);
         const now = new Date();
         const diasTranscurridos = Math.max(1, now.getDate());
         const gastoDiario = gastosMes / diasTranscurridos;
-        const ventasHoy = kpis?.ventasHoy ?? kpis?.salesToday ?? 0;
+        const ventasHoy = n(kpis?.ventasHoy ?? kpis?.salesToday);
         setData({ gastoDiario: Math.round(gastoDiario), ventasHoy: Math.round(ventasHoy) });
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -415,7 +493,7 @@ function GastosDonut() {
 
         setGastos(result);
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -514,18 +592,18 @@ function ProyeccionCierreMes() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
     ])
       .then(([expenses, kpis]) => {
         const now = new Date();
         const diasTranscurridos = Math.max(1, now.getDate());
         const diasTotales = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const ventasMes = kpis?.ventasMes ?? kpis?.salesMonth ?? 0;
-        const gastosMes = expenses?.totalMonth ?? expenses?.total ?? 0;
+        const ventasMes = n(kpis?.ventasMes ?? kpis?.salesMonth);
+        const gastosMes = n(expenses?.totalMonth ?? expenses?.total);
         setData({ ventasMes, gastosMes, diasTranscurridos, diasTotales });
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -552,7 +630,7 @@ function ProyeccionCierreMes() {
           Proyeccion {mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)}
         </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
+      <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center">
           <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Ventas proy.</p>
           <p className={cn("text-base font-extrabold", ventasProyectadas === 0 ? "text-[var(--text-tertiary)]" : "text-primary")}>{formatCurrency(ventasProyectadas, { decimals: 0 })}</p>
@@ -597,15 +675,15 @@ function ResumenFiscal() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
     ])
       .then(([kpis, expenses]) => {
-        const ventas = kpis?.ventasMes ?? kpis?.salesMonth ?? 0;
-        const compras = expenses?.totalMonth ?? expenses?.total ?? 0;
+        const ventas = n(kpis?.ventasMes ?? kpis?.salesMonth);
+        const compras = n(expenses?.totalMonth ?? expenses?.total);
         setData({ ventas, compras });
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -666,9 +744,9 @@ function ResumenFiscal() {
 
 function generarReporteBancario() {
   Promise.all([
-    fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-    fetch("/api/sales?limit=5000").then(r => r.ok ? r.json() : []),
-    fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
+    fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
+    fetchFinanzas<unknown[]>("/api/sales?limit=5000", []),
+    fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
   ])
     .then(([expenses, sales, kpis]) => {
       const now = new Date();
@@ -679,12 +757,12 @@ function generarReporteBancario() {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthKey = d.toISOString().slice(0, 7);
         const label = d.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
-        const monthSales = allSales.filter((s: { createdAt?: string; total: number }) => (s.createdAt ?? "").startsWith(monthKey));
-        const ingresos = monthSales.reduce((sum: number, s: { total: number }) => sum + (s.total ?? 0), 0);
+        const monthSales = (allSales as SaleRaw[]).filter((s) => (s.createdAt ?? "").startsWith(monthKey));
+        const ingresos = monthSales.reduce((sum, s) => sum + n(s.total), 0);
         let gastos = 0;
         if (expenses?.monthly && Array.isArray(expenses.monthly)) {
-          const m = expenses.monthly.find((e: { month: string; total: number }) => e.month === monthKey);
-          gastos = m?.total ?? 0;
+          const m = (expenses.monthly as Array<{ month: string; total?: number }>).find((e) => e.month === monthKey);
+          gastos = n(m?.total);
         }
         meses.push({ mes: label, ingresos: Math.round(ingresos), gastos: Math.round(gastos), utilidad: Math.round(ingresos - gastos) });
       }
@@ -830,9 +908,9 @@ function FinanzasDashboard() {
 
   useEffect(() => {
     Promise.allSettled([
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/sales?limit=5000").then(r => r.ok ? r.json() : []),
+      fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
+      fetchFinanzas<unknown[]>("/api/sales?limit=5000", []),
       fetch("/api/expenses?limit=2000").then(r => r.ok ? r.json() : []),
       fetch("/api/payables").then(r => r.ok ? r.json() : []),
       fetch("/api/fiados?status=ACTIVO").then(r => r.ok ? r.json() : []),
@@ -848,12 +926,14 @@ function FinanzasDashboard() {
       const sales = Array.isArray(salesRaw) ? salesRaw : [];
 
       // ── KPIs ──
-      const ingresos = kpisData?.ventasMes ?? kpisData?.salesMonth ?? 0;
-      const gastosMes = expSummary?.totalMonth ?? expSummary?.total ?? 0;
+      const ingresos = n(kpisData?.ventasMes ?? kpisData?.salesMonth);
+      const gastosMes = n(expSummary?.totalMonth ?? expSummary?.total);
       const utilidad = ingresos - gastosMes;
       const margen = ingresos > 0 ? Math.round(((ingresos - gastosMes) / ingresos) * 100) : 0;
-      const deuda = kpisData?.payablesVencidosMonto ?? payablesRaw.reduce((s: number, p: { amount?: number; total?: number }) => s + (p.amount ?? p.total ?? 0), 0);
-      const fiados = kpisData?.fiadosPendienteMonto ?? kpisData?.fiadosVencidosMonto ?? fiadosRaw.reduce((s: number, f: { total?: number; amount?: number }) => s + (f.total ?? f.amount ?? 0), 0);
+      const deuda = n(kpisData?.payablesVencidosMonto)
+        || (payablesRaw as PayableRaw[]).reduce((s, p) => s + n(p.amount ?? p.total), 0);
+      const fiados = n(kpisData?.fiadosPendienteMonto ?? kpisData?.fiadosVencidosMonto)
+        || (fiadosRaw as FiadoRaw[]).reduce((s, f) => s + n(f.total ?? f.amount), 0);
       const igvCobrado = ingresos * 0.18 / 1.18;
       const igvPagado = gastosMes * 0.18 / 1.18;
       const igvNeto = Math.round(igvCobrado - igvPagado);
@@ -872,9 +952,9 @@ function FinanzasDashboard() {
       setProjection({ ventasMes: ingresos, gastosMes, diasTranscurridos, diasTotales });
 
       // ── Health ──
-      const efectivo = kpisData?.cashToday ?? kpisData?.efectivoHoy ?? ingresos * 0.3;
-      const fiadosVencidos = kpisData?.fiadosVencidosMonto ?? 0;
-      const payablesVencidos = kpisData?.payablesVencidosMonto ?? 0;
+      const efectivo = n(kpisData?.cashToday ?? kpisData?.efectivoHoy) || ingresos * 0.3;
+      const fiadosVencidos = n(kpisData?.fiadosVencidosMonto);
+      const payablesVencidos = n(kpisData?.payablesVencidosMonto);
       setHealthData({ ingresos, gastos: gastosMes, efectivo, gastosMensuales: gastosMes, fiadosVencidos, payablesVencidos });
 
       // ── Monthly chart (last 6 months) ──
@@ -884,28 +964,31 @@ function FinanzasDashboard() {
         const monthKey = d.toISOString().slice(0, 7);
         const label = MESES[d.getMonth()];
         const fullLabel = d.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
-        const monthSales = sales.filter((s: { createdAt?: string; total: number }) => (s.createdAt ?? "").startsWith(monthKey));
-        const ing = monthSales.reduce((sum: number, s: { total: number }) => sum + (s.total ?? 0), 0);
+        const monthSales = (sales as SaleRaw[]).filter((s) => (s.createdAt ?? "").startsWith(monthKey));
+        const ing = monthSales.reduce((sum, s) => sum + n(s.total), 0);
         let gas = 0;
         if (expSummary?.monthly && Array.isArray(expSummary.monthly)) {
-          const m = expSummary.monthly.find((e: { month: string; total: number }) => e.month === monthKey);
-          gas = m?.total ?? 0;
+          const m = (expSummary.monthly as Array<{ month: string; total?: number }>).find((e) => e.month === monthKey);
+          gas = n(m?.total);
         } else if (expSummary?.totalMonth && i === 0) {
-          gas = expSummary.totalMonth;
+          gas = n(expSummary.totalMonth);
         }
         months.push({ mes: label, fullMonth: fullLabel, ingresos: Math.round(ing), gastos: Math.round(gas), utilidad: Math.round(ing - gas) });
       }
       setMonthlyData(months);
 
       // ── Expenses by category (donut) ──
-      const items = Array.isArray(expensesRaw) ? expensesRaw : (expensesRaw?.expenses ?? []);
+      const itemsRaw = Array.isArray(expensesRaw)
+        ? expensesRaw
+        : ((expensesRaw as { expenses?: unknown[] } | null)?.expenses ?? []);
+      const items = itemsRaw as ExpenseRaw[];
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const catMap = new Map<string, number>();
       for (const e of items) {
         const eDate = new Date(e.date ?? e.createdAt ?? "");
         if (eDate >= startOfMonth) {
           const cat = (e.category ?? "otros").charAt(0).toUpperCase() + (e.category ?? "otros").slice(1);
-          catMap.set(cat, (catMap.get(cat) ?? 0) + (e.amount ?? 0));
+          catMap.set(cat, (catMap.get(cat) ?? 0) + n(e.amount));
         }
       }
       setExpensesByCategory(
@@ -917,11 +1000,12 @@ function FinanzasDashboard() {
 
       // ── Payment methods breakdown ──
       const pmMap = new Map<string, number>();
-      for (const s of sales) {
+      for (const s of sales as SaleRaw[]) {
         const d = new Date(s.createdAt ?? "");
         if (d >= startOfMonth) {
-          const method = (s.paymentMethod ?? s.metodoPago ?? "efectivo").charAt(0).toUpperCase() + (s.paymentMethod ?? s.metodoPago ?? "efectivo").slice(1).toLowerCase();
-          pmMap.set(method, (pmMap.get(method) ?? 0) + (s.total ?? 0));
+          const rawMethod = s.paymentMethod ?? s.metodoPago ?? "efectivo";
+          const method = rawMethod.charAt(0).toUpperCase() + rawMethod.slice(1).toLowerCase();
+          pmMap.set(method, (pmMap.get(method) ?? 0) + n(s.total));
         }
       }
       setPaymentMethods(
@@ -937,10 +1021,10 @@ function FinanzasDashboard() {
         const dd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
         const dayKey = dd.toISOString().slice(0, 10);
         const dayLabel = `${dd.getDate()}/${dd.getMonth() + 1}`;
-        const daySales = sales.filter((s: { createdAt?: string; total: number }) => (s.createdAt ?? "").startsWith(dayKey));
-        const dayIngresos = daySales.reduce((sum: number, s: { total: number }) => sum + (s.total ?? 0), 0);
-        const dayExpenses = items.filter((e: { date?: string; createdAt?: string; amount: number }) => (e.date ?? e.createdAt ?? "").slice(0, 10) === dayKey);
-        const dayGastos = dayExpenses.reduce((sum: number, e: { amount: number }) => sum + (e.amount ?? 0), 0);
+        const daySales = (sales as SaleRaw[]).filter((s) => (s.createdAt ?? "").startsWith(dayKey));
+        const dayIngresos = daySales.reduce((sum, s) => sum + n(s.total), 0);
+        const dayExpenses = items.filter((e) => (e.date ?? e.createdAt ?? "").slice(0, 10) === dayKey);
+        const dayGastos = dayExpenses.reduce((sum, e) => sum + n(e.amount), 0);
         flowData.push({ dia: dayLabel, ingresos: Math.round(dayIngresos), gastos: Math.round(dayGastos), balance: Math.round(dayIngresos - dayGastos) });
       }
       setCashFlow(flowData);
@@ -1063,7 +1147,7 @@ function FinanzasDashboard() {
         <div className="h-16 w-16 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
           <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
         </div>
-        <CardTitle className="text-lg font-semibold text-foreground">Sin datos financieros</CardTitle>
+        <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Sin datos financieros</CardTitle>
         <p className="text-sm text-muted mt-1">Registra tus primeras ventas y gastos para ver el dashboard</p>
       </div>
     );
@@ -1375,7 +1459,7 @@ function FinanzasDashboard() {
             <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" strokeWidth={1.75} />
             <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyección {mesCapitalized}</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-5">
+          <div className="grid grid-cols-3 gap-4 mb-5">
             <div className="text-center p-3 bg-white/60 rounded-xl">
               <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1">Ventas proyectadas</p>
               <p className={cn("text-lg sm:text-xl font-extrabold", projVentas === 0 ? "text-[var(--text-tertiary)]" : "text-primary")}>{formatCurrency(projVentas, { decimals: 0 })}</p>
@@ -1653,14 +1737,14 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 10: Mejora 20 — Comparativo entre meses ════════ */}
       <StaggerItem index={9}>
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
-          <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <p className="text-sm font-bold text-[var(--text-primary)]">Comparar Meses</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1.5 min-h-9 bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]">
+            <div className="flex items-center gap-2">
+              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
               <span className="text-xs text-[var(--text-tertiary)]">vs</span>
-              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1.5 min-h-9 bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]">
+              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
             </div>
@@ -1770,7 +1854,7 @@ function IntelligenceKPIStrip() {
           productos: d.productosActivos ?? d.activeProducts ?? 0,
         });
       })
-      .catch(() => {});
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }));
   }, []);
 
   if (!kpis) return null;
