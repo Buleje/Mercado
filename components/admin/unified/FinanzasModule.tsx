@@ -1154,7 +1154,7 @@ function FinanzasDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
 
       {/* ════════ CONTROLES: Periodo + Refresh + Export ════════ */}
       <StaggerItem index={0}>
@@ -1163,7 +1163,7 @@ function FinanzasDashboard() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
             <span>Actualizado hace {minAgo} min</span>
-            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Actualizar datos">
+            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 h-11 w-11 flex items-center justify-center hover:bg-gray-100 rounded transition-colors" title="Actualizar datos">
               <RefreshCw className="h-3 w-3" />
             </button>
           </div>
