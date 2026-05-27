@@ -6,7 +6,8 @@ import {
   ChevronDown,
   ArrowUpRight,
   Check,
-  Minus,
+  X,
+  Crown,
   Receipt,
   CreditCard,
   ShieldCheck,
@@ -96,18 +97,44 @@ const FAQS = [
   },
 ];
 
-// ── Comparativa honesta — Buleje vs el cuaderno vs un POS caro ──
-type Cell = boolean | string;
-const COMPARE: { f: string; cuaderno: Cell; pos: Cell; buleje: Cell }[] = [
-  { f: "Ventas registradas solas", cuaderno: false, pos: true, buleje: true },
-  { f: "Stock en tiempo real", cuaderno: false, pos: true, buleje: true },
-  { f: "Cobrás con Yape / Plin", cuaderno: true, pos: false, buleje: true },
-  { f: "Boletas y facturas SUNAT", cuaderno: false, pos: true, buleje: true },
-  { f: "Pedidos por WhatsApp + delivery", cuaderno: false, pos: false, buleje: true },
-  { f: "Reportes del día al instante", cuaderno: false, pos: true, buleje: true },
-  { f: "Funciona desde el celular", cuaderno: true, pos: false, buleje: true },
-  { f: "Sin instalación ni técnico", cuaderno: true, pos: false, buleje: true },
-  { f: "Costo", cuaderno: "Tu tiempo y tu plata", pos: "S/ 300+/mes + instalación", buleje: "Desde S/ 0 · sin tarjeta" },
+// ── Por qué Buleje — los 3 caminos (cuaderno / POS caro / Buleje) ──
+const PATHS = [
+  {
+    name: "El cuaderno",
+    verdict: "Te cuesta tiempo",
+    cost: "Gratis, pero perdés plata",
+    points: [
+      "Anotás a mano y a veces no cuadra",
+      "Sin stock real ni reportes",
+      "Cobrás solo con efectivo o Yape suelto",
+      "Cada cierre de caja te roba la noche",
+    ],
+    positive: false,
+  },
+  {
+    name: "POS caro",
+    verdict: "Te cuesta plata",
+    cost: "S/ 300+/mes + instalación",
+    points: [
+      "Pagás licencia cara todos los meses",
+      "Necesitás un técnico para configurarlo",
+      "No recibe pedidos por WhatsApp ni delivery",
+      "Atado a una caja física, no al celular",
+    ],
+    positive: false,
+  },
+  {
+    name: "Buleje",
+    verdict: "No te cuesta ninguno",
+    cost: "Desde S/ 0 · sin tarjeta",
+    points: [
+      "Todo en una app: POS, stock, delivery y SUNAT",
+      "Cobrás con Yape, Plin, efectivo y tarjeta",
+      "Pedidos por WhatsApp + delivery integrado",
+      "Listo en 5 minutos, sin técnico ni instalación",
+    ],
+    positive: true,
+  },
 ];
 
 // ── Garantías de confianza ──
@@ -270,108 +297,83 @@ function IntegrationsStrip() {
   );
 }
 
-// ── Comparativa honesta ──
-function CompareCell({ value, accent = false }: { value: Cell; accent?: boolean }) {
-  if (typeof value === "string") {
-    return (
-      <span className={`text-[length:var(--ts-xs)] font-extrabold ${accent ? "text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>
-        {value}
-      </span>
-    );
-  }
-  return value ? (
-    <span
-      className={
-        accent
-          ? "inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-sm shadow-[var(--accent)]/30"
-          : "inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-600,#059669)] dark:bg-emerald-950/40 dark:text-emerald-400"
-      }
-      aria-label="Sí"
-    >
-      <Check className={accent ? "h-5 w-5" : "h-4 w-4"} strokeWidth={2.75} aria-hidden />
-    </span>
-  ) : (
-    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" aria-label="No">
-      <Minus className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
-    </span>
-  );
-}
-
+// ── Por qué Buleje — los 3 caminos (tarjetas) ──
 function CompareSection() {
-  const lastIdx = COMPARE.length - 1;
-  // Marco teal continuo en la columna Buleje (destacada como ganadora).
-  const bjCell = "relative bg-[var(--accent-soft)] border-x-2 border-[var(--accent)]/35";
   return (
     <section className="py-20 sm:py-28 bg-[var(--surface-canvas)]">
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
           <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
             <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
             Por qué Buleje
           </p>
           <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
-            Toda la potencia,{" "}
-            <span className="italic font-serif text-[var(--accent)]">sin el costo de siempre.</span>
+            Tres caminos.{" "}
+            <span className="italic font-serif text-[var(--accent)]">Uno te hace crecer.</span>
           </h2>
           <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
-            Lo que un sistema caro cobra cada mes — y lo que el cuaderno nunca
-            te dio — en una sola app que arranca gratis.
+            El cuaderno te cuesta tiempo. El POS caro te cuesta plata.
+            Buleje, ninguno de los dos.
           </p>
         </div>
 
-        <div className="overflow-x-auto pt-3">
-          <table className="w-full text-left min-w-[680px] border-separate border-spacing-0">
-            <thead>
-              <tr>
-                <th className="px-5 py-4 align-bottom text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Lo que necesitás
-                </th>
-                <th className="px-3 py-4 align-bottom text-center text-sm font-extrabold text-[var(--text-secondary)]">El cuaderno</th>
-                <th className="px-3 py-4 align-bottom text-center text-sm font-extrabold text-[var(--text-secondary)]">POS caro</th>
-                {/* Buleje — encabezado destacado (tope del marco teal) */}
-                <th className="px-3 pb-4 text-center border-x-2 border-t-2 border-[var(--accent)]/35 rounded-t-2xl bg-[var(--accent-soft)]">
-                  <span className="inline-flex flex-col items-center gap-1 pt-1">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-sm shadow-[var(--accent)]/30">
-                      <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Recomendado
-                    </span>
-                    <span className="text-base font-black text-[var(--accent)]">Buleje</span>
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARE.map((row, idx) => {
-                const isLast = idx === lastIdx;
-                return (
-                  <tr key={row.f}>
-                    <th scope="row" className={`px-5 py-3.5 font-bold text-sm text-[var(--text-primary)] ${idx % 2 === 1 ? "bg-[var(--surface-sunken)]/40" : ""} ${isLast ? "rounded-bl-2xl" : ""}`}>
-                      {row.f}
-                    </th>
-                    <td className={`px-3 py-3.5 text-center ${idx % 2 === 1 ? "bg-[var(--surface-sunken)]/40" : ""}`}>
-                      <CompareCell value={row.cuaderno} />
-                    </td>
-                    <td className={`px-3 py-3.5 text-center ${idx % 2 === 1 ? "bg-[var(--surface-sunken)]/40" : ""}`}>
-                      <CompareCell value={row.pos} />
-                    </td>
-                    <td className={`px-3 py-3.5 text-center ${bjCell} ${isLast ? "border-b-2 rounded-b-2xl" : ""}`}>
-                      <CompareCell value={row.buleje} accent />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* CTA tras la comparativa */}
-        <div className="mt-10 text-center">
-          <Link
-            href="/marketplace/registrar"
-            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
-          >
-            Empezar gratis con Buleje
-            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
-          </Link>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 items-start pt-5">
+          {PATHS.map((p) =>
+            p.positive ? (
+              // ── Tarjeta ganadora: Buleje ──
+              <div key={p.name} className="relative lg:-translate-y-4 pt-3">
+                {/* Corona (fuera del overflow-hidden para que no se recorte) */}
+                <span className="absolute top-0 left-1/2 z-20 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md shadow-[var(--accent)]/30 whitespace-nowrap">
+                  <Crown className="h-3.5 w-3.5" strokeWidth={2.5} /> Tu mejor opción
+                </span>
+                <div className="relative rounded-3xl bg-[var(--surface-raised)] ring-2 ring-[var(--accent)] shadow-[var(--shadow-xl)] shadow-[var(--accent)]/25 p-7 sm:p-8 overflow-hidden">
+                  <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[var(--accent)]/15 blur-3xl" />
+                  <div className="relative">
+                    <p className="mt-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">{p.verdict}</p>
+                    <h3 className="mt-1 text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-none">{p.name}</h3>
+                    <p className="mt-3 text-lg font-extrabold text-[var(--accent)]">{p.cost}</p>
+                    <ul className="mt-6 space-y-3">
+                      {p.points.map((pt) => (
+                        <li key={pt} className="flex items-start gap-3 text-sm text-[var(--text-primary)] font-medium leading-snug">
+                          <span aria-hidden className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white">
+                            <Check className="h-3 w-3" strokeWidth={3.25} />
+                          </span>
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      href="/marketplace/registrar"
+                      className="group mt-7 w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-6 py-3.5 text-sm font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+                    >
+                      Empezar gratis
+                      <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // ── Tarjetas opacas: cuaderno / POS caro ──
+              <div
+                key={p.name}
+                className="rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] p-7 sm:p-8"
+              >
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{p.verdict}</p>
+                <h3 className="mt-1 text-2xl font-extrabold tracking-[-0.01em] text-[var(--text-secondary)] leading-none">{p.name}</h3>
+                <p className="mt-3 text-base font-bold text-[var(--text-tertiary)]">{p.cost}</p>
+                <ul className="mt-6 space-y-3">
+                  {p.points.map((pt) => (
+                    <li key={pt} className="flex items-start gap-3 text-sm text-[var(--text-tertiary)] leading-snug">
+                      <span aria-hidden className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                        <X className="h-3 w-3" strokeWidth={3} />
+                      </span>
+                      {pt}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ),
+          )}
         </div>
       </div>
     </section>
