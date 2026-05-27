@@ -41,20 +41,65 @@ const PlansToggle = dynamic(
 const LiveSignupTicker = dynamic(
   () => import("@/components/landing/abrir-tienda/LiveSignupTicker"),
 );
+// Skeleton con la MISMA altura responsive que BodegaScene para reservar
+// espacio above-the-fold y evitar CLS mientras carga su JS (animaciones).
 const BodegaScene = dynamic(
   () => import("@/components/landing/abrir-tienda/BodegaScene"),
+  {
+    loading: () => (
+      <div
+        aria-hidden
+        className="w-full max-w-[560px] mx-auto h-[540px] sm:h-[580px] lg:h-[620px] rounded-3xl bg-[var(--surface-sunken)]/40 animate-pulse"
+      />
+    ),
+  },
 );
 
+const PAGE_URL = "https://www.buleje.pe/abrir-tienda";
+
 export const metadata: Metadata = {
-  title: "Activa tu tienda online — Plataforma todo-en-uno",
+  title: "Abre tu tienda online gratis en 5 minutos — Pucallpa",
   description:
-    "Más clientes, más pedidos, cero tecnología. Plan Estándar con primer mes gratis · Sin tarjeta · Sin contrato. Cancelás cuando quieras.",
-  alternates: { canonical: "/abrir-tienda" },
+    "Crea tu tienda online y vendé hoy: catálogo, pagos con Yape/Plin, delivery y reportes en una sola app. Empezás gratis, sin tarjeta y sin comisión. Plan Fundador para los primeros 10 negocios de Pucallpa.",
+  keywords: [
+    "abrir tienda online",
+    "crear tienda online Perú",
+    "vender por internet Pucallpa",
+    "software para bodega",
+    "POS bodega",
+    "tienda online gratis",
+    "pagos Yape Plin",
+    "delivery Pucallpa",
+    "facturación SUNAT",
+    "ecommerce sin comisión",
+  ],
+  alternates: {
+    canonical: "/abrir-tienda",
+    languages: { "es-PE": "/abrir-tienda", "es": "/abrir-tienda" },
+  },
   openGraph: {
-    title: "Activa tu tienda online",
+    title: "Abre tu tienda online gratis en 5 minutos",
     description:
-      "Plataforma todo-en-uno para que tu negocio venda online en 5 minutos.",
+      "Catálogo, pagos Yape, delivery y reportes — todo listo para que tu negocio venda hoy. Gratis para empezar, sin tarjeta y sin comisión.",
+    url: PAGE_URL,
     type: "website",
+    locale: "es_PE",
+    siteName: "Buleje",
+    images: [
+      {
+        url: "/api/og/negocios",
+        width: 1200,
+        height: 630,
+        alt: "Buleje — Abre tu tienda online en 5 minutos",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Abre tu tienda online gratis en 5 minutos | Buleje",
+    description:
+      "Vendé hoy con catálogo, Yape/Plin, delivery y reportes. Gratis para empezar, sin tarjeta, sin comisión.",
+    images: ["/api/og/negocios"],
   },
 };
 
@@ -641,11 +686,82 @@ function SocialProofSection() {
   );
 }
 
+// ── JSON-LD para rich results (Brandon 2026-05-27 SEO profundo) ──
+// 4 schemas: SoftwareApplication (con offers de planes), BreadcrumbList,
+// FAQPage (reusa FAQS para no divergir del contenido visible) y HowTo
+// (los 5 min de setup). AggregateRating sintético OMITIDO (penalty Google).
+function AbrirTiendaJsonLd() {
+  const baseUrl = "https://www.buleje.pe";
+
+  const softwareLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "@id": `${baseUrl}/abrir-tienda#software`,
+    name: "Buleje — Abre tu tienda online",
+    url: PAGE_URL,
+    description:
+      "Plataforma todo-en-uno para abrir tu tienda online en 5 minutos: catálogo, POS, inventario, delivery, fiado digital, facturación SUNAT y pagos con Yape/Plin. Sin comisión.",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    inLanguage: "es-PE",
+    offers: [
+      { "@type": "Offer", name: "Free", price: "0", priceCurrency: "PEN" },
+      { "@type": "Offer", name: "Starter", price: "89", priceCurrency: "PEN" },
+      { "@type": "Offer", name: "Pro", price: "179", priceCurrency: "PEN" },
+      { "@type": "Offer", name: "Business", price: "349", priceCurrency: "PEN" },
+    ],
+    publisher: { "@id": `${baseUrl}/#organization` },
+  };
+
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: baseUrl },
+      { "@type": "ListItem", position: 2, name: "Abre tu tienda", item: PAGE_URL },
+    ],
+  };
+
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+
+  const howToLd = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "Cómo abrir tu tienda online en Buleje",
+    totalTime: "PT5M",
+    description: "Activá tu tienda online en 5 minutos, sin código ni técnicos.",
+    step: [
+      { "@type": "HowToStep", position: 1, name: "Registrate gratis", text: "Creás tu cuenta sin tarjeta en menos de un minuto." },
+      { "@type": "HowToStep", position: 2, name: "Subí tu catálogo", text: "Cargás tus productos con fotos, precios y stock — o te ayudamos por WhatsApp." },
+      { "@type": "HowToStep", position: 3, name: "Conectá tus pagos", text: "Activás Yape, Plin, efectivo o tarjeta. El dinero llega directo a vos." },
+      { "@type": "HowToStep", position: 4, name: "Empezá a vender", text: "Compartís tu link y tus clientes te compran desde el navegador, sin instalar nada." },
+    ],
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />
+    </>
+  );
+}
+
 // Brandon 2026-05-20 v5: LandingHeader + Footer removidos. Chrome unificado
 // heredado del layout app/(store)/layout.tsx (mismo nav que /tiendas).
 export default function AbrirTiendaPage() {
   return (
     <>
+      <AbrirTiendaJsonLd />
       <main id="main-content">
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)]">
