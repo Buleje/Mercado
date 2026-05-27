@@ -23,7 +23,6 @@ import { AnimatePresence, m as motion } from "framer-motion";
 import {
   Repeat,
   ArrowRight,
-  Clock,
   X,
   Check,
   ShoppingCart,
@@ -108,34 +107,54 @@ export default function RepetirUltimoPedido() {
   );
   const hasUsableItems = validItems.length > 0;
 
+  // Contenido interno de la franja (compartido por el botón y el link).
+  const barInner = (
+    <span className="flex w-full items-center gap-2.5">
+      <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white">
+        <Repeat className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-sm">
+        <span className="font-extrabold text-[var(--accent)]">Tu último pedido</span>
+        <span className="text-[var(--text-secondary)]">
+          {" · "}{order.storeName}{" · "}
+          <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmtCurrency(order.total)}</span>
+          {" · "}{order.itemsCount} {order.itemsCount === 1 ? "item" : "items"}
+          <span className="hidden md:inline text-[var(--text-tertiary)]"> · {timeAgo(order.ts)}</span>
+        </span>
+      </span>
+      <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-3.5 h-8 text-xs font-bold group-hover:gap-2 transition-all">
+        Repetir
+        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+      </span>
+    </span>
+  );
+
   return (
     <>
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {hasUsableItems ? (
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="group w-full flex items-center gap-4 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4 sm:p-5 hover:border-[var(--accent)] hover:shadow-md transition-all text-left"
-          >
-            <RepetirCardBody order={order} />
-            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-sm font-bold group-hover:gap-2 transition-all">
-              Repetir
-              <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-          </button>
-        ) : (
-          <Link
-            href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
-            className="group flex items-center gap-4 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4 sm:p-5 hover:border-[var(--accent)] hover:shadow-md transition-all"
-          >
-            <RepetirCardBody order={order} />
-            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-sm font-bold group-hover:gap-2 transition-all">
-              Repetir
-              <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-          </Link>
-        )}
-      </section>
+      {/* Franja slim sticky bajo el nav (sticky top-16 = altura del nav md).
+          Discreta, siempre a mano, sin robarle espacio al catálogo. */}
+      <div className="sticky top-14 md:top-16 z-40 border-b border-[var(--accent)]/20 bg-[var(--accent-soft)]/95 backdrop-blur">
+        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
+          {hasUsableItems ? (
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              aria-label={`Repetir tu último pedido de ${order.storeName}`}
+              className="group flex w-full items-center py-2 text-left transition-opacity hover:opacity-90"
+            >
+              {barInner}
+            </button>
+          ) : (
+            <Link
+              href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
+              aria-label={`Repetir tu último pedido de ${order.storeName}`}
+              className="group flex w-full items-center py-2 transition-opacity hover:opacity-90"
+            >
+              {barInner}
+            </Link>
+          )}
+        </div>
+      </div>
 
       <RepetirPedidoModal
         open={modalOpen}
@@ -167,34 +186,6 @@ export default function RepetirUltimoPedido() {
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
-
-function RepetirCardBody({ order }: { order: LastOrder }) {
-  return (
-    <>
-      <div className="shrink-0 inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-sm">
-        <Repeat className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-          Tu último pedido
-        </p>
-        <p className="text-base sm:text-lg font-black text-[var(--text-primary)] truncate">
-          Repetí tu compra de {order.storeName}
-        </p>
-        <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)] flex-wrap">
-          <span className="font-bold tabular-nums">{fmtCurrency(order.total)}</span>
-          <span aria-hidden>·</span>
-          <span>{order.itemsCount} {order.itemsCount === 1 ? "item" : "items"}</span>
-          <span aria-hidden>·</span>
-          <span className="inline-flex items-center gap-1">
-            <Clock className="h-3 w-3" strokeWidth={2} />
-            {timeAgo(order.ts)}
-          </span>
-        </div>
-      </div>
-    </>
-  );
-}
 
 function RepetirPedidoModal({
   open,

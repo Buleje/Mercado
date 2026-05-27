@@ -60,16 +60,17 @@ export default function TiendasPromoCards({ hasOffers }: { hasOffers?: boolean }
   //    a 1 columna full-width tanto mobile como desktop — antes en sm+
   //    quedaba un hueco vacío a la derecha porque el grid pedía 2 cols.
   const singleCard = visibleCards.length === 1;
+  // Las cards visibles rellenan TODO el ancho: 1→full, 2→mitades, 3+→tercios.
+  // Antes quedaba siempre en 2 cols y con 3 cards dejaba un hueco a la derecha.
+  const gridCols = singleCard
+    ? "grid-cols-1"
+    : visibleCards.length === 2
+      ? "grid-cols-1 sm:grid-cols-2"
+      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
 
   return (
     <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
-      <div
-        className={
-          singleCard
-            ? "grid grid-cols-1 gap-3 sm:gap-4"
-            : "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
-        }
-      >
+      <div className={`grid ${gridCols} gap-3 sm:gap-4`}>
         {visibleCards.map((c) => (
           <PromoCardItem
             key={c.href}

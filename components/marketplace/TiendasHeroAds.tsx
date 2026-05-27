@@ -183,7 +183,19 @@ export default function TiendasHeroAds({ slot = "tiendas-hero", zone = null, mor
               {banners.length} promos activas
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 lg:gap-4">
+          {/* Grid adaptativo: las cards rellenan TODO el ancho según cuántas
+              haya. 3 banners → 3 columnas (sin hueco); 4+ → hasta 4. */}
+          <div
+            className={`grid grid-cols-2 gap-3 lg:gap-4 ${
+              secondary.length === 3
+                ? "sm:grid-cols-3"
+                : secondary.length === 2
+                  ? "sm:grid-cols-2"
+                  : secondary.length === 1
+                    ? "grid-cols-1"
+                    : "sm:grid-cols-3 lg:grid-cols-4"
+            }`}
+          >
             {secondary.map((b) => (
               <PromoMiniCard key={b.id} banner={b} />
             ))}
