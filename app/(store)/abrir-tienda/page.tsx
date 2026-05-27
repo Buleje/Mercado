@@ -1,7 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Store, ChevronDown, ArrowUpRight } from "@buleje/design-system/icons";
+import {
+  Store,
+  ChevronDown,
+  ArrowUpRight,
+  Check,
+  Minus,
+  Receipt,
+  MessageCircle,
+  CreditCard,
+  Wallet,
+  ShieldCheck,
+  Download,
+  Database,
+  RefreshCcw,
+  Sparkles,
+} from "@buleje/design-system/icons";
 
 // LandingHeader + Footer removidos — chrome unificado vive en
 // app/(store)/layout.tsx (mismo nav que /tiendas y /marketplace).
@@ -65,6 +80,44 @@ const FAQS = [
     q: "¿Tienen soporte humano?",
     a: "Sí. Respondemos en menos de 2 horas por WhatsApp. Sin bots, sin formularios. Personas reales.",
   },
+  {
+    q: "¿Buleje cobra comisión por cada venta?",
+    a: "No. 0% de comisión. El dinero llega directo a tu Yape, tu cuenta o tu caja. Solo pagás el plan mensual, sin sorpresas.",
+  },
+  {
+    q: "¿Mis clientes necesitan instalar una app?",
+    a: "No. Tus clientes te compran desde el navegador con un link — no descargan nada. Vos manejás tu tienda desde el celular o la compu.",
+  },
+  {
+    q: "¿Funciona si no sé nada de tecnología?",
+    a: "Sí. Si sabés usar WhatsApp, sabés usar Buleje. Y en el Plan Fundador hacemos el setup 1-a-1 contigo por videollamada.",
+  },
+  {
+    q: "¿Puedo usar mi propia marca y dominio?",
+    a: "Sí. Tu tienda lleva tu logo, tus colores y tu nombre. Desde el plan Starter podés conectar tu propio dominio.",
+  },
+];
+
+// ── Comparativa honesta — Buleje vs el cuaderno vs un POS caro ──
+type Cell = boolean | string;
+const COMPARE: { f: string; cuaderno: Cell; pos: Cell; buleje: Cell }[] = [
+  { f: "Ventas registradas solas", cuaderno: false, pos: true, buleje: true },
+  { f: "Stock en tiempo real", cuaderno: false, pos: true, buleje: true },
+  { f: "Cobrás con Yape / Plin", cuaderno: true, pos: false, buleje: true },
+  { f: "Boletas y facturas SUNAT", cuaderno: false, pos: true, buleje: true },
+  { f: "Pedidos por WhatsApp + delivery", cuaderno: false, pos: false, buleje: true },
+  { f: "Reportes del día al instante", cuaderno: false, pos: true, buleje: true },
+  { f: "Funciona desde el celular", cuaderno: true, pos: false, buleje: true },
+  { f: "Sin instalación ni técnico", cuaderno: true, pos: false, buleje: true },
+  { f: "Costo", cuaderno: "Tu tiempo y tu plata", pos: "S/ 300+/mes + instalación", buleje: "Desde S/ 0 · sin tarjeta" },
+];
+
+// ── Garantías de confianza ──
+const GUARANTEES = [
+  { icon: RefreshCcw, t: "Sin permanencia", d: "Cancelás con un click cuando quieras. Sin contratos ni letra chica." },
+  { icon: Download, t: "Tus datos son tuyos", d: "Exportás todo en CSV — clientes, ventas, productos — cuando quieras." },
+  { icon: Database, t: "Backups diarios", d: "Tu información respaldada cada día. Nunca perdés tu historial." },
+  { icon: ShieldCheck, t: "Protección Ley 29733", d: "Cumplimos la ley peruana de protección de datos personales." },
 ];
 
 function SectionSkeleton({ h = "400px" }: { h?: string }) {
@@ -74,6 +127,214 @@ function SectionSkeleton({ h = "400px" }: { h?: string }) {
       style={{ height: h }}
       className="bg-[var(--surface-sunken)] animate-pulse"
     />
+  );
+}
+
+// ── Integraciones — strip de logos de lo que el negocio ya usa ──
+function IntegrationsStrip() {
+  const items = [
+    { mark: "Y", name: "Yape", brand: "#722EAB" },
+    { mark: "P", name: "Plin", brand: "#00BFB3" },
+    { icon: Receipt, name: "SUNAT" },
+    { icon: MessageCircle, name: "WhatsApp" },
+    { icon: CreditCard, name: "Tarjeta · Stripe" },
+    { icon: Wallet, name: "Mercado Pago" },
+  ];
+  return (
+    <section className="py-12 sm:py-14 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <p className="text-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-7">
+          Ya conectado a lo que tu negocio usa todos los días
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+          {items.map((it) => (
+            <div
+              key={it.name}
+              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-2.5"
+            >
+              {it.mark ? (
+                <span
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-white text-sm font-extrabold"
+                  style={{ background: it.brand }}
+                  aria-hidden
+                >
+                  {it.mark}
+                </span>
+              ) : it.icon ? (
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]" aria-hidden>
+                  <it.icon className="h-4 w-4" strokeWidth={2} />
+                </span>
+              ) : null}
+              <span className="text-sm font-extrabold text-[var(--text-primary)]">{it.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Comparativa honesta ──
+function CompareCell({ value }: { value: Cell }) {
+  if (typeof value === "string") {
+    return <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">{value}</span>;
+  }
+  return value ? (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-600,#059669)] dark:bg-emerald-950/40 dark:text-emerald-400" aria-label="Sí">
+      <Check className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+    </span>
+  ) : (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" aria-label="No">
+      <Minus className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+    </span>
+  );
+}
+
+function CompareSection() {
+  return (
+    <section className="py-20 sm:py-28 bg-[var(--surface-canvas)]">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+            <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+            Por qué Buleje
+          </p>
+          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
+            Toda la potencia,{" "}
+            <span className="italic font-serif text-[var(--accent)]">sin el costo de siempre.</span>
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+          <table className="w-full text-left min-w-[640px]">
+            <thead>
+              <tr className="border-b border-[var(--rule-soft)]">
+                <th className="px-5 py-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  Lo que necesitás
+                </th>
+                <th className="px-3 py-4 text-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">El cuaderno</th>
+                <th className="px-3 py-4 text-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">POS caro</th>
+                <th className="px-3 py-4 text-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] bg-[var(--accent-soft)]/40">
+                  Buleje
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARE.map((row, idx) => (
+                <tr key={row.f} className={idx % 2 === 1 ? "bg-[var(--surface-sunken)]/40" : ""}>
+                  <th scope="row" className="px-5 py-3.5 font-bold text-sm text-[var(--text-primary)]">{row.f}</th>
+                  <td className="px-3 py-3.5 text-center">{<CompareCell value={row.cuaderno} />}</td>
+                  <td className="px-3 py-3.5 text-center">{<CompareCell value={row.pos} />}</td>
+                  <td className="px-3 py-3.5 text-center bg-[var(--accent-soft)]/30">{<CompareCell value={row.buleje} />}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Garantías / confianza ──
+function GuaranteeSection() {
+  return (
+    <section className="py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+            <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+            Sin riesgo
+          </p>
+          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
+            Probás tranquilo.{" "}
+            <span className="italic font-serif text-[var(--accent)]">Sin letra chica.</span>
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {GUARANTEES.map((g) => (
+            <div key={g.t} className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6">
+              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+                <g.icon className="h-6 w-6" strokeWidth={1.75} />
+              </span>
+              <h3 className="text-lg font-extrabold tracking-[-0.01em] text-[var(--text-primary)] leading-tight">{g.t}</h3>
+              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">{g.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Prueba social honesta — Plan Fundador (sin reseñas inventadas) ──
+function SocialProofSection() {
+  const CUPOS_TOTAL = 10;
+  const CUPOS_TOMADOS = 3;
+  const libres = CUPOS_TOTAL - CUPOS_TOMADOS;
+  return (
+    <section className="py-20 sm:py-28 bg-[var(--surface-canvas)]">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-7 sm:p-10 grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 lg:gap-12 items-center">
+          <div>
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
+              <span aria-hidden className="relative inline-flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
+              </span>
+              Plan Fundador · Pucallpa
+            </p>
+            <h2 className="text-[clamp(1.75rem,4vw,3rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1]">
+              Sé de los primeros{" "}
+              <span className="italic font-serif text-[var(--accent)]">{CUPOS_TOTAL} negocios.</span>
+            </h2>
+            <p className="mt-4 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-lg">
+              Setup 1-a-1, 90 días de acompañamiento por WhatsApp, sesión de fotos
+              sin costo y 0% comisión los primeros 90 días.
+            </p>
+            <div className="mt-7 flex items-center gap-3">
+              <div className="flex -space-x-2" aria-hidden>
+                {[
+                  { l: "D", c: "var(--accent)" },
+                  { l: "P", c: "#722EAB" },
+                  { l: "L", c: "#f97316" },
+                ].map(({ l, c }) => (
+                  <span key={l} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-extrabold text-sm ring-3 ring-[var(--surface-canvas)]" style={{ background: c }}>
+                    {l}
+                  </span>
+                ))}
+              </div>
+              <p className="text-sm text-[var(--text-secondary)] leading-snug">
+                <strong className="font-extrabold text-[var(--text-primary)]">Don Lucho, Pòlleria El Dorado</strong> y otros ya están vendiendo con Buleje.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-7 shadow-[var(--shadow-lg)]">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Cupos disponibles</p>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+                <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Limitado
+              </span>
+            </div>
+            <p className="text-5xl font-extrabold tracking-[-0.04em] tabular-nums leading-none mt-1">
+              <span className="text-[var(--accent)]">{libres}</span>
+              <span className="text-[var(--text-tertiary)] text-2xl font-extrabold ml-1">/ {CUPOS_TOTAL}</span>
+            </p>
+            <div className="mt-5 h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+              <span className="block h-full rounded-full bg-linear-to-r from-[var(--accent)] to-[var(--accent-600,var(--accent))]" style={{ width: `${(CUPOS_TOMADOS / CUPOS_TOTAL) * 100}%` }} />
+            </div>
+            <Link
+              href="/marketplace/registrar"
+              className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-6 py-3.5 text-sm font-extrabold shadow-md hover:shadow-lg transition-all"
+            >
+              Reservar mi cupo gratis
+              <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -141,6 +402,23 @@ export default function AbrirTiendaPage() {
                 <div className="mt-6">
                   <LiveSignupTicker />
                 </div>
+
+                {/* Chips de confianza — refuerzan el pitch arriba del fold */}
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {[
+                    { icon: ShieldCheck, label: "0% comisión" },
+                    { icon: CreditCard, label: "Sin tarjeta" },
+                    { icon: RefreshCcw, label: "Sin permanencia" },
+                  ].map((c) => (
+                    <span
+                      key={c.label}
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--text-secondary)]"
+                    >
+                      <c.icon className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={1.75} />
+                      {c.label}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               {/* Trust illustration — bodega con tecnología vendiendo en vivo.
@@ -156,14 +434,26 @@ export default function AbrirTiendaPage() {
           </div>
         </section>
 
+        {/* ── Integraciones — lo que tu negocio ya usa ───────────────── */}
+        <IntegrationsStrip />
+
         {/* ── Cómo cambia tu día con Buleje (sin promesas mágicas) ──── */}
         <HowItChanges />
 
         {/* ── Beneficios con tabs interactivas ───────────────────────── */}
         <BenefitsTabs />
 
+        {/* ── Comparativa honesta — Buleje vs cuaderno vs POS caro ───── */}
+        <CompareSection />
+
         {/* ── Plans con toggle mensual/anual ─────────────────────────── */}
         <PlansToggle />
+
+        {/* ── Garantías / confianza ──────────────────────────────────── */}
+        <GuaranteeSection />
+
+        {/* ── Prueba social — Plan Fundador ──────────────────────────── */}
+        <SocialProofSection />
 
         {/* ── FAQ ─────────────────────────────────────────────────────── */}
         <section className="py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]">
