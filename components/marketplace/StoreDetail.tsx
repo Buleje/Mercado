@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useDeferredValue } from "react";
+import { useState, useEffect, useCallback, useDeferredValue, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Lightbulb } from "@buleje/design-system/icons";
@@ -168,24 +168,25 @@ function RelatedProducts({
 }) {
   const { byStore } = useMarketplaceCart();
   const cartItems = byStore[storeId]?.items ?? [];
-  const cartProductIds = new Set(cartItems.map((i) => i.productId));
 
-  // Pick products the user hasn't added to cart yet, preferring in-stock and different categories
-  const cartCategories = new Set(
-    products.filter((p) => cartProductIds.has(p.id)).map((p) => p.category)
-  );
-
-  const related = products
-    .filter((p) => !cartProductIds.has(p.id) && p.stock > 0)
-    .sort((a, b) => {
-      // Prefer products from same category as what's in cart
-      const aMatch = cartCategories.has(a.category) ? 0 : 1;
-      const bMatch = cartCategories.has(b.category) ? 0 : 1;
-      if (aMatch !== bMatch) return aMatch - bMatch;
-      // Then by stock descending (as popularity proxy)
-      return b.stock - a.stock;
-    })
-    .slice(0, 6);
+  // Brandon 2026-05-27 (audit perf): memoizado. Antes recomputaba el filter+sort
+  // sobre TODOS los productos en cada render (cada add-to-cart) sin memo.
+  const related = useMemo(() => {
+    const cartProductIds = new Set(cartItems.map((i) => i.productId));
+    const cartCategories = new Set(
+      products.filter((p) => cartProductIds.has(p.id)).map((p) => p.category),
+    );
+    return products
+      .filter((p) => !cartProductIds.has(p.id) && p.stock > 0)
+      .sort((a, b) => {
+        const aMatch = cartCategories.has(a.category) ? 0 : 1;
+        const bMatch = cartCategories.has(b.category) ? 0 : 1;
+        if (aMatch !== bMatch) return aMatch - bMatch;
+        return b.stock - a.stock;
+      })
+      .slice(0, 6);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, JSON.stringify(cartItems.map((i) => i.productId))]);
 
   if (related.length === 0 || cartItems.length === 0) return null;
 
@@ -927,9 +928,10 @@ export default function StoreDetail({ slug }: { slug: string }) {
   }, [highlightedProductId, products]);
 
   // categorías únicas de los productos para el filtro
-  const categories = Array.from(
-    new Set(products.map((p) => p.category).filter(Boolean))
-  ) as string[];
+  const categories = useMemo(
+    () => Array.from(new Set(products.map((p) => p.category).filter(Boolean))) as string[],
+    [products],
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-0 sm:px-6 lg:px-8">
