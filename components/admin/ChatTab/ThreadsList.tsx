@@ -37,7 +37,7 @@ export function ThreadsList({
             onClick={() => onStatusFilterChange(s)}
             aria-pressed={statusFilter === s}
             className={cn(
-              "rounded-lg px-3 py-1 text-xs font-medium transition",
+              "rounded-lg px-3 py-1.5 min-h-11 sm:min-h-0 sm:py-1 text-xs font-medium transition",
               statusFilter === s
                 ? "bg-primary text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700",
@@ -79,7 +79,7 @@ export function ThreadsList({
                     onClick={() => onSelectThread(isSelected ? null : thread.id)}
                     aria-pressed={isSelected}
                     className={cn(
-                      "w-full border-l-4 p-3 text-left transition",
+                      "w-full border-l-4 p-3 min-h-11 text-left transition",
                       "hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)] dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60",
                       isSelected
                         ? "border-primary bg-primary/10 dark:bg-primary/10"
