@@ -154,7 +154,7 @@ export default async function TiendasPage() {
     url: `${BASE_URL}/tiendas`,
     name: "Tiendas y bodegas en Pucallpa",
     description:
-      "Directorio de bodegas, farmacias y restaurantes locales en Pucallpa y Ciudad Constitución con delivery rápido.",
+      "Directorio de bodegas, restaurantes, mercados, minimarkets y farmacias locales en Pucallpa y Ciudad Constitución con delivery rápido y pago con Yape, Plin o efectivo.",
     inLanguage: "es-PE",
     isPartOf: {
       "@type": "WebSite",
@@ -242,7 +242,7 @@ export default async function TiendasPage() {
         name: "¿Qué tipos de tiendas hay en Buleje?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Bodegas y minimarkets, farmacias, restaurantes y pizzerías, panaderías y ferreterías locales de Pucallpa y Ciudad Constitución, todas con catálogo online y delivery.",
+          text: "Bodegas y minimarkets, mercados, restaurantes y pizzerías, farmacias, panaderías y ferreterías locales de Pucallpa y Ciudad Constitución, todas con catálogo online y delivery.",
         },
       },
       {
