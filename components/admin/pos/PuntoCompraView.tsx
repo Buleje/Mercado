@@ -822,7 +822,7 @@ export default function PuntoCompraView() {
             }}
             disabled={processing}
             aria-label="Seleccionar proveedor"
-            className="px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
+            className="flex-1 sm:flex-none min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
           >
             <option value="">Todos los proveedores</option>
             {suppliers.map((s) => (
@@ -849,7 +849,7 @@ export default function PuntoCompraView() {
           onClick={() => setSoloReponer((v) => !v)}
           aria-pressed={soloReponer}
           className={cn(
-            "px-3 py-1.5 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+            "px-3 py-1.5 min-h-11 sm:min-h-0 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
             soloReponer
               ? "bg-[var(--data-error-500)] text-white"
               : "bg-gray-100 text-[var(--text-secondary)]",
@@ -865,7 +865,7 @@ export default function PuntoCompraView() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar producto..."
           aria-label="Buscar producto por nombre o código"
-          className="flex-1 min-w-36 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="flex-1 min-w-full sm:min-w-36 min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         />
 
         {/* Botón escáner de código de barras */}
@@ -946,7 +946,7 @@ export default function PuntoCompraView() {
           <button
             type="button"
             onClick={() => setShowNewExpense(true)}
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <Plus className="h-4 w-4" />
             Nuevo gasto recurrente
