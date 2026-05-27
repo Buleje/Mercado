@@ -1,8 +1,32 @@
 import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import ExplorarClient from "@/components/marketplace/explorar/ExplorarClient";
+import JsonLd from "@/components/JsonLd";
 
 const BASE_URL = "https://www.buleje.pe";
+
+// JSON-LD (2026-05-27): Breadcrumb + CollectionPage para el hub de descubrimiento.
+const explorarBreadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Inicio", item: BASE_URL },
+    { "@type": "ListItem", position: 2, name: "Marketplace", item: `${BASE_URL}/marketplace` },
+    { "@type": "ListItem", position: 3, name: "Explorar", item: `${BASE_URL}/marketplace/explorar` },
+  ],
+};
+
+const explorarCollectionLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": `${BASE_URL}/marketplace/explorar`,
+  name: "Explorar el catálogo de Buleje Pucallpa",
+  description:
+    "Bodegas, ofertas, categorías y ocasiones de todo Pucallpa en un solo lugar. Delivery rápido, pago con Yape, Plin o efectivo.",
+  url: `${BASE_URL}/marketplace/explorar`,
+  inLanguage: "es-PE",
+  isPartOf: { "@type": "WebSite", name: "Buleje", url: BASE_URL },
+};
 
 export const metadata: Metadata = {
   title: "Explorar — Todo el catálogo de Buleje",
@@ -58,5 +82,11 @@ export default async function ExplorarPage() {
   "use cache";
   cacheLife("minutes");
   cacheTag("marketplace-explorar");
-  return <ExplorarClient />;
+  return (
+    <>
+      <JsonLd data={explorarBreadcrumbLd} />
+      <JsonLd data={explorarCollectionLd} />
+      <ExplorarClient />
+    </>
+  );
 }

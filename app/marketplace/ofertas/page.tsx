@@ -1,7 +1,31 @@
 import type { Metadata } from "next";
 import OfertasClient from "@/components/marketplace/ofertas/OfertasClient";
+import JsonLd from "@/components/JsonLd";
 
 const BASE_URL = "https://www.buleje.pe";
+
+// JSON-LD (2026-05-27): Breadcrumb + CollectionPage para la página de ofertas.
+const ofertasBreadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Inicio", item: BASE_URL },
+    { "@type": "ListItem", position: 2, name: "Marketplace", item: `${BASE_URL}/marketplace` },
+    { "@type": "ListItem", position: 3, name: "Ofertas", item: `${BASE_URL}/marketplace/ofertas` },
+  ],
+};
+
+const ofertasCollectionLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": `${BASE_URL}/marketplace/ofertas`,
+  name: "Ofertas del día en Buleje Pucallpa",
+  description:
+    "Descuentos reales en bodegas, minimarkets y restaurantes de Pucallpa. Delivery rápido, pago con Yape, Plin o efectivo.",
+  url: `${BASE_URL}/marketplace/ofertas`,
+  inLanguage: "es-PE",
+  isPartOf: { "@type": "WebSite", name: "Buleje", url: BASE_URL },
+};
 
 export const metadata: Metadata = {
   title: "Ofertas — Precios que no te puedes perder",
@@ -38,5 +62,11 @@ export const metadata: Metadata = {
  * Hereda layout con MarketplaceNavbar del layout padre.
  */
 export default function OfertasPage() {
-  return <OfertasClient />;
+  return (
+    <>
+      <JsonLd data={ofertasBreadcrumbLd} />
+      <JsonLd data={ofertasCollectionLd} />
+      <OfertasClient />
+    </>
+  );
 }

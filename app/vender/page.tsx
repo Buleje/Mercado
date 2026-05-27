@@ -9,10 +9,52 @@ import VenderSteps from "@/components/vender/VenderSteps";
 import VenderRevenueCalculator from "@/components/vender/VenderRevenueCalculator";
 import VenderSocialProof from "@/components/vender/VenderSocialProof";
 import VenderFAQ from "@/components/vender/VenderFAQ";
+import { FAQ_ITEMS } from "@/components/vender/vender-faq-data";
 import VenderFinalCTA from "@/components/vender/VenderFinalCTA";
 import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
 import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
 import { relatedFor } from "@/lib/navigation/feature-registry";
+import JsonLd from "@/components/JsonLd";
+
+const VENDER_URL = "https://www.buleje.pe/vender";
+
+// JSON-LD seller landing (2026-05-27): SoftwareApplication con planes,
+// BreadcrumbList y FAQPage reusando FAQ_ITEMS (mismo contenido visible).
+const venderSoftwareLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": `${VENDER_URL}#software`,
+  name: "Buleje — Vende en el marketplace",
+  url: VENDER_URL,
+  description:
+    "Plataforma para que tu bodega venda online en Pucallpa: catálogo, pedidos por WhatsApp, delivery con repartidores locales y pagos Yape/Plin. Primer mes gratis.",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  inLanguage: "es-PE",
+  offers: [
+    { "@type": "Offer", name: "Gratis", price: "0", priceCurrency: "PEN" },
+    { "@type": "Offer", name: "Pro", price: "29", priceCurrency: "PEN" },
+  ],
+};
+
+const venderBreadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Inicio", item: "https://www.buleje.pe" },
+    { "@type": "ListItem", position: 2, name: "Vende en Buleje", item: VENDER_URL },
+  ],
+};
+
+const venderFaqLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
 
 export const metadata: Metadata = {
   title: "Vende en Buleje — Abre tu tienda en Pucallpa en 5 minutos",
@@ -63,6 +105,9 @@ export default function VenderLandingPage() {
   return (
     <StoreProviders tenantSlug="main">
       <MotionProvider>
+        <JsonLd data={venderSoftwareLd} />
+        <JsonLd data={venderBreadcrumbLd} />
+        <JsonLd data={venderFaqLd} />
         <div className="min-h-screen bg-[var(--surface-canvas)]">
           <MarketplaceNavbar />
           <main id="main-content">
