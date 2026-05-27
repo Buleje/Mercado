@@ -347,41 +347,116 @@ function B2BHero() {
             </div>
           </div>
 
-          {/* Panel de módulos estilizado (visual B2B distinto del BodegaScene) */}
-          <div className="relative">
-            <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 shadow-[var(--shadow-lg)]">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Tu panel · Buleje
-                </p>
-                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-                  <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                  </span>
-                  En vivo
-                </span>
+          {/* ── Mockup de celular — la app Buleje en vivo ──────────────────
+              Brandon 2026-05-27: reemplaza el panel plano. Ilustración del
+              software corriendo en el celular del dueño. Estático (server
+              component safe) pero con frame premium, dynamic island, glow y
+              chips flotantes. */}
+          <div className="relative flex justify-center lg:justify-end">
+            {/* Glow de marca detrás del teléfono */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/15 blur-3xl"
+            />
+
+            {/* Chips flotantes — refuerzan el pitch */}
+            <div className="absolute -left-2 top-12 z-20 hidden sm:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                <Wallet className="h-4 w-4" strokeWidth={2} />
+              </span>
+              <div className="leading-tight">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Yape recibido</p>
+                <p className="text-xs font-extrabold text-[var(--text-primary)] tabular-nums">+ S/ 28.50</p>
               </div>
-              <div className="rounded-2xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] p-4 mb-3">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Vendido hoy</p>
-                <p className="mt-1 text-3xl font-extrabold tracking-[-0.03em] tabular-nums text-[var(--text-primary)] leading-none">
-                  S/ 2,840 <span className="text-sm font-bold text-[var(--accent)] align-middle">+18%</span>
-                </p>
+            </div>
+            <div className="absolute -right-1 bottom-16 z-20 hidden sm:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--data-success-500)]/15 text-[var(--data-success-600,#059669)]">
+                <Truck className="h-4 w-4" strokeWidth={2} />
+              </span>
+              <div className="leading-tight">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">En camino</p>
+                <p className="text-xs font-extrabold text-[var(--text-primary)]">Marco · 12 min</p>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { icon: Smartphone, l: "POS" },
-                  { icon: Package, l: "Stock" },
-                  { icon: Truck, l: "Delivery" },
-                  { icon: Wallet, l: "Fiado" },
-                  { icon: Receipt, l: "SUNAT" },
-                  { icon: BarChart3, l: "Reportes" },
-                ].map((m) => (
-                  <div key={m.l} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-center">
-                    <m.icon className="h-5 w-5 mx-auto text-[var(--accent)]" strokeWidth={1.75} />
-                    <p className="mt-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{m.l}</p>
+            </div>
+
+            {/* Frame del teléfono */}
+            <div className="relative w-[270px] sm:w-[300px] rounded-[2.75rem] bg-[var(--text-primary)] p-2.5 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/25">
+              <div className="relative rounded-[2.25rem] bg-[var(--surface-canvas)] overflow-hidden">
+                {/* Dynamic island */}
+                <div aria-hidden className="absolute top-2.5 left-1/2 -translate-x-1/2 h-5 w-20 rounded-full bg-[var(--text-primary)] z-20" />
+
+                {/* Header */}
+                <div className="px-4 pt-11 pb-3 bg-linear-to-b from-[var(--accent)]/10 to-transparent">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mi negocio · hoy</p>
+                      <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight mt-0.5">Estás vendiendo</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/15 px-2 py-1">
+                      <span aria-hidden className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75 animate-ping" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
+                      </span>
+                      <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-600,#059669)]">LIVE</span>
+                    </span>
                   </div>
-                ))}
+                </div>
+
+                {/* Vendido hoy + barras */}
+                <div className="px-4">
+                  <p className="text-[2.25rem] font-extrabold tabular-nums tracking-[-0.04em] leading-none text-[var(--text-primary)]">
+                    S/ 2,840
+                  </p>
+                  <div className="mt-1.5 flex items-end justify-between">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/12 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-600,#059669)]">
+                      <BarChart3 className="h-3 w-3" strokeWidth={2.5} /> +18% vs ayer
+                    </span>
+                    <div className="flex items-end gap-1 h-8" aria-hidden>
+                      {[40, 65, 50, 80, 60, 95, 72].map((h, i) => (
+                        <span
+                          key={i}
+                          className="w-1.5 rounded-full bg-linear-to-t from-[var(--accent)]/40 to-[var(--accent)]"
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPI row */}
+                <div className="px-4 mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-2.5">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pedidos</p>
+                    <p className="text-lg font-extrabold tabular-nums text-[var(--text-primary)] leading-none mt-0.5">42</p>
+                  </div>
+                  <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-2.5">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Clientes</p>
+                    <p className="text-lg font-extrabold tabular-nums text-[var(--text-primary)] leading-none mt-0.5">128</p>
+                  </div>
+                </div>
+
+                {/* Módulos */}
+                <div className="px-4 mt-3 grid grid-cols-3 gap-1.5">
+                  {[
+                    { icon: Smartphone, l: "POS" },
+                    { icon: Package, l: "Stock" },
+                    { icon: Truck, l: "Delivery" },
+                    { icon: Wallet, l: "Fiado" },
+                    { icon: Receipt, l: "SUNAT" },
+                    { icon: MessageCircle, l: "WhatsApp" },
+                  ].map((m) => (
+                    <div key={m.l} className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] py-2 text-center">
+                      <m.icon className="h-4 w-4 mx-auto text-[var(--accent)]" strokeWidth={1.75} />
+                      <p className="mt-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{m.l}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer CTA */}
+                <div className="m-3 mt-3 h-10 rounded-xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-between px-4 shadow-[var(--shadow-md)]">
+                  <span className="text-xs font-extrabold">Ver todos los pedidos</span>
+                  <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
+                </div>
               </div>
             </div>
           </div>
