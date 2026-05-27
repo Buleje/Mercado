@@ -50,11 +50,9 @@ const FAQSection = dynamic(
   { ssr: true, loading: () => <SectionSkeleton /> },
 );
 // Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
-// Brandon mayo 2026: home y /abrir-tienda muestran los 4 planes
-// idénticos (Estándar/Pro/Enterprise/Max) — fuente única plan-tiers.
-const HomePlansToggle = dynamic(
-  () => import("@/components/landing/abrir-tienda/PlansToggle"),
-);
+// Brandon 2026-05-27: /negocios es 100% informativa/SEO. El selector
+// interactivo de planes + signup vive SOLO en /abrir-tienda (página de
+// conversión). Acá mostramos un teaser de precios y enlazamos allá.
 
 // Brandon mayo 14 2026: esta era la home pre-launch B2B (Plan Fundador,
 // 10 cupos, planes Free/Starter/Pro/Business, FAQ). Se movió de "/" a
@@ -714,18 +712,55 @@ function AboutAndPricingSnapshot() {
           </p>
         </div>
 
-        {/* Mismo PlansToggle que /abrir-tienda — cero duplicación,
-            cero desincronización. */}
-        <HomePlansToggle />
+        {/* Teaser de precios (informativo). El selector interactivo + el
+            signup viven en /abrir-tienda — esta página solo informa. */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[
+            { name: "Free", price: "0", note: "Para empezar gratis" },
+            { name: "Starter", price: "89", note: "Primer mes gratis" },
+            { name: "Pro", price: "179", note: "El más elegido", highlight: true },
+            { name: "Business", price: "349", note: "Todo ilimitado" },
+          ].map((p) => (
+            <div
+              key={p.name}
+              className={[
+                "relative rounded-2xl border p-5 sm:p-6 bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 hover:shadow-md",
+                p.highlight
+                  ? "border-[var(--accent)]/50 shadow-md shadow-[var(--accent)]/10"
+                  : "border-[var(--rule-soft)]",
+              ].join(" ")}
+            >
+              {p.highlight && (
+                <span className="absolute -top-2.5 left-5 inline-flex items-center rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white">
+                  {p.note}
+                </span>
+              )}
+              <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+                {p.name}
+              </p>
+              <p className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-[-0.03em] tabular-nums text-[var(--text-primary)] leading-none">
+                <span className="text-lg align-top text-[var(--text-tertiary)]">S/</span>
+                {p.price}
+                <span className="text-base font-bold text-[var(--text-tertiary)]">/mes</span>
+              </p>
+              {!p.highlight && (
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">{p.note}</p>
+              )}
+            </div>
+          ))}
+        </div>
 
-        <div className="mt-12 text-center">
+        <div className="mt-10 text-center">
           <Link
             href="/abrir-tienda#planes"
-            className="inline-flex items-center gap-2 text-base font-bold text-[var(--accent)] hover:gap-3 transition-all"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
           >
-            <T k="landing.plans.compare" fallback="Ver comparativa completa" />
-            <span aria-hidden>→</span>
+            Ver planes y activar mi tienda
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
           </Link>
+          <p className="mt-3 text-sm text-[var(--text-tertiary)]">
+            Primer mes gratis · Sin tarjeta · Cancelás cuando quieras
+          </p>
         </div>
       </div>
     </section>
