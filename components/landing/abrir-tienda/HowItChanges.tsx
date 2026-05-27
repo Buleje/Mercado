@@ -91,74 +91,74 @@ export default function HowItChanges() {
           </p>
         </div>
 
-        {/* Tabla comparativa — Antes / Después con icono de momento + badges de tiempo */}
-        <div className="grid gap-5 max-w-4xl mx-auto">
+        {/* Línea de tiempo del día — la mañana al cierre. Spine + nodos por momento */}
+        <ol className="relative max-w-4xl mx-auto">
+          {/* Spine vertical (detrás de los nodos) */}
+          <div
+            aria-hidden
+            className="absolute left-6 sm:left-7 top-7 bottom-7 w-0.5 bg-linear-to-b from-[var(--accent)]/50 via-[var(--accent)]/25 to-[var(--accent)]/0"
+          />
+
           {COMPARISONS.map((c) => {
             const Icon = c.icon;
             return (
-              <div
-                key={c.moment}
-                className="group rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] overflow-hidden transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]"
-              >
-                {/* Header del momento — icono + label + chip de ahorro */}
-                <div className="px-5 sm:px-6 py-3.5 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center gap-3">
+              <li key={c.moment} className="relative flex gap-4 sm:gap-6 pb-6 last:pb-0">
+                {/* Nodo del momento sobre el spine */}
+                <div className="relative z-10 shrink-0">
                   <span
                     aria-hidden
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-raised)] text-[var(--accent)] border border-[var(--rule-soft)] shrink-0"
+                    className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--accent)]/35 text-[var(--accent)] shadow-[var(--shadow-md)]"
                   >
-                    <Icon className="h-4 w-4" strokeWidth={2.25} />
-                  </span>
-                  <p className="flex-1 text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] truncate">
-                    {c.moment}
-                  </p>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider whitespace-nowrap shadow-sm shadow-[var(--accent)]/20">
-                    <span className="line-through opacity-60 tabular-nums">{c.beforeTime}</span>
-                    <ArrowRight className="h-3 w-3" strokeWidth={3} />
-                    <span className="tabular-nums">{c.afterTime}</span>
+                    <Icon className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
                   </span>
                 </div>
 
-                <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--rule-base)]">
-                  {/* Antes — con tipografía tachada visualmente */}
-                  <div className="relative px-5 sm:px-6 py-5 sm:py-6 flex items-start gap-3.5 bg-[var(--surface-sunken)]/40">
-                    <span
-                      aria-hidden
-                      className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--rule-base)] text-[var(--text-tertiary)]"
-                    >
-                      <X className="h-4 w-4" strokeWidth={2.75} />
+                {/* Tarjeta del momento */}
+                <div className="group flex-1 min-w-0 rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]">
+                  {/* Header: momento + chip de ahorro */}
+                  <div className="px-5 sm:px-6 py-3.5 border-b border-[var(--rule-soft)] flex items-center gap-3">
+                    <p className="flex-1 text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] truncate">
+                      {c.moment}
+                    </p>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider whitespace-nowrap shadow-sm shadow-[var(--accent)]/20">
+                      <span className="line-through opacity-60 tabular-nums">{c.beforeTime}</span>
+                      <ArrowRight className="h-3 w-3" strokeWidth={3} />
+                      <span className="tabular-nums">{c.afterTime}</span>
                     </span>
-                    <div className="min-w-0">
-                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
-                        Hoy sin Buleje
-                      </p>
-                      <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-                        {c.before}
-                      </p>
-                    </div>
                   </div>
 
-                  {/* Después — accent soft con typography más fuerte */}
-                  <div className="relative px-5 sm:px-6 py-5 sm:py-6 flex items-start gap-3.5 bg-[var(--accent-soft)]">
-                    <span
-                      aria-hidden
-                      className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/25"
-                    >
-                      <Check className="h-4 w-4" strokeWidth={2.75} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
-                        Con Buleje
-                      </p>
-                      <p className="text-sm font-semibold leading-relaxed text-[var(--text-primary)]">
-                        {c.after}
-                      </p>
+                  <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--rule-soft)]">
+                    {/* Antes */}
+                    <div className="px-5 sm:px-6 py-5 flex items-start gap-3 bg-[var(--surface-sunken)]/40">
+                      <span aria-hidden className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--rule-base)] text-[var(--text-tertiary)]">
+                        <X className="h-4 w-4" strokeWidth={2.75} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+                          Hoy sin Buleje
+                        </p>
+                        <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{c.before}</p>
+                      </div>
+                    </div>
+
+                    {/* Después */}
+                    <div className="px-5 sm:px-6 py-5 flex items-start gap-3 bg-[var(--accent-soft)]">
+                      <span aria-hidden className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/25">
+                        <Check className="h-4 w-4" strokeWidth={2.75} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+                          Con Buleje
+                        </p>
+                        <p className="text-sm font-semibold leading-relaxed text-[var(--text-primary)]">{c.after}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ol>
 
         {/* CTA + microcopy honesto */}
         <div className="mt-14 text-center">
