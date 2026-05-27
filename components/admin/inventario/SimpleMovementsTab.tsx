@@ -140,7 +140,7 @@ export default function SimpleMovementsTab() {
   return (
     <div className="space-y-6">
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4">
           <Package className="h-5 w-5 text-[var(--data-success-500)] mb-1" />
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Movimientos hoy</p>
@@ -160,21 +160,21 @@ export default function SimpleMovementsTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-0 basis-full sm:basis-auto">
+        <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 h-12 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
-        <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] dark:border-card-border p-0.5">
+        <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-0.5">
           {([["all", "Todos"], ["in", "Entradas"], ["out", "Salidas"]] as const).map(([v, l]) => (
             <button
               key={v}
               onClick={() => setFilterDir(v)}
-              className={cn("px-3 min-h-11 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap",
+              className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 filterDir === v ? "bg-primary text-white" : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface"
               )}
             >
@@ -184,7 +184,7 @@ export default function SimpleMovementsTab() {
         </div>
         <button
           onClick={() => void loadData()}
-          className="h-11 w-11 flex items-center justify-center rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           title="Refrescar"
         >
           <RefreshCw className="h-4 w-4" />
@@ -195,17 +195,17 @@ export default function SimpleMovementsTab() {
             tipo: m.label, cantidad: m.dir === "in" ? `+${m.quantity}` : `-${m.quantity}`,
             stock_resultado: m.newStock,
           })), `movimientos_${new Date().toISOString().slice(0, 10)}.csv`)}
-          className="flex items-center gap-1 px-3 min-h-11 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
         >
           <Download className="h-3.5 w-3.5" /> Excel
         </button>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
+      <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Cuándo</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Producto</th>
@@ -226,11 +226,11 @@ export default function SimpleMovementsTab() {
               {filtered.map(m => (
                 <tr key={m.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
                   <td className="px-4 py-3">
-                    <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtRelative(m.createdAt)}</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtRelative(m.createdAt)}</p>
                     <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{fmtDate(m.createdAt)}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-[180px] block">{m.productName}</span>
+                    <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[180px] block">{m.productName}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
@@ -250,7 +250,7 @@ export default function SimpleMovementsTab() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn("text-sm font-bold",
-                      m.newStock === 0 ? "text-[var(--data-error-500)]" : m.newStock <= 5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-foreground"
+                      m.newStock === 0 ? "text-[var(--data-error-500)]" : m.newStock <= 5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                     )}>
                       {m.newStock}
                     </span>
@@ -261,7 +261,7 @@ export default function SimpleMovementsTab() {
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface text-xs text-[var(--text-tertiary)]">
+          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-xs text-[var(--text-tertiary)]">
             Mostrando {filtered.length} de {enriched.length} movimientos
           </div>
         )}

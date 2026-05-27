@@ -149,7 +149,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             onClick={() => onToggle(promo.id)}
             disabled={loading}
             aria-label={promo.activa ? "Desactivar promoción" : "Activar promoción"}
-            className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
             {promo.activa
               ? <ToggleRight className="h-5 w-5 text-primary" />
@@ -160,7 +160,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             onClick={() => onDelete(promo.id)}
             disabled={loading}
             aria-label="Eliminar promoción"
-            className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
           >
             <Trash2 className="h-4 w-4 text-[var(--data-error-500)]" />
           </button>
@@ -311,7 +311,7 @@ export default function PromocionesModule() {
             onClick={fetchPromos}
             disabled={loading}
             aria-label="Recargar promociones"
-            className="h-11 w-11 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", loading && "animate-spin")} />
           </button>
@@ -319,7 +319,7 @@ export default function PromocionesModule() {
             onClick={() => { setShowForm(v => !v); setFormError(null); }}
             aria-label="Nueva promoción"
             className={cn(
-              "flex items-center gap-1.5 px-3 h-11 rounded-xl text-xs font-semibold transition-all",
+              "flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold transition-all",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               showForm
                 ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
@@ -378,7 +378,7 @@ export default function PromocionesModule() {
                 value={form.nombre}
                 onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                 placeholder="Ej: Descuento fin de semana"
-                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-12 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
 
@@ -387,7 +387,7 @@ export default function PromocionesModule() {
               <select
                 value={form.tipo}
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value as PromoType }))}
-                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-12 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               >
                 {(Object.keys(TIPO_LABELS) as PromoType[]).map(t => (
                   <option key={t} value={t}>{TIPO_LABELS[t]}</option>
@@ -407,7 +407,7 @@ export default function PromocionesModule() {
                   value={form.valor}
                   onChange={e => setForm(f => ({ ...f, valor: e.target.value }))}
                   placeholder={form.tipo === "porcentaje" ? "20" : "5.00"}
-                  className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-12 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                  className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 />
               </div>
             )}
@@ -419,7 +419,7 @@ export default function PromocionesModule() {
                 value={form.categorias}
                 onChange={e => setForm(f => ({ ...f, categorias: e.target.value }))}
                 placeholder="Lácteos, Bebidas"
-                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-12 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
 
@@ -429,7 +429,7 @@ export default function PromocionesModule() {
                 type="date"
                 value={form.fechaInicio}
                 onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
-                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-12 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
 
@@ -439,7 +439,7 @@ export default function PromocionesModule() {
                 type="date"
                 value={form.fechaFin}
                 onChange={e => setForm(f => ({ ...f, fechaFin: e.target.value }))}
-                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-12 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
 
@@ -452,7 +452,7 @@ export default function PromocionesModule() {
                 value={form.condicion}
                 onChange={e => setForm(f => ({ ...f, condicion: e.target.value }))}
                 placeholder='Ej: "min_cantidad:3" o "min_monto:50"'
-                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-12 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
           </div>
@@ -475,7 +475,7 @@ export default function PromocionesModule() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full h-12 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-center gap-2"
+            className="w-full h-10 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-center gap-2"
             style={{
               background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
               boxShadow: "0 4px 12px -2px rgba(45,106,79,0.4)",
@@ -494,7 +494,7 @@ export default function PromocionesModule() {
             key={f}
             onClick={() => setFilter(f)}
             className={cn(
-              "px-4 min-h-11 rounded-full text-sm font-medium transition-all capitalize",
+              "px-3 h-8 rounded-full text-xs font-medium transition-all capitalize",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               filter === f
                 ? "text-white"

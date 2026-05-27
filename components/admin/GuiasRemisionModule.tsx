@@ -674,7 +674,8 @@ export default function GuiasRemisionModule() {
   const _handleCopyReceptionLink = async () => {
     if (!selected) return;
     const url = `buleje.pe/recepcion/guia/${selected.id}`;
-    await navigator.clipboard.writeText(url).catch(() => {});
+    // Clipboard best-effort: falla por permisos del browser, UI feedback igual.
+    await navigator.clipboard.writeText(url).catch(() => { /* clipboard best-effort */ });
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
@@ -1188,13 +1189,13 @@ export default function GuiasRemisionModule() {
             >
               <div className="w-full max-w-3xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-[var(--color-card)] border-b border-[var(--rule-base)] px-4 sm:px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 z-10 bg-white dark:bg-[var(--color-card)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
                   <button onClick={() => setShowNew(false)} className="p-1 hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Order ID optional */}
@@ -1306,20 +1307,18 @@ export default function GuiasRemisionModule() {
                   <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2">Items</h4>
                   <div className="space-y-2">
                     {newItems.map((item, idx) => (
-                      <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                      <div key={idx} className="flex gap-2 items-center">
                         <input type="text" value={item.descripcion} onChange={e => updateItem(idx, "descripcion", e.target.value)} placeholder="Descripción"
                           className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                        <div className="flex gap-2 items-center">
-                          <input type="number" min="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)} placeholder="Cant."
-                            className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                          <input type="text" value={item.unidad} onChange={e => updateItem(idx, "unidad", e.target.value)} placeholder="Und"
-                            className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                          <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
-                            className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                          {newItems.length > 1 && (
-                            <button onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>
-                          )}
-                        </div>
+                        <input type="number" min="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)} placeholder="Cant."
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                        <input type="text" value={item.unidad} onChange={e => updateItem(idx, "unidad", e.target.value)} placeholder="Und"
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                        <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
+                          className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                        {newItems.length > 1 && (
+                          <button onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1351,7 +1350,7 @@ export default function GuiasRemisionModule() {
                 {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-4 sm:px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button onClick={() => setShowNew(false)}
                     className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
                     Cancelar

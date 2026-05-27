@@ -1,6 +1,6 @@
 "use client";
 import { CardTitle } from "@buleje/design-system";
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -97,7 +97,7 @@ function CategoryTreemapView() {
       .then(data => {
         if (Array.isArray(data)) setProducts(data.filter((p: TreemapProduct) => p.active));
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[InventarioAlmacenesModule] products fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 
@@ -163,7 +163,7 @@ function CategoryTreemapView() {
         {/* Mejora 9: SUNAT export button */}
         <button
           onClick={handleExportSunat}
-          className="flex items-center gap-1.5 px-3 min-h-11 py-2 rounded-lg border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--data-success-500)]/30 text-[var(--data-success-500)] text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
         >
           Exportar para Contador
         </button>
@@ -333,9 +333,9 @@ function InventoryAnalyticsDashboard() {
   return (
     <div className="space-y-6">
       {/* ── Controls: Period + Refresh + Export ── */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <PeriodSelector value={period} onChange={setPeriod} />
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
           <AutoRefreshControl secondsLeft={autoRefresh.secondsLeft} paused={autoRefresh.paused} isActive={autoRefresh.isActive} onTogglePause={autoRefresh.togglePause} onRefreshNow={autoRefresh.refreshNow} />
           <ExportButton />
         </div>
@@ -350,7 +350,7 @@ function InventoryAnalyticsDashboard() {
       )}
 
       {/* ── 1. KPIs ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpiCards.map((k, i) => (
           <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} color={k.color} alert={k.alert} />
         ))}
@@ -705,7 +705,7 @@ export default function InventarioAlmacenesModule() {
   }, []);
 
   return (
-    <div className="space-y-3 sm:space-y-6 p-0">
+    <div className="space-y-3 sm:space-y-6">
       <AdminModuleHeader
         title="Inventario"
         description="Stock, movimientos, vencimientos y análisis"
@@ -725,7 +725,7 @@ export default function InventarioAlmacenesModule() {
         {/* Mejora 7: Price labels button */}
         <button
           onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
-          className="flex items-center gap-1.5 px-3 min-h-11 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
         >
           Imprimir etiquetas
         </button>
@@ -747,15 +747,15 @@ export default function InventarioAlmacenesModule() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowConteoModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 min-h-11 py-2 rounded-lg text-sm font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
             >
-              <ListChecks className="h-4 w-4" /> Conteo físico
+              <ListChecks className="h-3.5 w-3.5" /> Conteo físico
             </button>
             <button
               onClick={() => setShowDeclaracionModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 min-h-11 py-2 rounded-lg text-sm font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-indigo-950/20 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-indigo-950/20 transition-colors"
             >
-              <LayoutDashboard className="h-4 w-4" /> Generar declaración
+              <LayoutDashboard className="h-3.5 w-3.5" /> Generar declaración
             </button>
           </div>
           <InventoryTab />
@@ -773,16 +773,16 @@ export default function InventarioAlmacenesModule() {
       {/* ── Modal: Conteo Físico ── */}
       {showConteoModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowConteoModal(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
-            <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Conteo Físico</CardTitle>
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)] z-10">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Conteo Físico</CardTitle>
               <div className="flex items-center gap-2">
-                <div className="flex gap-1 overflow-x-auto">
-                  <button onClick={() => setConteoMode("wizard")} className={cn("px-3 min-h-9 py-1 rounded-lg text-xs font-medium whitespace-nowrap", conteoMode === "wizard" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Guiado</button>
-                  <button onClick={() => setConteoMode("manual")} className={cn("px-3 min-h-9 py-1 rounded-lg text-xs font-medium whitespace-nowrap", conteoMode === "manual" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Manual</button>
-                  <button onClick={() => setConteoMode("scanner")} className={cn("px-3 min-h-9 py-1 rounded-lg text-xs font-medium whitespace-nowrap", conteoMode === "scanner" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Escáner</button>
+                <div className="flex gap-1">
+                  <button onClick={() => setConteoMode("wizard")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "wizard" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Guiado</button>
+                  <button onClick={() => setConteoMode("manual")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "manual" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Manual</button>
+                  <button onClick={() => setConteoMode("scanner")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "scanner" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Escáner</button>
                 </div>
-                <button onClick={() => setShowConteoModal(false)} className="p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+                <button onClick={() => setShowConteoModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
                   <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -799,14 +799,14 @@ export default function InventarioAlmacenesModule() {
       {/* ── Modal: Declaración de Inventario ── */}
       {showDeclaracionModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowDeclaracionModal(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
-            <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Declaración de Inventario</CardTitle>
-              <button onClick={() => setShowDeclaracionModal(false)} className="p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)] z-10">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Declaración de Inventario</CardTitle>
+              <button onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
                 <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+            <div className="flex-1 overflow-y-auto p-5">
               <DeclaracionInventarioModule />
             </div>
           </div>
@@ -839,14 +839,14 @@ export default function InventarioAlmacenesModule() {
       {/* ── Mejora 7: Price Labels Modal ── */}
       {showPriceLabels && (
         <div className="modal-backdrop p-4" onClick={() => setShowPriceLabels(false)}>
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl w-full sm:max-w-lg max-h-[80dvh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-4 sm:px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
+          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <CardTitle className="font-bold text-[var(--text-primary)] text-sm">Imprimir Etiquetas de Precio</CardTitle>
-              <button onClick={() => setShowPriceLabels(false)} className="p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+              <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                 <span className="text-[var(--text-tertiary)] text-lg">&times;</span>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-3">
+            <div className="flex-1 overflow-y-auto px-5 py-3">
               {labelLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -880,8 +880,8 @@ export default function InventarioAlmacenesModule() {
                 </div>
               )}
             </div>
-            <div className="px-4 sm:px-5 py-4 border-t border-[var(--rule-soft)]">
-              <button onClick={handlePrintLabels} disabled={selectedLabelIds.size === 0} className="w-full min-h-11 py-2.5 rounded-lg text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>
+            <div className="px-5 py-4 border-t border-[var(--rule-soft)]">
+              <button onClick={handlePrintLabels} disabled={selectedLabelIds.size === 0} className="w-full py-2.5 rounded-lg text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>
                 Generar etiquetas ({selectedLabelIds.size})
               </button>
             </div>

@@ -7,6 +7,7 @@ import {
   Truck, BarChart3, PackagePlus,
   ShoppingCart, ShoppingBasket, Clock, DollarSign, Building2, AlertTriangle, CreditCard,
   CheckCircle2, Maximize2, X as XIcon, RotateCcw,
+  Receipt,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
@@ -81,6 +82,7 @@ const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { 
 const PuntoCompraView = dynamic(() => import("@/components/admin/pos/PuntoCompraView"), { loading: S });
 const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComparator"), { ssr: false, loading: S });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: S });
+const HistorialGastosTab = dynamic(() => import("@/components/admin/compras/HistorialGastosTab"), { loading: S });
 
 const MODULE_ID = "compras";
 
@@ -88,6 +90,7 @@ const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '
 
 const TABS: AdminTab[] = [
   { id: "punto-compra", label: "Punto de Compra", icon: ShoppingBasket },
+  { id: "historial-gastos", label: "Historial de Gastos", icon: Receipt },
   { id: "sugerencias", label: "Sugerencias", icon: Lightbulb },
   { id: "ordenes-compra", label: "Ordenes", icon: ClipboardList },
   { id: "proveedores", label: "Proveedores", icon: Users },
@@ -319,7 +322,7 @@ function ComprasDashboard() {
     <div className="space-y-6">
 
       {/* === Controls: Period + Refresh + Export === */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-0">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <PeriodSelector value={period} onChange={setPeriod} />
         <div className="flex items-center gap-2">
           <AutoRefreshControl secondsLeft={autoRefresh.secondsLeft} paused={autoRefresh.paused} isActive={autoRefresh.isActive} onTogglePause={autoRefresh.togglePause} onRefreshNow={autoRefresh.refreshNow} />
@@ -336,14 +339,14 @@ function ComprasDashboard() {
       )}
 
       {/* === KPIs (6 cards) === */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpiCards.map((k, i) => (
           <KpiCard key={i} label={k.label} value={k.value} icon={k.icon} color={k.color} change={k.change} alert={k.alert} />
         ))}
       </div>
 
       {/* === Compras por Mes (AreaChart) === */}
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
         <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Compras por mes (últimos 6 meses)</CardTitle></div>
         <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
@@ -377,7 +380,7 @@ function ComprasDashboard() {
 
       {/* === Distribucion por Proveedor (PieChart + tabla) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center justify-between mb-4">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Gasto por proveedor</CardTitle>
             <div className="flex items-center gap-2">
@@ -406,7 +409,7 @@ function ComprasDashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Ranking de proveedores</CardTitle>
           <div className="max-h-70 space-y-3 overflow-y-auto">
             {supplierSpend.length === 0 ? (
@@ -439,7 +442,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Estado de OC (BarChart stacked) === */}
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Estado de ordenes por mes</CardTitle>
         <ResponsiveContainer minWidth={0} width="100%" height={250}>
           <BarChart data={statusByMonth}>
@@ -458,7 +461,7 @@ function ComprasDashboard() {
 
       {/* === Deuda por Proveedor (horizontal) + Proximos Pagos === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Deuda por proveedor</CardTitle>
           {debtBySupplier.length === 0 ? (
             <EmptyState title="Sin deudas registradas" description="No hay deudas pendientes con proveedores" />
@@ -479,7 +482,7 @@ function ComprasDashboard() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Proximos pagos</CardTitle>
           {nextPayments.length === 0 ? (
             <EmptyState title="Sin pagos pendientes" description="No hay pagos próximos registrados" />
@@ -522,7 +525,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Tendencia de Gastos vs Promedio Móvil (ComposedChart) === */}
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-4 sm:p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Tendencia de gastos</CardTitle>
         <p className="text-xs text-[var(--text-tertiary)] mb-4">Gasto real vs promedio móvil 3 meses</p>
         <ResponsiveContainer minWidth={0} width="100%" height={260}>
@@ -619,6 +622,7 @@ export default function ComprasModule() {
         moduleId="compras"
       >
         {sub === "punto-compra" && <PuntoCompraView />}
+        {sub === "historial-gastos" && <HistorialGastosTab />}
         {sub === "sugerencias" && <SugerenciasCompraTab />}
         {sub === "ordenes-compra" && <PurchaseOrdersTab />}
         {sub === "proveedores" && <SuppliersTab />}
