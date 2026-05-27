@@ -81,7 +81,11 @@ export function BulejeHeatmap({
         </div>
       )}
 
-      <div className="flex flex-col gap-1">
+      {/* Mobile: scroll horizontal con celdas legibles (24h no entran en
+          390px → quedaban diminutas). min-w fija ~460px en móvil; en desktop
+          (sm+) fit natural. Brandon 2026-05-27. */}
+      <div className="overflow-x-auto -mx-1 px-1 [scrollbar-width:thin]">
+      <div className="flex flex-col gap-1 min-w-[460px] sm:min-w-0">
         {/* Grid rows: 7 days */}
         {grid.map((row, dayIdx) => (
           <div key={dayIdx} className="flex items-center gap-1">
@@ -120,6 +124,7 @@ export function BulejeHeatmap({
             ))}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Legend */}
