@@ -68,6 +68,50 @@ function Sparkline({ values, color = "var(--accent)", className = "" }: { values
   );
 }
 
+// Gráfico mobile-first: barras Ingresos vs Gastos por día (7 días).
+// Más legible en celular que una sparkline de 32px — barras gruesas con
+// etiqueta de día y leyenda, escaladas al máximo de la serie.
+function MobileTrendChart({ series }: { series: { label: string; ingreso: number; gasto: number }[] }) {
+  if (series.length === 0) return null;
+  const max = Math.max(1, ...series.map((d) => Math.max(d.ingreso, d.gasto)));
+  return (
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+          Últimos {series.length} días
+        </span>
+        <span className="flex items-center gap-3 text-[length:var(--ts-2xs)] font-bold">
+          <span className="inline-flex items-center gap-1 text-[var(--text-secondary)]">
+            <span className="h-2.5 w-2.5 rounded-sm bg-[var(--accent)]" /> Entra
+          </span>
+          <span className="inline-flex items-center gap-1 text-[var(--text-secondary)]">
+            <span className="h-2.5 w-2.5 rounded-sm bg-[var(--data-warning-500,#f59e0b)]" /> Sale
+          </span>
+        </span>
+      </div>
+      <div className="flex h-28 items-end justify-between gap-1.5">
+        {series.map((d, i) => (
+          <div key={i} className="flex flex-1 flex-col items-center gap-1">
+            <div className="flex h-24 w-full items-end justify-center gap-0.5">
+              <div
+                className="w-1/2 max-w-2.5 rounded-t-sm bg-[var(--accent)] transition-all"
+                style={{ height: `${Math.max(2, (d.ingreso / max) * 100)}%` }}
+                title={`Entra: ${formatSoles(d.ingreso)}`}
+              />
+              <div
+                className="w-1/2 max-w-2.5 rounded-t-sm bg-[var(--data-warning-500,#f59e0b)] transition-all"
+                style={{ height: `${Math.max(2, (d.gasto / max) * 100)}%` }}
+                title={`Sale: ${formatSoles(d.gasto)}`}
+              />
+            </div>
+            <span className="text-[10px] font-bold text-[var(--text-tertiary)]">{d.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type DailyRev = { date: string; total: number; count: number };
 
 export default function VendorCommandCenter() {
@@ -110,7 +154,17 @@ export default function VendorCommandCenter() {
     const lastTwo = sparkIngresos.slice(-2);
     const trend = lastTwo.length === 2 && lastTwo[0] > 0 ? ((lastTwo[1] - lastTwo[0]) / lastTwo[0]) * 100 : 0;
 
-    return { ingresos, gastos, ganancia, margen, pedidos, sparkIngresos, sparkGastos, sparkGanancia, trend, days: daily.length };
+    // Serie diaria (últimos 7) para el gráfico de barras mobile.
+    const WD = ["D", "L", "M", "M", "J", "V", "S"];
+    const series = daily.slice(-7).map((d) => {
+      const ingreso = d.total || 0;
+      const gasto = gastosByDay.get(d.date) ?? 0;
+      const dt = new Date(`${d.date}T00:00:00`);
+      const label = Number.isNaN(dt.getTime()) ? "" : WD[dt.getDay()];
+      return { label, ingreso, gasto };
+    });
+
+    return { ingresos, gastos, ganancia, margen, pedidos, sparkIngresos, sparkGastos, sparkGanancia, trend, series, days: daily.length };
   }, [data]);
 
   const greeting = useMemo(() => {
@@ -187,7 +241,7 @@ export default function VendorCommandCenter() {
                   <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
                     {formatSoles(stats.ingresos)}
                   </p>
-                  <div className="mt-2 h-8">
+                  <div className="mt-2 h-8 hidden sm:block">
                     <Sparkline values={stats.sparkIngresos} className="h-full w-full" />
                   </div>
                 </div>
@@ -200,7 +254,7 @@ export default function VendorCommandCenter() {
                   <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
                     {formatSoles(stats.gastos)}
                   </p>
-                  <div className="mt-2 h-8">
+                  <div className="mt-2 h-8 hidden sm:block">
                     <Sparkline values={stats.sparkGastos} color="var(--data-warning-600,#b45309)" className="h-full w-full" />
                   </div>
                 </div>
@@ -220,7 +274,7 @@ export default function VendorCommandCenter() {
                   <p className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] ${stats.ganancia >= 0 ? "text-[var(--text-primary)]" : "text-[var(--data-danger-600,#dc2626)]"}`}>
                     {formatSoles(stats.ganancia)}
                   </p>
-                  <div className="mt-2 h-8">
+                  <div className="mt-2 h-8 hidden sm:block">
                     <Sparkline values={stats.sparkGanancia} color="var(--accent)" className="h-full w-full" />
                   </div>
                 </div>
@@ -230,6 +284,12 @@ export default function VendorCommandCenter() {
                   {stats.pedidos} pedido{stats.pedidos === 1 ? "" : "s"} en el período · gastos = órdenes de compra
                 </p>
               )}
+
+              {/* Gráfico mobile-only: barras Entra/Sale por día (las sparklines
+                  de las cards solo se ven en desktop — ilegibles en celular). */}
+              <div className="mt-3 sm:hidden">
+                <MobileTrendChart series={stats.series} />
+              </div>
 
               {/* ── Accesos directos a módulos ───────────────────────── */}
               <div className="mt-5">
