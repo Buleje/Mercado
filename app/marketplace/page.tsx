@@ -44,12 +44,22 @@ export async function generateMetadata(props: {
     ? `Marketplace en ${zona.charAt(0).toUpperCase() + zona.slice(1)} — Bodegas y Tiendas`
     : "Marketplace — Bodegas y Tiendas del Perú";
   const description = zona
-    ? `Encuentra bodegas, minimarkets y tiendas en ${zona}. Delivery rápido, pago con Yape o efectivo.`
-    : "Bodegas y minimarkets del Perú en un solo lugar. Delivery rápido, pago con Yape o efectivo.";
+    ? `Bodegas, minimarkets, restaurantes y farmacias en ${zona}. Pedí online con delivery rápido y pago con Yape, Plin o efectivo.`
+    : "Bodegas, minimarkets, restaurantes y farmacias del Perú en un solo lugar. Pedí online con delivery rápido y pago con Yape, Plin o efectivo.";
 
   return {
     title,
     description,
+    keywords: [
+      "marketplace bodegas Perú",
+      "bodegas online",
+      "minimarkets delivery",
+      "comprar abarrotes online",
+      "delivery Pucallpa",
+      "tiendas cerca de mí",
+      "pagar con Yape",
+      ...(zona ? [`bodegas ${zona}`, `delivery ${zona}`] : []),
+    ],
     alternates: {
       canonical: canonicalUrl,
     },
@@ -64,6 +74,13 @@ export async function generateMetadata(props: {
       siteName: "Buleje",
       locale: "es_PE",
       type: "website",
+      images: [{ url: "/api/og", width: 1200, height: 630, alt: "Buleje — marketplace de bodegas y tiendas del Perú" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/api/og"],
     },
   };
 }
