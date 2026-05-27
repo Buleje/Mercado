@@ -20,26 +20,40 @@ export function useSwipe(
   onSwipeRight: () => void,
   threshold = 75,
 ) {
-  const touchStart = useRef<number>(0);
-  const touchEnd = useRef<number>(0);
+  const startX = useRef<number>(0);
+  const startY = useRef<number>(0);
+  const endX = useRef<number>(0);
+  const endY = useRef<number>(0);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStart.current = e.targetTouches[0].clientX;
-    touchEnd.current = e.targetTouches[0].clientX;
+    const t = e.targetTouches[0];
+    startX.current = t.clientX;
+    startY.current = t.clientY;
+    endX.current = t.clientX;
+    endY.current = t.clientY;
   }, []);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
-    touchEnd.current = e.targetTouches[0].clientX;
+    const t = e.targetTouches[0];
+    endX.current = t.clientX;
+    endY.current = t.clientY;
   }, []);
 
   const onTouchEnd = useCallback(() => {
-    const diff = touchStart.current - touchEnd.current;
-    if (Math.abs(diff) < threshold) return;
+    const diffX = startX.current - endX.current;
+    const diffY = startY.current - endY.current;
 
     // Solo activar en viewport mobile (<768px)
     if (typeof window !== "undefined" && window.innerWidth >= 768) return;
 
-    if (diff > 0) {
+    // Debe superar el umbral horizontal…
+    if (Math.abs(diffX) < threshold) return;
+    // …y ser un gesto CLARAMENTE horizontal. Si el movimiento vertical domina
+    // (scroll para arriba/abajo), NO navegamos de tab.
+    // Fix Brandon 2026-05-27: al deslizar para scrollear te mandaba a Chat IA.
+    if (Math.abs(diffX) <= Math.abs(diffY) * 1.3) return;
+
+    if (diffX > 0) {
       onSwipeLeft();
     } else {
       onSwipeRight();
