@@ -64,6 +64,32 @@ export const districts: District[] = [
       "Campo Verde es el distrito rural de Ucayali. Las tiendas locales venden abarrotes y productos basicos con Buleje — ideal para zonas sin POS tradicional.",
   },
 
+  // ── Ciudad Constitución / Pasco (selva central) ──────────────────
+  {
+    slug: "constitucion-centro",
+    name: "Centro",
+    cityslug: "ciudad-constitucion",
+    geo: { lat: -9.8669, lon: -75.0017 },
+    description:
+      "El Centro de Ciudad Constitución concentra el comercio del distrito. Comprá en bodegas y minimarkets con delivery y Yape, o gestioná tu tienda con Buleje: inventario, ventas y facturación.",
+  },
+  {
+    slug: "constitucion-norte",
+    name: "Sector Norte",
+    cityslug: "ciudad-constitucion",
+    geo: { lat: -9.8550, lon: -75.0010 },
+    description:
+      "El Sector Norte de Ciudad Constitución suma bodegas de barrio y abarrotes. Pedí online con delivery rápido y pago al recibir, o digitaliza tu negocio con Buleje.",
+  },
+  {
+    slug: "constitucion-sur",
+    name: "Sector Sur",
+    cityslug: "ciudad-constitucion",
+    geo: { lat: -9.8780, lon: -75.0025 },
+    description:
+      "El Sector Sur de Ciudad Constitución crece con nuevos comercios. Comprá productos de primera necesidad con delivery o llevá tu bodega al sistema Buleje.",
+  },
+
   // ── Iquitos / Loreto ─────────────────────────────────────────────
   {
     slug: "iquitos-centro",

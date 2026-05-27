@@ -40,6 +40,19 @@ export const zones: Zone[] = [
     deliveryActive: true,
   },
   {
+    // Ciudad Constitución (Distrito de Constitución, Oxapampa — Pasco). Selva
+    // central. Descripción híbrida: capta búsquedas B2C (comprar/delivery) y
+    // B2B (software para bodegas) en un solo landing programático.
+    slug: "ciudad-constitucion",
+    name: "Ciudad Constitución",
+    region: "Pasco",
+    description:
+      "Comprá en bodegas y tiendas de Ciudad Constitución con delivery rápido y pago con Yape o efectivo. ¿Tenés un negocio? Gestioná inventario, ventas POS, fiado digital y facturación SUNAT con Buleje. Cobertura en la selva central de Pasco.",
+    geo: { lat: -9.8669, lon: -75.0017 },
+    districts: ["Centro", "Sector Norte", "Sector Sur"],
+    deliveryActive: true,
+  },
+  {
     slug: "iquitos",
     name: "Iquitos",
     region: "Loreto",

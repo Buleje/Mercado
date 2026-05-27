@@ -208,7 +208,7 @@ function LinkGroup({
           <li key={link.label}>
             <a
               href={link.href}
-              className="text-sm font-semibold text-white/75 hover:text-amber-200 transition-colors"
+              className="text-sm font-semibold text-white/75 hover:text-teal-200 transition-colors"
             >
               {link.label}
             </a>
@@ -301,10 +301,10 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
   const hoursLabel = todayEntry?.enabled ? `Hoy: ${todayEntry.open} – ${todayEntry.close}` : "Hoy: cerrado";
 
   return (
-    <footer className="relative bg-gradient-to-b from-[#0a1a14] via-[#06120d] to-black text-white">
-      {/* Acento ámbar Buleje — hairline superior con identidad amazónica */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-emerald-500/[0.06] to-transparent" />
+    <footer className="relative bg-gradient-to-b from-[#0d1414] via-[#0a1010] to-black text-white">
+      {/* Hairline superior — acento teal de marca (minimalista, 1 solo color) */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-teal-500/[0.05] to-transparent" />
 
       {/* Modo tienda: footer reducido — links pertinentes a la tienda actual.
           NO muestra Explorar / Recetas / Asistente IA / Buleje en Vivo
@@ -432,27 +432,29 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
           <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8 lg:gap-12 items-start lg:items-center">
             {/* IZQ — wordmark + tagline + chips de confianza */}
             <div>
+              {/* Logo blanco con glow teal sutil — firma de marca que se
+                  despega del fondo grafito sin saturar (minimalista). */}
               <BulejeWordmark
-                size={40}
+                size={46}
                 strokeWidth={1.75}
-                textSize={24}
-                className="text-white drop-shadow-[0_0_24px_rgba(252,211,77,0.15)]"
+                textSize={28}
+                className="text-white drop-shadow-[0_0_28px_rgba(45,212,191,0.28)]"
               />
               <p className="mt-3.5 max-w-xl text-sm sm:text-base leading-snug font-medium">
-                <span className="text-amber-300 font-extrabold">Tu mercado desde la selva amazónica.</span>{" "}
-                <span className="text-white/75">Bodegas y tiendas de {platformCity} con delivery, en un solo lugar.</span>
+                <span className="text-teal-300 font-extrabold">Tu mercado desde la selva amazónica.</span>{" "}
+                <span className="text-white/70">Bodegas y tiendas de {platformCity} con delivery, en un solo lugar.</span>
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 border border-emerald-400/30 px-3 py-1.5 text-xs font-extrabold text-emerald-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-500/12 border border-teal-400/25 px-3 py-1.5 text-xs font-extrabold text-teal-200">
                   <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                   {platformCity}, {platformRegion}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/12 border border-amber-300/30 px-3 py-1.5 text-xs font-extrabold text-amber-200">
-                  <Star className="h-3.5 w-3.5 fill-current" strokeWidth={0} aria-hidden />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] border border-white/10 px-3 py-1.5 text-xs font-extrabold text-white/75">
+                  <Star className="h-3.5 w-3.5 text-teal-300 fill-current" strokeWidth={0} aria-hidden />
                   <span className="tabular-nums">{hp.footerRating}</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/12 px-3 py-1.5 text-xs font-extrabold text-white/80">
-                  <Clock className="h-3.5 w-3.5 text-white/65" strokeWidth={2.5} aria-hidden />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] border border-white/10 px-3 py-1.5 text-xs font-extrabold text-white/75">
+                  <Clock className="h-3.5 w-3.5 text-white/55" strokeWidth={2.5} aria-hidden />
                   <span className="tabular-nums">{hoursLabel}</span>
                 </span>
               </div>
@@ -479,10 +481,10 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
               })()}
               <div className="flex items-center gap-2.5 justify-center lg:justify-end">
                 <span className="text-sm font-semibold text-white/50">O seguinos</span>
-                <a href={fbUrl || hp.footerFacebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors">
+                <a href={fbUrl || hp.footerFacebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors">
                   <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
-                <a href={igUrl || hp.footerInstagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors">
+                <a href={igUrl || hp.footerInstagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors">
                   <Instagram className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
               </div>
@@ -490,7 +492,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
           </div>
 
           {/* Separador con acento verde selva */}
-          <div className="mt-8 h-px bg-gradient-to-r from-transparent via-emerald-400/25 to-transparent" />
+          <div className="mt-8 h-px bg-gradient-to-r from-transparent via-teal-400/20 to-transparent" />
 
           {/* ── Links: una fila limpia, sin badge de jerga interna ── */}
           <nav aria-label="Enlaces de tiendas" className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2.5">
@@ -498,7 +500,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
               <a
                 key={link.label}
                 href={link.href}
-                className="text-sm font-semibold text-white/70 transition-colors hover:text-amber-200"
+                className="text-sm font-semibold text-white/70 transition-colors hover:text-teal-200"
               >
                 {link.label}
               </a>
@@ -570,7 +572,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
                 >
                   <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
@@ -579,14 +581,14 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
                 >
                   <Instagram className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
                 <a
                   href={`tel:${(storeTheme?.phone || platformPhone || "+51929340532").replace(/\s/g, "")}`}
                   aria-label="Llamar"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-amber-300/60 hover:bg-amber-300/10 hover:text-amber-200 transition-colors"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
                 >
                   <Phone className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
@@ -597,7 +599,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
 
         {/* Separador con acento verde selva */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="h-px bg-gradient-to-r from-transparent via-emerald-400/25 to-transparent" />
+          <div className="h-px bg-gradient-to-r from-transparent via-teal-400/20 to-transparent" />
         </div>
 
         {/* ── LINKS: 4 grupos con acordeón mobile (cerrados) + abiertos desktop ── */}
@@ -619,7 +621,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold text-white/85 hover:bg-amber-300/10 hover:text-amber-200 hover:border-amber-300/40 transition-colors"
+                    className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold text-white/85 hover:bg-teal-300/10 hover:text-teal-200 hover:border-teal-300/40 transition-colors"
                   >
                     {link.label}
                   </a>
@@ -637,27 +639,26 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
           Brandon 2026-05-18: cuando hay items en carrito, el StickyCartBar
           (~52px pegado encima del BottomNav) también tapa contenido — sumamos
           su altura solo en ese caso. Sin cart: 72px. Con cart: 130px. */}
-      <div className={`border-t border-emerald-400/15 bg-black/50 backdrop-blur-sm ${hasCart ? "pb-[calc(130px+env(safe-area-inset-bottom))]" : "pb-[calc(72px+env(safe-area-inset-bottom))]"} sm:pb-0`}>
+      <div className={`border-t border-teal-400/15 bg-black/50 backdrop-blur-sm ${hasCart ? "pb-[calc(130px+env(safe-area-inset-bottom))]" : "pb-[calc(72px+env(safe-area-inset-bottom))]"} sm:pb-0`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-            {/* Trust + payment chips — todos en 1 línea */}
+            {/* Trust + payment chips — minimalista: pills neutras + ícono teal
+                (mono + 1 acento de marca). Sin 4 colores distintos. */}
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-emerald-200 bg-emerald-500/10 border border-emerald-400/30">
-                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                Sitio seguro
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-sky-200 bg-sky-500/10 border border-sky-400/30">
-                <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                Yape · Plin
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-amber-200 bg-amber-400/15 border border-amber-300/35">
-                <Wallet className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                Efectivo
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-rose-200 bg-rose-500/10 border border-rose-400/30">
-                <Truck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                Delivery
-              </span>
+              {([
+                { Icon: ShieldCheck, label: "Sitio seguro" },
+                { Icon: CreditCard, label: "Yape · Plin" },
+                { Icon: Wallet, label: "Efectivo" },
+                { Icon: Truck, label: "Delivery" },
+              ] as const).map(({ Icon, label }) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-white/70 bg-white/[0.04] border border-white/10"
+                >
+                  <Icon className="h-3.5 w-3.5 text-teal-300" strokeWidth={2.5} aria-hidden />
+                  {label}
+                </span>
+              ))}
             </div>
 
             {/* Copyright + legal — 1 línea */}
@@ -668,12 +669,12 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                   /marketplace/[slug]). Forzamos "Buleje" para que el
                   copyright nunca filtre el nombre del tenant interno. */}
               <span className="font-bold text-white/80">© {year} Buleje</span>
-              <span aria-hidden className="text-emerald-400/40">·</span>
+              <span aria-hidden className="text-teal-400/40">·</span>
               <span className="hidden sm:inline">Hecho con cariño en {platformCity}</span>
-              <span aria-hidden className="hidden sm:inline text-emerald-400/40">·</span>
-              <a href="/privacidad" className="font-semibold hover:text-amber-200 transition-colors">Privacidad</a>
-              <span aria-hidden className="text-emerald-400/40">·</span>
-              <a href="/terminos" className="font-semibold hover:text-amber-200 transition-colors">Términos</a>
+              <span aria-hidden className="hidden sm:inline text-teal-400/40">·</span>
+              <a href="/privacidad" className="font-semibold hover:text-teal-200 transition-colors">Privacidad</a>
+              <span aria-hidden className="text-teal-400/40">·</span>
+              <a href="/terminos" className="font-semibold hover:text-teal-200 transition-colors">Términos</a>
             </p>
           </div>
         </div>
