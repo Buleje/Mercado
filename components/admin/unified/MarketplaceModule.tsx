@@ -1820,7 +1820,7 @@ function BoostModal({
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               Destacar tu producto en el marketplace. Aparece arriba en los listados de su categoría y muestra el badge <strong className="text-[var(--brand-secondary)]">Destacado</strong>.
             </p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <NumberField label="Puja diaria" prefix="S/" value={bidAmount} onChange={setBidAmount} hint="Mínimo S/ 1" />
               <NumberField label="Duración" suffix="días" value={days} onChange={setDays} hint="Máx 90" />
               <NumberField label="Tope total" prefix="S/" value={maxBudget} onChange={setMaxBudget} hint="Corta al llegar" />
