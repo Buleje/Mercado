@@ -61,16 +61,35 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
       },
-      // Bloqueamos training puro de terceros que no citan ni mandan tráfico.
+      // Brandon 2026-05-27: GPTBot (OpenAI) + ClaudeBot/anthropic-ai (Anthropic)
+      // PERMITIDOS. Trade-off aceptado: usan el contenido PÚBLICO para entrenar
+      // a cambio de máxima presencia en ChatGPT y Claude. Las zonas privadas
+      // (api/admin/checkout/cuenta) siguen vetadas.
       {
-        userAgent: ["CCBot", "GPTBot", "anthropic-ai", "Bytespider"],
+        userAgent: ["GPTBot", "ClaudeBot", "anthropic-ai"],
+        allow: "/",
+        disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
+      },
+      // Training de terceros que no citan ni mandan tráfico de retorno —
+      // siguen bloqueados (Common Crawl, ByteDance/TikTok).
+      {
+        userAgent: ["CCBot", "Bytespider"],
         disallow: "/",
       },
-      // Allow AI discovery bots (these send traffic back via citations)
+      // Allow AI discovery/search bots (these send traffic back via citations).
+      // Brandon 2026-05-27: agregados OAI-SearchBot (índice de ChatGPT Search /
+      // SearchGPT — distinto de GPTBot de entrenamiento) y Perplexity-User
+      // (fetch on-demand cuando un usuario pregunta). Objetivo: aparecer como
+      // fuente citada en respuestas de IA y captar el tráfico de retorno.
       {
-        userAgent: ["ChatGPT-User", "PerplexityBot"],
+        userAgent: [
+          "ChatGPT-User",
+          "OAI-SearchBot",
+          "PerplexityBot",
+          "Perplexity-User",
+        ],
         allow: "/",
-        disallow: ["/api/", "/admin/"],
+        disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

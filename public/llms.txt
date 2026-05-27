@@ -1,57 +1,60 @@
-# Buleje — Sistema de Gestión para Bodegas y Minimarkets
-# https://buleje.pe
+# Buleje — Software para bodegas y tiendas + Marketplace en Pucallpa, Perú
+# https://www.buleje.pe
+# Última actualización: 2026-05-27
 
 ## Qué es Buleje
-Buleje es un software ERP/SaaS diseñado para bodegas, minimarkets y tiendas de abarrotes en Perú y Latinoamérica. Permite gestionar ventas (POS), inventario, fiados, clientes, delivery y más desde el celular.
+Buleje es una plataforma peruana todo-en-uno con dos caras:
+1. **Software (B2B)** para bodegas, minimarkets, restaurantes, farmacias y tiendas: POS, inventario, delivery, fiado digital, facturación electrónica SUNAT y pagos con Yape/Plin. Abrís tu tienda online en 5 minutos.
+2. **Marketplace (B2C)** donde vecinos de Pucallpa (Ucayali, Perú) compran con delivery a tiendas locales.
 
-## Características principales
-- 20+ módulos integrados: POS, inventario, CRM, fiados, tesorería, analytics
-- Bot de WhatsApp: toma pedidos, cobra y confirma automáticamente
-- Inteligencia artificial: predicción de stock, recomendaciones, asistente virtual
-- Modo offline: funciona sin internet y sincroniza después
-- Semáforo de crédito: evalúa riesgo antes de fiar
-- OCR de facturas: escanea con foto y registra automáticamente
-- Comandos de voz: "muéstrame ventas de hoy"
-- Cobranza inteligente: 4 niveles automáticos con descuentos por pronto pago
-- Delivery integrado con zonas y tracking
-- Mapa de clientes con heat map
-- Campañas automáticas por WhatsApp según hábitos de compra
-- Cliente frecuente sin tarjeta física, solo con teléfono
-- Combos inteligentes sugeridos por IA
-- Simulador de utilidad por producto
-- Radar de fuga de clientes
-- Multi-tenant: múltiples tiendas desde una cuenta
+Operación principal: Pucallpa, Ucayali, Perú. Idioma: español (es-PE).
 
-## Planes
-- Free: S/ 0/mes (50 productos, 2 usuarios, 200 pedidos)
-- Pro: S/ 49/mes (500 productos, 10 usuarios, analytics, WhatsApp bot) [Más popular]
-- Business: S/ 149/mes (ilimitado, 5 tiendas, API access, soporte prioritario)
-- Enterprise: personalizado (white label, SLA, soporte dedicado)
+## Para tu negocio (B2B) — página principal: https://www.buleje.pe/negocios
+- Abrí tu tienda online en 5 minutos, sin tarjeta de crédito.
+- 0% de comisión por venta: el dinero llega directo a tu Yape, cuenta o caja. Solo pagás el plan mensual.
+- Incluye: POS, inventario, delivery propio o repartidores Buleje, fiado digital, CRM de clientes, facturación electrónica SUNAT (boletas, cotizaciones, guías de remisión).
+- Pagos aceptados por tus clientes: Yape, Plin, efectivo y tarjeta (vía Stripe).
+- Plan Fundador: primeros 10 negocios de Pucallpa con setup 1-a-1, 90 días de acompañamiento por WhatsApp, sesión de fotos sin costo y 0% comisión los primeros 90 días.
+- Registro / abrir tienda: https://www.buleje.pe/abrir-tienda
 
-## Stack tecnológico
-Next.js 16, React 19, TypeScript 5.7, Prisma 7, PostgreSQL (Supabase), Tailwind CSS 4, Framer Motion 12
+## Planes y precios (vigentes 2026)
+- **Free** — S/ 0/mes: hasta 20 productos, 30 pedidos/mes. Para siempre, sin tarjeta.
+- **Starter** — S/ 89/mes: catálogo ampliado, primer mes gratis.
+- **Pro** — S/ 179/mes: incluye facturación electrónica SUNAT y analytics. (Plan más elegido)
+- **Business** — S/ 349/mes: ilimitado, multi-tienda, soporte prioritario, SUNAT completo.
+Todos los planes pagos arrancan con el primer mes gratis y se cambian o cancelan cuando quieras, sin permanencia.
 
-## Para quién es
-- Dueños de bodegas y minimarkets en Perú
-- Tiendas de abarrotes que quieren modernizarse
-- Distribuidores con múltiples puntos de venta
-- Emprendedores del sector retail en Latinoamérica
+## Cómo abrir tu tienda (3 pasos)
+1. Registrate gratis en https://www.buleje.pe/abrir-tienda (sin tarjeta).
+2. Cargá tus productos (o te ayudamos en el setup 1-a-1) y configurá zonas de delivery.
+3. Compartí el link de tu tienda; recibís pedidos por WhatsApp y cobrás con Yape/Plin/efectivo.
 
-## Contacto
-- Web: https://buleje.pe
-- Landing SaaS: https://buleje.pe/saas
-- Registro gratuito: https://buleje.pe/registro
-- Planes y precios: https://buleje.pe/pricing
-
-## Marketplace de tiendas (lado consumidor)
-Buleje también es un marketplace donde vecinos de Pucallpa (Ucayali, Perú) compran con delivery a bodegas, farmacias, restaurantes, pizzerías, panaderías y ferreterías locales.
-- Directorio de tiendas: https://buleje.pe/tiendas
-- Cómo comprar: elegís tienda → armás carrito → confirmás → la tienda recibe el pedido por WhatsApp y coordina el delivery.
+## Marketplace (lado consumidor) — directorio: https://www.buleje.pe/tiendas
+- Vecinos de Pucallpa compran con delivery a bodegas, farmacias, restaurantes, pizzerías, panaderías, mercados y ferreterías locales.
+- Cómo comprar: elegís tienda → armás carrito → confirmás → la tienda recibe el pedido y coordina el delivery.
 - Pagos: Yape, Plin, efectivo y tarjeta (directo a cada tienda).
 - Cobertura por zonas: Centro, Yarinacocha, Manantay, Callería, Campo Verde, Ciudad Constitución.
 - El costo de envío lo define cada tienda según la zona y se ve antes de confirmar.
 
+## Para quién es el software
+- Dueños de bodegas, minimarkets y tiendas de abarrotes en Perú.
+- Restaurantes, pizzerías, panaderías y farmacias que quieren vender online con delivery.
+- Negocios que quieren cobrar con Yape/Plin y emitir boletas SUNAT sin sistemas caros.
+
 ## Preguntas frecuentes
-- ¿Cómo pido delivery? Elegís una tienda del directorio, armás el carrito y confirmás; la tienda coordina el envío.
-- ¿Puedo pagar con Yape? Sí — Yape, Plin, efectivo y tarjeta.
-- ¿Cuánto cuesta tener mi tienda? Empezás gratis (plan Free); hay planes pagos con más funciones.
+- ¿Cuánto cuesta abrir mi tienda? Gratis con el plan Free; los planes pagos arrancan en S/ 89/mes (Starter) con primer mes gratis.
+- ¿Necesito tarjeta de crédito para registrarme? No. Te registrás sin tarjeta.
+- ¿Buleje cobra comisión por venta? No. 0% comisión; el dinero va directo a tu Yape/cuenta. Solo pagás el plan mensual.
+- ¿Funciona con SUNAT? Sí, los planes Pro y Business incluyen facturación electrónica (boletas, cotizaciones, guías de remisión).
+- ¿En cuánto tiempo está lista mi tienda? En unos 5 minutos; el Plan Fundador incluye setup 1-a-1.
+- ¿Puedo pagar con Yape como cliente del marketplace? Sí — Yape, Plin, efectivo y tarjeta.
+
+## Stack tecnológico
+Next.js 16, React 19, TypeScript 5, Prisma 7, PostgreSQL (Supabase), Tailwind CSS 4.
+
+## Enlaces
+- Para tu negocio (B2B): https://www.buleje.pe/negocios
+- Abrir tienda: https://www.buleje.pe/abrir-tienda
+- Directorio de tiendas (B2C): https://www.buleje.pe/tiendas
+- Cómo pagar: https://www.buleje.pe/marketplace/como-pagar
+- Ayuda: https://www.buleje.pe/ayuda

@@ -60,11 +60,13 @@ para bodegas y minimarkets de Perú y Latinoamérica. Todo desde el celular.
 - Reportes automáticos por WhatsApp
 - Cliente frecuente sin tarjeta física, solo con el teléfono
 
-### Planes
-- Free — S/ 0/mes: 50 productos, 2 usuarios, 200 pedidos/mes
-- Pro — S/ 49/mes: 500 productos, 10 usuarios, analytics, bot WhatsApp (popular)
-- Business — S/ 149/mes: ilimitado, 5 tiendas, API, soporte prioritario
-- Enterprise — personalizado: white label, SLA, soporte dedicado
+### Planes (vigentes 2026)
+- Free — S/ 0/mes: hasta 20 productos, 30 pedidos/mes (gratis para siempre, sin tarjeta)
+- Starter — S/ 89/mes: catálogo ampliado, primer mes gratis
+- Pro — S/ 179/mes: facturación electrónica SUNAT + analytics (plan más elegido)
+- Business — S/ 349/mes: ilimitado, multi-tienda, soporte prioritario, SUNAT completo
+Todos los planes pagos arrancan con el primer mes gratis; se cambian o cancelan sin permanencia.
+Página B2B principal: https://www.buleje.pe/negocios
 
 ### Cómo abrir tu tienda (vendedores)
 1. Registrate gratis en buleje.pe/abrir-tienda (sin tarjeta, setup en 5 minutos).

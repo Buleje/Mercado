@@ -83,6 +83,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
       alternates: { languages: { "es-PE": `${baseUrl}/marketplace/como-pagar` } },
     },
+    // Brandon 2026-05-27 SEO: /negocios y /abrir-tienda son las landings B2B
+    // de mayor intención comercial (software para bodegas). Estaban AUSENTES
+    // del sitemap — Google no las priorizaba. priority alto + changeFrequency
+    // weekly (cambian con ofertas del Plan Fundador / precios).
+    {
+      url: `${baseUrl}/negocios`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.95,
+      alternates: { languages: { "es-PE": `${baseUrl}/negocios` } },
+    },
+    {
+      url: `${baseUrl}/abrir-tienda`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9,
+      alternates: { languages: { "es-PE": `${baseUrl}/abrir-tienda` } },
+    },
     // Brandon 2026-05-20 v10 audit P1 SEO: /pricing y /registro REMOVIDOS
     // del sitemap — son paginas internas/transaccionales que no aportan
     // valor SEO y diluyen la calidad del index. Si necesitan estar

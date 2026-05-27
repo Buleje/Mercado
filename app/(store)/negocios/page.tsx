@@ -73,8 +73,29 @@ export const metadata: Metadata = {
   title: "Software para bodega y tienda en Perú | POS, ventas y delivery",
   description:
     "Vendé sin comisión 90 días. Tu bodega online en 5 minutos con Yape, POS y delivery. Sé de los primeros 10 del Plan Fundador en Pucallpa.",
+  // Brandon 2026-05-27 SEO profundo: keywords B2B de alta intención (long-tail
+  // local + categoría). Google ya no rankea por meta keywords, pero ayudan a
+  // buscadores secundarios, IAs y herramientas SEO. hreflang es-PE explícito.
+  keywords: [
+    "software para bodega",
+    "software para minimarket",
+    "POS para bodega Perú",
+    "punto de venta bodega",
+    "sistema para tienda de abarrotes",
+    "abrir tienda online Perú",
+    "vender con Yape",
+    "facturación electrónica SUNAT bodega",
+    "software bodega Pucallpa",
+    "ERP para minimarket",
+    "delivery para bodega",
+    "fiado digital",
+  ],
   alternates: {
     canonical: "https://www.buleje.pe/negocios",
+    languages: {
+      "es-PE": "https://www.buleje.pe/negocios",
+      "x-default": "https://www.buleje.pe/negocios",
+    },
   },
   robots: {
     index: true,
@@ -92,10 +113,10 @@ export const metadata: Metadata = {
     siteName: "Buleje",
     images: [
       {
-        url: "/api/og",
+        url: "/api/og/negocios",
         width: 1200,
         height: 630,
-        alt: "Buleje para Negocios — Software para bodegas y tiendas en Perú",
+        alt: "Buleje para Negocios — Software para bodegas y tiendas en Perú · 0% comisión",
       },
     ],
   },
@@ -104,7 +125,7 @@ export const metadata: Metadata = {
     title: "Software para bodega y tienda en Perú",
     description:
       "Vendé sin comisión 90 días. Tu bodega online en 5 minutos con Yape, POS y delivery.",
-    images: ["/api/og"],
+    images: ["/api/og/negocios"],
   },
 };
 
@@ -222,6 +243,77 @@ async function BulejeJsonLd() {
           text: "Setup 1-a-1 por WhatsApp, capacitación de 90 días, sesión de fotos sin costo y acompañamiento personal para los primeros 10 negocios del Plan Fundador.",
         },
       },
+      // Brandon 2026-05-27 SEO profundo: 4 preguntas extra de alta intención
+      // (comisión, tiempo de setup, Yape, tipos de negocio) — cubren las queries
+      // que más hacen los dueños y las respuestas que citan las IAs.
+      {
+        "@type": "Question",
+        name: "¿Buleje cobra comisión por cada venta?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No. Buleje cobra 0% de comisión por venta: el dinero llega directo a tu Yape, tu cuenta bancaria o tu caja. Solo pagás el plan mensual, sin sorpresas.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿En cuánto tiempo está lista mi tienda online?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "En unos 5 minutos: te registrás, cargás tus productos y compartís el link. Con el Plan Fundador hacemos el setup 1-a-1 contigo para dejarla lista la misma tarde.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Mis clientes pueden pagar con Yape y Plin?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Sí. Tus clientes pagan con Yape, Plin, efectivo y tarjeta. El cobro va directo a tu cuenta; Buleje no intermedia el dinero de tus ventas.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "¿Para qué tipo de negocios sirve Buleje?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Para bodegas, minimarkets, tiendas de abarrotes, restaurantes, pizzerías, panaderías, farmacias y ferreterías que quieran vender online con delivery, cobrar con Yape/Plin y emitir comprobantes SUNAT.",
+        },
+      },
+    ],
+  };
+
+  // HowTo — pasos para abrir tu tienda. Elegible para rich result de pasos en
+  // Google y muy citado por IAs cuando alguien pregunta "cómo abrir mi tienda".
+  const howToLd = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "Cómo abrir tu tienda online en Buleje en 5 minutos",
+    description:
+      "Pasos para crear tu tienda online de bodega o minimarket en Perú con POS, delivery y pagos Yape, gratis y sin tarjeta.",
+    totalTime: "PT5M",
+    estimatedCost: { "@type": "MonetaryAmount", currency: "PEN", value: "0" },
+    inLanguage: "es-PE",
+    step: [
+      {
+        "@type": "HowToStep",
+        position: 1,
+        name: "Registrate gratis",
+        text: "Creá tu cuenta en buleje.pe/abrir-tienda. No pedimos tarjeta de crédito.",
+        url: `${baseUrl}/abrir-tienda`,
+      },
+      {
+        "@type": "HowToStep",
+        position: 2,
+        name: "Cargá tus productos y zonas de delivery",
+        text: "Subí tu catálogo con precios y stock, y definí las zonas a las que repartís. Si querés, hacemos el setup 1-a-1 contigo.",
+        url: `${baseUrl}/abrir-tienda`,
+      },
+      {
+        "@type": "HowToStep",
+        position: 3,
+        name: "Compartí tu tienda y recibí pedidos",
+        text: "Compartí el link de tu tienda. Recibís los pedidos por WhatsApp y cobrás con Yape, Plin, efectivo o tarjeta, directo a tu cuenta.",
+        url: `${baseUrl}/negocios`,
+      },
     ],
   };
 
@@ -238,6 +330,10 @@ async function BulejeJsonLd() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }}
       />
     </>
   );
