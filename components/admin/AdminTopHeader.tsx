@@ -152,18 +152,22 @@ export function AdminTopHeader({
           onClick={onOpenSearch}
           aria-label="Búsqueda global (atajo Ctrl+K)"
           className={cn(
-            "group flex items-center gap-2.5 px-3.5 h-11 sm:h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all border",
+            // Brandon 2026-05-28: en MOBILE el search es un botón lupa cuadrado
+            // (h-11 w-11) — libera ancho para el toggle de tienda + avatar y se
+            // alinea con el resto de iconos del header. En sm+ vuelve a ser el
+            // pill ancho con placeholder y atajo ⌘K.
+            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-xl sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer transition-all border shrink-0 sm:shrink",
             isAutoDarkTheme
               ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] hover:bg-white/[0.07]"
               : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-white dark:hover:bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)]"
           )}
         >
           <Search className={cn(
-            "h-4 w-4 shrink-0 transition-colors",
+            "h-5 w-5 sm:h-4 sm:w-4 shrink-0 transition-colors",
             isAutoDarkTheme ? "text-white/50 group-hover:text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary"
           )} strokeWidth={2} />
           <span className={cn(
-            "flex-1 text-left text-sm font-medium truncate transition-colors",
+            "hidden sm:block flex-1 text-left text-sm font-medium truncate transition-colors",
             isAutoDarkTheme ? "text-white/55 group-hover:text-white/80" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)]"
           )}>
             Buscar módulos, productos, clientes...

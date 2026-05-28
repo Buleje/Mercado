@@ -667,6 +667,20 @@ body {
     color: var(--color-muted);
   }
 
+  /* Brandon 2026-05-28: celdas sin label (th icon-only / checkbox) NO deben
+     reservar el 42% en blanco. El hook ya omite data-label cuando no hay texto
+     extraíble; acá hacemos invisible el ::before y dejamos la celda alinear
+     a la izquierda. */
+  .admin-mobile-cards tbody td:not([data-label])::before,
+  .admin-mobile-cards tbody th:not([data-label])::before {
+    display: none;
+  }
+  .admin-mobile-cards tbody td:not([data-label]),
+  .admin-mobile-cards tbody th:not([data-label]) {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
   .admin-mobile-cards tbody td > *,
   .admin-mobile-cards tbody th > * {
     min-width: 0;
