@@ -24,6 +24,7 @@ import { ProductSpecs } from "./ProductSpecs";
 import { ProductSellerInfo } from "./ProductSellerInfo";
 import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
+import FrequentlyBoughtTogether from "./FrequentlyBoughtTogether";
 import type { ProductBadgeIntent } from "@buleje/design-system";
 // Trust signals (ronda 4): señales sociales + escasez para aumentar conversion
 import LowStockBadge from "@/components/marketplace/trust/LowStockBadge";
@@ -279,6 +280,15 @@ export function ProductDetailClient({
             storeZone={store.zone}
             storeKm={store.km}
             storeRating={store.rating}
+          />
+
+          <div className="border-t border-[var(--rule-soft)]" />
+
+          <FrequentlyBoughtTogether
+            productId={product.id}
+            storeId={store.id}
+            storeName={store.name}
+            storeSlug={store.slug}
           />
 
           <div className="border-t border-[var(--rule-soft)]" />

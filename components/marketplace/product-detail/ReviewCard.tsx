@@ -1,10 +1,125 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Star, ShieldCheck, ThumbsUp, User } from "@buleje/design-system/icons";
+import { Star, ShieldCheck, ThumbsUp, User, X, ChevronLeft, ChevronRight, ZoomIn } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { MockReview } from "@/lib/mocks/product-reviews.mock";
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+
+interface LightboxProps {
+  photos: string[];
+  initialIndex: number;
+  reviewerName: string;
+  onClose: () => void;
+}
+
+function PhotoLightbox({ photos, initialIndex, reviewerName, onClose }: LightboxProps) {
+  const [current, setCurrent] = useState(initialIndex);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") setCurrent((i) => Math.max(0, i - 1));
+      if (e.key === "ArrowRight") setCurrent((i) => Math.min(photos.length - 1, i + 1));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [photos.length, onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Foto de reseña de ${reviewerName}`}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col items-center gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Cerrar */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar galería"
+          className="absolute -top-3 -right-3 z-10 h-9 w-9 rounded-full bg-white/10 text-white hover:bg-white/25 flex items-center justify-center transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {/* Imagen principal */}
+        <div className="relative w-full max-h-[70vh] rounded-2xl overflow-hidden bg-black">
+          <Image
+            src={photos[current]!}
+            alt={`Foto ${current + 1} de ${photos.length} — reseña de ${reviewerName}`}
+            width={800}
+            height={800}
+            className="w-full h-full object-contain max-h-[70vh]"
+            priority
+          />
+        </div>
+
+        {/* Navegación y contador */}
+        {photos.length > 1 && (
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setCurrent((i) => Math.max(0, i - 1))}
+              disabled={current === 0}
+              aria-label="Foto anterior"
+              className="h-10 w-10 rounded-full bg-white/10 text-white disabled:opacity-30 hover:bg-white/25 flex items-center justify-center transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <span className="text-sm font-semibold text-white tabular-nums">
+              {current + 1} / {photos.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCurrent((i) => Math.min(photos.length - 1, i + 1))}
+              disabled={current === photos.length - 1}
+              aria-label="Foto siguiente"
+              className="h-10 w-10 rounded-full bg-white/10 text-white disabled:opacity-30 hover:bg-white/25 flex items-center justify-center transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Miniaturas strip */}
+        {photos.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto max-w-full pb-1">
+            {photos.map((url, i) => (
+              <button
+                key={`lb-thumb-${i}`}
+                type="button"
+                onClick={() => setCurrent(i)}
+                aria-label={`Ir a foto ${i + 1}`}
+                className={cn(
+                  "relative h-14 w-14 shrink-0 rounded-lg overflow-hidden border-2 transition-all",
+                  current === i
+                    ? "border-white scale-105"
+                    : "border-white/30 opacity-60 hover:opacity-100 hover:border-white/60",
+                )}
+              >
+                <Image
+                  src={url}
+                  alt={`Miniatura ${i + 1}`}
+                  fill
+                  sizes="56px"
+                  className="object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface ReviewCardProps {
   review: MockReview;
@@ -47,6 +162,7 @@ export default function ReviewCard({ review, onHelpful }: ReviewCardProps) {
   const [voted, setVoted] = useState(false);
   const [localCount, setLocalCount] = useState(review.helpfulCount);
   const [voting, setVoting] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const handleVote = async () => {
     if (voted || voting) return;
@@ -116,22 +232,39 @@ export default function ReviewCard({ review, onHelpful }: ReviewCardProps) {
       </div>
 
       {review.photos.length > 0 && (
-        <div className="mt-3 flex gap-2 overflow-x-auto">
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {review.photos.map((url, i) => (
-            <div
+            <button
               key={`${review.id}-ph-${i}`}
-              className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)] dark:bg-gray-800"
+              type="button"
+              onClick={() => setLightboxIndex(i)}
+              aria-label={`Ampliar foto ${i + 1} de ${review.photos.length} de la reseña de ${review.userName}`}
+              className="group relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)] dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-[var(--accent)]/50 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50 focus-visible:outline-none"
             >
               <Image
                 src={url}
                 alt={`Foto ${i + 1} de la reseña de ${review.userName}`}
                 fill
                 sizes="80px"
-                className="object-cover"
+                className="object-cover group-hover:scale-105 transition-transform duration-200"
               />
-            </div>
+              {/* Overlay hint: zoom icon */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-colors">
+                <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+              </div>
+            </button>
           ))}
         </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <PhotoLightbox
+          photos={review.photos}
+          initialIndex={lightboxIndex}
+          reviewerName={review.userName}
+          onClose={() => setLightboxIndex(null)}
+        />
       )}
 
       <footer className="mt-4 flex items-center justify-between">
