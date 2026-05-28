@@ -1,6 +1,9 @@
 ---
 name: dev-fast-start
 description: Arranca dev server limpio + crea QA admin + deshabilita onboarding modal + captura baseline visual — todo en paralelo. Uso cuando Brandon diga "arranca dev rapido", "setup rapido para qa", "necesito ver el admin", "prepara todo para verificar".
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Bash, Grep, Glob
 ---
 
 # Skill: dev-fast-start

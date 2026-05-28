@@ -1,6 +1,10 @@
 ---
 name: shadow-detector
 description: Detecta componentes shadowed — misma export name desde 2+ archivos, uno local dentro de un modulo grande que shadowea al canonico del DS. Previene bugs tipo "refactor no se refleja en runtime". Uso antes de cada refactor de primitive (StatCard, StatusBadge, AdminCard, SparklineKPICard, etc.) o cuando Brandon diga "por que el fix no se ve", "refactor no toma efecto", "shadow", "por que sigue igual".
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Grep, Glob, Bash
+argument-hint: "[ComponentName]"
 ---
 
 # Skill: shadow-detector

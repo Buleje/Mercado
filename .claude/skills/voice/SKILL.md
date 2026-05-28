@@ -1,6 +1,9 @@
 ---
 name: voice
 description: Habla en voz alta usando TTS de Windows (PowerShell SAPI). Útil para anunciar fin de tareas largas o leer alertas críticas. Usar cuando Brandon esté lejos del monitor.
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Bash, Grep, Glob
 ---
 
 # /voice — Text-to-speech vía Windows SAPI

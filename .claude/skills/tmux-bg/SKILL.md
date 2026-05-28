@@ -1,6 +1,9 @@
 ---
 name: tmux-bg
 description: Sesión tmux persistente para mantener estado entre comandos Bash. Útil para REPLs (node, python, psql), procesos largos en background, o reanudar una sesión interrumpida. Usar cuando necesite estado sostenido o trabajar en background.
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Bash, Grep, Glob
 ---
 
 # /tmux-bg — Sesión bash persistente

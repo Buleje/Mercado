@@ -1,6 +1,10 @@
 ---
 name: sprint-wrap
 description: Cierra un sprint del roadmap ADR-075 o similar — auto-genera ADR addendum con delta cuantitativo, baseline snapshot, visual verify post, update MEMORY.md, y commit del cierre. Uso cuando Brandon diga "cerra sprint", "wrap sprint", "cierre", "delta final", o al terminar un ultra-impact mayor.
+user-invocable: true
+model: opus
+allowed-tools: Read, Edit, Write, Grep, Glob, Bash, TaskCreate, TaskUpdate
+argument-hint: "[sprint-name | ADR-ID]"
 ---
 
 # Skill: sprint-wrap

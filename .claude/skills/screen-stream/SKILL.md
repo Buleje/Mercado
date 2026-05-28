@@ -1,6 +1,9 @@
 ---
 name: screen-stream
 description: Captura screenshots periódicos durante una tarea larga y los guarda en reports/screen-stream/. Útil para auditar trabajo autónomo nocturno o sesiones de loop largas.
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Bash, Grep, Glob
 ---
 
 # /screen-stream — Stream de capturas durante tareas largas

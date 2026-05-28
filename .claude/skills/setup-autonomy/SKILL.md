@@ -1,6 +1,9 @@
 ---
 name: setup-autonomy
 description: Setup one-shot para máxima autonomía Claude. Imprime los comandos de sudo que Brandon debe correr UNA VEZ para habilitar Playwright headless, OCR (Tesseract), y otros componentes que requieren elevación. Usar cuando Brandon diga "instala lo que falta para autonomía" o "pasame los sudo".
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Bash, Grep, Glob
 ---
 
 # /setup-autonomy — Comandos one-shot de elevación

@@ -1,6 +1,9 @@
 ---
 name: bulk-safe-migrate
 description: Wrapper de bulk-migration scripts que evita los 3 bugs clasicos descubiertos en ADR-075 — shadow primitives, use-client desplazamiento, y lint-staged OOM. Uso cuando hay que migrar >50 archivos con imports o className transformations, o antes de correr migrate-to-ds / migrate-decorative-colors / cualquier codemod.
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Bash, Grep, Glob
 ---
 
 # Skill: bulk-safe-migrate

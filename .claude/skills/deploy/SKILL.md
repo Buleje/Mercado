@@ -4,6 +4,7 @@ description: Ejecutar el proceso completo de deploy para Buleje. Usar cuando el 
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
+model: sonnet
 ---
 
 # Deploy — Buleje

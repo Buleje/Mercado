@@ -1,6 +1,10 @@
 ---
 name: ci-workflow-triggers
 description: Diagnosticar por qué CI no corre en un PR — branch triggers, paths filters, engine mismatch, npm cache portable, coverage thresholds vs baseline
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Grep, Glob, Bash
+argument-hint: "[PR# | branch | 'check-all']"
 ---
 
 # CI Workflow Triggers — Skill

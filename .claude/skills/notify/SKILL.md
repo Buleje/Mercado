@@ -1,6 +1,9 @@
 ---
 name: notify
 description: Envía notificación push a Brandon vía Telegram cuando termina una tarea larga. Usar al final de loops/sprints autónomos o cuando una tarea tarda >5 min.
+user-invocable: true
+model: sonnet
+allowed-tools: Read, Bash, Grep, Glob
 ---
 
 # /notify — Push notification a Brandon
