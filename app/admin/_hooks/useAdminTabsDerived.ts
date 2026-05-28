@@ -97,7 +97,16 @@ export function useAdminTabsDerived(params: Params) {
     // permita (no más). Los tabs del módulo Config siempre pasan
     // (config, plan, mi-perfil, auditoria) para que el dueño pueda
     // gestionar su suscripción incluso en Básico.
-    return baseTabs.filter((tab) => planUnlockedTabs.has(tab));
+    //
+    // 2026-05-28 (ADR-124 fix): los tabs SPEC-GATED (forestal CTP, salud,
+    // textil) bypasean el plan tier filter — la feature flag de spec
+    // ES el mecanismo de unlock. Si los filtraramos por plan, no
+    // aparecerían NUNCA porque no están en ningún unlockedTabs de planes
+    // genéricos. El gating real lo hace `enabledSpecModuleIds` abajo.
+    return baseTabs.filter((tab) => {
+      if (SPEC_GATED_MODULE_IDS.has(tab)) return true;
+      return planUnlockedTabs.has(tab);
+    });
   }, [userRole, savedRolePerms, planUnlockedTabs]);
 
   const filteredTabs = useMemo(() => {
