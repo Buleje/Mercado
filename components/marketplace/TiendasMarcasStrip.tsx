@@ -11,6 +11,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface FeaturedStore {
   id: string;
@@ -110,18 +111,18 @@ export default function TiendasMarcasStrip() {
                 className="group shrink-0 flex flex-col items-center gap-1.5 w-[68px]"
               >
                 <div
-                  className="h-16 w-16 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden flex items-center justify-center transition-all group-hover:border-[var(--accent)]/40 group-hover:-translate-y-0.5 group-hover:shadow-md"
+                  className="relative h-16 w-16 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden flex items-center justify-center transition-all group-hover:border-[var(--accent)]/40 group-hover:-translate-y-0.5 group-hover:shadow-md"
                   style={{
                     backgroundColor: s.logoUrl ? undefined : `${toneFor(idx)}1a`,
                   }}
                 >
                   {s.logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={s.logoUrl}
                       alt={s.name}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
+                      fill
+                      sizes="64px"
+                      className="object-cover"
                     />
                   ) : (
                     <span

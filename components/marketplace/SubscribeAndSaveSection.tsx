@@ -15,6 +15,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import {
   ArrowRight,
@@ -75,11 +76,12 @@ function SubscribableCard({ product }: { product: SubscribableProductMock }) {
     >
       <Link href={href} className="block">
         <div className="relative aspect-square bg-[var(--surface-alt)] dark:bg-gray-800 overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={product.image}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.opacity = "0";
             }}

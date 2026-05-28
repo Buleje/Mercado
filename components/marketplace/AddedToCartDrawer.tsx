@@ -26,6 +26,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, m } from "framer-motion";
 import {
@@ -283,11 +284,12 @@ export function AddedToCartDrawerProvider({
                     {/* Imagen 80×80 con badge qty inline */}
                     <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-[var(--brand-primary)]/20 to-[var(--brand-secondary)]/10 ring-1 ring-[var(--rule-soft)]">
                       {product.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={product.image}
                           alt={product.name}
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="80px"
+                          className="object-cover"
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center">

@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Flame, Plus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
@@ -87,13 +88,12 @@ function TopSellerCard({ item, onAdd, added }: TopSellerCardProps) {
       {/* Imagen */}
       <div className="relative h-[108px] bg-[var(--surface-sunken)] overflow-hidden">
         {item.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={item.image}
             alt={item.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            decoding="async"
+            fill
+            sizes="180px"
+            className="object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
