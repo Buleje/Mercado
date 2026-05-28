@@ -24,8 +24,12 @@ import {
   Clock,
   X as XIcon,
   RefreshCw,
+  ThumbsUp,
+  ThumbsDown,
+  BarChart3,
 } from "@buleje/design-system/icons";
 import WoodEntryForm from "./WoodEntryForm";
+import SpeciesAggregateChart from "./SpeciesAggregateChart";
 
 interface WoodEntry {
   id: string;
@@ -95,6 +99,14 @@ export default function CTPLibroOperaciones() {
   // Modal form
   const [showForm, setShowForm] = useState(false);
 
+  // Row actions
+  const [actionPending, setActionPending] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  // Dashboard toggle
+  const [showDashboard, setShowDashboard] = useState(false);
+
   async function load() {
     setLoading(true);
     setError(null);
@@ -131,6 +143,30 @@ export default function CTPLibroOperaciones() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
+  async function doAction(id: string, action: "validate" | "reject" | "delete", reason?: string) {
+    setActionPending(`${id}:${action}`);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/forestal/wood-entries/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action, ...(reason ? { reason } : {}) }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message ?? data.error ?? `HTTP ${res.status}`);
+      }
+      await load();
+      setRejectingId(null);
+      setRejectReason("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setActionPending(null);
+    }
+  }
+
   // KPIs derivados
   const kpis = useMemo(() => {
     const totalVolume = entries.reduce(
@@ -164,6 +200,19 @@ export default function CTPLibroOperaciones() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDashboard((v) => !v)}
+              className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
+                showDashboard
+                  ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              }`}
+              aria-label="Dashboard de agregados"
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span>{showDashboard ? "Cerrar dashboard" : "Ver dashboard"}</span>
+            </button>
             <button
               type="button"
               onClick={load}
@@ -211,6 +260,9 @@ export default function CTPLibroOperaciones() {
           />
         </div>
       </header>
+
+      {/* Dashboard agregados */}
+      {showDashboard && <SpeciesAggregateChart />}
 
       {/* Filtros */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -266,6 +318,7 @@ export default function CTPLibroOperaciones() {
               <Th className="text-right">Volumen (m³)</Th>
               <Th className="text-right">Piezas</Th>
               <Th>Estado</Th>
+              <Th className="text-right">Acciones</Th>
             </tr>
           </thead>
           <tbody>
@@ -338,6 +391,72 @@ export default function CTPLibroOperaciones() {
                     <div className="mt-1 text-xs text-[var(--data-danger-700)]">
                       {e.rejectionReason}
                     </div>
+                  )}
+                </Td>
+                <Td className="text-right">
+                  {e.status === "pendiente" ? (
+                    rejectingId === e.id ? (
+                      <div className="inline-flex flex-col items-end gap-2">
+                        <input
+                          type="text"
+                          value={rejectReason}
+                          onChange={(ev) => setRejectReason(ev.target.value)}
+                          placeholder="Motivo (min 3 chars)"
+                          className="h-9 w-48 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm outline-none focus:border-[var(--data-danger-500)]"
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={
+                              rejectReason.trim().length < 3 ||
+                              actionPending === `${e.id}:reject`
+                            }
+                            onClick={() => doAction(e.id, "reject", rejectReason.trim())}
+                            className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-danger-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                          >
+                            Confirmar rechazo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRejectingId(null);
+                              setRejectReason("");
+                            }}
+                            className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)]"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="inline-flex gap-2">
+                        <button
+                          type="button"
+                          disabled={actionPending === `${e.id}:validate`}
+                          onClick={() => doAction(e.id, "validate")}
+                          title="Validar ingreso"
+                          className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-success-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                        >
+                          <ThumbsUp className="h-3 w-3" />
+                          Validar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRejectingId(e.id);
+                            setRejectReason("");
+                          }}
+                          title="Rechazar"
+                          className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-3 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]"
+                        >
+                          <ThumbsDown className="h-3 w-3" />
+                          Rechazar
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    <span className="text-xs text-[var(--text-tertiary)]">—</span>
                   )}
                 </Td>
               </tr>

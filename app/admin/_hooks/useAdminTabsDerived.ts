@@ -18,6 +18,7 @@ import type { TabCategory } from "../_lib/tab-categories";
 import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
 import { usePlanTier } from "@/hooks/use-plan-tier";
 import { useAdminTemplateOverlay } from "./useAdminTemplateOverlay";
+import { useEnabledSpecs, SPEC_GATED_MODULE_IDS } from "@/hooks/use-enabled-specs";
 
 type Params = {
   userRole: string;
@@ -59,6 +60,11 @@ export function useAdminTabsDerived(params: Params) {
   const templateOverlay = useAdminTemplateOverlay();
   const { resolveLabel, isHiddenByTemplate } = templateOverlay;
 
+  // ── Especializaciones habilitadas (ADR-124) ────────────────────────────
+  // Tabs en SPEC_GATED_MODULE_IDS solo aparecen si la spec del tenant
+  // está habilitada. Cache sessionStorage 5min, falla cerrado.
+  const { enabledModuleIds: enabledSpecModuleIds } = useEnabledSpecs();
+
   // Aplica labels custom a ALL_TABS sin mutar el array original.
   const enhancedTabs = useMemo(
     () => ALL_TABS.map((t) => ({ ...t, label: resolveLabel(t.id, t.label) })),
@@ -96,12 +102,15 @@ export function useAdminTabsDerived(params: Params) {
 
   const filteredTabs = useMemo(() => {
     // Filtra por permisos de rol + tabs ocultos manualmente + plan tier +
-    // plantilla del superadmin (módulos marcados como invisibles por default).
+    // plantilla del superadmin (módulos marcados como invisibles por default) +
+    // especializaciones habilitadas (ADR-124 — spec-gated tabs solo si la
+    // feature flag está ON para el tenant).
     let result = enhancedTabs.filter(
       t =>
         allowedTabs.includes(t.id) &&
         !hiddenTabs.has(t.id) &&
-        !isHiddenByTemplate(t.id),
+        !isHiddenByTemplate(t.id) &&
+        (!SPEC_GATED_MODULE_IDS.has(t.id) || enabledSpecModuleIds.has(t.id)),
     );
 
     // Filtra por categoría seleccionada en el sidebar
@@ -117,7 +126,7 @@ export function useAdminTabsDerived(params: Params) {
     }
 
     return result;
-  }, [enhancedTabs, allowedTabs, hiddenTabs, isHiddenByTemplate, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
+  }, [enhancedTabs, allowedTabs, hiddenTabs, isHiddenByTemplate, enabledSpecModuleIds, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
 
   const favoriteTabItems = useMemo(
     () =>
