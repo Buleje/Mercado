@@ -59,7 +59,11 @@ export type Tab =
   | "gift-cards-admin"       // Gift cards gestión
   | "socio-members"          // Socio Buleje
   | "lives-admin"            // Transmisiones en vivo
-  | "leads-funnel";          // Funnel de leads outbound/inbound (CEO dashboard)
+  | "leads-funnel"           // Funnel de leads outbound/inbound (CEO dashboard)
+  // ── Especializaciones por tenant (ADR-124) ─────────────────────────────
+  // Estos tabs SOLO aparecen si el tenant tiene la TenantFeatureFlag
+  // `spec:<vertical>:<modulo>` habilitada por superadmin.
+  | "ctp-libro-operaciones"; // Forestal: LOE-CTP SERFOR
 
 /**
  * Subconjunto de Tabs cuya navegación directa por URL/hash/localStorage
@@ -107,4 +111,6 @@ export const VALID_TABS: readonly Tab[] = [
   "socio-members",
   "lives-admin",
   "leads-funnel",
+  // Especializaciones (ADR-124)
+  "ctp-libro-operaciones",
 ] as const;

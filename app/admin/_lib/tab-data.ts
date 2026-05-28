@@ -48,6 +48,7 @@ import {
   MessageCircle,
   Archive as FolderArchive,
   UserPlus,
+  TreePine,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -101,6 +102,8 @@ export const ALL_TABS = [
   { id: "mi-perfil" as Tab,           label: "Mi Perfil",           icon: CircleUser },
   // — SOPORTE —
   { id: "support-inbox" as Tab,       label: "Soporte",             icon: Inbox },
+  // ── ESPECIALIZACIONES (ADR-124) — solo visibles si el tenant las habilita
+  { id: "ctp-libro-operaciones" as Tab, label: "Libro CTP (Forestal)", icon: TreePine },
 ] as const;
 
 /** Tipo auxiliar para un elemento del array ALL_TABS */

@@ -54,6 +54,8 @@ const TurnosModule              = dynamic(() => import("@/components/admin/Turno
 const PrestamosModule           = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: TabSpinner });
 const AdelantosModule           = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: TabSpinner });
 const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
+// ADR-124 — Especialización forestal CTP
+const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/forestal/CTPLibroOperaciones"), { loading: TabSpinner });
 const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/ScoringCrediticioTab"),      { loading: TabSpinner });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
 const StoreCustomizer           = dynamic(() => import("@/components/admin/StoreCustomizer"),           { loading: TabSpinner });
@@ -218,6 +220,11 @@ export function TabRouter({
   if (tab === "prestamos") return <PrestamosModule />;
   if (tab === "adelantos") return <AdelantosModule />;
   if (tab === "recetas")   return <RecetasModule />;
+  // ADR-124 — Especializaciones por tenant. El endpoint /api/admin/forestal/*
+  // protege el acceso (ensureSpecializationOrDeny → 403 si no habilitada).
+  // El módulo se renderiza siempre que el tab esté en el sidebar (gating en
+  // sidebar pendiente Phase 4 — useEnabledSpecs hook).
+  if (tab === "ctp-libro-operaciones") return <CTPLibroOperaciones />;
   if (tab === "scoring")   return <ScoringCrediticioTab />;
   if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;
 
