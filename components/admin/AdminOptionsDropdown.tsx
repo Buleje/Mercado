@@ -122,18 +122,21 @@ export default function AdminOptionsDropdown({
         aria-haspopup="menu"
         aria-label="Opciones del panel"
         className={cn(
-          "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold transition-colors border",
+          // Brandon 2026-05-28: en MOBILE h-11 w-11 rounded-xl (mismo formato
+          // que hamburguesa + lupa para emparejar el header). En md+ vuelve al
+          // pill compacto con "Opciones" + chevron.
+          "inline-flex items-center justify-center md:justify-start h-11 w-11 md:w-auto md:h-8 md:px-2.5 md:gap-1.5 rounded-xl md:rounded-lg text-xs font-semibold transition-colors border shrink-0",
           "text-[var(--text-secondary)] border-[var(--rule-base)]",
           "dark:text-[var(--text-secondary)] dark:border-[var(--rule-base)]",
           "hover:bg-gray-100 dark:hover:bg-[var(--surface-sunken)] hover:text-primary",
           open && "bg-gray-100 dark:bg-[var(--surface-sunken)] text-primary",
         )}
       >
-        <Settings2 className="h-4 w-4" />
+        <Settings2 className="h-5 w-5 md:h-4 md:w-4" />
         <span className="hidden md:inline">Opciones</span>
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 transition-transform duration-200",
+            "hidden md:block h-3.5 w-3.5 transition-transform duration-200",
             open && "rotate-180",
           )}
         />

@@ -141,7 +141,14 @@ export function AdminTopHeader({
         <AdminTooltip content="Abrir menú" side="bottom">
           <button
             onClick={onOpenMobileNav}
-            className="sm:hidden inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors shrink-0"
+            // Brandon 2026-05-28: mismo estilo que la lupa cuadrada (rounded-xl
+            // + border + bg) — antes era rounded-lg sin border, no emparejaba.
+            className={cn(
+              "sm:hidden inline-flex items-center justify-center h-11 w-11 rounded-xl border transition-colors shrink-0",
+              isAutoDarkTheme
+                ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:bg-white/[0.07]"
+                : "bg-[var(--surface-sunken)] border-[var(--rule-base)] hover:bg-white"
+            )}
             aria-label="Menú"
           >
             <Menu className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
