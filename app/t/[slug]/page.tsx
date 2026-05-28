@@ -402,10 +402,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                   className="relative w-48 h-48 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/20 flex items-center justify-center shadow-[var(--shadow-xl)]"
                 >
                   {tenant.logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={tenant.logoUrl}
                       alt=""
+                      width={128}
+                      height={128}
+                      priority
                       className="w-32 h-32 rounded-full object-cover"
                     />
                   ) : (
@@ -517,13 +519,14 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     href={`/t/${tenant.slug}/tienda`}
                     className="group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] shadow-sm hover:shadow-xl transition-all hover:-translate-y-0.5 border border-[var(--rule-base)]"
                   >
-                    <div className="aspect-square bg-[var(--surface-sunken)] overflow-hidden">
+                    <div className="aspect-square bg-[var(--surface-sunken)] overflow-hidden relative">
                       {p.productImage && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={p.productImage}
                           alt={p.productName}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
+                          fill
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
                         />
                       )}
                     </div>
