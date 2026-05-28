@@ -206,31 +206,16 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
             className="pointer-events-none absolute -bottom-20 -left-12 h-32 w-32 rounded-full bg-white/8 blur-2xl"
           />
           <div className="relative">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/80 leading-tight mb-1">
+            {/* Fila superior: marca + cerrar */}
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <span className="inline-flex items-center gap-1.5 h-7 pl-1.5 pr-3 rounded-full bg-white/15 ring-1 ring-white/20 backdrop-blur-sm">
+                <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white text-[var(--accent)] text-[10px] font-black leading-none">
+                  b
+                </span>
+                <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white leading-none">
                   Buleje
-                </p>
-                {isLoggedIn ? (
-                  <>
-                    <p className="text-xl font-black tracking-tight leading-tight truncate">
-                      Hola, {greetingName} 👋
-                    </p>
-                    <p className="text-[length:var(--ts-xs)] font-bold text-white/85 leading-tight mt-1 truncate">
-                      {customer?.email}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xl font-black tracking-tight leading-tight">
-                      ¡Bienvenido!
-                    </p>
-                    <p className="text-[length:var(--ts-xs)] font-bold text-white/85 leading-tight mt-1">
-                      Iniciá sesión para ver tus pedidos
-                    </p>
-                  </>
-                )}
-              </div>
+                </span>
+              </span>
               <button
                 type="button"
                 onClick={onClose}
@@ -239,6 +224,49 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
               >
                 <X className="h-5 w-5" strokeWidth={2.5} />
               </button>
+            </div>
+
+            {/* Identidad: avatar (inicial logueado / icono anónimo) + saludo */}
+            <div className="flex items-center gap-3 mb-4">
+              <span
+                aria-hidden
+                className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/30 backdrop-blur-sm shadow-inner"
+              >
+                {isLoggedIn ? (
+                  <span className="text-2xl font-black text-white leading-none uppercase">
+                    {greetingName.charAt(0)}
+                  </span>
+                ) : (
+                  <UserCircle className="h-8 w-8 text-white" strokeWidth={2} />
+                )}
+              </span>
+              <div className="min-w-0 flex-1">
+                {isLoggedIn ? (
+                  <>
+                    <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/70 leading-tight mb-0.5">
+                      Hola de nuevo
+                    </p>
+                    <p className="text-xl font-black tracking-tight leading-tight truncate capitalize">
+                      {greetingName}
+                    </p>
+                    <p className="text-[length:var(--ts-xs)] font-bold text-white/80 leading-tight mt-0.5 truncate">
+                      {customer?.email}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/70 leading-tight mb-0.5">
+                      Bienvenido a Buleje
+                    </p>
+                    <p className="text-xl font-black tracking-tight leading-tight">
+                      Tu barrio, a domicilio
+                    </p>
+                    <p className="text-[length:var(--ts-xs)] font-bold text-white/80 leading-tight mt-0.5">
+                      Iniciá sesión para ver tus pedidos
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">

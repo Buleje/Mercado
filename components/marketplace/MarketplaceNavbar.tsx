@@ -466,15 +466,13 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
     return () => document.removeEventListener("mousedown", handler);
   }, [userMenuOpen]);
 
-  // Body scroll lock mientras drawer mobile abierto
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [mobileMenuOpen]);
+  // Brandon 2026-05-27 (FIX bug nav oculto): el body-scroll-lock lo maneja
+  // EXCLUSIVAMENTE SharedMobileNavDrawer. Antes este efecto también lo hacía y
+  // generaba un race: el drawer (hijo) corre su efecto primero y pone
+  // `overflow: hidden`; este efecto (padre) capturaba `prev = "hidden"` y al
+  // cerrar lo RESTAURABA a "hidden", dejando el body bloqueado. Con
+  // `body { overflow: hidden }` el `position: sticky` del nav se rompe y al
+  // scrollear el nav se va de pantalla. Quitar el duplicado elimina el race.
 
   // Escape cierra drawer mobile
   useEffect(() => {
@@ -510,7 +508,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               h-16 (64px) → h-14 (56px) en mobile, h-16 desktop.
               Reduce el real-estate ocupado above-the-fold y se siente más
               ligero/comercial. Desktop mantiene h-16 por links + branding. */}
-          <div className="flex h-14 md:h-16 items-center gap-2 sm:gap-3 lg:gap-4">
+          <div className="flex h-[52px] md:h-16 items-center gap-2 sm:gap-3 lg:gap-4">
             {/* ── Logo (desktop+tablet) — Brandon, mayo 14 2026: siempre lleva a /tiendas.
                  En mobile vive dentro del input de búsqueda (mayo 15 2026). ── */}
             {/* Brandon 2026-05-20 v7: logo dinámico — en storefront muestra
@@ -819,7 +817,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     "Categoría, producto o tienda" (3 palabras → 2) */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 aria-label="Abrir menú"
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-drawer"
@@ -834,7 +832,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 aria-label={t("nav.search")}
                 className="flex-1 min-w-0"
               >
-                <div className="relative flex items-center h-10 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1">
+                <div className="relative flex items-center h-9 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1">
                   <Link
                     href={storefront.logo ? "/tiendas" : "/"}
                     aria-label={storefront.logo ? `${storefront.name ?? "Tienda"} — Ver directorio` : "Buleje — Inicio"}
@@ -882,9 +880,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     type="button"
                     onClick={() => setMobileSearchOpen(true)}
                     aria-label="Buscar"
-                    className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
+                    className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
                   >
-                    <Search className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={2.5} />
+                    <Search className="h-3 w-3" aria-hidden="true" strokeWidth={2.5} />
                   </button>
                 </div>
               </form>
@@ -894,7 +892,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 <Link
                   href="/marketplace/mi-cuenta"
                   aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
-                  className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)] text-[12px] font-black text-white shadow-sm active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-[12px] font-black text-white shadow-sm active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   {getInitials(customer.name)}
                 </Link>
@@ -902,7 +900,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 <button
                   onClick={openAuthModal}
                   aria-label={t("nav.login")}
-                  className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   <UserCircle className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
                 </button>
@@ -913,7 +911,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 data-tour="cart"
                 onClick={handleOpenCart}
                 aria-label={`Carrito — ${cartItemCount} ${cartItemCount === 1 ? "producto" : "productos"}`}
-                className="relative shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                className="relative shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
               >
                 {cartItemCount > 0 && (
                   <span
