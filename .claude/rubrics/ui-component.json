@@ -1,0 +1,66 @@
+{
+  "name": "UI Component Buleje-compliant (BSM Design System + a11y)",
+  "version": 1,
+  "applies_to": "components/**/*.tsx",
+  "criteria": [
+    {
+      "id": "no-hex-hardcoded",
+      "weight": "critical",
+      "check_bash": "! grep -E '#[0-9a-fA-F]{3,8}\\b' $FILE",
+      "fail_msg": "Hex hardcoded = viola BSM Design System (ADRs 069-075). Usar tokens del DS: text-foreground, bg-card, border-border, etc."
+    },
+    {
+      "id": "no-text-xs-or-smaller-in-body",
+      "weight": "high",
+      "check_bash": "! grep -E 'className=[\"\\x27].*text-(xs|2xs)[^a-z]' $FILE || grep -E 'caption|badge|tooltip|label' $FILE",
+      "fail_msg": "text-xs/2xs = letra diminuta para mayores (bsm-typography-rules). Body mínimo text-sm/base. Solo permitido en captions/badges/tooltips."
+    },
+    {
+      "id": "dark-mode-tokens",
+      "weight": "high",
+      "check_bash": "! grep -E 'className=[\"\\x27].*gray-[0-9]+[^a-z]' $FILE || grep -E '(dark:|--color-)' $FILE",
+      "fail_msg": "gray-* sin dark: variant rompe dark mode. Usar tokens DS: text-muted-foreground, bg-muted (auto-adapt)."
+    },
+    {
+      "id": "lucide-icons-not-emojis",
+      "weight": "high",
+      "check_bash": "! grep -E '[🥉🥈🥇💎🏷️🎉🚀🔥💰📊🎯⭐⚠️✨💵🛒🏠]' $FILE",
+      "fail_msg": "Emojis genéricos en UI = no-DS. Usar Lucide React icons o SVG custom (feedback_no_generic_emojis.md)."
+    },
+    {
+      "id": "filter-inputs-h-12-min",
+      "weight": "high",
+      "check_bash": "! grep -E '(filter|search|input).*className' $FILE || ! grep -E 'h-(8|9|10)\\b' $FILE",
+      "fail_msg": "Filtros/inputs con h-8/9/10 = chatos (bsm-typography-rules). Mínimo h-12 con border-2 rounded-2xl."
+    },
+    {
+      "id": "client-directive-position",
+      "weight": "critical",
+      "check_bash": "! grep -E '^\\\"use client\\\"' $FILE || head -1 $FILE | grep -q '\\\"use client\\\"'",
+      "fail_msg": "'use client' debe ser PRIMERA línea del archivo. Imports después del directive."
+    },
+    {
+      "id": "alt-on-images",
+      "weight": "high",
+      "check_bash": "! grep -E '<Image|<img' $FILE || ! grep -E '<(Image|img)[^/]*/>' $FILE | grep -v 'alt='",
+      "fail_msg": "<Image> / <img> sin alt = falla a11y WCAG. alt=\"descripción SEO\" obligatorio (no alt=\"\")."
+    },
+    {
+      "id": "no-blocking-modal-on-entry",
+      "weight": "medium",
+      "check_bash": "! grep -E 'useEffect.*setOpen.*true|useEffect.*setShow.*true' $FILE || grep -E '(localStorage|sessionStorage|cookie)' $FILE",
+      "fail_msg": "Modal abierto en mount sin gate localStorage = fricción (feedback_no_blocking_entry_modals.md). Usar tarjeta embebida no-bloqueante."
+    },
+    {
+      "id": "max-300-lines",
+      "weight": "medium",
+      "check_bash": "test $(wc -l < $FILE) -le 300",
+      "fail_msg": "Componente >300 líneas. Extraer hooks/sub-componentes. Convención CLAUDE.md."
+    }
+  ],
+  "pass_threshold": {
+    "critical_pct": 100,
+    "high_pct": 70,
+    "medium_pct": 50
+  }
+}

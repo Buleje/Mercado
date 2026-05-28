@@ -153,7 +153,7 @@ Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · S
 | **DANGER** | Zona peligrosa | Squad + security | Full pipeline |
 | **INITIATIVE** | 5+ archivos, ≥2 áreas | Hub BUILD→QUALITY→OPS | Todos los gates |
 
-Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 18 agentes).
+Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 14 agentes en roster canónico; 4 specialists adicionales fuera de Hub en `.claude/agents/`).
 
 ---
 
@@ -218,10 +218,53 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 | Archivo | Para qué |
 |---|---|
-| `AGENTS.md` | Arquitectura Hub & Spoke v2 (18 agentes) y protocolos de handoff |
+| `AGENTS.md` | Arquitectura Hub & Spoke v2 (14 agentes canónicos) y protocolos de handoff |
 | `MEMORIA-PROYECTO.md` | Memoria viva del proyecto (decisiones, operación crítica, gaps) |
 | `docs/HISTORY.md` | Snapshot histórico de tabs/fases/batches (archivo histórico) |
 | `README.md` | Quick start, deployment Vercel, API endpoints |
 | `docs/adr/` | Decisiones de arquitectura vivas |
 | `SESSION_HANDOFF.md` | Estado de sesión anterior (si existe) |
-| `.claude/hooks/` | 23 hooks (danger zone, lint, tsc, ADR injector, deploy gates) |
+| `.claude/hooks/` | 28 hooks (danger zone, lint, tsc, rubric-check, ADR injector, deploy gates) |
+| `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — usa `outcome-evaluator` |
+| `.claude/skills/` | 62 skills (skill v2: frontmatter `allowed-tools`+`model`+`argument-hint`) |
+
+---
+
+## 11. Power assets 2026 (cheat-sheet de skills/rubrics/hooks claves)
+
+### Skills agentic 2026 (Anthropic Code with Claude 2026)
+
+| Skill | Trigger | Resultado |
+|---|---|---|
+| `outcome-evaluator` | "evaluá esto", "self-grade", refactor crítico | Generator+Evaluator loop con rubric verificable, max 3 iters |
+| `dreaming` | "consolidá memoria", fin de sprint, MEMORY.md >50 entries | Dedupe + síntesis de patrones en dry-run, apply explícito |
+| `agentic-loops` | tarea >1h o ≥3 capas | 5 patrones canónicos (PGE / parallel worktree / Hub & Spoke / Outcomes / BG+SendMessage) |
+| `turbo-parallel` | "rápido", "turbo", 3+ sub-tareas | Dispatch N agentes en 1 mensaje, run_in_background+isolation |
+| `ultra-impact` | "mega refactor", ≥5 archivos, ≥2 capas | Pipeline systematic con baseline pre/post, atomic commits |
+
+### Rubrics bash-verificables (`.claude/rubrics/`)
+
+| Aplica a | Rubric | Criterios critical |
+|---|---|---|
+| `app/api/**/route.ts` | `api-endpoint.json` | tenantId · safeParse · no prisma directo · no force-dynamic · no SQLi |
+| `lib/db/**/*.db.ts` | `db-class.json` | tenantId 1er param · sin fallback "main" · no raw interpolation · sufijo DB |
+| `prisma/migrations/**/migration.sql` | `prisma-migration.json` | no DROP sin backup · NOT NULL con default · tenantId en tablas nuevas |
+| `components/**/*.tsx` | `ui-component.json` | no hex hardcoded · "use client" primera línea · alt en imágenes |
+
+Hook `post-edit-rubric-check.mjs` ya las corre auto en cada Edit/Write/MultiEdit; alertas no-bloqueantes a stderr.
+
+### Hooks claves (28 activos)
+
+| Hook | Cuándo dispara | Función |
+|---|---|---|
+| `pre-tool-mem-guard` | PreToolUse | Aborta si RAM crítica (evita SIGKILL WSL) |
+| `pre-bash-guard` | PreToolUse | Bloquea `rm -rf`, `--force` peligrosos |
+| `danger-zone` | PreToolUse | Confirma edits en archivos críticos (schema, auth) |
+| `post-edit-rubric-check` | PostToolUse | Auto-rubric por capa, warning si critical falla |
+| `post-tool-tsc` | PostToolUse | tsc focused tras edit (debounce 5s) |
+| `post-edit-typography-lint` | PostToolUse | Alerta texto chico, gray sin dark |
+| `pre-compact-handoff` | PreCompact | Snapshot estado antes de compactar contexto |
+| `session-start-context` | SessionStart | Imprime sesión previa, pending tasks, improvement radar |
+| `session-start-autonomy` | SessionStart | Dev server boot, QA admin, warmup BG |
+| `stop-skill-suggester` | Stop | Detecta patrón repetido → propone skill nuevo |
+

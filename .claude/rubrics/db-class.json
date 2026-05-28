@@ -1,0 +1,66 @@
+{
+  "name": "DB class Buleje-compliant (lib/db/*.db.ts)",
+  "version": 1,
+  "applies_to": "lib/db/**/*.db.ts",
+  "criteria": [
+    {
+      "id": "tenantId-first-param",
+      "weight": "critical",
+      "check_bash": "grep -E '(static|async).*(tenantId|getTenantId).*[,)]' $FILE",
+      "fail_msg": "Métodos de DB class deben recibir tenantId como 1er parámetro (CLAUDE.md regla #3). Patrón: static async findX(tenantId: string, ...rest)."
+    },
+    {
+      "id": "uses-prisma-adapter",
+      "weight": "critical",
+      "check_bash": "grep -E '(prisma|getPrisma|prismaClient)' $FILE",
+      "fail_msg": "Sin acceso a Prisma. DB class debe importar el cliente — import { prisma } from '@/lib/prisma'."
+    },
+    {
+      "id": "cache-strategy",
+      "weight": "high",
+      "check_bash": "grep -E '(cache\\.|withCache|getCache|setCache|use cache)' $FILE",
+      "fail_msg": "Sin estrategia de caché. Reads frecuentes deben usar lib/cache.ts. Patrón ADR-019: 'use cache' + cacheLife/Tag, o lib/cache helpers."
+    },
+    {
+      "id": "cache-invalidation",
+      "weight": "high",
+      "check_bash": "! grep -E '(create|update|delete|upsert)' $FILE || grep -E '(invalidate|revalidateTag|cache\\.del)' $FILE",
+      "fail_msg": "Mutación sin invalidación de caché (regla #5). Tras write, llamar invalidate(key) o invalidateByPrefix(prefix)."
+    },
+    {
+      "id": "audit-log-writes",
+      "weight": "medium",
+      "check_bash": "! grep -E '(create|update|delete)' $FILE || grep -E '(AuditLogDB|logActivity|activityLog)' $FILE",
+      "fail_msg": "Mutación sin audit log. Para operaciones de escritura registrar en lib/audit/. Fire-and-forget con .catch(() => {})."
+    },
+    {
+      "id": "no-raw-interpolation",
+      "weight": "critical",
+      "check_bash": "! grep -E '\\$queryRaw.*\\$\\{|queryRawUnsafe.*\\+' $FILE",
+      "fail_msg": "Raw SQL con interpolación = SQLi. Usar Prisma.sql tag template o $1 $2 con $queryRaw."
+    },
+    {
+      "id": "decimal-not-float",
+      "weight": "high",
+      "check_bash": "! grep -E ': (number|float|Float).*precio|: (number|float|Float).*amount|: (number|float|Float).*total' $FILE || grep 'Decimal' $FILE",
+      "fail_msg": "Dinero como Float = pérdida de precisión (ADR-018). Usar Prisma.Decimal."
+    },
+    {
+      "id": "class-export",
+      "weight": "high",
+      "check_bash": "grep -E 'export (class|const) [A-Z][a-zA-Z]+DB' $FILE",
+      "fail_msg": "DB class debe exportarse con sufijo DB. Patrón: export class XxxDB { static async ... }."
+    },
+    {
+      "id": "no-default-tenant-fallback",
+      "weight": "critical",
+      "check_bash": "! grep -E 'tenantId.*=\\s*[\"\\x27]main[\"\\x27]|tenantId.*\\|\\|.*[\"\\x27]main[\"\\x27]' $FILE",
+      "fail_msg": "Fallback hardcoded a tenant 'main' = leak cross-tenant. tenantId debe venir del request, sin defaults."
+    }
+  ],
+  "pass_threshold": {
+    "critical_pct": 100,
+    "high_pct": 75,
+    "medium_pct": 50
+  }
+}

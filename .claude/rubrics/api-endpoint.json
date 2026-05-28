@@ -24,8 +24,8 @@
     {
       "id": "no-force-dynamic",
       "weight": "critical",
-      "check_bash": "! grep 'force-dynamic' $FILE",
-      "fail_msg": "force-dynamic rompe Next 16 cacheComponents (ADR-019). Usar 'use cache' + cacheLife/Tag."
+      "check_bash": "! grep -E '^export\\s+const\\s+dynamic\\s*=\\s*[\"\\x27]force-dynamic[\"\\x27]' $FILE",
+      "fail_msg": "export const dynamic = 'force-dynamic' rompe Next 16 cacheComponents (ADR-019). Usar 'use cache' + cacheLife/Tag."
     },
     {
       "id": "rate-limit",

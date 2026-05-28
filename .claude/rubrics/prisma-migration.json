@@ -1,0 +1,59 @@
+{
+  "name": "Prisma migration segura",
+  "version": 1,
+  "applies_to": "prisma/migrations/**/migration.sql",
+  "criteria": [
+    {
+      "id": "no-drop-without-backup",
+      "weight": "critical",
+      "check_bash": "! grep -iE '^DROP TABLE|^DROP COLUMN' $FILE",
+      "fail_msg": "DROP TABLE / DROP COLUMN sin snapshot previo = data loss irreversible. Plan: rename → migrate data → drop en migration separada después de N días."
+    },
+    {
+      "id": "not-null-needs-default-or-empty-table",
+      "weight": "critical",
+      "check_bash": "! grep -iE 'ADD COLUMN.*NOT NULL' $FILE || grep -iE 'DEFAULT|empty table' $FILE",
+      "fail_msg": "ADD COLUMN NOT NULL en tabla con datos = falla en producción. Estrategia: (a) NULL primero, (b) backfill, (c) NOT NULL en migration separada."
+    },
+    {
+      "id": "indices-on-foreign-keys",
+      "weight": "high",
+      "check_bash": "! grep -iE 'FOREIGN KEY|REFERENCES' $FILE || grep -iE 'CREATE INDEX|INDEX' $FILE",
+      "fail_msg": "FK sin índice = full table scan en joins. Agregar CREATE INDEX al lado de cada FOREIGN KEY."
+    },
+    {
+      "id": "tenantId-on-new-tables",
+      "weight": "critical",
+      "check_bash": "! grep -iE 'CREATE TABLE' $FILE || grep -iE '\"?tenantId\"?|\"?tenant_id\"?' $FILE",
+      "fail_msg": "Nueva tabla sin tenantId = leak cross-tenant. Toda tabla de datos de negocio debe tener tenantId TEXT NOT NULL."
+    },
+    {
+      "id": "concurrent-index-large-tables",
+      "weight": "medium",
+      "check_bash": "! grep -iE 'CREATE INDEX' $FILE || grep -iE 'CONCURRENTLY' $FILE",
+      "fail_msg": "CREATE INDEX bloquea writes en tablas grandes. Usar CREATE INDEX CONCURRENTLY (requiere correr fuera de transacción Prisma)."
+    },
+    {
+      "id": "rename-not-drop-create",
+      "weight": "high",
+      "check_bash": "! (grep -iE '^DROP COLUMN' $FILE && grep -iE '^ADD COLUMN' $FILE)",
+      "fail_msg": "Patrón DROP + ADD = data loss + lock. Usar ALTER TABLE ... RENAME COLUMN."
+    },
+    {
+      "id": "reversible-down-migration",
+      "weight": "medium",
+      "check_bash": "test -f $(dirname $FILE)/../rollback.sql || grep -iE 'rollback|reverse' $FILE",
+      "fail_msg": "Sin plan de rollback documentado. Crear rollback.sql o documentar pasos manuales."
+    }
+  ],
+  "pass_threshold": {
+    "critical_pct": 100,
+    "high_pct": 80,
+    "medium_pct": 60
+  },
+  "notes": [
+    "Schema drift conocido: ProductAnalytics + ColumnNotFound suppliers (ver MEMORIA-PROYECTO.md).",
+    "DIRECT_URL requerida para migrate deploy (pgBouncer no soporta migrations).",
+    "Workaround para conflictos DNS: aplicar SQL directo via Supabase MCP."
+  ]
+}
