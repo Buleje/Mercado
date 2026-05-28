@@ -111,6 +111,16 @@ export default function VenderLandingPage() {
         <div className="min-h-screen bg-[var(--surface-canvas)]">
           <MarketplaceNavbar />
           <main id="main-content">
+            {/*
+              SEO 2026-05-28 audit: VenderHero renderiza el H1 visual via prop
+              de UnifiedHero (no semántico). El server-rendered HTML no tenía
+              H1 → Google veía la página sin encabezado primario. Agregamos
+              H1 sr-only en el SSR initial. Visualmente invisible para no
+              romper el diseño hero, accesible a screen readers y crawlers.
+            */}
+            <h1 className="sr-only">
+              Vende tu bodega en Pucallpa — Marketplace Buleje sin comisiones
+            </h1>
             <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
                 <Breadcrumbs items={[{ label: "Vende en Buleje" }]} />

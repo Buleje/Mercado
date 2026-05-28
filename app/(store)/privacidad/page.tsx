@@ -58,17 +58,50 @@ export default function PrivacidadPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-bold">5. Tus derechos</h2>
-          <p>Tienes derecho a:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Acceder a tus datos personales.</li>
-            <li>Solicitar la corrección de datos incorrectos.</li>
-            <li>Solicitar la eliminación de tus datos.</li>
-            <li>Darte de baja de comunicaciones promocionales.</li>
-          </ul>
+          {/*
+            SEO 2026-05-28 audit MEDIUM: H2 explícito "Derechos ARCO" hace
+            visible el cumplimiento Ley 29733 PE (compliance trust signal).
+            H3 por cada derecho mejora estructura para Google y aumenta
+            chance de Featured Snippet en búsquedas "ley 29733 ejercer derechos".
+          */}
+          <h2 className="text-xl font-bold">5. Tus derechos ARCO (Ley 29733 Perú)</h2>
           <p>
+            Como titular de datos personales en Perú, gozas de los derechos ARCO
+            (Acceso, Rectificación, Cancelación, Oposición) reconocidos por la
+            Ley 29733 de Protección de Datos Personales:
+          </p>
+
+          <h3 className="text-lg font-semibold mt-4">Derecho de Acceso</h3>
+          <p>
+            Solicitar gratuitamente una copia de todos los datos personales que
+            mantenemos sobre ti, incluyendo su origen y los fines de uso.
+          </p>
+
+          <h3 className="text-lg font-semibold mt-4">Derecho de Rectificación</h3>
+          <p>
+            Solicitar la corrección de datos incorrectos, inexactos, incompletos
+            o desactualizados.
+          </p>
+
+          <h3 className="text-lg font-semibold mt-4">Derecho de Cancelación</h3>
+          <p>
+            Solicitar la eliminación de tus datos cuando ya no sean necesarios
+            para los fines que se recolectaron, o cuando retires tu consentimiento
+            (derecho al olvido).
+          </p>
+
+          <h3 className="text-lg font-semibold mt-4">Derecho de Oposición</h3>
+          <p>
+            Oponerte al tratamiento de tus datos para finalidades específicas,
+            como comunicaciones promocionales o decisiones automatizadas.
+          </p>
+
+          <p className="mt-4">
             Para ejercer cualquiera de estos derechos, contáctanos por WhatsApp al{" "}
-            <a href="tel:+51929340532" className="text-primary hover:underline">929 340 532</a>.
+            <a href="tel:+51929340532" className="text-primary hover:underline">929 340 532</a>{" "}
+            o vía el formulario en{" "}
+            <a href="/cuenta/privacidad" className="text-primary hover:underline">tu cuenta → Privacidad</a>.
+            Respondemos en máximo 10 días hábiles según ley.
           </p>
         </section>
 

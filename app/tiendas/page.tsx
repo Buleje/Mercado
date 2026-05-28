@@ -272,6 +272,15 @@ export default async function TiendasPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqSchema) }}
       />
+      {/*
+        SEO 2026-05-28 audit: TiendasClient (client component) renderiza el
+        H1 visual, pero el HTML SSR initial no lo tenía → Google veía la
+        página sin encabezado primario. H1 sr-only en server preserva el
+        diseño y da H1 semántico desde el primer byte del HTML.
+      */}
+      <h1 className="sr-only">
+        Tiendas y bodegas en Pucallpa con delivery — Buleje Marketplace
+      </h1>
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
     </>
   );

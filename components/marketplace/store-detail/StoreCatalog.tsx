@@ -124,9 +124,15 @@ function ProductListRow({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+          {/*
+            SEO 2026-05-28 audit P1: product name was <p>, ahora <h3> para que
+            Google entienda jerarquía H1(store) → H2(catálogo) → H3(producto).
+            ItemList JSON-LD asocia mejor con headings semánticos. className
+            mantiene estética idéntica.
+          */}
+          <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
             {product.productName}
-          </p>
+          </h3>
           {product.productUnit && (
             <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5 truncate">
               {product.productUnit}

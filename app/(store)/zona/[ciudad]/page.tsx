@@ -264,8 +264,14 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
         <div className="inline-block rounded-full bg-emerald-50 px-4 py-1 text-sm font-medium text-[var(--data-success-700)] mb-4">
           Software ERP para Bodegas
         </div>
+        {/*
+          SEO 2026-05-28 audit CRITICAL: H1 antes era "Buleje en {city}" pero
+          el meta title decía "Bodegas con delivery en {city}" → inconsistencia
+          confunde a Google y baja CTR. Ahora alineamos H1 con title intent.
+          Captura searches "bodegas pucallpa delivery", "tiendas {city}".
+        */}
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
-          Buleje en {zone.name}
+          Bodegas con delivery en {zone.name}
         </h1>
         <p className="mt-3 text-lg text-slate-600 max-w-2xl mx-auto">
           {zone.description}

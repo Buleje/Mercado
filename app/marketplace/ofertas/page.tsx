@@ -66,6 +66,13 @@ export default function OfertasPage() {
     <>
       <JsonLd data={ofertasBreadcrumbLd} />
       <JsonLd data={ofertasCollectionLd} />
+      {/*
+        SEO 2026-05-28 audit: OfertasClient (client) renderiza el H1 visual.
+        SSR initial HTML no tenía H1 → Google sin encabezado primario.
+      */}
+      <h1 className="sr-only">
+        Ofertas y descuentos de bodegas en Pucallpa hoy — Buleje Marketplace
+      </h1>
       <OfertasClient />
     </>
   );

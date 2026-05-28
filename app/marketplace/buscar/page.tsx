@@ -98,15 +98,27 @@ export default async function BuscarPage({ searchParams }: PageProps) {
   });
 
   return (
-    <BuscarClient
-      initialQuery={q}
-      initialSort={sort}
-      initialPage={page}
-      initialData={initialData}
-      initialCategories={categories}
-      initialStores={stores}
-      initialPriceMin={priceMin}
-      initialPriceMax={priceMax}
-    />
+    <>
+      {/*
+        SEO 2026-05-28 audit: H1 dinámico server-side. Sin query muestra entry
+        page heading (indexable). Con query: H1 contextualizado pero página
+        sigue noindex via metadata.robots (configurado más arriba).
+      */}
+      <h1 className="sr-only">
+        {q
+          ? `Resultados de búsqueda para "${q}" en bodegas de Pucallpa`
+          : "Busca productos en bodegas y tiendas de Pucallpa — Buleje"}
+      </h1>
+      <BuscarClient
+        initialQuery={q}
+        initialSort={sort}
+        initialPage={page}
+        initialData={initialData}
+        initialCategories={categories}
+        initialStores={stores}
+        initialPriceMin={priceMin}
+        initialPriceMax={priceMax}
+      />
+    </>
   );
 }

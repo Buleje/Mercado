@@ -294,8 +294,14 @@ async function CategoryZoneContent({
 
       {/* FAQ */}
       <section className="mt-10">
+        {/*
+          SEO 2026-05-28 audit MEDIUM: H2 antes era genérico "Preguntas frecuentes"
+          sin contexto categoría/ciudad. Ahora contextualizado para capturar
+          long-tail SERP ("FAQ abarrotes Pucallpa" vs "FAQ bebidas Pucallpa")
+          y aumentar señal de relevancia local.
+        */}
         <h2 className="text-lg font-bold text-slate-800 mb-4">
-          Preguntas frecuentes
+          Preguntas frecuentes sobre {cat.label.toLowerCase()} en {zone.name}
         </h2>
         <div className="space-y-3">
           {faqs.slice(0, 3).map((faq) => (

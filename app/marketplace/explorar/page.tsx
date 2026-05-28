@@ -86,6 +86,14 @@ export default async function ExplorarPage() {
     <>
       <JsonLd data={explorarBreadcrumbLd} />
       <JsonLd data={explorarCollectionLd} />
+      {/*
+        SEO 2026-05-28 audit: ExplorarClient (client) renderiza el H1 visual.
+        SSR initial HTML no tenía H1 → ranking penalizado. H1 sr-only desde
+        el server con keyword de búsqueda principal.
+      */}
+      <h1 className="sr-only">
+        Explora bodegas, restaurantes y farmacias en Pucallpa — Buleje
+      </h1>
       <ExplorarClient />
     </>
   );
