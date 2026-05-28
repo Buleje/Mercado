@@ -26,6 +26,7 @@ import {
   Truck,
   Wallet,
   Clock,
+  Bookmark,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, modifierHashOf, type CartItem } from "@/hooks/use-marketplace-cart";
@@ -34,6 +35,9 @@ import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import CartCouponSection from "@/components/marketplace/CartCouponSection";
 import CartSuggestions from "@/components/marketplace/cart/CartSuggestions";
+import FreeShippingProgress from "@/components/marketplace/cart/FreeShippingProgress";
+import ComboSugerido from "@/components/marketplace/cart/ComboSugerido";
+import { useSavedForLater, SavedForLaterSection } from "@/components/marketplace/cart/SavedForLater";
 import CompartirListaWhatsApp from "@/components/marketplace/CompartirListaWhatsApp";
 import QuantityStepper from "@/components/ui-system/QuantityStepper";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
@@ -48,10 +52,12 @@ function ItemRow({
   item,
   onQty,
   onRemove,
+  onSave,
 }: {
   item: CartItem;
   onQty: (qty: number) => void;
   onRemove: () => void;
+  onSave: () => void;
 }) {
   return (
     <m.div
@@ -129,6 +135,16 @@ function ItemRow({
 
           <button
             type="button"
+            onClick={onSave}
+            aria-label="Guardar para después"
+            className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+          >
+            <Bookmark className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            <span className="hidden sm:inline">Guardar</span>
+          </button>
+
+          <button
+            type="button"
             onClick={onRemove}
             aria-label="Eliminar producto del carrito"
             className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
@@ -168,8 +184,10 @@ function TrustPill({ icon: Icon, label }: { icon: typeof Truck; label: string })
 }
 
 export default function CarritoPage() {
-  const { byStore, totalByStore, grandTotal, itemCount, updateQuantity, removeItem, clearAll } =
+  const { byStore, totalByStore, grandTotal, itemCount, updateQuantity, removeItem, clearAll, addItem } =
     useMarketplaceCart();
+  // Guardar para después (localStorage). saveItem mueve el item fuera del carrito.
+  const { saved, saveItem, unsaveItem } = useSavedForLater();
   const { customer: loggedCustomer } = useCustomer();
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
@@ -228,6 +246,22 @@ export default function CarritoPage() {
         item.modifierHash ?? modifierHashOf(item.modifiers),
       ),
     [removeItem],
+  );
+  // Guardar para después = sacar del carrito + persistir en la lista de guardados.
+  const handleSave = useCallback(
+    (item: CartItem) => {
+      saveItem(item);
+      handleRemove(item);
+    },
+    [saveItem, handleRemove],
+  );
+  // Volver al carrito desde "Guardados".
+  const handleMoveToCart = useCallback(
+    (item: CartItem) => {
+      addItem({ ...item, quantity: item.quantity || 1 });
+      unsaveItem(item);
+    },
+    [addItem, unsaveItem],
   );
 
   return (
@@ -364,6 +398,9 @@ export default function CarritoPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5 sm:gap-6 lg:gap-8 items-start pb-8">
           <section aria-label="Productos en tu carrito" className="space-y-4 sm:space-y-5">
+            {/* Progreso hacia envío gratis */}
+            <FreeShippingProgress />
+
             {storeIds.map((sid) => {
               const group = byStore[sid];
               const subtotal = totalByStore[sid]?.total ?? 0;
@@ -419,6 +456,7 @@ export default function CarritoPage() {
                           item={item}
                           onQty={(qty) => handleQty(item, qty)}
                           onRemove={() => handleRemove(item)}
+                          onSave={() => handleSave(item)}
                         />
                       );
                     })}
@@ -466,6 +504,16 @@ export default function CarritoPage() {
                 Un pedido por tienda. Cada una con su propio ETA.
               </p>
             </div>
+
+            {/* Completá tu combo (sugiere bebida si llevás comida sin bebida) */}
+            <ComboSugerido />
+
+            {/* Guardados para después */}
+            <SavedForLaterSection
+              saved={saved}
+              onMoveToCart={handleMoveToCart}
+              onRemoveSaved={unsaveItem}
+            />
           </section>
 
           {/* CheckoutSummary oculto en mobile (Brandon, mayo 14 2026): el
