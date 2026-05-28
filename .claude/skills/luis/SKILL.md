@@ -4,6 +4,7 @@ description: MODO MAXIMO — Arranque completo con todo el ecosistema. Carga 25 
 user-invocable: true
 model: opus
 context: fork
+allowed-tools: Read, Edit, Write, Bash
 ---
 
 # /luis — MODO MAXIMO (Level 5 Real + Sprint 2)

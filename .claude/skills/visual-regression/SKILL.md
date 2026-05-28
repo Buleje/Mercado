@@ -3,6 +3,7 @@ name: visual-regression
 description: Captura screenshots baseline de rutas clave con Playwright, los guarda como referencia, y los compara contra estado actual para detectar regresiones visuales. Usar cuando Brandon diga "visual regression", "comparar visual", "snapshot test", "antes de mergear UI", o antes/después de cambios grandes de CSS/design tokens.
 user-invocable: true
 model: sonnet
+allowed-tools: Read, Write, Bash, Grep, Glob
 context: fork
 ---
 

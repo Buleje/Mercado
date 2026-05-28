@@ -5,6 +5,7 @@ user-invocable: true
 model: opus
 context: fork
 argument-hint: "[lista de features/fixes o referencia a ROADMAP]"
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob, Agent, TaskCreate, TaskUpdate
 ---
 
 # /sprint-autopilot v2 — Hub Pipeline Streaming

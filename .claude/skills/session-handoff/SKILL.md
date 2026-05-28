@@ -3,6 +3,7 @@ name: session-handoff
 description: Guarda estado completo de la sesion actual para que la siguiente sesion retome exactamente donde quedamos. Incluye tareas pendientes, archivos dirty, branch, contexto y plan.
 user-invocable: true
 model: sonnet
+allowed-tools: Read, Write, Bash
 ---
 
 # /session-handoff — Transferencia de sesion completa

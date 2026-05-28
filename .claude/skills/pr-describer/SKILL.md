@@ -4,6 +4,7 @@ description: Genera automáticamente el body de un Pull Request a partir de los 
 user-invocable: true
 model: sonnet
 context: fork
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob, Agent, TaskCreate, TaskUpdate
 ---
 
 # /pr-describer — Auto-generador de PR descriptions

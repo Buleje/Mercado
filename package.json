@@ -66,9 +66,10 @@
     "chromatic": "chromatic --project-token=$CHROMATIC_PROJECT_TOKEN --only-changed --exit-zero-on-changes",
     "queue:workers": "tsx lib/queue/workers.ts",
     "sentry:setup-alerts": "tsx scripts/setup-sentry-alerts.ts",
-    "redis:health": "node -e \"fetch('http://localhost:3000/api/admin/health').then(r=>r.json()).then(d=>console.log(JSON.stringify(d,null,2))).catch(()=>console.log('Dev server not running — inicia con: npm run dev'))\"",
+    "redis:health": "node -e \"fetch('http://localhost:3000/api/admin/health').then(r=>r.json()).then(d=>console.log(JSON.stringify(d,null,2))).catch(()=>console.log('Dev server not running \u2014 inicia con: npm run dev'))\"",
     "audit:tenant": "node scripts/audit-tenant-isolation.mjs",
-    "audit:cross-tenant": "node scripts/audit-cross-tenant.mjs"
+    "audit:cross-tenant": "node scripts/audit-cross-tenant.mjs",
+    "claude:validate": "node scripts/claude-validate.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",

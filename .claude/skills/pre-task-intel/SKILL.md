@@ -4,6 +4,7 @@ description: Auto-carga contexto relevante (ADRs, tests, commits, danger zones) 
 user-invocable: true
 model: sonnet
 argument-hint: "[checkout|database|auth|seo|fiado|performance|integration|general]"
+allowed-tools: Read, Grep, Glob, Bash
 ---
 
 # /pre-task-intel — Inteligencia Pre-Tarea

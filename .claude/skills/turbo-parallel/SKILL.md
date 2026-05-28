@@ -4,6 +4,7 @@ description: Modo TURBO de paralelismo agresivo. Fuerza dispatch de N agentes + 
 user-invocable: true
 model: opus
 context: main
+allowed-tools: Read, Edit, Write, Grep, Glob, Bash, Agent, TaskCreate, TaskUpdate
 ---
 
 # /turbo-parallel — Paralelismo agresivo (ADR-061)

@@ -5,6 +5,7 @@ user-invocable: true
 model: opus
 context: fork
 argument-hint: "[scan|fix|status]"
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob, Agent, TaskCreate, TaskUpdate
 ---
 
 # /prod-to-code — Pipeline Produccion → Codigo Automatico

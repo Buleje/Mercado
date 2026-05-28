@@ -4,6 +4,7 @@ description: Lanza N agentes en worktrees aislados para trabajar en features ind
 user-invocable: true
 model: opus
 context: fork
+allowed-tools: Read, Bash, Agent, TaskCreate, TaskUpdate
 ---
 
 # /parallel-work — Trabajo paralelo en worktrees aislados

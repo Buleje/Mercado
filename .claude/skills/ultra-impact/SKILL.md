@@ -3,6 +3,7 @@ name: ultra-impact
 description: Modo ultra-high-effort para cambios grandes multi-archivo que requerirían semanas de trabajo humano. Aplica todos los patrones probados de una sesión pico — systematic debugging, parallel dispatch, atomic commits, baseline pre/post, worktree isolation, danger zone respect — sin sacrificar calidad profesional. Usar cuando Brandon diga "ultra-impact", "ambicioso máximo", "trabajo de varios empleados", "mega refactor", o cuando un sub-proyecto toque ≥5 archivos y ≥2 capas del stack.
 user-invocable: true
 model: opus
+allowed-tools: Read, Edit, Write, Grep, Glob, Bash, Agent, TaskCreate, TaskUpdate, SendMessage
 context: fork
 ---
 

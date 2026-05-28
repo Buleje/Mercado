@@ -5,6 +5,7 @@ user-invocable: true
 model: opus
 context: fork
 argument-hint: "[analyze|apply|scan|generate|history|reset]"
+allowed-tools: Read, Edit, Write, Grep, Glob, Bash, Agent, TaskCreate, TaskUpdate
 ---
 
 # /evolve — Auto-Evolucion + Aprendizaje Compuesto
