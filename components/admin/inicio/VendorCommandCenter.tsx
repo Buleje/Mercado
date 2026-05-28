@@ -104,7 +104,7 @@ function MobileTrendChart({ series }: { series: { label: string; ingreso: number
                 title={`Sale: ${formatSoles(d.gasto)}`}
               />
             </div>
-            <span className="text-[10px] font-bold text-[var(--text-tertiary)]">{d.label}</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">{d.label}</span>
           </div>
         ))}
       </div>
@@ -178,8 +178,10 @@ export default function VendorCommandCenter() {
     <section aria-label="Inicio del panel" className="mb-2">
       {/* ── Marco de computadora (browser frame) ─────────────────────── */}
       <div className="overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]">
-        {/* Chrome bar (compacto en mobile) */}
-        <div className="flex items-center gap-2 sm:gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2 sm:px-4 sm:py-2.5">
+        {/* Chrome bar (browser falso). Brandon 2026-05-28: oculto en mobile —
+            el marco decorativo (dots + URL + "En vivo") robaba alto sin dato
+            útil. En desktop se mantiene como mockup. */}
+        <div className="hidden sm:flex items-center gap-2 sm:gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2 sm:px-4 sm:py-2.5">
           <div className="flex gap-1 sm:gap-1.5" aria-hidden>
             <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-[#ff5f57]" />
             <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-[#febc2e]" />
@@ -208,7 +210,7 @@ export default function VendorCommandCenter() {
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                 {greeting}
               </p>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                 Tu negocio de un vistazo
               </h2>
             </div>
@@ -238,7 +240,7 @@ export default function VendorCommandCenter() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+                  <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                     {formatSoles(stats.ingresos)}
                   </p>
                   <div className="mt-2 h-8 hidden sm:block">
@@ -251,7 +253,7 @@ export default function VendorCommandCenter() {
                   <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                     <Receipt className="h-3.5 w-3.5 text-[var(--data-warning-600,#b45309)]" strokeWidth={2.25} /> Gastos
                   </span>
-                  <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+                  <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                     {formatSoles(stats.gastos)}
                   </p>
                   <div className="mt-2 h-8 hidden sm:block">
@@ -271,7 +273,7 @@ export default function VendorCommandCenter() {
                       </span>
                     )}
                   </div>
-                  <p className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[-0.02em] ${stats.ganancia >= 0 ? "text-[var(--text-primary)]" : "text-[var(--data-danger-600,#dc2626)]"}`}>
+                  <p className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)] ${stats.ganancia >= 0 ? "text-[var(--text-primary)]" : "text-[var(--data-danger-600,#dc2626)]"}`}>
                     {formatSoles(stats.ganancia)}
                   </p>
                   <div className="mt-2 h-8 hidden sm:block">

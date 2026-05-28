@@ -60,16 +60,23 @@ function resolveInitialTab(): Tab {
     if (VALID_TABS.includes(hash as Tab)) return hash as Tab;
   }
 
-  // 3. localStorage
-  try {
-    const saved = localStorage.getItem("admin_active_tab");
-    if (saved) {
-      const migrated = TAB_MIGRATION[saved];
-      if (migrated) return migrated;
-      if (VALID_TABS.includes(saved as Tab)) return saved as Tab;
+  // 3. localStorage — "retomar último tab". Brandon 2026-05-28: SOLO en
+  // desktop. En mobile, abrir `/admin` directo (sin ?tab ni #hash) debe llevar
+  // SIEMPRE a Inicio (vendor-dashboard) — el dueño quiere ver caja/pedidos/
+  // alertas primero, no el último módulo donde quedó (ej. Chat IA). Los deep
+  // links (?tab=) y el hash siguen respetándose arriba.
+  const isMobile = window.innerWidth < 768;
+  if (!isMobile) {
+    try {
+      const saved = localStorage.getItem("admin_active_tab");
+      if (saved) {
+        const migrated = TAB_MIGRATION[saved];
+        if (migrated) return migrated;
+        if (VALID_TABS.includes(saved as Tab)) return saved as Tab;
+      }
+    } catch {
+      // localStorage no disponible (modo privado, SSR, etc.)
     }
-  } catch {
-    // localStorage no disponible (modo privado, SSR, etc.)
   }
 
   return "vendor-dashboard";

@@ -18,6 +18,7 @@
  */
 
 import type { ComponentType } from "react";
+import { LayoutGrid } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Tab } from "../../app/admin/_lib/tabs.types";
 
@@ -36,21 +37,22 @@ export interface AdminMobileBottomBarProps {
   onOpenMobileNav: () => void;
 }
 
-// Brandon 2026-05-27: bottom bar fija con 5 accesos directos para todos los
-// roles — Inicio, Pedidos, POS (Ventas & Caja), Adelantos, Compras.
-const FIVE_QUICK: Tab[] = ["vendor-dashboard", "pedidos", "ventas-caja", "adelantos", "compras"];
+// Brandon 2026-05-28: 4 accesos DIARIOS del bodeguero + botón "Más" (abre el
+// drawer con el resto). Antes eran Inicio/Pedidos/POS/Adelantos/Compras —
+// Adelantos y Compras son de nicho; los reemplazan Vender (POS) y Stock, que
+// son el día a día. El resto (Adelantos, Compras, etc.) sigue en "Más".
+const FOUR_QUICK: Tab[] = ["vendor-dashboard", "ventas-caja", "pedidos", "inventario"];
 const MOBILE_PRIORITY: Record<string, Tab[]> = {
-  admin:      FIVE_QUICK,
-  cajero:     FIVE_QUICK,
-  almacenero: FIVE_QUICK,
+  admin:      FOUR_QUICK,
+  cajero:     FOUR_QUICK,
+  almacenero: FOUR_QUICK,
 };
-// Labels cortos para que entren los 5 en la barra móvil.
+// Labels cortos para que entren en la barra móvil.
 const SHORT_LABELS: Record<string, string> = {
   "vendor-dashboard": "Inicio",
+  "ventas-caja": "Vender",
   pedidos: "Pedidos",
-  "ventas-caja": "POS",
-  adelantos: "Adelantos",
-  compras: "Compras",
+  inventario: "Stock",
 };
 
 export function AdminMobileBottomBar({
@@ -59,6 +61,7 @@ export function AdminMobileBottomBar({
   filteredTabs,
   alerts,
   onNavigate,
+  onOpenMobileNav,
 }: AdminMobileBottomBarProps) {
   const priorityIds = MOBILE_PRIORITY[userRole] ?? MOBILE_PRIORITY.admin;
   const quickTabs = priorityIds
@@ -98,6 +101,16 @@ export function AdminMobileBottomBar({
           {currentTab === id && <span className="absolute top-0 inset-x-0 h-0.5 bg-primary" />}
         </button>
       ))}
+
+      {/* "Más" — abre el drawer con el resto de módulos (Adelantos, Compras…) */}
+      <button
+        onClick={onOpenMobileNav}
+        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[48px] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted transition-colors"
+        aria-label="Más módulos"
+      >
+        <LayoutGrid className="h-5 w-5" />
+        <span className="leading-tight">Más</span>
+      </button>
     </nav>
   );
 }
