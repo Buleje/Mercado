@@ -60,6 +60,23 @@ export const TrackOrderDB = {
   },
 
   /**
+   * Resuelve tenantId desde slug (subdomain). Usado por el endpoint público
+   * `/api/track/[orderId]` para verificar que el orderId pertenece al tenant
+   * del host (defensa en profundidad — el orderId ya es entropy-based pero
+   * esto evita IDOR cross-tenant aún si hubo colisión / leak).
+   *
+   * Brandon 2026-05-28 P0 (audit #1 SEC).
+   */
+  async findTenantIdBySlug(slug: string): Promise<string | null> {
+    if (!slug) return null;
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+    return tenant?.id ?? null;
+  },
+
+  /**
    * Busca el nombre del repartidor a partir de la ruta de delivery más reciente.
    * Retorna null si no hay ruta o no hay driverId.
    */

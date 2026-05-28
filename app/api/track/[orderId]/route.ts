@@ -6,6 +6,12 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { resolveTenantFromHost } from "@/lib/middleware/tenant";
+
+// Slugs "neutros" — significan que el Host no apunta a un tenant específico
+// (localhost dev, vercel preview, dominio raíz). En esos casos NO se aplica
+// la verificación cross-tenant porque no hay tenant concreto del Host.
+const HOST_NEUTRAL_SLUGS = new Set(["main", "www"]);
 
 /**
  * GET /api/track/[orderId]
@@ -79,13 +85,33 @@ export async function GET(
     return NextResponse.json({ error: "Invalid tracking code" }, { status: 400 });
   }
 
+  // Brandon 2026-05-28 P0 (audit #1 SEC — IDOR cross-tenant):
+  // El endpoint es público (link de WhatsApp), pero antes no verificaba que
+  // el order pertenezca al tenant del Host. Si el orderId era predecible o
+  // se filtraba, alguien podía consultarlo desde cualquier subdominio. Ahora
+  // resolvemos el tenantId del Host y exigimos coincidencia con order.tenantId.
+  // Hosts neutrales (localhost, vercel preview, raíz) saltan el check.
+  const hostSlug = resolveTenantFromHost(req);
+  const expectedTenantId = HOST_NEUTRAL_SLUGS.has(hostSlug)
+    ? null
+    : await TrackOrderDB.findTenantIdBySlug(hostSlug);
+
   try {
-    const cacheKey = `track:public:${orderId}`;
+    // Cache key incluye expectedTenantId para que pizza-pucallpa y mi-pollo
+    // cacheen el mismo orderId por separado si llegan a coincidir en colisión.
+    const cacheKey = `track:public:${expectedTenantId ?? "any"}:${orderId}`;
     const data = await getOrSet<PublicTrackingResponse | null>(cacheKey, 15, async () => {
       // Leer el order con raw SQL porque los 8 campos nuevos de D1.4 todavía
       // no están en schema.prisma (el SQL fue aplicado manualmente)
       const order = await TrackOrderDB.findOrderForTracking(orderId);
       if (!order) return null;
+
+      // Cross-tenant guard. Si el Host pide pizza-pucallpa pero el order es de
+      // mi-pollo, retornamos null (404). NO leak — la respuesta es idéntica
+      // a "no existe", así no se confirma la existencia del orderId.
+      if (expectedTenantId && order.tenantId !== expectedTenantId) {
+        return null;
+      }
 
       // Buscar el nombre de la tienda (Store) asociada al tenantId
       const storeName = await TrackOrderDB.findStoreNameByTenantId(order.tenantId);
