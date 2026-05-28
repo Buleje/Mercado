@@ -72,17 +72,15 @@ export class CulqiProvider implements PaymentProvider {
     //   }),
     // });
 
-    console.log("[CulqiProvider.charge] stub — no HTTP real", {
-      orderId: input.orderId,
-      amountCents: input.amountCents,
-      currency: input.currency,
-    });
-
-    return {
-      status: "succeeded",
-      externalId: `culqi_stub_${input.orderId}`,
-      providerResponse: { stub: true },
-    };
+    // Brandon 2026-05-28 P0 (auditoría seguridad/code-quality):
+    // CulqiProvider era un STUB registrado en lib/payments/registry.ts como
+    // proveedor real. Si un tenant seleccionaba Culqi, el stub retornaba
+    // `status: "succeeded"` sin hacer HTTP — pagos "confirmados" al cliente
+    // sin cobro real. Ahora falla explícito hasta implementar el HTTP real.
+    throw new Error(
+      "CulqiProvider no implementado todavía. Use Yape, MercadoPago o Stripe. " +
+        "Para activar: ver TODO en lib/payments/adapters/culqi-adapter.ts (charge/refund).",
+    );
   }
 
   async refund(input: RefundInput): Promise<RefundResult> {
@@ -98,17 +96,12 @@ export class CulqiProvider implements PaymentProvider {
     // TODO: real HTTP call a https://api.culqi.com/v2/refunds
     // const response = await fetch("https://api.culqi.com/v2/refunds", { ... });
 
-    console.log("[CulqiProvider.refund] stub — no HTTP real", {
-      externalId: input.externalId,
-      amountCents: input.amountCents,
-    });
-
-    return {
-      refundId: `culqi_refund_stub_${input.externalId}`,
-      status: "succeeded",
-      amountCents: input.amountCents ?? 0,
-      providerResponse: { stub: true },
-    };
+    // Brandon 2026-05-28 P0: idem charge — el stub retornaba "succeeded" sin
+    // hacer HTTP a Culqi. Falla explícito hasta implementar la integración.
+    throw new Error(
+      "CulqiProvider.refund no implementado todavía. Para activar: implementar HTTP " +
+        "real contra https://api.culqi.com/v2/refunds.",
+    );
   }
 
   async verifyWebhook(req: WebhookRequest): Promise<WebhookVerification> {
