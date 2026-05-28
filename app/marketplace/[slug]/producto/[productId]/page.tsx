@@ -18,6 +18,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { Metadata } from "next";
 import { ProductDetailClient } from "@/components/marketplace/product-detail/ProductDetailClient";
 import BackToStoreButton from "@/components/marketplace/product-detail/BackToStoreButton";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import type { RelatedProduct } from "@/components/marketplace/product-detail/ProductRelated";
 
 // ── Types desde la API ─────────────────────────────────────────────────────────
@@ -267,12 +268,15 @@ function ProductJsonLd({ product, slug, productId, now }: {
     typeof reviewCount === "number" &&
     reviewCount > 0
   ) {
+    // 2026-05-28 audit P5: ratingValue antes era string ("5.0") por
+    // toFixed() — algunos parsers Google rechazan. Ahora Number con
+    // 1 decimal (5.0). bestRating/worstRating también pasan a number.
     jsonLd.aggregateRating = {
       "@type": "AggregateRating",
-      ratingValue: rating.toFixed(1),
+      ratingValue: Number(rating.toFixed(1)),
       reviewCount: reviewCount,
-      bestRating: "5",
-      worstRating: "1",
+      bestRating: 5,
+      worstRating: 1,
     };
   }
 
@@ -313,9 +317,36 @@ export default async function ProductDetailPage({ params }: PageProps) {
       ? [{ url: product.image, alt: product.name }]
       : [];
 
+  // 2026-05-28 audit P2 CRITICAL: BreadcrumbList JSON-LD agregado al PDP
+  // marketplace. Antes solo el storefront /tienda/[slug] tenía breadcrumbs.
+  // Sin esto SERP no muestra path Home → Marketplace → {tienda} → {producto}
+  // → CTR cae en desktop SERP.
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
+  const breadcrumbItems = [
+    { name: "Inicio", url: base },
+    { name: "Marketplace", url: `${base}/marketplace` },
+    { name: product.store.name, url: `${base}/marketplace/${slug}` },
+    { name: product.name, url: `${base}/marketplace/${slug}/producto/${productId}` },
+  ];
+
   return (
     <>
       <ProductJsonLd product={product} slug={slug} productId={productId} now={Date.now()} />
+
+      {/*
+        SEO 2026-05-28 audit P4: H1 sr-only server-side. ProductDetailClient
+        es client → SSR HTML no tenía H1. Ahora H1 semántico en initial HTML
+        para Google + screen readers, sin afectar diseño visual.
+      */}
+      <h1 className="sr-only">
+        {product.name} — S/{(() => {
+          const n = typeof product.price === "number" ? product.price : Number(product.price);
+          return Number.isFinite(n) ? n.toFixed(2) : "0.00";
+        })()} en {product.store.name} ({product.store.zone ?? "Pucallpa"})
+      </h1>
+
+      {/* BreadcrumbSchema: JSON-LD para SERP + nav visible si visible=true */}
+      <BreadcrumbSchema items={breadcrumbItems} visible={false} />
 
       {/* Botón Volver — más limpio que breadcrumbs, vuelve a la tienda. */}
       <div className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 lg:px-8">

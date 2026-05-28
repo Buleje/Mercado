@@ -133,14 +133,28 @@ function buildRecipeJsonLd(receta: RecetaSEO): Record<string, unknown> {
     })
     .filter(Boolean);
 
-  let steps: Array<{ "@type": "HowToStep"; text: string }> = [];
+  // 2026-05-28 audit P3: HowToStep es válido por schema.org/Google pero
+  // se beneficia de `name` + `position` para Rich Recipe carousel. Antes
+  // solo emitía text — ahora completa la triada (position + name + text).
+  // Google prefiere esto para mostrar la receta en el carrusel de pasos.
+  let steps: Array<{
+    "@type": "HowToStep";
+    position: number;
+    name: string;
+    text: string;
+  }> = [];
   if (receta.pasosJson) {
     try {
       const parsed = JSON.parse(receta.pasosJson) as unknown;
       if (Array.isArray(parsed)) {
         steps = parsed
           .filter((s): s is string => typeof s === "string" && s.length > 0)
-          .map((text) => ({ "@type": "HowToStep" as const, text }));
+          .map((text, i) => ({
+            "@type": "HowToStep" as const,
+            position: i + 1,
+            name: `Paso ${i + 1}`,
+            text,
+          }));
       }
     } catch {
       // invalid JSON — skip steps
@@ -156,6 +170,11 @@ function buildRecipeJsonLd(receta: RecetaSEO): Record<string, unknown> {
     recipeCategory: receta.categoria ?? "Cocina peruana",
     recipeCuisine: "Peruana",
     recipeYield: receta.porciones ? `${receta.porciones} porciones` : undefined,
+    // 2026-05-28 audit secondary: prepTime ISO 8601 si está disponible (no
+    // todas las recetas tienen el campo, fallback skip vía undefined).
+    ...(typeof (receta as { prepMinutos?: number }).prepMinutos === "number"
+      ? { prepTime: `PT${(receta as { prepMinutos?: number }).prepMinutos}M` }
+      : {}),
     totalTime: receta.tiempoMinutos ? `PT${receta.tiempoMinutos}M` : undefined,
     keywords: [receta.nombre, "receta peruana", "Pucallpa", receta.categoria].filter(Boolean).join(", "),
     recipeIngredient: ingredients.length > 0 ? ingredients : undefined,
