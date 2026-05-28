@@ -1,0 +1,66 @@
+{
+  "name": "API endpoint Buleje-compliant (CLAUDE.md §4)",
+  "version": 1,
+  "applies_to": "app/api/**/route.ts",
+  "criteria": [
+    {
+      "id": "tenant-isolation",
+      "weight": "critical",
+      "check_bash": "grep -E '(tenantId|getTenantId|requireTenant)' $FILE",
+      "fail_msg": "Endpoint sin tenantId — viola CLAUDE.md regla #3 (multi-tenant). Agregar getTenantId(req) primero param de cualquier DB class."
+    },
+    {
+      "id": "no-direct-prisma",
+      "weight": "critical",
+      "check_bash": "! grep -E 'prisma\\.[a-z]+\\.(findMany|findFirst|findUnique|create|update|delete|upsert)' $FILE",
+      "fail_msg": "Usa prisma directo — viola regla #1 (DB class obligatoria en lib/db/). Mover a XxxDB.method()."
+    },
+    {
+      "id": "safeParse-not-parse",
+      "weight": "critical",
+      "check_bash": "! grep -E '\\.parse\\(' $FILE || grep 'safeParse' $FILE",
+      "fail_msg": "Zod usa .parse() — viola regla #2 (safeParse para no lanzar excepciones)."
+    },
+    {
+      "id": "no-force-dynamic",
+      "weight": "critical",
+      "check_bash": "! grep 'force-dynamic' $FILE",
+      "fail_msg": "force-dynamic rompe Next 16 cacheComponents (ADR-019). Usar 'use cache' + cacheLife/Tag."
+    },
+    {
+      "id": "rate-limit",
+      "weight": "high",
+      "check_bash": "grep -E '(ratelimit|withRateLimit)' $FILE",
+      "fail_msg": "Sin rate limit — riesgo de abuse. Agregar @upstash/ratelimit o middleware."
+    },
+    {
+      "id": "rbac",
+      "weight": "high",
+      "check_bash": "grep -E '(requireAdmin|requireRole|requireAuth)' $FILE",
+      "fail_msg": "Sin RBAC guard — endpoint público o sin verificación de rol. Usar requireAdmin(req, ['admin'])."
+    },
+    {
+      "id": "audit-log",
+      "weight": "medium",
+      "check_bash": "! grep -E '(POST|PUT|DELETE|PATCH)' $FILE || grep -E '(logActivity|AuditLogDB)' $FILE",
+      "fail_msg": "Endpoint de escritura sin audit log. Agregar logActivity(...).catch(()=>{})."
+    },
+    {
+      "id": "cache-invalidation",
+      "weight": "medium",
+      "check_bash": "! grep -E '(POST|PUT|DELETE|PATCH)' $FILE || grep -E '(invalidate|revalidateTag)' $FILE",
+      "fail_msg": "Endpoint de escritura sin invalidación de caché — viola regla #5."
+    },
+    {
+      "id": "raw-sql-parameterized",
+      "weight": "critical",
+      "check_bash": "! grep -E '\\$\\{.*\\}.*queryRaw|queryRaw.*\\$\\{' $FILE",
+      "fail_msg": "Raw SQL con template literal — SQLi. Usar Prisma.sql tag o $1 $2 $3 params."
+    }
+  ],
+  "pass_threshold": {
+    "critical_pct": 100,
+    "high_pct": 80,
+    "medium_pct": 60
+  }
+}
