@@ -8,6 +8,7 @@
  * Estilo: tokens del DS · sin emojis decorativos · responsivo.
  */
 
+import Image from "next/image";
 import {
   Truck,
   ShieldCheck,
@@ -63,9 +64,14 @@ function AboutBlock({ section, primary }: { section: AboutSection; primary: stri
           </p>
         </div>
         {imageUrl && (
-          <div className="rounded-2xl overflow-hidden aspect-[4/3] bg-[var(--surface-sunken)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+          <div className="rounded-2xl overflow-hidden aspect-[4/3] bg-[var(--surface-sunken)] relative">
+            <Image
+              src={imageUrl}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
           </div>
         )}
       </div>
@@ -346,12 +352,12 @@ function GalleryBlock({ section, primary }: { section: GallerySection; primary: 
             key={i}
             className="group relative rounded-2xl overflow-hidden bg-[var(--surface-sunken)] aspect-square shadow-md hover:shadow-xl transition-shadow"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={img.url}
               alt={img.alt ?? ""}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
-              loading="lazy"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
             />
             {img.caption && (
               <figcaption className="absolute inset-x-0 bottom-0 p-3 bg-linear-to-t from-black/80 to-transparent text-white text-xs font-bold leading-snug">
@@ -378,12 +384,13 @@ function ImageTextBlock({ section, primary }: { section: ImageTextSection; prima
         }`}
       >
         {/* Imagen */}
-        <div className="rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/10] bg-[var(--surface-sunken)] shadow-xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <div className="rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/10] bg-[var(--surface-sunken)] shadow-xl relative">
+          <Image
             src={imageUrl}
             alt={imageAlt ?? ""}
-            className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-[var(--dur-slower)]"
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover hover:scale-[1.02] transition-transform duration-[var(--dur-slower)]"
           />
         </div>
         {/* Texto */}
