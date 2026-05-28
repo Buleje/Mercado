@@ -265,28 +265,66 @@ export const CustomersDB = {
     });
   },
   async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
+    if (!tenantId) throw new Error("CustomersDB.upsert: tenantId requerido");
     const locs = (data.locations ?? []).map((l) => ({ id: l.id, location: l.location, reference: l.reference }));
-    const row = await prisma.customer.upsert({
-      where: { phone: data.phone },
-      create: {
-        phone: data.phone, name: data.name,
-        location: data.location ?? "", reference: data.reference ?? "",
-        activeLocationId: data.activeLocationId ?? null,
-        tenantId,
-        ...(data.email && { email: data.email }),
-        ...(data.birthday && { birthday: new Date(data.birthday) }),
-        locations: { create: locs },
-      },
-      update: {
-        name: data.name, location: data.location ?? "", reference: data.reference ?? "",
-        activeLocationId: data.activeLocationId ?? null,
-        ...(data.email && { email: data.email }),
-        ...(data.birthday !== undefined && { birthday: data.birthday ? new Date(data.birthday) : null }),
-        locations: { deleteMany: {}, create: locs },
-      },
-      include: { locations: true },
+
+    // Brandon 2026-05-28 P0 (auditoría seguridad #3 — multi-tenant data integrity):
+    // Antes este método hacía `prisma.customer.upsert({ where: { phone } })` lo cual
+    // ignoraba `tenantId` porque `phone` tiene `@unique` global (scaffolding temporal
+    // TD-040 Phase 1). Si dos tenants tenían un cliente con el mismo número (común en
+    // Pucallpa con familiares), el upsert del tenant B sobrescribía datos del tenant A.
+    // Fix sin cambio de schema: findFirst({ phone, tenantId }) → update | create,
+    // scopeado por tenantId en ambas ramas. La constraint global de `phone @unique`
+    // sigue vigente hasta TD-040 Phase 3 (drop @unique → @@unique([tenantId, phone])),
+    // entonces si la creación falla por colisión cross-tenant, retornamos error explícito.
+    const existing = await prisma.customer.findFirst({
+      where: { phone: data.phone, tenantId },
+      select: { id: true },
     });
-    return mapCustomer(row);
+
+    if (existing) {
+      const row = await prisma.customer.update({
+        where: { id: existing.id },
+        data: {
+          name: data.name, location: data.location ?? "", reference: data.reference ?? "",
+          activeLocationId: data.activeLocationId ?? null,
+          ...(data.email && { email: data.email }),
+          ...(data.birthday !== undefined && { birthday: data.birthday ? new Date(data.birthday) : null }),
+          locations: { deleteMany: {}, create: locs },
+        },
+        include: { locations: true },
+      });
+      return mapCustomer(row);
+    }
+
+    // No existe en este tenant. Crear — si `phone` ya está tomado por otro tenant,
+    // Prisma lanza P2002 (unique constraint). Lo capturamos para devolver mensaje
+    // claro hasta que TD-040 Phase 3 elimine el global @unique.
+    try {
+      const row = await prisma.customer.create({
+        data: {
+          phone: data.phone, name: data.name,
+          location: data.location ?? "", reference: data.reference ?? "",
+          activeLocationId: data.activeLocationId ?? null,
+          tenantId,
+          ...(data.email && { email: data.email }),
+          ...(data.birthday && { birthday: new Date(data.birthday) }),
+          locations: { create: locs },
+        },
+        include: { locations: true },
+      });
+      return mapCustomer(row);
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === "P2002") {
+        // El teléfono ya existe en otro tenant — schema global @unique aún vigente.
+        throw new Error(
+          `El teléfono ${data.phone} ya está registrado en otra tienda. ` +
+            "Esta restricción es temporal (TD-040 Phase 3 pendiente).",
+        );
+      }
+      throw err;
+    }
   },
   async delete(tenantId: string, phone: string): Promise<void> {
     await prisma.customer.deleteMany({ where: { phone: normalizePhone(phone), tenantId } }).catch((err) => logger.error("[customers.db] customer delete failed", { error: String(err), phone }));
