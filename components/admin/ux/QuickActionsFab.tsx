@@ -36,30 +36,34 @@ interface QuickAction {
   shortcut?: string;
 }
 
+// Brandon 2026-05-28: hrefs usaban `?module=` (legacy) cuando el admin lee
+// `?tab=` (resolveInitialTab en useAdminTabs.ts). Resultado: las acciones del
+// FAB no abrían el módulo correspondiente, el panel se quedaba en el tab
+// activo. Ahora apuntan a los ids canónicos de tabs.types.ts.
 const ACTIONS: QuickAction[] = [
   {
-    Icon: Package,
-    label: BTN.createProduct,
-    href: "/admin?module=inventario&action=new",
-    shortcut: "P",
-  },
-  {
     Icon: ShoppingCart,
-    label: BTN.createOrder,
-    href: "/admin?module=pos",
+    label: BTN.createOrder, // Registrar venta — top 1 del bodeguero
+    href: "/admin?tab=ventas-caja",
     shortcut: "V",
   },
   {
-    Icon: UserPlus,
-    label: BTN.createCustomer,
-    href: "/admin?module=crm&action=new",
-    shortcut: "C",
+    Icon: Package,
+    label: BTN.createProduct, // Nuevo producto
+    href: "/admin?tab=productos&action=new",
+    shortcut: "P",
   },
   {
     Icon: CreditCard,
-    label: BTN.createCredit,
-    href: "/admin?module=fiados&action=new",
+    label: BTN.createCredit, // Cobrar / dar fiado
+    href: "/admin?tab=fiados&action=new",
     shortcut: "F",
+  },
+  {
+    Icon: UserPlus,
+    label: BTN.createCustomer, // Nuevo cliente
+    href: "/admin?tab=clientes&action=new",
+    shortcut: "C",
   },
 ];
 

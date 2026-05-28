@@ -328,8 +328,14 @@ function AdminPage() {
           : "sm:ml-[260px]",
       )}>
         {/* ADR-087: alertas operativas — adentro del shell para respetar
-            el margin del sidebar fixed (260px / 60px compact / 660px config). */}
-        <AdminAlertsBanner />
+            el margin del sidebar fixed (260px / 60px compact / 660px config).
+            Brandon 2026-05-28: en Inicio (vendor-dashboard) + mobile lo
+            ocultamos porque MorningBriefingCard + "Alertas accionables" del
+            dashboard ya muestran lo mismo (eran 3 zonas de alertas en la
+            misma vista). En otras tabs / desktop se mantiene. */}
+        <div className={tab === "vendor-dashboard" ? "hidden sm:block" : ""}>
+          <AdminAlertsBanner />
+        </div>
 
         <AdminTopHeader
           presentationMode={presentationMode}
