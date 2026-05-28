@@ -732,6 +732,9 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       storageKey="inicio-multi-order"
       layout="column"
       gap={4}
+      // Brandon 2026-05-28: en mobile mostramos solo los 2 charts más
+      // importantes y el resto detrás de "Ver más gráficos". Desktop intacto.
+      mobileCollapseAfter={2}
     />
   );
 });

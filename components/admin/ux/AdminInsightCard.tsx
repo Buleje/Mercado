@@ -300,9 +300,11 @@ export const AdminInsightCard = memo(function AdminInsightCard({
         )}
       </div>
 
-      {/* Contextual row — 3-5 métricas */}
+      {/* Contextual row — 3-5 métricas. Brandon 2026-05-28: en mobile pasa a
+          scroll horizontal (snap) en vez de grid 2x2 — más KPIs caben sin
+          apilar y la card no crece a lo alto. Desktop conserva grid-cols-4. */}
       {contextualMetrics.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-[var(--rule-soft)] border-b border-[var(--rule-soft)]">
+        <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar [&::-webkit-scrollbar]:hidden divide-x divide-[var(--rule-soft)] border-b border-[var(--rule-soft)] sm:grid sm:grid-cols-4 sm:overflow-visible sm:snap-none" style={{ scrollbarWidth: "none" }}>
           {contextualMetrics.map((m) => {
             const dUp = m.delta != null && m.delta > 0;
             const dDown = m.delta != null && m.delta < 0;
@@ -315,7 +317,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
                     ? "text-[var(--data-error-500)]"
                     : "text-[var(--text-primary)]";
             return (
-              <div key={m.label} className="px-5 py-5 sm:px-7 sm:py-6">
+              <div key={m.label} className="snap-start shrink-0 basis-1/2 sm:basis-auto sm:shrink px-5 py-5 sm:px-7 sm:py-6">
                 <p className="text-xs sm:text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2.5">
                   {m.label}
                 </p>

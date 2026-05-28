@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { ChevronDown } from "@buleje/design-system/icons";
 import {
   DndContext,
   closestCenter,
@@ -67,6 +68,14 @@ interface Props {
    * lado en monitores comunes.
    */
   minColumnWidth?: string;
+  /**
+   * Brandon 2026-05-28: en mobile (<768px), mostrá SOLO las primeras N
+   * secciones visibles y poné el resto detrás de un botón "Ver más gráficos".
+   * El dashboard apilaba 5+ charts sin pedirlo → mucho scroll. Con esto el
+   * dueño ve los 1-2 más importantes y expande solo si los quiere. Desktop
+   * intacto (sin cambios).
+   */
+  mobileCollapseAfter?: number;
 }
 
 interface PersistState {
@@ -90,13 +99,25 @@ interface PersistState {
  *  - Toast "Layout guardado" en primer drag
  *  - Persiste en localStorage (orden + hidden)
  */
-export function DraggableSections({ items, storageKey, gap = 1, layout = "column", minColumnWidth = "36rem" }: Props) {
+export function DraggableSections({ items, storageKey, gap = 1, layout = "column", minColumnWidth = "36rem", mobileCollapseAfter }: Props) {
   const [state, setState] = useState<PersistState>(() => ({
     order: items.map((i) => i.id),
     hidden: [],
   }));
   const [hydrated, setHydrated] = useState(false);
   const firstDragRef = useRef(true);
+  // Brandon 2026-05-28: colapso en mobile. matchMedia evita re-renders por
+  // resize en desktop; solo recarga si cambia el breakpoint.
+  const [isMobile, setIsMobile] = useState(false);
+  const [showAllMobile, setShowAllMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   // Presentation modal — guarda el id del chart activo (null = cerrado).
   const [presentingId, setPresentingId] = useState<string | null>(null);
 
@@ -189,6 +210,28 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
   const isDefault =
     validOrder.every((id, i) => id === items[i]?.id) && state.hidden.length === 0;
 
+  // Mobile collapse: muestra solo las primeras N VISIBLES (no oculta);
+  // las que están "hidden" por el ojo se cuentan en validOrder pero ocupan
+  // el HiddenPlaceholder — no las contamos para el límite.
+  const collapseN = mobileCollapseAfter ?? Infinity;
+  const collapseActive =
+    isMobile && !showAllMobile && Number.isFinite(collapseN) && validOrder.filter((id) => !hiddenSet.has(id)).length > collapseN;
+  const visibleOrder = (() => {
+    if (!collapseActive) return validOrder;
+    const out: string[] = [];
+    let shown = 0;
+    for (const id of validOrder) {
+      if (hiddenSet.has(id)) continue; // no contar ocultos en mobile
+      if (shown >= collapseN) break;
+      out.push(id);
+      shown += 1;
+    }
+    return out;
+  })();
+  const hiddenByCollapseCount = collapseActive
+    ? validOrder.filter((id) => !hiddenSet.has(id)).length - visibleOrder.length
+    : 0;
+
   return (
     <div>
       <DndContext
@@ -197,7 +240,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
         onDragEnd={handleDragEnd}
       >
         <SortableContext
-          items={validOrder}
+          items={visibleOrder}
           strategy={layout === "grid" ? rectSortingStrategy : verticalListSortingStrategy}
         >
           <div
@@ -224,7 +267,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
             }
           >
             <AnimatePresence initial={false}>
-              {validOrder.map((id, index) => {
+              {visibleOrder.map((id, index) => {
                 const item = items.find((i) => i.id === id);
                 if (!item) return null;
                 const rendered = item.render();
@@ -249,6 +292,31 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Toggle "Ver más / Ver menos gráficos" — solo mobile cuando hay
+          mobileCollapseAfter configurado. */}
+      {isMobile && Number.isFinite(collapseN) && (hiddenByCollapseCount > 0 || showAllMobile) && (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowAllMobile((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] active:scale-95 transition-all"
+            aria-expanded={showAllMobile}
+          >
+            {showAllMobile ? (
+              <>
+                Ver menos gráficos
+                <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={2.5} aria-hidden />
+              </>
+            ) : (
+              <>
+                Ver {hiddenByCollapseCount} {hiddenByCollapseCount === 1 ? "gráfico más" : "gráficos más"}
+                <ChevronDown className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {hydrated && !isDefault && (
         <div className="mt-4 flex justify-end">
