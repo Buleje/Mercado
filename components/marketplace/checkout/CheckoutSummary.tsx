@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Smartphone,
   CheckCircle2,
+  TrendingDown,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
@@ -39,6 +40,12 @@ export type SummaryProps = {
   ctaLoading?: boolean;
   couponDiscount?: number;
   loyaltyDiscount?: number;
+  /**
+   * Ahorro extra por ofertas (precio tachado vs precio actual).
+   * Lo calcula quien usa el componente sumando (originalPrice - price) * qty
+   * de los items que tengan basePrice. Es solo preview visual — no altera el total.
+   */
+  offerSavings?: number;
   showItems?: boolean;
   helperText?: string;
   /** Slot para CouponInput u otro widget encima del breakdown (ronda 4). */
@@ -53,15 +60,29 @@ export default function CheckoutSummary({
   ctaLoading = false,
   couponDiscount = 0,
   loyaltyDiscount = 0,
+  offerSavings = 0,
   showItems = false,
   helperText,
   beforeBreakdown,
 }: SummaryProps) {
-  const { byStore, grandTotal, itemCount } = useMarketplaceCart();
+  const { byStore, grandTotal, itemCount, items } = useMarketplaceCart();
   const storeIds = Object.keys(byStore);
   const subtotal = grandTotal;
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : subtotal > 0 ? 5 : 0;
   const total = Math.max(0, subtotal - couponDiscount - loyaltyDiscount + shipping);
+
+  // Ahorro por ofertas: suma (basePrice - price) * qty de items que tengan basePrice > price.
+  // Es preview visual puro — no entra al cálculo del total real.
+  const offerSavingsCalc = offerSavings > 0
+    ? offerSavings
+    : items.reduce((acc, i) => {
+        if (i.basePrice != null && i.basePrice > i.price) {
+          acc += (i.basePrice - i.price) * i.quantity;
+        }
+        return acc;
+      }, 0);
+  const totalSavings = offerSavingsCalc + couponDiscount + loyaltyDiscount;
+  const hasSavings = totalSavings > 0.005; // evitar mostrar S/0.00
   const remainingForFree = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
 
   const isEmpty = itemCount === 0;
@@ -188,6 +209,22 @@ export default function CheckoutSummary({
               <dd className="font-black tabular-nums text-lg">−{fmt(loyaltyDiscount)}</dd>
             </div>
           )}
+          {/* ── Línea de ahorro total (preview visual, no altera total backend) ─── */}
+          {hasSavings && (
+            <div
+              aria-label={`Estás ahorrando ${fmt(totalSavings)}`}
+              className="flex items-center justify-between gap-3 rounded-xl bg-[var(--data-success-50,var(--accent-soft))] px-4 py-2.5 border border-[var(--data-success-200,var(--accent))/30]"
+            >
+              <span className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-600)]">
+                <TrendingDown className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
+                Estás ahorrando
+              </span>
+              <span className="tabular-nums font-black text-lg text-[var(--data-success-600)]">
+                {fmt(totalSavings)}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-baseline justify-between">
             <dt className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <Truck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />

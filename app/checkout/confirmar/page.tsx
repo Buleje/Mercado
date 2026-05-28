@@ -34,6 +34,7 @@ import { useCustomer, type Customer } from "@/contexts/customer-context";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
+import CheckoutUpsell from "@/components/marketplace/checkout/CheckoutUpsell";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
@@ -903,6 +904,9 @@ export default function CheckoutConfirmarPage() {
               CheckoutMobileCtaBar sticky bottom). Removido — el bar global
               cubre el confirmar abajo. */}
         </div>
+
+        {/* Upsell final — "¿Le sumás algo?" (no tapa el CTA principal) */}
+        <CheckoutUpsell />
 
         {/* CheckoutSummary oculto en mobile — el cliente ya revisó todo en
             los pasos previos, en confirmar solo necesita ver y aceptar */}
