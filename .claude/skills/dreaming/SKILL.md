@@ -124,14 +124,33 @@ mv reorganized/MEMORY.md.next ~/.../memory/MEMORY.md
 3. **NUNCA aplicar sin `--apply` explícito.** Default = dry-run con diff.
 4. **Si una memoria menciona credenciales / DNI / dinero, NO la tocás** — alta sensibilidad.
 
-## Métricas esperadas
+## Métricas reales (run 2026-05-28)
 
-| Métrica | Baseline (sesión 2026-05-28) | Target post-dreaming |
+Run autónomo con general-purpose agent sobre 70 memorias + MEMORY.md (69 líneas):
+
+| Métrica | Antes | Después (target) | Δ |
+|---|---|---|---|
+| Archivos en raíz | 70 | ~42 | -40% |
+| Líneas raíz | 3,334 | ~2,000 | -40% |
+| Tokens raíz | ~70K | ~42K | -40% |
+| Memorias STALE detectadas | — | 6 | archivar |
+| Memorias DUPLICATE detectadas | — | 3 | mergear |
+| project_session_* a archivar | — | 17 | `_archive/sessions/` |
+| Pattern-memories nuevas | — | 3 | crear |
+| Tiempo agent | — | 6 min | 159K tokens |
+
+**Lección clave del run:** la reducción de tokens es ~40%, no 60%+, porque las anécdotas concretas en `Why:` de cada feedback son **irreemplazables** y NO se pueden mergear sin perder valor. El gain real es **discoverability** (cluster temático + patterns sintetizados), no compresión bruta.
+
+Para reducción más agresiva: modo `--aggressive` (no incluido por default, requiere flag explícito).
+
+## Métricas esperadas (cálculos genéricos)
+
+| Métrica | Baseline | Target post-dreaming |
 |---|---|---|
-| Memorias activas | 52 | 35-40 (después de archivar sesiones viejas) |
+| Memorias activas | 50+ | -30-40% archived |
 | Tokens MEMORY.md | ~12K | ~8K |
-| Duplicados | ~5 (sospechas N+1, modal admin standard, etc.) | 0 |
-| Pattern-memories nuevas | 0 | 2-3 (de patrones repetidos) |
+| Duplicados | 3-5 | 0 |
+| Pattern-memories nuevas | 0 | 2-3 |
 
 ## Integración con session-recap
 

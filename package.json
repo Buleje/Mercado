@@ -69,7 +69,9 @@
     "redis:health": "node -e \"fetch('http://localhost:3000/api/admin/health').then(r=>r.json()).then(d=>console.log(JSON.stringify(d,null,2))).catch(()=>console.log('Dev server not running \u2014 inicia con: npm run dev'))\"",
     "audit:tenant": "node scripts/audit-tenant-isolation.mjs",
     "audit:cross-tenant": "node scripts/audit-cross-tenant.mjs",
-    "claude:validate": "node scripts/claude-validate.mjs"
+    "claude:validate": "node scripts/claude-validate.mjs",
+    "claude:dreaming": "node scripts/claude-dreaming-apply.mjs",
+    "claude:dreaming:apply": "node scripts/claude-dreaming-apply.mjs --safe"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",
