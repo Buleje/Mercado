@@ -45,6 +45,7 @@ import {
   HeartHandshake,
   Radio,
   UserPlus,
+  TreePine,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -410,6 +411,23 @@ export const TIENDA_MODULE: TabCategory = {
   tabs: ["store-customizer", "pagina-inicio"],
 };
 
+// ── Módulo Especializaciones (ADR-124) ────────────────────────────────────────
+// Tabs verticales habilitables por superadmin (forestal CTP, salud, textil).
+// El render del sidebar SOLO los muestra si:
+//   1. allowedTabs los incluye (rol+plan pasan — spec bypassa plan filter)
+//   2. La feature flag de spec está enabled para el tenant
+// Si el tenant no tiene NINGUNA spec activa, la categoría completa queda vacía
+// y el sidebar la oculta automáticamente (vía catTabs.length === 0 en line ~1355).
+export const ESPECIALIZACIONES_MODULE: TabCategory = {
+  id: "especializaciones",
+  label: "Especializaciones",
+  icon: TreePine,
+  // Solo los tabs YA DECLARADOS en tabs.types Tab union. Cuando agregemos
+  // gtf-emisor / recetas-medicas / cuero-trazabilidad al union, los sumamos
+  // acá. Por ahora solo CTP forestal está implementado (Phase 1-4 ADR-124).
+  tabs: ["ctp-libro-operaciones"],
+};
+
 // ── Módulo Config (siempre visible desde dropdown de usuario) ────────────────
 export const CONFIG_MODULE: TabCategory = {
   id: "config",
@@ -420,7 +438,13 @@ export const CONFIG_MODULE: TabCategory = {
 
 // ── TAB_CATEGORIES: composición final del sidebar ────────────────────────────
 // (Config y Plan se acceden desde el dropdown de usuario, no desde el sidebar)
-export const TAB_CATEGORIES: TabCategory[] = [...BASIC_MODULES, TIENDA_MODULE];
+// ESPECIALIZACIONES va al final — la categoría se auto-oculta si el tenant no
+// tiene specs habilitadas (filtro catTabs.length === 0 en AdminSidebar).
+export const TAB_CATEGORIES: TabCategory[] = [
+  ...BASIC_MODULES,
+  TIENDA_MODULE,
+  ESPECIALIZACIONES_MODULE,
+];
 
 // ── Modo Fácil vs Avanzado ──────────────────────────────────────────────────
 // Modo Fácil: solo las secciones esenciales del día a día.
