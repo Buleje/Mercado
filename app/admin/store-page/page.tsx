@@ -102,19 +102,11 @@ export default function StorePageAdminPage() {
       <AdminModuleHeader
         eyebrow="Mi tienda pública"
         title="Qué ve el cliente cuando entra a tu storefront"
-        description={
-          <>
-            Hero (título, subtítulo, imagen) · Logo y banner para el marketplace · Promociones rotantes · Métricas. Para{" "}
-            <strong>colores, logo del tema y tipografía</strong>, usá{" "}
-            <Link
-              href="?tab=store-customizer"
-              className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
-            >
-              Identidad y tema →
-            </Link>
-            . Para productos, combos o descuentos, usá los módulos dedicados (Productos · Promociones).
-          </>
-        }
+        // Brandon 2026-05-28: descripción reducida — antes era un párrafo
+        // largo con lista de features + 2 links cruzados, ocupaba media
+        // pantalla en mobile. Para colores/tipografía existe la tab
+        // "Identidad y tema"; para productos/promos, sus módulos dedicados.
+        description="Editá el hero, contacto y SEO de tu tienda pública."
         icon={Globe}
       >
         <Link

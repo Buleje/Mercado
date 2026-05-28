@@ -150,7 +150,9 @@ export default function AppearanceTab() {
   return (
     <AdminTabShell
       title="Apariencia"
-      description="Personaliza colores, hero, datos de contacto y SEO de tu página individual."
+      // Brandon 2026-05-28: descripción reducida (1 línea); las sub-tabs
+      // ya describen cada sección. En mobile el texto largo apilaba ruido.
+      description="Hero, contacto y SEO de tu página."
       icon={Palette}
     >
       {/* Published toggle */}
@@ -482,28 +484,31 @@ function HeroEditor({
 
   return (
     <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
-      {/* Header de la card */}
-      <header className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
-            <Type className="h-5 w-5" strokeWidth={2} />
+      {/* Header de la card. Brandon 2026-05-28: más compacto en mobile, copy
+          recortado (la preview está justo abajo, no hace falta repetirlo). */}
+      <header className="px-4 py-3 sm:px-5 sm:py-4 border-b border-[var(--rule-soft)] flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <span className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <Type className="h-4.5 w-4.5 sm:h-5 sm:w-5" strokeWidth={2} />
           </span>
           <div className="min-w-0">
-            <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
-              Hero · lo primero que ve el cliente
+            <h3 className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
+              Hero <span className="font-medium text-[var(--text-tertiary)]">· lo primero que ve el cliente</span>
             </h3>
-            <p className="text-xs text-[var(--text-secondary)] leading-snug">
-              Título grande, subtítulo claro, botón directo. Editás → ves el cambio al toque a la derecha.
+            <p className="hidden sm:block text-xs text-[var(--text-secondary)] leading-snug mt-0.5">
+              Título grande, subtítulo claro, botón directo.
             </p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setShowTemplates((s) => !s)}
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-3.5 h-9 text-xs font-extrabold hover:bg-[var(--accent)]/90 transition-colors"
+          aria-label={showTemplates ? "Ocultar plantillas" : "Usar plantilla"}
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-3 sm:px-3.5 h-9 text-xs font-extrabold hover:bg-[var(--accent)]/90 transition-colors"
         >
           <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
-          {showTemplates ? "Ocultar plantillas" : "Usar plantilla"}
+          <span className="hidden sm:inline">{showTemplates ? "Ocultar plantillas" : "Usar plantilla"}</span>
+          <span className="sm:hidden">{showTemplates ? "Cerrar" : "Plantillas"}</span>
         </button>
       </header>
 
