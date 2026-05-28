@@ -52,18 +52,46 @@ if (!fs.existsSync(changesPath)) {
 
 const changes = fs.readFileSync(changesPath, "utf8");
 
-// Parse table rows of format: | `file` | ACTION → target | reason |
+// Parse: section heading determines target subdir, then collect filenames from rows
 const moves = [];
 const merges = [];
+let currentSection = null;
+let currentTarget = null;
+
+const SECTION_RX = /^###\s+([A-Z])\.\s+(\w+)/;
 
 for (const line of changes.split("\n")) {
-  const m = line.match(/^\|\s*`([^`]+\.md)`(?:\s*\+\s*`([^`]+\.md)`)?\s*\|\s*(\w+)(?:\s*→\s*([^\|]+))?\s*\|/);
-  if (!m) continue;
-  const [, file1, file2, action, target] = m;
-  if (action === "ARCHIVE") {
-    moves.push({ file: file1, target: (target || "_archive/").trim() });
-  } else if (action === "MERGE") {
-    if (file2) merges.push({ files: [file1, file2], reason: "merge" });
+  // Detect section start
+  const sec = line.match(SECTION_RX);
+  if (sec) {
+    currentSection = sec[2].toUpperCase();
+    if (currentSection === "STALE") currentTarget = "_archive/stale/";
+    else if (currentSection === "NOISE") currentTarget = "_archive/sessions/";
+    else if (currentSection === "DUPLICATE") currentTarget = null; // merges, no archive
+    else currentTarget = "_archive/";
+    continue;
+  }
+
+  // Detect table row with a .md filename in backticks
+  // Format A: `file.md` | ARCHIVE → `_archive/stale/` | reason
+  // Format C: `file.md` | reason  (target implied by section)
+  // Format B: `file1.md` + `file2.md` | MERGE → target | reason
+  const fileMatch = line.match(/^\|\s*`([^`]+\.md)`/);
+  if (!fileMatch) continue;
+  const file1 = fileMatch[1];
+
+  // Check if it's a merge (two files)
+  const mergeMatch = line.match(/^\|\s*`([^`]+\.md)`\s*\+\s*`([^`]+\.md)`/);
+  if (mergeMatch && currentSection === "DUPLICATE") {
+    merges.push({ files: [mergeMatch[1], mergeMatch[2]], reason: "duplicate-merge" });
+    continue;
+  }
+
+  // Otherwise it's an archive move
+  if (currentTarget) {
+    // Avoid duplicates (header rows like "| Archivo | Razón |")
+    if (file1 === "Archivos" || file1 === "Archivo" || moves.some((m) => m.file === file1)) continue;
+    moves.push({ file: file1, target: currentTarget });
   }
 }
 
