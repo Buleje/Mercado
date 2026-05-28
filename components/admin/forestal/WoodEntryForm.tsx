@@ -297,8 +297,8 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
   // ═════════════════════════════════════════════════════════════════════
 
   return (
-    <AdminModal open onClose={onClose} variant="side" hideCloseButton>
-      <div className="-mx-6 -my-6 flex h-full flex-col bg-white">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton>
+      <div className="flex h-full max-h-[88vh] flex-col bg-white">
         {/* ── Header minimalista ─────────────────────────────────────── */}
         <header className="flex items-center justify-between border-b border-[var(--rule-soft)] px-6 py-4">
           <div className="flex items-center gap-3 min-w-0">
