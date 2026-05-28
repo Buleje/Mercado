@@ -74,7 +74,6 @@ import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader"
 import TiendasLocationBar from "@/components/marketplace/TiendasLocationBar";
 import TiendasWelcomeBanner from "@/components/marketplace/TiendasWelcomeBanner";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
-import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 // `dynamic` ya está importado al top — usado por ExplorarTracker, MarketplaceFilters,
 // SearchAutocomplete y los strips desktop-only (Tiendas*Strip).
 
@@ -287,8 +286,12 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
   // subcategorías visibles. Sin chips → no hay sticky bar → no scroll listener.
   // Declarado DESPUÉS del state `subcategories` (orden léxico de hooks).
   const hasSubcategoryChips = subcategories.length > 0;
-  const navVisible = useNavScrollHide(80, hasSubcategoryChips);
-  const showStickySubcategoryBar = scrolledPastSubcategories && navVisible;
+  // Brandon 2026-05-27: el navbar ahora es FIJO siempre (no se esconde al
+  // bajar). La sticky subnav de subcategorías debe aparecer apenas el usuario
+  // pasa la sección original — independiente de la dirección de scroll. Antes
+  // dependía de `navVisible` (show-up only), por lo que al BAJAR (cuando más se
+  // necesita) quedaba oculta. Ahora basta con haber scrolleado más allá.
+  const showStickySubcategoryBar = scrolledPastSubcategories;
 
   // Fetch subcategorías cuando cambia la categoría principal.
   // Filtramos para mostrar SOLO las que tienen ≥1 tienda vinculada — un
@@ -761,7 +764,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
             transitionDelay: showStickySubcategoryBar ? "0ms" : "0ms, 0ms, 550ms",
           }}
           className={cn(
-            "sm:hidden fixed left-0 right-0 top-16 z-40 will-change-transform",
+            "sm:hidden fixed left-0 right-0 top-[52px] z-40 will-change-transform",
             showStickySubcategoryBar
               ? "pointer-events-auto"
               : "pointer-events-none",
@@ -1196,7 +1199,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
             <div ref={subcategorySectionRef} className="lg:pt-1 lg:border-t lg:border-[var(--rule-soft)]">
               {/* Mini-label minimalista encima de subcategorías */}
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5 lg:mb-2">
-                Categorías
+                Lo que se te antoja
               </p>
               {/* Mobile/tablet: scroll horizontal (chips con icono+label) */}
               <div
@@ -1490,7 +1493,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
           {!loading && !error && finalStores.length > 0 && (
             <div className="flex items-baseline justify-between gap-3 mb-3">
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Tiendas{" "}
+                Todas nuestras tiendas{" "}
                 <span className="text-[var(--accent)] tabular-nums">
                   · {finalStores.length}
                 </span>

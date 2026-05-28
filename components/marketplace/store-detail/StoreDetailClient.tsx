@@ -295,7 +295,7 @@ export default function StoreDetailClient({
           comillas) sin tocar los normales de URL. CSS interpreta solo la
           URL correcta. */}
       <div
-        className="lg:hidden sticky top-[56px] z-30 h-14 overflow-hidden border-b border-black/10 shadow-sm"
+        className="lg:hidden sticky top-[52px] z-30 h-14 overflow-hidden border-b border-black/10 shadow-sm"
         style={{
           background: store.banner
             ? `linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.55)), url("${encodeURI(store.banner).replace(/"/g, "%22")}") center/cover`
@@ -412,8 +412,8 @@ export default function StoreDetailClient({
       <div
         className={cn(
           "sticky z-20 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-base)] transition-shadow duration-150",
-          // top-[112px] = 56 nav (v6) + 56 barra slim. En desktop top-0.
-          "top-[112px] lg:top-0",
+          // top-[108px] = 52 nav (v7 minimalista) + 56 barra slim. Desktop top-0.
+          "top-[108px] lg:top-0",
           isStuck ? "shadow-[0_4px_16px_-6px_rgba(0,0,0,0.12)]" : "shadow-none",
         )}
         style={{ contain: "layout paint" }}

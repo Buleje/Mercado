@@ -1,46 +1,51 @@
 "use client";
 
 /**
- * MarketplaceCategoriesBar — sub-nav de categorías para MOBILE del marketplace.
+ * MarketplaceCategoriesBar — sub-nav de categorías de PRODUCTO para MOBILE.
  *
- * Por qué existe: el `MarketplaceSecondaryNav` (mega-menú) es `hidden md:block`,
- * así que en celular el home NO tenía barra de categorías — a diferencia del
- * storefront `/marketplace/[slug]`, que sí muestra chips horizontales. Esto
- * trae ESE mismo patrón (chips scrollables con icono, sticky bajo el navbar)
- * al home/listados, para que se vea igual que dentro de una tienda.
+ * Brandon 2026-05-27: antes mostraba RUBROS de tienda (Restaurantes, Bodegas…).
+ * Ahora muestra las categorías de PRODUCTO reales del marketplace (Bebidas,
+ * Carnes, Pollo, Snacks…), que es lo que el cliente realmente busca. Los rubros
+ * de tienda siguen accesibles desde el drawer del navbar ("Explorar por rubro").
  *
- * Data REAL desde /api/marketplace/categories (tipos de tienda gestionados
- * desde superadmin). Cada chip navega a /marketplace/categoria/[id].
+ * Data REAL desde /api/marketplace/product-categories — solo categorías con ≥1
+ * producto publicado (cero chips muertos). Cada chip lleva al buscador filtrado
+ * (/marketplace/buscar?cat=ID), que muestra el grid de productos de esa
+ * categoría cross-store.
  *
  * Solo mobile (`md:hidden`) — en desktop manda el mega-menú existente.
  */
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { getStoreCategoryIcon } from "@/components/marketplace/_category-icons";
+import { usePathname, useSearchParams } from "next/navigation";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 import { cn } from "@/lib/utils";
 
-interface MarketplaceCategory {
+interface ProductCategory {
   id: string;
-  label: string;
-  imageUrl: string | null;
+  count: number;
+}
+
+/** "pollo-brasa" → "Pollo brasa" · "bebidas" → "Bebidas" */
+function prettyLabel(id: string): string {
+  const spaced = id.replace(/[-_]+/g, " ").trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 export default function MarketplaceCategoriesBar() {
-  const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/marketplace/categories")
+    fetch("/api/marketplace/product-categories")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (cancelled) return;
-        const list = (d?.categories ?? []) as MarketplaceCategory[];
-        // El store JSON incluye una entrada `_meta` sin label — descartarla
-        // (y cualquier id interno con prefijo "_" o sin label).
-        setCategories(list.filter((c) => c.label && !c.id.startsWith("_")));
+        const list = (d?.categories ?? []) as ProductCategory[];
+        setCategories(list.filter((c) => c.id && c.count > 0));
       })
       .catch(() => {
         /* barra no crítica: si falla, no se muestra */
@@ -50,57 +55,70 @@ export default function MarketplaceCategoriesBar() {
     };
   }, []);
 
+  // Brandon 2026-05-27: NO mostrar la barra dentro de una tienda
+  // (/marketplace/[slug]). Ahí el storefront tiene su propia barra slim
+  // (banner + retroceder + info) y su subnav de categorías del producto.
+  // Una página de tienda = /marketplace/{slug} cuyo primer segmento NO es una
+  // ruta reservada del marketplace.
+  const MARKETPLACE_RESERVED = new Set([
+    "apply", "buscar", "calificar-entrega", "carrito", "categoria",
+    "como-pagar", "comparar", "en-vivo", "explorar", "favoritos",
+    "gift-cards", "mi-cuenta", "negocios", "ofertas", "para-vos",
+    "payment-result", "recetas", "registrar", "repartidor",
+  ]);
+  const segments = pathname?.split("/").filter(Boolean) ?? [];
+  const isStorePage =
+    segments[0] === "marketplace" &&
+    segments.length >= 2 &&
+    !MARKETPLACE_RESERVED.has(segments[1]);
+  if (isStorePage) return null;
+
   if (categories.length === 0) return null;
 
-  const activeId = pathname?.startsWith("/marketplace/categoria/")
-    ? decodeURIComponent(pathname.split("/marketplace/categoria/")[1] ?? "").split("/")[0]
-    : null;
-  const isHome = pathname === "/marketplace";
+  // Activo cuando estamos en /marketplace/buscar?cat=ID
+  const activeCat =
+    pathname === "/marketplace/buscar" ? searchParams.get("cat") : null;
+  const isHome = pathname === "/marketplace" && !activeCat;
+
+  const chipBase =
+    "snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-2 text-sm font-bold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+  const chipActive =
+    "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]";
+  const chipIdle =
+    "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]/60";
 
   return (
-    <div className="md:hidden sticky top-14 z-40 border-b border-[var(--rule-base)] bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
+    <div className="md:hidden sticky top-[52px] z-40 border-b border-[var(--rule-base)] bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
       <nav
-        aria-label="Categorías del marketplace"
+        aria-label="Categorías de productos"
         className="flex gap-2 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden snap-x px-4 py-2.5"
         style={{ scrollbarWidth: "none" }}
       >
-        {/* Chip "Todos" → vuelve al home del marketplace */}
+        {/* Chip "Todo" → home del marketplace */}
         <Link
           href="/marketplace"
           aria-current={isHome ? "page" : undefined}
-          className={cn(
-            "snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-2 text-sm font-bold whitespace-nowrap transition-colors",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-            isHome
-              ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]"
-              : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]/60",
-          )}
+          className={cn(chipBase, isHome ? chipActive : chipIdle)}
         >
-          Todos
+          Todo
         </Link>
 
         {categories.map((cat) => {
-          const Icon = getStoreCategoryIcon(cat.id);
-          const active = activeId === cat.id;
+          const Icon = getProductCategoryIcon(cat.id.toLowerCase());
+          const active = activeCat === cat.id;
           return (
             <Link
               key={cat.id}
-              href={`/marketplace/categoria/${cat.id}`}
+              href={`/marketplace/buscar?cat=${encodeURIComponent(cat.id)}`}
               aria-current={active ? "page" : undefined}
-              className={cn(
-                "snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-2 text-sm font-bold whitespace-nowrap transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-                active
-                  ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]"
-                  : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]/60",
-              )}
+              className={cn(chipBase, active ? chipActive : chipIdle)}
             >
               <Icon
                 className={cn("h-4 w-4 shrink-0", active ? "text-white" : "text-[var(--accent)]")}
                 strokeWidth={2}
                 aria-hidden
               />
-              {cat.label}
+              {prettyLabel(cat.id)}
             </Link>
           );
         })}

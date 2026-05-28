@@ -19,7 +19,16 @@ export default function MarketplaceHomeHeader({
   storeCount?: number;
 }) {
   return (
-    <header className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+    <>
+    {/* Mobile (Brandon 2026-05-27): la home arranca directo en los banners.
+        El header editorial (eyebrow + h1 + propuesta + trust strip) se oculta
+        en cel para ir al grano; dejamos solo un <h1> sr-only para no perder el
+        anclaje SEO. En sm+ el header completo sigue visible. */}
+    <h1 className="sm:hidden sr-only">
+      Tus bodegas y tiendas favoritas de Pucallpa, a un toque — delivery rápido
+      con Yape, tarjeta o efectivo
+    </h1>
+    <header className="hidden sm:block border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
           Marketplace · Pucallpa
@@ -64,5 +73,6 @@ export default function MarketplaceHomeHeader({
         </ul>
       </div>
     </header>
+    </>
   );
 }

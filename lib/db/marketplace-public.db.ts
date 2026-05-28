@@ -567,6 +567,46 @@ export const MarketplacePublicDB = {
   },
 
   /**
+   * getProductCategories — categorías de PRODUCTO distintas presentes en el
+   * marketplace (tiendas publicadas + activas), ordenadas por cantidad de
+   * productos. Alimenta el subnav mobile de categorías (Brandon 2026-05-27):
+   * solo devuelve categorías con ≥1 producto real → cero chips muertos.
+   *
+   * Preserva el valor EXACTO de `product.category` (sin lowercasing) porque el
+   * filtro de /marketplace/buscar?cat= hace match exacto contra ese valor.
+   * Cacheado 300s.
+   *
+   * @cross-tenant intentional (ADR-082).
+   */
+  async getProductCategories(): Promise<Array<{ id: string; count: number }>> {
+    return getOrSet("marketplace:product-categories:v2", 300, async () => {
+      const rows = await prisma.storeProduct.findMany({
+        where: {
+          isActive: true,
+          store: { isPublished: true, tenant: { active: true } },
+          product: { active: true, deletedAt: null },
+        },
+        select: { product: { select: { category: true } } },
+        take: 10000,
+      });
+      // Dedupe CASE-INSENSITIVE: distintas tiendas guardan "bebidas" vs
+      // "Bebidas" — se agrupan en un solo chip. El filtro de /buscar usa
+      // `contains` insensitive, así que el id en minúsculas matchea todas las
+      // variantes. La key minúscula también alimenta el ícono canónico.
+      const counts = new Map<string, number>();
+      for (const r of rows) {
+        const cat = r.product?.category?.trim();
+        if (!cat) continue;
+        const key = cat.toLowerCase();
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      return [...counts.entries()]
+        .map(([id, count]) => ({ id, count }))
+        .sort((a, b) => b.count - a.count);
+    });
+  },
+
+  /**
    * Verifica qué product IDs existen en el marketplace (cross-store o tenant-scoped).
    * Caso de uso: validación defensiva del carrito para no eliminar items válidos.
    * Cap: 100 IDs por llamada.
