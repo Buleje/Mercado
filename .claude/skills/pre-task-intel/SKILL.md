@@ -76,9 +76,22 @@ argument-hint: "[checkout|database|auth|seo|fiado|performance|integration|genera
 - **Git:** `git log --oneline -10`, `git branch --show-current`, `git status --short`
 - **Sprint:** leer `session_sprint2_seo_kickoff.md` en memoria
 
+## Rubric correspondiente (cargar SI aplica)
+
+Al detectar dominio, cargar también la rubric verificable correspondiente:
+
+| Dominio | Rubric a cargar | Cuándo |
+|---|---|---|
+| `database` | `.claude/rubrics/db-class.json` + `prisma-migration.json` | Si tarea toca lib/db o prisma/migrations |
+| `auth`, `integration` | `.claude/rubrics/api-endpoint.json` | Si tarea crea/edita app/api/**/route.ts |
+| `performance`, cualquier UI | `.claude/rubrics/ui-component.json` | Si tarea toca components/**/*.tsx |
+| `checkout` | `api-endpoint.json` + `db-class.json` + `ui-component.json` | Toca 3 capas, cargar las 3 |
+
+La rubric NO bloquea — se carga como "lo que vamos a verificar al cerrar". Skill `outcome-evaluator` la usa en el loop.
+
 ## Formato de salida
 
-Reportar para el dominio detectado: ADRs relevantes (titulo + 1 linea), archivos clave (path:lines + que hace), cambios recientes (ultimos 5 commits en area), tests existentes (N archivos en patron), danger zones (archivo + por que + agente recomendado), contexto de sprint (sprint actual + estado + prioridad).
+Reportar para el dominio detectado: ADRs relevantes (titulo + 1 linea), archivos clave (path:lines + que hace), cambios recientes (ultimos 5 commits en area), tests existentes (N archivos en patron), danger zones (archivo + por que + agente recomendado), contexto de sprint (sprint actual + estado + prioridad), **rubric path** (si aplica).
 
 ## Integracion
 

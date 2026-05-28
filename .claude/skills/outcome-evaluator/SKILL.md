@@ -51,11 +51,16 @@ Cada tarea define su rubric. La rubric es un archivo JSON o markdown con criteri
 }
 ```
 
-Rubrics canónicas en `.claude/rubrics/`:
-- `api-endpoint.json` — para `app/api/**/route.ts`
-- `db-class.json` — para `lib/db/*.db.ts`
-- `prisma-migration.json` — para `prisma/migrations/*/migration.sql`
-- `ui-component.json` — para `components/**/*.tsx`
+Rubrics canónicas en `.claude/rubrics/` (4 capas cubiertas):
+
+| Rubric | Aplica a | Critical | High | Medium |
+|---|---|---|---|---|
+| `api-endpoint.json` | `app/api/**/route.ts` | 5 (tenantId, safeParse, no prisma directo, no force-dynamic, no SQLi) | 2 (rate limit, RBAC) | 2 (audit log, cache invalidation) |
+| `db-class.json` | `lib/db/**/*.db.ts` | 4 (tenantId 1er param, no fallback "main", no raw interpolation, prisma adapter) | 3 (cache strategy, invalidation, Decimal money, class export) | 1 (audit log writes) |
+| `prisma-migration.json` | `prisma/migrations/**/migration.sql` | 3 (no DROP sin backup, NOT NULL con default, tenantId en tablas nuevas) | 2 (índices en FKs, rename no drop+create) | 2 (CONCURRENTLY, rollback) |
+| `ui-component.json` | `components/**/*.tsx` | 2 (no hex hardcoded, "use client" primera línea) | 5 (text-xs en body, dark mode tokens, lucide no emojis, h-12 filtros, alt) | 2 (no modal entry, max 300 líneas) |
+
+**Hook auto-fire:** `post-edit-rubric-check.mjs` corre las rubrics CRITICAL en cada Edit/Write. Si fallan, alerta non-blocking a stderr. El skill `outcome-evaluator` corre el loop completo (CRITICAL + HIGH + MEDIUM con threshold).
 
 ## Loop canónico
 
