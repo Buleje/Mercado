@@ -41,6 +41,8 @@ const SharedMobileNavDrawer = dynamic(
 );
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
+import StoreStatusBanner from "./StoreStatusBanner";
+import StoreTopSellers from "./StoreTopSellers";
 // Brandon 2026-05-20 v11 audit P2: StorePromoBannersStrip below-fold +
 // hace fetch propio en mount → dynamic ssr:false ahorra ~5KB initial.
 // (Brandon 2026-05-21 v6: import de `dynamic` ya está en línea 21.)
@@ -397,6 +399,16 @@ export default function StoreDetailClient({
         isOpen={isOpen}
         paymentMethods={paymentMethods}
       />
+
+      {/* ── Estado de la tienda (abierto/cerrado + tiempo de entrega) ── */}
+      <StoreStatusBanner
+        isOpen={isOpen}
+        nextOpeningAt={nextOpeningAt ?? null}
+        scheduleLabel="Lun a Dom · 7am – 11pm"
+      />
+
+      {/* ── Lo más pedido de esta tienda ── */}
+      <StoreTopSellers storeSlug={store.slug} storeId={store.id} storeName={store.name} />
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
       <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
