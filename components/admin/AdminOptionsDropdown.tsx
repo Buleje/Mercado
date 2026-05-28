@@ -122,14 +122,15 @@ export default function AdminOptionsDropdown({
         aria-haspopup="menu"
         aria-label="Opciones del panel"
         className={cn(
-          // Brandon 2026-05-28: en MOBILE h-11 w-11 rounded-xl (mismo formato
-          // que hamburguesa + lupa para emparejar el header). En md+ vuelve al
-          // pill compacto con "Opciones" + chevron.
-          "inline-flex items-center justify-center md:justify-start h-11 w-11 md:w-auto md:h-8 md:px-2.5 md:gap-1.5 rounded-xl md:rounded-lg text-xs font-semibold transition-colors border shrink-0",
-          "text-[var(--text-secondary)] border-[var(--rule-base)]",
-          "dark:text-[var(--text-secondary)] dark:border-[var(--rule-base)]",
-          "hover:bg-gray-100 dark:hover:bg-[var(--surface-sunken)] hover:text-primary",
-          open && "bg-gray-100 dark:bg-[var(--surface-sunken)] text-primary",
+          // Brandon 2026-05-28: en MOBILE círculo branded teal-soft + accent
+          // (mismo lenguaje que hamburguesa + lupa). En md+ vuelve al pill
+          // compacto con "Opciones" + chevron.
+          "inline-flex items-center justify-center md:justify-start h-11 w-11 md:w-auto md:h-8 md:px-2.5 md:gap-1.5 rounded-xl md:rounded-lg text-xs font-semibold transition-colors shrink-0",
+          "max-md:bg-[var(--accent-soft)] max-md:text-[var(--accent)] max-md:ring-1 max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
+          "md:border md:text-[var(--text-secondary)] md:border-[var(--rule-base)]",
+          "md:dark:text-[var(--text-secondary)] md:dark:border-[var(--rule-base)]",
+          "hover:bg-gray-100 md:dark:hover:bg-[var(--surface-sunken)] md:hover:text-primary",
+          open && "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] md:bg-gray-100 md:dark:bg-[var(--surface-sunken)] md:text-primary",
         )}
       >
         <Settings2 className="h-5 w-5 md:h-4 md:w-4" />

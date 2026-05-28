@@ -131,6 +131,12 @@ export function AdminTopHeader({
   return (
     <header
       className={cn(
+        // Brandon 2026-05-28: en MOBILE forzamos fondo CLARO (surface-raised)
+        // y texto primary — los temas "Buleje" / "Ejecutivo" dejaban el header
+        // negro con `background-image: linear-gradient(...)` que se veía pesado
+        // en cel. Anulamos también el bg-image (bg-none) para que no quede el
+        // gradient encima. En sm+ se respeta el theme configurado.
+        "max-sm:bg-[var(--surface-raised)]! max-sm:bg-none! max-sm:text-[var(--text-primary)]! max-sm:border-[var(--rule-base)]!",
         "border-b px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
         headerThemeClasses,
         presentationMode && "hidden!"
@@ -141,17 +147,16 @@ export function AdminTopHeader({
         <AdminTooltip content="Abrir menú" side="bottom">
           <button
             onClick={onOpenMobileNav}
-            // Brandon 2026-05-28: mismo estilo que la lupa cuadrada (rounded-xl
-            // + border + bg) — antes era rounded-lg sin border, no emparejaba.
+            // Brandon 2026-05-28: estilo branded — círculo teal-soft con icono
+            // accent (mismo lenguaje visual que el resto del DS de Buleje).
             className={cn(
-              "sm:hidden inline-flex items-center justify-center h-11 w-11 rounded-xl border transition-colors shrink-0",
-              isAutoDarkTheme
-                ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:bg-white/[0.07]"
-                : "bg-[var(--surface-sunken)] border-[var(--rule-base)] hover:bg-white"
+              "sm:hidden inline-flex items-center justify-center h-11 w-11 rounded-xl transition-colors shrink-0 ring-1",
+              "bg-[var(--accent-soft)] text-[var(--accent)] ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
+              "hover:bg-[color-mix(in_oklab,var(--accent)_12%,var(--surface-raised))]"
             )}
             aria-label="Menú"
           >
-            <Menu className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
+            <Menu className="h-5 w-5" strokeWidth={2.25} />
           </button>
         </AdminTooltip>
 
@@ -159,20 +164,22 @@ export function AdminTopHeader({
           onClick={onOpenSearch}
           aria-label="Búsqueda global (atajo Ctrl+K)"
           className={cn(
-            // Brandon 2026-05-28: en MOBILE el search es un botón lupa cuadrado
-            // (h-11 w-11) — libera ancho para el toggle de tienda + avatar y se
-            // alinea con el resto de iconos del header. En sm+ vuelve a ser el
-            // pill ancho con placeholder y atajo ⌘K.
-            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-xl sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer transition-all border shrink-0 sm:shrink",
+            // Brandon 2026-05-28: en MOBILE = botón lupa cuadrado branded
+            // (teal-soft + accent), igual que la hamburguesa. En sm+ vuelve a
+            // ser el pill ancho con placeholder y atajo ⌘K (theme-aware).
+            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-xl sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer transition-all shrink-0 sm:shrink",
+            "max-sm:bg-[var(--accent-soft)]! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
+            "sm:border",
             isAutoDarkTheme
-              ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] hover:bg-white/[0.07]"
-              : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-white dark:hover:bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)]"
+              ? "sm:bg-white/[0.04] sm:border-[color-mix(in oklab, var(--accent) 15%, transparent)] sm:hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] sm:hover:bg-white/[0.07]"
+              : "sm:bg-[var(--surface-sunken)] sm:dark:bg-surface sm:border-[var(--rule-base)] sm:dark:border-[var(--rule-base)] sm:hover:border-primary/40 sm:hover:bg-white sm:dark:hover:bg-[var(--surface-raised)] sm:hover:shadow-[var(--shadow-sm)]"
           )}
         >
           <Search className={cn(
             "h-5 w-5 sm:h-4 sm:w-4 shrink-0 transition-colors",
-            isAutoDarkTheme ? "text-white/50 group-hover:text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary"
-          )} strokeWidth={2} />
+            "max-sm:text-[var(--accent)]!",
+            isAutoDarkTheme ? "sm:text-white/50 sm:group-hover:text-[color-mix(in oklab, var(--accent) 60%, white)]" : "sm:text-[var(--text-tertiary)] sm:dark:text-muted sm:group-hover:text-primary"
+          )} strokeWidth={2.25} />
           <span className={cn(
             "hidden sm:block flex-1 text-left text-sm font-medium truncate transition-colors",
             isAutoDarkTheme ? "text-white/55 group-hover:text-white/80" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)]"
