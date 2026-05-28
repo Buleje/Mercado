@@ -4,9 +4,7 @@
  *
  * Server component: lista tenants + catálogo. Toggle handler en client.
  */
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { getSessionPayload } from "@/lib/session";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { listSpecializations } from "@/lib/specializations";
 import SpecializationsClient from "./SpecializationsClient";
@@ -19,13 +17,12 @@ export const metadata = {
 };
 
 export default async function SpecializationsPage() {
-  // Server-side auth guard
-  const hdrs = await headers();
-  const cookie = hdrs.get("cookie") || "";
-  const session = await getSessionPayload(cookie);
-  if (!session || session.role !== "superadmin") {
-    redirect("/admin/login?reason=superadmin_required");
-  }
+  // 2026-05-28 fix: el guard explicito anterior (getSessionPayload con cookie
+  // header completo) estaba ROTO — kickeaba al login. La proteccion real ya
+  // la hace lib/middleware/auth-guards.ts → guardSuperadminPages para
+  // todas las rutas /superadmin/*. Aca solo confirmamos cookies() para
+  // forzar render dinamico (no static prerender) y dejamos pasar.
+  await cookies();
 
   // Cargar tenants activos + flags actuales en paralelo
   const [tenants, allFlags] = await Promise.all([
