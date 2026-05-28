@@ -20,6 +20,7 @@ import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOver
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
+import { SPEC_GATED_MODULE_IDS } from "@/hooks/use-enabled-specs";
 import { SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
@@ -194,6 +195,14 @@ export function AdminSidebar({
       const visible: string[] = [];
       const comingSoon: string[] = [];
       for (const id of tabIds) {
+        // 2026-05-28 ADR-124 fix: SPEC-GATED tabs (forestal CTP, salud, textil)
+        // bypassean el filtro vertical. Son módulos ORTOGONALES a la industry:
+        // un tenant restaurante puede tener forestal CTP habilitada si su
+        // dueño es también aserradero. El gating real es el feature flag.
+        if (SPEC_GATED_MODULE_IDS.has(id)) {
+          visible.push(id);
+          continue;
+        }
         if (verticalHiddenSet.has(id)) continue;
         if (verticalComingSoonSet.has(id)) {
           comingSoon.push(id);
