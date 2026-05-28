@@ -9,7 +9,6 @@ import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloa
 import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
 import ConditionalPromoBar from "@/components/marketplace/ConditionalPromoBar";
 import ConditionalGlobalChrome from "@/components/marketplace/ConditionalGlobalChrome";
-import StickyCartBar from "@/components/marketplace/StickyCartBar";
 import BottomNav from "@/components/marketplace/BottomNav";
 import ConditionalShoppingChrome from "@/components/marketplace/ConditionalShoppingChrome";
 import Footer from "@/components/Footer";
@@ -94,7 +93,9 @@ export default function MarketplaceLayout({
               <Suspense fallback={null}>
                 <ConditionalShoppingChrome>
                   <MarketplaceFloatingWidgets />
-                  <StickyCartBar />
+                  {/* Brandon 2026-05-27: StickyCartBar flotante removida — el
+                      CTA de carrito ahora vive integrado en BottomNav (un solo
+                      nav abajo: franja de carrito + tabs). */}
                   <BottomNav />
                 </ConditionalShoppingChrome>
               </Suspense>

@@ -25,7 +25,19 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbStoreProductModifierGroup } from "@/lib/db/marketplace.db";
-import type { SelectedModifier } from "@/hooks/use-marketplace-cart";
+import { useMarketplaceCart, type SelectedModifier } from "@/hooks/use-marketplace-cart";
+
+/** Producto sugerido para "Combiná con tu pedido" (misma tienda). */
+interface SuggestionItem {
+  productId: number;
+  storeProductId: string;
+  name: string;
+  price: number;
+  image: string | null;
+  unit: string | null;
+  category: string | null;
+  stock: number | null;
+}
 
 interface ProductModifierModalProps {
   open: boolean;
@@ -76,14 +88,85 @@ export default function ProductModifierModal({
   const [note, setNote] = useState("");
   const [showNoteField, setShowNoteField] = useState(false);
 
+  // ── "Combiná con tu pedido" — cross-sell de la MISMA tienda ──────────────
+  // Brandon 2026-05-27: rellena el modal (sobre todo cuando no hay adicionales)
+  // sugiriendo otros productos de la tienda para complementar (ej. una bebida).
+  const { addItem } = useMarketplaceCart();
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
+  const [addedSuggestionIds, setAddedSuggestionIds] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     if (open) {
       setSelection(initialSelection ?? defaultSelectionFor(groups));
       setQuantity(1);
       setNote("");
       setShowNoteField(false);
+      setAddedSuggestionIds(new Set());
     }
   }, [open, groups, initialSelection]);
+
+  // Fetch de sugerencias de la misma tienda al abrir. Excluye el producto
+  // actual y los agotados. Prioriza otra categoría distinta a la del producto
+  // (ej. si pedís comida, primero te muestra bebidas/postres).
+  useEffect(() => {
+    if (!open || !product.storeSlug) return;
+    const ctrl = new AbortController();
+    fetch(
+      `/api/marketplace/catalog?storeSlug=${encodeURIComponent(product.storeSlug)}&sort=popular&limit=12`,
+      { signal: ctrl.signal },
+    )
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((j) => {
+        const list = (j.data ?? []) as Array<Record<string, unknown>>;
+        const mapped: SuggestionItem[] = list
+          .filter(
+            (p) =>
+              String(p.productId) !== String(product.id) &&
+              (p.stock == null || (p.stock as number) > 0),
+          )
+          .map((p) => ({
+            productId: p.productId as number,
+            storeProductId: String(p.storeProductId),
+            name: String(p.name),
+            price: Number(p.price) || 0,
+            image: (p.image as string | null) ?? null,
+            unit: (p.unit as string | null) ?? null,
+            category: (p.category as string | null) ?? null,
+            stock: (p.stock as number | null) ?? null,
+          }));
+        // Ordena las de OTRA categoría primero (complemento real).
+        const curCat = (product.category ?? "").toLowerCase();
+        mapped.sort((a, b) => {
+          const aOther = (a.category ?? "").toLowerCase() !== curCat ? 0 : 1;
+          const bOther = (b.category ?? "").toLowerCase() !== curCat ? 0 : 1;
+          return aOther - bOther;
+        });
+        setSuggestions(mapped.slice(0, 6));
+      })
+      .catch(() => {
+        /* no crítico */
+      });
+    return () => ctrl.abort();
+  }, [open, product.storeSlug, product.id, product.category]);
+
+  const handleAddSuggestion = (sug: SuggestionItem) => {
+    addItem({
+      storeId: product.storeId,
+      storeName: product.storeName,
+      storeSlug: product.storeSlug,
+      storeProductId: sug.storeProductId,
+      productId: sug.productId,
+      name: sug.name,
+      price: sug.price,
+      basePrice: sug.price,
+      image: sug.image,
+      unit: sug.unit,
+      category: sug.category ?? undefined,
+      stock: sug.stock,
+      quantity: 1,
+    });
+    setAddedSuggestionIds((prev) => new Set(prev).add(sug.storeProductId));
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -378,13 +461,15 @@ export default function ProductModifierModal({
               )}
 
               {groups.length === 0 ? (
-                <div className="text-center py-10">
-                  <Sparkles className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-3" />
-                  <p className="text-sm font-bold text-[var(--text-primary)]">
-                    Este producto no tiene adicionales
+                <div className="text-center py-5">
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-2.5">
+                    <ShoppingCart className="h-6 w-6" strokeWidth={2} aria-hidden />
+                  </span>
+                  <p className="text-sm font-extrabold text-[var(--text-primary)]">
+                    Listo para agregar
                   </p>
                   <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                    Solo elegí la cantidad y agregá al carrito.
+                    Elegí la cantidad{suggestions.length > 0 ? " — y mirá qué le combina abajo." : " y agregá al carrito."}
                   </p>
                 </div>
               ) : (
@@ -515,6 +600,69 @@ export default function ProductModifierModal({
                       Dejale un mensaje al cocinero
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* ── "Combiná con tu pedido" — cross-sell misma tienda ──────
+                   Rellena el modal (sobre todo cuando no hay adicionales) y
+                   sube el ticket promedio sugiriendo complementos. */}
+              {suggestions.length > 0 && (
+                <div className={cn("pt-1", groups.length > 0 && "border-t border-[var(--rule-soft)] pt-5")}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                      <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                    </span>
+                    <div className="leading-tight">
+                      <p className="text-sm font-black text-[var(--text-primary)]">Combiná con tu pedido</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">
+                        Otros de {product.storeName} para acompañar
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden pb-1 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+                    {suggestions.map((sug) => {
+                      const added = addedSuggestionIds.has(sug.storeProductId);
+                      return (
+                        <div
+                          key={sug.storeProductId}
+                          className="shrink-0 w-32 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
+                        >
+                          <div className="relative h-24 w-full bg-[var(--surface-sunken)]">
+                            {sug.image ? (
+                              <Image src={sug.image} alt="" fill sizes="128px" className="object-cover" unoptimized />
+                            ) : (
+                              <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-center px-1">
+                                {sug.category ?? "Producto"}
+                              </span>
+                            )}
+                          </div>
+                          <div className="p-2">
+                            <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight line-clamp-2 min-h-[2rem]">
+                              {sug.name}
+                            </p>
+                            <div className="mt-1.5 flex items-center justify-between gap-1">
+                              <span className="text-sm font-black text-[var(--text-primary)] tabular-nums">
+                                {fmt(sug.price)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleAddSuggestion(sug)}
+                                aria-label={added ? `${sug.name} agregado` : `Agregar ${sug.name}`}
+                                className={cn(
+                                  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all active:scale-90",
+                                  added
+                                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                                    : "bg-[var(--accent)] text-white hover:brightness-110",
+                                )}
+                              >
+                                {added ? <Check className="h-4 w-4" strokeWidth={2.75} /> : <Plus className="h-4 w-4" strokeWidth={2.75} />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

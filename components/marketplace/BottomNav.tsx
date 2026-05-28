@@ -20,17 +20,21 @@
  * Adapta al modo `tiendas-only`: el tab principal lleva a /tiendas.
  */
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Search,
   ShoppingCart,
   User,
   Store as StoreIcon,
+  ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
+
+const fmtPEN = (n: number) =>
+  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -54,9 +58,17 @@ const TABS: Tab[] = [
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const { itemCount } = useMarketplaceCart();
+  const { itemCount, items } = useMarketplaceCart();
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
+
+  // Subtotal para la franja de carrito integrada (Brandon 2026-05-27: un solo
+  // nav abajo = franja de carrito + tabs en el MISMO contenedor; reemplaza a la
+  // StickyCartBar flotante que duplicaba el acceso al carrito).
+  const subtotal = useMemo(
+    () => items.reduce((s, it) => s + it.price * it.quantity, 0),
+    [items],
+  );
 
   // Brandon, mayo 14 2026: durante el flujo de checkout (carrito + datos +
   // entrega + confirmar) el BottomNav distrae del CTA principal y ofrece
@@ -135,6 +147,45 @@ export default function BottomNav() {
         "shadow-[0_-2px_10px_rgba(0,0,0,0.05)]",
       )}
     >
+      {/* ── Franja de carrito integrada — solo cuando hay productos.
+           Mismo contenedor que los tabs → un solo nav. Toda la franja navega
+           al carrito; el chip "Pagar" refuerza el CTA. ── */}
+      {itemCount > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+              try { navigator.vibrate(15); } catch { /* silent */ }
+            }
+            router.push("/marketplace/carrito");
+          }}
+          aria-label={`Ver carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}, ${fmtPEN(subtotal)}. Ir a pagar`}
+          className="flex w-full items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--accent)] px-4 py-2.5 text-left text-white active:opacity-95 transition-opacity"
+        >
+          <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25">
+            <ShoppingCart className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden />
+            <span
+              aria-hidden
+              className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[length:var(--ts-2xs)] font-black leading-none text-[var(--accent)] tabular-nums ring-1 ring-[var(--accent)]"
+            >
+              {itemCount > 99 ? "99+" : itemCount}
+            </span>
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col leading-tight">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/75">
+              {itemCount} {itemCount === 1 ? "producto" : "productos"}
+            </span>
+            <span className="text-base font-black tabular-nums truncate">
+              {fmtPEN(subtotal)}
+            </span>
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-4 h-9 text-sm font-black text-[var(--accent)]">
+            Pagar
+            <ArrowRight className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+          </span>
+        </button>
+      )}
+
       <div className="flex items-stretch">
         {TABS.map(({ id, label, Icon }) => {
           const isActive = currentActive === id;

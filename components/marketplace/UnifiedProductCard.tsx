@@ -105,7 +105,6 @@ function ProductImageFallback({ name, category }: { name?: string | null; catego
   );
 }
 import { cn } from "@/lib/utils";
-import { useCartWithUndo } from "@/hooks/use-cart-with-undo";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import { useCompare } from "@/contexts/compare-context";
@@ -205,7 +204,6 @@ export default function UnifiedProductCard({
   layout = "list",
 }: UnifiedProductCardProps) {
   const isCompact = layout === "compact";
-  const { addItemWithUndo } = useCartWithUndo();
   // Brandon 2026-05-18 v6: importamos `addItem` directo (sin drawer) para
   // el flow de modifiers — cuando el cliente confirma desde el modal de
   // adicionales NO queremos abrir el AddedToCartDrawer encima (sería un
@@ -278,16 +276,6 @@ export default function UnifiedProductCard({
     });
   }, [inCompare, addToCompare, removeFromCompare, compareItems, compareMax, product]);
 
-  const hasModifiers =
-    Array.isArray(product.modifierGroups) && product.modifierGroups.length > 0;
-  // Solo hay que FORZAR el modal de adicionales si algún grupo es obligatorio
-  // (required) o exige un mínimo. Si todos son opcionales, el "+" agrega el
-  // producto base directo (Brandon 2026-05-24) — así nunca se "pierde" el
-  // producto al cerrar el modal con X. Los extras se pueden agregar luego
-  // desde el drawer ("Editar") o el carrito.
-  const hasRequiredModifiers = (product.modifierGroups ?? []).some(
-    (g) => g.required || g.minSelect > 0,
-  );
 
   // Brandon 2026-05-18 v5: handleDecrement removido — el stepper mobile
   // del card se quitó (CTA mobile ahora es círculo icon-only igual que
@@ -303,30 +291,11 @@ export default function UnifiedProductCard({
         /* silent */
       }
     }
-    if (hasRequiredModifiers) {
-      // Hay adicionales OBLIGATORIOS → el cliente debe elegir antes de agregar.
-      setModifierModalOpen(true);
-      return;
-    }
-    addItemWithUndo({
-      storeId: product.storeId ?? "",
-      storeName: product.storeName ?? "",
-      storeSlug: product.storeSlug ?? "",
-      storeProductId: product.storeProductId ?? String(product.id),
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      basePrice: product.price,
-      image: product.image ?? null,
-      unit: product.unit ?? null,
-      description: product.description ?? null,
-      // Snapshot del stock para que el carrito pueda capar el inc y evitar
-      // el 409 del checkout. null = restaurante/servicio sin inventario.
-      stock: product.stock ?? null,
-    });
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 1200);
-  }, [addItemWithUndo, product, isOutOfStock, hasRequiredModifiers]);
+    // Brandon 2026-05-27: SIEMPRE abrir el modal "Armá tu pedido" — tenga o no
+    // adicionales. Sin grupos, el modal muestra solo la cantidad + agregar
+    // (quick add). Unifica el flujo de agregado en un único formato.
+    setModifierModalOpen(true);
+  }, [isOutOfStock]);
 
   /* ── Badges top-left ───────────────────────────────────────────── */
   const showOfertaBadge =
@@ -737,8 +706,9 @@ export default function UnifiedProductCard({
         />
       )}
 
-      {/* Modal de variaciones — solo si el producto las tiene configuradas */}
-      {hasModifiers && (
+      {/* Modal "Armá tu pedido" — SIEMPRE disponible (Brandon 2026-05-27).
+          Con adicionales muestra los grupos; sin adicionales, solo cantidad. */}
+      {(
         <ProductModifierModal
           open={modifierModalOpen}
           onClose={() => setModifierModalOpen(false)}

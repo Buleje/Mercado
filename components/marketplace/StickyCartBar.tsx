@@ -91,6 +91,16 @@ export default function StickyCartBar() {
     }
   }, []);
 
+  // Brandon 2026-05-27 (FIX "se ocultó y no aparece"): si el usuario tocó el
+  // botón ocultar (EyeOff), la barra quedaba oculta hasta que cambiara el
+  // subtotal — podía "no volver nunca". Ahora el dismiss es por-pantalla: al
+  // navegar a otra ruta la barra REAPARECE (mientras haya productos). El
+  // EyeOff sigue funcionando para ocultarla en la vista actual.
+  useEffect(() => {
+    setDismissedSubtotal(null);
+    if (typeof window !== "undefined") sessionStorage.removeItem(SS_KEY);
+  }, [pathname]);
+
   // Auto-cerrar el panel expandido cuando el carrito queda vacío
   useEffect(() => {
     if (totalQty === 0 && expanded) setExpanded(false);

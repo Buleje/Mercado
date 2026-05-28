@@ -19,7 +19,8 @@ import { Search, LayoutGrid, List, ShoppingCart, Check, Flame } from "@buleje/de
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import ProductModifierModal from "@/components/marketplace/ProductModifierModal";
+import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import type { DbStoreProduct } from "@/lib/db/marketplace.db";
 
 /**
@@ -87,33 +88,18 @@ function ProductListRow({
   );
   const qty = inCart?.quantity ?? 0;
   const hasModifiers = (product.modifierGroups?.length ?? 0) > 0;
+  const [modifierModalOpen, setModifierModalOpen] = useState(false);
 
   const handleAdd = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      // Con modifiers (ej. pollo "1/4 vs 1/8") no podemos agregar directo —
-      // mandamos al detalle para que el cliente elija opciones.
-      if (hasModifiers) {
-        window.location.href = href;
-        return;
-      }
-      addItem({
-        productId: product.productId,
-        storeProductId: product.id,
-        name: product.productName,
-        price: product.retailPrice,
-        image: product.productImage,
-        unit: product.productUnit,
-        storeId,
-        storeName,
-        storeSlug,
-        quantity: 1,
-        category: product.productCategory,
-        stock: product.stock ?? null,
-      });
+      // Brandon 2026-05-27: SIEMPRE abrir el modal "Armá tu pedido", tenga o no
+      // adicionales. Sin grupos el modal muestra solo cantidad + agregar.
+      // Unifica el flujo de agregado en un único formato.
+      setModifierModalOpen(true);
     },
-    [addItem, hasModifiers, href, product, storeId, storeName, storeSlug],
+    [],
   );
 
   return (
@@ -177,6 +163,49 @@ function ProductListRow({
           </>
         )}
       </button>
+
+      {/* Modal "Armá tu pedido" — SIEMPRE montado (Brandon 2026-05-27): todo
+          producto abre este formato; sin adicionales muestra solo cantidad. */}
+      {(
+        <ProductModifierModal
+          open={modifierModalOpen}
+          onClose={() => setModifierModalOpen(false)}
+          product={{
+            id: product.productId,
+            name: product.productName,
+            price: product.retailPrice,
+            image: product.productImage ?? null,
+            unit: product.productUnit ?? null,
+            category: product.productCategory ?? null,
+            storeId,
+            storeName,
+            storeSlug,
+            storeProductId: String(product.id),
+            description: null,
+          }}
+          groups={product.modifierGroups ?? []}
+          onConfirm={({ quantity, modifiers, finalUnitPrice }) => {
+            addItem({
+              storeId,
+              storeName,
+              storeSlug,
+              storeProductId: String(product.id),
+              productId: product.productId,
+              name: product.productName,
+              price: finalUnitPrice,
+              basePrice: product.retailPrice,
+              image: product.productImage ?? null,
+              unit: product.productUnit ?? null,
+              category: product.productCategory,
+              stock: product.stock ?? null,
+              modifiers,
+              modifierHash: modifierHashOf(modifiers),
+              quantity,
+            });
+            setModifierModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
