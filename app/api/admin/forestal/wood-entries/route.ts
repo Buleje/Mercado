@@ -142,7 +142,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     logger.error("[wood-entries.GET] failed", { error: String(err) });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Dev-mode: expone mensaje + stack truncado para debug rápido.
+    // Production: solo error_code genérico (no leak).
+    const isDev = process.env.NODE_ENV !== "production";
+    return NextResponse.json(
+      isDev
+        ? {
+            error: "internal_error",
+            message: String(err),
+            stack: err instanceof Error
+              ? err.stack?.split("\n").slice(0, 5).join("\n")
+              : undefined,
+          }
+        : { error: "internal_error" },
+      { status: 500 },
+    );
   }
 }
 
