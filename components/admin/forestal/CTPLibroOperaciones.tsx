@@ -1,18 +1,16 @@
 "use client";
 
 /**
- * CTPLibroOperaciones — Tab del panel admin con Libro de Operaciones del
- * Centro de Transformación Primaria (LOE-CTP SERFOR, ADR-124).
+ * CTPLibroOperaciones — Módulo admin Libro de Operaciones del Centro de
+ * Transformación Primaria (LOE-CTP SERFOR, ADR-124).
  *
  * Solo se renderiza si el tenant tiene `spec:forestal:ctp-libro` habilitado
- * (gating en app/admin/page.tsx + en el endpoint).
+ * (gating en sidebar via useEnabledSpecs + en endpoints via 403).
  *
- * Estructura:
- *   1. Header con stats (volumen mes, especies, pendientes validar)
- *   2. Filtros (status, especie, GTF, rango fechas)
- *   3. Tabla de entries
- *   4. Modal form crear/editar
+ * 2026-05-28 v2 — Refactor visual: AdminModuleHeader + StatCard + AdminModal
+ * para alinear con resto de módulos admin (AdelantosModule, etc.).
  */
+
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
@@ -27,7 +25,10 @@ import {
   ThumbsUp,
   ThumbsDown,
   BarChart3,
+  Boxes,
 } from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import WoodEntryForm from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 
@@ -57,33 +58,13 @@ interface ListResponse {
 
 const STATUS_META: Record<
   WoodEntry["status"],
-  { label: string; color: string; Icon: typeof CheckCircle2 }
+  { label: string; tone: "success" | "warning" | "danger" | "info" | "muted"; Icon: typeof CheckCircle2 }
 > = {
-  pendiente: {
-    label: "Pendiente",
-    color: "data-warning",
-    Icon: Clock,
-  },
-  validado: {
-    label: "Validado",
-    color: "data-success",
-    Icon: CheckCircle2,
-  },
-  procesado: {
-    label: "Procesado",
-    color: "data-info",
-    Icon: CheckCircle2,
-  },
-  rechazado: {
-    label: "Rechazado",
-    color: "data-danger",
-    Icon: AlertCircle,
-  },
-  anulado: {
-    label: "Anulado",
-    color: "text-tertiary",
-    Icon: XIcon,
-  },
+  pendiente:  { label: "Pendiente",  tone: "warning", Icon: Clock },
+  validado:   { label: "Validado",   tone: "success", Icon: CheckCircle2 },
+  procesado:  { label: "Procesado",  tone: "info",    Icon: CheckCircle2 },
+  rechazado:  { label: "Rechazado",  tone: "danger",  Icon: AlertCircle },
+  anulado:    { label: "Anulado",    tone: "muted",   Icon: XIcon },
 };
 
 export default function CTPLibroOperaciones() {
@@ -92,20 +73,15 @@ export default function CTPLibroOperaciones() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filtros
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [search, setSearch] = useState("");
 
-  // Modal form
   const [showForm, setShowForm] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
-  // Row actions
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
-
-  // Dashboard toggle
-  const [showDashboard, setShowDashboard] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -120,14 +96,10 @@ export default function CTPLibroOperaciones() {
         `/api/admin/forestal/wood-entries?${params.toString()}`,
         { credentials: "include" },
       );
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(
-          data.message ?? data.error ?? `HTTP ${res.status}`,
-        );
+        throw new Error(data.message ?? data.error ?? `HTTP ${res.status}`);
       }
-
       const data: ListResponse = await res.json();
       setEntries(data.entries);
       setTotal(data.total);
@@ -143,7 +115,11 @@ export default function CTPLibroOperaciones() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
-  async function doAction(id: string, action: "validate" | "reject" | "delete", reason?: string) {
+  async function doAction(
+    id: string,
+    action: "validate" | "reject" | "delete",
+    reason?: string,
+  ) {
     setActionPending(`${id}:${action}`);
     setError(null);
     try {
@@ -167,12 +143,8 @@ export default function CTPLibroOperaciones() {
     }
   }
 
-  // KPIs derivados
   const kpis = useMemo(() => {
-    const totalVolume = entries.reduce(
-      (acc, e) => acc + Number(e.volumeM3 ?? 0),
-      0,
-    );
+    const totalVolume = entries.reduce((acc, e) => acc + Number(e.volumeM3 ?? 0), 0);
     const pendingCount = entries.filter((e) => e.status === "pendiente").length;
     const citesCount = entries.filter((e) => e.speciesCites).length;
     const speciesSet = new Set(entries.map((e) => e.speciesCommonName));
@@ -186,80 +158,76 @@ export default function CTPLibroOperaciones() {
 
   return (
     <div className="space-y-6">
-      {/* Header con stats */}
-      <header>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="flex items-center gap-2 text-2xl font-extrabold text-[var(--text-primary)]">
-              <TreePine className="h-6 w-6 text-[var(--data-success-600)]" />
-              Libro de Operaciones CTP
-            </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Registro de ingresos de madera al Centro de Transformación Primaria.
-              Compatible con LOE-CTP SERFOR (interno, no oficial).
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowDashboard((v) => !v)}
-              className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
-                showDashboard
-                  ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-              }`}
-              aria-label="Dashboard de agregados"
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span>{showDashboard ? "Cerrar dashboard" : "Ver dashboard"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={load}
-              disabled={loading}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-              aria-label="Recargar"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              <span>Recargar</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
-            >
-              <Plus className="h-5 w-5" />
-              Nuevo ingreso
-            </button>
-          </div>
-        </div>
+      {/* Header editorial unificado (mismo patrón que AdelantosModule, etc.) */}
+      <AdminModuleHeader
+        eyebrow="Forestal · Especialización"
+        title="Libro de Operaciones CTP"
+        description="Registro de ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial)."
+        icon={TreePine}
+      >
+        <button
+          type="button"
+          onClick={() => setShowDashboard((v) => !v)}
+          className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
+            showDashboard
+              ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white"
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          }`}
+        >
+          <BarChart3 className="h-4 w-4" />
+          <span>{showDashboard ? "Cerrar dashboard" : "Dashboard"}</span>
+        </button>
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+          aria-label="Recargar"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          <span>Recargar</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
+        >
+          <Plus className="h-5 w-5" />
+          Nuevo ingreso
+        </button>
+      </AdminModuleHeader>
 
-        {/* KPIs */}
-        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <KpiCard
-            label="Total registros"
-            value={total.toString()}
-            sublabel={`${entries.length} visibles`}
-          />
-          <KpiCard
-            label="Volumen total (m³)"
-            value={kpis.totalVolume.toFixed(2)}
-            sublabel={`${kpis.speciesCount} especies`}
-          />
-          <KpiCard
-            label="Pendientes validar"
-            value={kpis.pendingCount.toString()}
-            sublabel="Requieren acción"
-            tone={kpis.pendingCount > 0 ? "warning" : undefined}
-          />
-          <KpiCard
-            label="Especies CITES"
-            value={kpis.citesCount.toString()}
-            sublabel="Protección internacional"
-            tone={kpis.citesCount > 0 ? "danger" : undefined}
-          />
-        </div>
-      </header>
+      {/* KPIs con StatCard del DS (mismo look-and-feel que finanzas/adelantos) */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard
+          label="Total registros"
+          value={total.toString()}
+          subValue={`${entries.length} visibles`}
+          icon={Boxes}
+          emphasis="neutral"
+        />
+        <StatCard
+          label="Volumen total"
+          value={`${kpis.totalVolume.toFixed(2)} m³`}
+          subValue={`${kpis.speciesCount} especies`}
+          icon={TreePine}
+          emphasis="success"
+        />
+        <StatCard
+          label="Pendientes validar"
+          value={kpis.pendingCount.toString()}
+          subValue="Requieren acción"
+          icon={Clock}
+          emphasis={kpis.pendingCount > 0 ? "warning" : "neutral"}
+        />
+        <StatCard
+          label="Especies CITES"
+          value={kpis.citesCount.toString()}
+          subValue="Protección internacional"
+          icon={AlertCircle}
+          emphasis={kpis.citesCount > 0 ? "error" : "neutral"}
+        />
+      </div>
 
       {/* Dashboard agregados */}
       {showDashboard && <SpeciesAggregateChart />}
@@ -471,7 +439,8 @@ export default function CTPLibroOperaciones() {
               Sin ingresos registrados aún.
             </p>
             <p className="mt-1 text-sm">
-              Hacé click en &quot;Nuevo ingreso&quot; para registrar el primer movimiento de madera.
+              Hacé click en &quot;Nuevo ingreso&quot; para registrar el primer
+              movimiento de madera.
             </p>
           </div>
         )}
@@ -484,7 +453,7 @@ export default function CTPLibroOperaciones() {
         )}
       </div>
 
-      {/* Modal Form */}
+      {/* Modal Form — ahora usa AdminModal del shared (Radix Dialog) */}
       {showForm && (
         <WoodEntryForm
           onClose={() => setShowForm(false)}
@@ -526,45 +495,23 @@ function Td({
   return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
 }
 
-function KpiCard({
-  label,
-  value,
-  sublabel,
-  tone,
-}: {
-  label: string;
-  value: string;
-  sublabel?: string;
-  tone?: "warning" | "danger";
-}) {
-  const accent =
-    tone === "danger"
-      ? "border-[var(--data-danger-300)] bg-[var(--data-danger-50)]"
-      : tone === "warning"
-        ? "border-[var(--data-warning-300)] bg-[var(--data-warning-50)]"
-        : "border-[var(--rule-base)] bg-[var(--surface-raised)]";
-
-  return (
-    <div className={`rounded-2xl border-2 ${accent} p-4`}>
-      <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
-        {value}
-      </p>
-      {sublabel && (
-        <p className="mt-1 text-xs text-[var(--text-secondary)]">{sublabel}</p>
-      )}
-    </div>
-  );
-}
-
 function StatusBadge({ status }: { status: WoodEntry["status"] }) {
   const meta = STATUS_META[status];
   const { Icon } = meta;
+  // tonos coherentes con DS — sin nesting de var()
+  const cls =
+    meta.tone === "success"
+      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+      : meta.tone === "warning"
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+        : meta.tone === "danger"
+          ? "bg-[var(--data-danger-100)] text-[var(--data-danger-900)]"
+          : meta.tone === "info"
+            ? "bg-[var(--data-info-100)] text-[var(--data-info-900)]"
+            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full bg-[var(--${meta.color}-100)] px-2.5 py-1 text-xs font-bold text-[var(--${meta.color}-900)]`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}
     >
       <Icon className="h-3 w-3" />
       {meta.label}

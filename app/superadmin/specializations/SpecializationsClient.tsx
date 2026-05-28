@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Check, X, Loader2, AlertTriangle, Filter, Search } from "@buleje/design-system/icons";
 import type { Specialization, SpecializationKey } from "@/lib/specializations";
+import { broadcastSpecsChanged } from "@/hooks/use-enabled-specs";
 
 interface TenantWithFlags {
   id: string;
@@ -76,6 +77,15 @@ export default function SpecializationsClient({
               : t,
           ),
         );
+      });
+
+      // 2026-05-28 — Real-time sync: broadcast a todos los tabs admin del
+      // mismo browser para que el sidebar refresque sin reload. Cross-browser
+      // queda en visibilitychange (TTL 30s en el hook).
+      broadcastSpecsChanged({
+        tenantId,
+        specKey,
+        enabled: !current,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

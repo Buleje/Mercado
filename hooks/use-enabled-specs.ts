@@ -4,17 +4,26 @@
  * useEnabledSpecs — hook que consulta las especializaciones habilitadas
  * para el tenant actual (ADR-124).
  *
- * Cachea en sessionStorage por 5 min para evitar request en cada render.
- * Si el endpoint falla, retorna un set vacío (falla cerrado — mejor
- * ocultar el tab que mostrarlo mal).
+ * Real-time sync (2026-05-28 v2):
+ * - TTL bajado a 30s (era 5min — demasiado para feedback inmediato).
+ * - Escucha BroadcastChannel "buleje:specs" — superadmin toggle dispara
+ *   mensaje y todos los tabs del mismo browser refetchean al instante.
+ * - Escucha visibilitychange/focus: al volver al tab admin re-fetch si
+ *   el cache está vencido (cross-browser fallback).
+ * - storage event para cross-tab (mismo dominio, mismo browser, sin BC).
+ *
+ * Falla cerrado: ante cualquier error retorna set vacío.
  *
  * Usage:
  *   const { enabledModuleIds, isLoading } = useEnabledSpecs();
  *   if (!enabledModuleIds.has("ctp-libro-operaciones")) {
  *     // ocultar este tab del sidebar
  *   }
+ *
+ * Trigger remoto (desde superadmin tras toggle):
+ *   broadcastSpecsChanged(); // ver export más abajo
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface SpecResponse {
   keys: string[];
@@ -29,7 +38,8 @@ interface UseEnabledSpecsResult {
 }
 
 const CACHE_KEY = "buleje:enabled-specs";
-const TTL_MS = 5 * 60 * 1000; // 5 min
+const BROADCAST_CHANNEL = "buleje:specs";
+const TTL_MS = 30 * 1000; // 30s — feedback rápido sin paliza al endpoint
 
 interface CacheEntry {
   ts: number;
@@ -66,10 +76,17 @@ export function useEnabledSpecs(): UseEnabledSpecsResult {
   const [isLoading, setIsLoading] = useState(!data);
   const [version, setVersion] = useState(0);
 
+  const refresh = useCallback(() => {
+    try { sessionStorage.removeItem(CACHE_KEY); } catch {}
+    setVersion((v) => v + 1);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     const cached = readCache();
-    if (cached) {
+    if (cached && version === 0) {
+      // Solo usar cache en el primer render. Cualquier refresh manual o
+      // cambio de version bypasea cache y refetchea.
       setData(cached);
       setIsLoading(false);
       return;
@@ -93,15 +110,84 @@ export function useEnabledSpecs(): UseEnabledSpecsResult {
     };
   }, [version]);
 
+  // ── Real-time invalidation ─────────────────────────────────────────────
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // 1) BroadcastChannel — el superadmin dispara post-toggle. Todos los
+    //    tabs admin del MISMO browser refetchean inmediato.
+    let bc: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        bc = new BroadcastChannel(BROADCAST_CHANNEL);
+        bc.addEventListener("message", (ev) => {
+          if (ev?.data?.type === "spec-toggled") {
+            refresh();
+          }
+        });
+      } catch {
+        // fallback silently
+      }
+    }
+
+    // 2) visibilitychange: al volver al tab, si cache caducó re-fetch.
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        if (!readCache()) refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // 3) focus: paranoia extra (algunos browsers no disparan visibility).
+    const onFocus = () => {
+      if (!readCache()) refresh();
+    };
+    window.addEventListener("focus", onFocus);
+
+    // 4) storage — fallback cross-tab cuando BroadcastChannel no está
+    //    disponible (Safari 14, viejos browsers).
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === CACHE_KEY && e.newValue === null) {
+        refresh();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      bc?.close();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [refresh]);
+
   return {
     enabledKeys: new Set(data?.keys ?? []),
     enabledModuleIds: new Set(data?.moduleIds ?? []),
     isLoading,
-    refresh: () => {
-      sessionStorage.removeItem(CACHE_KEY);
-      setVersion((v) => v + 1);
-    },
+    refresh,
   };
+}
+
+/**
+ * Dispara invalidation en todos los tabs del browser via BroadcastChannel.
+ * Llamar desde superadmin DESPUÉS de un toggle exitoso.
+ * Falla silent si BroadcastChannel no disponible.
+ */
+export function broadcastSpecsChanged(payload?: {
+  tenantId?: string;
+  specKey?: string;
+  enabled?: boolean;
+}): void {
+  if (typeof window === "undefined") return;
+  if (typeof BroadcastChannel === "undefined") return;
+  try {
+    const bc = new BroadcastChannel(BROADCAST_CHANNEL);
+    bc.postMessage({ type: "spec-toggled", ...(payload ?? {}) });
+    bc.close();
+  } catch {
+    // silent
+  }
 }
 
 /**

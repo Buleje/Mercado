@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, TreePine, AlertTriangle, Loader2 } from "@buleje/design-system/icons";
+import { TreePine, AlertTriangle, Loader2 } from "@buleje/design-system/icons";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 interface Props {
   onClose: () => void;
@@ -171,38 +172,30 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm sm:items-center"
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Nuevo ingreso al CTP"
+      description="Registro LOE-CTP — Compatible con formato SERFOR"
+      variant="wide"
     >
-      <div className="my-8 w-full max-w-4xl rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-2xl">
-        {/* Header */}
-        <header className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-[var(--data-success-100)] p-2">
-              <TreePine className="h-5 w-5 text-[var(--data-success-700)]" />
-            </div>
-            <div>
-              <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
-                Nuevo ingreso al CTP
-              </h3>
-              <p className="text-xs text-[var(--text-secondary)]">
-                Registro LOE-CTP — Compatible con formato SERFOR
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </header>
+      {/* Mini-encabezado con icon (overrides el default de AdminModal con
+          el icon forestal para identidad visual del módulo) */}
+      <div className="mb-4 flex items-center gap-3 border-b-2 border-[var(--rule-base)] pb-3">
+        <div className="rounded-2xl bg-[var(--data-success-100)] p-2">
+          <TreePine className="h-5 w-5 text-[var(--data-success-700)]" />
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wider text-[var(--text-tertiary)]">
+            Forestal · LOE-CTP SERFOR
+          </p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">
+            Completá los 6 pasos. Los campos con * son obligatorios.
+          </p>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 p-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-[var(--data-danger-900)]">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
@@ -530,8 +523,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
             </button>
           </footer>
         </form>
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 
