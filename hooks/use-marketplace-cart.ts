@@ -65,13 +65,27 @@ const EMPTY_STATE: CartState = { items: [] };
 
 // ---------- helpers de storage ----------
 
+/**
+ * Brandon 2026-05-27 (FIX bloat): las imágenes data:URI (base64) inflan el
+ * localStorage del carrito — un item llegó a 136 KB, con riesgo de exceder la
+ * cuota (~5MB) y serializar lento en CADA update. El carrito no necesita la
+ * imagen embebida: si es `data:` la descartamos (la UI cae a fallback). Las
+ * URLs http / relativas (/uploads) se conservan (livianas).
+ */
+function safeImage(image: string | null | undefined): string | null {
+  if (!image) return null;
+  return image.startsWith("data:") ? null : image;
+}
+
 function readStorage(): CartState {
   if (typeof window === "undefined") return EMPTY_STATE;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return EMPTY_STATE;
     const parsed = JSON.parse(raw) as CartState;
-    return parsed && Array.isArray(parsed.items) ? parsed : EMPTY_STATE;
+    if (!parsed || !Array.isArray(parsed.items)) return EMPTY_STATE;
+    // Cura carritos ya inflados al leerlos (data:URI → null).
+    return { items: parsed.items.map((it) => ({ ...it, image: safeImage(it.image) })) };
   } catch {
     return EMPTY_STATE;
   }
@@ -179,6 +193,7 @@ export function useMarketplaceCart() {
       const incomingHash = item.modifierHash ?? modifierHashOf(item.modifiers);
       const normalized: CartItem = {
         ...item,
+        image: safeImage(item.image),
         quantity: item.quantity ?? 1,
         modifierHash: incomingHash,
       };
