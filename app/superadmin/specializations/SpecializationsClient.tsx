@@ -1,9 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, X, Loader2, AlertTriangle, Filter, Search } from "@buleje/design-system/icons";
+import {
+  Check,
+  X,
+  Loader2,
+  AlertTriangle,
+  Filter,
+  Search,
+  TreePine,
+  Building2,
+  Layers,
+  Zap,
+} from "@buleje/design-system/icons";
 import type { Specialization, SpecializationKey } from "@/lib/specializations";
 import { broadcastSpecsChanged } from "@/hooks/use-enabled-specs";
+import { AdminTabShell } from "@/app/admin/_components/_shared";
+import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
 
 interface TenantWithFlags {
   id: string;
@@ -94,33 +107,37 @@ export default function SpecializationsClient({
     }
   }
 
-  return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] py-6">
-        <div className="mx-auto max-w-7xl px-6">
-          <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">
-            Especializaciones por tenant
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Activa módulos verticales (forestal CTP, salud, textil) en cada
-            negocio. Cambios aplican inmediatamente — el módulo aparece en el
-            panel admin tras refrescar.
-          </p>
-        </div>
-      </header>
+  // Stats hero (KPIs derivadas)
+  const totalEnabled = tenants.reduce(
+    (acc, t) => acc + Object.values(t.flags).filter(Boolean).length,
+    0,
+  );
+  const availableSpecs = catalog.filter((c) => c.status === "available").length;
 
+  return (
+    <AdminTabShell
+      title="Especializaciones"
+      kicker="Plataforma · Habilitación por tenant"
+      description="Activa módulos verticales (forestal CTP, salud, textil) en cada negocio. Cambios aplican en tiempo real al panel admin del tenant."
+      icon={TreePine}
+      stats={
+        <>
+          <SAStatChip icon={Building2} label="Tenants" value={tenants.length} tone="sky" />
+          <SAStatChip icon={Layers} label="Especializaciones" value={`${availableSpecs}/${catalog.length}`} hint="disponibles / total" tone="violet" />
+          <SAStatChip icon={Zap} label="Activaciones" value={totalEnabled} tone="emerald" />
+        </>
+      }
+    >
       {error && (
-        <div className="mx-auto mt-4 max-w-7xl px-6">
-          <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-[var(--data-danger-900)]">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-            <div className="text-sm">
-              <strong>Error al togglear:</strong> {error}
-            </div>
+        <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-[var(--data-danger-900)]">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div className="text-sm">
+            <strong>Error al togglear:</strong> {error}
           </div>
         </div>
       )}
 
-      <div className="mx-auto max-w-7xl px-6 py-6">
+      <div>
         {/* Filtros */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
@@ -295,6 +312,6 @@ export default function SpecializationsClient({
           </div>
         )}
       </div>
-    </div>
+    </AdminTabShell>
   );
 }

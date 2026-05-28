@@ -82,17 +82,17 @@ export function useEnabledSpecs(): UseEnabledSpecsResult {
   }, []);
 
   useEffect(() => {
+    // 2026-05-28 v3 fix: SIEMPRE re-fetch al mount. El cache es solo para
+    // evitar request en navegaciones SPA dentro del admin — el primer render
+    // tras login/reload debe traer data fresca (sino: superadmin toggleó →
+    // admin recarga → seguía viendo cache viejo de la sesión anterior).
+    // Cache se aplica como initial value (UI inmediato) pero igual fetch.
     let cancelled = false;
-    const cached = readCache();
-    if (cached && version === 0) {
-      // Solo usar cache en el primer render. Cualquier refresh manual o
-      // cambio de version bypasea cache y refetchea.
-      setData(cached);
-      setIsLoading(false);
-      return;
-    }
     setIsLoading(true);
-    fetch("/api/admin/me/specializations", { credentials: "include" })
+    fetch("/api/admin/me/specializations", {
+      credentials: "include",
+      cache: "no-store",
+    })
       .then((r) => (r.ok ? r.json() : { keys: [], moduleIds: [] }))
       .then((d: SpecResponse) => {
         if (cancelled) return;
