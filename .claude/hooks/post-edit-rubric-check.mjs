@@ -35,6 +35,11 @@ const RUBRIC_ROUTES = [
   { rubric: "ui-component.json",      match: /^components\/.*\.tsx$/ },
 ];
 
+// Universal — corre SIEMPRE además de la rubric específica
+const UNIVERSAL_RUBRICS = [
+  { rubric: "secrets-leak.json", match: /\.(ts|tsx|js|mjs|json|sql|env|md)$/ },
+];
+
 const SKIP_FILES = [
   /\.test\.(t|j)sx?$/,
   /\.spec\.(t|j)sx?$/,
@@ -65,11 +70,18 @@ function extractFilePath(payload) {
   return ti.file_path || ti.notebook_path || null;
 }
 
-function pickRubric(relPath) {
+function pickRubrics(relPath) {
+  const rubrics = [];
   for (const route of RUBRIC_ROUTES) {
-    if (route.match.test(relPath)) return route.rubric;
+    if (route.match.test(relPath)) {
+      rubrics.push(route.rubric);
+      break; // solo 1 capa-específica
+    }
   }
-  return null;
+  for (const route of UNIVERSAL_RUBRICS) {
+    if (route.match.test(relPath)) rubrics.push(route.rubric);
+  }
+  return rubrics;
 }
 
 function runCriticalChecks(rubricPath, absFilePath) {
@@ -112,27 +124,33 @@ function main() {
 
   if (SKIP_FILES.some((rx) => rx.test(relPath))) process.exit(0);
 
-  const rubricFile = pickRubric(relPath);
-  if (!rubricFile) process.exit(0);
+  const rubricFiles = pickRubrics(relPath);
+  if (rubricFiles.length === 0) process.exit(0);
 
   if (!debouncePassed()) process.exit(0);
 
-  const rubricPath = path.join(RUBRICS_DIR, rubricFile);
-  if (!fs.existsSync(rubricPath)) process.exit(0);
+  const allFails = [];
+  for (const rubricFile of rubricFiles) {
+    const rubricPath = path.join(RUBRICS_DIR, rubricFile);
+    if (!fs.existsSync(rubricPath)) continue;
+    const { rubric, total, failed } = runCriticalChecks(rubricPath, absFile);
+    if (failed.length > 0) {
+      allFails.push({ rubricFile, rubric, total, failed });
+    }
+  }
 
-  const { rubric, total, failed } = runCriticalChecks(rubricPath, absFile);
+  if (allFails.length === 0) process.exit(0);
 
-  if (failed.length === 0) process.exit(0);
-
-  // Emit warning to stderr (Claude reads this in next turn)
-  const lines = [
-    "",
-    `⚠️  Rubric check FAIL (${failed.length}/${total} critical) en ${relPath}`,
-    `   Rubric: ${rubric}`,
-    ...failed.map((f) => `   ✗ ${f.id}: ${f.msg}`),
-    `   Fix: ver .claude/rubrics/${rubricFile} o correr /outcome-evaluator`,
-    "",
-  ];
+  const lines = [""];
+  for (const af of allFails) {
+    lines.push(
+      `⚠️  Rubric check FAIL (${af.failed.length}/${af.total} critical) en ${relPath}`,
+      `   Rubric: ${af.rubric}`,
+      ...af.failed.map((f) => `   ✗ ${f.id}: ${f.msg}`),
+      `   Fix: ver .claude/rubrics/${af.rubricFile} o correr /outcome-evaluator`,
+      ""
+    );
+  }
   console.error(lines.join("\n"));
   process.exit(0); // non-blocking
 }

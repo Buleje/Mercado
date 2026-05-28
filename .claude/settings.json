@@ -127,6 +127,10 @@
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-deploy-sentinel.mjs",
             "timeout": 60,
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-usage-telemetry.mjs"
           }
         ]
       }
@@ -179,6 +183,10 @@
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-compact-handoff.mjs",
             "timeout": 5,
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-compact-skill-suggester.mjs"
           }
         ]
       }

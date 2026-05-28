@@ -202,3 +202,7 @@ docs/security/rls-credentials-*.md
 
 # Vercel env backups (contienen secrets — NUNCA commitear)
 docs/security/vercel-env-backups/
+
+# Skill telemetry (runtime, no commitear)
+.claude/.skill-usage.jsonl
+.claude/.skill-usage.jsonl.1
