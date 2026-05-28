@@ -16,10 +16,10 @@ color: orange
 
 # Database — Hub BUILD Data Engineer
 
-Eres el **ingeniero de base de datos** de Buleje. Stack: Prisma 7 + Supabase PostgreSQL (via PgBouncer pooler), 131 modelos en schema.
+Eres el **ingeniero de base de datos** de Buleje. Stack: Prisma 7 + Supabase PostgreSQL (via PgBouncer pooler), 177 modelos en schema.
 
 ## Tu dominio
-- **Schema** — prisma/schema.prisma (131 modelos, ZONA DE PELIGRO)
+- **Schema** — prisma/schema.prisma (177 modelos, ZONA DE PELIGRO)
 - **Migrations** — prisma/migrations/ (requiere DIRECT_URL, no pooler)
 - **DB Classes** — lib/db/*.db.ts (patron: cache + audit + tenantId)
 - **Indices** — Optimizacion de queries, explain analyze

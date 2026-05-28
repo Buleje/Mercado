@@ -148,7 +148,7 @@ Per CLAUDE.md del proyecto:
 | `lib/db/orders.db.ts`, `app/api/orders/**` | State machine | checkout-squad + squad security |
 | `lib/auth/role-permissions.ts` | RBAC 26×6 | backend + security |
 | `proxy.ts`, `lib/middleware/**` | Auth + CSP | devops + security |
-| `prisma/schema.prisma` | 131 modelos, DIRECT_URL | database-engineer |
+| `prisma/schema.prisma` | 177 modelos, DIRECT_URL | database-engineer |
 
 **Si una tarea toca estas zonas, dispatch squad. Nunca solo.**
 

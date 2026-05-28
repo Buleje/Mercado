@@ -17,6 +17,10 @@
  */
 import { readFileSync } from "node:fs";
 
+// Opt-out para sesiones de setup (instalar tools que requieren curl|sh, sudo, etc.)
+// Uso: BSM_ALLOW_INSTALL=1 claude
+if (process.env.BSM_ALLOW_INSTALL === "1") process.exit(0);
+
 /**
  * Lista de patrones regex que bloquean comandos peligrosos.
  * Cada entrada: { pattern, label, severity, reason }

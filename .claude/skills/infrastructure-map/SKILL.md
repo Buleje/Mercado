@@ -43,7 +43,7 @@ Ejecuta prisma + agents + services → documento unificado.
 Cada subcomando genera un `.md` con:
 - Titulo + fecha de generacion
 - Diagrama Mermaid valido (erDiagram / flowchart / architecture)
-- Agrupado por dominio (no listar 131 modelos sin estructura)
+- Agrupado por dominio (no listar 177 modelos sin estructura)
 
 Ejemplo de relaciones Prisma:
 ```mermaid
@@ -71,6 +71,6 @@ flowchart TB
 
 ## Referencia
 
-- Schema: `prisma/schema.prisma` (131 modelos)
+- Schema: `prisma/schema.prisma` (177 modelos)
 - Agentes: `.claude/agents/` (24 agentes)
 - Docs: `docs/ARCHITECTURE.md`

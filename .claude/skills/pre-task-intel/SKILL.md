@@ -36,7 +36,7 @@ argument-hint: "[checkout|database|auth|seo|fiado|performance|integration|genera
 
 ### database
 - **ADRs:** 017 (ola1 migrations), 018 (float-to-decimal), 020 (ola1 plan), 001 (multi-tenancy)
-- **Archivos:** `prisma/schema.prisma` (131 modelos), `lib/db/*.db.ts`, `prisma/migrations/`
+- **Archivos:** `prisma/schema.prisma` (177 modelos), `lib/db/*.db.ts`, `prisma/migrations/`
 - **Tests:** `__tests__/**/db*`, `__tests__/**/migration*`
 - **Danger:** schema.prisma — requiere DIRECT_URL + migration-planner. Ref: `reference_prisma_pgbouncer_workaround.md`
 

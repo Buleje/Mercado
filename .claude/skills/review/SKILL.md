@@ -48,7 +48,7 @@ Revisar TODOS los archivos modificados y verificar:
 - [ ] **tenantId en todas las queries** — cada consulta a la DB debe filtrar por tenantId
 - [ ] **safeParse() en lugar de .parse()** — Zod debe usar safeParse() para control de errores
 - [ ] **DB classes de lib/db/** — nunca Prisma directo, siempre usar las clases de `lib/db/*.db.ts`
-- [ ] **force-dynamic en route handlers** — `export const dynamic = "force-dynamic"` en todos los route handlers
+- [ ] **No usar `force-dynamic` (Next 16)** — usar `"use cache"` + `cacheLife(...)` + `cacheTag(...)` (ADR-019). `export const dynamic = "force-dynamic"` rompe el servidor.
 - [ ] **Fire-and-forget** — `logActivity().catch(() => {})` y `sendNotification().catch(() => {})` no deben bloquear
 
 ### 4. Verificar convenciones adicionales

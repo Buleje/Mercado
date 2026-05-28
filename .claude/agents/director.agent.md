@@ -170,7 +170,7 @@ Cuando detectes que una tarea toca zona de peligro, carga el skill automaticamen
 | Archivos detectados | Skill a cargar | Razon |
 |-------------------|---------------|-------|
 | components/checkout/**, CheckoutModal.tsx | checkout-flow | State machine pagos, idempotency |
-| schema.prisma, prisma/migrations/ | prisma-schema + database-migrations | 131 modelos, requiere DIRECT_URL |
+| schema.prisma, prisma/migrations/ | prisma-schema + database-migrations | 177 modelos, requiere DIRECT_URL |
 | lib/auth/role-permissions.ts, proxy.ts | security-auth | 26 recursos x 6 roles, CSP |
 | contexts/cart-context.tsx | state-management | BroadcastChannel multi-tab |
 | lib/db/orders.db.ts | database-migrations | State machine, idempotency keys |

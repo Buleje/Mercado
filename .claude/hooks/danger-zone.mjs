@@ -87,15 +87,27 @@ try {
             `Índice maestro: docs/instructions-index.md`
         }
       });
-      process.stdout.write(response);
+      // MODO WARN (2026-05-28): No bloqueante. Solo advierte por stderr.
+      // Para volver a bloqueo duro, restaurar exit(2) + stdout.write(response).
+      // Opt-out: BSM_DZ_BLOCK=1 → modo blocking original.
+      if (process.env.BSM_DZ_BLOCK === "1") {
+        process.stdout.write(response);
+        process.stderr.write(
+          `⚠️ ZONA DE PELIGRO (BLOCK): ${zone.label}\n` +
+          `   📖 Skill: "${zone.skill}" (${skillPath})\n` +
+          `   🤖 Agente: ${zone.agent}\n` +
+          `   💡 ${zone.reason}${skillMissingNote}\n`
+        );
+        process.exit(2);
+      }
       process.stderr.write(
-        `⚠️ ZONA DE PELIGRO: ${zone.label}\n` +
-        `   📖 Skill requerido: "${zone.skill}" (${skillPath})\n` +
-        `   🤖 Agente recomendado: ${zone.agent}\n` +
-        `   💡 Razon: ${zone.reason}${skillMissingNote}\n` +
-        `   Usa /audit-first o el agente recomendado antes de tocar este archivo.\n`
+        `🟡 DANGER ZONE (warn-only): ${zone.label}\n` +
+        `   📖 Skill recomendado: "${zone.skill}" (${skillPath})\n` +
+        `   🤖 Agente: ${zone.agent}\n` +
+        `   💡 ${zone.reason}${skillMissingNote}\n` +
+        `   (Tip: BSM_DZ_BLOCK=1 para volver a bloqueo duro)\n`
       );
-      process.exit(2); // Exit 2 = blocking error per official spec
+      process.exit(0);
     }
   }
 

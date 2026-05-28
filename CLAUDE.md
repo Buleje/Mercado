@@ -71,13 +71,13 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 | `delivery/`, `delivery-app/` | Repartidor (+ Capacitor) |
 | `supplier/` | Portal proveedores |
 | `t/[tenantSlug]/` | Storefront por tenant (white-label) |
-| `api/` | **158 endpoints** REST |
+| `api/` | **903 endpoints** REST |
 | `checkout/`, `pedido/`, `tracking/`, `venta/` | Flujos de compra y POS |
 | `pricing/`, `vender/`, `tiendas/` | Marketing SaaS |
 | `playground/`, `design-system/`, `api-docs/` | Internos / dev |
 
 ### `lib/` (~222 archivos)
-- **`lib/db/`** (≈90 clases `*.db.ts`) — única vía de acceso a Prisma. Cada clase: `tenantId` 1er param, cache + audit + invalidate.
+- **`lib/db/`** (≈196 clases `*.db.ts`) — única vía de acceso a Prisma. Cada clase: `tenantId` 1er param, cache + audit + invalidate.
 - **`lib/auth/`** — sesiones, RBAC `role-permissions.ts` (26 recursos × 6 roles).
 - **`lib/middleware/`, `proxy.ts`** — auth, CSP, rate limit, multi-tenant guard.
 - **`lib/ai/`, `lib/agents/`, `claude-router.ts`** — features IA (chef, asistente, recomendaciones).
@@ -87,12 +87,12 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 - **`lib/env.ts`** — valida secrets en startup.
 
 ### `components/` (30 subdirs)
-`admin/` (85+ tabs) · `store/` · `checkout/` · `marketplace/` · `customer/` · `delivery/` · `supplier/` · `superadmin/` · `socio-buleje/` · `loyalty/` · `landing/` · `marketing/` · `cms` (`blocks/`) · `ui/` + `ui-system/` (primitivos del DS) · `auth/` · `notifications/` · `onboarding/` · `accessibility/` · `tracking/` · `seo/` · `charts/` · `providers/`.
+`admin/` (133 tabs) · `store/` · `checkout/` · `marketplace/` · `customer/` · `delivery/` · `supplier/` · `superadmin/` · `socio-buleje/` · `loyalty/` · `landing/` · `marketing/` · `cms` (`blocks/`) · `ui/` + `ui-system/` (primitivos del DS) · `auth/` · `notifications/` · `onboarding/` · `accessibility/` · `tracking/` · `seo/` · `charts/` · `providers/`.
 
 ### `contexts/` (19)
 `cart` · `customer` · `theme` · `settings` · `tenant` · `favorites` · `wishlist` · `compare` · `currency` · `locale` · `vocabulary` · `subscription` · `socio-buleje` · `promotions` · `quick-add` · `reviews` · `module-tabs` · `dashboard-data` · `assistant` · `toast`.
 
-### `prisma/schema.prisma` — **160 modelos**
+### `prisma/schema.prisma` — **177 modelos**
 Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · Sale/SaleItem · Supplier · PurchaseOrder · Promotion · Coupon · CashRegister · Batch · Review · AdminUser/SuperadminUser · Notification · WhatsAppConversation · StripeWebhookQueue · CMS (Page/PageBlock/Media) · Treasury · Fiado · Turno · Receta · Cotizacion · GuiaRemision · NotaCredito · etc.
 
 ### `docs/adr/` (ADRs vivos)
@@ -153,7 +153,7 @@ Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · S
 | **DANGER** | Zona peligrosa | Squad + security | Full pipeline |
 | **INITIATIVE** | 5+ archivos, ≥2 áreas | Hub BUILD→QUALITY→OPS | Todos los gates |
 
-Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 14 agentes).
+Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 18 agentes).
 
 ---
 
@@ -165,7 +165,7 @@ Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hu
 | `lib/db/orders.db.ts` | State machine de órdenes |
 | `lib/auth/role-permissions.ts` | 26 recursos × 6 roles |
 | `proxy.ts`, `lib/middleware/**` | Auth + CSP + rate limit + multi-tenant |
-| `prisma/schema.prisma` | **160 modelos**, requiere DIRECT_URL |
+| `prisma/schema.prisma` | **177 modelos**, requiere DIRECT_URL |
 | `contexts/cart-context.tsx` | BroadcastChannel multi-tab |
 | `lib/db/marketplace.db.ts`, `commissions.ts` | Dinero cross-vendor |
 
@@ -218,7 +218,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 
 | Archivo | Para qué |
 |---|---|
-| `AGENTS.md` | Arquitectura Hub & Spoke v2 (14 agentes) y protocolos de handoff |
+| `AGENTS.md` | Arquitectura Hub & Spoke v2 (18 agentes) y protocolos de handoff |
 | `MEMORIA-PROYECTO.md` | Memoria viva del proyecto (decisiones, operación crítica, gaps) |
 | `docs/HISTORY.md` | Snapshot histórico de tabs/fases/batches (archivo histórico) |
 | `README.md` | Quick start, deployment Vercel, API endpoints |
