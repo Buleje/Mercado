@@ -13,6 +13,8 @@ import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
 import MyFidelidadCard from "@/components/marketplace/MyFidelidadCard";
+import MarketplaceQuickReorder from "@/components/marketplace/MarketplaceQuickReorder";
+import SaludoHorario from "@/components/marketplace/home/SaludoHorario";
 // SEO/SSR (2026-05-24): estas 2 secciones de mayor valor comercial se importan
 // ESTÁTICAMENTE (no dynamic ssr:false) y reciben datos del servidor por props,
 // para que su contenido (tiendas, productos, precios) salga en el HTML inicial
@@ -183,6 +185,11 @@ export default function MarketplaceContent({
             CategoriasQuickAccess y OfertasEditorial MOVIDOS a /explorar
             para armar el layout tipo Mercado Libre pedido. */}
 
+      {/* Saludo dinámico por horario (desayuno/almuerzo/cena) */}
+      <div className="mx-auto max-w-[1760px] px-3 sm:px-4 lg:px-6 pt-3">
+        <SaludoHorario />
+      </div>
+
       {/* Banner promocional rotativo (slot="bodegas" editable desde superadmin) */}
       <PromoBannerCarousel slot="bodegas" />
 
@@ -191,6 +198,11 @@ export default function MarketplaceContent({
         <div className="w-full lg:max-w-sm">
           <MyFidelidadCard />
         </div>
+      </div>
+
+      {/* Volvé a pedir — re-orden del último pedido (auto-oculta si no hay) */}
+      <div className="mx-auto max-w-[1760px] px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
+        <MarketplaceQuickReorder />
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════
