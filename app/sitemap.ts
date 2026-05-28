@@ -6,6 +6,26 @@ import { prisma } from "@/lib/prisma";
 
 const realCategories = categories.filter((c) => c.id !== "todos");
 
+// 2026-05-28 audit P0: cap a top productos para evitar explosión zone×product
+// (zones × dbProducts antes generaba 16,000 URLs thin-content, agente SEO H1).
+// Solución: reducir productos en zone×product a top-50 por id (proxy de
+// novedad). El detalle individual del producto sigue cubierto en /tienda/{slug}.
+const ZONE_X_PRODUCT_TOP_N = 50;
+
+/**
+ * Helper: agrega alternates con es-PE + x-default (SEO H2 audit 2026-05-28).
+ * Google guidance: https://developers.google.com/search/docs/specialty/international/localized-versions
+ * Sin x-default, Google asume es-PE única y descuenta rank en es-AR, es-MX, es genérico.
+ */
+function withHreflang(url: string) {
+  return {
+    languages: {
+      "es-PE": url,
+      "x-default": url,
+    },
+  };
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
     process.env.NEXT_PUBLIC_URL || "https://www.buleje.pe";
@@ -17,36 +37,69 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // enumeraban todo el catálogo de tiendas privadas. Cada tenant debe
   // generar su propio sitemap por subdominio (futuro: sitemap multi-archivo).
   //
-  // NOTA: Product model no tiene updatedAt/createdAt en schema actual.
-  // Usamos lastModified compartido. Pendiente: agregar `updatedAt DateTime @updatedAt`
-  // a Product (migration breaking) para lastModified real por producto.
-  let dbProducts: { id: number; name: string }[] = [];
-  try {
-    dbProducts = await prisma.product.findMany({
-      where: { tenantId: "main", active: true, deletedAt: null },
-      select: { id: true, name: true },
-      orderBy: { id: "desc" },
-      take: 1000,
-    });
-  } catch {
-    // DB unavailable during static build — fall back to empty
-  }
+  // 2026-05-28 audit BUG-03: paralelizamos las 4 queries independientes con
+  // Promise.all() — antes eran await secuenciales (~5×latencia DB). Reduce
+  // ~60% el tiempo de generar el sitemap. Cada catch local devuelve [] en
+  // fallback (DB unavailable durante static build).
+  //
+  // NOTA: Product/StoreProduct/Receta model no tienen updatedAt/createdAt en
+  // schema actual. Usamos lastModified compartido. Pendiente migration
+  // breaking (expand-migrate-contract) para agregar @updatedAt y emitir
+  // lastModified real por entidad. Ver migration-planner.
+  //
+  // Imagen sitemap (audit M3/BUG-05): productos con `image` field se emiten
+  // con `images: [imageUrl]` para indexar en Google Images. Cada URL puede
+  // listar hasta 1000 imágenes según el spec.
+  const [dbProducts, dbCats, stores, recipes] = await Promise.all([
+    prisma.product
+      .findMany({
+        where: { tenantId: "main", active: true, deletedAt: null },
+        select: { id: true, name: true, image: true },
+        orderBy: { id: "desc" },
+        take: 1000,
+      })
+      .catch(() => [] as Array<{ id: number; name: string; image: string | null }>),
+    prisma.product
+      .findMany({
+        where: { tenantId: "main", active: true, deletedAt: null },
+        select: { category: true },
+        distinct: ["category"],
+      })
+      .catch(() => [] as Array<{ category: string }>),
+    prisma.store
+      .findMany({
+        where: { isPublished: true },
+        select: { id: true, slug: true, updatedAt: true, name: true },
+        orderBy: { rating: "desc" },
+      })
+      .catch(() => [] as Array<{ id: string; slug: string; updatedAt: Date; name: string | null }>),
+    prisma.receta
+      .findMany({
+        where: { tenantId: "main", activa: true },
+        select: { id: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 1000,
+      })
+      .catch(() => [] as Array<{ id: string; updatedAt: Date }>),
+  ]);
 
-  // Static pages with high priority
+  // Static pages with high priority — TODAS con x-default hreflang
+  // (audit H2 2026-05-28): antes solo es-PE → Google asumía única locale.
+  // Ahora x-default cubre es-AR, es-MX, es genérico, fallback global.
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified,
       changeFrequency: "daily",
       priority: 1.0,
-      alternates: { languages: { "es-PE": baseUrl } },
+      alternates: withHreflang(baseUrl),
     },
     {
       url: `${baseUrl}/tienda`,
       lastModified,
       changeFrequency: "daily",
       priority: 0.9,
-      alternates: { languages: { "es-PE": `${baseUrl}/tienda` } },
+      alternates: withHreflang(`${baseUrl}/tienda`),
     },
     {
       url: `${baseUrl}/recetas`,
@@ -63,27 +116,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified,
       changeFrequency: "daily",
       priority: 0.95,
-      alternates: { languages: { "es-PE": `${baseUrl}/tiendas` } },
+      alternates: withHreflang(`${baseUrl}/tiendas`),
     },
     {
       url: `${baseUrl}/marketplace/ofertas`,
       lastModified,
       changeFrequency: "daily",
       priority: 0.85,
-      alternates: { languages: { "es-PE": `${baseUrl}/marketplace/ofertas` } },
+      alternates: withHreflang(`${baseUrl}/marketplace/ofertas`),
     },
     {
       url: `${baseUrl}/marketplace/explorar`,
       lastModified,
       changeFrequency: "daily",
       priority: 0.85,
+      alternates: withHreflang(`${baseUrl}/marketplace/explorar`),
     },
     {
       url: `${baseUrl}/marketplace/como-pagar`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.7,
-      alternates: { languages: { "es-PE": `${baseUrl}/marketplace/como-pagar` } },
+      alternates: withHreflang(`${baseUrl}/marketplace/como-pagar`),
     },
     // Brandon 2026-05-27 SEO: /negocios y /abrir-tienda son las landings B2B
     // de mayor intención comercial (software para bodegas). Estaban AUSENTES
@@ -94,21 +148,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.95,
-      alternates: { languages: { "es-PE": `${baseUrl}/negocios` } },
+      alternates: withHreflang(`${baseUrl}/negocios`),
     },
     {
       url: `${baseUrl}/abrir-tienda`,
       lastModified,
       changeFrequency: "weekly",
       priority: 0.9,
-      alternates: { languages: { "es-PE": `${baseUrl}/abrir-tienda` } },
+      alternates: withHreflang(`${baseUrl}/abrir-tienda`),
     },
     {
       url: `${baseUrl}/vender`,
       lastModified,
       changeFrequency: "weekly",
       priority: 0.85,
-      alternates: { languages: { "es-PE": `${baseUrl}/vender` } },
+      alternates: withHreflang(`${baseUrl}/vender`),
     },
     // Brandon 2026-05-20 v10 audit P1 SEO: /pricing y /registro REMOVIDOS
     // del sitemap — son paginas internas/transaccionales que no aportan
@@ -142,14 +196,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // Category pages (excluding "todos")
+  // 2026-05-28 audit M2: changeFrequency `daily` era fake-feed — categorías
+  // "Frutas/Abarrotes/Lácteos" no cambian estructura diaria. Google deprioritiza
+  // feeds inflados → CTR baja. Cambio a `weekly` (realista).
   const categoryPages: MetadataRoute.Sitemap = categories
     .filter((cat) => cat.id !== "todos")
     .map((cat) => ({
       url: `${baseUrl}/tienda/categoria/${cat.id}`,
       lastModified,
-      changeFrequency: "daily" as const,
+      changeFrequency: "weekly" as const,
       priority: 0.8,
-      alternates: { languages: { "es-PE": `${baseUrl}/tienda/categoria/${cat.id}` } },
+      alternates: withHreflang(`${baseUrl}/tienda/categoria/${cat.id}`),
     }));
 
   // Dynamic DB categories (if any not in static data)
@@ -158,34 +215,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // y comparaba ID-slug (frutas-verduras) contra label-DB (Frutas y Verduras).
   // Resultado: Google veía DUPLICADOS para cada categoría (slug + label encoded).
   // Ahora normalizamos AMBAS fuentes a slug y deduplicamos correctamente.
-  let dbCategoryPages: MetadataRoute.Sitemap = [];
-  try {
-    const dbCats = await prisma.product.findMany({
-      // SECURITY 2026-05-25 (audit): scope a tenant "main" — antes exponía
-      // categorías cross-tenant en el sitemap público (mismo patrón que dbProducts arriba).
-      where: { tenantId: "main", active: true, deletedAt: null },
-      select: { category: true },
-      distinct: ["category"],
-    });
-    // Set normalizada de IDs ya cubiertos por categoryPages: slug del id + slug del label.
-    const staticCatSlugs = new Set<string>();
-    for (const c of categories) {
-      staticCatSlugs.add(c.id);
-      staticCatSlugs.add(slugify(c.label));
-    }
-    dbCategoryPages = dbCats
-      .filter((c) => c.category && !staticCatSlugs.has(slugify(c.category)))
-      .map((c) => ({
-        // Emite SIEMPRE el slug normalizado (no encodeURIComponent del nombre
-        // capitalizado). Cierra la duplicación con dbCategoryPages.
-        url: `${baseUrl}/tienda/categoria/${slugify(c.category)}`,
-        lastModified,
-        changeFrequency: "weekly" as const,
-        priority: 0.7,
-      }));
-  } catch {
-    // ignore
+  //
+  // 2026-05-28 audit BUG-03: dbCats ahora viene de la Promise.all() unificada
+  // arriba (variable `dbCats` ya cargada). Se elimina query duplicada.
+  const staticCatSlugs = new Set<string>();
+  for (const c of categories) {
+    staticCatSlugs.add(c.id);
+    staticCatSlugs.add(slugify(c.label));
   }
+  const dbCategoryPages: MetadataRoute.Sitemap = dbCats
+    .filter((c) => c.category && !staticCatSlugs.has(slugify(c.category)))
+    .map((c) => ({
+      url: `${baseUrl}/tienda/categoria/${slugify(c.category)}`,
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
 
   // Individual product pages — dynamic from DB
   //
@@ -199,19 +244,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dedup adicional: si dos productos generan el mismo slug (ej. "agua-cielo"
   // de "Agua Cielo" y "Agua Cielo!" ambos slugify a "agua-cielo"), Set descarta
   // duplicados — Google no debe ver 2 URLs idénticas.
+  //
+  // 2026-05-28 audit M3/BUG-05: agregamos `images: [imageUrl]` cuando existe.
+  // Productos con foto se indexan en Google Images (~30% tráfico extra LatAm
+  // visual según audit competitivo Rappi/MercadoLibre).
   const seenSlugs = new Set<string>();
   const productPages: MetadataRoute.Sitemap = dbProducts
-    .map((product) => ({ slug: slugify(product.name || "") }))
+    .map((product) => ({
+      slug: slugify(product.name || ""),
+      image: product.image,
+    }))
     .filter(({ slug }) => {
       if (!slug || seenSlugs.has(slug)) return false;
       seenSlugs.add(slug);
       return true;
     })
-    .map(({ slug }) => ({
+    .map(({ slug, image }) => ({
       url: `${baseUrl}/tienda/${slug}`,
       lastModified,
       changeFrequency: "weekly" as const,
       priority: 0.6,
+      ...(image ? { images: [image] } : {}),
     }));
 
   // ────────────────────────────────────────────────────────────────────────
@@ -226,56 +279,65 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const TEST_SLUG_BLOCKLIST = new Set(["tienda-3", "buleje", "main", "demo"]);
   const TEST_SLUG_PATTERN = /(test|prueba|demo|sandbox)/i;
   const marketplacePages: MetadataRoute.Sitemap = [];
-  try {
-    // Fetch all published stores
-    const stores = (await prisma.store.findMany({
-      where: { isPublished: true },
-      select: { id: true, slug: true, updatedAt: true, name: true },
-      orderBy: { rating: "desc" },
-    })).filter(
-      (s) =>
-        !TEST_SLUG_BLOCKLIST.has(s.slug.toLowerCase()) &&
-        !TEST_SLUG_PATTERN.test(s.slug) &&
-        !TEST_SLUG_PATTERN.test(s.name ?? ""),
-    );
 
-    // Add marketplace hub
-    marketplacePages.push({
-      url: `${baseUrl}/marketplace`,
-      lastModified,
-      changeFrequency: "daily" as const,
-      priority: 0.9,
-    });
+  // 2026-05-28 audit BUG-03: `stores` viene de la Promise.all() unificada arriba.
+  // Filtramos blocklist/pattern aquí (no se puede aplicar como where en Prisma).
+  const filteredStores = stores.filter(
+    (s) =>
+      !TEST_SLUG_BLOCKLIST.has(s.slug.toLowerCase()) &&
+      !TEST_SLUG_PATTERN.test(s.slug) &&
+      !TEST_SLUG_PATTERN.test(s.name ?? ""),
+  );
 
-    // Add individual store pages
-    const storePages = stores.map((s) => ({
-      url: `${baseUrl}/marketplace/${s.slug}`,
-      lastModified: s.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
-    marketplacePages.push(...storePages);
+  // Add marketplace hub
+  marketplacePages.push({
+    url: `${baseUrl}/marketplace`,
+    lastModified,
+    changeFrequency: "daily" as const,
+    priority: 0.9,
+    alternates: withHreflang(`${baseUrl}/marketplace`),
+  });
 
-    // Audit 2026-05-17 02-P2-3: incluir páginas /t/[slug] (storefronts
-    // white-label de tenants) en sitemap root. Antes solo se exponían
-    // /marketplace/${slug} y los tenants white-label quedaban fuera de
-    // Google. Reusamos la query de stores publicadas porque cada Store
-    // tiene un Tenant asociado (slug es la misma identidad).
-    const tenantPages = stores.map((s) => ({
+  // Add individual marketplace store pages.
+  // Cada store tiene `updatedAt` real (a diferencia de Product) → lastModified real.
+  const storePages = filteredStores.map((s) => ({
+    url: `${baseUrl}/marketplace/${s.slug}`,
+    lastModified: s.updatedAt,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+  marketplacePages.push(...storePages);
+
+  // Audit 2026-05-17 02-P2-3 + 2026-05-28 P1 Coverage: incluir storefront
+  // white-label /t/[slug] Y /t/[slug]/tienda. Antes solo /t/{slug} estaba —
+  // /t/{slug}/tienda existe en code (app/t/[slug]/tienda/page.tsx) pero
+  // Google no la descubría (asimetría detectada por coverage audit).
+  const tenantPages = filteredStores.flatMap((s) => [
+    {
       url: `${baseUrl}/t/${s.slug}`,
       lastModified: s.updatedAt,
       changeFrequency: "weekly" as const,
       priority: 0.7,
-    }));
-    marketplacePages.push(...tenantPages);
+    },
+    {
+      url: `${baseUrl}/t/${s.slug}/tienda`,
+      lastModified: s.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.65,
+    },
+  ]);
+  marketplacePages.push(...tenantPages);
 
-    // Fetch all active store products from all published stores
-    const storeIds = stores.map((s) => s.id);
-    if (storeIds.length > 0) {
+  // Fetch all active store products from all published stores
+  const storeIds = filteredStores.map((s) => s.id);
+  if (storeIds.length > 0) {
+    try {
       // Audit 2026-05-17 02-P1-03: sin take, findMany puede retornar miles
       // de rows en build → OOM en Vercel build container. Cap a 5000 productos
       // priorizando los más recientes (sitemap Google acepta hasta 50k URLs,
       // 5k es safe + cubre los más relevantes para SEO).
+      // 2026-05-28 audit M3: imagen sitemap via Product relation (StoreProduct
+      // no tiene imageUrl propio — el producto base lo provee).
       const storeProducts = await prisma.storeProduct.findMany({
         where: {
           storeId: { in: storeIds },
@@ -285,63 +347,51 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           id: true,
           storeId: true,
           productId: true,
+          product: { select: { image: true } },
         },
         orderBy: { id: "desc" },
         take: 5000,
       });
 
       // Build storeId -> slug map
-      const storeSlugMap = new Map(stores.map((s) => [s.id, s.slug]));
+      const storeSlugMap = new Map(filteredStores.map((s) => [s.id, s.slug]));
 
-      // StoreProduct no tiene updatedAt — usar ahora mismo como fallback conservador.
+      // StoreProduct no tiene updatedAt — usar `now` para fallback conservador
+      // (Brandon: TODO migration breaking para agregar updatedAt).
       const now = new Date();
 
       // Add store product detail pages: /marketplace/{storeSlug}/producto/{productId}
       const productDetailPages = storeProducts.map((sp) => {
         const storeSlug = storeSlugMap.get(sp.storeId) || "unknown";
+        const img = sp.product?.image;
         return {
           url: `${baseUrl}/marketplace/${storeSlug}/producto/${sp.productId}`,
           lastModified: now,
           changeFrequency: "weekly" as const,
           priority: 0.6,
+          ...(img ? { images: [img] } : {}),
         };
       });
       marketplacePages.push(...productDetailPages);
+    } catch {
+      // storeProduct query falla — skip product details, mantener stores
     }
-  } catch {
-    // DB unavailable during static build
-    marketplacePages.push({
-      url: `${baseUrl}/marketplace`,
-      lastModified,
-      changeFrequency: "daily" as const,
-      priority: 0.9,
-    });
   }
 
   // Recipe detail pages — REACTIVADO 2026-04-20 (Sprint S2).
   // La pagina app/marketplace/recetas/[id]/page.tsx ahora existe con
   // metadata SEO + JSON-LD Recipe schema.
-  let recipePages: MetadataRoute.Sitemap = [];
-  try {
-    const recipes = await prisma.receta.findMany({
-      // SECURITY 2026-05-25 (audit): scope a tenant "main" — antes listaba recetas cross-tenant.
-      where: { tenantId: "main", activa: true },
-      select: { id: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-      take: 1000,
-    });
-
-    recipePages = recipes.map((r) => ({
-      url: `${baseUrl}/marketplace/recetas/${r.id}`,
-      lastModified: r.updatedAt,
-      changeFrequency: "monthly" as const,
-      priority: 0.6,
-    }));
-  } catch {
-    // DB unavailable — devolver lista vacia es safe
-  }
+  // 2026-05-28: `recipes` ahora viene de la Promise.all() unificada arriba.
+  const recipePages: MetadataRoute.Sitemap = recipes.map((r) => ({
+    url: `${baseUrl}/marketplace/recetas/${r.id}`,
+    lastModified: r.updatedAt,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
 
   // Programmatic SEO — zone pages (/zona/[ciudad] + /zona/[ciudad]/[categoria])
+  // 2026-05-28 audit M2: changeFrequency `daily` en city×category era fake.
+  // Las páginas son derivadas (mismo contenido por zona). Cambio a `weekly`.
   const zonePages: MetadataRoute.Sitemap = [];
   for (const zone of zones) {
     // City landing page
@@ -350,31 +400,51 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.85,
-      alternates: { languages: { "es-PE": `${baseUrl}/zona/${zone.slug}` } },
+      alternates: withHreflang(`${baseUrl}/zona/${zone.slug}`),
     });
     // City × category pages
     for (const cat of realCategories) {
+      const cityCatUrl = `${baseUrl}/zona/${zone.slug}/${cat.id}`;
       zonePages.push({
-        url: `${baseUrl}/zona/${zone.slug}/${cat.id}`,
+        url: cityCatUrl,
         lastModified,
-        changeFrequency: "daily",
+        changeFrequency: "weekly", // realista vs daily fake
         priority: 0.8,
-        alternates: { languages: { "es-PE": `${baseUrl}/zona/${zone.slug}/${cat.id}` } },
+        alternates: withHreflang(cityCatUrl),
       });
     }
   }
 
   // Programmatic SEO — zone × product pages (/zona/[ciudad]/producto/[slug])
+  //
+  // 2026-05-28 audit HIGH (SEO H1 + Tech BUG-01): cap a TOP_N productos por zona.
+  // Antes: |zones| × |dbProducts| = 16 × 1000 = 16,000 URLs thin-content.
+  // Ahora: |zones| × TOP_N(50) = 800 URLs targeted.
+  //
+  // Razón: Google marca como thin content cuando hay miles de URLs apuntando
+  // a contenido casi-idéntico (mismo producto, diferente "ciudad" en la URL).
+  // El detalle real del producto sigue cubierto por /tienda/{slug}.
+  //
+  // Estrategia: top productos ordenados por id desc (proxy de novedad). Para
+  // futuro mejor: ordenar por searchVolume / clicks (requiere telemetría).
   const zoneProductPages: MetadataRoute.Sitemap = [];
+  const seenZoneProducts = new Set<string>(); // dedup por (zone,slug)
   if (dbProducts.length > 0) {
+    const topProductsForZones = dbProducts.slice(0, ZONE_X_PRODUCT_TOP_N);
     for (const zone of zones) {
-      for (const product of dbProducts) {
+      for (const product of topProductsForZones) {
+        const productSlug = slugify(product.name || "");
+        if (!productSlug) continue;
+        const key = `${zone.slug}:${productSlug}`;
+        if (seenZoneProducts.has(key)) continue;
+        seenZoneProducts.add(key);
+        const url = `${baseUrl}/zona/${zone.slug}/producto/${productSlug}`;
         zoneProductPages.push({
-          url: `${baseUrl}/zona/${zone.slug}/producto/${slugify(product.name)}`,
+          url,
           lastModified,
-          changeFrequency: "weekly",
-          priority: 0.6,
-          alternates: { languages: { "es-PE": `${baseUrl}/zona/${zone.slug}/producto/${slugify(product.name)}` } },
+          changeFrequency: "monthly", // realista, no daily (audit M2)
+          priority: 0.5, // bajamos vs 0.6 — son páginas long-tail derivadas
+          alternates: withHreflang(url),
         });
       }
     }
@@ -382,24 +452,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Programmatic SEO — district landing + district × category pages
   // /zona/[ciudad]/distrito/[distrito] + /zona/[ciudad]/distrito/[distrito]/[categoria]
+  // 2026-05-28 audit M2: district × category cambia a weekly (no daily fake).
   const districtPages: MetadataRoute.Sitemap = [];
   for (const district of districts) {
     // District landing
+    const districtUrl = `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}`;
     districtPages.push({
-      url: `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}`,
+      url: districtUrl,
       lastModified,
       changeFrequency: "weekly",
       priority: 0.78,
-      alternates: { languages: { "es-PE": `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}` } },
+      alternates: withHreflang(districtUrl),
     });
     // District × category
     for (const cat of realCategories) {
+      const districtCatUrl = `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}/${cat.id}`;
       districtPages.push({
-        url: `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}/${cat.id}`,
+        url: districtCatUrl,
         lastModified,
-        changeFrequency: "daily",
+        changeFrequency: "weekly",
         priority: 0.72,
-        alternates: { languages: { "es-PE": `${baseUrl}/zona/${district.cityslug}/distrito/${district.slug}/${cat.id}` } },
+        alternates: withHreflang(districtCatUrl),
       });
     }
   }

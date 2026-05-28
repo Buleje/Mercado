@@ -46,12 +46,29 @@ export default function robots(): MetadataRoute.Robots {
           "/checkout/",
           "/cuenta/",
           "/marketplace/mi-cuenta/",
+          // 2026-05-28 tech audit: rutas admin/internas que estaban expuestas
+          "/panel/",
+          "/cms/",
+          "/delivery/",
+          "/delivery-app/",
+          "/supplier/",
         ],
       },
       {
         userAgent: "Googlebot",
         allow: "/",
-        disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/superadmin/",
+          "/checkout/",
+          "/cuenta/",
+          "/panel/",
+          "/cms/",
+          "/delivery/",
+          "/delivery-app/",
+          "/supplier/",
+        ],
       },
       // Brandon 2026-05-25: Google-Extended PERMITIDO — alimenta Google AI
       // Overviews + Gemini (lo más usado en Perú) y Google sí cita la fuente.
@@ -59,7 +76,18 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "Google-Extended",
         allow: "/",
-        disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/superadmin/",
+          "/checkout/",
+          "/cuenta/",
+          "/panel/",
+          "/cms/",
+          "/delivery/",
+          "/delivery-app/",
+          "/supplier/",
+        ],
       },
       // Brandon 2026-05-27: GPTBot (OpenAI) + ClaudeBot/anthropic-ai (Anthropic)
       // PERMITIDOS. Trade-off aceptado: usan el contenido PÚBLICO para entrenar
@@ -68,7 +96,18 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: ["GPTBot", "ClaudeBot", "anthropic-ai"],
         allow: "/",
-        disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/superadmin/",
+          "/checkout/",
+          "/cuenta/",
+          "/panel/",
+          "/cms/",
+          "/delivery/",
+          "/delivery-app/",
+          "/supplier/",
+        ],
       },
       // Training de terceros que no citan ni mandan tráfico de retorno —
       // siguen bloqueados (Common Crawl, ByteDance/TikTok).
@@ -89,7 +128,18 @@ export default function robots(): MetadataRoute.Robots {
           "Perplexity-User",
         ],
         allow: "/",
-        disallow: ["/api/", "/admin/", "/superadmin/", "/checkout/", "/cuenta/"],
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/superadmin/",
+          "/checkout/",
+          "/cuenta/",
+          "/panel/",
+          "/cms/",
+          "/delivery/",
+          "/delivery-app/",
+          "/supplier/",
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
