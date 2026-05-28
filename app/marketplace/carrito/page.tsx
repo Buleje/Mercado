@@ -33,6 +33,7 @@ import CheckoutStepper from "@/components/marketplace/checkout/CheckoutStepper";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import CartCouponSection from "@/components/marketplace/CartCouponSection";
+import CartSuggestions from "@/components/marketplace/cart/CartSuggestions";
 import CompartirListaWhatsApp from "@/components/marketplace/CompartirListaWhatsApp";
 import QuantityStepper from "@/components/ui-system/QuantityStepper";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
@@ -494,6 +495,11 @@ export default function CarritoPage() {
           </div>
         </div>
       )}
+
+      {/* Descubrimiento al pie del carrito: último antojo + cross-sell por
+          categoría. Solo con productos en el carrito. */}
+      {!isEmpty && <CartSuggestions />}
+
       <AuthModal open={authModalOpen} onClose={closeAuthModal} />
       <ConfirmDialog />
 
