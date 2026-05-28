@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import CommandPalette from "./CommandPalette";
@@ -47,6 +47,8 @@ import {
   AlertOctagon,
   Rocket,
   FileText,
+  Search,
+  TreePine,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -117,6 +119,10 @@ const NAV_GROUPS: NavGroupDef[] = [
     icon: <Building2 className="w-4 h-4 shrink-0" />,
     items: [
       { label: "Tenants",            icon: <Building2   className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"      },
+      // ADR-124 — Especializaciones por tenant: matriz de feature flags
+      // que habilita módulos verticales (forestal CTP, salud, textil, etc.)
+      // en el panel admin del negocio seleccionado.
+      { label: "Especializaciones",  icon: <TreePine    className="w-5 h-5 shrink-0" />, href: "/superadmin/specializations" },
       { label: "Pedidos",            icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/orders"       },
       { label: "Repartidores",       icon: <Truck       className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores" },
     ],
@@ -364,6 +370,31 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const [sessionExpired, setSessionExpired] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>(NAV_ITEMS);
   const [visual, setVisual] = useState<SidebarVisualPrefs>(DEFAULT_VISUAL);
+  // 2026-05-28 — Buscador de módulos del nav. Filtra grupos+items por
+  // label/href cuando el query >= 2 chars. Si no hay match, muestra empty
+  // state. Sin query → grupos normales.
+  const [navSearch, setNavSearch] = useState("");
+
+  // 2026-05-28 — Filtra los NAV_GROUPS por query (label/href). Si query
+  // está vacío o tiene menos de 2 chars, retorna grupos completos. Si hay
+  // match, retorna grupos con SOLO los items que matchean (mantiene
+  // estructura para que el flyout/accordion renderee igual).
+  const filteredGroups = useMemo(() => {
+    const q = navSearch.trim().toLowerCase();
+    if (q.length < 2) return NAV_GROUPS;
+    return NAV_GROUPS.map((g) => ({
+      ...g,
+      items: g.items.filter(
+        (it) =>
+          it.label.toLowerCase().includes(q) ||
+          it.href.toLowerCase().includes(q) ||
+          g.label.toLowerCase().includes(q),
+      ),
+    })).filter((g) => g.items.length > 0);
+  }, [navSearch]);
+
+  const hasSearchResults = filteredGroups.length > 0;
+  const isSearching = navSearch.trim().length >= 2;
 
   // Sincroniza nav items + visual prefs con la config guardada. Reacciona
   // a "storage" (otra pestaña) y a custom event "superadmin-nav-config-changed"
@@ -570,12 +601,75 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           )}
         </div>
 
+        {/* 2026-05-28 — Buscador de módulos del nav (desktop).
+            Oculto cuando el sidebar está colapsado (solo icons).
+            Filter aplica reactivamente sobre filteredGroups. */}
+        {!collapsed && (
+          <div className="px-3 pt-3 pb-1 shrink-0">
+            <div
+              className={[
+                "flex items-center gap-2 h-10 rounded-xl border-2 px-3",
+                isBuleje
+                  ? "border-white/15 bg-white/5 focus-within:border-white/40"
+                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus-within:border-[var(--brand-ink)]",
+              ].join(" ")}
+            >
+              <Search
+                className={[
+                  "h-4 w-4 shrink-0",
+                  isBuleje ? "text-white/60" : "text-[var(--text-tertiary)]",
+                ].join(" ")}
+              />
+              <input
+                type="text"
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                placeholder="Buscar módulo..."
+                aria-label="Buscar módulos, secciones o pestañas"
+                className={[
+                  "w-full bg-transparent text-sm font-medium outline-none",
+                  isBuleje
+                    ? "text-white placeholder:text-white/40"
+                    : "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+                ].join(" ")}
+              />
+              {navSearch && (
+                <button
+                  type="button"
+                  onClick={() => setNavSearch("")}
+                  aria-label="Limpiar búsqueda"
+                  className={[
+                    "rounded-full p-0.5 transition-colors",
+                    isBuleje
+                      ? "text-white/50 hover:text-white hover:bg-white/10"
+                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+                  ].join(" ")}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            {isSearching && (
+              <p
+                className={[
+                  "mt-2 text-[length:var(--ts-2xs)] font-medium",
+                  isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]",
+                ].join(" ")}
+              >
+                {hasSearchResults
+                  ? `${filteredGroups.reduce((n, g) => n + g.items.length, 0)} resultado(s)`
+                  : "Sin resultados"}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Nav — botones de grupo. Hover abre flyout lateral con los items
             del grupo (mismo patrón que admin de negocios). Tipografía sm/base
             para mejorar lectura (antes era 2xs/sm = muy chico). */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1.5">
           <NavGroupsFlyout
-            groups={NAV_GROUPS}
+            groups={filteredGroups}
             visibleHrefs={new Set(navItems.map((it) => it.href))}
             pathname={pathname}
             sidebarCollapsed={collapsed}
@@ -583,6 +677,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             isBuleje={isBuleje}
             density={visual.density}
             iconClassName={iconClassName}
+            forceExpandAll={isSearching}
           />
         </nav>
 
@@ -646,16 +741,57 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             </button>
           </div>
 
+          {/* 2026-05-28 — Buscador mobile (mismo state que desktop) */}
+          <div className="px-3 pt-3 pb-1 shrink-0">
+            <div
+              className={[
+                "flex items-center gap-2 h-10 rounded-xl border-2 px-3",
+                isBuleje
+                  ? "border-white/15 bg-white/5 focus-within:border-white/40"
+                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus-within:border-[var(--brand-ink)]",
+              ].join(" ")}
+            >
+              <Search className={["h-4 w-4 shrink-0", isBuleje ? "text-white/60" : "text-[var(--text-tertiary)]"].join(" ")} />
+              <input
+                type="text"
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                placeholder="Buscar módulo..."
+                aria-label="Buscar módulos"
+                className={[
+                  "w-full bg-transparent text-sm font-medium outline-none",
+                  isBuleje ? "text-white placeholder:text-white/40" : "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+                ].join(" ")}
+              />
+              {navSearch && (
+                <button
+                  type="button"
+                  onClick={() => setNavSearch("")}
+                  aria-label="Limpiar"
+                  className={["rounded-full p-0.5 transition-colors", isBuleje ? "text-white/50 hover:text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"].join(" ")}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Nav mobile — sin flyout (no hay hover en touch).
               Acordeón vertical clásico: tap en grupo expande sus items. */}
           <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-2">
             <NavGroupsAccordion
-              groups={NAV_GROUPS}
+              groups={filteredGroups}
               visibleHrefs={new Set(navItems.map((it) => it.href))}
               pathname={pathname}
               onItemClick={() => setMobileOpen(false)}
               isBuleje={isBuleje}
+              forceExpandAll={isSearching}
             />
+            {isSearching && !hasSearchResults && (
+              <div className={["mt-6 px-3 text-center text-sm", isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]"].join(" ")}>
+                Sin resultados para &quot;{navSearch}&quot;
+              </div>
+            )}
           </nav>
         </aside>
       )}
@@ -790,6 +926,8 @@ interface NavGroupsFlyoutProps {
   isBuleje: boolean;
   density: SidebarVisualPrefs["density"];
   iconClassName: string;
+  /** 2026-05-28 — fuerza expansion de todos los items (modo búsqueda) */
+  forceExpandAll?: boolean;
 }
 
 function NavGroupsFlyout({
@@ -801,6 +939,7 @@ function NavGroupsFlyout({
   isBuleje,
   density,
   iconClassName,
+  forceExpandAll = false,
 }: NavGroupsFlyoutProps) {
   const [hoveredId, setHoveredId] = useState<NavGroupId | null>(null);
   const [position, setPosition] = useState<{ top: number } | null>(null);
@@ -852,6 +991,57 @@ function NavGroupsFlyout({
   const sidebarWidth = sidebarCollapsed ? 64 : 240;
   const hoveredGroup = hoveredId ? groups.find((g) => g.id === hoveredId) ?? null : null;
   const hoveredVisibleItems = hoveredGroup?.items.filter((it) => visibleHrefs.has(it.href)) ?? [];
+
+  // 2026-05-28 — Modo búsqueda: cuando hay query activa, en lugar de
+  // mostrar headers de grupo con flyout (que requieren hover), renderizamos
+  // los items directamente apilados — el usuario ve los matches al toque.
+  if (forceExpandAll && !sidebarCollapsed) {
+    return (
+      <div className="space-y-3">
+        {groups.map((group) => {
+          const groupItems = group.items.filter((it) => visibleHrefs.has(it.href));
+          if (groupItems.length === 0) return null;
+          return (
+            <div key={group.id} className="space-y-0.5">
+              <div
+                className={[
+                  "flex items-center gap-2 px-3 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
+                  isBuleje ? "text-white/45" : "text-[var(--text-tertiary)]",
+                ].join(" ")}
+              >
+                <span className="opacity-60">{group.icon}</span>
+                <span>{group.label}</span>
+              </div>
+              {groupItems.map((it) => {
+                const isActive =
+                  pathname === it.href ||
+                  (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href));
+                return (
+                  <Link
+                    key={it.href}
+                    href={it.href}
+                    onClick={onItemClick}
+                    className={[
+                      "flex items-center gap-2.5 rounded-lg transition-colors",
+                      headerPad,
+                      "text-[13px] font-medium",
+                      isActive ? headerActiveClass : headerIdleClass,
+                    ].join(" ")}
+                  >
+                    <span className={[iconClassName, "shrink-0"].join(" ")}>{it.icon}</span>
+                    <span className="flex-1 text-left truncate">{it.label}</span>
+                    {isActive && (
+                      <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-1">
@@ -1052,6 +1242,8 @@ interface NavGroupsAccordionProps {
   pathname: string;
   onItemClick: () => void;
   isBuleje: boolean;
+  /** 2026-05-28 — fuerza todos los grupos expandidos (modo búsqueda) */
+  forceExpandAll?: boolean;
 }
 
 function NavGroupsAccordion({
@@ -1060,11 +1252,15 @@ function NavGroupsAccordion({
   pathname,
   onItemClick,
   isBuleje,
+  forceExpandAll = false,
 }: NavGroupsAccordionProps) {
   const activeGroupId = groups.find((g) =>
     g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
   )?.id ?? "inicio";
   const [expanded, setExpanded] = useState<Set<NavGroupId>>(() => new Set([activeGroupId]));
+  const allGroupIds = useMemo(() => new Set(groups.map((g) => g.id)), [groups]);
+  // En modo búsqueda, todos los grupos visibles se expanden automáticamente.
+  const effectiveExpanded = forceExpandAll ? allGroupIds : expanded;
 
   // Cuando cambia la ruta, asegurarse que el grupo de la ruta está expandido.
   useEffect(() => {
@@ -1105,7 +1301,7 @@ function NavGroupsAccordion({
       {groups.map((group) => {
         const items = group.items.filter((it) => visibleHrefs.has(it.href));
         if (items.length === 0) return null;
-        const isOpen = expanded.has(group.id);
+        const isOpen = effectiveExpanded.has(group.id);
         const panelId = `m-nav-group-${group.id}`;
 
         return (
