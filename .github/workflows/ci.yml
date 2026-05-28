@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, prod]
   pull_request:
-    branches: [master, main]
+    branches: [master, main, prod]
 
 jobs:
   lint-test-build:
