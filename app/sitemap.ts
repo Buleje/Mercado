@@ -16,12 +16,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // (audit H11). Antes se listaban productos cross-tenant → competidores
   // enumeraban todo el catálogo de tiendas privadas. Cada tenant debe
   // generar su propio sitemap por subdominio (futuro: sitemap multi-archivo).
+  //
+  // NOTA: Product model no tiene updatedAt/createdAt en schema actual.
+  // Usamos lastModified compartido. Pendiente: agregar `updatedAt DateTime @updatedAt`
+  // a Product (migration breaking) para lastModified real por producto.
   let dbProducts: { id: number; name: string }[] = [];
   try {
     dbProducts = await prisma.product.findMany({
       where: { tenantId: "main", active: true, deletedAt: null },
       select: { id: true, name: true },
-      orderBy: { id: "asc" },
+      orderBy: { id: "desc" },
       take: 1000,
     });
   } catch {
@@ -50,12 +54,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
-    {
-      url: `${baseUrl}/buscar`,
-      lastModified,
-      changeFrequency: "daily",
-      priority: 0.7,
-    },
+    // 2026-05-28 SEO fix: /buscar REMOVIDO del sitemap.
+    // Search-result pages NUNCA deben estar en sitemap — diluyen crawl budget
+    // y Google las indexa como contenido duplicado del catálogo. La pagina
+    // /buscar/page.tsx debe tener metadata.robots = { index: false } (TODO).
     {
       url: `${baseUrl}/tiendas`,
       lastModified,
@@ -151,6 +153,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
   // Dynamic DB categories (if any not in static data)
+  //
+  // 2026-05-28 BUGFIX: el dedup contra static categories era case-sensitive
+  // y comparaba ID-slug (frutas-verduras) contra label-DB (Frutas y Verduras).
+  // Resultado: Google veía DUPLICADOS para cada categoría (slug + label encoded).
+  // Ahora normalizamos AMBAS fuentes a slug y deduplicamos correctamente.
   let dbCategoryPages: MetadataRoute.Sitemap = [];
   try {
     const dbCats = await prisma.product.findMany({
@@ -160,11 +167,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { category: true },
       distinct: ["category"],
     });
-    const staticCatIds = new Set(categories.map((c) => c.id));
+    // Set normalizada de IDs ya cubiertos por categoryPages: slug del id + slug del label.
+    const staticCatSlugs = new Set<string>();
+    for (const c of categories) {
+      staticCatSlugs.add(c.id);
+      staticCatSlugs.add(slugify(c.label));
+    }
     dbCategoryPages = dbCats
-      .filter((c) => c.category && !staticCatIds.has(c.category))
+      .filter((c) => c.category && !staticCatSlugs.has(slugify(c.category)))
       .map((c) => ({
-        url: `${baseUrl}/tienda/categoria/${encodeURIComponent(c.category)}`,
+        // Emite SIEMPRE el slug normalizado (no encodeURIComponent del nombre
+        // capitalizado). Cierra la duplicación con dbCategoryPages.
+        url: `${baseUrl}/tienda/categoria/${slugify(c.category)}`,
         lastModified,
         changeFrequency: "weekly" as const,
         priority: 0.7,
@@ -174,12 +188,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Individual product pages — dynamic from DB
-  const productPages: MetadataRoute.Sitemap = dbProducts.map((product) => ({
-    url: `${baseUrl}/tienda/${product.id}`,
-    lastModified,
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
+  //
+  // 2026-05-28 BUGFIX: antes emitía /tienda/{id} (1252382 etc) pero el route
+  // handler `app/(store)/tienda/[slug]/page.tsx` espera SLUG del nombre
+  // (línea 28: `slugify(p.name) === slug`). Resultado: 80+ URLs en sitemap
+  // apuntaban a 404. Ahora emite /tienda/{slug} usando el mismo slugify().
+  //
+  // Productos sin nombre (edge case) se filtran porque slugify("") === "".
+  //
+  // Dedup adicional: si dos productos generan el mismo slug (ej. "agua-cielo"
+  // de "Agua Cielo" y "Agua Cielo!" ambos slugify a "agua-cielo"), Set descarta
+  // duplicados — Google no debe ver 2 URLs idénticas.
+  const seenSlugs = new Set<string>();
+  const productPages: MetadataRoute.Sitemap = dbProducts
+    .map((product) => ({ slug: slugify(product.name || "") }))
+    .filter(({ slug }) => {
+      if (!slug || seenSlugs.has(slug)) return false;
+      seenSlugs.add(slug);
+      return true;
+    })
+    .map(({ slug }) => ({
+      url: `${baseUrl}/tienda/${slug}`,
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
 
   // ────────────────────────────────────────────────────────────────────────
   // Task #13: Marketplace stores + store products + recipes
