@@ -15,6 +15,14 @@ jobs:
       # Dummy values so Next.js build doesn't fail on missing env vars
       DATABASE_URL: "postgresql://user:pass@localhost:5432/ci_db"
       NEXT_PUBLIC_VAPID_PUBLIC_KEY: "ci-placeholder"
+      # Stripe placeholder: Next 16 hace "collect page data" sobre /api/admin/plan/checkout/stripe-session
+      # y stripe.checkout.sessions.create se evalúa en build → Error "Neither apiKey nor authenticator".
+      # Una clave sk_test_* dummy permite que la inicialización del SDK no falle.
+      STRIPE_SECRET_KEY: "sk_test_ci_placeholder_for_build_only_not_a_real_key"
+      STRIPE_WEBHOOK_SECRET: "whsec_ci_placeholder"
+      STRIPE_PRICE_PRO: "price_ci_placeholder"
+      STRIPE_PRICE_BUSINESS: "price_ci_placeholder"
+      STRIPE_PRICE_ENTERPRISE: "price_ci_placeholder"
 
     steps:
       - name: Checkout repository
