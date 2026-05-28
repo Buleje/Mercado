@@ -44,7 +44,13 @@ export type ModuleId =
   | "pedidos"
   | "configuracion"
   | "equipo"
-  | "plan";
+  | "plan"
+  // ── Módulos de especialización (ADR-124) — solo visibles si el tenant
+  // tiene la feature flag spec:<vertical>:<modulo> habilitada por superadmin
+  | "ctp-libro-operaciones" // Forestal: Libro de Operaciones CTP (LOE-CTP SERFOR)
+  | "gtf-emisor"            // Forestal: Emisor de Guías de Transporte Forestal (futuro)
+  | "recetas-medicas"       // Salud: Recetas médicas (futuro)
+  | "cuero-trazabilidad";   // Textil: Trazabilidad cuero (futuro)
 
 /**
  * Default module access per role.

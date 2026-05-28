@@ -4512,3 +4512,116 @@ model AdelantoEntregaPactada {
 
   @@index([adelantoId])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FORESTAL / CTP — Centro de Transformación Primaria (ADR-124, 2026-05-28)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Modulo de especialización forestal. Habilitable por tenant vía TenantFeatureFlag
+// con flagKey "spec:forestal:ctp-libro" (set desde /superadmin/specializations).
+//
+// LOE-CTP (Libro de Operaciones Electrónico de Centros de Transformación
+// Primaria) — registro oficial SERFOR del flujo de productos forestales
+// maderables ingresando a un CTP. Spec normativa:
+//   - RDE N° D000009-2023-MIDAGRI-SERFOR-DE (oficializa LOE-CTP)
+//   - RDE N° D000014-2024-MIDAGRI-SERFOR-DE (formato GTF + anexos)
+//
+// Este módulo NO reemplaza el sistema oficial SERFOR (LOE-CTP V2.6.1
+// vive en sniffs.serfor.gob.pe) — es un libro PARALELO interno para
+// gestión operativa del tenant, con campos compatibles para futuro
+// integración / sync.
+
+enum WoodEntryStatus {
+  pendiente    // Recién ingresado, esperando validación
+  validado     // Validado por responsable (firmado)
+  rechazado    // Documentación incompleta o inconsistencias
+  procesado    // Madera ya transformada / consumida en producción
+  anulado      // Anulado (error de tipeo, no contó); soft-history
+}
+
+enum WoodOriginType {
+  concesion           // Concesión forestal (titular habilitante)
+  predio_privado      // Predio privado con plan de manejo
+  comunidad_nativa    // Comunidad nativa / campesina
+  reforestacion       // Plantación / proyecto de reforestación
+  retroaserradero     // Re-entrada desde otro aserradero (origen CTP)
+  otro
+}
+
+enum WoodProductType {
+  rolliza             // Madera rolliza (troncos sin procesar)
+  aserrada            // Aserrada (tabla/tablón cortado)
+  tablones            // Tablones específicamente
+  listones            // Listones (medidas estandarizadas)
+  durmientes          // Durmientes (railway ties)
+  pulgada             // Comercializada en pulgadas (medida tradicional)
+  carbon              // Carbón vegetal
+  lena                // Leña / firewood
+  otro
+}
+
+enum DocumentType {
+  RUC
+  DNI
+  CE                  // Carnet de Extranjería
+  PASAPORTE
+}
+
+// WoodEntry — registro de ingreso de madera al CTP (planta).
+// 1 entry = 1 GTF + 1 especie + 1 product type. Si la GTF trae múltiples
+// especies/productos, se crean N entries con el mismo gtfNumber.
+model WoodEntry {
+  id                    String           @id @default(cuid())
+  tenantId              String
+
+  // ── Fecha + Guía de Transporte Forestal (SERFOR) ─────
+  entryDate             DateTime         @default(now())
+  gtfNumber             String           // "Número de Guía de Transporte Forestal"
+  gtfDate               DateTime?
+  gtfSeries             String?          // Serie de la GTF (si aplica)
+
+  // ── Proveedor / Titular Habilitante ──────────────────
+  providerName          String
+  providerDocument      String?          // RUC/DNI/CE/PASAPORTE number
+  providerDocumentType  DocumentType?
+
+  // ── Origen del material ──────────────────────────────
+  originType            WoodOriginType   @default(otro)
+  originCode            String?          // Número de concesión, predio o comunidad
+  originRegion          String?          // Loreto, Ucayali, Madre de Dios, etc.
+  originDistrict        String?          // Distrito específico
+
+  // ── Especie ──────────────────────────────────────────
+  speciesCommonName     String           // "Tornillo", "Capirona", "Shihuahuaco"
+  speciesScientificName String?          // "Cedrelinga catenaeformis"
+  speciesCites          Boolean          @default(false) // ¿En CITES (protegida)?
+
+  // ── Producto ─────────────────────────────────────────
+  productType           WoodProductType  @default(rolliza)
+  volumeM3              Decimal          @db.Decimal(12, 4) // 4 decimales — precisión forestal
+  pieces                Int              @default(0)
+  avgLengthM            Decimal?         @db.Decimal(8, 2)  // Largo promedio metros
+  avgDiameterCm         Decimal?         @db.Decimal(8, 2)  // Diámetro promedio cm (rolliza)
+  humidityPct           Decimal?         @db.Decimal(5, 2)  // % humedad
+  defectsNotes          String?          // Defectos visibles (nudos, podredumbre)
+
+  // ── Trazabilidad ─────────────────────────────────────
+  notes                 String?
+  photos                Json?            // Array de URLs de fotos
+  status                WoodEntryStatus  @default(pendiente)
+  validatedBy           String?          // AdminUser.id que validó
+  validatedAt           DateTime?
+  rejectionReason       String?          // Si status=rechazado, razón
+
+  // ── Auditoría ────────────────────────────────────────
+  createdBy             String           // AdminUser.id que registró
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  deletedAt             DateTime?
+
+  @@index([tenantId, entryDate(sort: Desc)])
+  @@index([tenantId, status])
+  @@index([tenantId, gtfNumber])
+  @@index([tenantId, speciesCommonName])
+  @@index([deletedAt])
+}
