@@ -755,6 +755,10 @@ export function AdminSidebar({
     finanzas: "Gestión",
     "marketplace-ops": "Canales",
     documentos: "Más",
+    // ADR-124 — Especializaciones tiene su propio super-section. Solo
+    // aparece si el tenant tiene specs habilitadas (la categoría se
+    // auto-oculta en el render cuando catTabs.length === 0).
+    especializaciones: "Especializaciones",
   };
 
   return (

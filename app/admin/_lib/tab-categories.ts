@@ -438,12 +438,18 @@ export const CONFIG_MODULE: TabCategory = {
 
 // ── TAB_CATEGORIES: composición final del sidebar ────────────────────────────
 // (Config y Plan se acceden desde el dropdown de usuario, no desde el sidebar)
-// ESPECIALIZACIONES va al final — la categoría se auto-oculta si el tenant no
-// tiene specs habilitadas (filtro catTabs.length === 0 en AdminSidebar).
+//
+// Orden 2026-05-28:
+// 1. BASIC_MODULES (inicio → ventas → compras → productos → clientes → finanzas → marketplace)
+// 2. ESPECIALIZACIONES_MODULE — ANTES de Mi Tienda. Razón: el footer fijo del
+//    sidebar tapaba el último item del nav scrollable en viewports estándar
+//    (1080p). Especializaciones está activa para tenants que la habilitan;
+//    ponerla arriba la hace descubrible sin scroll. Auto-oculta si vacía.
+// 3. TIENDA_MODULE — al final (configuración visual, menos frecuente).
 export const TAB_CATEGORIES: TabCategory[] = [
   ...BASIC_MODULES,
-  TIENDA_MODULE,
   ESPECIALIZACIONES_MODULE,
+  TIENDA_MODULE,
 ];
 
 // ── Modo Fácil vs Avanzado ──────────────────────────────────────────────────
