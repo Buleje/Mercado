@@ -40,6 +40,15 @@ export default function RecetasPage() {
       <MarketplaceNavbar />
       <MarketplaceSecondaryNav />
       <main id="main-content">
+        {/*
+          SEO 2026-05-28 audit: RecetarioClient (client) renderiza el H1 visual.
+          SSR HTML no tenía H1 → Google sin encabezado primario.
+          H1 sr-only con long-tail keyword "recetas peruanas + ciudad" captura
+          search intent ("receta peruana fácil", "ceviche pucallpa", etc.).
+        */}
+        <h1 className="sr-only">
+          Recetas peruanas con ingredientes de bodega — Recetario Buleje Pucallpa
+        </h1>
         <RecetarioClient />
       </main>
       <Footer />

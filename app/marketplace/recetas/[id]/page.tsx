@@ -205,6 +205,14 @@ export default async function RecetaDetallePage({ params }: PageProps) {
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {/*
+        SEO 2026-05-28 audit P4: H1 sr-only con nombre receta + keyword
+        "receta peruana". RecetaDetalleClient (client) renderiza el H1
+        visual pero SSR HTML no tenía → Google sin encabezado primario.
+      */}
+      <h1 className="sr-only">
+        {receta.nombre} — Receta peruana paso a paso | Buleje
+      </h1>
       <RecetaDetalleClient recetaId={id} />
       <Footer />
     </>

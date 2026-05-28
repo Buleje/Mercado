@@ -25,7 +25,9 @@ const BASE_URL = "https://www.buleje.pe";
 export const metadata: Metadata = {
   // El template del root layout agrega " | Buleje". No duplicar el sufijo
   // de marca aquí — Brandon 2026-05-20 SEO fix.
-  title: "Bodegas, restaurantes y mercados en Pucallpa · Delivery con Yape",
+  // 2026-05-28 audit: title antes 64 chars (truncado en mobile SERP).
+  // Ahora 53 chars — keyword "Bodegas en Pucallpa" + intent "delivery" + brand.
+  title: "Bodegas en Pucallpa · Delivery Yape · Buleje",
   // Brandon 2026-05-20 v2: 135 chars (target 70-155). Antes 159 chars
   // dispara warning de SEO auditors (Google trunca a ~155). Mantiene las
   // keywords clave (bodegas, farmacias, restaurantes, Pucallpa, delivery,
