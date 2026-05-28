@@ -254,7 +254,7 @@ export default function MarketplaceContent({
           href="/marketplace/explorar"
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
         >
-          Explorar todo el catalogo
+          Explorar todo el catálogo
           <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
         </Link>
       </section>

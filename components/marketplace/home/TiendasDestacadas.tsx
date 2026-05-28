@@ -43,7 +43,11 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
 export default function TiendasDestacadas({ initialStores }: { initialStores?: FeaturedStore[] } = {}) {
-  const [stores, setStores] = useState<FeaturedStore[]>(initialStores ?? []);
+  // Brandon 2026-05-27: NO destacar tiendas vacías (productsCount === 0). Una
+  // tienda sin productos no debería aparecer en "Bodegas que no puedes perderte".
+  const onlyWithProducts = (list: FeaturedStore[]) =>
+    list.filter((s) => (s.productsCount ?? 0) > 0);
+  const [stores, setStores] = useState<FeaturedStore[]>(onlyWithProducts(initialStores ?? []));
   const [loading, setLoading] = useState(!initialStores);
 
   useEffect(() => {
@@ -55,7 +59,7 @@ export default function TiendasDestacadas({ initialStores }: { initialStores?: F
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (cancelled) return;
-        setStores((d?.stores ?? []) as FeaturedStore[]);
+        setStores(onlyWithProducts((d?.stores ?? []) as FeaturedStore[]));
       })
       .catch(() => {
         /* sección no crítica: se oculta sola si falla */

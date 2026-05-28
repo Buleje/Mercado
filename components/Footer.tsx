@@ -43,11 +43,14 @@ const marketplaceLinks = [
   { href: "/asistente", label: "Asistente IA" },
 ];
 
+// Brandon 2026-05-27 (FIX 404): /tienda/categoria/* no existe como ruta.
+// Apuntamos al buscador del marketplace filtrado por categoría de producto
+// (mismo destino que el subnav de categorías), que sí renderiza el grid.
 const categoryLinks = [
-  { href: "/tienda/categoria/abarrotes", label: "Abarrotes" },
-  { href: "/tienda/categoria/bebidas", label: "Bebidas" },
-  { href: "/tienda/categoria/carnes", label: "Carne y Pollo" },
-  { href: "/tienda/categoria/lacteos", label: "Lácteos" },
+  { href: "/marketplace/buscar?cat=abarrotes", label: "Abarrotes" },
+  { href: "/marketplace/buscar?cat=bebidas", label: "Bebidas" },
+  { href: "/marketplace/buscar?cat=carnes", label: "Carne y Pollo" },
+  { href: "/marketplace/buscar?cat=lácteos", label: "Lácteos" },
 ];
 
 // ── Columna 2: Mi cuenta ────────────────────────────────────────────────
