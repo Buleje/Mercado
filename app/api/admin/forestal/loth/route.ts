@@ -87,6 +87,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ stats });
     }
 
+    if (url.searchParams.get("despachables") === "1") {
+      return NextResponse.json({ items: await ForestLothDB.despachablesResueltos(auth.tenantId) });
+    }
+
     const sectionParam = url.searchParams.get("section");
     const section =
       sectionParam && (LOTH_SECTIONS as readonly string[]).includes(sectionParam)

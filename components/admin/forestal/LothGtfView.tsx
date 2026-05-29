@@ -151,6 +151,16 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
     }]);
     setIt({ code: "", species: it.species, diamMayorM: "", diamMenorM: "", lengthM: "" });
   }
+  async function loadDespachadas() {
+    try {
+      const r = await fetch("/api/admin/forestal/loth?despachables=1", { credentials: "include" });
+      if (!r.ok) return;
+      const fetched = ((await r.json()).items ?? []) as GtfItem[];
+      const existing = new Set(items.map((x) => x.code));
+      const nuevos = fetched.filter((x) => x.code && !existing.has(x.code));
+      if (nuevos.length) setItems((arr) => [...arr, ...nuevos]);
+    } catch { /* best-effort: si falla, el usuario carga manual */ }
+  }
   const totalVol = items.reduce((a, i) => a + Number(i.volumeM3 ?? 0), 0);
 
   async function submit(e: React.FormEvent) {
@@ -189,7 +199,12 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
 
       {/* Lista de trozas */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Lista de trozas / productos</p>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Lista de trozas / productos</p>
+          <button type="button" onClick={loadDespachadas} className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
+            <Plus className="h-3.5 w-3.5" /> Cargar trozas despachadas
+          </button>
+        </div>
         <div className="grid grid-cols-2 items-end gap-2 lg:grid-cols-6">
           <Field label="Código"><input value={it.code} onChange={(e) => setItem("code", e.target.value)} placeholder="85-TOR-A" className={I} /></Field>
           <Field label="Especie"><input value={it.species} onChange={(e) => setItem("species", e.target.value)} placeholder="Tornillo" className={I} /></Field>
@@ -232,11 +247,21 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
   );
 }
 
-// ─── Impresión (ventana nueva, aislada) ─────────────────────────────────────
-function printGtf(g: Gtf) {
+// ─── Impresión (ventana nueva, aislada) — QR real vía lazy-import ───────────
+async function printGtf(g: Gtf) {
   const items = Array.isArray(g.items) ? g.items : [];
   const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${x.code ?? ""}</td><td>${x.species ?? ""}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.diamMenorM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.lengthM?.toFixed?.(2) ?? ""}</td><td style="text-align:right">${x.volumeM3?.toFixed?.(4) ?? ""}</td></tr>`).join("");
   const vol = g.volumenTotalM3 ? Number(g.volumenTotalM3).toFixed(4) : "0";
+
+  // QR real: codifica una cadena de verificación interna escaneable
+  let qrSvg = "";
+  try {
+    const QRCode = (await import("qrcode")).default;
+    const payload = `BSM-GTF|N:${g.gtfNumber}|TIT:${g.titularName ?? ""}|TH:${g.tituloHabilitante ?? ""}|VOL:${vol}m3|F:${fmtDate(g.gtfDate)}`;
+    qrSvg = await QRCode.toString(payload, { type: "svg", margin: 1, width: 118, errorCorrectionLevel: "M" });
+  } catch {
+    qrSvg = `<div style="font-family:monospace">◫◫◫</div>`;
+  }
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>GTF ${g.gtfNumber}</title>
   <style>
     body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:28px;font-size:12px}
@@ -251,7 +276,7 @@ function printGtf(g: Gtf) {
     .dj{margin-top:14px;font-size:10px;color:#444;border-top:1px dashed #999;padding-top:8px}
     .anul{color:#b00;font-weight:bold;border:2px solid #b00;display:inline-block;padding:2px 8px;border-radius:4px}
   </style></head><body onload="window.print()">
-    <div class="qr">◫◫◫<br>GTF<br><b>${g.gtfNumber}</b><br>verif. interna</div>
+    <div class="qr">${qrSvg}<div style="font-size:9px;margin-top:4px">verif. interna</div></div>
     <h1>GUÍA DE TRANSPORTE FORESTAL</h1>
     <div class="sub">Documento interno de gestión — no oficial (la GTF oficial se emite por SNIFFS)</div>
     ${g.status === "anulada" ? `<div class="anul">ANULADA — ${g.annulledReason ?? ""}</div>` : ""}

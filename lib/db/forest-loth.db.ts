@@ -238,6 +238,43 @@ export class ForestLothDB {
     }));
   }
 
+  /**
+   * Trozas despachadas con su especie/medidas/volumen resueltos desde Trozado.
+   * Alimenta el prefill de la GTF ("cargar desde despacho").
+   */
+  static async despachablesResueltos(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const entries = await prisma.forestLothEntry.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado", section: { in: ["trozado", "despacho_troza"] } },
+      select: {
+        section: true, trozaCode: true, speciesCommon: true, speciesScientific: true, cites: true,
+        diamMayorM: true, diamMenorM: true, lengthM: true, volumeM3: true, gtfNumber: true,
+      },
+    });
+    const trozaMap = new Map<string, { species: string | null; scientific: string | null; cites: boolean; dM: number | null; dm: number | null; L: number | null; vol: number | null }>();
+    for (const e of entries) {
+      if (e.section === "trozado" && e.trozaCode) {
+        trozaMap.set(e.trozaCode, {
+          species: e.speciesCommon, scientific: e.speciesScientific, cites: e.cites,
+          dM: e.diamMayorM ? Number(e.diamMayorM) : null, dm: e.diamMenorM ? Number(e.diamMenorM) : null,
+          L: e.lengthM ? Number(e.lengthM) : null, vol: e.volumeM3 ? Number(e.volumeM3) : null,
+        });
+      }
+    }
+    const items: Array<Record<string, unknown>> = [];
+    for (const e of entries) {
+      if (e.section === "despacho_troza" && e.trozaCode) {
+        const t = trozaMap.get(e.trozaCode);
+        items.push({
+          code: e.trozaCode, species: t?.species ?? null, scientific: t?.scientific ?? null, cites: t?.cites ?? false,
+          diamMayorM: t?.dM ?? null, diamMenorM: t?.dm ?? null, lengthM: t?.L ?? null, volumeM3: t?.vol ?? null,
+          gtfNumber: e.gtfNumber ?? null,
+        });
+      }
+    }
+    return items;
+  }
+
   // ─── Carátula ────────────────────────────────────────────────────────
 
   static async createCaratula(tenantId: string, input: LothCaratulaInput) {
