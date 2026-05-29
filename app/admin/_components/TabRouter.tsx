@@ -56,6 +56,8 @@ const AdelantosModule           = dynamic(() => import("@/components/admin/adela
 const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
 // ADR-124 — Especialización forestal CTP
 const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/forestal/CTPLibroOperaciones"), { loading: TabSpinner });
+// ADR-125 — Especialización forestal Títulos Habilitantes (LO-TH)
+const LothLibroOperaciones      = dynamic(() => import("@/components/admin/forestal/LothLibroOperaciones"), { loading: TabSpinner });
 const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/ScoringCrediticioTab"),      { loading: TabSpinner });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
 const StoreCustomizer           = dynamic(() => import("@/components/admin/StoreCustomizer"),           { loading: TabSpinner });
@@ -225,6 +227,7 @@ export function TabRouter({
   // El módulo se renderiza siempre que el tab esté en el sidebar (gating en
   // sidebar pendiente Phase 4 — useEnabledSpecs hook).
   if (tab === "ctp-libro-operaciones") return <CTPLibroOperaciones />;
+  if (tab === "loth-libro-operaciones") return <LothLibroOperaciones />;
   if (tab === "scoring")   return <ScoringCrediticioTab />;
   if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;
 

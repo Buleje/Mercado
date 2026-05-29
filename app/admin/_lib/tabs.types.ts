@@ -63,7 +63,8 @@ export type Tab =
   // ── Especializaciones por tenant (ADR-124) ─────────────────────────────
   // Estos tabs SOLO aparecen si el tenant tiene la TenantFeatureFlag
   // `spec:<vertical>:<modulo>` habilitada por superadmin.
-  | "ctp-libro-operaciones"; // Forestal: LOE-CTP SERFOR
+  | "ctp-libro-operaciones"  // Forestal: LOE-CTP SERFOR
+  | "loth-libro-operaciones"; // Forestal: LO-TH Títulos Habilitantes (ADR-125)
 
 /**
  * Subconjunto de Tabs cuya navegación directa por URL/hash/localStorage
@@ -111,6 +112,7 @@ export const VALID_TABS: readonly Tab[] = [
   "socio-members",
   "lives-admin",
   "leads-funnel",
-  // Especializaciones (ADR-124)
+  // Especializaciones (ADR-124 / ADR-125)
   "ctp-libro-operaciones",
+  "loth-libro-operaciones",
 ] as const;

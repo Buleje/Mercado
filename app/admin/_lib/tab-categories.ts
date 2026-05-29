@@ -425,7 +425,7 @@ export const ESPECIALIZACIONES_MODULE: TabCategory = {
   // Solo los tabs YA DECLARADOS en tabs.types Tab union. Cuando agregemos
   // gtf-emisor / recetas-medicas / cuero-trazabilidad al union, los sumamos
   // acá. Por ahora solo CTP forestal está implementado (Phase 1-4 ADR-124).
-  tabs: ["ctp-libro-operaciones"],
+  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones"],
 };
 
 // ── Módulo Config (siempre visible desde dropdown de usuario) ────────────────
