@@ -408,4 +408,25 @@ export class CacaoDB {
       humedadFueraCount: humedadFuera.length,
     };
   }
+
+  /** Precio de compra promedio del tenant (S//kg) sobre lotes SECOS — comparable
+   *  con la referencia internacional en S//kg seco. Ponderado por peso. */
+  static async avgBuyPrice(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lotes = await prisma.cacaoLote.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado", tipoGrano: "seco" },
+      select: { pesoKg: true, precioPorKg: true, premioPorKg: true, totalPagado: true },
+    });
+    let kg = 0, total = 0;
+    for (const l of lotes) {
+      const peso = Number(l.pesoKg ?? 0);
+      const t = l.totalPagado != null ? Number(l.totalPagado) : peso * (Number(l.precioPorKg ?? 0) + Number(l.premioPorKg ?? 0));
+      if (peso > 0 && t > 0) { kg += peso; total += t; }
+    }
+    return {
+      kg: Math.round(kg * 100) / 100,
+      avgPrecioPorKg: kg > 0 ? Math.round((total / kg) * 100) / 100 : null,
+      lotes: lotes.length,
+    };
+  }
 }

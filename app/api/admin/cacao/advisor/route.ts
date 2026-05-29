@@ -4,6 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { getCacaoMarket } from "@/lib/cacao/cacao-market";
 import { cacaoAdvisor } from "@/lib/cacao/cacao-advisor";
+import { CacaoDB } from "@/lib/db/cacao.db";
 import { callLLM } from "@/lib/llm-router";
 import { logger } from "@/lib/logger";
 
@@ -36,6 +37,19 @@ export async function GET(req: NextRequest) {
       weekLow52: market.price.weekLow52,
       series: market.price.series,
     });
+
+    // Comparación: mi precio de compra (seco) vs referencia internacional S//kg.
+    const buy = await CacaoDB.avgBuyPrice(auth.tenantId).catch(() => null);
+    const refKg = market.pricePenPerKg;
+    const local = buy && buy.avgPrecioPorKg != null
+      ? {
+          miPrecioKg: buy.avgPrecioPorKg,
+          kg: buy.kg,
+          lotes: buy.lotes,
+          refKg,
+          spreadPct: refKg ? Math.round(((buy.avgPrecioPorKg - refKg) / refKg) * 1000) / 10 : null,
+        }
+      : { miPrecioKg: null, kg: 0, lotes: buy?.lotes ?? 0, refKg, spreadPct: null };
 
     // Narrativa IA (cacheada por señal). Reutiliza si vigente y misma señal.
     let narrative: string | null = null;
@@ -73,7 +87,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ advisor, narrative, generatedAt: market.generatedAt });
+    return NextResponse.json({ advisor, narrative, local, generatedAt: market.generatedAt });
   } catch (err) {
     logger.error("[cacao.advisor.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

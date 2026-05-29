@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import {
-  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks,
+  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins,
 } from "@buleje/design-system/icons";
 
 interface Donde { canal: string; nota: string }
@@ -16,7 +16,8 @@ interface Advisor {
   titulo: string; resumen: string; motivos: string[]; cuando: string; donde: Donde[]; riesgos: string[]; compra: string;
   metrics: { pos52: number | null; trend30: number | null; trend7: number | null; volatilidad: number | null };
 }
-interface Resp { advisor: Advisor | null; narrative: string | null; generatedAt?: string }
+interface Local { miPrecioKg: number | null; kg: number; lotes: number; refKg: number | null; spreadPct: number | null }
+interface Resp { advisor: Advisor | null; narrative: string | null; local?: Local; generatedAt?: string }
 
 const SIGNAL = {
   vender: { label: "VENDER", Icon: TrendingUp, ring: "var(--data-success-500)", soft: "var(--data-success-50)", text: "var(--data-success-900)", accent: "var(--data-success-700)" },
@@ -90,6 +91,37 @@ export default function CacaoAsesor() {
             <MetricChip label="Tendencia semana" value={a.metrics.trend7 != null ? `${a.metrics.trend7 > 0 ? "+" : ""}${a.metrics.trend7}%` : "—"} Icon={trendIcon(a.metrics.trend7)} tone={a.metrics.trend7} />
             <MetricChip label="Volatilidad" value={a.metrics.volatilidad != null ? `${a.metrics.volatilidad}%` : "—"} />
           </div>
+
+          {/* Tu precio vs mercado */}
+          {data?.local && (
+            <Card icon={Coins} title="Tu precio de compra vs. el mercado">
+              {data.local.miPrecioKg != null && data.local.refKg != null ? (
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="rounded-xl bg-[var(--surface-sunken)] px-4 py-2.5 text-center">
+                    <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tu compra (prom.)</div>
+                    <div className="font-mono text-xl font-extrabold tabular-nums text-[var(--text-primary)]">S/ {data.local.miPrecioKg.toFixed(2)}<span className="text-sm font-normal text-[var(--text-tertiary)]">/kg</span></div>
+                  </div>
+                  <Minus className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <div className="rounded-xl bg-[var(--surface-sunken)] px-4 py-2.5 text-center">
+                    <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Internacional</div>
+                    <div className="font-mono text-xl font-extrabold tabular-nums text-[var(--text-primary)]">S/ {data.local.refKg.toFixed(2)}<span className="text-sm font-normal text-[var(--text-tertiary)]">/kg</span></div>
+                  </div>
+                  {data.local.spreadPct != null && (
+                    <div className="flex-1 min-w-[180px]">
+                      {(() => { const s = data.local.spreadPct; const below = s < 0;
+                        return <p className="text-sm leading-relaxed" style={{ color: below ? "var(--data-success-700)" : "var(--data-warning-700)" }}>
+                          <b>{below ? "Comprás" : "Comprás"} {Math.abs(s).toFixed(1)}% {below ? "por DEBAJO" : "por ENCIMA"}</b> del referencial internacional.{" "}
+                          <span className="text-[var(--text-secondary)]">{below ? "Buen margen — el spread cubre tu beneficio/secado y ganancia." : "Cuidá tu margen: estás pagando caro vs. el precio de venta de referencia."}</span>
+                        </p>;
+                      })()}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-[var(--text-tertiary)]">Aún no registraste lotes de cacao <b>seco</b> con precio para comparar. Registrá tus compras y acá verás si comprás por debajo o por encima del mercado internacional.</p>
+              )}
+            </Card>
+          )}
 
           {/* Motivos + Cuándo */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
