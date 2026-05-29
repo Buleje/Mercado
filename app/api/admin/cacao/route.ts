@@ -66,9 +66,24 @@ const beneficioSchema = z.object({
   observaciones: z.string().trim().max(1000).nullable().optional(),
 });
 
+const ventaSchema = z.object({
+  fecha: z.coerce.date().optional(),
+  compradorNombre: z.string().trim().max(160).nullable().optional(),
+  canal: z.enum(["cooperativa", "exportador", "mercado_local", "otro"]).nullable().optional(),
+  pesoKg: z.coerce.number().positive().max(9_999_999),
+  moneda: z.enum(["PEN", "USD"]).optional(),
+  precioPorKg: money,
+  tipoCambio: z.coerce.number().min(0).max(100).nullable().optional(),
+  esFob: z.boolean().optional(),
+  variedad: z.string().trim().max(40).nullable().optional(),
+  grado: z.string().trim().max(20).nullable().optional(),
+  observaciones: z.string().trim().max(1000).nullable().optional(),
+});
+
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("annul_lote"), id: z.string().trim().min(1), reason: z.string().trim().min(3).max(500) }),
   z.object({ action: z.literal("annul_beneficio"), id: z.string().trim().min(1) }),
+  z.object({ action: z.literal("annul_venta"), id: z.string().trim().min(1), reason: z.string().trim().max(500).optional() }),
   z.object({ action: z.literal("update_producer"), id: z.string().trim().min(1), patch: producerSchema.partial() }),
 ]);
 
@@ -108,6 +123,8 @@ export async function GET(req: NextRequest) {
     if (view === "inventory") return NextResponse.json({ inventory: await CacaoDB.inventory(g.auth.tenantId) });
     if (view === "trends") return NextResponse.json({ trends: await CacaoDB.trends(g.auth.tenantId) });
     if (view === "beneficios") return NextResponse.json({ beneficios: await CacaoDB.listBeneficios(g.auth.tenantId, { search }) });
+    if (view === "ventas") return NextResponse.json({ ventas: await CacaoDB.listVentas(g.auth.tenantId, { search }) });
+    if (view === "ventas-stats") return NextResponse.json({ stats: await CacaoDB.ventasStats(g.auth.tenantId) });
     if (view === "lotes-disponibles") return NextResponse.json({ lotes: await CacaoDB.availableLotesForBeneficio(g.auth.tenantId) });
     const from = sp.get("from") ? new Date(sp.get("from")!) : undefined;
     const to = sp.get("to") ? new Date(sp.get("to")!) : undefined;
@@ -140,6 +157,12 @@ export async function POST(req: NextRequest) {
       const producer = await CacaoDB.createProducer(g.auth.tenantId, { ...parsed.data, createdBy: g.auth.username ?? "unknown" });
       return NextResponse.json({ producer }, { status: 201 });
     }
+    if (type === "venta") {
+      const parsed = ventaSchema.safeParse(body);
+      if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+      const venta = await CacaoDB.createVenta(g.auth.tenantId, { ...parsed.data, createdBy: g.auth.username ?? "unknown" });
+      return NextResponse.json({ venta }, { status: 201 });
+    }
     if (type === "beneficio") {
       const parsed = beneficioSchema.safeParse(body);
       if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
@@ -169,6 +192,9 @@ export async function PATCH(req: NextRequest) {
     }
     if (parsed.data.action === "annul_beneficio") {
       return NextResponse.json({ beneficio: await CacaoDB.annulBeneficio(g.auth.tenantId, parsed.data.id) });
+    }
+    if (parsed.data.action === "annul_venta") {
+      return NextResponse.json({ venta: await CacaoDB.annulVenta(g.auth.tenantId, parsed.data.id, parsed.data.reason ?? "") });
     }
     return NextResponse.json({ producer: await CacaoDB.updateProducer(g.auth.tenantId, parsed.data.id, parsed.data.patch) });
   } catch (err) {

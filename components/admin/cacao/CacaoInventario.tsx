@@ -14,7 +14,8 @@ import { StatCard } from "@buleje/design-system";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 
 interface Inv {
-  kgSecoDisponible: number; kgSecoBeneficio: number; kgSecoAcopiado: number; kgHumedoProceso: number; kgSecoProyectado: number;
+  kgSecoDisponible: number; kgProducido: number; kgVendido: number; ingresosVenta: number;
+  kgSecoBeneficio: number; kgSecoAcopiado: number; kgHumedoProceso: number; kgSecoProyectado: number;
   precioRefProm: number; valorEstimado: number; rendimientoProm: number | null; lotesEnProceso: number;
   porVariedad: { variedad: string; kg: number }[]; porGrado: { grado: string; kg: number }[];
   enProceso: { loteCode: string | null; estado: string; pesoHumedoKg: number; secoProyectado: number; diasEnProceso: number }[];
@@ -77,7 +78,7 @@ export default function CacaoInventario() {
 
       {/* Hero: stock + valorización a costo y a mercado */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Cacao seco disponible" value={`${n2(inv.kgSecoDisponible)} kg`} subValue="listo para vender" icon={Warehouse} emphasis={inv.kgSecoDisponible > 0 ? "success" : "neutral"} />
+        <StatCard label="Cacao seco disponible" value={`${n2(inv.kgSecoDisponible)} kg`} subValue={inv.kgVendido > 0 ? `${n2(inv.kgProducido)} producido − ${n2(inv.kgVendido)} vendido` : "listo para vender"} icon={Warehouse} emphasis={inv.kgSecoDisponible > 0 ? "success" : "neutral"} />
         <StatCard label="Valor a costo" value={`S/ ${n2(inv.valorEstimado)}`} subValue={inv.precioRefProm > 0 ? `S/ ${inv.precioRefProm.toFixed(2)}/kg acopio` : "sin precio ref."} icon={Coins} emphasis="neutral" />
         <StatCard label="Valor a precio intl." value={valorMercado != null ? `S/ ${n2(valorMercado)}` : "—"} subValue={precioIntlKg != null ? `S/ ${precioIntlKg.toFixed(2)}/kg ICE` : "mercado n/d"} icon={Globe} emphasis="neutral" />
         <StatCard label="Ganancia potencial" value={ganancia != null ? `${ganancia >= 0 ? "+" : ""}S/ ${n2(ganancia)}` : "—"} subValue={margenPct != null ? `${margenPct >= 0 ? "+" : ""}${margenPct}% vs costo` : "vendiendo a intl."} icon={TrendingUp} emphasis={ganancia != null && ganancia >= 0 ? "success" : "warning"} />

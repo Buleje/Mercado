@@ -6,7 +6,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
-import { cacaoFermentationIndex, cacaoGrade, cacaoLiquidacion, cacaoMerma, cacaoProyeccionSeco, cacaoRendimiento } from "@/lib/cacao/cacao-quality";
+import { cacaoFermentationIndex, cacaoGrade, cacaoLiquidacion, cacaoMerma, cacaoProyeccionSeco, cacaoRendimiento, cacaoVentaTotalPen } from "@/lib/cacao/cacao-quality";
 
 const CACHE_PREFIX = "cacao";
 const dec = (v: number | string | null | undefined) =>
@@ -39,6 +39,13 @@ export interface BeneficioInput {
   humedadInicial?: number | string | null; humedadFinal?: number | string | null;
   pesoHumedoKg?: number | string | null; pesoSecoKg?: number | string | null;
   estado?: string; observaciones?: string | null; createdBy: string;
+}
+
+export interface VentaInput {
+  fecha?: Date; compradorNombre?: string | null; canal?: string | null;
+  pesoKg: number | string; moneda?: string; precioPorKg?: number | string | null;
+  tipoCambio?: number | string | null; esFob?: boolean; variedad?: string | null;
+  grado?: string | null; observaciones?: string | null; createdBy: string;
 }
 
 export class CacaoDB {
@@ -423,7 +430,7 @@ export class CacaoDB {
   // ─── Inventario de cacao seco + valorización + desgloses ─────────────
   static async inventory(tenantId: string) {
     if (!tenantId) throw new Error("tenantId is required");
-    const [lotes, beneficios] = await Promise.all([
+    const [lotes, beneficios, ventas] = await Promise.all([
       prisma.cacaoLote.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
         select: { id: true, loteCode: true, tipoGrano: true, pesoKg: true, precioPorKg: true, premioPorKg: true, variedad: true, grado: true },
@@ -431,6 +438,10 @@ export class CacaoDB {
       prisma.cacaoBeneficio.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
         select: { loteId: true, loteCode: true, estado: true, pesoHumedoKg: true, pesoSecoKg: true, fermInicio: true, secInicio: true, createdAt: true },
+      }),
+      prisma.cacaoVenta.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        select: { pesoKg: true, totalPen: true },
       }),
     ]);
     const r2 = (x: number) => Math.round(x * 100) / 100;
@@ -483,10 +494,16 @@ export class CacaoDB {
       const precio = Number(l.precioPorKg ?? 0) + Number(l.premioPorKg ?? 0);
       if (peso > 0 && precio > 0) { kgSecoValBase += peso; valBase += peso * precio; }
     }
-    const kgSecoDisponible = r2(kgSecoBeneficio + kgSecoAcopiado);
+    const kgProducido = kgSecoBeneficio + kgSecoAcopiado;
+    let kgVendido = 0, ingresosVenta = 0;
+    for (const v of ventas) { kgVendido += Number(v.pesoKg ?? 0); ingresosVenta += Number(v.totalPen ?? 0); }
+    const kgSecoDisponible = r2(Math.max(0, kgProducido - kgVendido));
     const precioRefProm = kgSecoValBase > 0 ? r2(valBase / kgSecoValBase) : 0;
     return {
       kgSecoDisponible,
+      kgProducido: r2(kgProducido),
+      kgVendido: r2(kgVendido),
+      ingresosVenta: r2(ingresosVenta),
       kgSecoBeneficio: r2(kgSecoBeneficio),
       kgSecoAcopiado: r2(kgSecoAcopiado),
       kgHumedoProceso: r2(kgHumedoProceso),
@@ -566,6 +583,70 @@ export class CacaoDB {
       kg: Math.round(kg * 100) / 100,
       avgPrecioPorKg: kg > 0 ? Math.round((total / kg) * 100) / 100 : null,
       lotes: lotes.length,
+    };
+  }
+
+  // ─── Ventas de cacao seco (ADR-128 v3) ───────────────────────────────
+  static async listVentas(tenantId: string, filters: { search?: string; includeAnnulled?: boolean } = {}) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const where: Prisma.CacaoVentaWhereInput = { tenantId, deletedAt: null };
+    if (!filters.includeAnnulled) where.status = "registrado";
+    if (filters.search) where.OR = [
+      { ventaCode: { contains: filters.search, mode: "insensitive" } },
+      { compradorNombre: { contains: filters.search, mode: "insensitive" } },
+    ];
+    return prisma.cacaoVenta.findMany({ where, orderBy: { fecha: "desc" }, take: 500 });
+  }
+
+  static async createVenta(tenantId: string, input: VentaInput) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (input.pesoKg == null || Number(input.pesoKg) <= 0) throw new Error("pesoKg must be > 0");
+    if (!input.createdBy?.trim()) throw new Error("createdBy is required");
+    const year = (input.fecha ?? new Date()).getUTCFullYear();
+    const count = await prisma.cacaoVenta.count({ where: { tenantId, ventaCode: { startsWith: `V-${year}-` } } });
+    const ventaCode = `V-${year}-${String(count + 1).padStart(3, "0")}`;
+    const moneda = input.moneda === "USD" ? "USD" : "PEN";
+    const totalPen = cacaoVentaTotalPen(Number(input.pesoKg), n(input.precioPorKg), moneda, n(input.tipoCambio));
+    const venta = await prisma.cacaoVenta.create({
+      data: {
+        tenantId, ventaCode, fecha: input.fecha ?? new Date(),
+        compradorNombre: input.compradorNombre?.trim() || null, canal: input.canal?.trim() || null,
+        pesoKg: new Prisma.Decimal(input.pesoKg), moneda,
+        precioPorKg: dec(input.precioPorKg), tipoCambio: moneda === "USD" ? dec(input.tipoCambio) : null,
+        totalPen: dec(totalPen), esFob: !!input.esFob, variedad: input.variedad?.trim() || null,
+        grado: input.grado?.trim() || null, observaciones: input.observaciones?.trim() || null,
+        status: "registrado", createdBy: input.createdBy,
+      },
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return venta;
+  }
+
+  static async annulVenta(tenantId: string, id: string, reason: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const v = await prisma.cacaoVenta.update({
+      where: { id, tenantId } satisfies Prisma.CacaoVentaWhereUniqueInput,
+      data: { status: "anulado", annulledReason: reason?.trim() || null },
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return v;
+  }
+
+  static async ventasStats(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ventas = await prisma.cacaoVenta.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado" },
+      select: { pesoKg: true, totalPen: true, esFob: true },
+    });
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    let kg = 0, ingresos = 0, fob = 0;
+    for (const v of ventas) { kg += Number(v.pesoKg ?? 0); ingresos += Number(v.totalPen ?? 0); if (v.esFob) fob++; }
+    return {
+      ventas: ventas.length,
+      kgVendido: r2(kg),
+      ingresos: r2(ingresos),
+      precioVentaPromKg: kg > 0 ? r2(ingresos / kg) : 0,
+      ventasFob: fob,
     };
   }
 }

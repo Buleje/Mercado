@@ -22,8 +22,9 @@ import CacaoAsesor from "./CacaoAsesor";
 import CacaoResumen from "./CacaoResumen";
 import CacaoInventario from "./CacaoInventario";
 import CacaoProductores from "./CacaoProductores";
+import CacaoVentas from "./CacaoVentas";
 
-type View = "acopio" | "beneficio" | "inventario" | "productores" | "resumen" | "mercado" | "asesor";
+type View = "acopio" | "beneficio" | "inventario" | "ventas" | "productores" | "resumen" | "mercado" | "asesor";
 interface Lote {
   id: string; loteCode: string; fecha: string; productorNombre: string | null; variedad: string | null;
   tipoGrano: string; pesoKg: string; humedadPct: string | null; precioPorKg: string | null; totalPagado: string | null;
@@ -36,6 +37,7 @@ const VIEWS: { key: View; label: string; icon: typeof Leaf; hint: string }[] = [
   { key: "acopio", label: "Acopio", icon: PackageCheck, hint: "Lotes recibidos" },
   { key: "beneficio", label: "Beneficio", icon: Droplets, hint: "Fermentación + secado" },
   { key: "inventario", label: "Inventario", icon: Warehouse, hint: "Cacao seco" },
+  { key: "ventas", label: "Ventas", icon: Coins, hint: "Cacao vendido" },
   { key: "productores", label: "Productores", icon: Users, hint: "Proveedores" },
   { key: "resumen", label: "Resumen", icon: BarChart3, hint: "KPIs de campaña" },
   { key: "mercado", label: "Mercado", icon: Newspaper, hint: "Precios y noticias" },
@@ -61,7 +63,7 @@ export default function CacaoAcopio() {
 
   const load = useCallback(async (v: View, fOverride?: { variedad?: string; grado?: string; from?: string; to?: string }) => {
     // Solo "acopio" se renderiza inline; el resto son componentes self-fetch.
-    if (v !== "acopio") { setLoading(false); return; }
+    if (v !== "acopio") { setLoading(false); return; } // ventas/inventario/etc. self-fetch
     setLoading(true); setError(null);
     const fv = fOverride?.variedad ?? fVariedad, fg = fOverride?.grado ?? fGrado, ff = fOverride?.from ?? fFrom, ft = fOverride?.to ?? fTo;
     try {
@@ -202,6 +204,9 @@ export default function CacaoAcopio() {
       {/* INVENTARIO */}
       {/* INVENTARIO — componente propio (self-fetch + integración precio intl.) */}
       {view === "inventario" && <CacaoInventario />}
+
+      {/* VENTAS — componente propio (self-fetch + descuenta inventario) */}
+      {view === "ventas" && <CacaoVentas />}
 
       {/* RESUMEN — dashboard de campaña (componente propio, self-fetch) */}
       {view === "resumen" && <CacaoResumen />}

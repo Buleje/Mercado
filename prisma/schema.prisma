@@ -5034,3 +5034,33 @@ model CacaoBeneficio {
   @@index([tenantId, loteId])
   @@index([deletedAt])
 }
+
+/// Venta de cacao seco (ADR-128 v3). Descuenta del inventario disponible.
+/// Soporta venta local (PEN) y exportación FOB (USD + tipo de cambio).
+model CacaoVenta {
+  id              String    @id @default(cuid())
+  tenantId        String
+  ventaCode       String    // V-2026-001 (correlativo)
+  fecha           DateTime  @default(now())
+  compradorNombre String?
+  canal           String?   // cooperativa | exportador | mercado_local | otro
+  pesoKg          Decimal   @db.Decimal(12, 2) // kg seco vendido
+  moneda          String    @default("PEN") // PEN | USD
+  precioPorKg     Decimal?  @db.Decimal(10, 2) // en `moneda`
+  tipoCambio      Decimal?  @db.Decimal(8, 4)  // USD→PEN si moneda=USD
+  totalPen        Decimal?  @db.Decimal(14, 2) // computado en soles
+  esFob           Boolean   @default(false)    // exportación FOB
+  variedad        String?
+  grado           String?
+  observaciones   String?
+  status          String    @default("registrado") // registrado | anulado
+  annulledReason  String?
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  @@index([tenantId, fecha(sort: Desc)])
+  @@index([tenantId, status])
+  @@index([deletedAt])
+}

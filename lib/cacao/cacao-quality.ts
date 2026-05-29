@@ -115,3 +115,36 @@ export function cacaoRendimiento(pesoHumedoKg: number | null | undefined, pesoSe
   return Math.round((s / h) * 1000) / 10;
 }
 
+// ─── Ventas de cacao seco (ADR-128 v3) ──────────────────────────────────────
+
+export const CACAO_VENTA_CANALES = ["cooperativa", "exportador", "mercado_local", "otro"] as const;
+export const CACAO_MONEDAS = ["PEN", "USD"] as const;
+
+/**
+ * Total de una venta convertido a SOLES. Si la moneda es USD, multiplica por el
+ * tipo de cambio. Retorna 0 si faltan datos válidos.
+ */
+export function cacaoVentaTotalPen(
+  pesoKg: number | null | undefined,
+  precioPorKg: number | null | undefined,
+  moneda: string = "PEN",
+  tipoCambio: number | null | undefined = null,
+): number {
+  const peso = num(pesoKg), precio = num(precioPorKg);
+  if (peso <= 0 || precio <= 0) return 0;
+  const enMoneda = peso * precio;
+  if (moneda === "USD") {
+    const fx = num(tipoCambio);
+    return fx > 0 ? Math.round(enMoneda * fx * 100) / 100 : 0;
+  }
+  return Math.round(enMoneda * 100) / 100;
+}
+
+/** Margen bruto de la venta vs. costo de acopio: (ingreso − costo) / costo (%). */
+export function cacaoVentaMargen(totalPen: number | null | undefined, pesoKg: number | null | undefined, costoPorKg: number | null | undefined): number | null {
+  const total = num(totalPen), peso = num(pesoKg), costoKg = num(costoPorKg);
+  if (total <= 0 || peso <= 0 || costoKg <= 0) return null;
+  const costo = peso * costoKg;
+  return Math.round(((total - costo) / costo) * 1000) / 10;
+}
+

@@ -1,0 +1,154 @@
+"use client";
+
+/**
+ * CacaoVentas — registro de ventas de cacao seco (ADR-128 v3). Self-fetch.
+ * KPIs (ventas, kg vendido, ingresos, precio prom, FOB), tabla, anular,
+ * export CSV y modal de nueva venta. Las ventas descuentan del inventario.
+ */
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Coins, Plus, Search, RefreshCw, Download, AlertCircle, AlertTriangle, Globe, Scale, TrendingUp } from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { csrfHeaders } from "@/lib/csrf-client";
+import CacaoVentaForm from "./CacaoVentaForm";
+
+interface Venta {
+  id: string; ventaCode: string; fecha: string; compradorNombre: string | null; canal: string | null;
+  pesoKg: string; moneda: string; precioPorKg: string | null; tipoCambio: string | null; totalPen: string | null;
+  esFob: boolean; variedad: string | null; grado: string | null; status: string;
+}
+interface Stats { ventas: number; kgVendido: number; ingresos: number; precioVentaPromKg: number; ventasFob: number }
+
+const n2 = (v: string | number | null) => (v == null || v === "" ? "—" : Number(v).toFixed(2));
+const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
+const CANAL_LABEL: Record<string, string> = { cooperativa: "Cooperativa", exportador: "Exportador", mercado_local: "Mercado local", otro: "Otro" };
+
+export default function CacaoVentas() {
+  const [items, setItems] = useState<Venta[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [annulId, setAnnulId] = useState<string | null>(null);
+  const [annulBusy, setAnnulBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const [rv, rs] = await Promise.all([
+        fetch("/api/admin/cacao?view=ventas", { credentials: "include" }),
+        fetch("/api/admin/cacao?view=ventas-stats", { credentials: "include" }),
+      ]);
+      if (!rv.ok) throw new Error(`HTTP ${rv.status}`);
+      setItems((await rv.json()).ventas ?? []);
+      setStats(rs.ok ? (await rs.json()).stats ?? null : null);
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setLoading(false); }
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  async function annul() {
+    if (!annulId) return;
+    setAnnulBusy(true);
+    try {
+      const r = await fetch("/api/admin/cacao", { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify({ action: "annul_venta", id: annulId }) });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      setAnnulId(null); load();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setAnnulBusy(false); }
+  }
+
+  const view = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q ? items.filter((v) => v.ventaCode.toLowerCase().includes(q) || (v.compradorNombre ?? "").toLowerCase().includes(q)) : items;
+  }, [items, search]);
+
+  function exportCsv() {
+    const head = ["Venta", "Fecha", "Comprador", "Canal", "Kg", "Moneda", "Precio/kg", "Tipo cambio", "Total S/", "FOB"];
+    const esc = (v: unknown) => { const s = String(v ?? ""); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const rows = view.map((v) => [v.ventaCode, v.fecha.slice(0, 10), v.compradorNombre, v.canal, n2(v.pesoKg), v.moneda, n2(v.precioPorKg), n2(v.tipoCambio), n2(v.totalPen), v.esFob ? "si" : "no"].map(esc).join(","));
+    const csv = "﻿" + [head.join(","), ...rows].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a"); a.href = url; a.download = `cacao-ventas-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Ingresos por venta" value={`S/ ${n2(stats?.ingresos ?? 0)}`} subValue={`${stats?.ventas ?? 0} ventas`} icon={Coins} emphasis="success" />
+        <StatCard label="Kg vendido" value={`${n2(stats?.kgVendido ?? 0)} kg`} icon={Scale} emphasis="neutral" />
+        <StatCard label="Precio venta prom." value={`S/ ${n2(stats?.precioVentaPromKg ?? 0)}`} subValue="por kg" icon={TrendingUp} emphasis="neutral" />
+        <StatCard label="Ventas FOB" value={String(stats?.ventasFob ?? 0)} subValue="exportación" icon={Globe} emphasis="neutral" />
+      </div>
+
+      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por código o comprador…" className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
+        </div>
+        <button type="button" onClick={exportCsv} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Download className="h-4 w-4" />CSV</button>
+        <button type="button" onClick={() => setShowNew(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Registrar venta</button>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--surface-sunken)] text-left">
+            <tr><Th>Venta</Th><Th>Fecha</Th><Th>Comprador</Th><Th>Canal</Th><Th className="text-right">Kg</Th><Th className="text-right">Precio</Th><Th className="text-right">Total S/</Th><Th className="text-right">Acción</Th></tr>
+          </thead>
+          <tbody>
+            {view.map((v) => (
+              <tr key={v.id} className="border-t border-[var(--rule-soft)]">
+                <Td><span className="font-mono text-xs font-bold text-[var(--text-primary)]">{v.ventaCode}</span>{v.esFob && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><Globe className="h-3 w-3" />FOB</span>}</Td>
+                <Td className="text-[var(--text-secondary)]">{fdate(v.fecha)}</Td>
+                <Td className="text-[var(--text-primary)]">{v.compradorNombre ?? "—"}</Td>
+                <Td className="text-[var(--text-secondary)]">{v.canal ? CANAL_LABEL[v.canal] ?? v.canal : "—"}</Td>
+                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(v.pesoKg)}</Td>
+                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{v.precioPorKg ? `${v.moneda === "USD" ? "US$" : "S/"} ${n2(v.precioPorKg)}` : "—"}</Td>
+                <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{v.totalPen ? `S/ ${n2(v.totalPen)}` : "—"}</Td>
+                <Td className="text-right"><button type="button" onClick={() => setAnnulId(v.id)} className="inline-flex h-8 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">Anular</button></Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {loading && items.length === 0 ? (
+          <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
+        ) : view.length === 0 && (
+          search ? <div className="p-12 text-center text-[var(--text-tertiary)]"><Search className="mx-auto mb-3 h-10 w-10 opacity-30" /><p className="text-base font-medium">Sin resultados.</p></div>
+          : <div className="p-12 text-center text-[var(--text-tertiary)]">
+              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Coins className="h-7 w-7" /></span>
+              <p className="text-base font-bold text-[var(--text-primary)]">Sin ventas registradas</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm">Registrá la venta de tu cacao seco (local o exportación FOB). Se descuenta del inventario y verás tus ingresos.</p>
+              <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar venta</button>
+            </div>
+        )}
+      </div>
+
+      {showNew && <CacaoVentaForm onClose={() => setShowNew(false)} onSaved={() => { setShowNew(false); load(); }} />}
+
+      {annulId && (
+        <AdminModal open onClose={() => setAnnulId(null)} variant="centered-sm" hideCloseButton>
+          <div className="bg-[var(--surface-raised)] p-5">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--data-error-50)] text-[var(--data-error-600)]"><AlertTriangle className="h-6 w-6" /></span>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Anular venta {items.find((v) => v.id === annulId)?.ventaCode ?? ""}</h3>
+                <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">Sale de los ingresos y el cacao vuelve al inventario disponible. <strong className="text-[var(--text-secondary)]">No se borra</strong> — queda en el historial.</p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+              <button type="button" disabled={annulBusy} onClick={annul} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"><AlertTriangle className="h-4 w-4" />{annulBusy ? "Anulando…" : "Anular venta"}</button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+    </div>
+  );
+}
+
+function Th({ children, className }: { children: React.ReactNode; className?: string }) { return <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>; }
+function Td({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>; }

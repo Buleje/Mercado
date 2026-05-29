@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cacaoGrade, cacaoFermentationIndex, cacaoLiquidacion, cumpleHumedad, cacaoMerma, cacaoProyeccionSeco, cacaoRendimiento, MERMA_TIPICA_PCT } from "@/lib/cacao/cacao-quality";
+import { cacaoGrade, cacaoFermentationIndex, cacaoLiquidacion, cumpleHumedad, cacaoMerma, cacaoProyeccionSeco, cacaoRendimiento, MERMA_TIPICA_PCT, cacaoVentaTotalPen, cacaoVentaMargen } from "@/lib/cacao/cacao-quality";
 
 /** Lógica de calidad/liquidación de cacao (ADR-128). Referencias NTP-ISO 2451 / 1114 / 2291. */
 
@@ -87,5 +87,31 @@ describe("cacaoRendimiento — kg seco / kg húmedo (%)", () => {
   });
   it("null sin datos", () => {
     expect(cacaoRendimiento(null, 40)).toBeNull();
+  });
+});
+
+describe("cacaoVentaTotalPen — total de venta en soles", () => {
+  it("PEN: 100 kg × S/13 = S/1300", () => {
+    expect(cacaoVentaTotalPen(100, 13, "PEN")).toBe(1300);
+  });
+  it("USD: 100 kg × US$3.5 × 3.75 = S/1312.50", () => {
+    expect(cacaoVentaTotalPen(100, 3.5, "USD", 3.75)).toBe(1312.5);
+  });
+  it("USD sin tipo de cambio → 0 (no se puede convertir)", () => {
+    expect(cacaoVentaTotalPen(100, 3.5, "USD", null)).toBe(0);
+  });
+  it("0 sin peso o precio", () => {
+    expect(cacaoVentaTotalPen(0, 13, "PEN")).toBe(0);
+    expect(cacaoVentaTotalPen(100, 0, "PEN")).toBe(0);
+  });
+});
+
+describe("cacaoVentaMargen — margen bruto vs costo de acopio", () => {
+  it("vendo a S/1300 lo que costó S/950 (100kg×9.5) ≈ +36.8%", () => {
+    expect(cacaoVentaMargen(1300, 100, 9.5)).toBe(36.8);
+  });
+  it("null sin datos válidos", () => {
+    expect(cacaoVentaMargen(0, 100, 9.5)).toBeNull();
+    expect(cacaoVentaMargen(1300, 100, 0)).toBeNull();
   });
 });
