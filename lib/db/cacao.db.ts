@@ -327,31 +327,54 @@ export class CacaoDB {
     return { lote, beneficio };
   }
 
-  // ─── Inventario de cacao seco + valorización ─────────────────────────
+  // ─── Inventario de cacao seco + valorización + desgloses ─────────────
   static async inventory(tenantId: string) {
     if (!tenantId) throw new Error("tenantId is required");
     const [lotes, beneficios] = await Promise.all([
       prisma.cacaoLote.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
-        select: { id: true, tipoGrano: true, pesoKg: true, precioPorKg: true, premioPorKg: true, totalPagado: true },
+        select: { id: true, loteCode: true, tipoGrano: true, pesoKg: true, precioPorKg: true, premioPorKg: true, variedad: true, grado: true },
       }),
       prisma.cacaoBeneficio.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
-        select: { loteId: true, estado: true, pesoHumedoKg: true, pesoSecoKg: true },
+        select: { loteId: true, loteCode: true, estado: true, pesoHumedoKg: true, pesoSecoKg: true, fermInicio: true, secInicio: true, createdAt: true },
       }),
     ]);
     const r2 = (x: number) => Math.round(x * 100) / 100;
+    const loteById = new Map(lotes.map((l) => [l.id, l]));
     const lotesConBeneficio = new Set(beneficios.map((b) => b.loteId).filter(Boolean) as string[]);
+    const now = Date.now();
 
-    // Seco terminado del beneficio + lotes acopiados ya secos (sin beneficio, evita doble conteo)
     let kgSecoBeneficio = 0, kgSecoAcopiado = 0, kgHumedoProceso = 0, kgSecoProyectado = 0;
     let rendSum = 0, rendN = 0;
+    const porVariedad: Record<string, number> = {};
+    const porGrado: Record<string, number> = {};
+    const addStock = (variedad: string | null, grado: string | null, kg: number) => {
+      if (kg <= 0) return;
+      const v = variedad || "—"; porVariedad[v] = r2((porVariedad[v] ?? 0) + kg);
+      const g = grado || "sin_clasificar"; porGrado[g] = r2((porGrado[g] ?? 0) + kg);
+    };
+    const enProceso: { loteCode: string | null; estado: string; pesoHumedoKg: number; secoProyectado: number; diasEnProceso: number }[] = [];
+
     for (const b of beneficios) {
-      if (b.estado === "terminado" && b.pesoSecoKg != null) kgSecoBeneficio += Number(b.pesoSecoKg);
-      else {
+      const lote = b.loteId ? loteById.get(b.loteId) : null;
+      if (b.estado === "terminado" && b.pesoSecoKg != null) {
+        const kg = Number(b.pesoSecoKg);
+        kgSecoBeneficio += kg;
+        addStock(lote?.variedad ?? null, lote?.grado ?? null, kg);
+      } else {
         const h = Number(b.pesoHumedoKg ?? 0);
         kgHumedoProceso += h;
-        kgSecoProyectado += cacaoProyeccionSeco(h);
+        const proy = cacaoProyeccionSeco(h);
+        kgSecoProyectado += proy;
+        const start = b.fermInicio ?? b.secInicio ?? b.createdAt;
+        enProceso.push({
+          loteCode: b.loteCode ?? lote?.loteCode ?? null,
+          estado: b.estado,
+          pesoHumedoKg: r2(h),
+          secoProyectado: r2(proy),
+          diasEnProceso: start ? Math.max(0, Math.floor((now - new Date(start).getTime()) / 86400000)) : 0,
+        });
       }
       const rend = cacaoRendimiento(b.pesoHumedoKg == null ? null : Number(b.pesoHumedoKg), b.pesoSecoKg == null ? null : Number(b.pesoSecoKg));
       if (rend != null) { rendSum += rend; rendN++; }
@@ -359,9 +382,10 @@ export class CacaoDB {
     let kgSecoValBase = 0, valBase = 0;
     for (const l of lotes) {
       if (l.tipoGrano === "seco" && !lotesConBeneficio.has(l.id)) {
-        kgSecoAcopiado += Number(l.pesoKg ?? 0);
+        const kg = Number(l.pesoKg ?? 0);
+        kgSecoAcopiado += kg;
+        addStock(l.variedad, l.grado, kg);
       }
-      // precio ponderado de referencia (a costo de acopio)
       const peso = Number(l.pesoKg ?? 0);
       const precio = Number(l.precioPorKg ?? 0) + Number(l.premioPorKg ?? 0);
       if (peso > 0 && precio > 0) { kgSecoValBase += peso; valBase += peso * precio; }
@@ -377,7 +401,10 @@ export class CacaoDB {
       precioRefProm,
       valorEstimado: r2(kgSecoDisponible * precioRefProm),
       rendimientoProm: rendN ? Math.round((rendSum / rendN) * 10) / 10 : null,
-      lotesEnProceso: beneficios.filter((b) => b.estado !== "terminado").length,
+      lotesEnProceso: enProceso.length,
+      porVariedad: Object.entries(porVariedad).map(([variedad, kg]) => ({ variedad, kg })).sort((a, b) => b.kg - a.kg),
+      porGrado: Object.entries(porGrado).map(([grado, kg]) => ({ grado, kg })).sort((a, b) => b.kg - a.kg),
+      enProceso: enProceso.sort((a, b) => b.diasEnProceso - a.diasEnProceso),
     };
   }
 

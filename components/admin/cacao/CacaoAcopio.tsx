@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Leaf, Plus, RefreshCw, Search, Users, Scale, Coins, PackageCheck, AlertCircle, X as XIcon, BarChart3, Droplets,
-  Warehouse, TrendingUp, Download, Filter, Newspaper, Sparkles, AlertTriangle,
+  Warehouse, Download, Filter, Newspaper, Sparkles, AlertTriangle,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -22,6 +22,7 @@ import CacaoProducerDrawer from "./CacaoProducerDrawer";
 import CacaoNoticiero from "./CacaoNoticiero";
 import CacaoAsesor from "./CacaoAsesor";
 import CacaoResumen from "./CacaoResumen";
+import CacaoInventario from "./CacaoInventario";
 
 type View = "acopio" | "beneficio" | "inventario" | "productores" | "resumen" | "mercado" | "asesor";
 interface Beneficio {
@@ -34,10 +35,6 @@ interface Lote {
   indiceFermentacion: string | null; grado: string | null; status: string; annulledReason: string | null;
 }
 interface Producer { id: string; codigo: string | null; nombre: string; dni: string | null; sector: string | null; parcelaHa: string | null; variedad: string | null; certificacion: string | null }
-interface Inventory {
-  kgSecoDisponible: number; kgSecoBeneficio: number; kgSecoAcopiado: number; kgHumedoProceso: number; kgSecoProyectado: number;
-  precioRefProm: number; valorEstimado: number; rendimientoProm: number | null; lotesEnProceso: number;
-}
 
 const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
 const n2 = (v: string | number | null) => (v == null ? "—" : Number(v).toFixed(2));
@@ -61,7 +58,6 @@ export default function CacaoAcopio() {
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [producers, setProducers] = useState<Producer[]>([]);
   const [beneficios, setBeneficios] = useState<Beneficio[]>([]);
-  const [inventory, setInventory] = useState<Inventory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -80,13 +76,13 @@ export default function CacaoAcopio() {
   const [showFilters, setShowFilters] = useState(false);
 
   const load = useCallback(async (v: View, fOverride?: { variedad?: string; grado?: string; from?: string; to?: string }) => {
-    if (v === "mercado" || v === "asesor" || v === "resumen") { setLoading(false); return; } // se auto-cargan (componentes propios)
+    if (v === "mercado" || v === "asesor" || v === "resumen" || v === "inventario") { setLoading(false); return; } // se auto-cargan (componentes propios)
     setLoading(true); setError(null);
     const fv = fOverride?.variedad ?? fVariedad, fg = fOverride?.grado ?? fGrado, ff = fOverride?.from ?? fFrom, ft = fOverride?.to ?? fTo;
     try {
-      const param = v === "productores" ? "producers" : v === "inventario" ? "inventory" : v === "beneficio" ? "beneficios" : "lotes";
+      const param = v === "productores" ? "producers" : v === "beneficio" ? "beneficios" : "lotes";
       const q = new URLSearchParams({ view: param });
-      if (search.trim() && v !== "inventario") q.set("search", search.trim());
+      if (search.trim()) q.set("search", search.trim());
       if (v === "acopio") {
         if (fv) q.set("variedad", fv);
         if (fg) q.set("grado", fg);
@@ -97,7 +93,6 @@ export default function CacaoAcopio() {
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       const d = await r.json();
       if (v === "productores") setProducers(d.producers ?? []);
-      else if (v === "inventario") setInventory(d.inventory ?? null);
       else if (v === "beneficio") setBeneficios(d.beneficios ?? []);
       else setLotes(d.lotes ?? []);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
@@ -281,39 +276,8 @@ export default function CacaoAcopio() {
       )}
 
       {/* INVENTARIO */}
-      {view === "inventario" && (
-        <>
-          {loading && !inventory ? (
-            <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando inventario…</p></div>
-          ) : inventory && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <StatCard label="Cacao seco disponible" value={`${n2(inventory.kgSecoDisponible)} kg`} subValue="listo para vender" icon={Warehouse} emphasis={inventory.kgSecoDisponible > 0 ? "success" : "neutral"} />
-                <StatCard label="Valor estimado" value={`S/ ${n2(inventory.valorEstimado)}`} subValue={inventory.precioRefProm > 0 ? `a S/ ${inventory.precioRefProm.toFixed(2)}/kg acopio` : "sin precio ref."} icon={Coins} emphasis="neutral" />
-                <StatCard label="En proceso (húmedo)" value={`${n2(inventory.kgHumedoProceso)} kg`} subValue={`${inventory.lotesEnProceso} lotes beneficiando`} icon={Droplets} emphasis="neutral" />
-                <StatCard label="Seco proyectado" value={`${n2(inventory.kgSecoProyectado)} kg`} subValue="al terminar secado" icon={TrendingUp} emphasis="neutral" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <Panel title="Composición del cacao seco disponible">
-                  <Bar label="De beneficio (fermentado + secado)" value={inventory.kgSecoBeneficio} max={Math.max(inventory.kgSecoDisponible, 1)} unit="kg" />
-                  <Bar label="Acopiado ya seco" value={inventory.kgSecoAcopiado} max={Math.max(inventory.kgSecoDisponible, 1)} unit="kg" />
-                  <div className="mt-2 flex items-center justify-between border-t border-[var(--rule-soft)] pt-2 text-sm">
-                    <span className="font-bold text-[var(--text-primary)]">Total disponible</span>
-                    <span className="font-mono font-extrabold tabular-nums text-[var(--data-success-700)]">{n2(inventory.kgSecoDisponible)} kg</span>
-                  </div>
-                </Panel>
-                <Panel title="Rendimiento del beneficio">
-                  <div className="flex flex-col items-center justify-center gap-1 py-2">
-                    <span className="font-mono text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">{inventory.rendimientoProm != null ? `${inventory.rendimientoProm}%` : "—"}</span>
-                    <span className="text-xs text-[var(--text-tertiary)]">kg seco obtenido por kg húmedo (promedio)</span>
-                    <span className="mt-1 text-xs text-[var(--text-tertiary)]">Proyección usa merma típica ~60% cuando aún no hay peso seco real.</span>
-                  </div>
-                </Panel>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      {/* INVENTARIO — componente propio (self-fetch + integración precio intl.) */}
+      {view === "inventario" && <CacaoInventario />}
 
       {/* RESUMEN — dashboard de campaña (componente propio, self-fetch) */}
       {view === "resumen" && <CacaoResumen />}
@@ -390,18 +354,6 @@ function EmptyOrLoading({ loading, empty, icon: Icon, msg, hint, cta, searchActi
       <p className="text-base font-bold text-[var(--text-primary)]">{msg}</p>
       {hint && <p className="mx-auto mt-1 max-w-sm text-sm">{hint}</p>}
       {cta && <button type="button" onClick={cta.onClick} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />{cta.label}</button>}
-    </div>
-  );
-}
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"><h3 className="mb-3 text-sm font-bold text-[var(--text-primary)]">{title}</h3><div className="space-y-2">{children}</div></div>;
-}
-function Bar({ label, value, max, unit }: { label: string; value: number; max: number; unit: string }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return (
-    <div>
-      <div className="mb-1 flex justify-between text-sm"><span className="text-[var(--text-secondary)]">{label}</span><span className="font-mono tabular-nums text-[var(--text-primary)]">{value.toFixed(2)} {unit}</span></div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} /></div>
     </div>
   );
 }
