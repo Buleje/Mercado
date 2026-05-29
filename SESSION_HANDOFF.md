@@ -31,13 +31,17 @@ Ctrl+Shift+R en `/t/pizza-pucallpa/admin?tab=cacao-acopio` (o `main`). Recorré:
 🐛 `--data-danger-*` **no existe** en el design system (toda la familia indefinida). El token de rojo es `--data-error-*` (50/100/500/600/700). Arreglé los 9 componentes de cacao. **Quedan ~15 archivos del repo con el token roto** (rojos sin estilo) — fix global pendiente (1 sed). Ver memoria `reference_ds_token_danger_gotcha`.
 
 ## Backlog v4 (estado)
-1. ✅ Empty states con CTA (onboarding) — hecho.
-2. ⬜ Beneficio: avanzar estado (fermentando→secando→terminado) — pendiente (necesita seed: en `main` todos terminado). Mejor diseño: "editar beneficio" (reusar form en modo PATCH).
-3. ⬜ Mi-precio histórico (chart en el tiempo) — necesita datos multi-día.
-4. ⬜ Trazabilidad pública QR `/verificar-cacao` (como el forestal).
-5. ✅ Fix global `--data-danger-*` → `--data-error-*` (15 archivos forestal/docs/inicio/superadmin) — hecho. Queda 1 bare `var(--data-danger)` en `adelantos/AnalisisView` (familia bare distinta).
-6. ⚠️ **Schema drift** (sin resolver): `CacaoProducer/Lote/Beneficio` se crearon vía Supabase MCP, NO en `prisma/migrations` → correr en prod antes de deploy.
-7. ✅ Mobile: sub-tabs en fila scrolleable — hecho.
+1. ✅ Empty states con CTA · 5. ✅ Fix global tokens danger · 7. ✅ Mobile sub-tabs.
+2. ✅ **Trazabilidad QR pública** `/verificar-cacao/[code]` + QR en la ficha + WhatsApp al productor (wa.me) — hechos.
+6. ⚠️ **Schema drift** (sin resolver): `CacaoProducer/Lote/Beneficio` vía Supabase MCP, NO en `prisma/migrations` → correr en prod antes de deploy.
+
+## Backlog v5 — elegido por Brandon, PENDIENTE (features pesados)
+- **Registrar ventas (stock real)** — necesita modelo `CacaoVenta` (schema nuevo → drift) + DB + API + UI. Descuenta del inventario, ingresos/margen real.
+- **Venta FOB / USD** — parte de ventas, con tipo de cambio (FX ya disponible en cacao-market).
+- **Recordatorios de beneficio** — cron (`lib/cron/`) que avisa lotes con N días en proceso. Hoy el inventario ya marca 12+ días (parcial).
+- **Documentos del lote** — upload + storage (Supabase Storage). Adjuntar certificados/fotos.
+- **Beneficio: avanzar etapa** (fermentando→secando→terminado desde tabla) — chico; avanzar a terminado necesita capturar peso seco (mini-form).
+- **Mi precio en el tiempo** — chart mensual de mi precio de compra vs intl (mejor con datos multi-mes; hoy `main` solo tiene mayo).
 
 ## Notas operativas
 - Mercado: Yahoo Finance (`CC=F`, `PEN=X`, no-oficial) + Google News RSS — gratis, sin key, degradan con gracia. Cache 20min (precio/news) / 2h (narrativa IA).
