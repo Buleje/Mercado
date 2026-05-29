@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cacaoGrade, cacaoFermentationIndex, cacaoLiquidacion, cumpleHumedad, cacaoMerma } from "@/lib/cacao/cacao-quality";
+import { cacaoGrade, cacaoFermentationIndex, cacaoLiquidacion, cumpleHumedad, cacaoMerma, cacaoProyeccionSeco, cacaoRendimiento, MERMA_TIPICA_PCT } from "@/lib/cacao/cacao-quality";
 
 /** Lógica de calidad/liquidación de cacao (ADR-128). Referencias NTP-ISO 2451 / 1114 / 2291. */
 
@@ -58,5 +58,34 @@ describe("cacaoMerma — pérdida húmedo→seco (beneficio v2)", () => {
   });
   it("null sin datos", () => {
     expect(cacaoMerma(null, 40)).toBeNull();
+  });
+});
+
+describe("cacaoProyeccionSeco — kg seco esperado desde húmedo", () => {
+  it("merma típica 60%: 100 kg húmedo → 40 kg seco", () => {
+    expect(cacaoProyeccionSeco(100)).toBe(40);
+    expect(MERMA_TIPICA_PCT).toBe(60);
+  });
+  it("merma custom 55%: 200 → 90", () => {
+    expect(cacaoProyeccionSeco(200, 55)).toBe(90);
+  });
+  it("0 si no hay peso húmedo", () => {
+    expect(cacaoProyeccionSeco(0)).toBe(0);
+    expect(cacaoProyeccionSeco(null)).toBe(0);
+  });
+  it("clamp de merma fuera de rango (no negativos)", () => {
+    expect(cacaoProyeccionSeco(100, 150)).toBe(1); // merma capada a 99%
+  });
+});
+
+describe("cacaoRendimiento — kg seco / kg húmedo (%)", () => {
+  it("100 húmedo → 40 seco = 40%", () => {
+    expect(cacaoRendimiento(100, 40)).toBe(40);
+  });
+  it("null si seco supera húmedo (inválido)", () => {
+    expect(cacaoRendimiento(40, 100)).toBeNull();
+  });
+  it("null sin datos", () => {
+    expect(cacaoRendimiento(null, 40)).toBeNull();
   });
 });
