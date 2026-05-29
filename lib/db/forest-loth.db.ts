@@ -88,16 +88,8 @@ export interface LothCaratulaInput {
 
 const CACHE_PREFIX = "forest-loth";
 
-/** Smalian/SERFOR: V = 0.7854 × ((Dmayor + Dmenor)/2)² × Longitud (m³). */
-export function smalianVolume(
-  diamMayorM: number,
-  diamMenorM: number,
-  lengthM: number,
-): number {
-  if (!(diamMayorM > 0) || !(diamMenorM > 0) || !(lengthM > 0)) return 0;
-  const dProm = (diamMayorM + diamMenorM) / 2;
-  return Math.round(0.7854 * dProm * dProm * lengthM * 10000) / 10000;
-}
+/** Cubicación Smalian/SERFOR (re-export de la fórmula pura). */
+export { smalianVolume } from "@/lib/forestal/loth-constants";
 
 const dec = (v: number | string | null | undefined) =>
   v === null || v === undefined || v === "" ? null : new Prisma.Decimal(v);

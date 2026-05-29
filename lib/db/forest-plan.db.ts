@@ -10,16 +10,14 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { censusVolume, computeBalance, type BalanceMovement, type BalanceSpeciesInput } from "@/lib/forestal/loth-constants";
 
 const CACHE_PREFIX = "forest-plan";
 const dec = (v: number | string | null | undefined) =>
   v === null || v === undefined || v === "" ? null : new Prisma.Decimal(v);
 
-/** Volumen comercial del árbol en pie (SERFOR): 0.7854 × DAP² × Hc × ff. */
-export function censusVolume(dapM: number, hcM: number, ff = 0.65): number {
-  if (!(dapM > 0) || !(hcM > 0)) return 0;
-  return Math.round(0.7854 * dapM * dapM * hcM * ff * 10000) / 10000;
-}
+/** Volumen comercial del árbol en pie (re-export de la fórmula pura). */
+export { censusVolume };
 
 export interface PlanInput {
   caratulaId?: string | null;
@@ -373,64 +371,27 @@ export class ForestPlanDB {
       prisma.forestPlan.findFirst({ where: { tenantId, id: planId, deletedAt: null } }),
     ]);
 
-    const trozaMap = new Map<string, { species: string | null; vol: number }>();
-    const talado: Record<string, number> = {};
-    for (const e of entries) {
-      if (e.section === "trozado" && e.trozaCode) {
-        trozaMap.set(e.trozaCode, { species: e.speciesCommon, vol: Number(e.volumeM3 ?? 0) });
-      }
-      if (e.section === "tala" && e.speciesCommon) {
-        talado[e.speciesCommon] = (talado[e.speciesCommon] ?? 0) + Number(e.volumeM3 ?? 0);
-      }
-    }
-    const movilizado: Record<string, number> = {};
-    for (const e of entries) {
-      if (e.section === "despacho_troza" && e.trozaCode) {
-        const t = trozaMap.get(e.trozaCode);
-        if (t?.species) movilizado[t.species] = (movilizado[t.species] ?? 0) + t.vol;
-      }
-      if (e.section === "despacho_producto" && e.speciesCommon && e.unit === "m3") {
-        movilizado[e.speciesCommon] = (movilizado[e.speciesCommon] ?? 0) + Number(e.quantity ?? 0);
-      }
-    }
-
+    const species: BalanceSpeciesInput[] = speciesRows.map((s) => ({
+      speciesCommon: s.speciesCommon,
+      cites: s.cites,
+      volumenAutorizadoM3: Number(s.volumenAutorizadoM3),
+      precioVentaSoles: s.precioVentaSoles ? Number(s.precioVentaSoles) : null,
+      valorEstadoNaturalSoles: s.valorEstadoNaturalSoles ? Number(s.valorEstadoNaturalSoles) : null,
+    }));
+    const movements: BalanceMovement[] = entries.map((e) => ({
+      section: e.section,
+      speciesCommon: e.speciesCommon,
+      trozaCode: e.trozaCode,
+      volumeM3: e.volumeM3 ? Number(e.volumeM3) : null,
+      quantity: e.quantity ? Number(e.quantity) : null,
+      unit: e.unit,
+    }));
     const uit = Number(plan?.uitRef ?? 0);
     const area = Number(plan?.areaHa ?? 0);
-    const pagoArea = Math.round(0.0001 * uit * area * 100) / 100; // 0.01% UIT × ha
 
-    let pagoDerechoTotal = pagoArea;
-    let valorTotal = 0;
-    const rows = speciesRows.map((s) => {
-      const autorizado = Number(s.volumenAutorizadoM3);
-      const mov = movilizado[s.speciesCommon] ?? 0;
-      const tal = talado[s.speciesCommon] ?? 0;
-      const saldo = Math.round((autorizado - mov) * 10000) / 10000;
-      const precio = Number(s.precioVentaSoles ?? 0);
-      const ven = Number(s.valorEstadoNaturalSoles ?? 0);
-      const valorMovilizado = Math.round(mov * precio * 100) / 100;
-      const pagoDerecho = Math.round(mov * ven * 100) / 100;
-      valorTotal += valorMovilizado;
-      pagoDerechoTotal += pagoDerecho;
-      return {
-        species: s.speciesCommon,
-        cites: s.cites,
-        autorizado,
-        talado: Math.round(tal * 10000) / 10000,
-        movilizado: Math.round(mov * 10000) / 10000,
-        saldo,
-        pctMovilizado: autorizado > 0 ? Math.round((mov / autorizado) * 1000) / 10 : 0,
-        precioVenta: precio,
-        valorMovilizado,
-        pagoDerecho,
-        exceso: tal > autorizado + 1e-6 || mov > autorizado + 1e-6,
-      };
-    });
-
+    const result = computeBalance(species, movements, { uitRef: uit, areaHa: area });
     return {
-      rows,
-      pagoArea,
-      pagoDerechoTotal: Math.round(pagoDerechoTotal * 100) / 100,
-      valorTotal: Math.round(valorTotal * 100) / 100,
+      ...result,
       plan: plan ? { vigenciaHasta: plan.vigenciaHasta, estado: plan.estado, areaHa: area, uitRef: uit } : null,
     };
   }
