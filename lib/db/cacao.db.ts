@@ -232,29 +232,48 @@ export class CacaoDB {
     const [lotes, productoresActivos] = await Promise.all([
       prisma.cacaoLote.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
-        select: { pesoKg: true, totalPagado: true, variedad: true, grado: true, indiceFermentacion: true, humedadPct: true },
+        select: { pesoKg: true, totalPagado: true, variedad: true, grado: true, indiceFermentacion: true, humedadPct: true, tipoGrano: true, fecha: true },
       }),
       prisma.cacaoProducer.count({ where: { tenantId, deletedAt: null, status: "activo" } }),
     ]);
     const r2 = (x: number) => Math.round(x * 100) / 100;
-    let kg = 0, valor = 0, idxSum = 0, idxN = 0, humOk = 0;
+    let kg = 0, valor = 0, idxSum = 0, idxN = 0, humOk = 0, humN = 0, kgSeco = 0, kgHumedo = 0, gradoI = 0;
+    let minFecha: Date | null = null, maxFecha: Date | null = null;
     const porVariedad: Record<string, number> = {};
     const porGrado: Record<string, number> = {};
     for (const l of lotes) {
-      kg += Number(l.pesoKg ?? 0);
+      const peso = Number(l.pesoKg ?? 0);
+      kg += peso;
       valor += Number(l.totalPagado ?? 0);
       if (l.indiceFermentacion != null) { idxSum += Number(l.indiceFermentacion); idxN++; }
-      if (l.humedadPct != null && Number(l.humedadPct) <= 7) humOk++;
-      const v = l.variedad ?? "—"; porVariedad[v] = r2((porVariedad[v] ?? 0) + Number(l.pesoKg ?? 0));
+      if (l.humedadPct != null) { humN++; if (Number(l.humedadPct) <= 7) humOk++; }
+      if (l.tipoGrano === "seco") kgSeco += peso; else kgHumedo += peso;
+      if (l.grado === "I") gradoI++;
+      const v = l.variedad ?? "—"; porVariedad[v] = r2((porVariedad[v] ?? 0) + peso);
       const g = l.grado ?? "sin_clasificar"; porGrado[g] = (porGrado[g] ?? 0) + 1;
+      const f = new Date(l.fecha);
+      if (!minFecha || f < minFecha) minFecha = f;
+      if (!maxFecha || f > maxFecha) maxFecha = f;
     }
+    const n = lotes.length;
+    const diasCampana = minFecha && maxFecha ? Math.max(1, Math.round((maxFecha.getTime() - minFecha.getTime()) / 86400000) + 1) : 0;
     return {
-      lotes: lotes.length,
+      lotes: n,
       productoresActivos,
       kgAcopiados: r2(kg),
       valorPagado: r2(valor),
+      precioPromKg: kg > 0 ? r2(valor / kg) : 0,
+      ticketPromLote: n ? r2(valor / n) : 0,
+      kgPromLote: n ? r2(kg / n) : 0,
+      kgSeco: r2(kgSeco),
+      kgHumedo: r2(kgHumedo),
+      pctGradoI: n ? Math.round((gradoI / n) * 100) : 0,
       indiceFermentacionProm: idxN ? Math.round((idxSum / idxN) * 10) / 10 : 0,
-      pctHumedadEnNorma: lotes.length ? Math.round((humOk / lotes.length) * 100) : 0,
+      pctHumedadEnNorma: humN ? Math.round((humOk / humN) * 100) : 0,
+      humedadMuestras: humN,
+      primeraFecha: minFecha ? minFecha.toISOString() : null,
+      ultimaFecha: maxFecha ? maxFecha.toISOString() : null,
+      diasCampana,
       porVariedad: Object.entries(porVariedad).map(([variedad, kg]) => ({ variedad, kg })).sort((a, b) => b.kg - a.kg),
       porGrado: Object.entries(porGrado).map(([grado, count]) => ({ grado, count })),
     };

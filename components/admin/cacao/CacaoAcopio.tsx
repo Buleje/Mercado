@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Leaf, Plus, RefreshCw, Search, Users, Scale, Coins, PackageCheck, AlertCircle, X as XIcon, BarChart3, Droplets,
-  Warehouse, TrendingUp, Download, Filter, Award, Newspaper, Sparkles, AlertTriangle,
+  Warehouse, TrendingUp, Download, Filter, Newspaper, Sparkles, AlertTriangle,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -21,7 +21,7 @@ import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoProducerDrawer from "./CacaoProducerDrawer";
 import CacaoNoticiero from "./CacaoNoticiero";
 import CacaoAsesor from "./CacaoAsesor";
-import { printCacaoReporte } from "@/lib/cacao/cacao-reporte";
+import CacaoResumen from "./CacaoResumen";
 
 type View = "acopio" | "beneficio" | "inventario" | "productores" | "resumen" | "mercado" | "asesor";
 interface Beneficio {
@@ -34,19 +34,9 @@ interface Lote {
   indiceFermentacion: string | null; grado: string | null; status: string; annulledReason: string | null;
 }
 interface Producer { id: string; codigo: string | null; nombre: string; dni: string | null; sector: string | null; parcelaHa: string | null; variedad: string | null; certificacion: string | null }
-interface Stats {
-  lotes: number; productoresActivos: number; kgAcopiados: number; valorPagado: number; indiceFermentacionProm: number; pctHumedadEnNorma: number;
-  porVariedad: { variedad: string; kg: number }[]; porGrado: { grado: string; count: number }[];
-}
 interface Inventory {
   kgSecoDisponible: number; kgSecoBeneficio: number; kgSecoAcopiado: number; kgHumedoProceso: number; kgSecoProyectado: number;
   precioRefProm: number; valorEstimado: number; rendimientoProm: number | null; lotesEnProceso: number;
-}
-interface Trends {
-  meses: { mes: string; kg: number; valor: number }[];
-  topProductores: { nombre: string; kg: number; pagado: number; lotes: number }[];
-  calidad: { bien: number; violeta: number; pizarroso: number; mohoso: number; muestras: number } | null;
-  humedadFuera: { loteCode: string; humedadPct: number }[]; humedadFueraCount: number;
 }
 
 const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
@@ -71,9 +61,7 @@ export default function CacaoAcopio() {
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [producers, setProducers] = useState<Producer[]>([]);
   const [beneficios, setBeneficios] = useState<Beneficio[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [inventory, setInventory] = useState<Inventory | null>(null);
-  const [trends, setTrends] = useState<Trends | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -92,20 +80,10 @@ export default function CacaoAcopio() {
   const [showFilters, setShowFilters] = useState(false);
 
   const load = useCallback(async (v: View, fOverride?: { variedad?: string; grado?: string; from?: string; to?: string }) => {
-    if (v === "mercado" || v === "asesor") { setLoading(false); return; } // se auto-cargan
+    if (v === "mercado" || v === "asesor" || v === "resumen") { setLoading(false); return; } // se auto-cargan (componentes propios)
     setLoading(true); setError(null);
     const fv = fOverride?.variedad ?? fVariedad, fg = fOverride?.grado ?? fGrado, ff = fOverride?.from ?? fFrom, ft = fOverride?.to ?? fTo;
     try {
-      if (v === "resumen") {
-        const [rs, rt] = await Promise.all([
-          fetch(`/api/admin/cacao?view=stats`, { credentials: "include" }),
-          fetch(`/api/admin/cacao?view=trends`, { credentials: "include" }),
-        ]);
-        if (!rs.ok) throw new Error(`HTTP ${rs.status}`);
-        setStats((await rs.json()).stats ?? null);
-        setTrends(rt.ok ? (await rt.json()).trends ?? null : null);
-        return;
-      }
       const param = v === "productores" ? "producers" : v === "inventario" ? "inventory" : v === "beneficio" ? "beneficios" : "lotes";
       const q = new URLSearchParams({ view: param });
       if (search.trim() && v !== "inventario") q.set("search", search.trim());
@@ -337,68 +315,8 @@ export default function CacaoAcopio() {
         </>
       )}
 
-      {/* RESUMEN */}
-      {view === "resumen" && stats && (
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <button type="button" onClick={() => printCacaoReporte(stats, trends)} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" />Imprimir reporte</button>
-          </div>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard label="Kg acopiados" value={`${n2(stats.kgAcopiados)} kg`} subValue={`${stats.lotes} lotes`} icon={Scale} emphasis="success" />
-            <StatCard label="Pagado a productores" value={`S/ ${n2(stats.valorPagado)}`} subValue={`${stats.productoresActivos} productores`} icon={Coins} emphasis="neutral" />
-            <StatCard label="Índice ferm. prom." value={`${stats.indiceFermentacionProm}%`} icon={Leaf} emphasis={stats.indiceFermentacionProm >= 60 ? "success" : "warning"} />
-            <StatCard label="Humedad en norma" value={`${stats.pctHumedadEnNorma}%`} subValue="≤ 7% (NTP 208.040)" icon={Scale} emphasis={stats.pctHumedadEnNorma >= 80 ? "success" : "warning"} />
-          </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Panel title="Kg por variedad">
-              {stats.porVariedad.length === 0 ? <Muted /> : stats.porVariedad.map((v) => <Bar key={v.variedad} label={v.variedad} value={v.kg} max={stats.porVariedad[0].kg} unit="kg" />)}
-            </Panel>
-            <Panel title="Lotes por grado">
-              {stats.porGrado.length === 0 ? <Muted /> : stats.porGrado.map((g) => (
-                <div key={g.grado} className="flex items-center justify-between py-1.5 text-sm"><GradoBadge grado={g.grado === "sin_clasificar" ? null : g.grado} /><span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{g.count}</span></div>
-              ))}
-            </Panel>
-          </div>
-
-          {trends && trends.humedadFueraCount > 0 && (
-            <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-300)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-900)]">
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-              <div>
-                <strong>{trends.humedadFueraCount} lote{trends.humedadFueraCount > 1 ? "s" : ""} con humedad fuera de norma</strong> (&gt; 7%).{" "}
-                <span className="text-[var(--data-warning-800)]">{trends.humedadFuera.map((h) => `${h.loteCode} (${h.humedadPct.toFixed(1)}%)`).join(" · ")}</span>
-              </div>
-            </div>
-          )}
-
-          {trends && (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <Panel title="Kg acopiados por mes">
-                {trends.meses.length === 0 ? <Muted /> : (() => { const max = Math.max(...trends.meses.map((m) => m.kg), 1); return trends.meses.map((m) => <Bar key={m.mes} label={mesLabel(m.mes)} value={m.kg} max={max} unit="kg" />); })()}
-              </Panel>
-              <Panel title="Top productores (por pago)">
-                {trends.topProductores.length === 0 ? <Muted /> : trends.topProductores.map((p, i) => (
-                  <div key={p.nombre + i} className="flex items-center justify-between gap-2 py-1.5 text-sm">
-                    <span className="flex min-w-0 items-center gap-2"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">{i + 1}</span><span className="truncate text-[var(--text-primary)]">{p.nombre}</span></span>
-                    <span className="flex shrink-0 items-center gap-3"><span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{n2(p.kg)} kg</span><span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">S/ {n2(p.pagado)}</span></span>
-                  </div>
-                ))}
-              </Panel>
-            </div>
-          )}
-
-          {trends?.calidad && (
-            <Panel title={`Calidad promedio — prueba de corte (${trends.calidad.muestras} muestra${trends.calidad.muestras > 1 ? "s" : ""})`}>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <CalidadCell icon={Award} label="Bien fermentado" value={trends.calidad.bien} tone="success" />
-                <CalidadCell label="Violeta" value={trends.calidad.violeta} tone="warning" />
-                <CalidadCell label="Pizarroso" value={trends.calidad.pizarroso} tone="danger" />
-                <CalidadCell label="Mohoso" value={trends.calidad.mohoso} tone="danger" />
-              </div>
-            </Panel>
-          )}
-        </div>
-      )}
-      {view === "resumen" && loading && !stats && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando resumen…</p></div>}
+      {/* RESUMEN — dashboard de campaña (componente propio, self-fetch) */}
+      {view === "resumen" && <CacaoResumen />}
 
       {/* MERCADO / NOTICIERO */}
       {view === "mercado" && <CacaoNoticiero />}
@@ -484,18 +402,6 @@ function Bar({ label, value, max, unit }: { label: string; value: number; max: n
     <div>
       <div className="mb-1 flex justify-between text-sm"><span className="text-[var(--text-secondary)]">{label}</span><span className="font-mono tabular-nums text-[var(--text-primary)]">{value.toFixed(2)} {unit}</span></div>
       <div className="h-2.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} /></div>
-    </div>
-  );
-}
-function Muted() { return <p className="text-sm text-[var(--text-tertiary)]">Sin datos todavía.</p>; }
-const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-function mesLabel(mes: string) { const [y, m] = mes.split("-"); const idx = Number(m) - 1; return `${MESES[idx] ?? m} ${(y ?? "").slice(2)}`; }
-function CalidadCell({ icon: Icon, label, value, tone }: { icon?: typeof Leaf; label: string; value: number; tone: "success" | "warning" | "danger" }) {
-  const cls = tone === "success" ? "text-[var(--data-success-700)]" : tone === "warning" ? "text-[var(--data-warning-700)]" : "text-[var(--data-error-700)]";
-  return (
-    <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-center">
-      <div className="flex items-center justify-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{Icon && <Icon className="h-3 w-3" />}{label}</div>
-      <div className={`mt-1 font-mono text-xl font-extrabold tabular-nums ${cls}`}>{value.toFixed(1)}%</div>
     </div>
   );
 }
