@@ -91,3 +91,27 @@ export function cacaoMerma(pesoHumedoKg: number | null | undefined, pesoSecoKg: 
   return Math.round((1 - s / h) * 1000) / 10; // 1 decimal
 }
 
+/** Merma típica de referencia (húmedo→seco). De 100 kg baba salen ~40 kg seco. */
+export const MERMA_TIPICA_PCT = 60;
+
+/**
+ * Proyección de kg seco esperado a partir de kg húmedo en proceso, dada una
+ * merma % (default típica). Útil para estimar inventario seco "en camino".
+ */
+export function cacaoProyeccionSeco(
+  pesoHumedoKg: number | null | undefined,
+  mermaPct: number = MERMA_TIPICA_PCT,
+): number {
+  const h = num(pesoHumedoKg);
+  if (h <= 0) return 0;
+  const m = Math.min(Math.max(num(mermaPct), 0), 99);
+  return Math.round(h * (1 - m / 100) * 100) / 100;
+}
+
+/** Rendimiento del beneficio (kg seco / kg húmedo) en %. Inverso de la merma. */
+export function cacaoRendimiento(pesoHumedoKg: number | null | undefined, pesoSecoKg: number | null | undefined): number | null {
+  const h = num(pesoHumedoKg), s = num(pesoSecoKg);
+  if (h <= 0 || s <= 0 || s > h) return null;
+  return Math.round((s / h) * 1000) / 10;
+}
+

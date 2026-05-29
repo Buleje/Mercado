@@ -85,14 +85,41 @@ async function guard(req: NextRequest, roles: ("admin" | "almacenero" | "owner")
 export async function GET(req: NextRequest) {
   const g = await guard(req, ["admin", "almacenero", "owner"]);
   if (g.res) return g.res;
-  const view = new URL(req.url).searchParams.get("view") ?? "lotes";
-  const search = new URL(req.url).searchParams.get("search") ?? undefined;
+  const sp = new URL(req.url).searchParams;
+  const view = sp.get("view") ?? "lotes";
+  const search = sp.get("search") ?? undefined;
+  const id = sp.get("id") ?? undefined;
   try {
-    if (view === "producers") return NextResponse.json({ producers: await CacaoDB.listProducers(g.auth.tenantId, { search }) });
+    if (view === "producers") return NextResponse.json({ producers: await CacaoDB.listProducers(g.auth.tenantId, { search, includeInactive: sp.get("all") === "1" }) });
+    if (view === "producer-detail") {
+      if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
+      const detail = await CacaoDB.producerDetail(g.auth.tenantId, id);
+      if (!detail) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json(detail);
+    }
+    if (view === "lote-detail") {
+      if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
+      const detail = await CacaoDB.loteDetail(g.auth.tenantId, id);
+      if (!detail) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json(detail);
+    }
     if (view === "stats") return NextResponse.json({ stats: await CacaoDB.stats(g.auth.tenantId) });
+    if (view === "inventory") return NextResponse.json({ inventory: await CacaoDB.inventory(g.auth.tenantId) });
+    if (view === "trends") return NextResponse.json({ trends: await CacaoDB.trends(g.auth.tenantId) });
     if (view === "beneficios") return NextResponse.json({ beneficios: await CacaoDB.listBeneficios(g.auth.tenantId, { search }) });
     if (view === "lotes-disponibles") return NextResponse.json({ lotes: await CacaoDB.availableLotesForBeneficio(g.auth.tenantId) });
-    return NextResponse.json({ lotes: await CacaoDB.listLotes(g.auth.tenantId, { search }) });
+    const from = sp.get("from") ? new Date(sp.get("from")!) : undefined;
+    const to = sp.get("to") ? new Date(sp.get("to")!) : undefined;
+    return NextResponse.json({
+      lotes: await CacaoDB.listLotes(g.auth.tenantId, {
+        search,
+        variedad: sp.get("variedad") || undefined,
+        grado: sp.get("grado") || undefined,
+        from: from && !isNaN(from.getTime()) ? from : undefined,
+        to: to && !isNaN(to.getTime()) ? to : undefined,
+        includeAnnulled: sp.get("includeAnnulled") === "1",
+      }),
+    });
   } catch (err) {
     logger.error("[cacao.GET] failed", { error: String(err), tenantId: g.auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

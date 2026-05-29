@@ -6,7 +6,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
-import { cacaoFermentationIndex, cacaoGrade, cacaoLiquidacion, cacaoMerma } from "@/lib/cacao/cacao-quality";
+import { cacaoFermentationIndex, cacaoGrade, cacaoLiquidacion, cacaoMerma, cacaoProyeccionSeco, cacaoRendimiento } from "@/lib/cacao/cacao-quality";
 
 const CACHE_PREFIX = "cacao";
 const dec = (v: number | string | null | undefined) =>
@@ -96,10 +96,20 @@ export class CacaoDB {
   }
 
   // ─── Lotes de acopio ─────────────────────────────────────────────────
-  static async listLotes(tenantId: string, filters: { search?: string; includeAnnulled?: boolean } = {}) {
+  static async listLotes(
+    tenantId: string,
+    filters: { search?: string; includeAnnulled?: boolean; variedad?: string; grado?: string; from?: Date; to?: Date } = {},
+  ) {
     if (!tenantId) throw new Error("tenantId is required");
     const where: Prisma.CacaoLoteWhereInput = { tenantId, deletedAt: null };
     if (!filters.includeAnnulled) where.status = "registrado";
+    if (filters.variedad) where.variedad = filters.variedad;
+    if (filters.grado) where.grado = filters.grado;
+    if (filters.from || filters.to) {
+      where.fecha = {};
+      if (filters.from) (where.fecha as Prisma.DateTimeFilter).gte = filters.from;
+      if (filters.to) (where.fecha as Prisma.DateTimeFilter).lte = filters.to;
+    }
     if (filters.search) {
       where.OR = [
         { loteCode: { contains: filters.search, mode: "insensitive" } },
@@ -247,6 +257,155 @@ export class CacaoDB {
       pctHumedadEnNorma: lotes.length ? Math.round((humOk / lotes.length) * 100) : 0,
       porVariedad: Object.entries(porVariedad).map(([variedad, kg]) => ({ variedad, kg })).sort((a, b) => b.kg - a.kg),
       porGrado: Object.entries(porGrado).map(([grado, count]) => ({ grado, count })),
+    };
+  }
+
+  // ─── Ficha de productor: perfil + historial agregado ─────────────────
+  static async producerDetail(tenantId: string, id: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const producer = await prisma.cacaoProducer.findFirst({ where: { id, tenantId, deletedAt: null } });
+    if (!producer) return null;
+    const lotes = await prisma.cacaoLote.findMany({
+      where: { tenantId, productorId: id, deletedAt: null, status: "registrado" },
+      orderBy: { fecha: "desc" }, take: 200,
+      select: {
+        id: true, loteCode: true, fecha: true, variedad: true, tipoGrano: true,
+        pesoKg: true, humedadPct: true, grado: true, indiceFermentacion: true, totalPagado: true,
+      },
+    });
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    let totalKg = 0, totalPagado = 0, idxSum = 0, idxN = 0;
+    const gradoCounts: Record<string, number> = {};
+    for (const l of lotes) {
+      totalKg += Number(l.pesoKg ?? 0);
+      totalPagado += Number(l.totalPagado ?? 0);
+      if (l.indiceFermentacion != null) { idxSum += Number(l.indiceFermentacion); idxN++; }
+      const g = l.grado ?? "sin_clasificar"; gradoCounts[g] = (gradoCounts[g] ?? 0) + 1;
+    }
+    return {
+      producer,
+      lotes,
+      agg: {
+        loteCount: lotes.length,
+        totalKg: r2(totalKg),
+        totalPagado: r2(totalPagado),
+        avgIndice: idxN ? Math.round((idxSum / idxN) * 10) / 10 : null,
+        gradoCounts,
+        lastFecha: lotes[0]?.fecha ?? null,
+      },
+    };
+  }
+
+  // ─── Ficha de lote: detalle + beneficio vinculado ────────────────────
+  static async loteDetail(tenantId: string, id: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lote = await prisma.cacaoLote.findFirst({ where: { id, tenantId } });
+    if (!lote) return null;
+    const beneficio = await prisma.cacaoBeneficio.findFirst({
+      where: { tenantId, loteId: id, deletedAt: null, status: "registrado" },
+      orderBy: { createdAt: "desc" },
+    });
+    return { lote, beneficio };
+  }
+
+  // ─── Inventario de cacao seco + valorización ─────────────────────────
+  static async inventory(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [lotes, beneficios] = await Promise.all([
+      prisma.cacaoLote.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        select: { id: true, tipoGrano: true, pesoKg: true, precioPorKg: true, premioPorKg: true, totalPagado: true },
+      }),
+      prisma.cacaoBeneficio.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        select: { loteId: true, estado: true, pesoHumedoKg: true, pesoSecoKg: true },
+      }),
+    ]);
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    const lotesConBeneficio = new Set(beneficios.map((b) => b.loteId).filter(Boolean) as string[]);
+
+    // Seco terminado del beneficio + lotes acopiados ya secos (sin beneficio, evita doble conteo)
+    let kgSecoBeneficio = 0, kgSecoAcopiado = 0, kgHumedoProceso = 0, kgSecoProyectado = 0;
+    let rendSum = 0, rendN = 0;
+    for (const b of beneficios) {
+      if (b.estado === "terminado" && b.pesoSecoKg != null) kgSecoBeneficio += Number(b.pesoSecoKg);
+      else {
+        const h = Number(b.pesoHumedoKg ?? 0);
+        kgHumedoProceso += h;
+        kgSecoProyectado += cacaoProyeccionSeco(h);
+      }
+      const rend = cacaoRendimiento(b.pesoHumedoKg == null ? null : Number(b.pesoHumedoKg), b.pesoSecoKg == null ? null : Number(b.pesoSecoKg));
+      if (rend != null) { rendSum += rend; rendN++; }
+    }
+    let kgSecoValBase = 0, valBase = 0;
+    for (const l of lotes) {
+      if (l.tipoGrano === "seco" && !lotesConBeneficio.has(l.id)) {
+        kgSecoAcopiado += Number(l.pesoKg ?? 0);
+      }
+      // precio ponderado de referencia (a costo de acopio)
+      const peso = Number(l.pesoKg ?? 0);
+      const precio = Number(l.precioPorKg ?? 0) + Number(l.premioPorKg ?? 0);
+      if (peso > 0 && precio > 0) { kgSecoValBase += peso; valBase += peso * precio; }
+    }
+    const kgSecoDisponible = r2(kgSecoBeneficio + kgSecoAcopiado);
+    const precioRefProm = kgSecoValBase > 0 ? r2(valBase / kgSecoValBase) : 0;
+    return {
+      kgSecoDisponible,
+      kgSecoBeneficio: r2(kgSecoBeneficio),
+      kgSecoAcopiado: r2(kgSecoAcopiado),
+      kgHumedoProceso: r2(kgHumedoProceso),
+      kgSecoProyectado: r2(kgSecoProyectado),
+      precioRefProm,
+      valorEstimado: r2(kgSecoDisponible * precioRefProm),
+      rendimientoProm: rendN ? Math.round((rendSum / rendN) * 10) / 10 : null,
+      lotesEnProceso: beneficios.filter((b) => b.estado !== "terminado").length,
+    };
+  }
+
+  // ─── Tendencias para el dashboard ────────────────────────────────────
+  static async trends(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lotes = await prisma.cacaoLote.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado" },
+      orderBy: { fecha: "asc" }, take: 2000,
+      select: {
+        fecha: true, pesoKg: true, totalPagado: true, productorId: true, productorNombre: true,
+        humedadPct: true, loteCode: true, pctBienFermentado: true, pctVioleta: true, pctPizarroso: true, pctMohoso: true,
+      },
+    });
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    const porMes: Record<string, { kg: number; valor: number }> = {};
+    const porProductor: Record<string, { nombre: string; kg: number; pagado: number; lotes: number }> = {};
+    let bienN = 0, bienSum = 0, vioSum = 0, pizSum = 0, mohSum = 0;
+    const humedadFuera: { loteCode: string; humedadPct: number }[] = [];
+    for (const l of lotes) {
+      const d = new Date(l.fecha);
+      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      porMes[key] = porMes[key] ?? { kg: 0, valor: 0 };
+      porMes[key].kg = r2(porMes[key].kg + Number(l.pesoKg ?? 0));
+      porMes[key].valor = r2(porMes[key].valor + Number(l.totalPagado ?? 0));
+      const pk = l.productorId ?? l.productorNombre ?? "—";
+      porProductor[pk] = porProductor[pk] ?? { nombre: l.productorNombre ?? "Sin nombre", kg: 0, pagado: 0, lotes: 0 };
+      porProductor[pk].kg = r2(porProductor[pk].kg + Number(l.pesoKg ?? 0));
+      porProductor[pk].pagado = r2(porProductor[pk].pagado + Number(l.totalPagado ?? 0));
+      porProductor[pk].lotes++;
+      if (l.pctBienFermentado != null || l.pctVioleta != null || l.pctPizarroso != null || l.pctMohoso != null) {
+        bienN++;
+        bienSum += Number(l.pctBienFermentado ?? 0); vioSum += Number(l.pctVioleta ?? 0);
+        pizSum += Number(l.pctPizarroso ?? 0); mohSum += Number(l.pctMohoso ?? 0);
+      }
+      if (l.humedadPct != null && Number(l.humedadPct) > 7) humedadFuera.push({ loteCode: l.loteCode, humedadPct: Number(l.humedadPct) });
+    }
+    const meses = Object.entries(porMes).map(([mes, v]) => ({ mes, ...v })).slice(-12);
+    const topProductores = Object.values(porProductor).sort((a, b) => b.pagado - a.pagado).slice(0, 8);
+    return {
+      meses,
+      topProductores,
+      calidad: bienN
+        ? { bien: Math.round((bienSum / bienN) * 10) / 10, violeta: Math.round((vioSum / bienN) * 10) / 10, pizarroso: Math.round((pizSum / bienN) * 10) / 10, mohoso: Math.round((mohSum / bienN) * 10) / 10, muestras: bienN }
+        : null,
+      humedadFuera: humedadFuera.slice(0, 20),
+      humedadFueraCount: humedadFuera.length,
     };
   }
 }
