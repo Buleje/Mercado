@@ -37,6 +37,7 @@ export interface Specialization {
 
 export type SpecializationKey =
   | "spec:forestal:ctp-libro"
+  | "spec:forestal:loth-libro"
   | "spec:forestal:gtf-emisor"
   | "spec:salud:recetas-medicas"
   | "spec:textil:cuero";
@@ -49,6 +50,16 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     description:
       "Registra ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial).",
     moduleId: "ctp-libro-operaciones",
+    recommendedIndustry: "madereria",
+    status: "available",
+  },
+  "spec:forestal:loth-libro": {
+    key: "spec:forestal:loth-libro",
+    vertical: "forestal",
+    name: "Libro de Operaciones de Títulos Habilitantes",
+    description:
+      "Libro del titular de la concesión/permiso en el bosque: tala, trozado, despacho, consumo, producto terminado y su despacho (6 secciones SERFOR, RDE 264-2019). Interno, no oficial.",
+    moduleId: "loth-libro-operaciones",
     recommendedIndustry: "madereria",
     status: "available",
   },

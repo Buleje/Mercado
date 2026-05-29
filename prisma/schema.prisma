@@ -4625,3 +4625,240 @@ model WoodEntry {
   @@index([tenantId, speciesCommonName])
   @@index([deletedAt])
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Libro de Operaciones de los Títulos Habilitantes (LO-TH) — ADR-125
+// Libro del titular de la concesión/permiso, EN EL BOSQUE (≠ LO-CTP de planta).
+// Formato RDE N° 264-2019-MINAGRI-SERFOR-DE · 6 secciones unificadas.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Carátula del libro (Anexo 1). Un registro por tomo / documento de gestión.
+model ForestLothCaratula {
+  id                 String    @id @default(cuid())
+  tenantId           String
+
+  registroNumber     String?   // N° de registro del libro (otorgado por la ARFFS)
+  tomo               String?   // N° de tomo (por documento de gestión)
+  titularName        String    // Titular del título habilitante (persona/razón social)
+  representanteLegal String?    // Si es persona jurídica
+  tituloHabilitante  String?   // N° de título habilitante (contrato/permiso/autorización)
+  ruc                String?
+  dni                String?
+  domicilio          String?
+  departamento       String?
+  provincia          String?
+  distrito           String?
+  telefono           String?
+  email              String?
+  docGestionType     String?   // PO | PMFI | DEMA
+  docGestionName     String?   // Nombre/periodo del documento de gestión
+  resolucionNumber   String?   // N° de resolución de aprobación
+  resolucionDate     DateTime?
+
+  isActive           Boolean   @default(true)
+  createdBy          String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  @@index([tenantId, isActive])
+  @@index([deletedAt])
+}
+
+/// Entrada unificada de las 6 secciones del LO-TH (discriminador `section`).
+model ForestLothEntry {
+  id                String    @id @default(cuid())
+  tenantId          String
+  caratulaId        String?   // libro/tomo al que pertenece (ref. app-level)
+
+  // tala | trozado | despacho_troza | consumo_troza | producto_terminado | despacho_producto
+  section           String
+  lineNo            Int       // correlativo por sección/tomo (item N°), calculado max+1
+  entryDate         DateTime  @default(now())
+
+  // ── Trazabilidad por código ──────────────────────────
+  treeCode          String?   // Código del árbol (tala, trozado)
+  trozaCode         String?   // Código de troza (trozado, despacho, consumo)
+  despachoCode      String?   // Código de despacho distinto (despacho_troza)
+  isRama            Boolean   @default(false) // "R" — rama aprovechable (X)
+
+  // ── Especie ──────────────────────────────────────────
+  speciesCommon     String?
+  speciesScientific String?
+  cites             Boolean   @default(false)
+
+  // ── Medidas dasométricas (tala, trozado) ─────────────
+  diamMayorM        Decimal?  @db.Decimal(8, 3) // Ø sección mayor (m)
+  diamMenorM        Decimal?  @db.Decimal(8, 3) // Ø sección menor (m)
+  lengthM           Decimal?  @db.Decimal(8, 2) // longitud (aprovechable) (m)
+  volumeM3          Decimal?  @db.Decimal(12, 4) // Smalian
+
+  // ── Producto (producto_terminado, despacho_producto) ─
+  productType       String?   // tipo de producto terminado (lista SERFOR)
+  quantity          Decimal?  @db.Decimal(14, 4)
+  unit              String?   // m3 | kg | unidad
+  pieces            Int?      // cantidad de piezas (despacho_producto)
+
+  // ── Despacho ─────────────────────────────────────────
+  gtfNumber         String?   // despacho_troza, despacho_producto
+
+  // ── Flags + observaciones ────────────────────────────
+  discarded         Boolean   @default(false) // "descartado"
+  consumoInterno    Boolean   @default(false) // "consumo interno"
+  observations      String?
+
+  // ── Subsanación SERFOR (corrección visible, no borrar) ─
+  correctsLineNo    Int?      // esta línea corrige a la línea N
+  correctionNote    String?
+
+  status            String    @default("registrado") // registrado | anulado
+  annulledReason    String?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  @@index([tenantId, section, entryDate(sort: Desc)])
+  @@index([tenantId, caratulaId, section, lineNo])
+  @@index([tenantId, treeCode])
+  @@index([tenantId, trozaCode])
+  @@index([deletedAt])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Plan de Manejo Forestal + Censo + Especies autorizadas — ADR-126
+// Base maestra que gobierna el LO-TH: el permiso aprobado, las especies y
+// volúmenes autorizados, y el censo de árboles georreferenciados.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Plan de Manejo / Permiso aprobado por la ARFFS (PMFI | PO | DEMA).
+model ForestPlan {
+  id                 String    @id @default(cuid())
+  tenantId           String
+  caratulaId         String?   // vínculo a la carátula del libro (ref. app-level)
+
+  planType           String    @default("PO") // PMFI | PO | DEMA
+  planNumber         String?
+  tituloHabilitante  String?
+  resolucionNumber   String?
+  resolucionDate     DateTime?
+  titularName        String
+  arffs              String?   // Autoridad Regional Forestal y de Fauna Silvestre
+  region             String?
+  parcelaCorta       String?
+  areaHa             Decimal?  @db.Decimal(12, 2)
+  uitRef             Decimal?  @db.Decimal(10, 2) // UIT vigente para cálculo de pago
+
+  vigenciaDesde      DateTime?
+  vigenciaHasta      DateTime?
+  estado             String    @default("vigente") // vigente | vencido | cerrado | suspendido
+
+  notes              String?
+  isActive           Boolean   @default(true)
+  createdBy          String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  @@index([tenantId, isActive])
+  @@index([deletedAt])
+}
+
+/// Especie APROBADA en el plan, con volumen autorizado y datos comerciales.
+model ForestPlanSpecies {
+  id                      String    @id @default(cuid())
+  tenantId                String
+  planId                  String
+
+  speciesCommon           String
+  speciesScientific       String?
+  cites                   Boolean   @default(false)
+  categoria               String?   // categoría SERFOR (1–4) para VEN
+
+  volumenAutorizadoM3     Decimal   @db.Decimal(12, 4)
+  arbolesAutorizados      Int?
+  valorEstadoNaturalSoles Decimal?  @db.Decimal(12, 2) // VEN S//m³ (pago derecho)
+  precioVentaSoles        Decimal?  @db.Decimal(12, 2) // precio de venta S//m³ (comercial)
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  deletedAt               DateTime?
+
+  @@index([tenantId, planId])
+  @@index([deletedAt])
+}
+
+/// Árbol del censo forestal: georreferenciado, con volumen estimado.
+model ForestCensusTree {
+  id                String    @id @default(cuid())
+  tenantId          String
+  planId            String
+
+  treeCode          String    // código único del árbol censado
+  speciesCommon     String
+  speciesScientific String?
+  cites             Boolean   @default(false)
+
+  dapM              Decimal?  @db.Decimal(8, 3)  // diámetro a la altura del pecho (m)
+  alturaComercialM  Decimal?  @db.Decimal(8, 2)  // altura comercial Hc (m)
+  factorForma       Decimal?  @db.Decimal(5, 3)  // ff (default operativo ~0.65)
+  volumenEstimadoM3 Decimal?  @db.Decimal(12, 4) // 0.7854 × DAP² × Hc × ff
+
+  utmZona           String?
+  utmX              Decimal?  @db.Decimal(12, 2)
+  utmY              Decimal?  @db.Decimal(12, 2)
+  parcelaCorta      String?
+  calidad           String?
+
+  estado            String    @default("en_pie") // en_pie | talado | descartado
+  notes             String?
+
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  @@index([tenantId, planId])
+  @@index([tenantId, treeCode])
+  @@index([tenantId, estado])
+  @@index([deletedAt])
+}
+
+/// Guía de Transporte Forestal (GTF) — ADR-126 Fase 4. Interna, no oficial.
+model ForestGtf {
+  id                String    @id @default(cuid())
+  tenantId          String
+  planId            String?
+
+  gtfNumber         String
+  gtfDate           DateTime?
+  tipo              String    @default("trozas") // trozas | producto
+
+  titularName       String?
+  tituloHabilitante String?
+  parcelaCorta      String?
+
+  transportista     String?
+  transportistaDoc  String?
+  conductor         String?
+  conductorLicencia String?
+  placaVehiculo     String?
+  origen            String?
+  destino           String?
+
+  items             Json?     // lista de trozas/productos (snapshot)
+  volumenTotalM3    Decimal?  @db.Decimal(12, 4)
+  piezasTotal       Int?
+  observations      String?
+
+  status            String    @default("emitida") // emitida | anulada
+  annulledReason    String?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  @@index([tenantId, status])
+  @@index([tenantId, gtfNumber])
+  @@index([deletedAt])
+}
