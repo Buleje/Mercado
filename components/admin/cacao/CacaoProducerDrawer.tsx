@@ -87,7 +87,7 @@ export default function CacaoProducerDrawer({ producerId, onClose, onChanged, on
 
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 text-sm">
           {loading && <div className="flex items-center justify-center gap-2 py-16 text-[var(--text-tertiary)]"><Loader2 className="h-5 w-5 animate-spin" /> Cargando…</div>}
-          {error && <div className="rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-3 text-[var(--data-danger-900)]">{error}</div>}
+          {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-[var(--data-error-700)]">{error}</div>}
 
           {producer && !loading && (
             <>
@@ -185,6 +185,6 @@ function Lbl({ span, children }: { span: string; children: React.ReactNode }) {
 function GradoMini({ grado }: { grado: string | null }) {
   if (!grado) return null;
   const g = grado as CacaoGrado;
-  const cls = g === "I" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : g === "II" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" : "bg-[var(--data-danger-100)] text-[var(--data-danger-900)]";
+  const cls = g === "I" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : g === "II" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
   return <span className={`rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${cls}`}>{g === "fuera_norma" ? "FN" : g}</span>;
 }

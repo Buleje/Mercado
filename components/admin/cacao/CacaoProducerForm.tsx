@@ -46,7 +46,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
         </header>
         <form id="cacao-producer-form" onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
-          {error && <div className="rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-4 py-3 text-sm text-[var(--data-danger-900)]">{error}</div>}
+          {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">{error}</div>}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Nombre" required><input value={f.nombre} onChange={set("nombre")} placeholder="Juan Pérez" className={I} /></Field>
             <Field label="DNI"><input value={f.dni} onChange={set("dni")} placeholder="12345678" className={I} /></Field>
@@ -77,7 +77,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{label}{required && <span className="text-[var(--data-danger-600)]">*</span>}</span>
+      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{label}{required && <span className="text-[var(--data-error-600)]">*</span>}</span>
       {children}
     </label>
   );

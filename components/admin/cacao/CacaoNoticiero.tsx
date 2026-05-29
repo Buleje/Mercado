@@ -6,13 +6,21 @@
  * alucinación) + feed de noticias (Google News) + enlaces de referencia.
  */
 import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import {
-  Newspaper, RefreshCw, TrendingUp, TrendingDown, Minus, ExternalLink, AlertCircle, Coins, Globe, ArrowUpRight,
+  Newspaper, RefreshCw, TrendingUp, TrendingDown, Minus, ExternalLink, AlertCircle, Coins, Globe, ArrowUpRight, Activity,
 } from "@buleje/design-system/icons";
+
+// recharts fuera del bundle inicial del admin
+const CacaoPriceChart = dynamic(() => import("./CacaoPriceChart"), {
+  ssr: false,
+  loading: () => <div className="flex h-[360px] items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]"><Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando gráfico…</div>,
+});
 
 interface Price {
   value: number; currency: string; prevClose: number | null; change: number | null; changePct: number | null;
-  dayHigh: number | null; dayLow: number | null; weekHigh52: number | null; weekLow52: number | null; asOf: string; spark: number[];
+  dayHigh: number | null; dayLow: number | null; weekHigh52: number | null; weekLow52: number | null; asOf: string;
+  spark: number[]; series: { t: number; c: number }[];
 }
 interface NewsItem { title: string; source: string | null; link: string; pubDate: string | null }
 interface Market { price: Price | null; usdPen: number | null; pricePenPerKg: number | null; news: NewsItem[]; generatedAt: string }
@@ -65,7 +73,7 @@ export default function CacaoNoticiero() {
         <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
       </div>
 
-      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-sm text-[var(--data-danger-900)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo cargar el mercado:</strong> {error}</div></div>}
+      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo cargar el mercado:</strong> {error}</div></div>}
 
       {loading && !data && <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando mercado del cacao…</p></div>}
 
@@ -80,14 +88,13 @@ export default function CacaoNoticiero() {
                     <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Cacao · ICE New York (USD / tonelada)</p>
                     <div className="mt-1 flex items-end gap-3">
                       <span className="font-mono text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{fmt(p.value)}</span>
-                      <span className={`mb-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-danger-100)] text-[var(--data-danger-900)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+                      <span className={`mb-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
                         {up ? <TrendingUp className="h-4 w-4" /> : down ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                         {p.changePct != null ? `${up ? "+" : ""}${p.changePct}%` : "—"}
                       </span>
                     </div>
                     {data.pricePenPerKg != null && <p className="mt-1 text-sm text-[var(--text-secondary)]">≈ <b className="text-[var(--text-primary)]">S/ {data.pricePenPerKg.toFixed(2)}/kg</b> seco (referencia internacional)</p>}
                   </div>
-                  <Sparkline data={p.spark} up={up} />
                 </div>
 
                 {/* Rango 52 semanas */}
@@ -116,6 +123,9 @@ export default function CacaoNoticiero() {
           </div>
         </div>
       )}
+
+      {/* Flujo de precio + analítica de movimiento */}
+      {p?.series && p.series.length > 1 && <CacaoPriceChart series={p.series} />}
 
       {/* Noticias */}
       {data && (
@@ -162,15 +172,4 @@ function Cell({ label, value }: { label: string; value: string }) {
 }
 function RefLink({ href, label }: { href: string; label: string }) {
   return <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1 font-medium text-[var(--text-secondary)] hover:text-[var(--accent)]">{label}<ArrowUpRight className="h-3 w-3" /></a>;
-}
-function Sparkline({ data, up }: { data: number[]; up: boolean }) {
-  if (!data || data.length < 2) return null;
-  const w = 160, h = 48, min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`).join(" ");
-  const stroke = up ? "var(--data-success-500)" : "var(--data-danger-500)";
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0" aria-hidden>
-      <polyline points={pts} fill="none" stroke={stroke} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  );
 }

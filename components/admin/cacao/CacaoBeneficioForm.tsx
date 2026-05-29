@@ -90,7 +90,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
         </header>
 
         <form id="cacao-beneficio-form" onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
-          {error && <div className="rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-4 py-3 text-sm text-[var(--data-danger-900)]">{error}</div>}
+          {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">{error}</div>}
 
           {/* Picker de lote */}
           <div className="space-y-2 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3">

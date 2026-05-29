@@ -115,7 +115,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
         </header>
 
         <form id="cacao-lote-form" onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
-          {error && <div className="rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-4 py-3 text-sm text-[var(--data-danger-900)]">{error}</div>}
+          {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">{error}</div>}
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Fecha" required><input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required className={I} /></Field>
@@ -193,7 +193,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
 function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{label}{required && <span className="text-[var(--data-danger-600)]">*</span>}</span>
+      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{label}{required && <span className="text-[var(--data-error-600)]">*</span>}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}
     </label>
@@ -201,7 +201,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
 }
 
 function Metric({ label, value, tone }: { label: string; value: string; tone: "success" | "warning" | "danger" | "muted" }) {
-  const cls = tone === "success" ? "text-[var(--data-success-700)]" : tone === "warning" ? "text-[var(--data-warning-700)]" : tone === "danger" ? "text-[var(--data-danger-700)]" : "text-[var(--text-primary)]";
+  const cls = tone === "success" ? "text-[var(--data-success-700)]" : tone === "warning" ? "text-[var(--data-warning-700)]" : tone === "danger" ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]";
   return (
     <div>
       <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{label}</div>

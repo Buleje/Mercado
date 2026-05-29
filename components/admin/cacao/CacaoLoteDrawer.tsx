@@ -77,12 +77,12 @@ export default function CacaoLoteDrawer({ loteId, acopiador, onClose }: { loteId
 
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 text-sm">
           {loading && <div className="flex items-center justify-center gap-2 py-16 text-[var(--text-tertiary)]"><Loader2 className="h-5 w-5 animate-spin" /> Cargando ficha…</div>}
-          {error && <div className="rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-3 text-[var(--data-danger-900)]">{error}</div>}
+          {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-[var(--data-error-700)]">{error}</div>}
 
           {lote && !loading && (
             <>
               {lote.status === "anulado" && (
-                <div className="rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-3 text-[var(--data-danger-900)]">
+                <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-[var(--data-error-700)]">
                   <strong>Lote anulado.</strong> {lote.annulledReason ?? ""}
                 </div>
               )}
@@ -197,7 +197,7 @@ function MiniStat({ label, value, warn }: { label: string; value: string; warn?:
 }
 function CutBar({ label, sub, v, tone }: { label: string; sub: string; v: string | null; tone: "success" | "warning" | "danger" }) {
   const val = v == null || v === "" ? 0 : Number(v);
-  const bar = tone === "success" ? "bg-[var(--data-success-500)]" : tone === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-danger-500)]";
+  const bar = tone === "success" ? "bg-[var(--data-success-500)]" : tone === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between">
@@ -211,6 +211,6 @@ function CutBar({ label, sub, v, tone }: { label: string; sub: string; v: string
 function GradoBadge({ grado }: { grado: string | null }) {
   if (!grado) return <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-tertiary)]">sin clasificar</span>;
   const g = grado as CacaoGrado;
-  const cls = g === "I" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : g === "II" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" : "bg-[var(--data-danger-100)] text-[var(--data-danger-900)]";
+  const cls = g === "I" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : g === "II" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
   return <span className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${cls}`}>{GRADO_LABEL[g] ?? grado}</span>;
 }

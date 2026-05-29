@@ -181,7 +181,7 @@ export default function CacaoAcopio() {
         })}
       </div>
 
-      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-sm text-[var(--data-danger-900)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
+      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
       {/* ACOPIO */}
       {view === "acopio" && (
@@ -228,7 +228,7 @@ export default function CacaoAcopio() {
                       <Td className="text-right font-mono tabular-nums"><span className={l.humedadPct && Number(l.humedadPct) > 7 ? "text-[var(--data-warning-700)]" : "text-[var(--text-secondary)]"}>{l.humedadPct ? `${Number(l.humedadPct).toFixed(1)}%` : "—"}</span></Td>
                       <Td><GradoBadge grado={l.grado} /></Td>
                       <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}</Td>
-                      <Td className="text-right">{annul ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : <button type="button" onClick={(e) => { e.stopPropagation(); setAnnulId(l.id); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-3 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]">Anular</button>}</Td>
+                      <Td className="text-right">{annul ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : <button type="button" onClick={(e) => { e.stopPropagation(); setAnnulId(l.id); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">Anular</button>}</Td>
                     </tr>
                   );
                 })}
@@ -415,10 +415,10 @@ export default function CacaoAcopio() {
           <div className="w-full max-w-md rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-bold text-[var(--text-primary)]">Anular lote</h3>
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">Motivo (queda en el historial, no se borra).</p>
-            <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (min 3 caracteres)" className="mt-3 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-danger-500)]" />
+            <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (min 3 caracteres)" className="mt-3 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]" />
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)]">Cancelar</button>
-              <button type="button" disabled={annulReason.trim().length < 3} onClick={annul} className="inline-flex h-10 items-center rounded-xl bg-[var(--data-danger-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Confirmar anulación</button>
+              <button type="button" disabled={annulReason.trim().length < 3} onClick={annul} className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Confirmar anulación</button>
             </div>
           </div>
         </div>
@@ -440,7 +440,7 @@ function SearchBar({ value, onChange, onEnter, placeholder }: { value: string; o
 function GradoBadge({ grado }: { grado: string | null }) {
   if (!grado) return <span className="text-xs text-[var(--text-tertiary)]">sin clasificar</span>;
   const g = grado as CacaoGrado;
-  const cls = g === "I" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : g === "II" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" : "bg-[var(--data-danger-100)] text-[var(--data-danger-900)]";
+  const cls = g === "I" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : g === "II" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>{GRADO_LABEL[g] ?? grado}</span>;
 }
 function EmptyOrLoading({ loading, empty, icon: Icon, msg }: { loading: boolean; empty: boolean; icon: typeof Leaf; msg: string }) {
@@ -464,7 +464,7 @@ function Muted() { return <p className="text-sm text-[var(--text-tertiary)]">Sin
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 function mesLabel(mes: string) { const [y, m] = mes.split("-"); const idx = Number(m) - 1; return `${MESES[idx] ?? m} ${(y ?? "").slice(2)}`; }
 function CalidadCell({ icon: Icon, label, value, tone }: { icon?: typeof Leaf; label: string; value: number; tone: "success" | "warning" | "danger" }) {
-  const cls = tone === "success" ? "text-[var(--data-success-700)]" : tone === "warning" ? "text-[var(--data-warning-700)]" : "text-[var(--data-danger-700)]";
+  const cls = tone === "success" ? "text-[var(--data-success-700)]" : tone === "warning" ? "text-[var(--data-warning-700)]" : "text-[var(--data-error-700)]";
   return (
     <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-center">
       <div className="flex items-center justify-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{Icon && <Icon className="h-3 w-3" />}{label}</div>

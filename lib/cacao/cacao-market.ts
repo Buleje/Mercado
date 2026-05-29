@@ -15,6 +15,7 @@ import "server-only";
 const TTL_MS = 20 * 60 * 1000; // 20 min
 const UA = "Mozilla/5.0 (compatible; BulejeCacao/1.0)";
 
+export interface PricePoint { t: number; c: number } // t = epoch ms, c = cierre USD/t
 export interface CacaoPrice {
   value: number; // USD por tonelada métrica
   currency: string;
@@ -26,7 +27,8 @@ export interface CacaoPrice {
   weekHigh52: number | null;
   weekLow52: number | null;
   asOf: string; // ISO
-  spark: number[]; // cierres recientes para sparkline
+  spark: number[]; // cierres recientes para sparkline (compat)
+  series: PricePoint[]; // 1 año de cierres diarios para el gráfico de flujo
 }
 export interface CacaoNewsItem { title: string; source: string | null; link: string; pubDate: string | null }
 export interface CacaoMarket {
@@ -52,18 +54,25 @@ async function safeFetch(url: string, timeoutMs = 9000): Promise<Response | null
 }
 
 async function fetchCocoaPrice(): Promise<CacaoPrice | null> {
-  const r = await safeFetch("https://query1.finance.yahoo.com/v8/finance/chart/CC=F?interval=1d&range=1mo");
+  // 1 año de cierres diarios → serie para el gráfico de flujo de precio.
+  const r = await safeFetch("https://query1.finance.yahoo.com/v8/finance/chart/CC=F?interval=1d&range=1y");
   if (!r) return null;
   try {
     const j = await r.json();
     const res = j?.chart?.result?.[0];
     const m = res?.meta;
     if (!m || typeof m.regularMarketPrice !== "number") return null;
-    const closes: number[] = (res?.indicators?.quote?.[0]?.close ?? []).filter((x: unknown): x is number => typeof x === "number");
+    const ts: number[] = res?.timestamp ?? [];
+    const rawCloses: (number | null)[] = res?.indicators?.quote?.[0]?.close ?? [];
+    const series: PricePoint[] = [];
+    for (let i = 0; i < ts.length; i++) {
+      const c = rawCloses[i];
+      if (typeof c === "number" && c > 0) series.push({ t: ts[i] * 1000, c: Math.round(c * 100) / 100 });
+    }
+    const closes = series.map((p) => p.c);
     const value = m.regularMarketPrice;
-    // Cambio DIARIO: cierre del día anterior = penúltimo close del array (el
-    // último ≈ precio de hoy). chartPreviousClose en range=1mo es de hace ~1 mes
-    // (daría un cambio mensual mal etiquetado), por eso no lo usamos para el %.
+    // Cambio DIARIO: cierre del día anterior = penúltimo close (el último ≈ hoy).
+    // chartPreviousClose en range=1y sería de hace ~1 año (mal etiquetado).
     const prev = closes.length >= 2 ? closes[closes.length - 2]
       : typeof m.chartPreviousClose === "number" ? m.chartPreviousClose : null;
     const change = prev != null ? Math.round((value - prev) * 100) / 100 : null;
@@ -80,6 +89,7 @@ async function fetchCocoaPrice(): Promise<CacaoPrice | null> {
       weekLow52: m.fiftyTwoWeekLow ?? null,
       asOf: m.regularMarketTime ? new Date(m.regularMarketTime * 1000).toISOString() : new Date().toISOString(),
       spark: closes.slice(-30),
+      series,
     };
   } catch {
     return null;
