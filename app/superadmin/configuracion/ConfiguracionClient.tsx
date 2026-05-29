@@ -32,10 +32,15 @@ type ImageKind = "logo" | "favicon" | "yapeQr" | "plinQr" | "ogImage";
 
 export default function ConfiguracionClient() {
   const [config, setConfig] = useState<PlatformConfig>(PLATFORM_CONFIG_DEFAULTS);
+  const [savedSnapshot, setSavedSnapshot] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [issues, setIssues] = useState<{ path: string; message: string }[]>([]);
+
+  // ¿Hay cambios sin guardar? Comparación estructural contra el último snapshot.
+  const dirty = savedSnapshot !== "" && JSON.stringify(config) !== savedSnapshot;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +53,7 @@ export default function ConfiguracionClient() {
       }
       const data = (await res.json()) as { config: PlatformConfig };
       setConfig(data.config);
+      setSavedSnapshot(JSON.stringify(data.config));
     } catch {
       setError("Error de red.");
     } finally {
@@ -60,18 +66,30 @@ export default function ConfiguracionClient() {
   const save = useCallback(async () => {
     setSaving(true);
     setError(null);
+    setIssues([]);
     try {
+      const snapshot = JSON.stringify(config);
       const res = await fetch("/api/superadmin/platform-config", {
         method: "PATCH",
         credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(config),
+        body: snapshot,
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Error al guardar");
+        // Surface campo-por-campo qué validación falló (ej. URL o color inválido).
+        if (Array.isArray(data.issues)) {
+          setIssues(
+            data.issues.slice(0, 8).map((i: { path?: (string | number)[]; message?: string }) => ({
+              path: (i.path ?? []).join(" › ") || "(raíz)",
+              message: i.message ?? "inválido",
+            })),
+          );
+        }
         return;
       }
+      setSavedSnapshot(snapshot);
       setSavedAt(Date.now());
       setTimeout(() => setSavedAt(null), 3000);
     } catch {
@@ -80,6 +98,14 @@ export default function ConfiguracionClient() {
       setSaving(false);
     }
   }, [config]);
+
+  // Aviso del navegador si intentás salir con cambios sin guardar.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   // Keyboard: Cmd/Ctrl+S guarda sin recargar la página
   useEffect(() => {
@@ -136,31 +162,47 @@ export default function ConfiguracionClient() {
     <div className="space-y-6">
       {/* Barra de acción primaria — sticky top-right; reemplaza el <header>
           inline que duplicaba kicker/título con el AdminTabShell del wrapper. */}
-      <div className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5">
-        <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-          </span>
-          Cambios aplican en vivo
-        </p>
+      <div className="sticky top-2 z-20 flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-5 py-3.5">
+        {dirty ? (
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)]">
+            <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" />
+            Cambios sin guardar
+          </p>
+        ) : (
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+            </span>
+            {savedAt ? "Guardado · aplica en vivo" : "Todo guardado · aplica en vivo"}
+          </p>
+        )}
         <button
           onClick={save}
-          disabled={saving}
-          className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-sm shadow-md shadow-[var(--accent)]/25 hover:gap-2.5 hover:shadow-lg hover:shadow-[var(--accent)]/35 disabled:opacity-60 transition-all"
+          disabled={saving || !dirty}
+          className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-sm shadow-md shadow-[var(--accent)]/25 hover:gap-2.5 hover:shadow-lg hover:shadow-[var(--accent)]/35 disabled:opacity-50 disabled:shadow-none transition-all"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedAt ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
-          {savedAt ? "Guardado" : "Guardar cambios"}
+          {saving ? "Guardando…" : savedAt ? "Guardado" : dirty ? "Guardar cambios" : "Sin cambios"}
         </button>
       </div>
 
       {error && (
-        <div className="rounded-2xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:text-red-300 inline-flex items-center gap-2 w-full">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          {error}
-          <button onClick={() => setError(null)} className="ml-auto" aria-label="Cerrar">
-            <X className="h-3.5 w-3.5" />
-          </button>
+        <div className="rounded-2xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm text-[var(--data-error-700)] dark:text-red-300 w-full">
+          <div className="inline-flex items-center gap-2 w-full font-bold">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {error}
+            <button onClick={() => { setError(null); setIssues([]); }} className="ml-auto" aria-label="Cerrar">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {issues.length > 0 && (
+            <ul className="mt-2 space-y-1 pl-6 text-xs font-medium list-disc marker:text-[var(--data-error-500)]">
+              {issues.map((it, i) => (
+                <li key={i}><span className="font-mono font-bold">{it.path}</span>: {it.message}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -311,6 +353,37 @@ export default function ConfiguracionClient() {
               onChange={(v) => setConfig({ ...config, brand: { ...config.brand, secondaryColor: v } })}
             />
           </Row>
+
+          {/* Preview en vivo de la marca */}
+          <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 p-4">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">Vista previa</p>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-white">
+                {config.brand.logoUrl ? (
+                  <Image src={config.brand.logoUrl} alt="logo" fill sizes="56px" className="object-contain" unoptimized />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-xs text-[var(--text-tertiary)]">logo</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="text-lg font-extrabold leading-tight" style={{ color: config.brand.primaryColor }}>
+                  {config.brand.name || "Buleje"}
+                </div>
+                {config.brand.tagline && <div className="text-sm text-[var(--text-secondary)] truncate">{config.brand.tagline}</div>}
+              </div>
+              <div className="ml-auto flex items-center gap-3">
+                <SwatchPreview hex={config.brand.primaryColor} label="primario" />
+                <SwatchPreview hex={config.brand.secondaryColor} label="secundario" />
+                <button
+                  type="button"
+                  className="h-9 px-4 rounded-full text-xs font-extrabold text-white shadow-sm"
+                  style={{ backgroundColor: config.brand.primaryColor }}
+                >
+                  Botón
+                </button>
+              </div>
+            </div>
+          </div>
         </Section>
 
         {/* ── 3. Contacto / Soporte ───────────────────────────────── */}
@@ -511,6 +584,15 @@ function ColorField({
           className="flex-1 h-8 bg-transparent text-sm font-mono font-bold text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)] uppercase"
         />
       </div>
+    </div>
+  );
+}
+
+function SwatchPreview({ hex, label }: { hex: string; label: string }) {
+  return (
+    <div className="text-center">
+      <span className="block h-9 w-9 rounded-lg border border-[var(--rule-soft)]" style={{ backgroundColor: hex }} aria-label={`${label} ${hex}`} />
+      <span className="mt-1 block text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)]">{(hex || "").toUpperCase()}</span>
     </div>
   );
 }

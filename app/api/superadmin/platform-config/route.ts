@@ -33,8 +33,13 @@ export async function GET() {
   return NextResponse.json({ config });
 }
 
-const ColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
-const UrlOrNull = z.string().url().or(z.literal("")).nullable();
+const ColorSchema = z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).or(z.literal("")).nullable();
+// Acepta URL absoluta (https://…), ruta relativa (/brand/logo.png) o vacío.
+// Los defaults de marca usan rutas relativas → z.string().url() las rechazaba (400 en round-trip).
+const UrlOrNull = z
+  .string().trim().max(2048)
+  .refine((v) => v === "" || v.startsWith("/") || /^https?:\/\//i.test(v), { message: "Debe ser una URL (https://…) o una ruta (/…)" })
+  .nullable();
 
 const ConfigSchema = z.object({
   payment: z.object({
