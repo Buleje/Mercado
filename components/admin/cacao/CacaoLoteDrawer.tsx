@@ -6,8 +6,9 @@
  * (cut test), liquidación, beneficio vinculado y botón de recibo imprimible.
  */
 import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import {
-  Leaf, Loader2, Printer, Droplets, Scale, Coins, Beaker, X as XIcon, FlaskConical,
+  Leaf, Loader2, Printer, Droplets, Scale, Coins, Beaker, X as XIcon, FlaskConical, QrCode, Copy, Check, ExternalLink,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
@@ -36,6 +37,19 @@ export default function CacaoLoteDrawer({ loteId, acopiador, onClose }: { loteId
   const [beneficio, setBeneficio] = useState<Beneficio | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [publicUrl, setPublicUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  // QR de trazabilidad pública — apunta a /verificar-cacao/{loteCode} en el
+  // dominio actual (el tenant se resuelve por Host).
+  useEffect(() => {
+    if (!lote?.loteCode || typeof window === "undefined") return;
+    const url = `${window.location.origin}/verificar-cacao/${encodeURIComponent(lote.loteCode)}`;
+    setPublicUrl(url);
+    QRCode.toDataURL(url, { width: 220, margin: 1, color: { dark: "#451a03", light: "#ffffff" } })
+      .then(setQrUrl).catch(() => setQrUrl(null));
+  }, [lote?.loteCode]);
 
   useEffect(() => {
     let cancel = false;
@@ -156,6 +170,20 @@ export default function CacaoLoteDrawer({ loteId, acopiador, onClose }: { loteId
                   {lote.observaciones && <p className="text-[var(--text-secondary)]">{lote.observaciones}</p>}
                 </Section>
               )}
+
+              {/* QR de trazabilidad pública */}
+              <Section icon={QrCode} title="QR de trazabilidad">
+                <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
+                  {qrUrl ? <img src={qrUrl} alt="QR de trazabilidad" className="h-28 w-28 shrink-0 rounded-xl border-2 border-[var(--rule-base)] bg-white p-1" /> : <div className="grid h-28 w-28 shrink-0 place-items-center rounded-xl border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]"><QrCode className="h-8 w-8" /></div>}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[var(--text-secondary)]">Imprimilo en el saco. El comprador escanea y ve origen y calidad — sin precios.</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => { navigator.clipboard?.writeText(publicUrl); setCopied(true); setTimeout(() => setCopied(false), 1800); }} className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">{copied ? <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" /> : <Copy className="h-3.5 w-3.5" />}{copied ? "Copiado" : "Copiar link"}</button>
+                      <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"><ExternalLink className="h-3.5 w-3.5" />Ver página</a>
+                    </div>
+                  </div>
+                </div>
+              </Section>
             </>
           )}
         </div>

@@ -375,6 +375,48 @@ export class CacaoDB {
     return { lote, beneficio };
   }
 
+  // ─── Trazabilidad pública por código de lote (QR) ───────────────────
+  // Solo info de origen/calidad; NUNCA precios/pagos (es público).
+  static async traceByCode(tenantId: string, code: string) {
+    if (!tenantId || !code) return null;
+    const lote = await prisma.cacaoLote.findFirst({
+      where: { tenantId, loteCode: code, deletedAt: null, status: "registrado" },
+      select: {
+        id: true, loteCode: true, fecha: true, variedad: true, tipoGrano: true, grado: true,
+        indiceFermentacion: true, humedadPct: true, productorId: true, productorNombre: true,
+        pctBienFermentado: true, pctVioleta: true, pctPizarroso: true, pctMohoso: true,
+      },
+    });
+    if (!lote) return null;
+    const [producer, beneficio] = await Promise.all([
+      lote.productorId ? prisma.cacaoProducer.findFirst({ where: { id: lote.productorId, tenantId }, select: { sector: true, certificacion: true, altitudMsnm: true } }) : Promise.resolve(null),
+      prisma.cacaoBeneficio.findFirst({
+        where: { tenantId, loteId: lote.id, deletedAt: null, status: "registrado" },
+        orderBy: { createdAt: "desc" },
+        select: { fermDias: true, secDias: true, metodoSecado: true, humedadFinal: true, tipoFermentador: true },
+      }),
+    ]);
+    const num = (v: unknown) => (v == null ? null : Number(v));
+    return {
+      loteCode: lote.loteCode,
+      fecha: lote.fecha.toISOString(),
+      variedad: lote.variedad,
+      tipoGrano: lote.tipoGrano,
+      grado: lote.grado,
+      indiceFermentacion: num(lote.indiceFermentacion),
+      humedadPct: num(lote.humedadPct),
+      productorNombre: lote.productorNombre,
+      sector: producer?.sector ?? null,
+      certificacion: producer?.certificacion ?? null,
+      altitudMsnm: producer?.altitudMsnm ?? null,
+      cut: { bien: num(lote.pctBienFermentado), violeta: num(lote.pctVioleta), pizarroso: num(lote.pctPizarroso), mohoso: num(lote.pctMohoso) },
+      beneficio: beneficio ? {
+        fermDias: beneficio.fermDias, secDias: beneficio.secDias, metodoSecado: beneficio.metodoSecado,
+        humedadFinal: num(beneficio.humedadFinal), tipoFermentador: beneficio.tipoFermentador,
+      } : null,
+    };
+  }
+
   // ─── Inventario de cacao seco + valorización + desgloses ─────────────
   static async inventory(tenantId: string) {
     if (!tenantId) throw new Error("tenantId is required");
