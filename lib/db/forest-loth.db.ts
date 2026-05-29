@@ -331,6 +331,63 @@ export class ForestLothDB {
     return [];
   }
 
+  /**
+   * Trazabilidad por código (target del QR de origen, Batch 4): dado un código de
+   * árbol (85-TOR) o de troza (85-TOR-A), reconstruye toda la cadena del árbol +
+   * el plan/título que lo autoriza. Solo info de origen legal (sin costos/precios).
+   */
+  static async traceByCode(tenantId: string, code: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const norm = code.trim();
+    if (!norm) return null;
+    // El código de troza es <árbol>-<sufijo>; derivamos el árbol raíz.
+    const treeRoot = norm.includes("-") ? norm.replace(/-[A-Za-z0-9]+$/, "") : norm;
+
+    const entries = await prisma.forestLothEntry.findMany({
+      where: {
+        tenantId, deletedAt: null, status: "registrado",
+        OR: [
+          { treeCode: treeRoot }, { treeCode: norm },
+          { trozaCode: norm }, { trozaCode: treeRoot }, { trozaCode: { startsWith: `${treeRoot}-` } },
+        ],
+      },
+      orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],
+      select: {
+        section: true, lineNo: true, entryDate: true, treeCode: true, trozaCode: true, despachoCode: true,
+        speciesCommon: true, speciesScientific: true, cites: true, productType: true,
+        volumeM3: true, quantity: true, unit: true, gtfNumber: true, planId: true,
+      },
+    });
+    if (entries.length === 0) return null;
+
+    const planId = entries.find((e) => e.planId)?.planId ?? null;
+    const plan = planId
+      ? await prisma.forestPlan.findFirst({
+          where: { tenantId, id: planId, deletedAt: null },
+          select: { planType: true, planNumber: true, titularName: true, tituloHabilitante: true, resolucionNumber: true, resolucionDate: true, region: true, arffs: true, vigenciaHasta: true, estado: true },
+        })
+      : null;
+
+    const speciesEntry = entries.find((e) => e.speciesCommon) ?? entries[0];
+    const gtfs = [...new Set(entries.map((e) => e.gtfNumber).filter(Boolean))] as string[];
+
+    return {
+      code: norm,
+      treeCode: treeRoot,
+      species: speciesEntry.speciesCommon,
+      scientific: speciesEntry.speciesScientific,
+      cites: speciesEntry.cites,
+      plan,
+      gtfs,
+      chain: entries.map((e) => ({
+        section: e.section, lineNo: e.lineNo, entryDate: e.entryDate.toISOString(),
+        treeCode: e.treeCode, trozaCode: e.trozaCode, despachoCode: e.despachoCode,
+        productType: e.productType, volumeM3: e.volumeM3 ? Number(e.volumeM3) : null,
+        quantity: e.quantity ? Number(e.quantity) : null, unit: e.unit, gtfNumber: e.gtfNumber,
+      })),
+    };
+  }
+
   // ─── Carátula ────────────────────────────────────────────────────────
 
   static async createCaratula(tenantId: string, input: LothCaratulaInput) {
