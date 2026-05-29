@@ -21,6 +21,7 @@ import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoProducerDrawer from "./CacaoProducerDrawer";
 import CacaoNoticiero from "./CacaoNoticiero";
 import CacaoAsesor from "./CacaoAsesor";
+import { printCacaoReporte } from "@/lib/cacao/cacao-reporte";
 
 type View = "acopio" | "beneficio" | "inventario" | "productores" | "resumen" | "mercado" | "asesor";
 interface Beneficio {
@@ -339,6 +340,9 @@ export default function CacaoAcopio() {
       {/* RESUMEN */}
       {view === "resumen" && stats && (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <button type="button" onClick={() => printCacaoReporte(stats, trends)} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" />Imprimir reporte</button>
+          </div>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard label="Kg acopiados" value={`${n2(stats.kgAcopiados)} kg`} subValue={`${stats.lotes} lotes`} icon={Scale} emphasis="success" />
             <StatCard label="Pagado a productores" value={`S/ ${n2(stats.valorPagado)}`} subValue={`${stats.productoresActivos} productores`} icon={Coins} emphasis="neutral" />
