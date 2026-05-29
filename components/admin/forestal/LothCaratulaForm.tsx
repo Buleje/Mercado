@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { FileText, Loader2, X, AlertTriangle } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -99,7 +100,7 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
               <FileText className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
-              <h2 className="truncate text-base font-bold text-[var(--text-primary)]">Carátula del libro</h2>
+              <CardTitle as="h2" className="truncate text-base font-bold text-[var(--text-primary)]">Carátula del libro</CardTitle>
               <p className="truncate text-xs text-[var(--text-tertiary)]">Datos del titular y documento de gestión (Anexo 1 SERFOR)</p>
             </div>
           </div>

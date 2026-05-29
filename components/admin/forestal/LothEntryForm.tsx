@@ -20,6 +20,7 @@ import {
   ShieldAlert,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
 import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
@@ -269,9 +270,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
               <TreePine className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
-              <h2 className="truncate text-base font-bold text-[var(--text-primary)]">
+              <CardTitle as="h2" className="truncate text-base font-bold text-[var(--text-primary)]">
                 Nueva línea · {meta.label}
-              </h2>
+              </CardTitle>
               <p className="truncate text-xs text-[var(--text-tertiary)]">
                 Sección {meta.index} · {meta.help}
               </p>

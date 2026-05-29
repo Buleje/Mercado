@@ -23,6 +23,7 @@ import {
   ShieldAlert,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   listSpecies,
@@ -315,9 +316,9 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
               <TreePine className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
-              <h2 className="truncate text-base font-bold text-[var(--text-primary)]">
+              <CardTitle as="h2" className="truncate text-base font-bold text-[var(--text-primary)]">
                 Nuevo ingreso de madera
-              </h2>
+              </CardTitle>
               <p className="truncate text-xs text-[var(--text-tertiary)]">
                 Libro de Operaciones CTP · LOE-CTP SERFOR
               </p>
@@ -721,9 +722,9 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
               {/* Especie */}
               <div className="mb-5">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg font-bold leading-tight text-[var(--text-primary)]">
+                  <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">
                     {finalSpeciesName || "Sin especie"}
-                  </h3>
+                  </CardTitle>
                   {finalCites && <CitesPill />}
                 </div>
                 {finalScientificName && (
@@ -866,9 +867,9 @@ function Section({
         <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
           {index}
         </span>
-        <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           {title}
-        </h3>
+        </CardTitle>
       </div>
       <div className="space-y-4">{children}</div>
     </section>

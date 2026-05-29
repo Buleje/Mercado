@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FileText, Plus, TreePine, ShieldAlert, Upload, Trash2, Loader2, AlertCircle, Printer, MapPin,
 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 
@@ -137,7 +138,7 @@ export default function LothPlanView() {
                 <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   Plan de Manejo · {plan.planType}
                 </div>
-                <h3 className="text-lg font-bold text-[var(--text-primary)]">{plan.titularName}</h3>
+                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">{plan.titularName}</CardTitle>
                 <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-3 lg:grid-cols-4">
                   <Meta k="N° plan" v={plan.planNumber} />
                   <Meta k="Título hab." v={plan.tituloHabilitante} />
@@ -630,7 +631,7 @@ function Panel({ title, action, children }: { title: string; action?: React.Reac
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h4 className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{title}</h4>
+        <CardTitle as="h4" className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{title}</CardTitle>
         {action}
       </div>
       {children}

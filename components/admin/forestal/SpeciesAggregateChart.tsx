@@ -10,6 +10,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Loader2, RefreshCw, AlertCircle } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 
 interface Aggregate {
   species: string;
@@ -93,9 +94,9 @@ export default function SpeciesAggregateChart() {
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-[var(--brand-ink)]" />
-          <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+          <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
             Volumen por especie ({PERIOD_LABEL[period]})
-          </h3>
+          </CardTitle>
         </div>
 
         <div className="flex items-center gap-2">
