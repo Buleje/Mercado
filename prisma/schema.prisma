@@ -4703,6 +4703,11 @@ model ForestLothEntry {
   // ── Despacho ─────────────────────────────────────────
   gtfNumber         String?   // despacho_troza, despacho_producto
 
+  // ── Georreferencia + evidencia de campo (Batch 4) ────
+  gpsLat            Decimal?  @db.Decimal(10, 7) // latitud captura en campo
+  gpsLng            Decimal?  @db.Decimal(10, 7) // longitud captura en campo
+  photoUrl          String?   // foto-evidencia (tocón/troza) vía /api/upload
+
   // ── Flags + observaciones ────────────────────────────
   discarded         Boolean   @default(false) // "descartado"
   consumoInterno    Boolean   @default(false) // "consumo interno"

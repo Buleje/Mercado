@@ -14,7 +14,7 @@
  *    para productos; un lote puede mezclar árboles) — se marca como "por especie".
  */
 
-import { TreePine, ChevronRight } from "@buleje/design-system/icons";
+import { TreePine, ChevronRight, MapPin, ExternalLink } from "@buleje/design-system/icons";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 
 const num = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
@@ -96,10 +96,13 @@ function OperationCard({ op }: { op: Operation }) {
       done: op.tala.length > 0,
       body:
         op.tala.length > 0 ? (
-          <span>
-            <Code>{op.tree}</Code> · Ø {num(op.tala[0].diamMayorM, 2)}/{num(op.tala[0].diamMenorM, 2)} m · L {num(op.tala[0].lengthM, 2)} m ·{" "}
-            <Vol>{talaVol.toFixed(4)} m³</Vol>
-          </span>
+          <div>
+            <span>
+              <Code>{op.tree}</Code> · Ø {num(op.tala[0].diamMayorM, 2)}/{num(op.tala[0].diamMenorM, 2)} m · L {num(op.tala[0].lengthM, 2)} m ·{" "}
+              <Vol>{talaVol.toFixed(4)} m³</Vol>
+            </span>
+            <GpsPhotoEvidence entry={op.tala[0]} />
+          </div>
         ) : null,
     },
     {
@@ -112,10 +115,13 @@ function OperationCard({ op }: { op: Operation }) {
             <div className="text-[var(--text-tertiary)]">{op.trozado.length} trozas · <Vol>{trozVol.toFixed(4)} m³</Vol></div>
             <div className="flex flex-wrap gap-x-4 gap-y-0.5">
               {op.trozado.map((t) => (
-                <span key={t.id}>
-                  <Code>{t.trozaCode}</Code> <span className="font-mono tabular-nums text-[var(--text-secondary)]">{num(t.volumeM3)}</span>
-                  {t.isRama && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(rama)</span>}
-                </span>
+                <div key={t.id}>
+                  <span>
+                    <Code>{t.trozaCode}</Code> <span className="font-mono tabular-nums text-[var(--text-secondary)]">{num(t.volumeM3)}</span>
+                    {t.isRama && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(rama)</span>}
+                  </span>
+                  <GpsPhotoEvidence entry={t} />
+                </div>
               ))}
             </div>
           </div>
@@ -257,4 +263,38 @@ function Gtf({ children }: { children: React.ReactNode }) {
 }
 function unit(u: string | null) {
   return u === "m3" ? "m³" : u === "kg" ? "Kg" : u === "unidad" ? "u" : (u ?? "");
+}
+
+/** Muestra pin GPS con link a OpenStreetMap y/o thumbnail de foto si existen. */
+function GpsPhotoEvidence({ entry }: { entry: LothEntryDTO }) {
+  const hasGps = entry.gpsLat != null && entry.gpsLng != null;
+  const lat = hasGps ? Number(entry.gpsLat) : null;
+  const lng = hasGps ? Number(entry.gpsLng) : null;
+  if (!hasGps && !entry.photoUrl) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-3">
+      {hasGps && lat != null && lng != null && (
+        <a
+          href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-300)] bg-[var(--data-success-50)] px-2 py-0.5 text-xs font-medium text-[var(--data-success-800)] transition-colors hover:bg-[var(--data-success-100)]"
+        >
+          <MapPin className="h-3 w-3 shrink-0" />
+          <span className="font-mono tabular-nums">{lat.toFixed(5)}, {lng.toFixed(5)}</span>
+          <ExternalLink className="h-3 w-3 shrink-0" />
+        </a>
+      )}
+      {entry.photoUrl && (
+        <a href={entry.photoUrl} target="_blank" rel="noopener noreferrer">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={entry.photoUrl}
+            alt="Foto de evidencia de campo"
+            className="h-16 w-auto rounded-lg border border-[var(--rule-base)] object-cover transition-opacity hover:opacity-80"
+          />
+        </a>
+      )}
+    </div>
+  );
 }

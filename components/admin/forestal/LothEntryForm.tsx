@@ -8,7 +8,7 @@
  * formularios cortos. Volumen por fórmula SERFOR (Smalian) en tala/trozado.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TreePine,
   AlertTriangle,
@@ -18,6 +18,9 @@ import {
   Search,
   Check,
   ShieldAlert,
+  MapPin,
+  Camera,
+  ExternalLink,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
@@ -105,6 +108,16 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
   const [speciesQuery, setSpeciesQuery] = useState("");
   const [showPicker, setShowPicker] = useState(false);
+
+  // ── GPS + foto de evidencia ───────────────────────────────────────────
+  const [gpsLat, setGpsLat] = useState<number | null>(null);
+  const [gpsLng, setGpsLng] = useState<number | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Plan + picker de ítems disponibles (flujo data-driven, ADR-127) ──
   interface PlanOpt { id: string; planType: string; planNumber: string | null; titularName: string }
@@ -266,11 +279,63 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
   const isValid = missing.length === 0;
 
+  function captureGps() {
+    if (!navigator.geolocation) {
+      setGpsError("Geolocalización no disponible en este dispositivo.");
+      return;
+    }
+    setGpsLoading(true);
+    setGpsError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsLat(pos.coords.latitude);
+        setGpsLng(pos.coords.longitude);
+        setGpsLoading(false);
+      },
+      (err) => {
+        setGpsError(`No se pudo obtener la ubicación: ${err.message}`);
+        setGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    setPhotoError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "general");
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: csrfHeaders({}),
+        credentials: "include",
+        body: fd,
+      });
+      if (!res.ok) {
+        const r = await res.json().catch(() => ({}));
+        throw new Error(r.error ?? `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setPhotoUrl(data.url);
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPhotoUploading(false);
+    }
+  }
+
   function reset() {
     setTreeCode(""); setTrozaCode(""); setDespachoCode(""); setIsRama(false);
     setDiamMayor(""); setDiamMenor(""); setLengthM(""); setVolumeM3("");
     setQuantity(""); setPieces(""); setGtfNumber(""); setDiscarded(false);
     setConsumoInterno(false); setObservations("");
+    setGpsLat(null); setGpsLng(null); setGpsError(null);
+    setPhotoUrl(null); setPhotoError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function handleSubmit(e: React.FormEvent, keepOpen = false) {
@@ -319,6 +384,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       if (fields.has("gtf")) payload.gtfNumber = gtfNumber.trim() || null;
       if (fields.has("discarded")) payload.discarded = discarded;
       if (fields.has("consumoInterno")) payload.consumoInterno = consumoInterno;
+
+      payload.gpsLat = gpsLat ?? null;
+      payload.gpsLng = gpsLng ?? null;
+      payload.photoUrl = photoUrl ?? null;
 
       const res = await fetch("/api/admin/forestal/loth", {
         method: "POST",
@@ -684,6 +753,87 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
               Consumo interno <span className="text-[var(--text-tertiary)]">(campamento, puentes, etc.)</span>
             </label>
           )}
+
+          {/* Evidencia de campo (GPS + foto) */}
+          <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+            <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+              Evidencia de campo <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
+            </CardTitle>
+
+            {/* GPS */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={captureGps}
+                disabled={gpsLoading}
+                className="inline-flex h-12 items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {gpsLoading
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <MapPin className="h-4 w-4 text-[var(--data-success-600)]" />
+                }
+                {gpsLoading ? "Obteniendo GPS…" : gpsLat != null ? "Actualizar ubicación GPS" : "Capturar ubicación GPS"}
+              </button>
+              {gpsError && (
+                <p className="flex items-center gap-1.5 text-xs text-[var(--data-danger-700)]">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{gpsError}
+                </p>
+              )}
+              {gpsLat != null && gpsLng != null && (
+                <p className="flex items-center gap-1.5 text-xs text-[var(--data-success-800)]">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-mono tabular-nums">{gpsLat.toFixed(6)}, {gpsLng.toFixed(6)}</span>
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${gpsLat}&mlon=${gpsLng}#map=17/${gpsLat}/${gpsLng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 underline underline-offset-2"
+                  >
+                    Ver en mapa <ExternalLink className="h-3 w-3" />
+                  </a>
+                </p>
+              )}
+            </div>
+
+            {/* Foto */}
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                aria-label="Foto de evidencia"
+                onChange={handlePhotoChange}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={photoUploading}
+                className="inline-flex h-12 items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {photoUploading
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <Camera className="h-4 w-4 text-[var(--data-success-600)]" />
+                }
+                {photoUploading ? "Subiendo foto…" : photoUrl ? "Cambiar foto" : "Subir foto del tocón / troza"}
+              </button>
+              {photoError && (
+                <p className="flex items-center gap-1.5 text-xs text-[var(--data-danger-700)]">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{photoError}
+                </p>
+              )}
+              {photoUrl && (
+                <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photoUrl}
+                    alt="Foto de evidencia de campo"
+                    className="h-28 w-auto rounded-lg border border-[var(--rule-base)] object-cover transition-opacity hover:opacity-80"
+                  />
+                </a>
+              )}
+            </div>
+          </div>
 
           <Field label="Observaciones">
             <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2.5`} />

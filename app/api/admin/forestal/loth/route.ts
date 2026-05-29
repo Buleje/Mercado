@@ -52,6 +52,10 @@ const createSchema = z.object({
 
   correctsLineNo: z.coerce.number().int().positive().nullable().optional(),
   correctionNote: z.string().trim().max(500).nullable().optional(),
+
+  gpsLat: z.coerce.number().min(-90).max(90).nullable().optional(),
+  gpsLng: z.coerce.number().min(-180).max(180).nullable().optional(),
+  photoUrl: z.string().trim().max(500).nullable().optional(),
 });
 
 async function ensureSpecOrDeny(tenantId: string) {

@@ -54,6 +54,10 @@ export interface LothEntryCreateInput {
   correctsLineNo?: number | null;
   correctionNote?: string | null;
 
+  gpsLat?: number | string | null;
+  gpsLng?: number | string | null;
+  photoUrl?: string | null;
+
   createdBy: string;
 }
 
@@ -141,6 +145,9 @@ export class ForestLothDB {
         observations: input.observations?.trim() || null,
         correctsLineNo: input.correctsLineNo ?? null,
         correctionNote: input.correctionNote?.trim() || null,
+        gpsLat: dec(input.gpsLat),
+        gpsLng: dec(input.gpsLng),
+        photoUrl: input.photoUrl?.trim() || null,
         status: "registrado",
         createdBy: input.createdBy,
       },

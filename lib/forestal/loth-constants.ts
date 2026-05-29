@@ -293,4 +293,7 @@ export interface LothEntryDTO {
   observations: string | null;
   status: "registrado" | "anulado";
   annulledReason: string | null;
+  gpsLat: string | null;
+  gpsLng: string | null;
+  photoUrl: string | null;
 }
