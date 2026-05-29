@@ -198,6 +198,7 @@ export const SPEC_GATED_MODULE_IDS = new Set<string>([
   "ctp-libro-operaciones",
   "loth-libro-operaciones",
   "gtf-emisor",
+  "cacao-acopio",
   "recetas-medicas",
   "cuero-trazabilidad",
 ]);
