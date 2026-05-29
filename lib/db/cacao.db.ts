@@ -315,6 +315,54 @@ export class CacaoDB {
     };
   }
 
+  // ─── Productores + agregados de compra (analítica de proveedores) ────
+  static async producersWithStats(tenantId: string, filters: { search?: string; includeInactive?: boolean } = {}) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [producers, lotes] = await Promise.all([
+      this.listProducers(tenantId, filters),
+      prisma.cacaoLote.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado", productorId: { not: null } },
+        select: { productorId: true, pesoKg: true, totalPagado: true, fecha: true, grado: true },
+      }),
+    ]);
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    type Agg = { kg: number; pagado: number; lotes: number; lastFecha: Date | null; gradoI: number };
+    const agg = new Map<string, Agg>();
+    for (const l of lotes) {
+      if (!l.productorId) continue;
+      const a = agg.get(l.productorId) ?? { kg: 0, pagado: 0, lotes: 0, lastFecha: null, gradoI: 0 };
+      a.kg += Number(l.pesoKg ?? 0); a.pagado += Number(l.totalPagado ?? 0); a.lotes++;
+      if (l.grado === "I") a.gradoI++;
+      const f = new Date(l.fecha);
+      if (!a.lastFecha || f > a.lastFecha) a.lastFecha = f;
+      agg.set(l.productorId, a);
+    }
+    const withStats = producers.map((p) => {
+      const a = agg.get(p.id);
+      return {
+        ...p,
+        stats: {
+          kg: r2(a?.kg ?? 0), pagado: r2(a?.pagado ?? 0), lotes: a?.lotes ?? 0,
+          lastFecha: a?.lastFecha ? a.lastFecha.toISOString() : null, gradoI: a?.gradoI ?? 0,
+        },
+      };
+    });
+    const totalKg = withStats.reduce((s, p) => s + p.stats.kg, 0);
+    const totalPagado = withStats.reduce((s, p) => s + p.stats.pagado, 0);
+    const conCompras = withStats.filter((p) => p.stats.lotes > 0).length;
+    const top = [...withStats].filter((p) => p.stats.lotes > 0).sort((a, b) => b.stats.pagado - a.stats.pagado)[0];
+    return {
+      producers: withStats,
+      summary: {
+        total: producers.length,
+        conCompras,
+        totalKg: r2(totalKg),
+        totalPagado: r2(totalPagado),
+        top: top ? { nombre: top.nombre, kg: top.stats.kg, pagado: top.stats.pagado } : null,
+      },
+    };
+  }
+
   // ─── Ficha de lote: detalle + beneficio vinculado ────────────────────
   static async loteDetail(tenantId: string, id: string) {
     if (!tenantId) throw new Error("tenantId is required");

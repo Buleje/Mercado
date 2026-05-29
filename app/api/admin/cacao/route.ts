@@ -91,6 +91,7 @@ export async function GET(req: NextRequest) {
   const id = sp.get("id") ?? undefined;
   try {
     if (view === "producers") return NextResponse.json({ producers: await CacaoDB.listProducers(g.auth.tenantId, { search, includeInactive: sp.get("all") === "1" }) });
+    if (view === "producers-stats") return NextResponse.json(await CacaoDB.producersWithStats(g.auth.tenantId, { search, includeInactive: sp.get("all") === "1" }));
     if (view === "producer-detail") {
       if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
       const detail = await CacaoDB.producerDetail(g.auth.tenantId, id);
