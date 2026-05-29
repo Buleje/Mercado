@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cacaoGrade, cacaoFermentationIndex, cacaoLiquidacion, cumpleHumedad, cacaoMerma, cacaoProyeccionSeco, cacaoRendimiento, MERMA_TIPICA_PCT, cacaoVentaTotalPen, cacaoVentaMargen } from "@/lib/cacao/cacao-quality";
+import { cacaoGrade, cacaoFermentationIndex, cacaoLiquidacion, cumpleHumedad, cacaoMerma, cacaoProyeccionSeco, cacaoRendimiento, MERMA_TIPICA_PCT, cacaoVentaTotalPen, cacaoVentaMargen, cacaoBeneficioAlerta } from "@/lib/cacao/cacao-quality";
 
 /** Lógica de calidad/liquidación de cacao (ADR-128). Referencias NTP-ISO 2451 / 1114 / 2291. */
 
@@ -113,5 +113,24 @@ describe("cacaoVentaMargen — margen bruto vs costo de acopio", () => {
   it("null sin datos válidos", () => {
     expect(cacaoVentaMargen(0, 100, 9.5)).toBeNull();
     expect(cacaoVentaMargen(1300, 100, 0)).toBeNull();
+  });
+});
+
+describe("cacaoBeneficioAlerta — días en etapa del beneficio", () => {
+  it("fermentando dentro de norma (≤7d) → ok", () => {
+    expect(cacaoBeneficioAlerta("fermentando", 5).nivel).toBe("ok");
+    expect(cacaoBeneficioAlerta("fermentando", 7).nivel).toBe("ok");
+  });
+  it("fermentando 8d → atención, 10d → urgente (sobre-fermenta)", () => {
+    expect(cacaoBeneficioAlerta("fermentando", 8).nivel).toBe("atencion");
+    expect(cacaoBeneficioAlerta("fermentando", 10).nivel).toBe("urgente");
+  });
+  it("secando 13d → atención, 18d → urgente (moho)", () => {
+    expect(cacaoBeneficioAlerta("secando", 13).nivel).toBe("atencion");
+    expect(cacaoBeneficioAlerta("secando", 18).nivel).toBe("urgente");
+  });
+  it("terminado o sin días → ok", () => {
+    expect(cacaoBeneficioAlerta("terminado", 99).nivel).toBe("ok");
+    expect(cacaoBeneficioAlerta("fermentando", null).nivel).toBe("ok");
   });
 });

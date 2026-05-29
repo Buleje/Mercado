@@ -148,3 +148,33 @@ export function cacaoVentaMargen(totalPen: number | null | undefined, pesoKg: nu
   return Math.round(((total - costo) / costo) * 1000) / 10;
 }
 
+// ─── Alertas de proceso del beneficio (ADR-128 v3) ──────────────────────────
+
+export type CacaoBeneficioAlerta = "ok" | "atencion" | "urgente";
+
+/** Días típicos máximos por etapa (referencia agronómica del beneficio de cacao). */
+export const FERM_DIAS_MAX = 7; // fermentación 5-7 días; pasado esto sobre-fermenta
+export const SEC_DIAS_MAX = 12; // secado solar 5-10d; >12d riesgo de moho/rancidez
+
+/**
+ * Nivel de alerta por días transcurridos en la etapa ACTUAL del beneficio.
+ * - fermentando: ideal ≤7d. 8-9 = atención (revisar y voltear), ≥10 = urgente (sobre-fermenta).
+ * - secando: ideal ≤12d. 13-17 = atención, ≥18 = urgente (moho/rancidez).
+ * - terminado o sin fecha de etapa: ok.
+ */
+export function cacaoBeneficioAlerta(
+  estado: string | null | undefined,
+  diasEnEtapa: number | null | undefined,
+): { nivel: CacaoBeneficioAlerta; motivo: string } {
+  const d = diasEnEtapa == null ? null : Math.max(0, Math.floor(Number(diasEnEtapa)));
+  if (estado === "fermentando" && d != null) {
+    if (d >= FERM_DIAS_MAX + 3) return { nivel: "urgente", motivo: `${d} días fermentando — riesgo de sobre-fermentación` };
+    if (d > FERM_DIAS_MAX) return { nivel: "atencion", motivo: `${d} días fermentando — revisá el punto y volteá` };
+  }
+  if (estado === "secando" && d != null) {
+    if (d >= SEC_DIAS_MAX + 6) return { nivel: "urgente", motivo: `${d} días secando — riesgo de moho/rancidez` };
+    if (d > SEC_DIAS_MAX) return { nivel: "atencion", motivo: `${d} días secando — revisá la humedad para cerrar` };
+  }
+  return { nivel: "ok", motivo: "" };
+}
+

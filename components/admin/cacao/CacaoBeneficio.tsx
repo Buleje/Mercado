@@ -12,7 +12,7 @@ import {
 import { StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { cacaoRendimiento, cacaoMerma } from "@/lib/cacao/cacao-quality";
+import { cacaoRendimiento, cacaoMerma, cacaoBeneficioAlerta } from "@/lib/cacao/cacao-quality";
 import CacaoBeneficioForm from "./CacaoBeneficioForm";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 
@@ -21,7 +21,22 @@ interface Beneficio {
   fermDias: number | null; fermVolteos: number | null; tipoFermentador: string | null;
   secDias: number | null; metodoSecado: string | null; humedadFinal: string | null;
   pesoHumedoKg: string | null; pesoSecoKg: string | null; mermaPct: string | null;
+  fermInicio: string | null; secInicio: string | null; createdAt: string;
 }
+
+const daysSince = (iso: string | null | undefined) =>
+  iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)) : null;
+
+/** Nivel de alerta + días en la etapa actual de un beneficio. */
+function alertaOf(b: Beneficio) {
+  const dias = b.estado === "fermentando" ? daysSince(b.fermInicio ?? b.createdAt)
+    : b.estado === "secando" ? daysSince(b.secInicio ?? b.createdAt) : null;
+  return { ...cacaoBeneficioAlerta(b.estado, dias), dias };
+}
+const ALERTA_CLS: Record<string, string> = {
+  atencion: "text-[var(--data-warning-700)]",
+  urgente: "text-[var(--data-error-600)]",
+};
 
 const n2 = (v: string | number | null) => (v == null || v === "" ? "—" : Number(v).toFixed(2));
 const ESTADO: Record<string, { label: string; cls: string }> = {
@@ -30,7 +45,7 @@ const ESTADO: Record<string, { label: string; cls: string }> = {
   terminado: { label: "Terminado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-900)]" },
 };
 const FILTERS: { v: string; label: string }[] = [
-  { v: "todos", label: "Todos" }, { v: "fermentando", label: "Fermentando" }, { v: "secando", label: "Secando" }, { v: "terminado", label: "Terminado" },
+  { v: "todos", label: "Todos" }, { v: "fermentando", label: "Fermentando" }, { v: "secando", label: "Secando" }, { v: "terminado", label: "Terminado" }, { v: "atencion", label: "⚠ Atención" },
 ];
 
 export default function CacaoBeneficio() {
@@ -89,18 +104,21 @@ export default function CacaoBeneficio() {
   }
 
   const kpis = useMemo(() => {
-    let enProceso = 0, terminados = 0, kgSeco = 0, mermaSum = 0, mermaN = 0;
+    let enProceso = 0, terminados = 0, kgSeco = 0, mermaSum = 0, mermaN = 0, atencion = 0;
     for (const b of items) {
       if (b.estado === "terminado") { terminados++; if (b.pesoSecoKg) kgSeco += Number(b.pesoSecoKg); }
       else enProceso++;
       if (b.mermaPct != null) { mermaSum += Number(b.mermaPct); mermaN++; }
+      if (alertaOf(b).nivel !== "ok") atencion++;
     }
-    return { enProceso, terminados, kgSeco: Math.round(kgSeco * 100) / 100, mermaProm: mermaN ? Math.round((mermaSum / mermaN) * 10) / 10 : null };
+    return { enProceso, terminados, kgSeco: Math.round(kgSeco * 100) / 100, mermaProm: mermaN ? Math.round((mermaSum / mermaN) * 10) / 10 : null, atencion };
   }, [items]);
 
   const view = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return items.filter((b) => (filter === "todos" || b.estado === filter) && (!q || (b.loteCode ?? "").toLowerCase().includes(q)));
+    return items.filter((b) =>
+      (filter === "todos" || (filter === "atencion" ? alertaOf(b).nivel !== "ok" : b.estado === filter))
+      && (!q || (b.loteCode ?? "").toLowerCase().includes(q)));
   }, [items, search, filter]);
 
   function exportCsv() {
@@ -124,6 +142,14 @@ export default function CacaoBeneficio() {
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
+
+      {kpis.atencion > 0 && filter !== "atencion" && (
+        <button type="button" onClick={() => setFilter("atencion")} className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-left text-sm text-[var(--data-warning-900)] transition hover:bg-[var(--data-warning-100)]">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning-700)]" />
+          <span className="flex-1"><strong>{kpis.atencion} {kpis.atencion === 1 ? "lote requiere" : "lotes requieren"} atención</strong> — llevan demasiados días en fermentación o secado.</span>
+          <span className="shrink-0 font-bold underline">Ver</span>
+        </button>
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
@@ -151,10 +177,16 @@ export default function CacaoBeneficio() {
             {view.map((b) => {
               const est = ESTADO[b.estado] ?? { label: b.estado, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" };
               const rend = cacaoRendimiento(b.pesoHumedoKg == null ? null : Number(b.pesoHumedoKg), b.pesoSecoKg == null ? null : Number(b.pesoSecoKg));
+              const al = alertaOf(b);
               return (
                 <tr key={b.id} onClick={() => b.loteId && setLoteDrawerId(b.loteId)} className={`border-t border-[var(--rule-soft)] transition ${b.loteId ? "cursor-pointer hover:bg-[var(--surface-sunken)]" : ""}`}>
                   <Td><span className="font-mono text-xs font-bold text-[var(--text-primary)]">{b.loteCode ?? "—"}</span></Td>
-                  <Td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${est.cls}`}>{est.label}</span></Td>
+                  <Td>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${est.cls}`}>{est.label}{al.dias != null && b.estado !== "terminado" ? ` · ${al.dias}d` : ""}</span>
+                      {al.nivel !== "ok" && <span title={al.motivo} className="inline-flex"><AlertTriangle className={`h-4 w-4 ${ALERTA_CLS[al.nivel]}`} aria-label={al.motivo} /></span>}
+                    </span>
+                  </Td>
                   <Td className="text-[var(--text-secondary)]">{b.fermDias != null ? `${b.fermDias}d` : "—"}{b.fermVolteos != null ? ` · ${b.fermVolteos} volteos` : ""}{b.tipoFermentador ? ` · ${b.tipoFermentador}` : ""}</Td>
                   <Td className="text-[var(--text-secondary)]">{b.secDias != null ? `${b.secDias}d` : "—"}{b.metodoSecado ? ` · ${b.metodoSecado}` : ""}</Td>
                   <Td className="text-right font-mono tabular-nums"><span className={b.humedadFinal && Number(b.humedadFinal) > 7 ? "text-[var(--data-warning-700)]" : "text-[var(--text-secondary)]"}>{b.humedadFinal ? `${Number(b.humedadFinal).toFixed(1)}%` : "—"}</span></Td>
