@@ -238,7 +238,7 @@ export default function CacaoAcopio() {
                 })}
               </tbody>
             </table>
-            <EmptyOrLoading loading={loading} empty={lotes.length === 0} icon={PackageCheck} msg="Sin lotes de acopio. Registrá el primero." />
+            <EmptyOrLoading loading={loading} empty={lotes.length === 0} icon={PackageCheck} msg="Empezá tu libro de acopio" hint="Registrá el primer lote de cacao: peso, calidad (prueba de corte) y liquidación al productor — todo se calcula al vuelo." cta={{ label: "Registrar primer lote", onClick: () => setShowLote(true) }} searchActive={!!search.trim() || activeFilters > 0} />
           </div>
         </>
       )}
@@ -264,7 +264,7 @@ export default function CacaoAcopio() {
                 ))}
               </tbody>
             </table>
-            <EmptyOrLoading loading={loading} empty={producers.length === 0} icon={Users} msg="Sin productores registrados. Agregá el primero." />
+            <EmptyOrLoading loading={loading} empty={producers.length === 0} icon={Users} msg="Aún no tenés productores" hint="Registrá a tus proveedores de cacao para vincularlos a los lotes y ver su historial de compras y calidad." cta={{ label: "Agregar productor", onClick: () => setShowProducer(true) }} searchActive={!!search.trim()} />
           </div>
         </>
       )}
@@ -297,7 +297,7 @@ export default function CacaoAcopio() {
                 })}
               </tbody>
             </table>
-            <EmptyOrLoading loading={loading} empty={beneficios.length === 0} icon={Droplets} msg="Sin beneficios registrados. Registrá la fermentación/secado de un lote." />
+            <EmptyOrLoading loading={loading} empty={beneficios.length === 0} icon={Droplets} msg="Sin beneficios registrados" hint="Registrá la fermentación y el secado de un lote para controlar la merma húmedo→seco y el rendimiento." cta={{ label: "Nuevo beneficio", onClick: () => setShowBeneficio(true) }} searchActive={!!search.trim()} />
           </div>
         </>
       )}
@@ -462,10 +462,18 @@ function GradoBadge({ grado }: { grado: string | null }) {
   const cls = g === "I" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : g === "II" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>{GRADO_LABEL[g] ?? grado}</span>;
 }
-function EmptyOrLoading({ loading, empty, icon: Icon, msg }: { loading: boolean; empty: boolean; icon: typeof Leaf; msg: string }) {
+function EmptyOrLoading({ loading, empty, icon: Icon, msg, hint, cta, searchActive }: { loading: boolean; empty: boolean; icon: typeof Leaf; msg: string; hint?: string; cta?: { label: string; onClick: () => void }; searchActive?: boolean }) {
   if (loading) return <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>;
-  if (empty) return <div className="p-12 text-center text-[var(--text-tertiary)]"><Icon className="mx-auto mb-3 h-10 w-10 opacity-30" /><p className="text-base font-medium">{msg}</p></div>;
-  return null;
+  if (!empty) return null;
+  if (searchActive) return <div className="p-12 text-center text-[var(--text-tertiary)]"><Search className="mx-auto mb-3 h-10 w-10 opacity-30" /><p className="text-base font-medium">Sin resultados para tu búsqueda.</p><p className="mt-1 text-sm">Probá con otro término o limpiá los filtros.</p></div>;
+  return (
+    <div className="p-12 text-center text-[var(--text-tertiary)]">
+      <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon className="h-7 w-7" /></span>
+      <p className="text-base font-bold text-[var(--text-primary)]">{msg}</p>
+      {hint && <p className="mx-auto mt-1 max-w-sm text-sm">{hint}</p>}
+      {cta && <button type="button" onClick={cta.onClick} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />{cta.label}</button>}
+    </div>
+  );
 }
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"><h3 className="mb-3 text-sm font-bold text-[var(--text-primary)]">{title}</h3><div className="space-y-2">{children}</div></div>;
