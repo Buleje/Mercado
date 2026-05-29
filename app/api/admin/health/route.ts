@@ -87,9 +87,12 @@ export async function GET(req: NextRequest) {
   // platform-scope friendly (DB/cache probes, recent order count, queue status).
   const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   const platformSession = platformToken ? await getPlatformSession(platformToken) : null;
+  // tenantId solo para sesiones de admin de tienda; superadmin (platform) ve global.
+  let scopeTenantId: string | null = null;
   if (!platformSession) {
     const auth = await requireAdmin(req, ["admin", "owner", "manager", "tienda_owner", "cajero"]);
     if (auth instanceof NextResponse) return auth;
+    scopeTenantId = auth.tenantId;
   }
 
   try {
@@ -98,16 +101,16 @@ export async function GET(req: NextRequest) {
     // Run probes in parallel
     const [db, cache] = await Promise.all([probeDB(), probeCache()]);
 
-    // Brandon 2026-05-16 (audit Info hardening): este count es global
-    // de TODOS los tenants — es una métrica operativa de salud de la
-    // plataforma (probe que la DB responde + hay tráfico). Admin de un
-    // tenant podría inferir tamaño total de la plataforma. Aceptable
-    // como hardening info-level: el endpoint /admin/health solo es
-    // útil para diagnóstico, no expone PII ni nombres de tenants.
-    // Si en el futuro queremos restringir más, mover a /api/superadmin/health.
-     
+    // Probe de tráfico reciente. Para admin de tienda se scopea por tenantId
+    // (audit 2026-05-29 — no filtrar volumen global de la plataforma); para
+    // superadmin (platform session) queda global como métrica de plataforma.
     const recentOrderCount = await prisma.order
-      .count({ where: { createdAt: { gte: new Date(Date.now() - 3_600_000) } } })
+      .count({
+        where: {
+          ...(scopeTenantId ? { tenantId: scopeTenantId } : {}),
+          createdAt: { gte: new Date(Date.now() - 3_600_000) },
+        },
+      })
       .catch(() => -1);
 
     const hasRedis = !!process.env.REDIS_URL;

@@ -463,16 +463,14 @@ export class DocumentsDB {
       where: { id: { in: ids }, tenantId, deletedAt: null },
       select: { id: true, tags: true },
     });
-    let count = 0;
-    for (const d of docs) {
-      if (d.tags.includes(tagN)) continue;
-      await prisma.document.update({
-        where: { id: d.id },
-        data: { tags: [...d.tags, tagN] },
-      });
-      count++;
-    }
-    return count;
+    // Batch: updates independientes en paralelo (era N+1 secuencial).
+    const toUpdate = docs.filter((d) => !d.tags.includes(tagN));
+    await Promise.all(
+      toUpdate.map((d) =>
+        prisma.document.update({ where: { id: d.id }, data: { tags: [...d.tags, tagN] } }),
+      ),
+    );
+    return toUpdate.length;
   }
 
   // ── Folders ────────────────────────────────────────────────────────────────

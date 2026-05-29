@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 
 /**
  * CampaignsDB
@@ -90,7 +90,7 @@ export const CampaignsDB = {
   },
 
   async create(tenantId: string, data: CreateData) {
-    return prisma.campaign.create({
+    const created = await prisma.campaign.create({
       data: {
         tenantId,
         name: data.name,
@@ -102,6 +102,8 @@ export const CampaignsDB = {
         totalAudience: data.totalAudience,
       },
     });
+    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
+    return created;
   },
 
   async getForTenant(tenantId: string, id: string) {
@@ -119,6 +121,7 @@ export const CampaignsDB = {
       update.sentAt = data.sentAt ? new Date(data.sentAt) : null;
     }
     const updated = await prisma.campaign.update({ where: { id }, data: update });
+    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
     return { previous: existing, updated };
   },
 
@@ -126,6 +129,7 @@ export const CampaignsDB = {
     const existing = await this.getForTenant(tenantId, id);
     if (!existing) return null;
     await prisma.campaign.delete({ where: { id } });
+    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
     return existing;
   },
 };

@@ -51,6 +51,13 @@ vi.mock("@/lib/queue", () => ({
   enqueueActivityLog: vi.fn(async () => {}),
 }));
 
+// next/cache: primitivas que requieren el store de Next — no-op en unit test.
+vi.mock("next/cache", () => ({
+  revalidateTag: vi.fn(),
+  cacheTag: vi.fn(),
+  cacheLife: vi.fn(),
+}));
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makePostRequest(body: unknown) {
