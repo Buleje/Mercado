@@ -181,8 +181,13 @@ export async function POST(req: NextRequest) {
     const lote = await CacaoDB.createLote(g.auth.tenantId, { ...parsed.data, createdBy: g.auth.username ?? "unknown" });
     return NextResponse.json({ lote }, { status: 201 });
   } catch (err) {
-    logger.error("[cacao.POST] failed", { error: String(err), tenantId: g.auth.tenantId, type });
-    return NextResponse.json({ error: "internal_error", message: String(err) }, { status: 500 });
+    const msg = String(err instanceof Error ? err.message : err);
+    const code = (err as { code?: string })?.code;
+    if (msg.includes("ventas_no_disponible") || code === "P2021" || /does not exist/i.test(msg)) {
+      return NextResponse.json({ error: "ventas_no_disponible", message: "El registro de ventas todavía no está disponible (falta aplicar la migración cacao_venta). Reintenta en unos minutos." }, { status: 503 });
+    }
+    logger.error("[cacao.POST] failed", { error: msg, tenantId: g.auth.tenantId, type });
+    return NextResponse.json({ error: "internal_error", message: msg }, { status: 500 });
   }
 }
 
@@ -223,7 +228,12 @@ export async function PATCH(req: NextRequest) {
     }
     return NextResponse.json({ producer: await CacaoDB.updateProducer(g.auth.tenantId, parsed.data.id, parsed.data.patch) });
   } catch (err) {
-    logger.error("[cacao.PATCH] failed", { error: String(err), tenantId: g.auth.tenantId });
+    const msg = String(err instanceof Error ? err.message : err);
+    const code = (err as { code?: string })?.code;
+    if (msg.includes("ventas_no_disponible") || code === "P2021" || /does not exist/i.test(msg)) {
+      return NextResponse.json({ error: "ventas_no_disponible", message: "El registro de ventas todavía no está disponible (falta aplicar la migración cacao_venta)." }, { status: 503 });
+    }
+    logger.error("[cacao.PATCH] failed", { error: msg, tenantId: g.auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

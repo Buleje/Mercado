@@ -669,6 +669,7 @@ export class CacaoDB {
 
   static async createVenta(tenantId: string, input: VentaInput) {
     if (!tenantId) throw new Error("tenantId is required");
+    if (!(prisma as { cacaoVenta?: unknown }).cacaoVenta) throw new Error("ventas_no_disponible");
     if (input.pesoKg == null || Number(input.pesoKg) <= 0) throw new Error("pesoKg must be > 0");
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
     const year = (input.fecha ?? new Date()).getUTCFullYear();
@@ -693,6 +694,7 @@ export class CacaoDB {
 
   static async annulVenta(tenantId: string, id: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
+    if (!(prisma as { cacaoVenta?: unknown }).cacaoVenta) throw new Error("ventas_no_disponible");
     const v = await prisma.cacaoVenta.update({
       where: { id, tenantId } satisfies Prisma.CacaoVentaWhereUniqueInput,
       data: { status: "anulado", annulledReason: reason?.trim() || null },
