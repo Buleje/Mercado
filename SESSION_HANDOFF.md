@@ -1,7 +1,7 @@
 # SESSION HANDOFF — 2026-05-29 (Cacao · modo autónomo)
 
 **Branch:** `chore/p0-audit-2026-05-28` · **Working tree:** todo commiteado.
-**Commits de la sesión:** 13 (`ff8e60f1` → `279c70d7`).
+**Commits de la sesión:** 19 (`ff8e60f1` → `17ae7fdf`). Ronda 2 (continuación): handoff + empty states (e851413e) + **fix global tokens danger en 15 archivos** (7abec9a1) + sub-tabs mobile scroll (17ae7fdf).
 **Gates:** `tsc --noEmit` 0 en cada paso · 30 tests cacao verdes · verificación e2e en navegador (tenant `main`) por feature. NO se corrió `npm run build` completo (recomendado antes de deploy). NO se pusheó.
 
 ## Qué se hizo (arsenal de mejoras de Cacao, ADR-128)
@@ -30,13 +30,14 @@ Ctrl+Shift+R en `/t/pizza-pucallpa/admin?tab=cacao-acopio` (o `main`). Recorré:
 ## Hallazgo importante
 🐛 `--data-danger-*` **no existe** en el design system (toda la familia indefinida). El token de rojo es `--data-error-*` (50/100/500/600/700). Arreglé los 9 componentes de cacao. **Quedan ~15 archivos del repo con el token roto** (rojos sin estilo) — fix global pendiente (1 sed). Ver memoria `reference_ds_token_danger_gotcha`.
 
-## Backlog v4 (no hecho — para greenlight)
-1. Empty states con CTA (onboarding primer lote/productor).
-2. Beneficio: avanzar estado (fermentando→secando→terminado) desde la tabla.
-3. Mi-precio histórico (chart de mi precio de compra en el tiempo vs internacional).
-4. Trazabilidad pública QR `/verificar-cacao` (como el forestal).
-5. **Fix global `--data-danger-*`** en los ~15 archivos restantes del repo.
-6. **Schema drift**: `CacaoProducer/Lote/Beneficio` se crearon vía Supabase MCP, NO en `prisma/migrations` → correr en prod antes de deploy.
+## Backlog v4 (estado)
+1. ✅ Empty states con CTA (onboarding) — hecho.
+2. ⬜ Beneficio: avanzar estado (fermentando→secando→terminado) — pendiente (necesita seed: en `main` todos terminado). Mejor diseño: "editar beneficio" (reusar form en modo PATCH).
+3. ⬜ Mi-precio histórico (chart en el tiempo) — necesita datos multi-día.
+4. ⬜ Trazabilidad pública QR `/verificar-cacao` (como el forestal).
+5. ✅ Fix global `--data-danger-*` → `--data-error-*` (15 archivos forestal/docs/inicio/superadmin) — hecho. Queda 1 bare `var(--data-danger)` en `adelantos/AnalisisView` (familia bare distinta).
+6. ⚠️ **Schema drift** (sin resolver): `CacaoProducer/Lote/Beneficio` se crearon vía Supabase MCP, NO en `prisma/migrations` → correr en prod antes de deploy.
+7. ✅ Mobile: sub-tabs en fila scrolleable — hecho.
 
 ## Notas operativas
 - Mercado: Yahoo Finance (`CC=F`, `PEN=X`, no-oficial) + Google News RSS — gratis, sin key, degradan con gracia. Cache 20min (precio/news) / 2h (narrativa IA).
