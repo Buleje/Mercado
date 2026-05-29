@@ -58,6 +58,8 @@ const RecetasModule             = dynamic(() => import("@/components/admin/Recet
 const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/forestal/CTPLibroOperaciones"), { loading: TabSpinner });
 // ADR-125 — Especialización forestal Títulos Habilitantes (LO-TH)
 const LothLibroOperaciones      = dynamic(() => import("@/components/admin/forestal/LothLibroOperaciones"), { loading: TabSpinner });
+// ADR-128 — Especialización agrícola: Acopio & Beneficio de Cacao
+const CacaoAcopio               = dynamic(() => import("@/components/admin/cacao/CacaoAcopio"), { loading: TabSpinner });
 const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/ScoringCrediticioTab"),      { loading: TabSpinner });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
 const StoreCustomizer           = dynamic(() => import("@/components/admin/StoreCustomizer"),           { loading: TabSpinner });
@@ -228,6 +230,7 @@ export function TabRouter({
   // sidebar pendiente Phase 4 — useEnabledSpecs hook).
   if (tab === "ctp-libro-operaciones") return <CTPLibroOperaciones />;
   if (tab === "loth-libro-operaciones") return <LothLibroOperaciones />;
+  if (tab === "cacao-acopio") return <CacaoAcopio />;
   if (tab === "scoring")   return <ScoringCrediticioTab />;
   if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;
 

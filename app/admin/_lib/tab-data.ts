@@ -49,6 +49,7 @@ import {
   Archive as FolderArchive,
   UserPlus,
   TreePine,
+  Leaf,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -105,6 +106,7 @@ export const ALL_TABS = [
   // ── ESPECIALIZACIONES (ADR-124 / ADR-125) — solo visibles si el tenant las habilita
   { id: "ctp-libro-operaciones" as Tab, label: "Libro CTP (Forestal)", icon: TreePine },
   { id: "loth-libro-operaciones" as Tab, label: "Libro Títulos Hab. (Forestal)", icon: TreePine },
+  { id: "cacao-acopio" as Tab, label: "Acopio de Cacao (Agrícola)", icon: Leaf },
 ] as const;
 
 /** Tipo auxiliar para un elemento del array ALL_TABS */

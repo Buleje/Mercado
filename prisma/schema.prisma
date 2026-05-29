@@ -4918,3 +4918,79 @@ model ForestCtpEntry {
   @@index([tenantId, gtfNumber])
   @@index([deletedAt])
 }
+
+// ─── Especialización AGRÍCOLA · Cacao (ADR-128) ────────────────────────────────
+// Acopio & beneficio de cacao en grano. Alineado a NTP 208.040 (cosecha/beneficio),
+// NTP-ISO 2451 (clasificación por defectos), NTP-ISO 1114 (prueba de corte),
+// NTP-ISO 2291 (humedad). Spec: spec:agricola:cacao-acopio.
+
+/// Productor de cacao (master). Base para trazabilidad y liquidación.
+model CacaoProducer {
+  id                String    @id @default(cuid())
+  tenantId          String
+  codigo            String?   // P-001 (correlativo legible)
+  nombre            String
+  dni               String?
+  sector            String?   // caserío / sector / comunidad
+  parcelaHa         Decimal?  @db.Decimal(10, 2) // hectáreas de cacao
+  variedad          String?   // CCN-51 | criollo | trinitario | forastero | nacional
+  certificacion     String?   // organico | comercio_justo | convencional
+  altitudMsnm       Int?
+  telefono          String?
+  observaciones     String?
+  status            String    @default("activo") // activo | inactivo
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  @@index([tenantId, status])
+  @@index([tenantId, nombre])
+  @@index([deletedAt])
+}
+
+/// Lote de acopio de cacao + control de calidad (prueba de corte) + liquidación.
+model CacaoLote {
+  id                 String    @id @default(cuid())
+  tenantId           String
+  loteCode           String    // L-2026-001
+  productorId        String?   // ref. app-level a CacaoProducer
+  productorNombre    String?   // snapshot del nombre al momento del acopio
+  fecha              DateTime  @default(now())
+
+  variedad           String?
+  tipoGrano          String    @default("seco") // humedo | seco
+  pesoKg             Decimal   @db.Decimal(12, 2)
+  humedadPct         Decimal?  @db.Decimal(5, 2) // NTP-ISO 2291; meta ≤ 7%
+
+  // Liquidación al productor
+  precioPorKg        Decimal?  @db.Decimal(10, 2)
+  premioPorKg        Decimal?  @db.Decimal(10, 2) // premio por calidad / fino de aroma
+  totalPagado        Decimal?  @db.Decimal(14, 2) // (precio + premio) × pesoKg
+
+  // Prueba de corte (NTP-ISO 1114) — % sobre granos evaluados
+  cutGranos          Int?      // n° de granos evaluados
+  pctBienFermentado  Decimal?  @db.Decimal(5, 2) // marrón
+  pctVioleta         Decimal?  @db.Decimal(5, 2) // parcialmente fermentado
+  pctPizarroso       Decimal?  @db.Decimal(5, 2) // slaty / no fermentado
+  pctMohoso          Decimal?  @db.Decimal(5, 2) // moldy
+  granosPor100g      Int?
+  pctCascara         Decimal?  @db.Decimal(5, 2)
+  pctImpurezas       Decimal?  @db.Decimal(5, 2)
+  indiceFermentacion Decimal?  @db.Decimal(5, 2) // computado
+  grado              String?   // computado: I | II | fuera_norma
+
+  destino            String?
+  observaciones      String?
+  status             String    @default("registrado") // registrado | anulado
+  annulledReason     String?
+  createdBy          String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  @@index([tenantId, fecha(sort: Desc)])
+  @@index([tenantId, productorId])
+  @@index([tenantId, loteCode])
+  @@index([deletedAt])
+}

@@ -39,6 +39,7 @@ export type SpecializationKey =
   | "spec:forestal:ctp-libro"
   | "spec:forestal:loth-libro"
   | "spec:forestal:gtf-emisor"
+  | "spec:agricola:cacao-acopio"
   | "spec:salud:recetas-medicas"
   | "spec:textil:cuero";
 
@@ -73,6 +74,16 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     requires: ["spec:forestal:ctp-libro"],
     recommendedIndustry: "madereria",
     status: "coming-soon",
+  },
+  "spec:agricola:cacao-acopio": {
+    key: "spec:agricola:cacao-acopio",
+    vertical: "agricola",
+    name: "Acopio & Beneficio de Cacao",
+    description:
+      "Libro de acopio de cacao en grano: productores, lotes, calidad (prueba de corte NTP-ISO 1114 + humedad NTP-ISO 2291), grado por defectos (NTP-ISO 2451) y liquidación al productor. Alineado a NTP 208.040.",
+    moduleId: "cacao-acopio",
+    recommendedIndustry: "agricultura",
+    status: "available",
   },
   "spec:salud:recetas-medicas": {
     key: "spec:salud:recetas-medicas",
