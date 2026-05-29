@@ -48,8 +48,27 @@ const loteSchema = z.object({
   observaciones: z.string().trim().max(1000).nullable().optional(),
 });
 
+const beneficioSchema = z.object({
+  loteId: z.string().trim().max(60).nullable().optional(),
+  loteCode: z.string().trim().max(40).nullable().optional(),
+  fermInicio: z.coerce.date().nullable().optional(),
+  fermDias: z.coerce.number().int().min(0).max(60).nullable().optional(),
+  fermVolteos: z.coerce.number().int().min(0).max(100).nullable().optional(),
+  fermTempMaxC: z.coerce.number().min(0).max(80).nullable().optional(),
+  tipoFermentador: z.enum(["cajon", "saco", "monton", "tina"]).nullable().optional(),
+  secInicio: z.coerce.date().nullable().optional(),
+  secDias: z.coerce.number().int().min(0).max(60).nullable().optional(),
+  metodoSecado: z.enum(["solar", "tunel", "mecanico"]).nullable().optional(),
+  humedadInicial: pct, humedadFinal: pct,
+  pesoHumedoKg: z.coerce.number().min(0).max(9_999_999).nullable().optional(),
+  pesoSecoKg: z.coerce.number().min(0).max(9_999_999).nullable().optional(),
+  estado: z.enum(["fermentando", "secando", "terminado"]).optional(),
+  observaciones: z.string().trim().max(1000).nullable().optional(),
+});
+
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("annul_lote"), id: z.string().trim().min(1), reason: z.string().trim().min(3).max(500) }),
+  z.object({ action: z.literal("annul_beneficio"), id: z.string().trim().min(1) }),
   z.object({ action: z.literal("update_producer"), id: z.string().trim().min(1), patch: producerSchema.partial() }),
 ]);
 
@@ -71,6 +90,8 @@ export async function GET(req: NextRequest) {
   try {
     if (view === "producers") return NextResponse.json({ producers: await CacaoDB.listProducers(g.auth.tenantId, { search }) });
     if (view === "stats") return NextResponse.json({ stats: await CacaoDB.stats(g.auth.tenantId) });
+    if (view === "beneficios") return NextResponse.json({ beneficios: await CacaoDB.listBeneficios(g.auth.tenantId, { search }) });
+    if (view === "lotes-disponibles") return NextResponse.json({ lotes: await CacaoDB.availableLotesForBeneficio(g.auth.tenantId) });
     return NextResponse.json({ lotes: await CacaoDB.listLotes(g.auth.tenantId, { search }) });
   } catch (err) {
     logger.error("[cacao.GET] failed", { error: String(err), tenantId: g.auth.tenantId });
@@ -90,6 +111,12 @@ export async function POST(req: NextRequest) {
       if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
       const producer = await CacaoDB.createProducer(g.auth.tenantId, { ...parsed.data, createdBy: g.auth.username ?? "unknown" });
       return NextResponse.json({ producer }, { status: 201 });
+    }
+    if (type === "beneficio") {
+      const parsed = beneficioSchema.safeParse(body);
+      if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+      const beneficio = await CacaoDB.createBeneficio(g.auth.tenantId, { ...parsed.data, createdBy: g.auth.username ?? "unknown" });
+      return NextResponse.json({ beneficio }, { status: 201 });
     }
     const parsed = loteSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
@@ -111,6 +138,9 @@ export async function PATCH(req: NextRequest) {
   try {
     if (parsed.data.action === "annul_lote") {
       return NextResponse.json({ lote: await CacaoDB.annulLote(g.auth.tenantId, parsed.data.id, parsed.data.reason) });
+    }
+    if (parsed.data.action === "annul_beneficio") {
+      return NextResponse.json({ beneficio: await CacaoDB.annulBeneficio(g.auth.tenantId, parsed.data.id) });
     }
     return NextResponse.json({ producer: await CacaoDB.updateProducer(g.auth.tenantId, parsed.data.id, parsed.data.patch) });
   } catch (err) {

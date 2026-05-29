@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cacaoGrade, cacaoFermentationIndex, cacaoLiquidacion, cumpleHumedad } from "@/lib/cacao/cacao-quality";
+import { cacaoGrade, cacaoFermentationIndex, cacaoLiquidacion, cumpleHumedad, cacaoMerma } from "@/lib/cacao/cacao-quality";
 
 /** Lógica de calidad/liquidación de cacao (ADR-128). Referencias NTP-ISO 2451 / 1114 / 2291. */
 
@@ -46,5 +46,17 @@ describe("cumpleHumedad — meta ≤ 7% (NTP 208.040)", () => {
   it("6.8 cumple, 7.5 no", () => {
     expect(cumpleHumedad(6.8)).toBe(true);
     expect(cumpleHumedad(7.5)).toBe(false);
+  });
+});
+
+describe("cacaoMerma — pérdida húmedo→seco (beneficio v2)", () => {
+  it("100 kg baba → 40 kg seco = 60% merma", () => {
+    expect(cacaoMerma(100, 40)).toBe(60);
+  });
+  it("null si el seco supera al húmedo (dato inválido)", () => {
+    expect(cacaoMerma(40, 100)).toBeNull();
+  });
+  it("null sin datos", () => {
+    expect(cacaoMerma(null, 40)).toBeNull();
   });
 });

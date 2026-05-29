@@ -73,3 +73,21 @@ export function cacaoLiquidacion(
 export function cumpleHumedad(humedadPct: number | null | undefined): boolean {
   return humedadPct != null && Number(humedadPct) <= HUMEDAD_META_PCT;
 }
+
+// ─── Beneficio (post-cosecha): fermentación + secado (ADR-128 v2) ──────────
+
+export const CACAO_FERMENTADORES = ["cajon", "saco", "monton", "tina"] as const;
+export const CACAO_SECADO = ["solar", "tunel", "mecanico"] as const;
+export const CACAO_BENEFICIO_ESTADOS = ["fermentando", "secando", "terminado"] as const;
+
+/**
+ * Merma del beneficio húmedo→seco (%): cuánto peso se pierde al fermentar+secar.
+ * Típico en cacao ~58-62% (de 100 kg baba → ~38-42 kg seco). Retorna null si
+ * faltan datos o el seco supera al húmedo (dato inválido).
+ */
+export function cacaoMerma(pesoHumedoKg: number | null | undefined, pesoSecoKg: number | null | undefined): number | null {
+  const h = num(pesoHumedoKg), s = num(pesoSecoKg);
+  if (h <= 0 || s <= 0 || s > h) return null;
+  return Math.round((1 - s / h) * 1000) / 10; // 1 decimal
+}
+

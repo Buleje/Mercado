@@ -4994,3 +4994,43 @@ model CacaoLote {
   @@index([tenantId, loteCode])
   @@index([deletedAt])
 }
+
+/// Beneficio (post-cosecha) de un lote: fermentación + secado (ADR-128 v2).
+/// Determinante de la calidad/fino de aroma. NTP 208.040 buenas prácticas.
+model CacaoBeneficio {
+  id                String    @id @default(cuid())
+  tenantId          String
+  loteId            String?   // ref. app-level a CacaoLote
+  loteCode          String?   // snapshot
+
+  // Fermentación
+  fermInicio        DateTime?
+  fermDias          Int?      // días en fermentación (típico 5-7)
+  fermVolteos       Int?      // n° de volteos
+  fermTempMaxC      Decimal?  @db.Decimal(5, 2) // temperatura máxima alcanzada
+  tipoFermentador   String?   // cajon | saco | monton | tina
+
+  // Secado
+  secInicio         DateTime?
+  secDias           Int?
+  metodoSecado      String?   // solar | tunel | mecanico
+  humedadInicial    Decimal?  @db.Decimal(5, 2)
+  humedadFinal      Decimal?  @db.Decimal(5, 2) // meta ≤ 7% (NTP 208.040)
+
+  // Rendimiento (merma húmedo→seco, típico ~60%)
+  pesoHumedoKg      Decimal?  @db.Decimal(12, 2)
+  pesoSecoKg        Decimal?  @db.Decimal(12, 2)
+  mermaPct          Decimal?  @db.Decimal(5, 2) // computado
+
+  estado            String    @default("fermentando") // fermentando | secando | terminado
+  observaciones     String?
+  status            String    @default("registrado") // registrado | anulado
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  @@index([tenantId, estado])
+  @@index([tenantId, loteId])
+  @@index([deletedAt])
+}

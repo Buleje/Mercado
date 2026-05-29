@@ -6,7 +6,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
-import { cacaoFermentationIndex, cacaoGrade, cacaoLiquidacion } from "@/lib/cacao/cacao-quality";
+import { cacaoFermentationIndex, cacaoGrade, cacaoLiquidacion, cacaoMerma } from "@/lib/cacao/cacao-quality";
 
 const CACHE_PREFIX = "cacao";
 const dec = (v: number | string | null | undefined) =>
@@ -29,6 +29,16 @@ export interface LoteInput {
   pctPizarroso?: number | string | null; pctMohoso?: number | string | null;
   granosPor100g?: number | null; pctCascara?: number | string | null; pctImpurezas?: number | string | null;
   destino?: string | null; observaciones?: string | null; createdBy: string;
+}
+
+export interface BeneficioInput {
+  loteId?: string | null; loteCode?: string | null;
+  fermInicio?: Date | null; fermDias?: number | null; fermVolteos?: number | null;
+  fermTempMaxC?: number | string | null; tipoFermentador?: string | null;
+  secInicio?: Date | null; secDias?: number | null; metodoSecado?: string | null;
+  humedadInicial?: number | string | null; humedadFinal?: number | string | null;
+  pesoHumedoKg?: number | string | null; pesoSecoKg?: number | string | null;
+  estado?: string; observaciones?: string | null; createdBy: string;
 }
 
 export class CacaoDB {
@@ -149,6 +159,61 @@ export class CacaoDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
     return l;
+  }
+
+  // ─── Beneficio (fermentación + secado) ───────────────────────────────
+  static async listBeneficios(tenantId: string, filters: { search?: string } = {}) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const where: Prisma.CacaoBeneficioWhereInput = { tenantId, deletedAt: null, status: "registrado" };
+    if (filters.search) where.loteCode = { contains: filters.search, mode: "insensitive" };
+    return prisma.cacaoBeneficio.findMany({ where, orderBy: { createdAt: "desc" }, take: 500 });
+  }
+
+  /** Lotes de acopio (húmedos sobre todo) seleccionables para registrar su beneficio. */
+  static async availableLotesForBeneficio(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [lotes, beneficios] = await Promise.all([
+      prisma.cacaoLote.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        orderBy: { fecha: "desc" }, take: 300,
+        select: { id: true, loteCode: true, variedad: true, pesoKg: true, tipoGrano: true, humedadPct: true },
+      }),
+      prisma.cacaoBeneficio.findMany({ where: { tenantId, deletedAt: null, status: "registrado" }, select: { loteId: true } }),
+    ]);
+    const withBeneficio = new Set(beneficios.map((b) => b.loteId).filter(Boolean));
+    return lotes.filter((l) => !withBeneficio.has(l.id));
+  }
+
+  static async createBeneficio(tenantId: string, input: BeneficioInput) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!input.createdBy?.trim()) throw new Error("createdBy is required");
+    const merma = cacaoMerma(n(input.pesoHumedoKg), n(input.pesoSecoKg));
+    // estado: si hay humedad final/peso seco → terminado; si hay secado → secando; else fermentando
+    const estado = input.estado?.trim()
+      || (input.humedadFinal != null || input.pesoSecoKg != null ? "terminado" : input.secInicio ? "secando" : "fermentando");
+    const b = await prisma.cacaoBeneficio.create({
+      data: {
+        tenantId, loteId: input.loteId?.trim() || null, loteCode: input.loteCode?.trim() || null,
+        fermInicio: input.fermInicio ?? null, fermDias: input.fermDias ?? null, fermVolteos: input.fermVolteos ?? null,
+        fermTempMaxC: dec(input.fermTempMaxC), tipoFermentador: input.tipoFermentador?.trim() || null,
+        secInicio: input.secInicio ?? null, secDias: input.secDias ?? null, metodoSecado: input.metodoSecado?.trim() || null,
+        humedadInicial: dec(input.humedadInicial), humedadFinal: dec(input.humedadFinal),
+        pesoHumedoKg: dec(input.pesoHumedoKg), pesoSecoKg: dec(input.pesoSecoKg), mermaPct: dec(merma),
+        estado, observaciones: input.observaciones?.trim() || null, status: "registrado", createdBy: input.createdBy,
+      },
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return b;
+  }
+
+  static async annulBeneficio(tenantId: string, id: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const b = await prisma.cacaoBeneficio.update({
+      where: { id, tenantId } satisfies Prisma.CacaoBeneficioWhereUniqueInput,
+      data: { status: "anulado" },
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return b;
   }
 
   /** Resumen: kg acopiados, valor pagado, calidad, distribución por variedad/grado. */

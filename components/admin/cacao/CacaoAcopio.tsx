@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Leaf, Plus, RefreshCw, Search, Users, Scale, Coins, PackageCheck, AlertCircle, X as XIcon, BarChart3,
+  Leaf, Plus, RefreshCw, Search, Users, Scale, Coins, PackageCheck, AlertCircle, X as XIcon, BarChart3, Droplets,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -14,8 +14,13 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 import CacaoLoteForm from "./CacaoLoteForm";
 import CacaoProducerForm from "./CacaoProducerForm";
+import CacaoBeneficioForm from "./CacaoBeneficioForm";
 
-type View = "acopio" | "productores" | "resumen";
+type View = "acopio" | "beneficio" | "productores" | "resumen";
+interface Beneficio {
+  id: string; loteCode: string | null; estado: string; fermDias: number | null; secDias: number | null;
+  metodoSecado: string | null; humedadFinal: string | null; pesoHumedoKg: string | null; pesoSecoKg: string | null; mermaPct: string | null;
+}
 interface Lote {
   id: string; loteCode: string; fecha: string; productorNombre: string | null; variedad: string | null;
   tipoGrano: string; pesoKg: string; humedadPct: string | null; precioPorKg: string | null; totalPagado: string | null;
@@ -31,27 +36,35 @@ const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("
 const n2 = (v: string | number | null) => (v == null ? "—" : Number(v).toFixed(2));
 const VIEWS: { key: View; label: string; icon: typeof Leaf; hint: string }[] = [
   { key: "acopio", label: "Acopio", icon: PackageCheck, hint: "Lotes recibidos" },
+  { key: "beneficio", label: "Beneficio", icon: Droplets, hint: "Fermentación + secado" },
   { key: "productores", label: "Productores", icon: Users, hint: "Proveedores" },
   { key: "resumen", label: "Resumen", icon: BarChart3, hint: "KPIs de campaña" },
 ];
+const ESTADO_BENEFICIO: Record<string, { label: string; cls: string }> = {
+  fermentando: { label: "Fermentando", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" },
+  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-900)]" },
+  terminado: { label: "Terminado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-900)]" },
+};
 
 export default function CacaoAcopio() {
   const [view, setView] = useState<View>("acopio");
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [producers, setProducers] = useState<Producer[]>([]);
+  const [beneficios, setBeneficios] = useState<Beneficio[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showLote, setShowLote] = useState(false);
   const [showProducer, setShowProducer] = useState(false);
+  const [showBeneficio, setShowBeneficio] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
 
   const load = useCallback(async (v: View) => {
     setLoading(true); setError(null);
     try {
-      const param = v === "productores" ? "producers" : v === "resumen" ? "stats" : "lotes";
+      const param = v === "productores" ? "producers" : v === "resumen" ? "stats" : v === "beneficio" ? "beneficios" : "lotes";
       const q = new URLSearchParams({ view: param });
       if (search.trim() && v !== "resumen") q.set("search", search.trim());
       const r = await fetch(`/api/admin/cacao?${q}`, { credentials: "include" });
@@ -59,6 +72,7 @@ export default function CacaoAcopio() {
       const d = await r.json();
       if (v === "productores") setProducers(d.producers ?? []);
       else if (v === "resumen") setStats(d.stats ?? null);
+      else if (v === "beneficio") setBeneficios(d.beneficios ?? []);
       else setLotes(d.lotes ?? []);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
@@ -90,6 +104,8 @@ export default function CacaoAcopio() {
           ? <button type="button" onClick={() => setShowProducer(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nuevo productor</button>
           : view === "acopio"
           ? <button type="button" onClick={() => setShowLote(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nuevo lote</button>
+          : view === "beneficio"
+          ? <button type="button" onClick={() => setShowBeneficio(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nuevo beneficio</button>
           : null}
       </AdminModuleHeader>
 
@@ -173,6 +189,39 @@ export default function CacaoAcopio() {
         </>
       )}
 
+      {/* BENEFICIO */}
+      {view === "beneficio" && (
+        <>
+          <SearchBar value={search} onChange={setSearch} onEnter={() => load("beneficio")} placeholder="Buscar por código de lote…" />
+          <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--surface-sunken)] text-left"><tr>
+                <Th>Lote</Th><Th>Estado</Th><Th className="text-right">Ferm. (días)</Th><Th className="text-right">Secado (días)</Th><Th>Método</Th>
+                <Th className="text-right">Hum. final</Th><Th className="text-right">Húmedo→Seco</Th><Th className="text-right">Merma</Th>
+              </tr></thead>
+              <tbody>
+                {beneficios.map((b) => {
+                  const est = ESTADO_BENEFICIO[b.estado] ?? { label: b.estado, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" };
+                  return (
+                    <tr key={b.id} className="border-t border-[var(--rule-soft)]">
+                      <Td><span className="font-mono text-xs font-bold text-[var(--text-primary)]">{b.loteCode ?? "—"}</span></Td>
+                      <Td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${est.cls}`}>{est.label}</span></Td>
+                      <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.fermDias ?? "—"}</Td>
+                      <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.secDias ?? "—"}</Td>
+                      <Td className="text-[var(--text-secondary)]">{b.metodoSecado ?? "—"}</Td>
+                      <Td className="text-right font-mono tabular-nums"><span className={b.humedadFinal && Number(b.humedadFinal) > 7 ? "text-[var(--data-warning-700)]" : "text-[var(--text-secondary)]"}>{b.humedadFinal ? `${Number(b.humedadFinal).toFixed(1)}%` : "—"}</span></Td>
+                      <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.pesoHumedoKg ? n2(b.pesoHumedoKg) : "—"} → {b.pesoSecoKg ? n2(b.pesoSecoKg) : "—"}</Td>
+                      <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{b.mermaPct ? `${Number(b.mermaPct).toFixed(1)}%` : "—"}</Td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <EmptyOrLoading loading={loading} empty={beneficios.length === 0} icon={Droplets} msg="Sin beneficios registrados. Registrá la fermentación/secado de un lote." />
+          </div>
+        </>
+      )}
+
       {/* RESUMEN */}
       {view === "resumen" && stats && (
         <div className="space-y-4">
@@ -198,6 +247,7 @@ export default function CacaoAcopio() {
 
       {showLote && <CacaoLoteForm onClose={() => setShowLote(false)} onSaved={(o) => { if (!o?.keepOpen) setShowLote(false); load("acopio"); }} />}
       {showProducer && <CacaoProducerForm onClose={() => setShowProducer(false)} onSaved={() => { setShowProducer(false); load("productores"); }} />}
+      {showBeneficio && <CacaoBeneficioForm onClose={() => setShowBeneficio(false)} onSaved={() => { setShowBeneficio(false); load("beneficio"); }} />}
 
       {annulId && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setAnnulId(null)}>
