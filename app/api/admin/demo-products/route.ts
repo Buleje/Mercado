@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { ProductsDB } from "@/lib/db/products.db";
+import { prisma } from "@/lib/prisma"; // DELETE handler aún usa prisma directo (migración futura — requiere $transaction multi-modelo)
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -74,8 +75,7 @@ export async function POST(req: NextRequest) {
   try {
     // SECURITY: count scoped al tenant. Sin esto, un tenant nuevo veía
     // currentCount=30 (de otro tenant) y nunca se sembraban sus demos.
-     
-    const currentCount = await prisma.product.count({ where: { tenantId: auth.tenantId } });
+    const currentCount = await ProductsDB.countForTenant(auth.tenantId);
     if (currentCount >= 10) {
       return NextResponse.json({
         created: 0,
@@ -85,22 +85,18 @@ export async function POST(req: NextRequest) {
 
     let created = 0;
     for (const p of PRODUCTOS_BODEGA) {
-       
-      await prisma.product.create({
-        data: {
-          tenantId: auth.tenantId,
-          name: p.name,
-          category: p.category,
-          price: p.price,
-          costPrice: p.costPrice,
-          unit: p.unit,
-          stock: p.stock,
-          stockMin: p.stockMin,
-          stockMax: p.stockMax,
-          image: "",
-          active: true,
-          barcode: `7750${Math.floor(100000 + Math.random() * 900000)}`,
-        },
+      await ProductsDB.createDemo(auth.tenantId, {
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        costPrice: p.costPrice,
+        unit: p.unit,
+        stock: p.stock,
+        stockMin: p.stockMin,
+        stockMax: p.stockMax,
+        image: "",
+        active: true,
+        barcode: `7750${Math.floor(100000 + Math.random() * 900000)}`,
       });
       created++;
     }

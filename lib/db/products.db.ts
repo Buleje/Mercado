@@ -7,6 +7,7 @@ import type {
   Bundle as PBundle,
   BundleItem as PBundleItem,
 } from "@/lib/generated/prisma/client";
+import type { Prisma } from "@/lib/generated/prisma/client";
 import type { DbProduct } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
@@ -280,6 +281,94 @@ export const ProductsDB = {
     });
     revalidateTag(`tenant:${tenantId}:products`, "max");
     return result.count;
+  },
+
+  /**
+   * Devuelve { name, barcode } de todos los productos no eliminados del tenant.
+   * Usado por bulk-import para deduplicar contra el catálogo existente.
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  async findExistingForImport(
+    tenantId: string,
+  ): Promise<Array<{ name: string | null; barcode: string | null }>> {
+    return prisma.product.findMany({
+      where: { tenantId, deletedAt: null },
+      select: { name: true, barcode: true },
+    });
+  },
+
+  /**
+   * Inserta un batch de productos en masa.
+   * Cada row DEBE incluir tenantId. Preserva skipDuplicates:true igual que
+   * el createMany original del bulk-import route.
+   *
+   * Devuelve el count de filas creadas.
+   * tenantId SIEMPRE 1er parámetro (para consistencia de firma).
+   */
+  async bulkCreate(
+    tenantId: string,
+    rows: Prisma.ProductCreateManyInput[],
+  ): Promise<number> {
+    if (rows.length === 0) return 0;
+    const result = await prisma.product.createMany({
+      data: rows,
+      skipDuplicates: true,
+    });
+    revalidateTag(`tenant:${tenantId}:products`, "max");
+    return result.count;
+  },
+
+  /**
+   * Cuenta productos del tenant (sin filtro deletedAt — igual que el count
+   * original del demo-products route para decidir si ya tiene datos).
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  async countForTenant(tenantId: string): Promise<number> {
+    return prisma.product.count({ where: { tenantId } });
+  },
+
+  /**
+   * Crea un producto demo con los campos exactos del seeder de bodega peruana.
+   * Equivalente al prisma.product.create original del demo-products route.
+   * Invalida el cache de getAll tras cada insert.
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  async createDemo(
+    tenantId: string,
+    data: {
+      name: string;
+      category: string;
+      price: number;
+      costPrice: number;
+      unit: string;
+      stock: number;
+      stockMin: number;
+      stockMax: number;
+      image: string;
+      active: boolean;
+      barcode: string;
+    },
+  ): Promise<void> {
+    await prisma.product.create({
+      data: {
+        tenantId,
+        name: data.name,
+        category: data.category,
+        price: data.price,
+        costPrice: data.costPrice,
+        unit: data.unit,
+        stock: data.stock,
+        stockMin: data.stockMin,
+        stockMax: data.stockMax,
+        image: data.image,
+        active: data.active,
+        barcode: data.barcode,
+      },
+    });
+    revalidateTag(`tenant:${tenantId}:products`, "max");
   },
 };
 

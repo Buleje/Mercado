@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
-import { prisma } from "@/lib/prisma";
+import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -105,10 +105,7 @@ export async function POST(req: NextRequest) {
   const existingNames = new Set<string>();
   const existingBarcodes = new Set<string>();
   try {
-    const existing = await prisma.product.findMany({
-      where: { tenantId, deletedAt: null },
-      select: { name: true, barcode: true },
-    });
+    const existing = await ProductsDB.findExistingForImport(tenantId);
     existing.forEach((e) => {
       if (e.name) existingNames.add(e.name.trim().toLowerCase());
       if (e.barcode) existingBarcodes.add(e.barcode.trim());
@@ -147,8 +144,9 @@ export async function POST(req: NextRequest) {
   for (let i = 0; i < uniqueRows.length; i += BATCH_SIZE) {
     const slice = uniqueRows.slice(i, i + BATCH_SIZE);
     try {
-      const result = await prisma.product.createMany({
-        data: slice.map((r) => ({
+      const count = await ProductsDB.bulkCreate(
+        tenantId,
+        slice.map((r) => ({
           tenantId,
           name:        r.name,
           category:    r.category,
@@ -164,9 +162,8 @@ export async function POST(req: NextRequest) {
           badge:       r.badge ?? null,
           active:      r.active,
         })),
-        skipDuplicates: true,
-      });
-      created += result.count;
+      );
+      created += count;
     } catch (err) {
       logger.error("[bulk-import] batch insert failed", { batch: i / BATCH_SIZE, error: String(err) });
       errors.push({ row: i + 1, message: `Error al insertar batch ${i / BATCH_SIZE + 1}: ${(err as Error).message}` });
