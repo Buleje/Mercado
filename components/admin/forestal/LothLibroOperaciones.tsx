@@ -19,9 +19,14 @@ import {
   FileText,
   ShieldAlert,
   Ban,
+  Download,
+  Printer,
+  FileSpreadsheet,
+  ChevronDown,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { LOTH_SECTIONS, type LothSection, type LothEntryDTO } from "@/lib/forestal/loth-constants";
 import LothEntryForm, { SECTION_META } from "./LothEntryForm";
@@ -50,6 +55,15 @@ interface SectionStat {
 type Col = { key: string; label: string; align?: "right"; render: (e: LothEntry) => React.ReactNode };
 
 const num = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
+
+/** Días entre actividad (entryDate) y registro (createdAt). >15 = fuera de plazo SERFOR. */
+function lateDaysOf(e: LothEntry): number {
+  const act = e.entryDate ? new Date(e.entryDate).getTime() : 0;
+  const reg = (e as { createdAt?: string }).createdAt ? new Date((e as { createdAt?: string }).createdAt as string).getTime() : 0;
+  if (!act || !reg) return 0;
+  return Math.max(0, Math.floor((reg - act) / 86_400_000));
+}
+const PLAZO_DIAS = 15;
 
 const COLS: Record<LothSection, Col[]> = {
   tala: [
@@ -110,6 +124,22 @@ export default function LothLibroOperaciones() {
   const [pending, setPending] = useState<string | null>(null);
   const [view, setView] = useState<"secciones" | "trazabilidad" | "plan" | "gtf">("secciones");
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
+  const [exportMenu, setExportMenu] = useState(false);
+  const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
+
+  async function doExport(kind: "pdf" | "excel") {
+    setExportMenu(false);
+    setExporting(kind);
+    setError(null);
+    try {
+      if (kind === "excel") await downloadLothExcel();
+      else await printLothLibro();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setExporting(null);
+    }
+  }
 
   // Solo la lista de la sección activa — corre en cada cambio de sección/búsqueda.
   const loadEntries = useCallback(async () => {
@@ -236,6 +266,41 @@ export default function LothLibroOperaciones() {
           <FileText className="h-4 w-4" />
           <span>{caratula ? "Carátula" : "Configurar carátula"}</span>
         </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setExportMenu((v) => !v)}
+            disabled={exporting !== null}
+            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+          >
+            {exporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span>{exporting === "excel" ? "Generando…" : exporting === "pdf" ? "Abriendo…" : "Exportar"}</span>
+            <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+          </button>
+          {exportMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setExportMenu(false)} />
+              <div className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
+                <button
+                  type="button"
+                  onClick={() => doExport("pdf")}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-[var(--surface-canvas)]"
+                >
+                  <Printer className="h-4 w-4 text-[var(--data-danger-600)]" />
+                  <span><b className="block text-[var(--text-primary)]">PDF formato SERFOR</b><span className="text-xs text-[var(--text-tertiary)]">Carátula + 6 secciones, para imprimir/firmar</span></span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => doExport("excel")}
+                  className="flex w-full items-center gap-3 border-t border-[var(--rule-soft)] px-4 py-3 text-left text-sm transition-colors hover:bg-[var(--surface-canvas)]"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-[var(--data-success-600)]" />
+                  <span><b className="block text-[var(--text-primary)]">Excel (.xlsx) editable</b><span className="text-xs text-[var(--text-tertiary)]">1 hoja por sección + resumen</span></span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <button
           type="button"
           onClick={refreshAll}
@@ -404,6 +469,14 @@ export default function LothLibroOperaciones() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       {e.discarded && <Tag tone="danger">descartado</Tag>}
                       {annulled && <Tag tone="danger">ANULADO</Tag>}
+                      {!annulled && lateDaysOf(e) > PLAZO_DIAS && (
+                        <span
+                          title={`Registrado ${lateDaysOf(e)} días después de la actividad — SERFOR exige registro dentro de ${PLAZO_DIAS} días`}
+                          className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-900)]"
+                        >
+                          fuera de plazo · {lateDaysOf(e)}d
+                        </span>
+                      )}
                       {e.observations && <span className="text-xs text-[var(--text-tertiary)]">{e.observations}</span>}
                       {annulled && e.annulledReason && <span className="text-xs text-[var(--data-danger-700)]">· {e.annulledReason}</span>}
                     </div>
