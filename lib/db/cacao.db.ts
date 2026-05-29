@@ -13,6 +13,23 @@ const dec = (v: number | string | null | undefined) =>
   v === null || v === undefined || v === "" ? null : new Prisma.Decimal(v);
 const n = (v: number | string | null | undefined) => (v == null || v === "" ? null : Number(v));
 
+/**
+ * Lee de CacaoVenta tolerando que la tabla aún no exista (drift pre-deploy) o
+ * que el cliente Prisma en memoria sea anterior al modelo (server sin reiniciar).
+ * En esos casos degrada a `fallback` en vez de romper inventario/stats con 500.
+ */
+async function safeVenta<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+  if (!(prisma as { cacaoVenta?: unknown }).cacaoVenta) return fallback;
+  try {
+    return await fn();
+  } catch (e) {
+    const code = (e as { code?: string })?.code;
+    const msg = String(e instanceof Error ? e.message : e);
+    if (code === "P2021" || /does not exist|relation .* does not exist/i.test(msg)) return fallback;
+    throw e;
+  }
+}
+
 export interface ProducerInput {
   codigo?: string | null; nombre: string; dni?: string | null; sector?: string | null;
   parcelaHa?: number | string | null; variedad?: string | null; certificacion?: string | null;
@@ -491,10 +508,10 @@ export class CacaoDB {
         where: { tenantId, deletedAt: null, status: "registrado" },
         select: { loteId: true, loteCode: true, estado: true, pesoHumedoKg: true, pesoSecoKg: true, fermInicio: true, secInicio: true, createdAt: true },
       }),
-      prisma.cacaoVenta.findMany({
+      safeVenta(() => prisma.cacaoVenta.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
         select: { pesoKg: true, totalPen: true },
-      }),
+      }), [] as { pesoKg: Prisma.Decimal | null; totalPen: Prisma.Decimal | null }[]),
     ]);
     const r2 = (x: number) => Math.round(x * 100) / 100;
     const loteById = new Map(lotes.map((l) => [l.id, l]));
@@ -647,7 +664,7 @@ export class CacaoDB {
       { ventaCode: { contains: filters.search, mode: "insensitive" } },
       { compradorNombre: { contains: filters.search, mode: "insensitive" } },
     ];
-    return prisma.cacaoVenta.findMany({ where, orderBy: { fecha: "desc" }, take: 500 });
+    return safeVenta(() => prisma.cacaoVenta.findMany({ where, orderBy: { fecha: "desc" }, take: 500 }), []);
   }
 
   static async createVenta(tenantId: string, input: VentaInput) {
@@ -686,10 +703,10 @@ export class CacaoDB {
 
   static async ventasStats(tenantId: string) {
     if (!tenantId) throw new Error("tenantId is required");
-    const ventas = await prisma.cacaoVenta.findMany({
+    const ventas = await safeVenta(() => prisma.cacaoVenta.findMany({
       where: { tenantId, deletedAt: null, status: "registrado" },
       select: { pesoKg: true, totalPen: true, esFob: true },
-    });
+    }), [] as { pesoKg: Prisma.Decimal | null; totalPen: Prisma.Decimal | null; esFob: boolean }[]);
     const r2 = (x: number) => Math.round(x * 100) / 100;
     let kg = 0, ingresos = 0, fob = 0;
     for (const v of ventas) { kg += Number(v.pesoKg ?? 0); ingresos += Number(v.totalPen ?? 0); if (v.esFob) fob++; }
