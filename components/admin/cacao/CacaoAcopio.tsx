@@ -15,6 +15,8 @@ import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 import CacaoLoteForm from "./CacaoLoteForm";
 import CacaoProducerForm from "./CacaoProducerForm";
 import CacaoBeneficioForm from "./CacaoBeneficioForm";
+import CacaoLoteDrawer from "./CacaoLoteDrawer";
+import CacaoProducerDrawer from "./CacaoProducerDrawer";
 
 type View = "acopio" | "beneficio" | "productores" | "resumen";
 interface Beneficio {
@@ -60,6 +62,8 @@ export default function CacaoAcopio() {
   const [showBeneficio, setShowBeneficio] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
+  const [loteDrawerId, setLoteDrawerId] = useState<string | null>(null);
+  const [producerDrawerId, setProducerDrawerId] = useState<string | null>(null);
 
   const load = useCallback(async (v: View) => {
     setLoading(true); setError(null);
@@ -143,7 +147,7 @@ export default function CacaoAcopio() {
                 {lotes.map((l) => {
                   const annul = l.status === "anulado";
                   return (
-                    <tr key={l.id} className={`border-t border-[var(--rule-soft)] ${annul ? "opacity-50" : ""}`}>
+                    <tr key={l.id} onClick={() => setLoteDrawerId(l.id)} className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] ${annul ? "opacity-50" : ""}`}>
                       <Td><span className="font-mono text-xs font-bold text-[var(--text-primary)]">{l.loteCode}</span>{annul && <span className="ml-2 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">ANULADO</span>}</Td>
                       <Td className="text-[var(--text-secondary)]">{fdate(l.fecha)}</Td>
                       <Td className="font-medium text-[var(--text-primary)]">{l.productorNombre ?? "—"}</Td>
@@ -152,7 +156,7 @@ export default function CacaoAcopio() {
                       <Td className="text-right font-mono tabular-nums"><span className={l.humedadPct && Number(l.humedadPct) > 7 ? "text-[var(--data-warning-700)]" : "text-[var(--text-secondary)]"}>{l.humedadPct ? `${Number(l.humedadPct).toFixed(1)}%` : "—"}</span></Td>
                       <Td><GradoBadge grado={l.grado} /></Td>
                       <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}</Td>
-                      <Td className="text-right">{annul ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : <button type="button" onClick={() => { setAnnulId(l.id); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-3 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]">Anular</button>}</Td>
+                      <Td className="text-right">{annul ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : <button type="button" onClick={(e) => { e.stopPropagation(); setAnnulId(l.id); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-3 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]">Anular</button>}</Td>
                     </tr>
                   );
                 })}
@@ -172,7 +176,7 @@ export default function CacaoAcopio() {
               <thead className="bg-[var(--surface-sunken)] text-left"><tr><Th>Código</Th><Th>Nombre</Th><Th>DNI</Th><Th>Sector</Th><Th className="text-right">Ha</Th><Th>Variedad</Th><Th>Certificación</Th></tr></thead>
               <tbody>
                 {producers.map((p) => (
-                  <tr key={p.id} className="border-t border-[var(--rule-soft)]">
+                  <tr key={p.id} onClick={() => setProducerDrawerId(p.id)} className="cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)]">
                     <Td><span className="font-mono text-xs font-bold text-[var(--text-tertiary)]">{p.codigo ?? "—"}</span></Td>
                     <Td className="font-medium text-[var(--text-primary)]">{p.nombre}</Td>
                     <Td className="text-[var(--text-secondary)]">{p.dni ?? "—"}</Td>
@@ -248,6 +252,16 @@ export default function CacaoAcopio() {
       {showLote && <CacaoLoteForm onClose={() => setShowLote(false)} onSaved={(o) => { if (!o?.keepOpen) setShowLote(false); load("acopio"); }} />}
       {showProducer && <CacaoProducerForm onClose={() => setShowProducer(false)} onSaved={() => { setShowProducer(false); load("productores"); }} />}
       {showBeneficio && <CacaoBeneficioForm onClose={() => setShowBeneficio(false)} onSaved={() => { setShowBeneficio(false); load("beneficio"); }} />}
+
+      {loteDrawerId && <CacaoLoteDrawer loteId={loteDrawerId} onClose={() => setLoteDrawerId(null)} />}
+      {producerDrawerId && (
+        <CacaoProducerDrawer
+          producerId={producerDrawerId}
+          onClose={() => setProducerDrawerId(null)}
+          onChanged={() => load("productores")}
+          onOpenLote={(id) => { setProducerDrawerId(null); setLoteDrawerId(id); }}
+        />
+      )}
 
       {annulId && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setAnnulId(null)}>
