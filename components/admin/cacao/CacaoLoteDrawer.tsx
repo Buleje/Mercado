@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import {
-  Leaf, Loader2, Printer, Droplets, Scale, Coins, Beaker, X as XIcon, FlaskConical, QrCode, Copy, Check, ExternalLink,
+  Leaf, Loader2, Printer, Droplets, Scale, Coins, Beaker, X as XIcon, FlaskConical, QrCode, Copy, Check, ExternalLink, MessageCircle,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
@@ -35,6 +35,7 @@ const pct = (v: string | number | null) => (v == null || v === "" ? "—" : `${N
 export default function CacaoLoteDrawer({ loteId, acopiador, onClose }: { loteId: string; acopiador?: string; onClose: () => void }) {
   const [lote, setLote] = useState<LoteFull | null>(null);
   const [beneficio, setBeneficio] = useState<Beneficio | null>(null);
+  const [productorTel, setProductorTel] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export default function CacaoLoteDrawer({ loteId, acopiador, onClose }: { loteId
         if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
         const d = await r.json();
         if (cancel) return;
-        setLote(d.lote ?? null); setBeneficio(d.beneficio ?? null);
+        setLote(d.lote ?? null); setBeneficio(d.beneficio ?? null); setProductorTel(d.productorTelefono ?? null);
       } catch (e) { if (!cancel) setError(e instanceof Error ? e.message : String(e)); }
       finally { if (!cancel) setLoading(false); }
     })();
@@ -191,6 +192,14 @@ export default function CacaoLoteDrawer({ loteId, acopiador, onClose }: { loteId
         {lote && !loading && (
           <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5">
             <button type="button" onClick={onClose} className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cerrar</button>
+            {(() => {
+              if (!productorTel) return null;
+              const digits = productorTel.replace(/\D/g, "");
+              const intl = digits.length === 9 ? `51${digits}` : digits;
+              const grado = lote.grado ? GRADO_LABEL[lote.grado as CacaoGrado] ?? "" : "";
+              const msg = `Hola ${lote.productorNombre ?? ""}, registramos tu lote ${lote.loteCode}: ${n2(lote.pesoKg)} kg${grado ? `, ${grado}` : ""}${lote.totalPagado ? `. Te pagamos S/ ${n2(lote.totalPagado)}` : ""}. ¡Gracias por tu cacao!`;
+              return <a href={`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:opacity-90"><MessageCircle className="h-4 w-4" />WhatsApp</a>;
+            })()}
             <button type="button" onClick={() => printCacaoRecibo(lote, acopiador)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90"><Printer className="h-4 w-4" /> Recibo</button>
           </footer>
         )}

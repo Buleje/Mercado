@@ -368,11 +368,14 @@ export class CacaoDB {
     if (!tenantId) throw new Error("tenantId is required");
     const lote = await prisma.cacaoLote.findFirst({ where: { id, tenantId } });
     if (!lote) return null;
-    const beneficio = await prisma.cacaoBeneficio.findFirst({
-      where: { tenantId, loteId: id, deletedAt: null, status: "registrado" },
-      orderBy: { createdAt: "desc" },
-    });
-    return { lote, beneficio };
+    const [beneficio, producer] = await Promise.all([
+      prisma.cacaoBeneficio.findFirst({
+        where: { tenantId, loteId: id, deletedAt: null, status: "registrado" },
+        orderBy: { createdAt: "desc" },
+      }),
+      lote.productorId ? prisma.cacaoProducer.findFirst({ where: { id: lote.productorId, tenantId }, select: { telefono: true } }) : Promise.resolve(null),
+    ]);
+    return { lote, beneficio, productorTelefono: producer?.telefono ?? null };
   }
 
   // ─── Trazabilidad pública por código de lote (QR) ───────────────────
