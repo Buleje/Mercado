@@ -40,7 +40,8 @@ vi.mock("@/lib/prisma", () => ({
     order: { findFirst: mockOrderFindFirst },
     deliveryPartner: { findFirst: mockPartnerFindFirst },
     deliveryAssignment: {
-      findUnique: mockAssignmentFindUnique,
+      // El DB layer ahora scopea por tenantId vía findFirst (IDOR fix 2026-05-29).
+      findFirst: mockAssignmentFindUnique,
       create: mockAssignmentCreate,
     },
   },

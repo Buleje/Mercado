@@ -418,8 +418,8 @@ export const SurveyDB = {
     return mapSurvey(r);
   },
 
-  async getByOrder(orderId: string): Promise<DbSurveyResponse | null> {
-    const r = await prisma.surveyResponse.findFirst({ where: { orderId } });
+  async getByOrder(tenantId: string, orderId: string): Promise<DbSurveyResponse | null> {
+    const r = await prisma.surveyResponse.findFirst({ where: { tenantId, orderId } });
     return r ? mapSurvey(r) : null;
   },
 
@@ -433,19 +433,19 @@ export const SurveyDB = {
     return rows.map(mapSurvey);
   },
 
-  async stats(): Promise<{
+  async stats(tenantId: string): Promise<{
     total: number;
     average: number;
     distribution: Record<number, number>;
   }> {
     const [agg, all] = await Promise.all([
       prisma.surveyResponse.aggregate({
-        where: { type: "nps" },
+        where: { tenantId, type: "nps" },
         _avg: { rating: true },
         _count: true,
       }),
       prisma.surveyResponse.findMany({
-        where: { type: "nps" },
+        where: { tenantId, type: "nps" },
         select: { rating: true },
       }),
     ]);

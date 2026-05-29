@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar que no tiene asignación previa
-    const existing = await DeliveryAssignmentsDB.findAssignmentByOrder(orderId);
+    const existing = await DeliveryAssignmentsDB.findAssignmentByOrder(auth.tenantId, orderId);
     if (existing) {
       return NextResponse.json(
         { error: "La orden ya tiene un delivery asignado" },

@@ -49,8 +49,8 @@ export const DeliveryAssignmentsDB = {
     });
   },
 
-  async findAssignmentByOrder(orderId: string) {
-    return prisma.deliveryAssignment.findUnique({ where: { orderId } });
+  async findAssignmentByOrder(tenantId: string, orderId: string) {
+    return prisma.deliveryAssignment.findFirst({ where: { tenantId, orderId } });
   },
 
   async createAssignment(data: {

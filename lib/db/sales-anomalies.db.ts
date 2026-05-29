@@ -218,9 +218,10 @@ export const SalesAnomaliesDB = {
   },
 
   async acknowledge(tenantId: string, anomalyId: string): Promise<DbSalesAnomaly> {
-    // Update con tenantId guard: si no pertenece al tenant, fallará el findUnique posterior.
-    const existing = await prisma.salesAnomaly.findUnique({ where: { id: anomalyId } });
-    if (!existing || existing.tenantId !== tenantId) {
+    // Lectura tenant-scoped (defense-in-depth): findFirst con tenantId evita
+    // siquiera leer una anomalía de otro tenant antes del update.
+    const existing = await prisma.salesAnomaly.findFirst({ where: { id: anomalyId, tenantId } });
+    if (!existing) {
       throw new Error(`Anomaly ${anomalyId} not found for tenant ${tenantId}`);
     }
     const row = await prisma.salesAnomaly.update({

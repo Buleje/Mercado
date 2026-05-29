@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
 
-    const stats = await SurveyDB.stats();
+    const stats = await SurveyDB.stats(auth.tenantId);
     const recent = await SurveyDB.getAll(auth.tenantId, 50);
 
     return NextResponse.json({ stats, recent });
