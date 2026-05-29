@@ -34,6 +34,7 @@ import LothCaratulaForm from "./LothCaratulaForm";
 import LothTraceView from "./LothTraceView";
 import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
+import LothAnalyticsView from "./LothAnalyticsView";
 
 type LothEntry = LothEntryDTO;
 
@@ -122,7 +123,7 @@ export default function LothLibroOperaciones() {
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [pending, setPending] = useState<string | null>(null);
-  const [view, setView] = useState<"secciones" | "trazabilidad" | "plan" | "gtf">("secciones");
+  const [view, setView] = useState<"secciones" | "trazabilidad" | "plan" | "gtf" | "analitica">("secciones");
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
   const [exportMenu, setExportMenu] = useState(false);
   const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
@@ -334,7 +335,7 @@ export default function LothLibroOperaciones() {
       {/* Toggle Secciones / Trazabilidad */}
       <div className="flex">
         <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
-          {([["plan", "Plan de Manejo"], ["secciones", "Secciones"], ["trazabilidad", "Trazabilidad"], ["gtf", "GTF"]] as const).map(([v, label]) => (
+          {([["plan", "Plan de Manejo"], ["secciones", "Secciones"], ["trazabilidad", "Trazabilidad"], ["gtf", "GTF"], ["analitica", "Analítica"]] as const).map(([v, label]) => (
             <button
               key={v}
               type="button"
@@ -356,6 +357,9 @@ export default function LothLibroOperaciones() {
 
       {/* Vista GTF — guías de transporte forestal */}
       {view === "gtf" && <LothGtfView />}
+
+      {/* Vista Analítica — inteligencia de aprovechamiento + anomalías (Batch 2) */}
+      {view === "analitica" && <LothAnalyticsView />}
 
       {/* Vista de trazabilidad — operación completa por árbol */}
       {view === "trazabilidad" && (
