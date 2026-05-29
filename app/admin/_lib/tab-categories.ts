@@ -46,6 +46,7 @@ import {
   Radio,
   UserPlus,
   TreePine,
+  Leaf,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -265,6 +266,13 @@ export type TabCategory = {
   label: string;
   icon: ComponentType<{ className?: string }>;
   tabs: Tab[];
+  /**
+   * Si true, la categoría SIEMPRE se renderiza como grupo desplegable en el
+   * sidebar — aunque tenga un solo tab visible. Por default una categoría de
+   * 1 tab colapsa a enlace directo (ej. Ventas). Las especializaciones lo
+   * fuerzan para que "Agricultura" muestre su header aunque solo tenga Cacao.
+   */
+  alwaysGroup?: boolean;
 };
 
 // ── Sidebar modules v6 — reorganized by FUNCTIONAL AREA (2026-04-18) ────────
@@ -411,21 +419,30 @@ export const TIENDA_MODULE: TabCategory = {
   tabs: ["store-customizer", "pagina-inicio"],
 };
 
-// ── Módulo Especializaciones (ADR-124) ────────────────────────────────────────
-// Tabs verticales habilitables por superadmin (forestal CTP, salud, textil).
-// El render del sidebar SOLO los muestra si:
-//   1. allowedTabs los incluye (rol+plan pasan — spec bypassa plan filter)
+// ── Módulos de Especialización por vertical (ADR-124) ──────────────────────────
+// Tabs verticales habilitables por superadmin, agrupados por VERTICAL de negocio
+// (Brandon 2026-05-29: separar Forestal de Agricultura — son cosas distintas).
+// El render del sidebar SOLO muestra cada tab si:
+//   1. allowedTabs lo incluye (rol+plan pasan — spec bypassa plan filter)
 //   2. La feature flag de spec está enabled para el tenant
-// Si el tenant no tiene NINGUNA spec activa, la categoría completa queda vacía
-// y el sidebar la oculta automáticamente (vía catTabs.length === 0 en line ~1355).
-export const ESPECIALIZACIONES_MODULE: TabCategory = {
-  id: "especializaciones",
-  label: "Especializaciones",
+// Cada categoría se auto-oculta si NINGÚN tab suyo está visible (catTabs.length
+// === 0 en el sidebar) — así un tenant solo-forestal no ve "Agricultura" y
+// viceversa. Mantener sincronizado con lib/specializations.ts (vertical).
+export const FORESTAL_MODULE: TabCategory = {
+  id: "forestal",
+  label: "Forestal",
   icon: TreePine,
-  // Solo los tabs YA DECLARADOS en tabs.types Tab union. Cuando agregemos
-  // gtf-emisor / recetas-medicas / cuero-trazabilidad al union, los sumamos
-  // acá. Por ahora solo CTP forestal está implementado (Phase 1-4 ADR-124).
-  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones", "cacao-acopio"],
+  alwaysGroup: true,
+  // Cuando gtf-emisor entre al Tab union (ADR-124 Fase futura) se suma acá.
+  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones"],
+};
+
+export const AGRICULTURA_MODULE: TabCategory = {
+  id: "agricultura",
+  label: "Agricultura",
+  icon: Leaf,
+  alwaysGroup: true, // 1 solo tab (Cacao) pero igual muestra header "Agricultura"
+  tabs: ["cacao-acopio"],
 };
 
 // ── Módulo Config (siempre visible desde dropdown de usuario) ────────────────
@@ -441,14 +458,16 @@ export const CONFIG_MODULE: TabCategory = {
 //
 // Orden 2026-05-28:
 // 1. BASIC_MODULES (inicio → ventas → compras → productos → clientes → finanzas → marketplace)
-// 2. ESPECIALIZACIONES_MODULE — ANTES de Mi Tienda. Razón: el footer fijo del
-//    sidebar tapaba el último item del nav scrollable en viewports estándar
-//    (1080p). Especializaciones está activa para tenants que la habilitan;
-//    ponerla arriba la hace descubrible sin scroll. Auto-oculta si vacía.
+// 2. FORESTAL_MODULE + AGRICULTURA_MODULE — ANTES de Mi Tienda. Razón: el footer
+//    fijo del sidebar tapaba el último item del nav scrollable en viewports
+//    estándar (1080p). Las especializaciones están activas para tenants que las
+//    habilitan; ponerlas arriba las hace descubribles sin scroll. Cada una
+//    auto-oculta si vacía (tenant solo-forestal no ve Agricultura y viceversa).
 // 3. TIENDA_MODULE — al final (configuración visual, menos frecuente).
 export const TAB_CATEGORIES: TabCategory[] = [
   ...BASIC_MODULES,
-  ESPECIALIZACIONES_MODULE,
+  FORESTAL_MODULE,
+  AGRICULTURA_MODULE,
   TIENDA_MODULE,
 ];
 

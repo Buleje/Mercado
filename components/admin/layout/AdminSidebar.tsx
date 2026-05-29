@@ -623,8 +623,10 @@ export function AdminSidebar({
   // Track which multi-tab categories are expanded (shows sub-tabs).
   // Desktop: NO auto-expand vertical — los sub-tabs emergen exclusivamente
   // via flyout lateral on hover. Mobile: accordion on-click del usuario.
-  // "inicio" se abre por default para que Chat IA sea visible de entrada.
-  const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(() => new Set(["inicio"]));
+  // Brandon 2026-05-29: arrancar con TODO colapsado en cada carga/recarga
+  // (antes "inicio" se auto-abría). Sidebar limpio; el usuario abre lo que
+  // necesita y solo 1 categoría queda abierta a la vez (acordeón estricto).
+  const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(() => new Set());
 
   // ── Flyout state for expanded sidebar hover ──
   const [hoveredCategory, setHoveredCategory] = React.useState<string | null>(null);
@@ -766,8 +768,10 @@ export function AdminSidebar({
     documentos: "Más",
     // ADR-124 — Especializaciones tiene su propio super-section. Solo
     // aparece si el tenant tiene specs habilitadas (la categoría se
-    // auto-oculta en el render cuando catTabs.length === 0).
-    especializaciones: "Especializaciones",
+    // auto-oculta en el render cuando catTabs.length === 0). Brandon
+    // 2026-05-29: dividido en Forestal + Agricultura; el header se ancla a
+    // la PRIMERA categoría de spec (forestal) que precede a agricultura.
+    forestal: "Especializaciones",
   };
 
   return (
@@ -902,7 +906,9 @@ export function AdminSidebar({
 
             if (catTabs.length === 0 && catComingSoonItems.length === 0) return null;
             const CategoryIcon = category.icon;
-            const isSingleTab = catTabs.length === 1;
+            // alwaysGroup fuerza render como grupo desplegable aunque tenga 1 tab
+            // (especializaciones: "Agricultura" muestra header aunque solo sea Cacao).
+            const isSingleTab = catTabs.length === 1 && !category.alwaysGroup;
             const sectionLabel = SECTION_BEFORE[category.id];
             const iconColor = ICON_COLORS[category.id] ?? "text-[var(--text-tertiary)]";
             const isSectionCollapsed = collapsedSections.has(sectionLabel ?? "");
@@ -981,12 +987,11 @@ export function AdminSidebar({
                         if (isSingleTab) {
                           navigateTab(catTabs[0] as Tab);
                         } else {
-                          setExpandedCategories(prev => {
-                            const next = new Set(prev);
-                            if (next.has(category.id)) next.delete(category.id);
-                            else next.add(category.id);
-                            return next;
-                          });
+                          // Acordeón estricto (Brandon 2026-05-29): abrir una
+                          // categoría cierra las demás; re-click la cierra.
+                          setExpandedCategories(prev =>
+                            prev.has(category.id) ? new Set() : new Set([category.id]),
+                          );
                         }
                       }}
                       className={cn(
