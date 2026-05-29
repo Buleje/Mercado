@@ -343,7 +343,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
             className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6"
           >
             {error && (
-              <div className="mb-6 flex items-start gap-3 rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-4 py-3 text-sm text-[var(--data-danger-900)]">
+              <div className="mb-6 flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>{error}</div>
               </div>
@@ -582,7 +582,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
               )}
 
               {finalCites && (
-                <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-3 py-2.5 text-xs text-[var(--data-danger-900)]">
+                <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs text-[var(--data-error-700)]">
                   <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
                     <span className="font-bold">Especie CITES.</span>{" "}
@@ -780,7 +780,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                   <ul className="space-y-1">
                     {missing.map((m) => (
                       <li key={m} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--data-danger-400)]" />
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--data-error-500)]" />
                         {m}
                       </li>
                     ))}
@@ -891,7 +891,7 @@ function Field({
     <label className="block">
       <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
         {label}
-        {required && <span className="text-[var(--data-danger-600)]">*</span>}
+        {required && <span className="text-[var(--data-error-600)]">*</span>}
       </span>
       {children}
       {hint && (
@@ -935,7 +935,7 @@ function SummaryRow({ label, value, mono }: { label: string; value: string; mono
 
 function CitesPill() {
   return (
-    <span className="inline-flex shrink-0 items-center rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-danger-900)]">
+    <span className="inline-flex shrink-0 items-center rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-error-700)]">
       CITES
     </span>
   );

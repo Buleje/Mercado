@@ -136,7 +136,7 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
         </header>
 
         <form id="ctp-entry-form" onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
-          {error && <div className="rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-4 py-3 text-sm text-[var(--data-danger-900)]">{error}</div>}
+          {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">{error}</div>}
 
           <Field label="Fecha" required><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={I} /></Field>
 
@@ -155,7 +155,7 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
                     <span className="flex min-w-0 items-center gap-2 truncate">
                       <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{it.code ?? it.productType ?? "—"}</span>
                       {it.species && <span className="truncate text-sm text-[var(--text-secondary)]">{it.species}</span>}
-                      {it.cites && <span className="rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">CITES</span>}
+                      {it.cites && <span className="rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
                     </span>
                     <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{it.vol != null ? `${it.vol.toFixed(4)} m³` : it.quantity != null ? `stock ${it.quantity.toFixed(2)} ${it.unit ?? ""}` : ""}</span>
                   </button>
@@ -218,7 +218,7 @@ const I = "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--sur
 function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{label}{required && <span className="text-[var(--data-danger-600)]">*</span>}</span>
+      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{label}{required && <span className="text-[var(--data-error-600)]">*</span>}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}
     </label>

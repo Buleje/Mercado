@@ -95,7 +95,7 @@ export default function LothAnalyticsView() {
   }, [data]);
 
   if (loading && !data) return <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Calculando inteligencia…</p></div>;
-  if (error) return <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-sm text-[var(--data-danger-900)]"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>;
+  if (error) return <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>;
   if (!data) return null;
 
   const errores = data.anomalias.filter((a) => a.level === "error");
@@ -124,7 +124,7 @@ export default function LothAnalyticsView() {
       ) : (
         <div className="space-y-2">
           {[...errores, ...warns].map((a, i) => (
-            <div key={i} className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-sm ${a.level === "error" ? "border-[var(--data-danger-300)] bg-[var(--data-danger-50)] text-[var(--data-danger-900)]" : "border-[var(--data-warning-300)] bg-[var(--data-warning-50)] text-[var(--data-warning-900)]"}`}>
+            <div key={i} className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-sm ${a.level === "error" ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-warning-300)] bg-[var(--data-warning-50)] text-[var(--data-warning-900)]"}`}>
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div><b className="uppercase tracking-wide text-[length:var(--ts-2xs)]">{a.level === "error" ? "Grave" : "Alerta"}</b> · {a.message}</div>
             </div>
@@ -162,7 +162,7 @@ export default function LothAnalyticsView() {
               <tr key={s.species} className="border-t border-[var(--rule-soft)]">
                 <Td>
                   <span className="font-medium text-[var(--text-primary)]">{s.species}</span>
-                  {s.cites && <span className="ml-2 rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">CITES</span>}
+                  {s.cites && <span className="ml-2 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
                 </Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fm(s.taladoM3, 4)}</Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{fm(s.trozadoM3, 4)}</Td>
@@ -188,7 +188,7 @@ export default function LothAnalyticsView() {
                 <tr key={r.species} className="border-t border-[var(--rule-soft)]">
                   <Td className="font-medium text-[var(--text-primary)]">{r.species}</Td>
                   <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fm(r.movilizado, 4)}</Td>
-                  <Td className="text-right font-mono tabular-nums"><span className={r.saldo < 0 ? "text-[var(--data-danger-700)]" : "text-[var(--text-primary)]"}>{fm(r.saldo, 4)}</span></Td>
+                  <Td className="text-right font-mono tabular-nums"><span className={r.saldo < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}>{fm(r.saldo, 4)}</span></Td>
                   <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">S/ {fm(r.valorMovilizado)}</Td>
                 </tr>
               ))}
@@ -232,13 +232,13 @@ export default function LothAnalyticsView() {
                       <tr key={c.species} className="border-t border-[var(--rule-soft)]">
                         <Td>
                           <span className="font-medium text-[var(--text-primary)]">{c.species}</span>
-                          {c.cites && <span className="ml-2 rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">CITES</span>}
+                          {c.cites && <span className="ml-2 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
                           <div className="text-xs text-[var(--text-tertiary)]">VEN {fm(c.desglose.venM3)} + ext {fm(c.desglose.extraccionM3)} + transf {fm(c.desglose.transformacionM3)} + flete {fm(c.desglose.fleteM3)}</div>
                         </Td>
                         <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">S/ {fm(c.precioVentaM3)}</Td>
                         <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">S/ {fm(c.costoTotalM3)}</Td>
-                        <Td className="text-right font-mono tabular-nums"><span className={c.margenM3 >= 0 ? "text-[var(--data-success-700)]" : "text-[var(--data-danger-700)]"}>S/ {fm(c.margenM3)}</span></Td>
-                        <Td className="text-right"><span className={`font-mono font-bold tabular-nums ${c.margenPct >= 25 ? "text-[var(--data-success-700)]" : c.margenPct >= 0 ? "text-[var(--data-warning-700)]" : "text-[var(--data-danger-700)]"}`}>{c.margenPct}%</span></Td>
+                        <Td className="text-right font-mono tabular-nums"><span className={c.margenM3 >= 0 ? "text-[var(--data-success-700)]" : "text-[var(--data-error-700)]"}>S/ {fm(c.margenM3)}</span></Td>
+                        <Td className="text-right"><span className={`font-mono font-bold tabular-nums ${c.margenPct >= 25 ? "text-[var(--data-success-700)]" : c.margenPct >= 0 ? "text-[var(--data-warning-700)]" : "text-[var(--data-error-700)]"}`}>{c.margenPct}%</span></Td>
                         <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">S/ {fm(c.margen)}</Td>
                       </tr>
                     ))}

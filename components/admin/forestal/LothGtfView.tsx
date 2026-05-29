@@ -63,7 +63,7 @@ export default function LothGtfView() {
         </button>
       </div>
 
-      {error && <div className="rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-3 text-sm text-[var(--data-danger-900)]">{error}</div>}
+      {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
 
       {showForm && <GtfForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
 
@@ -84,14 +84,14 @@ export default function LothGtfView() {
                   <td className="px-4 py-2.5 text-[var(--text-primary)]">{g.titularName ?? "—"}</td>
                   <td className="px-4 py-2.5 text-[var(--text-secondary)]">{g.destino ?? "—"}</td>
                   <td className="px-4 py-2.5 text-right"><span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{g.volumenTotalM3 ? Number(g.volumenTotalM3).toFixed(4) : "—"}</span></td>
-                  <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-danger-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-900)]">Emitida</span>}</td>
+                  <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-900)]">Emitida</span>}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-2">
                       <button type="button" onClick={() => printGtf(g)} title="Imprimir" className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Imprimir</button>
                       {g.status !== "anulada" && (annulId === g.id ? (
                         <AnnulInline onConfirm={(r) => annul(g.id, r)} onCancel={() => setAnnulId(null)} />
                       ) : (
-                        <button type="button" onClick={() => setAnnulId(g.id)} className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-2.5 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]"><Ban className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => setAnnulId(g.id)} className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"><Ban className="h-3.5 w-3.5" /></button>
                       ))}
                     </div>
                   </td>
@@ -111,7 +111,7 @@ function AnnulInline({ onConfirm, onCancel }: { onConfirm: (r: string) => void; 
   return (
     <span className="inline-flex items-center gap-1">
       <input value={r} onChange={(e) => setR(e.target.value)} placeholder="Motivo" autoFocus className="h-8 w-32 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs text-[var(--text-primary)] outline-none" />
-      <button type="button" disabled={r.trim().length < 3} onClick={() => onConfirm(r.trim())} className="h-8 rounded-lg bg-[var(--data-danger-600)] px-2 text-xs font-bold text-white disabled:opacity-50">OK</button>
+      <button type="button" disabled={r.trim().length < 3} onClick={() => onConfirm(r.trim())} className="h-8 rounded-lg bg-[var(--data-error-600)] px-2 text-xs font-bold text-white disabled:opacity-50">OK</button>
       <button type="button" onClick={onCancel} className="h-8 rounded-lg border-2 border-[var(--rule-base)] px-2 text-xs font-bold text-[var(--text-primary)]">✕</button>
     </span>
   );
@@ -218,14 +218,14 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
 
   return (
     <form onSubmit={submit} className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
-      {err && <div className="rounded-lg border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-3 py-2 text-sm text-[var(--data-danger-900)]">{err}</div>}
+      {err && <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)]">{err}</div>}
       {libroErr && (
         <div className="rounded-lg border border-[var(--data-warning-300)] bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-900)]">
           No se pudo cargar el Libro de Operaciones ({libroErr}). La validación GTF ↔ libro está desactivada temporalmente.
         </div>
       )}
       {hasInvalidItems && (
-        <div className="rounded-lg border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-4 py-3 text-sm font-medium text-[var(--data-danger-900)]">
+        <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-medium text-[var(--data-error-700)]">
           Hay trozas que no figuran en el Libro de Operaciones. Registralas en Trozado/Despacho antes de emitir la GTF.
         </div>
       )}
@@ -268,21 +268,21 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
               <thead className="text-left text-xs text-[var(--text-tertiary)]"><tr><th className="py-1">Código</th><th>Especie</th><th className="text-right">Ø may</th><th className="text-right">Ø men</th><th className="text-right">Long.</th><th className="text-right">Vol. m³</th><th></th></tr></thead>
               <tbody>
                 {items.map((x, i) => (
-                  <tr key={i} className={`border-t border-[var(--rule-soft)] ${invalidCodes.has(i) ? "bg-[var(--data-danger-50)]" : ""}`}>
+                  <tr key={i} className={`border-t border-[var(--rule-soft)] ${invalidCodes.has(i) ? "bg-[var(--data-error-50)]" : ""}`}>
                     <td className="py-1.5 font-mono font-bold text-[var(--text-primary)]">
                       {x.code ?? "—"}
                       {invalidCodes.has(i) && (
-                        <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--data-danger-600)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white leading-none">
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--data-error-600)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white leading-none">
                           no está en el libro
                         </span>
                       )}
                     </td>
-                    <td>{x.species ?? "—"}{x.cites && <span className="ml-1 rounded bg-[var(--data-danger-100)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">CITES</span>}</td>
+                    <td>{x.species ?? "—"}{x.cites && <span className="ml-1 rounded bg-[var(--data-error-100)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}</td>
                     <td className="text-right font-mono tabular-nums">{x.diamMayorM?.toFixed(2) ?? "—"}</td>
                     <td className="text-right font-mono tabular-nums">{x.diamMenorM?.toFixed(2) ?? "—"}</td>
                     <td className="text-right font-mono tabular-nums">{x.lengthM?.toFixed(2) ?? "—"}</td>
                     <td className="text-right font-mono tabular-nums font-bold">{x.volumeM3?.toFixed(4) ?? "—"}</td>
-                    <td className="text-right"><button type="button" onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))} className="text-[var(--data-danger-600)]"><Trash2 className="h-3.5 w-3.5" /></button></td>
+                    <td className="text-right"><button type="button" onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))} className="text-[var(--data-error-600)]"><Trash2 className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 ))}
                 <tr className="border-t-2 border-[var(--rule-base)] font-bold"><td colSpan={5} className="py-1.5 text-right">Volumen total</td><td className="text-right font-mono tabular-nums text-[var(--data-success-700)]">{totalVol.toFixed(4)}</td><td></td></tr>

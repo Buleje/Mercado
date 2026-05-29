@@ -234,7 +234,7 @@ export default function VendorCommandCenter() {
                       <Wallet className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.25} /> Ingresos
                     </span>
                     {stats.trend !== 0 && (
-                      <span className={`inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold ${stats.trend > 0 ? "text-[var(--data-success-600,#16a34a)]" : "text-[var(--data-danger-600,#dc2626)]"}`}>
+                      <span className={`inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold ${stats.trend > 0 ? "text-[var(--data-success-600,#16a34a)]" : "text-[var(--data-error-600,#dc2626)]"}`}>
                         {stats.trend > 0 ? <TrendingUp className="h-3 w-3" strokeWidth={2.5} /> : <TrendingDown className="h-3 w-3" strokeWidth={2.5} />}
                         {Math.abs(stats.trend).toFixed(0)}%
                       </span>
@@ -273,7 +273,7 @@ export default function VendorCommandCenter() {
                       </span>
                     )}
                   </div>
-                  <p className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)] ${stats.ganancia >= 0 ? "text-[var(--text-primary)]" : "text-[var(--data-danger-600,#dc2626)]"}`}>
+                  <p className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)] ${stats.ganancia >= 0 ? "text-[var(--text-primary)]" : "text-[var(--data-error-600,#dc2626)]"}`}>
                     {formatSoles(stats.ganancia)}
                   </p>
                   <div className="mt-2 h-8 hidden sm:block">

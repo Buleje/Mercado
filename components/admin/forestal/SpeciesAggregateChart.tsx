@@ -124,7 +124,7 @@ export default function SpeciesAggregateChart() {
       </header>
 
       {error && (
-        <div className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-3 text-sm text-[var(--data-danger-900)]">
+        <div className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>

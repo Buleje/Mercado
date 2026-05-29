@@ -312,7 +312,7 @@ export default function CTPLibroOperaciones() {
       </div>
 
       {error && (
-        <div className="rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-[var(--data-danger-900)]">
+        <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)]">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="text-sm">
@@ -375,7 +375,7 @@ export default function CTPLibroOperaciones() {
                     {e.speciesCites && (
                       <span
                         title="Especie protegida CITES"
-                        className="rounded-full bg-[var(--data-danger-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]"
+                        className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]"
                       >
                         CITES
                       </span>
@@ -405,7 +405,7 @@ export default function CTPLibroOperaciones() {
                 <Td>
                   <StatusBadge status={e.status} />
                   {e.rejectionReason && (
-                    <div className="mt-1 text-xs text-[var(--data-danger-700)]">
+                    <div className="mt-1 text-xs text-[var(--data-error-700)]">
                       {e.rejectionReason}
                     </div>
                   )}
@@ -419,7 +419,7 @@ export default function CTPLibroOperaciones() {
                           value={rejectReason}
                           onChange={(ev) => setRejectReason(ev.target.value)}
                           placeholder="Motivo (min 3 chars)"
-                          className="h-9 w-48 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm outline-none focus:border-[var(--data-danger-500)]"
+                          className="h-9 w-48 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm outline-none focus:border-[var(--data-error-500)]"
                           autoFocus
                         />
                         <div className="flex gap-2">
@@ -430,7 +430,7 @@ export default function CTPLibroOperaciones() {
                               actionPending === `${e.id}:reject`
                             }
                             onClick={() => doAction(e.id, "reject", rejectReason.trim())}
-                            className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-danger-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                            className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-error-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
                           >
                             Confirmar rechazo
                           </button>
@@ -465,7 +465,7 @@ export default function CTPLibroOperaciones() {
                             setRejectReason("");
                           }}
                           title="Rechazar"
-                          className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-3 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]"
+                          className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
                         >
                           <ThumbsDown className="h-3 w-3" />
                           Rechazar
@@ -556,7 +556,7 @@ function StatusBadge({ status }: { status: WoodEntry["status"] }) {
       : meta.tone === "warning"
         ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
         : meta.tone === "danger"
-          ? "bg-[var(--data-danger-100)] text-[var(--data-danger-900)]"
+          ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
           : meta.tone === "info"
             ? "bg-[var(--data-info-100)] text-[var(--data-info-900)]"
             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";

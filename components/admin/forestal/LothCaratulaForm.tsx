@@ -111,7 +111,7 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
 
         <form id="loth-caratula-form" onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-4 py-3 text-sm text-[var(--data-danger-900)]">
+            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>{error}</div>
             </div>
@@ -184,7 +184,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
     <label className="block">
       <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
         {label}
-        {required && <span className="text-[var(--data-danger-600)]">*</span>}
+        {required && <span className="text-[var(--data-error-600)]">*</span>}
       </span>
       {children}
       {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}

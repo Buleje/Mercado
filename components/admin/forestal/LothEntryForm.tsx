@@ -443,7 +443,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
         {/* Body */}
         <form id="loth-entry-form" onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-4 py-3 text-sm text-[var(--data-danger-900)]">
+            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>{error}</div>
             </div>
@@ -652,7 +652,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           )}
 
           {fields.has("species") && cites && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-3 py-2.5 text-xs text-[var(--data-danger-900)]">
+            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs text-[var(--data-error-700)]">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
               <div><span className="font-bold">Especie CITES.</span> Requiere permiso de exportación. Verificá el sello en la GTF.</div>
             </div>
@@ -742,7 +742,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
           {fields.has("discarded") && (
             <label className="flex items-center gap-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
-              <input type="checkbox" checked={discarded} onChange={(e) => setDiscarded(e.target.checked)} className="h-4 w-4 accent-[var(--data-danger-600)]" />
+              <input type="checkbox" checked={discarded} onChange={(e) => setDiscarded(e.target.checked)} className="h-4 w-4 accent-[var(--data-error-600)]" />
               Descartado <span className="text-[var(--text-tertiary)]">(no aprovechable — anotá el motivo abajo)</span>
             </label>
           )}
@@ -775,7 +775,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                 {gpsLoading ? "Obteniendo GPS…" : gpsLat != null ? "Actualizar ubicación GPS" : "Capturar ubicación GPS"}
               </button>
               {gpsError && (
-                <p className="flex items-center gap-1.5 text-xs text-[var(--data-danger-700)]">
+                <p className="flex items-center gap-1.5 text-xs text-[var(--data-error-700)]">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{gpsError}
                 </p>
               )}
@@ -818,7 +818,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                 {photoUploading ? "Subiendo foto…" : photoUrl ? "Cambiar foto" : "Subir foto del tocón / troza"}
               </button>
               {photoError && (
-                <p className="flex items-center gap-1.5 text-xs text-[var(--data-danger-700)]">
+                <p className="flex items-center gap-1.5 text-xs text-[var(--data-error-700)]">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{photoError}
                 </p>
               )}
@@ -873,7 +873,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
     <label className="block">
       <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
         {label}
-        {required && <span className="text-[var(--data-danger-600)]">*</span>}
+        {required && <span className="text-[var(--data-error-600)]">*</span>}
       </span>
       {children}
       {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}
@@ -883,7 +883,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
 
 function CitesPill() {
   return (
-    <span className="inline-flex shrink-0 items-center rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-danger-900)]">
+    <span className="inline-flex shrink-0 items-center rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-error-700)]">
       CITES
     </span>
   );

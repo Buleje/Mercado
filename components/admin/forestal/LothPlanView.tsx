@@ -119,7 +119,7 @@ export default function LothPlanView() {
       </div>
 
       {error && (
-        <div className="rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-sm text-[var(--data-danger-900)]">
+        <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
           <AlertCircle className="mr-2 inline h-4 w-4" /> {error}
         </div>
       )}
@@ -216,7 +216,7 @@ function PlanForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
 
   return (
     <form onSubmit={submit} className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
-      {err && <div className="rounded-lg border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-3 py-2 text-sm text-[var(--data-danger-900)]">{err}</div>}
+      {err && <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)]">{err}</div>}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Field label="Tipo"><select value={f.planType} onChange={(e) => set("planType", e.target.value)} className={cls}><option>PO</option><option>PMFI</option><option>DEMA</option></select></Field>
         <Field label="N° de plan"><input value={f.planNumber} onChange={(e) => set("planNumber", e.target.value)} placeholder="PO 12" className={cls} /></Field>
@@ -297,7 +297,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
             <Cell right>{s.arbolesAutorizados ?? "—"}</Cell>
             <Cell right>{soles(s.precioVentaSoles)}</Cell>
             <Cell right>{soles(s.valorEstadoNaturalSoles)}</Cell>
-            <Cell right><button onClick={() => del(s.id)} className="text-[var(--data-danger-600)] hover:text-[var(--data-danger-800)]"><Trash2 className="h-4 w-4" /></button></Cell>
+            <Cell right><button onClick={() => del(s.id)} className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button></Cell>
           </tr>
         ))}
         {species.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Sin especies. Agregá las aprobadas en la resolución.</td></tr>}
@@ -407,7 +407,7 @@ function CensusPanel({ planId, trees, onChange }: { planId: string; trees: Tree[
             <Cell right><Mono bold>{n(t.volumenEstimadoM3)}</Mono></Cell>
             <Cell><span className="text-xs text-[var(--text-tertiary)]">{t.utmZona ?? "—"}</span></Cell>
             <Cell><EstadoTag estado={t.estado} /></Cell>
-            <Cell right><button onClick={() => del(t.id)} className="text-[var(--data-danger-600)] hover:text-[var(--data-danger-800)]"><Trash2 className="h-4 w-4" /></button></Cell>
+            <Cell right><button onClick={() => del(t.id)} className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button></Cell>
           </tr>
         ))}
         {trees.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin árboles censados. Agregá o importá el censo (CSV).</td></tr>}
@@ -467,7 +467,7 @@ function BalancePanel({ planId, vigenciaHasta }: { planId: string; vigenciaHasta
           {alerts.length > 0 && (
             <div className="mb-3 space-y-1.5">
               {alerts.map((a, i) => (
-                <div key={i} className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs font-medium ${a.tone === "danger" ? "bg-[var(--data-danger-50)] text-[var(--data-danger-900)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"}`}>
+                <div key={i} className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs font-medium ${a.tone === "danger" ? "bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"}`}>
                   <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {a.text}
                 </div>
               ))}
@@ -475,12 +475,12 @@ function BalancePanel({ planId, vigenciaHasta }: { planId: string; vigenciaHasta
           )}
           <Table head={["Especie", "Autorizado", "Talado", "Movilizado", "Saldo", "% mov.", "Valor S/", "Pago derecho S/"]}>
             {b.rows.map((r) => (
-              <tr key={r.species} className={`border-t border-[var(--rule-soft)] ${r.exceso ? "bg-[var(--data-danger-50)]" : ""}`}>
+              <tr key={r.species} className={`border-t border-[var(--rule-soft)] ${r.exceso ? "bg-[var(--data-error-50)]" : ""}`}>
                 <Cell><span className="font-medium text-[var(--text-primary)]">{r.species}</span>{r.cites && <CitesPill />}</Cell>
                 <Cell right><Mono>{r.autorizado.toFixed(2)}</Mono></Cell>
                 <Cell right><Mono>{r.talado.toFixed(2)}</Mono></Cell>
                 <Cell right><Mono>{r.movilizado.toFixed(2)}</Mono></Cell>
-                <Cell right><span className={`font-mono tabular-nums font-bold ${r.saldo < 0 ? "text-[var(--data-danger-700)]" : "text-[var(--data-success-700)]"}`}>{r.saldo.toFixed(2)}</span></Cell>
+                <Cell right><span className={`font-mono tabular-nums font-bold ${r.saldo < 0 ? "text-[var(--data-error-700)]" : "text-[var(--data-success-700)]"}`}>{r.saldo.toFixed(2)}</span></Cell>
                 <Cell right><SaldoBar pct={r.pctMovilizado} exceso={r.exceso} /></Cell>
                 <Cell right>{r.valorMovilizado > 0 ? `S/ ${r.valorMovilizado.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</Cell>
                 <Cell right>{r.pagoDerecho > 0 ? `S/ ${r.pagoDerecho.toFixed(2)}` : "—"}</Cell>
@@ -580,7 +580,7 @@ function CensusMap({ trees }: { trees: Tree[] }) {
   const W = 760, H = 320, pad = 28;
   const sx = (x: number) => (maxX === minX ? W / 2 : pad + ((x - minX) / (maxX - minX)) * (W - 2 * pad));
   const sy = (y: number) => (maxY === minY ? H / 2 : H - pad - ((y - minY) / (maxY - minY)) * (H - 2 * pad)); // Norte arriba
-  const color = (e: string) => (e === "talado" ? "var(--data-warning-500)" : e === "descartado" ? "var(--data-danger-500)" : "var(--data-success-500)");
+  const color = (e: string) => (e === "talado" ? "var(--data-warning-500)" : e === "descartado" ? "var(--data-error-500)" : "var(--data-success-500)");
 
   return (
     <Panel title={`Croquis de la parcela · ${pts.length} árboles georreferenciados (UTM)`}>
@@ -601,7 +601,7 @@ function CensusMap({ trees }: { trees: Tree[] }) {
         <MapPin className="h-3.5 w-3.5" />
         <Legend color="var(--data-success-500)" label="En pie" />
         <Legend color="var(--data-warning-500)" label="Talado" />
-        <Legend color="var(--data-danger-500)" label="Descartado" />
+        <Legend color="var(--data-error-500)" label="Descartado" />
       </div>
     </Panel>
   );
@@ -615,7 +615,7 @@ function SaldoBar({ pct, exceso }: { pct: number; exceso: boolean }) {
   return (
     <span className="inline-flex items-center gap-2">
       <span className="h-1.5 w-16 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-        <span className={`block h-full ${exceso ? "bg-[var(--data-danger-500)]" : pct > 90 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${w}%` }} />
+        <span className={`block h-full ${exceso ? "bg-[var(--data-error-500)]" : pct > 90 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${w}%` }} />
       </span>
       <span className="font-mono tabular-nums text-xs text-[var(--text-secondary)]">{pct.toFixed(0)}%</span>
     </span>
@@ -671,13 +671,13 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone?: "suc
   );
 }
 function CitesPill() {
-  return <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]"><ShieldAlert className="h-2.5 w-2.5" />CITES</span>;
+  return <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]"><ShieldAlert className="h-2.5 w-2.5" />CITES</span>;
 }
 function EstadoTag({ estado }: { estado: string }) {
   const m: Record<string, string> = {
     en_pie: "bg-[var(--data-success-100)] text-[var(--data-success-900)]",
     talado: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]",
-    descartado: "bg-[var(--data-danger-100)] text-[var(--data-danger-900)]",
+    descartado: "bg-[var(--data-error-100)] text-[var(--data-error-700)]",
   };
   const label: Record<string, string> = { en_pie: "En pie", talado: "Talado", descartado: "Descartado" };
   return <span className={`rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${m[estado] ?? "bg-[var(--surface-sunken)]"}`}>{label[estado] ?? estado}</span>;

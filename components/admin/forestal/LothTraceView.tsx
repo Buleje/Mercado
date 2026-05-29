@@ -206,7 +206,7 @@ function OperationCard({ op }: { op: Operation }) {
           <div className="flex items-center gap-2">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Operación · Árbol</span>
             <Code className="text-sm">{op.tree}</Code>
-            {op.cites && <span className="rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">CITES</span>}
+            {op.cites && <span className="rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-base font-bold text-[var(--text-primary)]">{op.species ?? "—"}</span>

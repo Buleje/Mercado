@@ -307,7 +307,7 @@ export default function LothLibroOperaciones() {
                   onClick={() => doExport("pdf")}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-[var(--surface-canvas)]"
                 >
-                  <Printer className="h-4 w-4 text-[var(--data-danger-600)]" />
+                  <Printer className="h-4 w-4 text-[var(--data-error-600)]" />
                   <span><b className="block text-[var(--text-primary)]">PDF formato SERFOR</b><span className="text-xs text-[var(--text-tertiary)]">Carátula + 6 secciones, para imprimir/firmar</span></span>
                 </button>
                 <button
@@ -385,7 +385,7 @@ export default function LothLibroOperaciones() {
       {view === "trazabilidad" && (
         <>
           {error && (
-            <div className="rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-sm text-[var(--data-danger-900)]">
+            <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
               <strong>Error:</strong> {error}
             </div>
           )}
@@ -467,7 +467,7 @@ export default function LothLibroOperaciones() {
       </div>
 
       {error && (
-        <div className="rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-[var(--data-danger-900)]">
+        <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)]">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="text-sm"><strong>Error:</strong> {error}</div>
@@ -514,7 +514,7 @@ export default function LothLibroOperaciones() {
                         </span>
                       )}
                       {e.observations && <span className="text-xs text-[var(--text-tertiary)]">{e.observations}</span>}
-                      {annulled && e.annulledReason && <span className="text-xs text-[var(--data-danger-700)]">· {e.annulledReason}</span>}
+                      {annulled && e.annulledReason && <span className="text-xs text-[var(--data-error-700)]">· {e.annulledReason}</span>}
                     </div>
                   </Td>
                   <Td className="text-right">
@@ -527,11 +527,11 @@ export default function LothLibroOperaciones() {
                           value={annulReason}
                           onChange={(ev) => setAnnulReason(ev.target.value)}
                           placeholder="Motivo (min 3)"
-                          className="h-9 w-44 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-danger-500)]"
+                          className="h-9 w-44 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
                           autoFocus
                         />
                         <div className="flex gap-2">
-                          <button type="button" disabled={annulReason.trim().length < 3 || pending === e.id} onClick={() => doAnnul(e.id)} className="inline-flex h-9 items-center rounded-xl bg-[var(--data-danger-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50">
+                          <button type="button" disabled={annulReason.trim().length < 3 || pending === e.id} onClick={() => doAnnul(e.id)} className="inline-flex h-9 items-center rounded-xl bg-[var(--data-error-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50">
                             Confirmar
                           </button>
                           <button type="button" onClick={() => { setAnnulId(null); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)]">
@@ -540,7 +540,7 @@ export default function LothLibroOperaciones() {
                         </div>
                       </div>
                     ) : (
-                      <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} title="Anular (subsanación SERFOR — queda visible)" className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-3 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]">
+                      <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} title="Anular (subsanación SERFOR — queda visible)" className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">
                         <Ban className="h-3 w-3" />
                         Anular
                       </button>
@@ -616,7 +616,7 @@ function Species({ e }: { e: LothEntry }) {
     <div>
       <div className="flex items-center gap-1.5">
         <span className="font-medium text-[var(--text-primary)]">{e.speciesCommon}</span>
-        {e.cites && <span className="rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">CITES</span>}
+        {e.cites && <span className="rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
       </div>
       {e.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{e.speciesScientific}</div>}
     </div>
@@ -624,7 +624,7 @@ function Species({ e }: { e: LothEntry }) {
 }
 function Tag({ children, tone }: { children: React.ReactNode; tone?: "danger" }) {
   const cls = tone === "danger"
-    ? "bg-[var(--data-danger-100)] text-[var(--data-danger-900)]"
+    ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
   return <span className={`rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide ${cls}`}>{children}</span>;
 }
