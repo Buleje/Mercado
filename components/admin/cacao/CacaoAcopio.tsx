@@ -7,10 +7,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Leaf, Plus, RefreshCw, Search, Users, Scale, Coins, PackageCheck, AlertCircle, X as XIcon, BarChart3, Droplets,
-  Warehouse, TrendingUp, Download, Filter, Award, Newspaper, Sparkles,
+  Warehouse, TrendingUp, Download, Filter, Award, Newspaper, Sparkles, AlertTriangle,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { GRADO_LABEL, CACAO_VARIEDADES, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 import CacaoLoteForm from "./CacaoLoteForm";
@@ -416,17 +417,26 @@ export default function CacaoAcopio() {
       )}
 
       {annulId && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setAnnulId(null)}>
-          <div className="w-full max-w-md rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-[var(--text-primary)]">Anular lote</h3>
-            <p className="mt-1 text-sm text-[var(--text-tertiary)]">Motivo (queda en el historial, no se borra).</p>
-            <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (min 3 caracteres)" className="mt-3 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]" />
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)]">Cancelar</button>
-              <button type="button" disabled={annulReason.trim().length < 3} onClick={annul} className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Confirmar anulación</button>
+        <AdminModal open onClose={() => setAnnulId(null)} variant="centered-sm" hideCloseButton>
+          <div className="bg-[var(--surface-raised)] p-5">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--data-error-50)] text-[var(--data-error-600)]"><AlertTriangle className="h-6 w-6" /></span>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Anular lote {lotes.find((l) => l.id === annulId)?.loteCode ?? ""}</h3>
+                <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">El lote queda marcado como anulado y sale de los totales. <strong className="text-[var(--text-secondary)]">No se borra</strong> — queda con su motivo en el historial.</p>
+              </div>
+            </div>
+            <label className="mt-4 block">
+              <span className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">Motivo de la anulación</span>
+              <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && annulReason.trim().length >= 3) annul(); }} placeholder="Ej: error de pesaje, lote duplicado…" className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]" />
+              <span className="mt-1 block text-xs text-[var(--text-tertiary)]">Mínimo 3 caracteres.</span>
+            </label>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+              <button type="button" disabled={annulReason.trim().length < 3} onClick={annul} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"><AlertTriangle className="h-4 w-4" />Anular lote</button>
             </div>
           </div>
-        </div>
+        </AdminModal>
       )}
     </div>
   );
