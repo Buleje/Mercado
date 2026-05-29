@@ -26,12 +26,25 @@ import {
   ThumbsDown,
   BarChart3,
   Boxes,
+  Truck,
+  Scale,
+  PackageOpen,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { csrfHeaders } from "@/lib/csrf-client";
 import WoodEntryForm from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
+import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
+
+type CtpView = "ingresos" | "produccion" | "despacho" | "saldos";
+
+const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
+  { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
+  { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación" },
+  { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto" },
+  { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
+];
 
 interface WoodEntry {
   id: string;
@@ -69,6 +82,7 @@ const STATUS_META: Record<
 };
 
 export default function CTPLibroOperaciones() {
+  const [view, setView] = useState<CtpView>("ingresos");
   const [entries, setEntries] = useState<WoodEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -166,38 +180,72 @@ export default function CTPLibroOperaciones() {
         description="Registro de ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial)."
         icon={TreePine}
       >
-        <button
-          type="button"
-          onClick={() => setShowDashboard((v) => !v)}
-          className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
-            showDashboard
-              ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white"
-              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-          }`}
-        >
-          <BarChart3 className="h-4 w-4" />
-          <span>{showDashboard ? "Cerrar dashboard" : "Dashboard"}</span>
-        </button>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-          aria-label="Recargar"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          <span>Recargar</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
-        >
-          <Plus className="h-5 w-5" />
-          Nuevo ingreso
-        </button>
+        {view === "ingresos" && (
+          <>
+            <button
+              type="button"
+              onClick={() => setShowDashboard((v) => !v)}
+              className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
+                showDashboard
+                  ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              }`}
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span>{showDashboard ? "Cerrar dashboard" : "Dashboard"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={load}
+              disabled={loading}
+              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+              aria-label="Recargar"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <span>Recargar</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
+            >
+              <Plus className="h-5 w-5" />
+              Nuevo ingreso
+            </button>
+          </>
+        )}
       </AdminModuleHeader>
 
+      {/* Sub-tabs del Libro CTP: flujo materia prima → producto → salida */}
+      <div className="flex flex-wrap gap-2 border-b-2 border-[var(--rule-soft)] pb-px">
+        {CTP_VIEWS.map((v) => {
+          const Icon = v.icon;
+          const active = view === v.key;
+          return (
+            <button
+              key={v.key}
+              type="button"
+              onClick={() => setView(v.key)}
+              className={`group inline-flex items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition ${
+                active
+                  ? "border-[var(--brand-ink)] text-[var(--brand-ink)]"
+                  : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{v.label}</span>
+              <span className="hidden text-xs font-normal text-[var(--text-tertiary)] sm:inline">· {v.hint}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {view === "produccion" && <CtpEntriesView section="produccion" />}
+      {view === "despacho" && <CtpEntriesView section="despacho" />}
+      {view === "saldos" && <CtpSaldosView />}
+
+      {view === "ingresos" && (
+      <>
       {/* KPIs con StatCard del DS (mismo look-and-feel que finanzas/adelantos) */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
@@ -463,6 +511,8 @@ export default function CTPLibroOperaciones() {
             load();
           }}
         />
+      )}
+      </>
       )}
     </div>
   );
