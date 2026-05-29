@@ -15,7 +15,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { GRADO_LABEL, CACAO_VARIEDADES, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 import CacaoLoteForm from "./CacaoLoteForm";
-import CacaoBeneficioForm from "./CacaoBeneficioForm";
+import CacaoBeneficio from "./CacaoBeneficio";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoNoticiero from "./CacaoNoticiero";
 import CacaoAsesor from "./CacaoAsesor";
@@ -24,10 +24,6 @@ import CacaoInventario from "./CacaoInventario";
 import CacaoProductores from "./CacaoProductores";
 
 type View = "acopio" | "beneficio" | "inventario" | "productores" | "resumen" | "mercado" | "asesor";
-interface Beneficio {
-  id: string; loteCode: string | null; estado: string; fermDias: number | null; secDias: number | null;
-  metodoSecado: string | null; humedadFinal: string | null; pesoHumedoKg: string | null; pesoSecoKg: string | null; mermaPct: string | null;
-}
 interface Lote {
   id: string; loteCode: string; fecha: string; productorNombre: string | null; variedad: string | null;
   tipoGrano: string; pesoKg: string; humedadPct: string | null; precioPorKg: string | null; totalPagado: string | null;
@@ -45,21 +41,14 @@ const VIEWS: { key: View; label: string; icon: typeof Leaf; hint: string }[] = [
   { key: "mercado", label: "Mercado", icon: Newspaper, hint: "Precios y noticias" },
   { key: "asesor", label: "Asesor", icon: Sparkles, hint: "¿Vender o aguantar?" },
 ];
-const ESTADO_BENEFICIO: Record<string, { label: string; cls: string }> = {
-  fermentando: { label: "Fermentando", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" },
-  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-900)]" },
-  terminado: { label: "Terminado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-900)]" },
-};
 
 export default function CacaoAcopio() {
   const [view, setView] = useState<View>("acopio");
   const [lotes, setLotes] = useState<Lote[]>([]);
-  const [beneficios, setBeneficios] = useState<Beneficio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showLote, setShowLote] = useState(false);
-  const [showBeneficio, setShowBeneficio] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [loteDrawerId, setLoteDrawerId] = useState<string | null>(null);
@@ -71,24 +60,20 @@ export default function CacaoAcopio() {
   const [showFilters, setShowFilters] = useState(false);
 
   const load = useCallback(async (v: View, fOverride?: { variedad?: string; grado?: string; from?: string; to?: string }) => {
-    if (v === "mercado" || v === "asesor" || v === "resumen" || v === "inventario" || v === "productores") { setLoading(false); return; } // se auto-cargan (componentes propios)
+    // Solo "acopio" se renderiza inline; el resto son componentes self-fetch.
+    if (v !== "acopio") { setLoading(false); return; }
     setLoading(true); setError(null);
     const fv = fOverride?.variedad ?? fVariedad, fg = fOverride?.grado ?? fGrado, ff = fOverride?.from ?? fFrom, ft = fOverride?.to ?? fTo;
     try {
-      const param = v === "beneficio" ? "beneficios" : "lotes";
-      const q = new URLSearchParams({ view: param });
+      const q = new URLSearchParams({ view: "lotes" });
       if (search.trim()) q.set("search", search.trim());
-      if (v === "acopio") {
-        if (fv) q.set("variedad", fv);
-        if (fg) q.set("grado", fg);
-        if (ff) q.set("from", new Date(ff).toISOString());
-        if (ft) q.set("to", new Date(ft + "T23:59:59").toISOString());
-      }
+      if (fv) q.set("variedad", fv);
+      if (fg) q.set("grado", fg);
+      if (ff) q.set("from", new Date(ff).toISOString());
+      if (ft) q.set("to", new Date(ft + "T23:59:59").toISOString());
       const r = await fetch(`/api/admin/cacao?${q}`, { credentials: "include" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
-      const d = await r.json();
-      if (v === "beneficio") setBeneficios(d.beneficios ?? []);
-      else setLotes(d.lotes ?? []);
+      setLotes((await r.json()).lotes ?? []);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [search, fVariedad, fGrado, fFrom, fTo]);
@@ -130,12 +115,12 @@ export default function CacaoAcopio() {
   return (
     <div className="space-y-6">
       <AdminModuleHeader eyebrow="Agrícola · Especialización" title="Acopio & Beneficio de Cacao" description="Libro de acopio de cacao en grano: productores, lotes, calidad (prueba de corte + humedad NTP-ISO) y liquidación al productor. Alineado a NTP 208.040." icon={Leaf}>
-        <button type="button" onClick={() => load(view)} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60" aria-label="Recargar"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /><span>Recargar</span></button>
-        {view === "acopio"
-          ? <button type="button" onClick={() => setShowLote(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nuevo lote</button>
-          : view === "beneficio"
-          ? <button type="button" onClick={() => setShowBeneficio(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nuevo beneficio</button>
-          : null}
+        {view === "acopio" && (
+          <>
+            <button type="button" onClick={() => load(view)} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60" aria-label="Recargar"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /><span>Recargar</span></button>
+            <button type="button" onClick={() => setShowLote(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nuevo lote</button>
+          </>
+        )}
       </AdminModuleHeader>
 
       {/* Sub-tabs */}
@@ -211,38 +196,8 @@ export default function CacaoAcopio() {
       {/* PRODUCTORES — componente propio (self-fetch + agregados + sus modales) */}
       {view === "productores" && <CacaoProductores />}
 
-      {/* BENEFICIO */}
-      {view === "beneficio" && (
-        <>
-          <SearchBar value={search} onChange={setSearch} onEnter={() => load("beneficio")} placeholder="Buscar por código de lote…" />
-          <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] text-left"><tr>
-                <Th>Lote</Th><Th>Estado</Th><Th className="text-right">Ferm. (días)</Th><Th className="text-right">Secado (días)</Th><Th>Método</Th>
-                <Th className="text-right">Hum. final</Th><Th className="text-right">Húmedo→Seco</Th><Th className="text-right">Merma</Th>
-              </tr></thead>
-              <tbody>
-                {beneficios.map((b) => {
-                  const est = ESTADO_BENEFICIO[b.estado] ?? { label: b.estado, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" };
-                  return (
-                    <tr key={b.id} className="border-t border-[var(--rule-soft)]">
-                      <Td><span className="font-mono text-xs font-bold text-[var(--text-primary)]">{b.loteCode ?? "—"}</span></Td>
-                      <Td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${est.cls}`}>{est.label}</span></Td>
-                      <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.fermDias ?? "—"}</Td>
-                      <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.secDias ?? "—"}</Td>
-                      <Td className="text-[var(--text-secondary)]">{b.metodoSecado ?? "—"}</Td>
-                      <Td className="text-right font-mono tabular-nums"><span className={b.humedadFinal && Number(b.humedadFinal) > 7 ? "text-[var(--data-warning-700)]" : "text-[var(--text-secondary)]"}>{b.humedadFinal ? `${Number(b.humedadFinal).toFixed(1)}%` : "—"}</span></Td>
-                      <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.pesoHumedoKg ? n2(b.pesoHumedoKg) : "—"} → {b.pesoSecoKg ? n2(b.pesoSecoKg) : "—"}</Td>
-                      <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{b.mermaPct ? `${Number(b.mermaPct).toFixed(1)}%` : "—"}</Td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <EmptyOrLoading loading={loading} empty={beneficios.length === 0} icon={Droplets} msg="Sin beneficios registrados" hint="Registrá la fermentación y el secado de un lote para controlar la merma húmedo→seco y el rendimiento." cta={{ label: "Nuevo beneficio", onClick: () => setShowBeneficio(true) }} searchActive={!!search.trim()} />
-          </div>
-        </>
-      )}
+      {/* BENEFICIO — componente propio (self-fetch + KPIs + anular + ficha lote) */}
+      {view === "beneficio" && <CacaoBeneficio />}
 
       {/* INVENTARIO */}
       {/* INVENTARIO — componente propio (self-fetch + integración precio intl.) */}
@@ -258,7 +213,6 @@ export default function CacaoAcopio() {
       {view === "asesor" && <CacaoAsesor />}
 
       {showLote && <CacaoLoteForm onClose={() => setShowLote(false)} onSaved={(o) => { if (!o?.keepOpen) setShowLote(false); load("acopio"); }} />}
-      {showBeneficio && <CacaoBeneficioForm onClose={() => setShowBeneficio(false)} onSaved={() => { setShowBeneficio(false); load("beneficio"); }} />}
 
       {loteDrawerId && <CacaoLoteDrawer loteId={loteDrawerId} onClose={() => setLoteDrawerId(null)} />}
 
