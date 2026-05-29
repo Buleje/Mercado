@@ -206,7 +206,7 @@ export default function RecetarioAdminTab() {
   // ── Delete ──
   const handleDelete = async (noteId: string) => {
     try {
-      await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE" });
+      await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE", headers: csrfHeaders() });
       setDeleteConfirm(null);
       fetchRecetas();
     } catch { /* silent */ }

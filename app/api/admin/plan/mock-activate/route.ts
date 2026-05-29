@@ -44,33 +44,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Plan inválido" }, { status: 400 });
   }
 
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
-    select: { id: true, slug: true, plan: true },
-  });
-  if (!tenant) return NextResponse.json({ error: "Tenant no existe" }, { status: 404 });
+  try {
+    const tenant = await prisma.tenant.findFirst({
+      where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
+      select: { id: true, slug: true, plan: true },
+    });
+    if (!tenant) return NextResponse.json({ error: "Tenant no existe" }, { status: 404 });
 
-  // Trial extendido a +30d para que parezca un sub activo.
-  const trialEndsAt = new Date();
-  trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+    // Trial extendido a +30d para que parezca un sub activo.
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
 
-  await prisma.tenant.update({
-    where: { id: tenant.id },
-    data: {
-      plan: parsed.data.plan,
-      trialEndsAt,
-      // Marcamos un id mock para que el guard NO lo trate como "sin plan pagado".
-      stripeSubscriptionId: `mock_sub_${Date.now()}`,
-      active: true,
-    },
-  });
+    await prisma.tenant.update({
+      where: { id: tenant.id },
+      data: {
+        plan: parsed.data.plan,
+        trialEndsAt,
+        // Marcamos un id mock para que el guard NO lo trate como "sin plan pagado".
+        stripeSubscriptionId: `mock_sub_${Date.now()}`,
+        active: true,
+      },
+    });
 
-  logger.info("[admin/plan/mock-activate]", {
-    adminUser: auth.username,
-    tenantSlug: tenant.slug,
-    oldPlan: tenant.plan,
-    newPlan: parsed.data.plan,
-  });
+    logger.info("[admin/plan/mock-activate]", {
+      adminUser: auth.username,
+      tenantSlug: tenant.slug,
+      oldPlan: tenant.plan,
+      newPlan: parsed.data.plan,
+    });
 
-  return NextResponse.json({ ok: true, plan: parsed.data.plan });
+    return NextResponse.json({ ok: true, plan: parsed.data.plan });
+  } catch (err) {
+    logger.error?.("[admin/plan/mock-activate] db error", { err });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }

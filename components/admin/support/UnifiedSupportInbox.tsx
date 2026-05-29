@@ -12,6 +12,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { MessageCircle, Star, Inbox, CheckCircle2, Loader2, AlertCircle, RefreshCw } from "@buleje/design-system/icons";
 import { EmptyState } from "@/components/admin/EmptyState";
 import type { SupportInboxItem } from "@/app/api/admin/support/inbox/route";
@@ -85,7 +86,7 @@ export function UnifiedSupportInbox() {
     (id: string) => {
       setResolving((prev) => new Set(prev).add(id));
       // Fire-and-forget (regla #7) — optimistic UI
-      fetch(`/api/admin/support/inbox/${id}/resolve`, { method: "PATCH" })
+      fetch(`/api/admin/support/inbox/${id}/resolve`, { method: "PATCH", headers: csrfHeaders() })
         .then(() => loadInbox())
         .catch((err) => console.warn("[UnifiedSupportInbox] resolve failed:", err))
         .finally(() => setResolving((prev) => { const s = new Set(prev); s.delete(id); return s; }));

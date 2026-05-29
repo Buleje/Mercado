@@ -387,7 +387,7 @@ export default function CotizacionesModule() {
     if (!selected) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/cotizaciones/${selected.id}/convertir`, { method: "POST" });
+      const res = await fetch(`/api/cotizaciones/${selected.id}/convertir`, { method: "POST", headers: csrfHeaders() });
       if (!res.ok) throw new Error("Error al convertir");
       setSelected({ ...selected, status: "CONVERTIDA" });
       fetchCotizaciones();

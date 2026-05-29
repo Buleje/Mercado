@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, Activity, Filter, Trash2, Search, Package, ShoppingCart, Users, Star, Settings, Truck, FileText, HandCoins, Megaphone, Calculator, Boxes } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Entry = {
   id: string;
@@ -109,7 +110,7 @@ export default function ActivityLogTab() {
 
   const clearLog = async () => {
     if (!confirm("¿Limpiar todo el log de actividad?")) return;
-    await fetch("/api/activity-log", { method: "DELETE" });
+    await fetch("/api/activity-log", { method: "DELETE", headers: csrfHeaders() });
     setEntries([]);
   };
 

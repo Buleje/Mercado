@@ -26,6 +26,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -369,7 +370,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
   }, [storeSlug]);
 
   const handleDelete = useCallback((section: BannerSection, bannerId: string) => {
-    fetch(`/api/marketplace/stores/${storeSlug}/banners/${bannerId}`, { method: "DELETE" })
+    fetch(`/api/marketplace/stores/${storeSlug}/banners/${bannerId}`, { method: "DELETE", headers: csrfHeaders() })
       .catch((err) => { /* fire-and-forget */ void err; });
     setBannersBySection((prev) => ({
       ...prev,

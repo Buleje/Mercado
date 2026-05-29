@@ -1038,7 +1038,7 @@ export default function SettingsModule({
           if (newPw !== confirmPw) { setPwChangeError("Las contraseñas no coinciden"); return; }
           await patch({ adminPassword: newPw });
           setStoredAdminPw(newPw); setCurrentPwInput(""); setNewPw(""); setConfirmPw("");
-          await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: newPw }) });
+          await fetch("/api/auth/login", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ password: newPw }) });
         }} className="space-y-3">
           <div><FieldLabel icon={<Lock className="h-3.5 w-3.5" />}>Contraseña actual</FieldLabel><TextInput value={currentPwInput} onChange={setCurrentPwInput} type="password" /></div>
           <div className="grid grid-cols-2 gap-3">

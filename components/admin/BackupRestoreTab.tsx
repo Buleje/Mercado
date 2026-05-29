@@ -4,6 +4,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Shield, Download, Upload, Clock, CheckCircle, AlertTriangle, HardDrive, Database, RefreshCw, Trash2, Play } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import type { BackupEntry } from "@/app/api/backups/route";
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -55,7 +56,7 @@ export default function BackupRestoreTab() {
   const handleCreateBackup = async () => {
     setCreating(true);
     try {
-      const res = await fetch("/api/backups", { method: "POST" });
+      const res = await fetch("/api/backups", { method: "POST", headers: csrfHeaders() });
       const data = await res.json();
       if (data.downloadUrl) {
         // Disparar descarga real del backup completo

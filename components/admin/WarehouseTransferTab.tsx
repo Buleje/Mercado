@@ -135,7 +135,7 @@ export default function WarehouseTransferTab() {
   }
 
   async function deleteTransfer(id: string) {
-    const res = await fetch(`/api/transfers?id=${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/transfers?id=${id}`, { method: "DELETE", headers: csrfHeaders() });
     if (!res.ok) return;
     setTransfers((prev) => prev.filter((transfer) => transfer.id !== id));
   }

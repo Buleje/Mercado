@@ -2,6 +2,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface ReferredTenant {
   id: string;
@@ -55,7 +56,7 @@ export default function ReferidosTiendasTab() {
     setGenerating(true);
     setError(null);
     try {
-      const res = await fetch("/api/referrals/stores", { method: "POST" });
+      const res = await fetch("/api/referrals/stores", { method: "POST", headers: csrfHeaders() });
       if (!res.ok) {
         const d = (await res.json()) as { error?: string };
         throw new Error(d.error ?? "Error al generar codigo");

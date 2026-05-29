@@ -10,6 +10,7 @@ import {
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const MODULE_ID = "ventas-caja";
 
@@ -121,7 +122,7 @@ function ShiftCloseModal({
     setConfirming(true);
     // Attempt to close shift via API (best-effort)
     try {
-      await fetch("/api/cash-registers/close-shift", { method: "POST" });
+      await fetch("/api/cash-registers/close-shift", { method: "POST", headers: csrfHeaders() });
     } catch {
       // ignore — shift close is optional
     }
