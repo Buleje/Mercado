@@ -110,6 +110,119 @@ export function computeBalance(
   return { rows, pagoArea, pagoDerechoTotal: Math.round(pagoDerechoTotal * 100) / 100, valorTotal: Math.round(valorTotal * 100) / 100 };
 }
 
+// ─── Analítica de aprovechamiento (Batch 2 · frente C) ─────────────────────
+
+export interface AprovResult {
+  funnel: {
+    taladoM3: number; trozadoM3: number; despachoTrozaM3: number;
+    consumidoM3: number; productoCantidad: number; despachoProductoM3: number;
+  };
+  bySpecies: { species: string; cites: boolean; taladoM3: number; trozadoM3: number; rendimientoPct: number; mermaM3: number }[];
+  rendimientoGlobalPct: number; // trozado / talado (cuánto del árbol se aprovecha como troza)
+}
+
+const r4 = (n: number) => Math.round(n * 10000) / 10000;
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * Aprovechamiento bosque→producto a partir de los movimientos del LO-TH.
+ * - talado     = Σ volumen sección Tala por especie
+ * - trozado    = Σ volumen sección Trozado por especie
+ * - rendimiento= trozado / talado (× especie y global)
+ * - merma      = talado − trozado (tocón, copa, despuntes)
+ */
+export function computeAprovechamiento(movements: BalanceMovement[]): AprovResult {
+  const trozaMap = new Map<string, number>(); // trozaCode → vol (de Trozado)
+  const tal: Record<string, number> = {};
+  const troz: Record<string, number> = {};
+  const cites: Record<string, boolean> = {};
+  let consumidoM3 = 0, productoCantidad = 0, despachoProductoM3 = 0;
+
+  for (const e of movements) {
+    if (e.section === "trozado" && e.trozaCode) trozaMap.set(e.trozaCode, Number(e.volumeM3 ?? 0));
+    if (e.section === "tala" && e.speciesCommon) tal[e.speciesCommon] = (tal[e.speciesCommon] ?? 0) + Number(e.volumeM3 ?? 0);
+    if (e.section === "trozado" && e.speciesCommon) troz[e.speciesCommon] = (troz[e.speciesCommon] ?? 0) + Number(e.volumeM3 ?? 0);
+    if (e.section === "consumo_troza") consumidoM3 += Number(e.volumeM3 ?? 0);
+    if (e.section === "producto_terminado") productoCantidad += Number(e.quantity ?? 0);
+    if (e.section === "despacho_producto" && e.unit === "m3") despachoProductoM3 += Number(e.quantity ?? 0);
+  }
+  let despachoTrozaM3 = 0;
+  for (const e of movements) {
+    if (e.section === "despacho_troza" && e.trozaCode) despachoTrozaM3 += trozaMap.get(e.trozaCode) ?? 0;
+  }
+  const allSpecies = new Set([...Object.keys(tal), ...Object.keys(troz)]);
+  const bySpecies = [...allSpecies].map((sp) => {
+    const t = tal[sp] ?? 0, tz = troz[sp] ?? 0;
+    return { species: sp, cites: cites[sp] ?? false, taladoM3: r4(t), trozadoM3: r4(tz), rendimientoPct: t > 0 ? r1((tz / t) * 100) : 0, mermaM3: r4(Math.max(0, t - tz)) };
+  }).sort((a, b) => b.taladoM3 - a.taladoM3);
+
+  const taladoTotal = Object.values(tal).reduce((a, b) => a + b, 0);
+  const trozadoTotal = Object.values(troz).reduce((a, b) => a + b, 0);
+  return {
+    funnel: {
+      taladoM3: r4(taladoTotal), trozadoM3: r4(trozadoTotal), despachoTrozaM3: r4(despachoTrozaM3),
+      consumidoM3: r4(consumidoM3), productoCantidad: r4(productoCantidad), despachoProductoM3: r4(despachoProductoM3),
+    },
+    bySpecies,
+    rendimientoGlobalPct: taladoTotal > 0 ? r1((trozadoTotal / taladoTotal) * 100) : 0,
+  };
+}
+
+export interface Anomaly { level: "error" | "warn"; code: string; message: string; species?: string }
+
+/**
+ * Detecta inconsistencias en el libro (defensa ante fiscalización):
+ *  - trozado > talado (imposible: no se troza más de lo tumbado)
+ *  - producto despachado en m³ > materia prima consumida (rendimiento >100%)
+ *  - movilizado > autorizado (exceso de aprovechamiento — grave)
+ *  - saldo < 10% del autorizado (alerta de agotamiento)
+ *  - troza despachada sin registro previo de trozado
+ *  - líneas registradas fuera del plazo de 15 días
+ */
+export function detectAnomalias(
+  movements: BalanceMovement[],
+  balanceRows: { species: string; autorizado: number; movilizado: number; saldo: number; exceso: boolean }[] = [],
+  lateCount = 0,
+): Anomaly[] {
+  const out: Anomaly[] = [];
+  const aprov = computeAprovechamiento(movements);
+  for (const s of aprov.bySpecies) {
+    if (s.trozadoM3 > s.taladoM3 + 1e-4) {
+      out.push({ level: "error", code: "trozado_gt_talado", species: s.species, message: `Trozado (${s.trozadoM3} m³) supera lo talado (${s.taladoM3} m³). Revisá la captura.` });
+    }
+  }
+  if (aprov.funnel.despachoProductoM3 > aprov.funnel.consumidoM3 + 1e-4 && aprov.funnel.consumidoM3 > 0) {
+    out.push({ level: "error", code: "rend_aserrio_imposible", message: `Producto despachado (${aprov.funnel.despachoProductoM3} m³) supera la materia prima consumida (${aprov.funnel.consumidoM3} m³).` });
+  }
+  for (const b of balanceRows) {
+    if (b.exceso) out.push({ level: "error", code: "exceso_autorizado", species: b.species, message: `Movilizado (${b.movilizado} m³) supera el volumen autorizado (${b.autorizado} m³) de ${b.species}.` });
+    else if (b.autorizado > 0 && b.saldo > 0 && b.saldo < b.autorizado * 0.1) {
+      out.push({ level: "warn", code: "saldo_bajo", species: b.species, message: `Queda solo ${b.saldo} m³ de ${b.species} (${r1((b.saldo / b.autorizado) * 100)}% del autorizado).` });
+    }
+  }
+  const trozas = new Set(movements.filter((e) => e.section === "trozado").map((e) => e.trozaCode));
+  for (const e of movements) {
+    if (e.section === "despacho_troza" && e.trozaCode && !trozas.has(e.trozaCode)) {
+      out.push({ level: "warn", code: "troza_fantasma", message: `Troza ${e.trozaCode} despachada sin registro de trozado.` });
+    }
+  }
+  if (lateCount > 0) out.push({ level: "warn", code: "fuera_de_plazo", message: `${lateCount} línea(s) registrada(s) fuera del plazo de 15 días.` });
+  return out;
+}
+
+export interface SaldoProjection { ritmoDiaM3: number; diasParaAgotar: number; fechaAgotamientoISO: string | null }
+
+/** Proyección de agotamiento del saldo según el ritmo histórico de movilización. */
+export function projectSaldo(saldoM3: number, movilizadoM3: number, firstActivityISO: string | null, nowISO: string): SaldoProjection | null {
+  if (!firstActivityISO || movilizadoM3 <= 0 || saldoM3 <= 0) return null;
+  const dias = Math.max(1, (new Date(nowISO).getTime() - new Date(firstActivityISO).getTime()) / 86_400_000);
+  const ritmoDiaM3 = movilizadoM3 / dias;
+  if (ritmoDiaM3 <= 0) return null;
+  const diasParaAgotar = Math.round(saldoM3 / ritmoDiaM3);
+  const fecha = new Date(new Date(nowISO).getTime() + diasParaAgotar * 86_400_000);
+  return { ritmoDiaM3: Math.round(ritmoDiaM3 * 10000) / 10000, diasParaAgotar, fechaAgotamientoISO: fecha.toISOString() };
+}
+
 /** DTO de una entrada del LO-TH tal como la devuelve la API (Decimals → string). */
 export interface LothEntryDTO {
   id: string;

@@ -53,6 +53,9 @@ export async function GET(req: NextRequest) {
     if (balanceId) {
       return NextResponse.json({ balance: await ForestPlanDB.balanceExtraccion(auth.tenantId, balanceId) });
     }
+    if (url.searchParams.get("analytics") === "1") {
+      return NextResponse.json({ analytics: await ForestPlanDB.analytics(auth.tenantId, url.searchParams.get("planId") ?? undefined) });
+    }
     const planId = url.searchParams.get("planId");
     if (planId) {
       const [plan, species, censusSummary] = await Promise.all([

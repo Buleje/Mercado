@@ -10,7 +10,10 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
-import { censusVolume, computeBalance, type BalanceMovement, type BalanceSpeciesInput } from "@/lib/forestal/loth-constants";
+import {
+  censusVolume, computeBalance, computeAprovechamiento, detectAnomalias, projectSaldo,
+  type BalanceMovement, type BalanceSpeciesInput,
+} from "@/lib/forestal/loth-constants";
 
 const CACHE_PREFIX = "forest-plan";
 const dec = (v: number | string | null | undefined) =>
@@ -393,6 +396,67 @@ export class ForestPlanDB {
     return {
       ...result,
       plan: plan ? { vigenciaHasta: plan.vigenciaHasta, estado: plan.estado, areaHa: area, uitRef: uit } : null,
+    };
+  }
+
+  /**
+   * Analítica de inteligencia (Batch 2 · frente C): aprovechamiento bosque→producto,
+   * balance por especie, proyección de agotamiento del saldo y anomalías.
+   * Usa el plan activo si no se pasa planId. Funciona sin plan (sin balance/proyección).
+   */
+  static async analytics(tenantId: string, planId?: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const plan = planId
+      ? await prisma.forestPlan.findFirst({ where: { tenantId, id: planId, deletedAt: null } })
+      : await prisma.forestPlan.findFirst({ where: { tenantId, deletedAt: null, estado: "vigente" }, orderBy: { createdAt: "desc" } });
+
+    const [entries, speciesRows] = await Promise.all([
+      prisma.forestLothEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        select: { section: true, speciesCommon: true, trozaCode: true, volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true },
+      }),
+      plan
+        ? prisma.forestPlanSpecies.findMany({ where: { tenantId, planId: plan.id, deletedAt: null } })
+        : Promise.resolve([]),
+    ]);
+
+    const movements: BalanceMovement[] = entries.map((e) => ({
+      section: e.section, speciesCommon: e.speciesCommon, trozaCode: e.trozaCode,
+      volumeM3: e.volumeM3 ? Number(e.volumeM3) : null, quantity: e.quantity ? Number(e.quantity) : null, unit: e.unit,
+    }));
+
+    const aprovechamiento = computeAprovechamiento(movements);
+
+    let balance: ReturnType<typeof computeBalance> | null = null;
+    if (plan && speciesRows.length > 0) {
+      const species: BalanceSpeciesInput[] = speciesRows.map((s) => ({
+        speciesCommon: s.speciesCommon, cites: s.cites, volumenAutorizadoM3: Number(s.volumenAutorizadoM3),
+        precioVentaSoles: s.precioVentaSoles ? Number(s.precioVentaSoles) : null,
+        valorEstadoNaturalSoles: s.valorEstadoNaturalSoles ? Number(s.valorEstadoNaturalSoles) : null,
+      }));
+      balance = computeBalance(species, movements, { uitRef: Number(plan.uitRef ?? 0), areaHa: Number(plan.areaHa ?? 0) });
+    }
+
+    // Fuera de plazo: createdAt − entryDate > 15 días
+    const lateCount = entries.filter((e) => {
+      if (!e.entryDate || !e.createdAt) return false;
+      return (e.createdAt.getTime() - e.entryDate.getTime()) / 86_400_000 > 15;
+    }).length;
+
+    const anomalias = detectAnomalias(movements, balance?.rows ?? [], lateCount);
+
+    let projection = null;
+    if (balance) {
+      const saldoTotal = balance.rows.reduce((a, r) => a + Math.max(0, r.saldo), 0);
+      const movilizadoTotal = balance.rows.reduce((a, r) => a + r.movilizado, 0);
+      const firstActivity = entries.reduce<Date | null>((min, e) => (e.entryDate && (!min || e.entryDate < min) ? e.entryDate : min), null);
+      projection = projectSaldo(saldoTotal, movilizadoTotal, firstActivity?.toISOString() ?? null, new Date().toISOString());
+    }
+
+    return {
+      hasPlan: !!plan,
+      plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta } : null,
+      aprovechamiento, balance, anomalias, projection, lateCount,
     };
   }
 

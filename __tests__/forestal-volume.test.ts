@@ -3,6 +3,9 @@ import {
   smalianVolume,
   censusVolume,
   computeBalance,
+  computeAprovechamiento,
+  detectAnomalias,
+  projectSaldo,
   type BalanceSpeciesInput,
   type BalanceMovement,
 } from "@/lib/forestal/loth-constants";
@@ -103,5 +106,69 @@ describe("computeBalance — balance de extracción / saldos (operación 85-TOR)
     );
     expect(exceso.rows[0].exceso).toBe(true);
     expect(exceso.rows[0].saldo).toBeLessThan(0);
+  });
+});
+
+describe("computeAprovechamiento — cascada bosque→producto (Batch 2)", () => {
+  const movs: BalanceMovement[] = [
+    { section: "tala", speciesCommon: "Tornillo", trozaCode: null, volumeM3: 5.003, quantity: null, unit: null },
+    { section: "trozado", speciesCommon: "Tornillo", trozaCode: "85-TOR-A", volumeM3: 4.887, quantity: null, unit: null },
+    { section: "despacho_troza", speciesCommon: null, trozaCode: "85-TOR-A", volumeM3: null, quantity: null, unit: null },
+    { section: "consumo_troza", speciesCommon: "Tornillo", trozaCode: "85-TOR-B", volumeM3: 2.126, quantity: null, unit: null },
+    { section: "despacho_producto", speciesCommon: "Tornillo", trozaCode: null, volumeM3: null, quantity: 1.9, unit: "m3" },
+  ];
+  it("funnel: talado 5.003 → trozado 4.887 → despacho troza 4.887 (resuelto) → consumo 2.126 → despacho PT 1.9", () => {
+    const a = computeAprovechamiento(movs);
+    expect(a.funnel.taladoM3).toBe(5.003);
+    expect(a.funnel.trozadoM3).toBe(4.887);
+    expect(a.funnel.despachoTrozaM3).toBe(4.887);
+    expect(a.funnel.consumidoM3).toBe(2.126);
+    expect(a.funnel.despachoProductoM3).toBe(1.9);
+  });
+  it("rendimiento global = trozado/talado ≈ 97.7%", () => {
+    expect(computeAprovechamiento(movs).rendimientoGlobalPct).toBe(97.7);
+  });
+  it("merma por especie = talado − trozado", () => {
+    const tor = computeAprovechamiento(movs).bySpecies.find((s) => s.species === "Tornillo")!;
+    expect(tor.mermaM3).toBe(0.116);
+  });
+});
+
+describe("detectAnomalias — defensa ante fiscalización (Batch 2)", () => {
+  it("detecta trozado > talado (imposible)", () => {
+    const an = detectAnomalias([
+      { section: "tala", speciesCommon: "Tornillo", trozaCode: null, volumeM3: 3, quantity: null, unit: null },
+      { section: "trozado", speciesCommon: "Tornillo", trozaCode: "T-A", volumeM3: 5, quantity: null, unit: null },
+    ]);
+    expect(an.some((a) => a.code === "trozado_gt_talado" && a.level === "error")).toBe(true);
+  });
+  it("detecta troza despachada sin trozado previo (fantasma)", () => {
+    const an = detectAnomalias([
+      { section: "despacho_troza", speciesCommon: null, trozaCode: "X-99", volumeM3: null, quantity: null, unit: null },
+    ]);
+    expect(an.some((a) => a.code === "troza_fantasma")).toBe(true);
+  });
+  it("propaga exceso del balance + alerta de líneas fuera de plazo", () => {
+    const an = detectAnomalias([], [{ species: "Caoba", autorizado: 2, movilizado: 3, saldo: -1, exceso: true }], 4);
+    expect(an.some((a) => a.code === "exceso_autorizado")).toBe(true);
+    expect(an.some((a) => a.code === "fuera_de_plazo")).toBe(true);
+  });
+  it("libro consistente → sin anomalías", () => {
+    expect(detectAnomalias([
+      { section: "tala", speciesCommon: "Tornillo", trozaCode: null, volumeM3: 5, quantity: null, unit: null },
+      { section: "trozado", speciesCommon: "Tornillo", trozaCode: "T-A", volumeM3: 4, quantity: null, unit: null },
+    ])).toHaveLength(0);
+  });
+});
+
+describe("projectSaldo — proyección de agotamiento (Batch 2)", () => {
+  it("ritmo y días para agotar según movilización histórica", () => {
+    const p = projectSaldo(100, 30, "2026-01-01T00:00:00.000Z", "2026-01-31T00:00:00.000Z")!;
+    expect(p.ritmoDiaM3).toBe(1); // 30 m³ / 30 días
+    expect(p.diasParaAgotar).toBe(100); // 100 / 1
+  });
+  it("retorna null sin movilización o sin saldo", () => {
+    expect(projectSaldo(100, 0, "2026-01-01T00:00:00.000Z", "2026-01-31T00:00:00.000Z")).toBeNull();
+    expect(projectSaldo(0, 30, "2026-01-01T00:00:00.000Z", "2026-01-31T00:00:00.000Z")).toBeNull();
   });
 });
