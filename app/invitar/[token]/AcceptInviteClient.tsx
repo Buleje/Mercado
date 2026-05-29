@@ -164,7 +164,7 @@ export default function AcceptInviteClient({ token }: Props) {
               required
               minLength={3}
               maxLength={40}
-              pattern="[a-zA-Z0-9._-]+"
+              pattern="[a-zA-Z0-9._\-]+"
               placeholder="ej: pedro.cajero"
               className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-bold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
             />

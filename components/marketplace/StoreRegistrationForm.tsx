@@ -508,7 +508,7 @@ export default function StoreRegistrationForm() {
                       autoComplete="tel"
                       inputMode="tel"
                       required
-                      pattern="[0-9 ()+-]{6,}"
+                      pattern="[0-9 \(\)+\-]{6,}"
                       value={ownerPhone}
                       onChange={(e) => setOwnerPhone(e.target.value)}
                       placeholder="Ej: 961 234 567"
