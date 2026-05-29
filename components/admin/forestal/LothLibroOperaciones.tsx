@@ -23,10 +23,12 @@ import {
   Printer,
   FileSpreadsheet,
   ChevronDown,
+  QrCode,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
+import { printTrozaLabels } from "@/lib/forestal/loth-labels";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { LOTH_SECTIONS, type LothSection, type LothEntryDTO } from "@/lib/forestal/loth-constants";
 import LothEntryForm, { SECTION_META } from "./LothEntryForm";
@@ -127,6 +129,24 @@ export default function LothLibroOperaciones() {
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
   const [exportMenu, setExportMenu] = useState(false);
   const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
+  const [printingLabels, setPrintingLabels] = useState(false);
+
+  async function doPrintLabels() {
+    setPrintingLabels(true);
+    setError(null);
+    try {
+      const count = await printTrozaLabels(entries, {
+        origin: window.location.origin,
+        titular: caratula?.titularName ?? null,
+        planNumber: caratula?.tituloHabilitante ?? null,
+      });
+      if (count === 0) setError("No hay códigos imprimibles en esta sección (usá Trozado o Tala).");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPrintingLabels(false);
+    }
+  }
 
   async function doExport(kind: "pdf" | "excel") {
     setExportMenu(false);
@@ -421,17 +441,29 @@ export default function LothLibroOperaciones() {
         <StatCard label="Especies CITES" value={citesCount.toString()} subValue="en esta sección" icon={ShieldAlert} emphasis={citesCount > 0 ? "error" : "neutral"} />
       </div>
 
-      {/* Búsqueda */}
-      <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-12">
-        <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && loadEntries()}
-          placeholder="Buscar por código, especie o GTF..."
-          className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-        />
+      {/* Búsqueda + etiquetas */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && loadEntries()}
+            placeholder="Buscar por código, especie o GTF..."
+            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={doPrintLabels}
+          disabled={printingLabels || entries.length === 0}
+          title="Imprimir etiquetas con QR de origen para las trozas de esta sección"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+        >
+          {printingLabels ? <RefreshCw className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
+          <span>Etiquetas QR</span>
+        </button>
       </div>
 
       {error && (
