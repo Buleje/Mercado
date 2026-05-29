@@ -50,6 +50,10 @@ export async function GET(req: NextRequest) {
     if (url.searchParams.get("saldos") === "1") {
       return NextResponse.json({ saldos: await ForestCtpDB.saldos(auth.tenantId) });
     }
+    const availableFor = url.searchParams.get("available");
+    if (availableFor && (CTP_SECTIONS as readonly string[]).includes(availableFor)) {
+      return NextResponse.json({ items: await ForestCtpDB.availableSource(auth.tenantId, availableFor as (typeof CTP_SECTIONS)[number]) });
+    }
     const s = url.searchParams.get("section");
     const section = s && (CTP_SECTIONS as readonly string[]).includes(s) ? (s as (typeof CTP_SECTIONS)[number]) : undefined;
     const { entries, total } = await ForestCtpDB.list(auth.tenantId, {

@@ -177,4 +177,47 @@ export class ForestCtpDB {
       })),
     };
   }
+
+  /**
+   * Ítems seleccionables (data-driven):
+   *  - produccion → ingresos de materia prima (WoodEntry)
+   *  - despacho   → productos producidos con stock > 0 (producido − despachado)
+   */
+  static async availableSource(tenantId: string, section: CtpSection) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (section === "produccion") {
+      const ing = await prisma.woodEntry.findMany({
+        where: { tenantId, deletedAt: null },
+        orderBy: { entryDate: "desc" },
+        take: 300,
+        select: { gtfNumber: true, speciesCommonName: true, speciesScientificName: true, speciesCites: true, volumeM3: true },
+      });
+      return ing.map((w) => ({
+        kind: "ingreso" as const, code: w.gtfNumber, species: w.speciesCommonName,
+        scientific: w.speciesScientificName, cites: w.speciesCites,
+        vol: w.volumeM3 ? Number(w.volumeM3) : null,
+      }));
+    }
+    if (section === "despacho") {
+      const entries = await prisma.forestCtpEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        select: { section: true, productType: true, speciesCommon: true, speciesScientific: true, cites: true, quantity: true, unit: true },
+      });
+      const stock = new Map<string, { productType: string | null; species: string | null; scientific: string | null; cites: boolean; unit: string | null; producido: number; despachado: number }>();
+      for (const e of entries) {
+        const key = `${e.productType}|${e.speciesCommon}`;
+        const cur = stock.get(key) ?? { productType: e.productType, species: e.speciesCommon, scientific: e.speciesScientific, cites: e.cites, unit: e.unit, producido: 0, despachado: 0 };
+        if (e.section === "produccion") cur.producido += Number(e.quantity ?? 0);
+        if (e.section === "despacho") cur.despachado += Number(e.quantity ?? 0);
+        stock.set(key, cur);
+      }
+      return [...stock.values()]
+        .filter((s) => s.producido - s.despachado > 0.0001)
+        .map((s) => ({
+          kind: "producto" as const, code: s.productType, productType: s.productType, species: s.species,
+          scientific: s.scientific, cites: s.cites, quantity: Math.round((s.producido - s.despachado) * 10000) / 10000, unit: s.unit,
+        }));
+    }
+    return [];
+  }
 }
