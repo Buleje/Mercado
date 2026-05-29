@@ -634,6 +634,52 @@ export class CacaoDB {
     };
   }
 
+  /**
+   * Serie mensual del precio propio (S//kg): a cómo COMPRÉ (acopio: totalPagado/kg)
+   * y a cómo VENDÍ (ventas: totalPen/kg). Últimos 12 meses con actividad. La serie
+   * de venta degrada a vacío si la tabla CacaoVenta aún no existe (`safeVenta`).
+   */
+  static async precioHistorico(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [lotes, ventas] = await Promise.all([
+      prisma.cacaoLote.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        orderBy: { fecha: "asc" }, take: 3000,
+        select: { fecha: true, pesoKg: true, totalPagado: true },
+      }),
+      safeVenta(() => prisma.cacaoVenta.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        orderBy: { fecha: "asc" }, take: 3000,
+        select: { fecha: true, pesoKg: true, totalPen: true },
+      }), [] as { fecha: Date; pesoKg: Prisma.Decimal | null; totalPen: Prisma.Decimal | null }[]),
+    ]);
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    const mk = (d: Date) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    const acc = (rows: { fecha: Date; pesoKg: unknown; valor: unknown }[]) => {
+      const m: Record<string, { kg: number; valor: number }> = {};
+      for (const r of rows) {
+        const k = mk(new Date(r.fecha));
+        (m[k] ??= { kg: 0, valor: 0 });
+        m[k].kg += Number(r.pesoKg ?? 0);
+        m[k].valor += Number(r.valor ?? 0);
+      }
+      return m;
+    };
+    const compra = acc(lotes.map((l) => ({ fecha: l.fecha, pesoKg: l.pesoKg, valor: l.totalPagado })));
+    const venta = acc(ventas.map((v) => ({ fecha: v.fecha, pesoKg: v.pesoKg, valor: v.totalPen })));
+    const keys = Array.from(new Set([...Object.keys(compra), ...Object.keys(venta)])).sort().slice(-12);
+    return keys.map((mes) => {
+      const c = compra[mes], s = venta[mes];
+      return {
+        mes,
+        precioCompra: c && c.kg > 0 ? r2(c.valor / c.kg) : null,
+        precioVenta: s && s.kg > 0 ? r2(s.valor / s.kg) : null,
+        kgCompra: c ? r2(c.kg) : 0,
+        kgVenta: s ? r2(s.kg) : 0,
+      };
+    });
+  }
+
   /** Precio de compra promedio del tenant (S//kg) sobre lotes SECOS — comparable
    *  con la referencia internacional en S//kg seco. Ponderado por peso. */
   static async avgBuyPrice(tenantId: string) {

@@ -129,6 +129,7 @@ export async function GET(req: NextRequest) {
     if (view === "stats") return NextResponse.json({ stats: await CacaoDB.stats(g.auth.tenantId) });
     if (view === "inventory") return NextResponse.json({ inventory: await CacaoDB.inventory(g.auth.tenantId) });
     if (view === "trends") return NextResponse.json({ trends: await CacaoDB.trends(g.auth.tenantId) });
+    if (view === "precio-historico") return NextResponse.json({ serie: await CacaoDB.precioHistorico(g.auth.tenantId) });
     if (view === "beneficios") return NextResponse.json({ beneficios: await CacaoDB.listBeneficios(g.auth.tenantId, { search }) });
     if (view === "ventas") return NextResponse.json({ ventas: await CacaoDB.listVentas(g.auth.tenantId, { search }) });
     if (view === "ventas-stats") return NextResponse.json({ stats: await CacaoDB.ventasStats(g.auth.tenantId) });

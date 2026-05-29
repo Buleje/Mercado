@@ -16,6 +16,10 @@ const CacaoPriceChart = dynamic(() => import("./CacaoPriceChart"), {
   ssr: false,
   loading: () => <div className="flex h-[360px] items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]"><Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando gráfico…</div>,
 });
+const CacaoMiPrecio = dynamic(() => import("./CacaoMiPrecio"), {
+  ssr: false,
+  loading: () => <div className="flex h-[320px] items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]"><Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando gráfico…</div>,
+});
 
 interface Price {
   value: number; currency: string; prevClose: number | null; change: number | null; changePct: number | null;
@@ -126,6 +130,8 @@ export default function CacaoNoticiero() {
 
       {/* Flujo de precio + analítica de movimiento */}
       {p?.series && p.series.length > 1 && <CacaoPriceChart series={p.series} />}
+
+      <CacaoMiPrecio marketRefSolKg={data?.pricePenPerKg ?? null} />
 
       {/* Noticias */}
       {data && (
