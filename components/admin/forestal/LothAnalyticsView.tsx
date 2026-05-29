@@ -10,21 +10,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, AlertTriangle, TrendingUp, Gauge, Coins, CalendarClock, Activity, CheckCircle2,
+  Calculator, Save, Wallet,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface Funnel {
   taladoM3: number; trozadoM3: number; despachoTrozaM3: number;
   consumidoM3: number; productoCantidad: number; despachoProductoM3: number;
 }
+interface CosteoRow {
+  species: string; cites: boolean; movilizadoM3: number; precioVentaM3: number; costoTotalM3: number;
+  margenM3: number; margenPct: number; ingreso: number; costo: number; margen: number;
+  desglose: { venM3: number; extraccionM3: number; transformacionM3: number; fleteM3: number };
+}
 interface Analytics {
   hasPlan: boolean;
-  plan: { planNumber: string | null; titularName: string; estado: string; vigenciaHasta: string | null } | null;
+  plan: { id: string; planNumber: string | null; titularName: string; estado: string; vigenciaHasta: string | null; costos: { extraccionM3: number; transformacionM3: number; fleteM3: number } } | null;
   aprovechamiento: { funnel: Funnel; bySpecies: { species: string; cites: boolean; taladoM3: number; trozadoM3: number; rendimientoPct: number; mermaM3: number }[]; rendimientoGlobalPct: number };
   balance: { rows: { species: string; movilizado: number; saldo: number; valorMovilizado: number }[]; pagoDerechoTotal: number; valorTotal: number } | null;
   anomalias: { level: "error" | "warn"; code: string; message: string; species?: string }[];
   projection: { ritmoDiaM3: number; diasParaAgotar: number; fechaAgotamientoISO: string | null } | null;
   lateCount: number;
+  costeo: { rows: CosteoRow[]; ingresoTotal: number; costoTotal: number; margenTotal: number; margenPctTotal: number; costoOperativoM3: number } | null;
 }
 
 const fm = (n: number, dp = 2) => n.toLocaleString("es-PE", { minimumFractionDigits: dp, maximumFractionDigits: dp });
@@ -34,17 +42,44 @@ export default function LothAnalyticsView() {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [costForm, setCostForm] = useState({ extraccionM3: "", transformacionM3: "", fleteM3: "" });
+  const [savingCosts, setSavingCosts] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
       const r = await fetch("/api/admin/forestal/plan?analytics=1", { credentials: "include" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
-      setData((await r.json()).analytics);
+      const a: Analytics = (await r.json()).analytics;
+      setData(a);
+      if (a.plan?.costos) setCostForm({
+        extraccionM3: a.plan.costos.extraccionM3 ? String(a.plan.costos.extraccionM3) : "",
+        transformacionM3: a.plan.costos.transformacionM3 ? String(a.plan.costos.transformacionM3) : "",
+        fleteM3: a.plan.costos.fleteM3 ? String(a.plan.costos.fleteM3) : "",
+      });
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  async function saveCosts() {
+    if (!data?.plan?.id) return;
+    setSavingCosts(true); setError(null);
+    try {
+      const r = await fetch("/api/admin/forestal/plan", {
+        method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
+        body: JSON.stringify({
+          id: data.plan.id,
+          costoExtraccionM3: costForm.extraccionM3 ? Number(costForm.extraccionM3) : null,
+          costoTransformacionM3: costForm.transformacionM3 ? Number(costForm.transformacionM3) : null,
+          costoFleteM3: costForm.fleteM3 ? Number(costForm.fleteM3) : null,
+        }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setSavingCosts(false); }
+  }
 
   const funnelSteps = useMemo(() => {
     if (!data) return [];
@@ -161,7 +196,73 @@ export default function LothAnalyticsView() {
           </table>
         </div>
       )}
+
+      {/* Costeo & margen por m³ (Batch 3 · frente D) */}
+      {data.hasPlan && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <div className="mb-4 flex items-center gap-2"><Calculator className="h-4 w-4 text-[var(--brand-ink)]" /><CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Costeo y margen por m³</CardTitle></div>
+
+          {/* Config de costos operativos (S//m³) */}
+          <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 sm:grid-cols-4">
+            <CostInput label="Extracción S//m³" hint="tala + arrastre + patio" value={costForm.extraccionM3} onChange={(v) => setCostForm((f) => ({ ...f, extraccionM3: v }))} />
+            <CostInput label="Transformación S//m³" hint="aserrío" value={costForm.transformacionM3} onChange={(v) => setCostForm((f) => ({ ...f, transformacionM3: v }))} />
+            <CostInput label="Flete S//m³" hint="transporte a destino" value={costForm.fleteM3} onChange={(v) => setCostForm((f) => ({ ...f, fleteM3: v }))} />
+            <div className="flex items-end">
+              <button type="button" onClick={saveCosts} disabled={savingCosts} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+                {savingCosts ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Guardar costos
+              </button>
+            </div>
+          </div>
+
+          {data.costeo && data.costeo.rows.length > 0 ? (
+            <>
+              <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <StatCard label="Ingreso (movilizado)" value={`S/ ${fm(data.costeo.ingresoTotal)}`} icon={Coins} emphasis="neutral" />
+                <StatCard label="Costo total" value={`S/ ${fm(data.costeo.costoTotal)}`} subValue={`op. S/ ${fm(data.costeo.costoOperativoM3)}/m³`} icon={Wallet} emphasis="neutral" />
+                <StatCard label="Margen" value={`S/ ${fm(data.costeo.margenTotal)}`} icon={TrendingUp} emphasis={data.costeo.margenTotal >= 0 ? "success" : "error"} />
+                <StatCard label="Margen %" value={`${data.costeo.margenPctTotal}%`} subValue="sobre ingreso" icon={Gauge} emphasis={data.costeo.margenPctTotal >= 25 ? "success" : data.costeo.margenPctTotal >= 0 ? "warning" : "error"} />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-[var(--surface-sunken)] text-left">
+                    <tr><Th>Especie</Th><Th className="text-right">Precio/m³</Th><Th className="text-right">Costo/m³</Th><Th className="text-right">Margen/m³</Th><Th className="text-right">Margen %</Th><Th className="text-right">Margen total</Th></tr>
+                  </thead>
+                  <tbody>
+                    {data.costeo.rows.map((c) => (
+                      <tr key={c.species} className="border-t border-[var(--rule-soft)]">
+                        <Td>
+                          <span className="font-medium text-[var(--text-primary)]">{c.species}</span>
+                          {c.cites && <span className="ml-2 rounded bg-[var(--data-danger-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">CITES</span>}
+                          <div className="text-xs text-[var(--text-tertiary)]">VEN {fm(c.desglose.venM3)} + ext {fm(c.desglose.extraccionM3)} + transf {fm(c.desglose.transformacionM3)} + flete {fm(c.desglose.fleteM3)}</div>
+                        </Td>
+                        <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">S/ {fm(c.precioVentaM3)}</Td>
+                        <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">S/ {fm(c.costoTotalM3)}</Td>
+                        <Td className="text-right font-mono tabular-nums"><span className={c.margenM3 >= 0 ? "text-[var(--data-success-700)]" : "text-[var(--data-danger-700)]"}>S/ {fm(c.margenM3)}</span></Td>
+                        <Td className="text-right"><span className={`font-mono font-bold tabular-nums ${c.margenPct >= 25 ? "text-[var(--data-success-700)]" : c.margenPct >= 0 ? "text-[var(--data-warning-700)]" : "text-[var(--data-danger-700)]"}`}>{c.margenPct}%</span></Td>
+                        <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">S/ {fm(c.margen)}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="mt-3 text-xs text-[var(--text-tertiary)]">El precio de venta y el VEN (derecho) salen de cada especie del plan; los costos operativos se aplican por m³ a todas. Margen = precio − (VEN + extracción + transformación + flete).</p>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-[var(--text-tertiary)]">Configurá precios de venta en las especies del plan y registrá movilización para ver el margen.</p>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+function CostInput({ label, hint, value, onChange }: { label: string; hint: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">{label}</span>
+      <input type="number" step="0.01" min="0" value={value} onChange={(e) => onChange(e.target.value)} placeholder="0.00" className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--brand-ink)]" />
+      <span className="mt-1 block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{hint}</span>
+    </label>
   );
 }
 
