@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { escapeHtml } from "@/lib/safe-html";
 import {
   TrendingUp, DollarSign, ShoppingCart, Users, Package,
   AlertTriangle, BarChart3, Clock, Banknote,
@@ -1229,16 +1230,16 @@ export default function DashboardTab() {
   const printTicket = useCallback((o: Order) => {
     const w = window.open("", "_blank", "width=360,height=600");
     if (!w) return;
-    const itemsHtml = o.items.map(i => `<tr><td style="padding:2px 0">${i.quantity}× ${i.name}</td><td style="text-align:right">S/${(i.price * i.quantity).toFixed(2)}</td></tr>`).join("");
+    const itemsHtml = o.items.map(i => `<tr><td style="padding:2px 0">${i.quantity}× ${escapeHtml(String(i.name ?? ""))}</td><td style="text-align:right">S/${(i.price * i.quantity).toFixed(2)}</td></tr>`).join("");
     w.document.write(`<!DOCTYPE html><html><head><title>Comanda #${o.id.slice(-6)}</title>
 <style>*{margin:0;padding:0;font-family:monospace;font-size:13px}body{padding:12px;max-width:300px}h2{text-align:center;font-size:15px;margin-bottom:4px}hr{border:0;border-top:1px dashed #999;margin:6px 0}table{width:100%;border-collapse:collapse}td{padding:2px 0}.total{font-size:15px;font-weight:bold;text-align:right}.footer{text-align:center;font-size:10px;color:#888;margin-top:8px}@media print{body{padding:0}}</style></head>
 <body><h2>Buleje</h2><p style="text-align:center;font-size:10px">Comanda #${o.id.slice(-6).toUpperCase()}</p><hr>
-<p><b>Cliente:</b> ${o.customer.name}</p>${o.customer.phone ? `<p><b>Tel:</b> ${o.customer.phone}</p>` : ""}
-${o.customer.location ? `<p><b>Dir:</b> ${o.customer.location}</p>` : ""}
+<p><b>Cliente:</b> ${escapeHtml(String(o.customer.name ?? ""))}</p>${o.customer.phone ? `<p><b>Tel:</b> ${escapeHtml(String(o.customer.phone))}</p>` : ""}
+${o.customer.location ? `<p><b>Dir:</b> ${escapeHtml(String(o.customer.location))}</p>` : ""}
 <p><b>Fecha:</b> ${new Date(o.createdAt).toLocaleString("es-PE")}</p>
 <p><b>Pago:</b> ${o.paymentMethod === "yape" ? "Yape" : "Efectivo"}</p><hr>
 <table>${itemsHtml}</table><hr><p class="total">TOTAL: S/${(o.total ?? 0).toFixed(2)}</p>
-${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
+${o.notes ? `<hr><p style="font-size:11px">${escapeHtml(String(o.notes))}</p>` : ""}
 <p class="footer">¡Gracias por tu compra!</p></body></html>`);
     w.document.close();
     w.focus();

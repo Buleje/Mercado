@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { escapeHtml } from "@/lib/safe-html";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, DollarSign, Loader2, AlertTriangle,
@@ -1959,16 +1960,16 @@ export default function PrestamosModule() {
   .firma { border-top: 1px solid #333; width: 200px; text-align: center; padding-top: 4px; margin-top: 40px; }
 </style></head><body>
 <h1>CRONOGRAMA DE AMORTIZACIÓN</h1>
-<p class="sub">${storeName}</p>
+<p class="sub">${escapeHtml(String(storeName ?? ""))}</p>
 <div class="info">
-  <div><b>Cliente:</b> ${selected.customerId || selected.entidadNombre || "—"}</div>
+  <div><b>Cliente:</b> ${escapeHtml(String(selected.customerId || selected.entidadNombre || "—"))}</div>
   <div><b>Monto:</b> ${selected.moneda === "USD" ? "$" : "S/"}${Number(selected.monto).toFixed(2)}</div>
   <div><b>Tasa:</b> ${selected.tasaInteres}% mensual${selected.tea ? ` (TEA ${selected.tea}%)` : ""}</div>
   <div><b>Sistema:</b> ${SISTEMA_LABELS[selected.sistemaAmortizacion]}</div>
   <div><b>N° Cuotas:</b> ${selected.numeroCuotas}</div>
   <div><b>Fecha:</b> ${formatDate(selected.createdAt)}</div>
-  ${selected.entidadNombre ? `<div><b>Entidad:</b> ${selected.entidadNombre}</div>` : ""}
-  <div><b>Estado:</b> ${selected.status}</div>
+  ${selected.entidadNombre ? `<div><b>Entidad:</b> ${escapeHtml(String(selected.entidadNombre))}</div>` : ""}
+  <div><b>Estado:</b> ${escapeHtml(String(selected.status ?? ""))}</div>
 </div>
 <table>
 <thead><tr><th>#</th><th>Fecha vence</th><th class="right">Capital</th><th class="right">Interés</th><th class="right">Cuota</th><th class="right">Saldo</th><th>Estado</th><th>Pago</th></tr></thead>
