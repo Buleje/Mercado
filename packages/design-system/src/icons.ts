@@ -297,6 +297,7 @@ export {
   Medal,
   Megaphone,
   MemoryStick,
+  Newspaper,
   MessageCircleQuestion,
   Mic,
   MicOff,

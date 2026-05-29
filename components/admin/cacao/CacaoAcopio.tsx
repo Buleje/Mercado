@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Leaf, Plus, RefreshCw, Search, Users, Scale, Coins, PackageCheck, AlertCircle, X as XIcon, BarChart3, Droplets,
-  Warehouse, TrendingUp, Download, Filter, Award,
+  Warehouse, TrendingUp, Download, Filter, Award, Newspaper,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -18,8 +18,9 @@ import CacaoProducerForm from "./CacaoProducerForm";
 import CacaoBeneficioForm from "./CacaoBeneficioForm";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoProducerDrawer from "./CacaoProducerDrawer";
+import CacaoNoticiero from "./CacaoNoticiero";
 
-type View = "acopio" | "beneficio" | "inventario" | "productores" | "resumen";
+type View = "acopio" | "beneficio" | "inventario" | "productores" | "resumen" | "mercado";
 interface Beneficio {
   id: string; loteCode: string | null; estado: string; fermDias: number | null; secDias: number | null;
   metodoSecado: string | null; humedadFinal: string | null; pesoHumedoKg: string | null; pesoSecoKg: string | null; mermaPct: string | null;
@@ -53,6 +54,7 @@ const VIEWS: { key: View; label: string; icon: typeof Leaf; hint: string }[] = [
   { key: "inventario", label: "Inventario", icon: Warehouse, hint: "Cacao seco" },
   { key: "productores", label: "Productores", icon: Users, hint: "Proveedores" },
   { key: "resumen", label: "Resumen", icon: BarChart3, hint: "KPIs de campaña" },
+  { key: "mercado", label: "Mercado", icon: Newspaper, hint: "Precios y noticias" },
 ];
 const ESTADO_BENEFICIO: Record<string, { label: string; cls: string }> = {
   fermentando: { label: "Fermentando", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" },
@@ -86,6 +88,7 @@ export default function CacaoAcopio() {
   const [showFilters, setShowFilters] = useState(false);
 
   const load = useCallback(async (v: View, fOverride?: { variedad?: string; grado?: string; from?: string; to?: string }) => {
+    if (v === "mercado") { setLoading(false); return; } // CacaoNoticiero se auto-carga
     setLoading(true); setError(null);
     const fv = fOverride?.variedad ?? fVariedad, fg = fOverride?.grado ?? fGrado, ff = fOverride?.from ?? fFrom, ft = fOverride?.to ?? fTo;
     try {
@@ -389,6 +392,9 @@ export default function CacaoAcopio() {
         </div>
       )}
       {view === "resumen" && loading && !stats && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando resumen…</p></div>}
+
+      {/* MERCADO / NOTICIERO */}
+      {view === "mercado" && <CacaoNoticiero />}
 
       {showLote && <CacaoLoteForm onClose={() => setShowLote(false)} onSaved={(o) => { if (!o?.keepOpen) setShowLote(false); load("acopio"); }} />}
       {showProducer && <CacaoProducerForm onClose={() => setShowProducer(false)} onSaved={() => { setShowProducer(false); load("productores"); }} />}
