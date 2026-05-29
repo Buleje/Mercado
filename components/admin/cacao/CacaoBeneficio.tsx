@@ -7,12 +7,12 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Droplets, Plus, Search, RefreshCw, Download, AlertCircle, AlertTriangle, Beaker, Sun, Scale, TrendingUp, Clock,
+  Droplets, Plus, Search, RefreshCw, Download, AlertCircle, AlertTriangle, Beaker, Sun, Scale, TrendingUp, Clock, ArrowRight, CheckCircle2,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { cacaoRendimiento } from "@/lib/cacao/cacao-quality";
+import { cacaoRendimiento, cacaoMerma } from "@/lib/cacao/cacao-quality";
 import CacaoBeneficioForm from "./CacaoBeneficioForm";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 
@@ -43,6 +43,11 @@ export default function CacaoBeneficio() {
   const [loteDrawerId, setLoteDrawerId] = useState<string | null>(null);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulBusy, setAnnulBusy] = useState(false);
+  const [advance, setAdvance] = useState<Beneficio | null>(null);
+  const [advBusy, setAdvBusy] = useState(false);
+  const [advPesoSeco, setAdvPesoSeco] = useState("");
+  const [advHumedad, setAdvHumedad] = useState("");
+  const [advMetodo, setAdvMetodo] = useState<string>("");
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -64,6 +69,23 @@ export default function CacaoBeneficio() {
       setAnnulId(null); load();
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setAnnulBusy(false); }
+  }
+
+  function openAdvance(b: Beneficio) {
+    setAdvance(b); setAdvPesoSeco(b.pesoSecoKg ?? ""); setAdvHumedad(b.humedadFinal ?? ""); setAdvMetodo(b.metodoSecado ?? "");
+  }
+  async function doAdvance() {
+    if (!advance) return;
+    setAdvBusy(true);
+    try {
+      const body: Record<string, unknown> = { action: "advance_beneficio", id: advance.id };
+      if (advance.estado === "fermentando" && advMetodo) body.metodoSecado = advMetodo;
+      if (advance.estado === "secando") { body.pesoSecoKg = advPesoSeco === "" ? null : Number(advPesoSeco); if (advHumedad !== "") body.humedadFinal = Number(advHumedad); }
+      const r = await fetch("/api/admin/cacao", { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(body) });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      setAdvance(null); load();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setAdvBusy(false); }
   }
 
   const kpis = useMemo(() => {
@@ -139,7 +161,16 @@ export default function CacaoBeneficio() {
                   <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.pesoHumedoKg ? n2(b.pesoHumedoKg) : "—"} → {b.pesoSecoKg ? n2(b.pesoSecoKg) : "—"}</Td>
                   <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{b.mermaPct ? `${Number(b.mermaPct).toFixed(1)}%` : "—"}</Td>
                   <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{rend != null ? `${rend}%` : "—"}</Td>
-                  <Td className="text-right"><button type="button" onClick={(e) => { e.stopPropagation(); setAnnulId(b.id); }} className="inline-flex h-8 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">Anular</button></Td>
+                  <Td className="text-right">
+                    <div className="inline-flex items-center justify-end gap-1.5">
+                      {b.estado !== "terminado" && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); openAdvance(b); }} className="inline-flex h-8 items-center gap-1 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-2.5 text-xs font-bold text-[var(--accent)] hover:opacity-90">
+                          {b.estado === "fermentando" ? "Secar" : "Terminar"}<ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setAnnulId(b.id); }} className="inline-flex h-8 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">Anular</button>
+                    </div>
+                  </Td>
                 </tr>
               );
             })}
@@ -160,6 +191,66 @@ export default function CacaoBeneficio() {
 
       {showNew && <CacaoBeneficioForm onClose={() => setShowNew(false)} onSaved={() => { setShowNew(false); load(); }} />}
       {loteDrawerId && <CacaoLoteDrawer loteId={loteDrawerId} onClose={() => setLoteDrawerId(null)} />}
+
+      {advance && (() => {
+        const aSecado = advance.estado === "fermentando"; // fermentando → secando
+        const pesoHum = advance.pesoHumedoKg == null ? null : Number(advance.pesoHumedoKg);
+        const pesoSec = advPesoSeco === "" ? null : Number(advPesoSeco);
+        const mermaPrev = !aSecado ? cacaoMerma(pesoHum, pesoSec) : null;
+        const rendPrev = !aSecado ? cacaoRendimiento(pesoHum, pesoSec) : null;
+        const METODOS = [{ v: "solar", label: "Solar" }, { v: "tunel", label: "Túnel" }, { v: "mecanico", label: "Mecánico" }];
+        const canSubmit = aSecado || (pesoSec != null && pesoSec > 0);
+        return (
+          <AdminModal open onClose={() => setAdvance(null)} variant="centered-sm" hideCloseButton>
+            <div className="bg-[var(--surface-raised)] p-5">
+              <div className="flex items-start gap-3">
+                <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${aSecado ? "bg-[var(--data-info-100)] text-[var(--data-info-700)]" : "bg-[var(--data-success-100)] text-[var(--data-success-700)]"}`}>
+                  {aSecado ? <Sun className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-[var(--text-primary)]">{aSecado ? "Pasar a secado" : "Terminar beneficio"} {advance.loteCode ?? ""}</h3>
+                  <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">{aSecado ? "Cierra la fermentación e inicia el secado. Se anotan los días fermentados automáticamente." : "Cierra el secado. Ingresa el peso seco final para calcular la merma y el rendimiento del lote."}</p>
+                </div>
+              </div>
+
+              {aSecado ? (
+                <div className="mt-4">
+                  <label className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Método de secado <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></label>
+                  <div className="inline-flex w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+                    {METODOS.map((m) => <button key={m.v} type="button" onClick={() => setAdvMetodo(advMetodo === m.v ? "" : m.v)} className={`flex-1 rounded-xl px-3 py-2 text-sm font-bold transition ${advMetodo === m.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{m.label}</button>)}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Peso seco final (kg) <span className="text-[var(--data-error-600)]">*</span></label>
+                      <input autoFocus type="number" inputMode="decimal" step="0.01" min="0" value={advPesoSeco} onChange={(e) => setAdvPesoSeco(e.target.value)} placeholder={pesoHum != null ? `≤ ${pesoHum}` : "0.00"} className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Humedad final (%) <span className="font-normal text-[var(--text-tertiary)]">opc.</span></label>
+                      <input type="number" inputMode="decimal" step="0.1" min="0" max="100" value={advHumedad} onChange={(e) => setAdvHumedad(e.target.value)} placeholder="≤ 7" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+                    </div>
+                  </div>
+                  {pesoHum != null && <p className="text-xs text-[var(--text-tertiary)]">Húmedo registrado: <strong className="text-[var(--text-secondary)]">{n2(pesoHum)} kg</strong></p>}
+                  {(mermaPrev != null || rendPrev != null) && (
+                    <div className="flex gap-2">
+                      {mermaPrev != null && <div className="flex-1 rounded-xl bg-[var(--surface-sunken)] px-3 py-2"><div className="text-xs text-[var(--text-tertiary)]">Merma</div><div className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{mermaPrev.toFixed(1)}%</div></div>}
+                      {rendPrev != null && <div className="flex-1 rounded-xl bg-[var(--surface-sunken)] px-3 py-2"><div className="text-xs text-[var(--text-tertiary)]">Rendimiento</div><div className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{rendPrev}%</div></div>}
+                    </div>
+                  )}
+                  {advHumedad !== "" && Number(advHumedad) > 7.5 && <p className="flex items-center gap-1.5 text-xs font-medium text-[var(--data-warning-700)]"><AlertTriangle className="h-3.5 w-3.5" />Humedad sobre 7.5% — fuera de la meta NTP (≤7%).</p>}
+                </div>
+              )}
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" onClick={() => setAdvance(null)} className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+                <button type="button" disabled={advBusy || !canSubmit} onClick={doAdvance} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{advBusy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}{advBusy ? "Guardando…" : aSecado ? "Pasar a secado" : "Terminar beneficio"}</button>
+              </div>
+            </div>
+          </AdminModal>
+        );
+      })()}
 
       {annulId && (
         <AdminModal open onClose={() => setAnnulId(null)} variant="centered-sm" hideCloseButton>

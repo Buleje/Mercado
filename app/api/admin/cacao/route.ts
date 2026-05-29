@@ -83,6 +83,13 @@ const ventaSchema = z.object({
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("annul_lote"), id: z.string().trim().min(1), reason: z.string().trim().min(3).max(500) }),
   z.object({ action: z.literal("annul_beneficio"), id: z.string().trim().min(1) }),
+  z.object({
+    action: z.literal("advance_beneficio"),
+    id: z.string().trim().min(1),
+    pesoSecoKg: z.coerce.number().min(0).max(9_999_999).nullable().optional(),
+    humedadFinal: pct,
+    metodoSecado: z.enum(["solar", "tunel", "mecanico"]).nullable().optional(),
+  }),
   z.object({ action: z.literal("annul_venta"), id: z.string().trim().min(1), reason: z.string().trim().max(500).optional() }),
   z.object({ action: z.literal("update_producer"), id: z.string().trim().min(1), patch: producerSchema.partial() }),
 ]);
@@ -192,6 +199,24 @@ export async function PATCH(req: NextRequest) {
     }
     if (parsed.data.action === "annul_beneficio") {
       return NextResponse.json({ beneficio: await CacaoDB.annulBeneficio(g.auth.tenantId, parsed.data.id) });
+    }
+    if (parsed.data.action === "advance_beneficio") {
+      try {
+        const beneficio = await CacaoDB.advanceBeneficio(g.auth.tenantId, parsed.data.id, {
+          pesoSecoKg: parsed.data.pesoSecoKg, humedadFinal: parsed.data.humedadFinal, metodoSecado: parsed.data.metodoSecado,
+        });
+        return NextResponse.json({ beneficio });
+      } catch (e) {
+        const msg = String(e instanceof Error ? e.message : e);
+        const known: Record<string, string> = {
+          peso_seco_requerido: "Ingresa el peso seco final para cerrar el beneficio.",
+          beneficio_ya_terminado: "Este beneficio ya está terminado.",
+          beneficio_anulado: "El beneficio está anulado.",
+          beneficio_not_found: "No se encontró el beneficio.",
+        };
+        if (known[msg]) return NextResponse.json({ error: msg, message: known[msg] }, { status: 400 });
+        throw e;
+      }
     }
     if (parsed.data.action === "annul_venta") {
       return NextResponse.json({ venta: await CacaoDB.annulVenta(g.auth.tenantId, parsed.data.id, parsed.data.reason ?? "") });

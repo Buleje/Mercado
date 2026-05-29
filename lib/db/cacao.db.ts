@@ -233,6 +233,58 @@ export class CacaoDB {
     return b;
   }
 
+  /**
+   * Avanza la etapa del beneficio: fermentando → secando → terminado.
+   * Estampa fechas/días automáticamente y cierra merma al terminar.
+   * Al pasar a "terminado" exige peso seco (para calcular rendimiento/merma).
+   */
+  static async advanceBeneficio(
+    tenantId: string,
+    id: string,
+    payload: { pesoSecoKg?: number | string | null; humedadFinal?: number | string | null; metodoSecado?: string | null } = {},
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const current = await prisma.cacaoBeneficio.findFirst({
+      where: { id, tenantId, deletedAt: null } satisfies Prisma.CacaoBeneficioWhereInput,
+    });
+    if (!current) throw new Error("beneficio_not_found");
+    if (current.status !== "registrado") throw new Error("beneficio_anulado");
+    const now = new Date();
+    const toNum = (v: unknown): number | null => (v == null ? null : Number(v));
+    const days = (from: Date | null) =>
+      from ? Math.max(0, Math.round((now.getTime() - from.getTime()) / 86_400_000)) : null;
+    const data: Prisma.CacaoBeneficioUpdateInput = {};
+
+    if (current.estado === "fermentando") {
+      // → secando: arranca el secado, cierra los días de fermentación
+      data.estado = "secando";
+      data.secInicio = current.secInicio ?? now;
+      if (current.fermDias == null) { const d = days(current.fermInicio); if (d != null) data.fermDias = d; }
+      const metodo = payload.metodoSecado?.trim();
+      if (metodo) data.metodoSecado = metodo;
+    } else if (current.estado === "secando") {
+      // → terminado: requiere peso seco para cerrar merma/rendimiento
+      const pesoSeco = n(payload.pesoSecoKg) ?? toNum(current.pesoSecoKg);
+      if (pesoSeco == null || pesoSeco <= 0) throw new Error("peso_seco_requerido");
+      data.estado = "terminado";
+      data.pesoSecoKg = dec(pesoSeco);
+      const humedad = n(payload.humedadFinal) ?? toNum(current.humedadFinal);
+      if (humedad != null) data.humedadFinal = dec(humedad);
+      const merma = cacaoMerma(toNum(current.pesoHumedoKg), pesoSeco);
+      if (merma != null) data.mermaPct = dec(merma);
+      if (current.secDias == null) { const d = days(current.secInicio); if (d != null) data.secDias = d; }
+    } else {
+      throw new Error("beneficio_ya_terminado");
+    }
+
+    const b = await prisma.cacaoBeneficio.update({
+      where: { id, tenantId } satisfies Prisma.CacaoBeneficioWhereUniqueInput,
+      data,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return b;
+  }
+
   /** Resumen: kg acopiados, valor pagado, calidad, distribución por variedad/grado. */
   static async stats(tenantId: string) {
     if (!tenantId) throw new Error("tenantId is required");
