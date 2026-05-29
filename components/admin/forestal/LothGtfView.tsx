@@ -132,6 +132,45 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const setItem = (k: keyof typeof it, v: string) => setIt((p) => ({ ...p, [k]: v }));
 
+  // ── Validación GTF ↔ Libro de Operaciones ──────────────────────────────
+  // codesInLibro: set de códigos registrados en el libro (sección trozado/despacho).
+  // null = cargando todavía; Set vacío podría significar "no hay trozas aún".
+  const [codesInLibro, setCodesInLibro] = useState<Set<string> | null>(null);
+  const [libroErr, setLibroErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/forestal/loth?available=despacho_troza", { credentials: "include" })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((j) => {
+        const codes = new Set<string>(
+          ((j.items ?? []) as Array<{ code?: string | null }>)
+            .map((x) => x.code?.trim() ?? "")
+            .filter(Boolean)
+        );
+        setCodesInLibro(codes);
+      })
+      .catch((e: unknown) => {
+        // Si el endpoint falla no bloqueamos al usuario, pero avisamos.
+        setLibroErr(e instanceof Error ? e.message : String(e));
+        setCodesInLibro(new Set()); // tratar como "sin datos" para no bloquear indefinidamente
+      });
+  }, []);
+
+  // Índice: para cada troza con código, ¿está en el libro?
+  // Solo aplica cuando codesInLibro ya cargó y la troza tiene código.
+  const invalidCodes: Set<number> = new Set(
+    items.reduce<number[]>((acc, x, i) => {
+      if (codesInLibro !== null && x.code && x.code.trim() !== "" && !codesInLibro.has(x.code.trim())) {
+        acc.push(i);
+      }
+      return acc;
+    }, [])
+  );
+  const hasInvalidItems = invalidCodes.size > 0;
+
   // Prefill titular/título del plan activo
   useEffect(() => {
     fetch("/api/admin/forestal/plan?active=1", { credentials: "include" })
@@ -165,7 +204,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (busy || !f.gtfNumber.trim() || items.length === 0) return;
+    if (busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems) return;
     setBusy(true); setErr(null);
     try {
       const body: Record<string, unknown> = { items };
@@ -180,6 +219,16 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
   return (
     <form onSubmit={submit} className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
       {err && <div className="rounded-lg border border-[var(--data-danger-200)] bg-[var(--data-danger-50)] px-3 py-2 text-sm text-[var(--data-danger-900)]">{err}</div>}
+      {libroErr && (
+        <div className="rounded-lg border border-[var(--data-warning-300)] bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-900)]">
+          No se pudo cargar el Libro de Operaciones ({libroErr}). La validación GTF ↔ libro está desactivada temporalmente.
+        </div>
+      )}
+      {hasInvalidItems && (
+        <div className="rounded-lg border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-4 py-3 text-sm font-medium text-[var(--data-danger-900)]">
+          Hay trozas que no figuran en el Libro de Operaciones. Registralas en Trozado/Despacho antes de emitir la GTF.
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Field label="N° GTF *"><input value={f.gtfNumber} onChange={(e) => set("gtfNumber", e.target.value)} placeholder="001-0000125" className={I} /></Field>
         <Field label="Fecha"><input type="date" value={f.gtfDate} onChange={(e) => set("gtfDate", e.target.value)} className={I} /></Field>
@@ -219,8 +268,15 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
               <thead className="text-left text-xs text-[var(--text-tertiary)]"><tr><th className="py-1">Código</th><th>Especie</th><th className="text-right">Ø may</th><th className="text-right">Ø men</th><th className="text-right">Long.</th><th className="text-right">Vol. m³</th><th></th></tr></thead>
               <tbody>
                 {items.map((x, i) => (
-                  <tr key={i} className="border-t border-[var(--rule-soft)]">
-                    <td className="py-1.5 font-mono font-bold text-[var(--text-primary)]">{x.code ?? "—"}</td>
+                  <tr key={i} className={`border-t border-[var(--rule-soft)] ${invalidCodes.has(i) ? "bg-[var(--data-danger-50)]" : ""}`}>
+                    <td className="py-1.5 font-mono font-bold text-[var(--text-primary)]">
+                      {x.code ?? "—"}
+                      {invalidCodes.has(i) && (
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--data-danger-600)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white leading-none">
+                          no está en el libro
+                        </span>
+                      )}
+                    </td>
                     <td>{x.species ?? "—"}{x.cites && <span className="ml-1 rounded bg-[var(--data-danger-100)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-danger-900)]">CITES</span>}</td>
                     <td className="text-right font-mono tabular-nums">{x.diamMayorM?.toFixed(2) ?? "—"}</td>
                     <td className="text-right font-mono tabular-nums">{x.diamMenorM?.toFixed(2) ?? "—"}</td>
@@ -240,7 +296,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         <span className="text-xs text-[var(--text-tertiary)]">{items.length} ítems · {totalVol.toFixed(4)} m³</span>
         <div className="flex gap-2">
           <button type="button" onClick={onClose} className="h-10 rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:bg-[var(--data-success-800)] disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Emitir GTF"}</button>
+          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:bg-[var(--data-success-800)] disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Emitir GTF"}</button>
         </div>
       </div>
     </form>
