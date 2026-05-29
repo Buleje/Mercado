@@ -174,11 +174,11 @@ export default function CacaoAcopio() {
       </AdminModuleHeader>
 
       {/* Sub-tabs */}
-      <div className="flex flex-wrap gap-2 border-b-2 border-[var(--rule-soft)] pb-px">
+      <div className="flex gap-2 overflow-x-auto border-b-2 border-[var(--rule-soft)] pb-px [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap">
         {VIEWS.map((v) => {
           const Icon = v.icon; const active = view === v.key;
           return (
-            <button key={v.key} type="button" onClick={() => setView(v.key)} className={`inline-flex items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition ${active ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
+            <button key={v.key} type="button" onClick={() => setView(v.key)} className={`inline-flex shrink-0 items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition ${active ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
               <Icon className="h-4 w-4" /><span>{v.label}</span><span className="hidden text-xs font-normal text-[var(--text-tertiary)] sm:inline">· {v.hint}</span>
             </button>
           );
