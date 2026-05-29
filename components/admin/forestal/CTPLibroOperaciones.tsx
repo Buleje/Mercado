@@ -29,6 +29,7 @@ import {
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { csrfHeaders } from "@/lib/csrf-client";
 import WoodEntryForm from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 
@@ -125,7 +126,7 @@ export default function CTPLibroOperaciones() {
     try {
       const res = await fetch(`/api/admin/forestal/wood-entries/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({ action, ...(reason ? { reason } : {}) }),
       });
