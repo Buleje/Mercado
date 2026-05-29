@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
-  Scale, PackageCheck, Layers,
+  Scale, PackageCheck, Layers, PackagePlus,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -47,6 +47,8 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [pending, setPending] = useState(false);
+  const [toProductId, setToProductId] = useState<string | null>(null);
+  const [toProductMsg, setToProductMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -70,6 +72,26 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
       setAnnulId(null); setAnnulReason(""); await load();
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setPending(false); }
+  }
+
+  async function sendToInventory(entryId: string) {
+    setToProductId(entryId);
+    setToProductMsg(null);
+    try {
+      const r = await fetch("/api/admin/forestal/ctp/to-product", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ entryId }),
+      });
+      const json: { ok?: boolean; message?: string; error?: string } = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(json.message ?? `HTTP ${r.status}`);
+      setToProductMsg(json.message ?? "Creado como borrador en inventario.");
+    } catch (e) {
+      setToProductMsg(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setToProductId(null);
+    }
   }
 
   const kpis = useMemo(() => {
@@ -106,6 +128,12 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] p-4 text-sm text-[var(--data-danger-900)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
+      {toProductMsg && (
+        <div className={`flex items-start justify-between gap-3 rounded-xl border-2 p-4 text-sm ${toProductMsg.startsWith("Error") ? "border-[var(--data-danger-300)] bg-[var(--data-danger-50)] text-[var(--data-danger-900)]" : "border-[var(--data-success-300)] bg-[var(--data-success-50)] text-[var(--data-success-900)]"}`}>
+          <div className="flex items-start gap-2"><PackagePlus className="mt-0.5 h-5 w-5 shrink-0" /><span>{toProductMsg}</span></div>
+          <button type="button" onClick={() => setToProductMsg(null)} className="shrink-0 text-xs font-bold underline opacity-70 hover:opacity-100">Cerrar</button>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <table className="w-full text-sm">
@@ -154,9 +182,23 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
                   {e.annulledReason && <div className="mt-1 text-xs text-[var(--data-danger-700)]">{e.annulledReason}</div>}
                 </Td>
                 <Td className="text-right">
-                  {e.status === "registrado"
-                    ? <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-3 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]">Anular</button>
-                    : <span className="text-xs text-[var(--text-tertiary)]">—</span>}
+                  {e.status === "registrado" ? (
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={toProductId === e.id}
+                        onClick={() => sendToInventory(e.id)}
+                        title="Crea el producto como borrador en el catálogo (inactivo)"
+                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--data-info-300)] bg-[var(--data-info-50)] px-3 text-xs font-bold text-[var(--data-info-900)] hover:bg-[var(--data-info-100)] disabled:opacity-50"
+                      >
+                        <PackagePlus className="h-3.5 w-3.5" />
+                        {toProductId === e.id ? "Creando…" : "Enviar a inventario"}
+                      </button>
+                      <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-danger-300)] bg-[var(--data-danger-50)] px-3 text-xs font-bold text-[var(--data-danger-900)] hover:bg-[var(--data-danger-100)]">Anular</button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-[var(--text-tertiary)]">—</span>
+                  )}
                 </Td>
               </tr>
             ))}

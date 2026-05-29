@@ -198,6 +198,24 @@ export const ProductsDB = {
     revalidateTag(`tenant:${product.tenantId}:products`, "max");
     return mapProduct(row);
   },
+  /**
+   * Crea un producto NUEVO dejando que la DB asigne el id (autoincrement).
+   * Usar para altas reales — `upsert` con id=0 insertaría id=0 literal (colisión).
+   */
+  async create(product: Omit<DbProduct, "id">): Promise<DbProduct> {
+    const row = await prisma.product.create({
+      data: {
+        name: product.name, category: product.category, price: product.price,
+        costPrice: product.costPrice, image: product.image,
+        description: product.description ?? null, unit: product.unit,
+        badge: product.badge, barcode: product.barcode, stock: product.stock,
+        stockMin: product.stockMin, stockMax: product.stockMax, active: product.active,
+        tenantId: product.tenantId,
+      },
+    });
+    revalidateTag(`tenant:${product.tenantId}:products`, "max");
+    return mapProduct(row);
+  },
   /** Soft-delete: sets deletedAt instead of physically removing the row. */
   async delete(tenantId: string, id: number): Promise<void> {
     await prisma.$executeRaw`UPDATE "Product" SET "deletedAt" = NOW() WHERE id = ${id} AND "tenantId" = ${tenantId}`.catch((err) => {
