@@ -6,6 +6,7 @@ import {
   computeAprovechamiento,
   detectAnomalias,
   projectSaldo,
+  computeCosteo,
   type BalanceSpeciesInput,
   type BalanceMovement,
 } from "@/lib/forestal/loth-constants";
@@ -170,5 +171,34 @@ describe("projectSaldo — proyección de agotamiento (Batch 2)", () => {
   it("retorna null sin movilización o sin saldo", () => {
     expect(projectSaldo(100, 0, "2026-01-01T00:00:00.000Z", "2026-01-31T00:00:00.000Z")).toBeNull();
     expect(projectSaldo(0, 30, "2026-01-01T00:00:00.000Z", "2026-01-31T00:00:00.000Z")).toBeNull();
+  });
+});
+
+describe("computeCosteo — margen por m³ (Batch 3)", () => {
+  it("margen = precio − (VEN + extracción + transformación + flete) × movilizado", () => {
+    const r = computeCosteo(
+      [{ species: "Tornillo", movilizadoM3: 10, precioVentaM3: 450, venM3: 22.5 }],
+      { extraccionM3: 120, transformacionM3: 80, fleteM3: 60 },
+    );
+    const row = r.rows[0];
+    expect(row.costoTotalM3).toBe(282.5); // 22.5 + 120 + 80 + 60
+    expect(row.margenM3).toBe(167.5); // 450 − 282.5
+    expect(row.margen).toBe(1675); // ×10
+    expect(row.margenPct).toBe(37.2); // 167.5/450
+    expect(r.margenTotal).toBe(1675);
+    expect(r.costoOperativoM3).toBe(260);
+  });
+  it("margen negativo cuando el costo supera el precio", () => {
+    const r = computeCosteo(
+      [{ species: "X", movilizadoM3: 1, precioVentaM3: 100, venM3: 40 }],
+      { extraccionM3: 50, transformacionM3: 30, fleteM3: 0 },
+    );
+    expect(r.rows[0].margenM3).toBe(-20);
+    expect(r.margenTotal).toBeLessThan(0);
+  });
+  it("sin costos operativos: margen = precio − VEN", () => {
+    const r = computeCosteo([{ species: "X", movilizadoM3: 2, precioVentaM3: 300, venM3: 30 }], { extraccionM3: 0, transformacionM3: 0, fleteM3: 0 });
+    expect(r.rows[0].margenM3).toBe(270);
+    expect(r.ingresoTotal).toBe(600);
   });
 });

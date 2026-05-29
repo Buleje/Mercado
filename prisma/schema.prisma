@@ -4751,6 +4751,11 @@ model ForestPlan {
   areaHa             Decimal?  @db.Decimal(12, 2)
   uitRef             Decimal?  @db.Decimal(10, 2) // UIT vigente para cálculo de pago
 
+  // Costeo (Batch 3 · frente D): costos operativos por m³ para calcular margen.
+  costoExtraccionM3      Decimal?  @db.Decimal(12, 2) // tala + arrastre + patio (S//m³)
+  costoTransformacionM3  Decimal?  @db.Decimal(12, 2) // aserrío / transformación (S//m³)
+  costoFleteM3           Decimal?  @db.Decimal(12, 2) // transporte a destino (S//m³)
+
   vigenciaDesde      DateTime?
   vigenciaHasta      DateTime?
   estado             String    @default("vigente") // vigente | vencido | cerrado | suspendido

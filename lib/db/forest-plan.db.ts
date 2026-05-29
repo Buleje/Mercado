@@ -11,8 +11,8 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import {
-  censusVolume, computeBalance, computeAprovechamiento, detectAnomalias, projectSaldo,
-  type BalanceMovement, type BalanceSpeciesInput,
+  censusVolume, computeBalance, computeAprovechamiento, detectAnomalias, projectSaldo, computeCosteo,
+  type BalanceMovement, type BalanceSpeciesInput, type CosteoSpeciesInput,
 } from "@/lib/forestal/loth-constants";
 
 const CACHE_PREFIX = "forest-plan";
@@ -35,6 +35,9 @@ export interface PlanInput {
   parcelaCorta?: string | null;
   areaHa?: number | string | null;
   uitRef?: number | string | null;
+  costoExtraccionM3?: number | string | null;
+  costoTransformacionM3?: number | string | null;
+  costoFleteM3?: number | string | null;
   vigenciaDesde?: Date | null;
   vigenciaHasta?: Date | null;
   estado?: string;
@@ -94,6 +97,9 @@ export class ForestPlanDB {
         parcelaCorta: input.parcelaCorta?.trim() || null,
         areaHa: dec(input.areaHa),
         uitRef: dec(input.uitRef),
+        costoExtraccionM3: dec(input.costoExtraccionM3),
+        costoTransformacionM3: dec(input.costoTransformacionM3),
+        costoFleteM3: dec(input.costoFleteM3),
         vigenciaDesde: input.vigenciaDesde ?? null,
         vigenciaHasta: input.vigenciaHasta ?? null,
         estado: input.estado ?? "vigente",
@@ -133,7 +139,7 @@ export class ForestPlanDB {
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const data: Prisma.ForestPlanUpdateInput = {};
-    const decKeys = new Set(["areaHa", "uitRef"]);
+    const decKeys = new Set(["areaHa", "uitRef", "costoExtraccionM3", "costoTransformacionM3", "costoFleteM3"]);
     for (const [k, v] of Object.entries(patch)) {
       if (v === undefined) continue;
       if (decKeys.has(k)) (data as Record<string, unknown>)[k] = dec(v as number | string | null);
@@ -453,10 +459,29 @@ export class ForestPlanDB {
       projection = projectSaldo(saldoTotal, movilizadoTotal, firstActivity?.toISOString() ?? null, new Date().toISOString());
     }
 
+    // Costeo y margen por m³ (Batch 3): cruza balance × precios × parámetros de costo del plan.
+    const costos = {
+      extraccionM3: Number(plan?.costoExtraccionM3 ?? 0),
+      transformacionM3: Number(plan?.costoTransformacionM3 ?? 0),
+      fleteM3: Number(plan?.costoFleteM3 ?? 0),
+    };
+    let costeo = null;
+    if (plan && balance && speciesRows.length > 0) {
+      const costeoInputs: CosteoSpeciesInput[] = balance.rows.map((r) => {
+        const sp = speciesRows.find((s) => s.speciesCommon === r.species);
+        return {
+          species: r.species, cites: sp?.cites ?? false, movilizadoM3: r.movilizado,
+          precioVentaM3: sp?.precioVentaSoles ? Number(sp.precioVentaSoles) : 0,
+          venM3: sp?.valorEstadoNaturalSoles ? Number(sp.valorEstadoNaturalSoles) : 0,
+        };
+      });
+      costeo = computeCosteo(costeoInputs, costos);
+    }
+
     return {
       hasPlan: !!plan,
-      plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta } : null,
-      aprovechamiento, balance, anomalias, projection, lateCount,
+      plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos } : null,
+      aprovechamiento, balance, anomalias, projection, lateCount, costeo,
     };
   }
 

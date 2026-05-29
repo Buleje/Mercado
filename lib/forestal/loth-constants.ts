@@ -223,6 +223,49 @@ export function projectSaldo(saldoM3: number, movilizadoM3: number, firstActivit
   return { ritmoDiaM3: Math.round(ritmoDiaM3 * 10000) / 10000, diasParaAgotar, fechaAgotamientoISO: fecha.toISOString() };
 }
 
+// ─── Costeo y margen por m³ (Batch 3 · frente D) ───────────────────────────
+
+export interface CosteoSpeciesInput { species: string; cites?: boolean; movilizadoM3: number; precioVentaM3: number; venM3: number }
+export interface CosteoParams { extraccionM3: number; transformacionM3: number; fleteM3: number }
+export interface CosteoRow {
+  species: string; cites: boolean; movilizadoM3: number;
+  precioVentaM3: number; costoTotalM3: number; margenM3: number; margenPct: number;
+  ingreso: number; costo: number; margen: number;
+  desglose: { venM3: number; extraccionM3: number; transformacionM3: number; fleteM3: number };
+}
+
+/**
+ * Costeo bosque→venta por especie (S//m³). Margen = precio venta − (derecho VEN +
+ * extracción + transformación + flete). Multiplica por lo movilizado para el total.
+ */
+export function computeCosteo(rows: CosteoSpeciesInput[], params: CosteoParams): {
+  rows: CosteoRow[]; ingresoTotal: number; costoTotal: number; margenTotal: number; margenPctTotal: number; costoOperativoM3: number;
+} {
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const op = Number(params.extraccionM3 || 0) + Number(params.transformacionM3 || 0) + Number(params.fleteM3 || 0);
+  let ingresoTotal = 0, costoTotal = 0, margenTotal = 0;
+  const out = rows.map((s) => {
+    const costoTotalM3 = s.venM3 + op;
+    const margenM3 = s.precioVentaM3 - costoTotalM3;
+    const ingreso = s.precioVentaM3 * s.movilizadoM3;
+    const costo = costoTotalM3 * s.movilizadoM3;
+    const margen = margenM3 * s.movilizadoM3;
+    ingresoTotal += ingreso; costoTotal += costo; margenTotal += margen;
+    return {
+      species: s.species, cites: s.cites ?? false, movilizadoM3: r2(s.movilizadoM3),
+      precioVentaM3: r2(s.precioVentaM3), costoTotalM3: r2(costoTotalM3), margenM3: r2(margenM3),
+      margenPct: s.precioVentaM3 > 0 ? Math.round((margenM3 / s.precioVentaM3) * 1000) / 10 : 0,
+      ingreso: r2(ingreso), costo: r2(costo), margen: r2(margen),
+      desglose: { venM3: r2(s.venM3), extraccionM3: r2(Number(params.extraccionM3 || 0)), transformacionM3: r2(Number(params.transformacionM3 || 0)), fleteM3: r2(Number(params.fleteM3 || 0)) },
+    };
+  });
+  return {
+    rows: out, ingresoTotal: r2(ingresoTotal), costoTotal: r2(costoTotal), margenTotal: r2(margenTotal),
+    margenPctTotal: ingresoTotal > 0 ? Math.round((margenTotal / ingresoTotal) * 1000) / 10 : 0,
+    costoOperativoM3: r2(op),
+  };
+}
+
 /** DTO de una entrada del LO-TH tal como la devuelve la API (Decimals → string). */
 export interface LothEntryDTO {
   id: string;
