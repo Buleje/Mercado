@@ -11,7 +11,7 @@ import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
   Scale, PackageCheck, Layers,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { StatCard, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import CtpEntryForm from "./CtpEntryForm";
 
@@ -174,7 +174,7 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
       {annulId && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setAnnulId(null)}>
           <div className="w-full max-w-md rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-[var(--text-primary)]">Anular línea</h3>
+            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Anular línea</CardTitle>
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">Indicá el motivo (queda en el historial, no se borra).</p>
             <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (min 3 caracteres)" className="mt-3 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-danger-500)]" />
             <div className="mt-4 flex justify-end gap-2">
@@ -228,7 +228,7 @@ export function CtpSaldosView() {
           </div>
 
           <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-            <div className="border-b-2 border-[var(--rule-base)] px-4 py-3"><h3 className="text-sm font-bold text-[var(--text-primary)]">Stock de productos transformados</h3></div>
+            <div className="border-b-2 border-[var(--rule-base)] px-4 py-3"><CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Stock de productos transformados</CardTitle></div>
             <table className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr><Th>Producto · Especie</Th><Th className="text-right">Producido</Th><Th className="text-right">Despachado</Th><Th className="text-right">Stock</Th></tr>
