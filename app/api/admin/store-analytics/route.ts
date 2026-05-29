@@ -3,7 +3,6 @@ import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { AdminStoreAnalyticsDB } from "@/lib/db/admin-store-analytics.db";
-import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/admin/store-analytics
@@ -49,17 +48,11 @@ export async function GET(req: NextRequest) {
     // Beneficio "Analytics avanzado" (superadmin > Beneficios): desbloquea
     // funnel + tendencia diaria + tabla de ingresos. El flag vive en la columna
     // jsonb benefits de Store (fuera de schema.prisma — zona peligrosa) →
-    // raw SQL parametrizado. Fail-safe: si falla, queda bloqueado (false).
+    // raw SQL parametrizado via AdminStoreAnalyticsDB.checkAdvancedAnalytics.
+    // Fail-safe: si falla, queda bloqueado (false).
     let advancedAnalytics = false;
     try {
-      const rows = await prisma.$queryRawUnsafe<Array<{ one: number }>>(
-        `SELECT 1 AS one FROM "Store"
-         WHERE "tenantId" = $1
-           AND COALESCE((benefits->>'advancedAnalytics')::boolean, false) = true
-         LIMIT 1`,
-        tenantId,
-      );
-      advancedAnalytics = rows.length > 0;
+      advancedAnalytics = await AdminStoreAnalyticsDB.checkAdvancedAnalytics(tenantId);
     } catch {
       /* sin beneficio detectable → bloqueado */
     }

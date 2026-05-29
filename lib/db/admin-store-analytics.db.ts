@@ -70,6 +70,27 @@ function toNum(v: unknown): number {
 
 export class AdminStoreAnalyticsDB {
   /**
+   * Verifica si el tenant tiene el beneficio "advancedAnalytics" habilitado
+   * en la columna jsonb `benefits` de Store.
+   * Usa raw SQL parametrizado (no interpolación) porque el campo vive fuera
+   * del schema tipado de Prisma.
+   *
+   * Fail-safe: cualquier error retorna false (feature bloqueada).
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  static async checkAdvancedAnalytics(tenantId: string): Promise<boolean> {
+    const rows = await prisma.$queryRawUnsafe<Array<{ one: number }>>(
+      `SELECT 1 AS one FROM "Store"
+       WHERE "tenantId" = $1
+         AND COALESCE((benefits->>'advancedAnalytics')::boolean, false) = true
+       LIMIT 1`,
+      tenantId,
+    );
+    return rows.length > 0;
+  }
+
+  /**
    * Obtiene todas las analíticas de ProductAnalytics para el panel admin.
    *
    * @param tenantId  — aislamiento multi-tenant (siempre 1er argumento)

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { OrdersDB } from "@/lib/db/orders.db";
+import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -49,30 +50,10 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      const newOrders = await prisma.order.findMany({
-        where: {
-          tenantId,
-          createdAt: { gt: lastCheck },
-        },
-        select: {
-          id: true,
-          customerName: true,
-          total: true,
-          status: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      });
-
-      const lowStock = await prisma.product.count({
-        where: {
-          tenantId,
-          active: true,
-          deletedAt: null,
-          stock: { lte: 5 },
-        },
-      });
+      const [newOrders, lowStock] = await Promise.all([
+        OrdersDB.findRecentForStream(tenantId, lastCheck),
+        ProductsDB.countLowStock(tenantId, 5),
+      ]);
 
       if (closed) {
         clearInterval(interval);

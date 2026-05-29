@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB } from "@/lib/db/products.db";
-import { prisma } from "@/lib/prisma";
+import { OrdersDB } from "@/lib/db/orders.db";
+import { SalesDB } from "@/lib/db/sales.db";
 import { logger } from "@/lib/logger";
 import { getOrSet } from "@/lib/cache";
 
@@ -55,22 +56,8 @@ export async function GET(req: NextRequest) {
     // OrderItem/SaleItem no tienen tenantId propio — el guard real es el filtro
     // anidado por la entidad padre (Order, Sale) que sí lo tiene.
     const [orderItems, saleItems] = await Promise.all([
-       
-      prisma.orderItem.findMany({
-        where: {
-          productId: { in: productIds },
-          order: { tenantId, createdAt: { gte: last365 }, status: { not: "cancelado" as never } },
-        },
-        select: { productId: true, quantity: true },
-      }),
-       
-      prisma.saleItem.findMany({
-        where: {
-          productId: { in: productIds },
-          sale: { tenantId, createdAt: { gte: last365 } },
-        },
-        select: { productId: true, quantity: true },
-      }),
+      OrdersDB.findOrderItemsByProducts(tenantId, productIds, last365),
+      SalesDB.findSaleItemsByProducts(tenantId, productIds, last365),
     ]);
 
     const demandMap = new Map<number | string, number>();

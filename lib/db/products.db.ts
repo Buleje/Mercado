@@ -77,6 +77,23 @@ function mapBundle(b: PBundle & { items: PBundleItem[] }): DbBundle {
 // ── Products ──────────────────────────────────────────────────────────────────
 
 export const ProductsDB = {
+  /**
+   * Cuenta los productos activos con stock bajo (lte threshold) para el
+   * SSE de notificaciones del admin.
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  async countLowStock(tenantId: string, threshold = 5): Promise<number> {
+    return prisma.product.count({
+      where: {
+        tenantId,
+        active: true,
+        deletedAt: null,
+        stock: { lte: threshold },
+      },
+    });
+  },
+
   async getAll(tenantId: string): Promise<DbProduct[]> {
     "use cache";
     // 5 min revalidate, 1 min stale OK, 30 min hard expire. Productos

@@ -15,7 +15,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { SupportInboxDB } from "@/lib/db/support-inbox.db";
 
 export type SupportInboxItem = {
   id: string;
@@ -38,26 +38,7 @@ export async function GET(req: NextRequest) {
 
   // ── 1. WhatsApp inbound logs ─────────────────────────────────────────────
   try {
-    const waLogs = await prisma.activityLog.findMany({
-      where: {
-        tenantId,
-        entity: "whatsapp.inbound",
-        ...(statusFilter === "resolved"
-          ? { action: "resolved" }
-          : statusFilter === "pending"
-          ? { action: { not: "resolved" } }
-          : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        user: true,
-        detail: true,
-        createdAt: true,
-        action: true,
-      },
-    });
+    const waLogs = await SupportInboxDB.getActivityLog(tenantId, statusFilter);
 
     for (const log of waLogs) {
       items.push({
@@ -75,23 +56,7 @@ export async function GET(req: NextRequest) {
 
   // ── 2. Reviews pendientes de moderación ──────────────────────────────────
   try {
-    const pendingReviews = await prisma.review.findMany({
-      where: {
-        tenantId,
-        status: "pending",
-        deletedAt: null,
-        ...(statusFilter === "resolved" ? { status: "approved" } : {}),
-      },
-      orderBy: { date: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        name: true,
-        text: true,
-        date: true,
-        status: true,
-      },
-    });
+    const pendingReviews = await SupportInboxDB.getReviews(tenantId, statusFilter);
 
     for (const rev of pendingReviews) {
       items.push({

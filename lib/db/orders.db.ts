@@ -117,6 +117,51 @@ function mapReturn(r: PReturn & { items: PReturnItem[] }): DbReturn {
 // ── Orders DB ─────────────────────────────────────────────────────────────────
 
 export const OrdersDB = {
+  /**
+   * Retorna OrderItems de los productIds dados, para el cálculo EOQ.
+   * El guard multi-tenant va anidado en order (OrderItem no tiene tenantId
+   * propio — el filtro real es por la entidad padre Order).
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  async findOrderItemsByProducts(
+    tenantId: string,
+    productIds: (number | string)[],
+    since: Date,
+  ) {
+    return prisma.orderItem.findMany({
+      where: {
+        productId: { in: productIds as number[] },
+        order: { tenantId, createdAt: { gte: since }, status: { not: "cancelado" as never } },
+      },
+      select: { productId: true, quantity: true },
+    });
+  },
+
+  /**
+   * Retorna los orders creados después de `since` para el SSE de
+   * notificaciones del admin. Hasta 5 resultados, ordenados desc.
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  async findRecentForStream(tenantId: string, since: Date) {
+    return prisma.order.findMany({
+      where: {
+        tenantId,
+        createdAt: { gt: since },
+      },
+      select: {
+        id: true,
+        customerName: true,
+        total: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+  },
+
   async getAll(tenantId: string): Promise<DbOrder[]> {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" }, take: 1000 })).map(mapOrder);

@@ -94,6 +94,27 @@ function mapCashRegister(r: PCashRegister & { movements: PCashMovement[] }): DbC
 // ── POS Sales DB ──────────────────────────────────────────────────────────────
 
 export const SalesDB = {
+  /**
+   * Retorna SaleItems de los productIds dados, para el cálculo EOQ.
+   * El guard multi-tenant va anidado en sale (SaleItem no tiene tenantId
+   * propio — el filtro real es por la entidad padre Sale).
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  async findSaleItemsByProducts(
+    tenantId: string,
+    productIds: (number | string)[],
+    since: Date,
+  ) {
+    return prisma.saleItem.findMany({
+      where: {
+        productId: { in: productIds as number[] },
+        sale: { tenantId, createdAt: { gte: since } },
+      },
+      select: { productId: true, quantity: true },
+    });
+  },
+
   async getAll(tenantId: string): Promise<DbSale[]> {
     // FIX 2026-05-07 (schema drift): omit idempotencyKey hasta que la
     // migration 20260507000000_add_sale_idempotency_key se aplique a la DB.

@@ -23,6 +23,27 @@ export interface DriverApplyData {
 
 export const DeliveryPartnersDB = {
   /**
+   * Retorna todos los partners activos del tenant con sus assignments
+   * para el período indicado (since). Usado por el ranking de repartidores.
+   *
+   * tenantId SIEMPRE 1er parámetro.
+   */
+  async getRanking(tenantId: string, since: Date) {
+    return prisma.deliveryPartner.findMany({
+      where: { tenantId, isActive: true },
+      select: {
+        id: true, name: true, phone: true, vehicleType: true,
+        rating: true, acceptanceRate: true,
+        totalOffers: true, totalAccepted: true,
+        assignments: {
+          where: { createdAt: { gte: since } },
+          select: { status: true, fee: true, deliveredAt: true, pickedUpAt: true, createdAt: true },
+        },
+      },
+    });
+  },
+
+  /**
    * Upsert idempotente para una aplicacion de repartidor:
    *   - Si existe (phone, tenantId): actualiza datos KYC, conserva isActive.
    *   - Si no existe: crea con isActive=false (pendiente de aprobacion).

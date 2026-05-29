@@ -1,7 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { DeliveryPartnersDB } from "@/lib/db/delivery-partners.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -31,18 +31,7 @@ export async function GET(req: NextRequest) {
     return d;
   })();
 
-  const partners = await prisma.deliveryPartner.findMany({
-    where: { tenantId: auth.tenantId, isActive: true },
-    select: {
-      id: true, name: true, phone: true, vehicleType: true,
-      rating: true, acceptanceRate: true,
-      totalOffers: true, totalAccepted: true,
-      assignments: {
-        where: { createdAt: { gte: since } },
-        select: { status: true, fee: true, deliveredAt: true, pickedUpAt: true, createdAt: true },
-      },
-    },
-  });
+  const partners = await DeliveryPartnersDB.getRanking(auth.tenantId, since);
 
   const ranked = partners
     .map((p) => {
