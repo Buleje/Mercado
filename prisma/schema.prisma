@@ -4862,3 +4862,47 @@ model ForestGtf {
   @@index([tenantId, gtfNumber])
   @@index([deletedAt])
 }
+
+/// Libro CTP — producción/transformación + despacho (ADR-127). Ingreso = WoodEntry.
+model ForestCtpEntry {
+  id                String    @id @default(cuid())
+  tenantId          String
+
+  section           String    // produccion | despacho
+  lineNo            Int
+  entryDate         DateTime  @default(now())
+
+  // Origen / materia prima
+  gtfIngreso        String?   // GTF con la que ingresó la materia prima
+  materiaPrimaRef   String?   // referencia libre a la materia prima / lote
+
+  speciesCommon     String?
+  speciesScientific String?
+  cites             Boolean   @default(false)
+
+  // Producción
+  productType       String?   // producto terminado
+  volumeInputM3     Decimal?  @db.Decimal(12, 4) // materia prima consumida
+  rendimientoPct    Decimal?  @db.Decimal(5, 2)  // output/input %
+
+  // Cantidad producida / despachada
+  quantity          Decimal?  @db.Decimal(14, 4)
+  unit              String?   // m3 | kg | unidad | pt
+  pieces            Int?
+
+  // Despacho
+  gtfNumber         String?   // GTF de salida del producto
+  destino           String?
+
+  observations      String?
+  status            String    @default("registrado") // registrado | anulado
+  annulledReason    String?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  @@index([tenantId, section, entryDate(sort: Desc)])
+  @@index([tenantId, gtfNumber])
+  @@index([deletedAt])
+}
