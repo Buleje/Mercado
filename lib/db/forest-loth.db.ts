@@ -22,6 +22,7 @@ export type { LothSection };
 
 export interface LothEntryCreateInput {
   caratulaId?: string | null;
+  planId?: string | null;
   section: LothSection;
   entryDate?: Date;
 
@@ -115,6 +116,7 @@ export class ForestLothDB {
       data: {
         tenantId,
         caratulaId: input.caratulaId ?? null,
+        planId: input.planId ?? null,
         section: input.section,
         lineNo,
         entryDate: input.entryDate ?? new Date(),
@@ -265,6 +267,68 @@ export class ForestLothDB {
       }
     }
     return items;
+  }
+
+  /**
+   * Ítems seleccionables para la sección (flujo data-driven, ADR-127):
+   *  - tala            → censo del plan con árboles `en_pie`
+   *  - trozado         → talas registradas (árboles tumbados) listos para trozar
+   *  - despacho_troza  → trozas trozadas aún no despachadas
+   *  - consumo_troza   → trozas trozadas aún no consumidas
+   *  - producto_terminado → trozas consumidas (materia prima del aserrío)
+   *  - despacho_producto  → productos terminados disponibles para despachar
+   */
+  static async availableSource(tenantId: string, section: LothSection, planId?: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+
+    if (section === "tala") {
+      const trees = await prisma.forestCensusTree.findMany({
+        where: { tenantId, deletedAt: null, estado: "en_pie", ...(planId ? { planId } : {}) },
+        orderBy: { treeCode: "asc" },
+        take: 1000,
+      });
+      return trees.map((t) => ({
+        kind: "censo" as const,
+        code: t.treeCode,
+        species: t.speciesCommon,
+        scientific: t.speciesScientific,
+        cites: t.cites,
+        dapM: t.dapM ? Number(t.dapM) : null,
+        hcM: t.alturaComercialM ? Number(t.alturaComercialM) : null,
+        vol: t.volumenEstimadoM3 ? Number(t.volumenEstimadoM3) : null,
+        meta: t.parcelaCorta ?? null,
+      }));
+    }
+
+    const entries = await prisma.forestLothEntry.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado", ...(planId ? { planId } : {}) },
+      select: { section: true, treeCode: true, trozaCode: true, speciesCommon: true, speciesScientific: true, cites: true, volumeM3: true, productType: true, quantity: true, unit: true },
+    });
+    const mapTroza = (e: (typeof entries)[number]) => ({
+      kind: "troza" as const, code: e.trozaCode, species: e.speciesCommon, scientific: e.speciesScientific,
+      cites: e.cites, vol: e.volumeM3 ? Number(e.volumeM3) : null,
+    });
+
+    if (section === "trozado") {
+      return entries.filter((e) => e.section === "tala" && e.treeCode).map((e) => ({
+        kind: "tala" as const, code: e.treeCode, species: e.speciesCommon, scientific: e.speciesScientific,
+        cites: e.cites, vol: e.volumeM3 ? Number(e.volumeM3) : null,
+      }));
+    }
+    if (section === "despacho_troza" || section === "consumo_troza") {
+      const used = new Set(entries.filter((e) => e.section === section).map((e) => e.trozaCode));
+      return entries.filter((e) => e.section === "trozado" && e.trozaCode && !used.has(e.trozaCode)).map(mapTroza);
+    }
+    if (section === "producto_terminado") {
+      return entries.filter((e) => e.section === "consumo_troza" && e.trozaCode).map(mapTroza);
+    }
+    if (section === "despacho_producto") {
+      return entries.filter((e) => e.section === "producto_terminado").map((e) => ({
+        kind: "producto" as const, code: e.productType, species: e.speciesCommon, scientific: e.speciesScientific,
+        cites: e.cites, productType: e.productType, quantity: e.quantity ? Number(e.quantity) : null, unit: e.unit,
+      }));
+    }
+    return [];
   }
 
   // ─── Carátula ────────────────────────────────────────────────────────

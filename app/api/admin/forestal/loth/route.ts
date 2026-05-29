@@ -21,6 +21,7 @@ const sectionEnum = z.enum(LOTH_SECTIONS);
 
 const createSchema = z.object({
   caratulaId: z.string().trim().min(1).nullable().optional(),
+  planId: z.string().trim().min(1).nullable().optional(),
   section: sectionEnum,
   entryDate: z.coerce.date().optional(),
 
@@ -89,6 +90,16 @@ export async function GET(req: NextRequest) {
 
     if (url.searchParams.get("despachables") === "1") {
       return NextResponse.json({ items: await ForestLothDB.despachablesResueltos(auth.tenantId) });
+    }
+
+    const availableFor = url.searchParams.get("available");
+    if (availableFor && (LOTH_SECTIONS as readonly string[]).includes(availableFor)) {
+      const items = await ForestLothDB.availableSource(
+        auth.tenantId,
+        availableFor as (typeof LOTH_SECTIONS)[number],
+        url.searchParams.get("planId") ?? undefined,
+      );
+      return NextResponse.json({ items });
     }
 
     const sectionParam = url.searchParams.get("section");

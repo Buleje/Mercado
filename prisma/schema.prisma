@@ -4670,6 +4670,7 @@ model ForestLothEntry {
   id                String    @id @default(cuid())
   tenantId          String
   caratulaId        String?   // libro/tomo al que pertenece (ref. app-level)
+  planId            String?   // Plan de Manejo de origen (ADR-127 — flujo data-driven)
 
   // tala | trozado | despacho_troza | consumo_troza | producto_terminado | despacho_producto
   section           String
@@ -4720,6 +4721,7 @@ model ForestLothEntry {
 
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, caratulaId, section, lineNo])
+  @@index([tenantId, planId, section])
   @@index([tenantId, treeCode])
   @@index([tenantId, trozaCode])
   @@index([deletedAt])

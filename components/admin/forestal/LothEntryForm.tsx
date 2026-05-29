@@ -8,7 +8,7 @@
  * formularios cortos. Volumen por fórmula SERFOR (Smalian) en tala/trozado.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   TreePine,
   AlertTriangle,
@@ -105,6 +105,88 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
   const [speciesQuery, setSpeciesQuery] = useState("");
   const [showPicker, setShowPicker] = useState(false);
+
+  // ── Plan + picker de ítems disponibles (flujo data-driven, ADR-127) ──
+  interface PlanOpt { id: string; planType: string; planNumber: string | null; titularName: string }
+  interface SourceItem {
+    kind: string; code: string | null; species: string | null; scientific: string | null; cites?: boolean;
+    dapM?: number | null; hcM?: number | null; vol?: number | null; productType?: string | null;
+    quantity?: number | null; unit?: string | null; meta?: string | null;
+  }
+  const [plans, setPlans] = useState<PlanOpt[]>([]);
+  const [planId, setPlanId] = useState<string | null>(null);
+  const [sources, setSources] = useState<SourceItem[]>([]);
+  const [loadingSrc, setLoadingSrc] = useState(false);
+  const [srcQuery, setSrcQuery] = useState("");
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const [plansRes, activeRes] = await Promise.all([
+          fetch("/api/admin/forestal/plan", { credentials: "include" }),
+          fetch("/api/admin/forestal/plan?active=1", { credentials: "include" }),
+        ]);
+        const pl = plansRes.ok ? (await plansRes.json()).plans ?? [] : [];
+        const active = activeRes.ok ? (await activeRes.json()).active : null;
+        if (cancel) return;
+        setPlans(pl);
+        setPlanId(active?.id ?? pl[0]?.id ?? null);
+      } catch { /* se puede registrar sin plan (código libre) */ }
+    })();
+    return () => { cancel = true; };
+  }, []);
+
+  const loadSources = useCallback(async (pid: string | null) => {
+    setLoadingSrc(true);
+    try {
+      const q = new URLSearchParams({ available: section });
+      if (pid) q.set("planId", pid);
+      const r = await fetch(`/api/admin/forestal/loth?${q.toString()}`, { credentials: "include" });
+      setSources(r.ok ? (await r.json()).items ?? [] : []);
+    } catch { setSources([]); }
+    finally { setLoadingSrc(false); }
+  }, [section]);
+  useEffect(() => { loadSources(planId); }, [planId, loadSources]);
+
+  function applySpecies(common: string | null) {
+    if (!common) return;
+    const slug = speciesOptions.find((s) => s.commonName.toLowerCase() === common.toLowerCase());
+    if (slug) setSpeciesSlug(slug.slug);
+    else { setSpeciesSlug("otro"); setCustomSpecies(common); }
+  }
+  function pickSource(it: SourceItem) {
+    applySpecies(it.species);
+    if (section === "tala") {
+      if (it.code) setTreeCode(it.code);
+      if (it.dapM) { setDiamMayor(String(it.dapM)); setDiamMenor(String(it.dapM)); }
+      if (it.hcM) setLengthM(String(it.hcM));
+    } else if (section === "trozado") {
+      if (it.code) { setTreeCode(it.code); setTrozaCode((c) => c || `${it.code}-`); }
+    } else if (section === "despacho_troza" || section === "consumo_troza") {
+      if (it.code) setTrozaCode(it.code);
+      if (section === "consumo_troza" && it.vol) setVolumeM3(String(it.vol));
+    } else if (section === "despacho_producto") {
+      if (it.productType) setProductType(it.productType);
+      if (it.quantity) setQuantity(String(it.quantity));
+      if (it.unit === "m3" || it.unit === "kg" || it.unit === "unidad") setUnit(it.unit);
+    }
+  }
+  const SOURCE_TITLE: Record<LothSection, string> = {
+    tala: "Elegí el árbol del censo",
+    trozado: "Elegí la tala a trozar",
+    despacho_troza: "Elegí la troza a despachar",
+    consumo_troza: "Elegí la troza a consumir",
+    producto_terminado: "Elegí la troza consumida (materia prima)",
+    despacho_producto: "Elegí el producto a despachar",
+  };
+  const filteredSources = useMemo(() => {
+    const q = srcQuery.trim().toLowerCase();
+    const list = q
+      ? sources.filter((s) => (s.code ?? "").toLowerCase().includes(q) || (s.species ?? "").toLowerCase().includes(q) || (s.productType ?? "").toLowerCase().includes(q))
+      : sources;
+    return list.slice(0, 60);
+  }, [sources, srcQuery]);
 
   // ── Censo: autocompletado data-driven (ADR-126) ──────────────────────
   interface CensusTree {
@@ -211,6 +293,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       const payload: Record<string, unknown> = {
         section,
         caratulaId: caratulaId ?? null,
+        planId: planId ?? null,
         entryDate: new Date(entryDate).toISOString(),
         observations: observations.trim() || null,
       };
@@ -300,6 +383,66 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           <Field label="Fecha" required>
             <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={cls.input} />
           </Field>
+
+          {/* Picker data-driven: elegí del plan lo disponible para esta sección */}
+          <div className="space-y-2 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-900)]">
+                {SOURCE_TITLE[section]}
+              </span>
+              <select
+                value={planId ?? ""}
+                onChange={(e) => setPlanId(e.target.value || null)}
+                className="h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
+              >
+                {plans.length === 0 && <option value="">Sin plan</option>}
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>Plan {p.planType} {p.planNumber ?? ""} — {p.titularName}</option>
+                ))}
+              </select>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+              <input
+                type="text"
+                value={srcQuery}
+                onChange={(e) => setSrcQuery(e.target.value)}
+                placeholder="Buscar por código o especie..."
+                className={`${cls.input} h-9 pl-8`}
+              />
+            </div>
+            <div className="max-h-44 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+              {loadingSrc ? (
+                <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
+              ) : filteredSources.length === 0 ? (
+                <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">
+                  Nada disponible en este plan para esta etapa.{section !== "tala" && " Registrá primero la etapa anterior."}
+                </div>
+              ) : (
+                filteredSources.map((it, i) => (
+                  <button
+                    key={`${it.code}-${i}`}
+                    type="button"
+                    onClick={() => pickSource(it)}
+                    className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]"
+                  >
+                    <span className="flex min-w-0 items-center gap-2 truncate">
+                      <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{it.code ?? it.productType ?? "—"}</span>
+                      {it.species && <span className="truncate text-sm text-[var(--text-secondary)]">{it.species}</span>}
+                      {it.cites && <CitesPill />}
+                    </span>
+                    <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                      {it.dapM ? `Ø ${it.dapM.toFixed(2)}m ` : ""}
+                      {it.vol != null ? `${it.vol.toFixed(4)} m³` : it.quantity != null ? `${it.quantity.toFixed(2)} ${it.unit ?? ""}` : ""}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-800)]">
+              Seleccioná de la lista para autocompletar, o cargá manualmente abajo.
+            </p>
+          </div>
 
           {fields.has("treeCode") && (
             <Field label="Código del árbol" required={!fields.has("trozaCode")} hint="El código del censo forestal — punto de partida de la trazabilidad">
