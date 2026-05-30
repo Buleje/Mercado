@@ -20,7 +20,7 @@ import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOver
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
-import { SPEC_GATED_MODULE_IDS } from "@/hooks/use-enabled-specs";
+import { SPEC_GATED_MODULE_IDS, useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import { SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
@@ -185,6 +185,10 @@ export function AdminSidebar({
     [verticalConfig],
   );
 
+  // Especializaciones habilitadas para el tenant (ADR-124). El gating real de
+  // los tabs spec-gated (cacao, forestal, salud…) lo hace este feature flag.
+  const { enabledModuleIds: enabledSpecModuleIds } = useEnabledSpecs();
+
   /** Aplica el filtro vertical sobre una lista de tab ids.
    *  Si el registry no tiene el tab en enabled → lo omite (oculto silencioso).
    *  Si está en hidden → omitido.
@@ -195,12 +199,13 @@ export function AdminSidebar({
       const visible: string[] = [];
       const comingSoon: string[] = [];
       for (const id of tabIds) {
-        // 2026-05-28 ADR-124 fix: SPEC-GATED tabs (forestal CTP, salud, textil)
-        // bypassean el filtro vertical. Son módulos ORTOGONALES a la industry:
-        // un tenant restaurante puede tener forestal CTP habilitada si su
-        // dueño es también aserradero. El gating real es el feature flag.
+        // 2026-05-28 ADR-124: SPEC-GATED tabs (forestal CTP, salud, textil…) son
+        // ORTOGONALES a la industry (bypassean el filtro vertical), PERO el gate
+        // real es el feature flag de la spec. 2026-05-29 FIX: antes se hacía
+        // `visible.push(id)` incondicional → el tab seguía visible aunque el
+        // superadmin desactivara la spec. Ahora solo si está habilitada.
         if (SPEC_GATED_MODULE_IDS.has(id)) {
-          visible.push(id);
+          if (enabledSpecModuleIds.has(id)) visible.push(id);
           continue;
         }
         if (verticalHiddenSet.has(id)) continue;
@@ -215,7 +220,7 @@ export function AdminSidebar({
       }
       return { visible, comingSoon };
     },
-    [verticalEnabledSet, verticalHiddenSet, verticalComingSoonSet],
+    [verticalEnabledSet, verticalHiddenSet, verticalComingSoonSet, enabledSpecModuleIds],
   );
 
   // Modal "Cambiar tipo de negocio" — solo visible para owner/admin
