@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 // (después del `import dynamic from "next/dynamic"`) para reducir initial
 // bundle y permitir streaming del listing.
 import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
+import SubcategoryChips from "@/components/marketplace/tiendas/SubcategoryChips";
 import { deriveActiveZones } from "@/lib/marketplace-zones";
 import {
   useMarketplaceGeo,
@@ -785,43 +786,12 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
                 <Boxes className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
                 Todas
               </button>
-              {subcategories.map((s) => {
-                const active = subCategoryId === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => setSubCategoryId(active ? null : s.id)}
-                    aria-pressed={active}
-                    title={s.description || s.label}
-                    className={cn(
-                      "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-extrabold transition-colors whitespace-nowrap",
-                      active
-                        ? "bg-[var(--accent)] text-white shadow-sm"
-                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                    )}
-                  >
-                    {s.imageUrl ? (
-                      // Brandon 2026-05-18 perf P2 #12: next/image con sizes
-                      // fijos → lazy decode + serving optimizado.
-                      <Image
-                        src={s.imageUrl}
-                        alt=""
-                        width={20}
-                        height={20}
-                        sizes="20px"
-                        className="h-5 w-5 rounded-md object-cover shrink-0"
-                      />
-                    ) : (
-                      <Boxes
-                        className="h-3.5 w-3.5"
-                        strokeWidth={2.25}
-                        aria-hidden
-                      />
-                    )}
-                    <span className="max-w-[120px] truncate">{s.label}</span>
-                  </button>
-                );
-              })}
+              <SubcategoryChips
+                subcategories={subcategories}
+                activeId={subCategoryId}
+                onSelect={setSubCategoryId}
+                variant="pill"
+              />
             </div>
           </div>
         </div>
@@ -1250,53 +1220,12 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
                 {/* Brandon 2026-05-21 v3 — chips más chicos en mobile:
                     icono h-10 w-10 mobile / h-12 w-12 desktop. Label ts-2xs.
                     min-w 64 mobile / 80 desktop. Caben 4–5 en viewport sin scroll. */}
-                {subcategories.map((s) => {
-                  const active = subCategoryId === s.id;
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => setSubCategoryId(active ? null : s.id)}
-                      aria-pressed={active}
-                      title={s.description || s.label}
-                      className={cn(
-                        "shrink-0 inline-flex flex-col items-center gap-1 transition-all px-1 py-1.5 min-w-[64px] sm:min-w-[80px] group",
-                        active ? "" : "opacity-90 hover:opacity-100",
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "h-10 w-10 sm:h-12 sm:w-12 rounded-2xl overflow-hidden flex items-center justify-center transition-all",
-                          active
-                            ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30 scale-105"
-                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
-                        )}
-                      >
-                        {s.imageUrl ? (
-                          <Image
-                            src={s.imageUrl}
-                            alt={s.label}
-                            width={48}
-                            height={48}
-                            sizes="(min-width: 640px) 48px, 40px"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <Boxes className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} aria-hidden />
-                        )}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold leading-tight text-center max-w-[80px] sm:max-w-[100px] truncate pb-0.5 border-b-2 transition-all",
-                          active
-                            ? "text-[var(--accent)] border-[var(--accent)]"
-                            : "text-[var(--text-primary)] border-transparent group-hover:border-[var(--accent)]/40",
-                        )}
-                      >
-                        {s.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                <SubcategoryChips
+                  subcategories={subcategories}
+                  activeId={subCategoryId}
+                  onSelect={setSubCategoryId}
+                  variant="card"
+                />
               </div>
               {/* Desktop sidebar: lista vertical con fila icono+label */}
               <div
@@ -1304,49 +1233,12 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
                 aria-label="Filtrá por categoría"
                 className="hidden lg:flex flex-col gap-0.5"
               >
-                {subcategories.map((s) => {
-                  const active = subCategoryId === s.id;
-                  return (
-                    <button
-                      key={`sidebar-${s.id}`}
-                      onClick={() => setSubCategoryId(active ? null : s.id)}
-                      aria-pressed={active}
-                      title={s.description || s.label}
-                      className={cn(
-                        "group w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all text-left",
-                        active
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "h-7 w-7 rounded-lg overflow-hidden flex items-center justify-center shrink-0 transition-all",
-                          active
-                            ? "bg-[var(--accent)] text-white"
-                            : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-hover:text-[var(--accent)]",
-                        )}
-                      >
-                        {s.imageUrl ? (
-                          <Image
-                            src={s.imageUrl}
-                            alt=""
-                            width={28}
-                            height={28}
-                            sizes="28px"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <Boxes className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                        )}
-                      </span>
-                      <span className="truncate">{s.label}</span>
-                      {active && (
-                        <span aria-hidden className="ml-auto inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)] shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
+                <SubcategoryChips
+                  subcategories={subcategories}
+                  activeId={subCategoryId}
+                  onSelect={setSubCategoryId}
+                  variant="row"
+                />
               </div>
             </div>
           )}
