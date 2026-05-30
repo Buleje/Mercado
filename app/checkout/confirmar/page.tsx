@@ -420,15 +420,18 @@ export default function CheckoutConfirmarPage() {
       }
       setToastOpen(true);
       setSubmitting(false);
-      // Redirect a /tiendas (directorio real). Tras 2.8s para que se vea el toast.
-      // El reset del checkout-data ocurre DESPUÉS del redirect — si lo hacemos
-      // antes, el useEffect de redirect rebotaría a /datos.
+      // Brandon 2026-05-29 (audit): el cliente necesita su COMPROBANTE y tracking.
+      // 1 solo pedido con id → página de gracias (número + seguimiento). Varias
+      // tiendas o sin id → /tiendas con el modal de éxito (snapshot localStorage).
+      // El reset ocurre DESPUÉS del redirect (sino el useEffect rebota a /datos).
       setTimeout(() => {
-        router.replace("/tiendas");
-        // Pequeño delay extra para asegurar que el unmount de /confirmar ya
-        // pasó antes de limpiar customer/address.
+        if (succeeded.length === 1 && first.orderId !== undefined) {
+          router.replace(`/pedido/${first.orderId}/gracias`);
+        } else {
+          router.replace("/tiendas");
+        }
         window.setTimeout(() => reset(), 300);
-      }, 2800);
+      }, 1600);
       return;
     } else if (succeeded.length > 0) {
       setErrorMsg(`${succeeded.length} pedidos enviados, ${failed.length} fallaron. Reintentalos.`);
