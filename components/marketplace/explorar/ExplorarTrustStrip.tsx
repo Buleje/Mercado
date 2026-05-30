@@ -26,8 +26,8 @@ const ITEMS: TrustItem[] = [
 export default function ExplorarTrustStrip() {
   return (
     <section className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      <div className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[var(--rule-soft)]">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[var(--rule-base)]">
           {ITEMS.map((it) => {
             const Icon = it.icon;
             return (
@@ -39,13 +39,13 @@ export default function ExplorarTrustStrip() {
                   <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 </span>
                 <div className="min-w-0">
-                  <p className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight leading-none text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
+                  <p className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
                     {it.big}
                   </p>
-                  <p className="mt-2 text-sm sm:text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                  <p className="mt-2 text-sm font-bold text-[var(--text-primary)] leading-tight">
                     {it.label}
                   </p>
-                  <p className="text-xs font-semibold text-[var(--text-tertiary)] leading-tight">{it.sub}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] leading-tight">{it.sub}</p>
                 </div>
               </div>
             );

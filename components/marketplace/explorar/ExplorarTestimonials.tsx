@@ -45,16 +45,14 @@ export default function ExplorarTestimonials() {
   return (
     <section className="bg-[var(--surface-canvas)] py-12 sm:py-20">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        <header className="max-w-3xl mx-auto text-center mb-10 sm:mb-14">
-          <p className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
-            <span className="h-[3px] w-8 rounded-full bg-[var(--accent)]" aria-hidden />
+        <header className="max-w-2xl mx-auto text-center mb-10 sm:mb-14">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Vecinos contentos
           </p>
-          <h2 className="font-display text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-            <span className="text-[var(--accent)]">5.4k</span> vecinos
-            ya confían en Buleje
+          <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
+            <span className="text-[var(--accent)]">5.4k</span> vecinos ya confían en Buleje
           </h2>
-          <p className="mt-4 text-base sm:text-lg lg:text-xl text-[var(--text-secondary)] max-w-xl mx-auto font-semibold leading-snug">
+          <p className="mt-3 text-[var(--text-secondary)]">
             Familias reales de Pucallpa contando lo que les gustó.
           </p>
         </header>
@@ -63,7 +61,7 @@ export default function ExplorarTestimonials() {
           {REVIEWS.map((r, idx) => (
             <article
               key={idx}
-              className="group relative rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-7 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-[var(--accent)]/40"
+              className="group relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7 transition-all hover:border-[var(--rule-strong)] hover:shadow-md"
             >
               {/* Quote watermark — muy sutil */}
               <Quote
@@ -84,20 +82,20 @@ export default function ExplorarTestimonials() {
               </div>
 
               {/* Quote */}
-              <p className="font-display text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-snug tracking-tight">
+              <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-relaxed">
                 &ldquo;{r.text}&rdquo;
               </p>
 
               {/* Author */}
-              <div className="mt-6 flex items-center gap-3 pt-5 border-t border-[var(--rule-soft)]">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)] text-white font-display text-lg font-extrabold shadow-md shadow-[var(--accent)]/25">
+              <div className="mt-6 flex items-center gap-3 pt-5 border-t border-[var(--rule-base)]">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)] text-white text-lg font-extrabold">
                   {r.initial}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                  <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">
                     {r.name}
                   </p>
-                  <p className="text-xs font-semibold text-[var(--text-tertiary)]">{r.zone}, Pucallpa</p>
+                  <p className="text-xs text-[var(--text-tertiary)]">{r.zone}, Pucallpa</p>
                 </div>
               </div>
             </article>

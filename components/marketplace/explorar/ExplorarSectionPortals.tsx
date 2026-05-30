@@ -127,20 +127,18 @@ export default function ExplorarSectionPortals() {
       {/* Section heading — minimal, no compite con hero */}
       <div className="mb-8 sm:mb-12 flex items-end justify-between gap-4 flex-wrap">
         <div className="max-w-xl">
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-            <span className="font-mono font-extrabold">02</span>
-            <span className="h-px w-6 bg-[var(--rule-base)]" aria-hidden />
-            <span>Destinos disponibles</span>
-          </div>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[0.95]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+            Destinos disponibles
+          </p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
             Elegí tu próximo destino
           </h2>
-          <p className="mt-3 text-base sm:text-lg text-[var(--text-secondary)] font-semibold">
+          <p className="mt-3 text-[var(--text-secondary)]">
             Cada portal te lleva al catálogo completo. Acá solo un asomo de lo que hay.
           </p>
         </div>
-        <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
-          <span className="font-display text-xl font-extrabold text-[var(--accent)] tabular-nums leading-none">
+        <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+          <span className="text-base font-extrabold text-[var(--accent)] tabular-nums leading-none">
             8
           </span>
           secciones disponibles
@@ -171,58 +169,28 @@ function FeaturedCard({
 }) {
   const Icon = portal.icon;
   const isBrand = portal.variant === "hero-brand";
-  const isWarm = portal.variant === "hero-warm";
 
-  // Brand: gradient accent muy sutil
-  // Warm: amber muy diluido (no rainbow)
-  const cardBg = isBrand
-    ? "bg-linear-to-br from-[var(--accent)]/[0.10] via-[var(--accent)]/[0.04] to-[var(--surface-raised)]"
-    : isWarm
-      ? "bg-linear-to-br from-amber-100/40 via-amber-50/20 to-[var(--surface-raised)] dark:from-amber-950/20 dark:via-amber-950/10"
-      : "bg-[var(--surface-raised)]";
+  // Vender editorial: superficies planas, sin gradientes ni rainbow.
+  // La card brand conserva un susurro de accent; el resto va neutro.
+  const cardBg = isBrand ? "bg-[var(--accent)]/[0.04]" : "bg-[var(--surface-raised)]";
 
   const iconBg = isBrand
-    ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/25"
-    : isWarm
-      ? "bg-amber-500 text-white shadow-md shadow-md/25 dark:bg-amber-600"
-      : "bg-[var(--text-primary)] text-[var(--surface-canvas)]";
+    ? "bg-[var(--accent)] text-white"
+    : "bg-[var(--surface-sunken)] text-[var(--text-primary)]";
 
-  const chipBg = isBrand
-    ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/20"
-    : isWarm
-      ? "bg-amber-100/80 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800/40"
-      : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] border-[var(--rule-soft)]";
+  const chipBg =
+    "bg-[var(--surface-canvas)] text-[var(--text-secondary)] border-[var(--rule-soft)]";
 
   const ctaBg = isBrand
-    ? "bg-[var(--accent)] text-white hover:brightness-110 shadow-md shadow-[var(--accent)]/25"
-    : isWarm
-      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:bg-[var(--accent)]"
-      : "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:bg-[var(--accent)]";
-
-  const eyebrowColor = isBrand
-    ? "text-[var(--accent)]"
-    : isWarm
-      ? "text-amber-700 dark:text-amber-300"
-      : "text-[var(--text-secondary)]";
+    ? "bg-[var(--accent)] text-white hover:brightness-110"
+    : "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:bg-[var(--accent)]";
 
   return (
     <Link
       href={portal.href}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-[var(--rule-soft)] p-6 sm:p-7 transition-all hover:-translate-y-1 hover:shadow-xl hover:border-[var(--accent)]/30 ${cardBg} ${className}`}
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-base)] p-6 sm:p-7 transition-all hover:border-[var(--rule-strong)] hover:shadow-md ${cardBg} ${className}`}
     >
-      {/* Subtle decorative shape - una sola, muy diluida */}
-      <div
-        aria-hidden
-        className={`pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full blur-3xl opacity-30 ${
-          isBrand
-            ? "bg-[var(--accent)]"
-            : isWarm
-              ? "bg-amber-300 dark:bg-amber-700"
-              : "bg-[var(--text-tertiary)]"
-        }`}
-      />
-
-      {/* Top row */}
+      {/* Top row — solo el ícono, sin tag flotante redundante */}
       <div className="relative flex items-start justify-between gap-3">
         <span
           className={`inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl ${iconBg} transition-transform group-hover:scale-105`}
@@ -233,29 +201,22 @@ function FeaturedCard({
             aria-hidden
           />
         </span>
-        <span
-          className={`inline-flex items-center rounded-full border px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] ${chipBg}`}
-        >
-          {portal.eyebrow}
-        </span>
       </div>
 
       {/* Body */}
       <div className="relative mt-6 sm:mt-8">
-        <p
-          className={`text-xs font-extrabold uppercase tracking-[var(--ls-wider)] ${eyebrowColor} mb-2`}
-        >
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
           {portal.eyebrow}
         </p>
         <h3
-          className={`font-display ${
-            big ? "text-4xl sm:text-5xl lg:text-6xl" : "text-2xl sm:text-3xl"
-          } font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[0.95]`}
+          className={`${
+            big ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl"
+          } font-extrabold tracking-tight text-[var(--text-primary)] leading-tight`}
         >
           {portal.title}
         </h3>
         <p
-          className={`mt-3 ${big ? "text-lg sm:text-xl" : "text-sm sm:text-base"} text-[var(--text-secondary)] leading-snug max-w-md font-semibold`}
+          className={`mt-2 ${big ? "text-base sm:text-lg" : "text-sm"} text-[var(--text-secondary)] leading-relaxed max-w-md`}
         >
           {portal.description}
         </p>
@@ -264,7 +225,7 @@ function FeaturedCard({
           {portal.preview.map((p) => (
             <span
               key={p}
-              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-extrabold ${chipBg}`}
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${chipBg}`}
             >
               {p}
             </span>
@@ -275,12 +236,12 @@ function FeaturedCard({
       {/* CTA */}
       <div className="relative mt-6 sm:mt-8">
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-sm sm:text-base font-extrabold uppercase tracking-wider transition-all group-hover:gap-2.5 ${ctaBg}`}
+          className={`inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-sm font-bold tracking-tight transition-all group-hover:gap-2.5 ${ctaBg}`}
         >
           {portal.cta}
           <ArrowUpRight
             className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-            strokeWidth={2.75}
+            strokeWidth={2.5}
             aria-hidden
           />
         </span>
@@ -295,22 +256,22 @@ function NeutralCard({ portal }: { portal: Portal }) {
   return (
     <Link
       href={portal.href}
-      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-[var(--accent)]/40"
+      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 transition-all hover:border-[var(--rule-strong)] hover:shadow-md"
     >
       <div className="relative">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-primary)] transition-all group-hover:bg-[var(--accent)] group-hover:text-white group-hover:scale-110">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-primary)] transition-all group-hover:bg-[var(--accent)] group-hover:text-white">
           <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
       </div>
 
       <div className="relative mt-4">
-        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]">
           {portal.eyebrow}
         </p>
-        <h3 className="mt-1 font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <h3 className="mt-1 text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {portal.title}
         </h3>
-        <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-snug font-semibold">
+        <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
           {portal.description}
         </p>
 
@@ -318,7 +279,7 @@ function NeutralCard({ portal }: { portal: Portal }) {
           {portal.preview.slice(0, 3).map((p) => (
             <span
               key={p}
-              className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-secondary)]"
+              className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
             >
               {p}
             </span>
@@ -327,11 +288,11 @@ function NeutralCard({ portal }: { portal: Portal }) {
       </div>
 
       <div className="relative mt-5">
-        <span className="inline-flex items-center gap-1.5 text-sm sm:text-base font-extrabold uppercase tracking-wider text-[var(--text-primary)] transition-all group-hover:gap-2.5 group-hover:text-[var(--accent)]">
+        <span className="inline-flex items-center gap-1.5 text-sm font-bold tracking-tight text-[var(--text-primary)] transition-all group-hover:gap-2.5 group-hover:text-[var(--accent)]">
           {portal.cta}
           <ArrowUpRight
             className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-            strokeWidth={2.75}
+            strokeWidth={2.5}
             aria-hidden
           />
         </span>

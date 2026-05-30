@@ -66,26 +66,25 @@ function PreviewSectionBox({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden shadow-sm">
-      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-soft)] bg-linear-to-r from-[var(--accent)]/5 via-[var(--surface-canvas)] to-[var(--surface-canvas)] px-5 sm:px-6 py-4 sm:py-5">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-base)] px-5 sm:px-6 py-4 sm:py-5">
         <div className="min-w-0">
-          <p className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-            <span className="h-[3px] w-8 rounded-full bg-[var(--accent)]" aria-hidden />
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             {eyebrow}
           </p>
-          <h3 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] mt-2 leading-tight">
+          <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] mt-1.5 leading-tight">
             {title}
           </h3>
-          <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5 font-semibold">{subtitle}</p>
+          <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5">{subtitle}</p>
         </div>
         <Link
           href={ctaHref}
-          className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm sm:text-base font-extrabold uppercase tracking-wider text-white shadow-lg shadow-[var(--accent)]/30 transition-all hover:brightness-110 hover:gap-3 hover:shadow-xl shrink-0"
+          className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] px-6 py-3 text-sm font-bold tracking-tight text-[var(--surface-canvas)] transition-all hover:bg-[var(--accent)] hover:gap-3 shrink-0"
         >
           {ctaLabel}
           <ArrowUpRight
             className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-            strokeWidth={2.75}
+            strokeWidth={2.5}
             aria-hidden
           />
         </Link>
@@ -109,25 +108,24 @@ function FinalCTA() {
   return (
     <section className="bg-[var(--surface-canvas)] py-12 sm:py-20 mt-4">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-[var(--text-primary)] p-8 sm:p-12 lg:p-16">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--text-primary)] p-8 sm:p-12 lg:p-16">
           {/* Single subtle accent glow */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-20 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/15 blur-3xl"
+            className="pointer-events-none absolute -top-20 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/10 blur-3xl"
           />
 
           <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 lg:gap-12 items-center">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white mb-6">
-                <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.75} aria-hidden />
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white mb-5">
+                <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
                 Para bodegueros · Gratis siempre
               </span>
-              <h2 className="font-display text-[clamp(2.25rem,6vw,4.5rem)] font-extrabold tracking-[-0.035em] text-white leading-[0.95]">
-                Tu bodega online
-                <br />
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                Tu bodega online{" "}
                 <span className="text-[var(--accent)]">en 5 minutos.</span>
               </h2>
-              <p className="mt-5 text-lg sm:text-xl text-white/80 max-w-xl leading-snug font-semibold">
+              <p className="mt-4 text-lg text-white/80 max-w-xl leading-relaxed">
                 Miles de vecinos están buscando lo que vendés. Subí tus productos y empezá a
                 recibir pedidos hoy mismo.
               </p>
@@ -152,23 +150,23 @@ function FinalCTA() {
             <div className="flex flex-col gap-2.5 shrink-0">
               <Link
                 href="/abrir-tienda"
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base sm:text-lg font-extrabold uppercase tracking-wider shadow-xl shadow-[var(--accent)]/40 hover:brightness-110 hover:gap-3 transition-all"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base sm:text-lg font-bold tracking-tight hover:brightness-110 hover:gap-3 transition-all"
               >
                 <Store className="h-5 w-5" strokeWidth={2.25} />
                 Abrir mi tienda
                 <ArrowUpRight
                   className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  strokeWidth={2.75}
+                  strokeWidth={2.5}
                   aria-hidden
                 />
               </Link>
               <Link
                 href="/abrir-tienda#planes"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-8 py-4 text-sm sm:text-base font-extrabold uppercase tracking-wider text-white hover:bg-white/10 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-8 py-4 text-sm sm:text-base font-bold tracking-tight text-white hover:bg-white/10 transition-colors"
               >
                 Ver planes
               </Link>
-              <p className="mt-2 text-xs font-extrabold uppercase tracking-wider text-white/70 text-center">
+              <p className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/70 text-center">
                 ✓ 200+ bodegueros ya venden
               </p>
             </div>

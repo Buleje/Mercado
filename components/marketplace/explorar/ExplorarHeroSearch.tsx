@@ -102,21 +102,20 @@ export default function ExplorarHeroSearch() {
 
       <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         {/* ── Eyebrow ───────────────────────────────────────── */}
-        <p className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] mb-6 shadow-sm">
-          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-          <Compass className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2} />
+        <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-5">
+          <Compass className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
           Hub de descubrimiento
         </p>
 
         {/* ── Title + sub ───────────────────────────────────── */}
-        <h1 className="font-display font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.9] text-[clamp(3rem,9vw,6.5rem)] max-w-4xl">
+        <h1 className="text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.05] sm:text-5xl lg:text-6xl max-w-3xl">
           Todo Pucallpa,{" "}
           <span className="text-[var(--accent)]">en un toque.</span>
         </h1>
 
-        <p className="mt-5 sm:mt-7 text-lg sm:text-xl lg:text-2xl text-[var(--text-secondary)] leading-snug max-w-2xl font-semibold">
+        <p className="mt-4 text-lg text-[var(--text-secondary)] leading-relaxed max-w-2xl sm:text-xl">
           El menú visual de tu marketplace. Acá no comprás —{" "}
-          <strong className="text-[var(--text-primary)] font-extrabold">descubrís</strong> qué
+          <strong className="text-[var(--text-primary)] font-bold">descubrís</strong> qué
           tiene Buleje y elegís dónde entrar a comprar.
         </p>
 
@@ -154,7 +153,7 @@ export default function ExplorarHeroSearch() {
           </button>
           <button
             type="submit"
-            className="rounded-xl m-1.5 px-6 sm:px-8 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base sm:text-lg font-extrabold uppercase tracking-wider hover:bg-[var(--accent)] transition-colors"
+            className="rounded-xl m-1.5 px-6 sm:px-8 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base sm:text-lg font-bold tracking-tight hover:bg-[var(--accent)] transition-colors"
           >
             Buscar
           </button>
@@ -194,7 +193,7 @@ export default function ExplorarHeroSearch() {
           <div className="grid grid-cols-4 gap-3 sm:gap-6">
             {STATS.map((s) => (
               <div key={s.label} className="text-center sm:text-left group cursor-default">
-                <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none transition-colors group-hover:text-[var(--accent)]">
+                <p className="text-3xl sm:text-4xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none transition-colors group-hover:text-[var(--accent)]">
                   {s.value}
                 </p>
                 <p className="mt-1.5 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">

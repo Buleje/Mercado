@@ -54,16 +54,15 @@ const STEPS: Step[] = [
 export default function ExplorarHowItWorks() {
   return (
     <section className="relative mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
-      <header className="max-w-2xl mb-10 sm:mb-14">
-        <p className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
-          <span className="h-[3px] w-8 rounded-full bg-[var(--accent)]" aria-hidden />
+      <header className="mx-auto max-w-2xl text-center mb-10 sm:mb-14">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           Cómo funciona
         </p>
-        <h2 className="font-display text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+        <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
           De buscar a recibir{" "}
-          <span className="text-[var(--accent)]">en 3 pasos.</span>
+          <span className="text-[var(--accent)]">en 3 pasos</span>
         </h2>
-        <p className="mt-4 text-base sm:text-lg lg:text-xl text-[var(--text-secondary)] leading-snug font-semibold">
+        <p className="mt-3 text-[var(--text-secondary)]">
           Sin formularios largos, sin tarjetas, sin repartidores que nunca llegan.
         </p>
       </header>
@@ -80,11 +79,11 @@ export default function ExplorarHowItWorks() {
           return (
             <div
               key={s.num}
-              className="group relative rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-7 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-[var(--accent)]/40"
+              className="group relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7 transition-all hover:border-[var(--rule-strong)] hover:shadow-md"
             >
               {/* Big number watermark */}
               <span
-                className="pointer-events-none absolute top-3 right-5 font-display text-7xl sm:text-8xl font-extrabold text-[var(--surface-sunken)] leading-none select-none"
+                className="pointer-events-none absolute top-3 right-5 text-6xl sm:text-7xl font-extrabold text-[var(--surface-sunken)] leading-none select-none tabular-nums"
                 aria-hidden
               >
                 {s.num}
@@ -96,13 +95,13 @@ export default function ExplorarHowItWorks() {
                   <Icon className="h-6 w-6" strokeWidth={2} aria-hidden />
                 </span>
 
-                <p className="mt-5 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                <p className="mt-5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   Paso {s.num}
                 </p>
-                <h3 className="mt-1.5 font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.05]">
+                <h3 className="mt-1 text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
                   {s.title}
                 </h3>
-                <p className="mt-3 text-sm sm:text-base text-[var(--text-secondary)] leading-snug font-semibold">
+                <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
                   {s.description}
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -129,7 +128,7 @@ export default function ExplorarHowItWorks() {
       <div className="mt-10 sm:mt-12 flex justify-center">
         <Link
           href="/marketplace"
-          className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base sm:text-lg font-extrabold uppercase tracking-wider shadow-xl hover:bg-[var(--accent)] hover:gap-3 transition-all"
+          className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base sm:text-lg font-bold tracking-tight shadow-sm hover:bg-[var(--accent)] hover:gap-3 transition-all"
         >
           Empezar a comprar
           <ArrowUpRight
