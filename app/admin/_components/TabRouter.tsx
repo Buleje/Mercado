@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { TabSpinner } from "@/app/admin/_lib/tab-spinner";
+import { useEnabledSpecs, SPEC_GATED_MODULE_IDS } from "@/hooks/use-enabled-specs";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { StoreMode } from "@/lib/jsondb";
@@ -192,6 +193,19 @@ export function TabRouter({
 
   // Prefetch modulos relacionados tras 2s de inactividad
   usePrefetchRelated(tab);
+
+  // ── Guard de especialización (ADR-124, fix 2026-05-29) ──
+  // Si el tab activo es spec-gated (cacao, forestal…) y el superadmin la
+  // desactivó, NO renderizar el módulo (evita 403 + pantalla rota cuando el
+  // último tab persistido en localStorage quedó deshabilitado). Redirige a
+  // inicio. Solo cuando specs YA cargaron (sino redirigiría un tab válido en
+  // el flash de loading).
+  const { enabledModuleIds, isLoading: specsLoading } = useEnabledSpecs();
+  const specBlocked = SPEC_GATED_MODULE_IDS.has(tab) && !specsLoading && !enabledModuleIds.has(tab);
+  useEffect(() => {
+    if (specBlocked) onNavigateTab("inicio" as Tab);
+  }, [specBlocked, onNavigateTab]);
+  if (specBlocked) return <TabSpinner />;
 
   // ── 0. Panel del vendedor ──
   if (tab === "vendor-dashboard") return <VendorDashboardModule />;
