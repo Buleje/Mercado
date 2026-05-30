@@ -27,6 +27,7 @@ import { useSettingsSafe, DEFAULT_DELIVERY } from "@/contexts/settings-context";
 import { DEFAULT_HOMEPAGE } from "@/lib/homepage-content";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
+import { extractWaNumber } from "@/lib/wa-number";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 
@@ -475,7 +476,11 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
             {/* DER — CTA WhatsApp + redes (compacto, idéntico al mega footer) */}
             <div className="flex flex-col gap-3 lg:items-end">
               {(() => {
-                const rawPhone = (storeTheme?.whatsapp || platformWa || hp.footerWhatsApp || "").replace(/\D/g, "");
+                // Bug fix 2026-05-30 (audit): hp.footerWhatsApp es una URL
+                // (wa.me/<num>?text=...); el replace(/\D/g) viejo conservaba los
+                // dígitos del query (%2C/%20) y rompía el número. extractWaNumber
+                // corta en el `?` y maneja número crudo o URL. [[lib/wa-number]]
+                const rawPhone = extractWaNumber(storeTheme?.whatsapp || platformWa || hp.footerWhatsApp);
                 if (!rawPhone) return null;
                 const text = encodeURIComponent(`Hola ${platformName}, quiero hacer un pedido`);
                 return (
@@ -561,7 +566,11 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
             {/* DER: CTA WhatsApp + iconos sociales compactos */}
             <div className="flex flex-col gap-3 lg:items-end">
               {(() => {
-                const rawPhone = (storeTheme?.whatsapp || platformWa || hp.footerWhatsApp || "").replace(/\D/g, "");
+                // Bug fix 2026-05-30 (audit): hp.footerWhatsApp es una URL
+                // (wa.me/<num>?text=...); el replace(/\D/g) viejo conservaba los
+                // dígitos del query (%2C/%20) y rompía el número. extractWaNumber
+                // corta en el `?` y maneja número crudo o URL. [[lib/wa-number]]
+                const rawPhone = extractWaNumber(storeTheme?.whatsapp || platformWa || hp.footerWhatsApp);
                 if (!rawPhone) return null;
                 const text = encodeURIComponent(`Hola ${storeTheme?.name || platformName}, quiero hacer un pedido`);
                 return (
