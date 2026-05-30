@@ -112,6 +112,17 @@ export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
   { id: "gift-cards-admin",   defaultLabel: "Gift cards",         category: "Marketplace",   defaultVisible: false, defaultPlan: "max",        description: "Vender y canjear gift cards.", scope: "tienda" },
   { id: "socio-members",      defaultLabel: "Socio Buleje",       category: "Marketplace",   defaultVisible: false, defaultPlan: "max",        description: "Programa de socios premium.", scope: "marketplace" },
 
+  // ── Especialización + módulos recientes (2026-05-29) ──────────────
+  // cacao/forestal: el unlock REAL es la feature flag de la spec
+  // (/superadmin/especializaciones). Acá solo se controla visibilidad/orden/
+  // label CUANDO la spec está activa — si la spec está OFF, el tab no aparece
+  // igual (gating en sidebar + TabRouter).
+  { id: "adelantos",              defaultLabel: "Adelantos",                      category: "Finanzas",    defaultVisible: false, defaultPlan: "enterprise", description: "Adelantos a personas liquidados por entregas.", scope: "tienda" },
+  { id: "leads-funnel",           defaultLabel: "Funnel de Leads",                category: "CRM",         defaultVisible: false, defaultPlan: "enterprise", description: "Embudo de prospectos y conversion.", scope: "mixto" },
+  { id: "cacao-acopio",           defaultLabel: "Acopio de Cacao",                category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Acopio y beneficio de cacao (especializacion agricola — requiere spec ON).", scope: "tienda" },
+  { id: "ctp-libro-operaciones",  defaultLabel: "Libro CTP (Forestal)",           category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Libro de operaciones CTP forestal (especializacion — requiere spec ON).", scope: "tienda" },
+  { id: "loth-libro-operaciones", defaultLabel: "Libro Titulos Hab. (Forestal)",  category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Libro de titulos habilitantes forestal (especializacion — requiere spec ON).", scope: "tienda" },
+
   // ── Sistema (siempre core, free y arriba) ─────────────────────────
   { id: "config",             defaultLabel: "Configuracion",      category: "Sistema",       defaultVisible: true,  defaultPlan: "basico",     description: "Usuarios, permisos y configuracion general.", scope: "sistema" },
   { id: "plan",               defaultLabel: "Mi plan",            category: "Sistema",       defaultVisible: true,  defaultPlan: "basico",     description: "Plan actual y opciones de upgrade.", scope: "sistema" },

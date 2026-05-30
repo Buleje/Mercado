@@ -34,6 +34,11 @@ import {
   type Industry,
 } from "@/lib/verticals/registry";
 
+// "Ver mi tienda" (storefront público) oculto por defecto — pedido Brandon
+// 2026-05-29: en la barra solo queda "Ver tiendas" (lista del marketplace).
+// Cambiar a true para reactivar el link al storefront propio.
+const SHOW_MI_TIENDA_LINK = false;
+
 // ─── Tipos del tab-item que se usa en esta pantalla ───────────────────────────
 type TabItem = {
   id: Tab;
@@ -1251,7 +1256,7 @@ export function AdminSidebar({
           >
             <Globe className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver tiendas ↗"}
           </Link>
-          {isRealTenant && (
+          {SHOW_MI_TIENDA_LINK && isRealTenant && (
             <Link
               href={storeHref}
               target="_blank"
