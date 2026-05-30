@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Redis client (lazy singleton) ─────────────────────────────────────────────
 
@@ -31,6 +32,11 @@ function getRedis(): Redis | null {
 
 const WINDOW_MS = 60 * 60 * 1000; // 1 hora
 
+// Slug válido = el mismo formato que el resto del marketplace. Defensa en
+// profundidad: nunca usar un slug crudo del request como key de Redis
+// (evita keys basura "lv:<payload>" e inyección de patrones).
+const SLUG_RE = /^[a-z0-9-]{2,64}$/;
+
 function liveKey(slug: string): string {
   return `lv:${slug}`;
 }
@@ -38,12 +44,15 @@ function liveKey(slug: string): string {
 // ── GET — leer conteo ─────────────────────────────────────────────────────────
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
-): Promise<NextResponse> {
+): Promise<Response> {
+  const rl = applyRateLimit(req, "MODERATE", "live-viewers-get");
+  if (rl) return rl;
+
   const { slug } = await params;
 
-  if (!slug || typeof slug !== "string") {
+  if (!slug || !SLUG_RE.test(slug)) {
     return NextResponse.json({ recentViewers: 0 }, { status: 400 });
   }
 
@@ -101,10 +110,13 @@ export async function GET(
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
-): Promise<NextResponse> {
+): Promise<Response> {
+  const rl = applyRateLimit(req, "MODERATE", "live-viewers-post");
+  if (rl) return rl;
+
   const { slug } = await params;
 
-  if (!slug || typeof slug !== "string") {
+  if (!slug || !SLUG_RE.test(slug)) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 

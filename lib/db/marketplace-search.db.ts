@@ -168,7 +168,10 @@ export const MarketplaceSearchDB = {
           skip: offset,
         }),
         prisma.storeProduct.count({ where }),
-        // Facets: buscamos SIN paginación para contar todo
+        // Facets: contamos sobre una muestra acotada para no escanear toda la
+        // tabla en búsquedas populares. take: 2000 cubre catálogos normales;
+        // con >2000 StoreProducts activos los conteos de facets quedan
+        // aproximados — aceptable para filtros de UI (Brandon 2026-05-30, audit).
         prisma.storeProduct.findMany({
           where,
           select: {
@@ -176,6 +179,7 @@ export const MarketplaceSearchDB = {
             store: { select: { slug: true, name: true, zone: true } },
             product: { select: { category: true } },
           },
+          take: 2000,
         }),
       ]);
 

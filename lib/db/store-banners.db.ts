@@ -1,6 +1,16 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import type { StoreBanner as PStoreBanner } from "@/lib/generated/prisma/client";
+
+// Caché de lectura (300s) — los banners de una tienda se piden en cada render
+// del storefront pero cambian raramente. Invalidación por prefijo de tenant
+// tras cualquier escritura (over-invalida dentro del tenant — seguro, banners
+// cambian poco). Brandon 2026-05-30 (audit /tiendas).
+const BANNERS_CACHE_TTL = 300;
+const bannersCacheKey = (tenantId: string, storeId: string, section?: string) =>
+  `store-banners:${tenantId}:${storeId}:${section ?? "__all__"}`;
+const bannersCachePrefix = (tenantId: string) => `store-banners:${tenantId}:`;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -71,19 +81,21 @@ function mapBanner(r: PStoreBanner): DbStoreBanner {
 
 export const StoreBannersDB = {
   async list(tenantId: string, storeId: string, section?: string): Promise<DbStoreBanner[]> {
-    const now = new Date();
-    const rows = await prisma.storeBanner.findMany({
-      where: {
-        tenantId,
-        storeId,
-        ...(section ? { section } : {}),
-        isActive: true,
-        OR: [{ startDate: null }, { startDate: { lte: now } }],
-        AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
-      },
-      orderBy: { position: "asc" },
+    return getOrSet(bannersCacheKey(tenantId, storeId, section), BANNERS_CACHE_TTL, async () => {
+      const now = new Date();
+      const rows = await prisma.storeBanner.findMany({
+        where: {
+          tenantId,
+          storeId,
+          ...(section ? { section } : {}),
+          isActive: true,
+          OR: [{ startDate: null }, { startDate: { lte: now } }],
+          AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
+        },
+        orderBy: { position: "asc" },
+      });
+      return rows.map(mapBanner);
     });
-    return rows.map(mapBanner);
   },
 
   async create(tenantId: string, params: DbStoreBannerCreateInput): Promise<DbStoreBanner> {
@@ -102,6 +114,7 @@ export const StoreBannersDB = {
         endDate: params.endDate ? new Date(params.endDate) : null,
       },
     });
+    invalidateByPrefix(bannersCachePrefix(tenantId));
     return mapBanner(row);
   },
 
@@ -123,12 +136,14 @@ export const StoreBannersDB = {
       },
     });
     if (result.count === 0) return null;
+    invalidateByPrefix(bannersCachePrefix(tenantId));
     const updated = await prisma.storeBanner.findUnique({ where: { id } });
     return updated ? mapBanner(updated) : null;
   },
 
   async delete(tenantId: string, id: string): Promise<void> {
     await prisma.storeBanner.deleteMany({ where: { id, tenantId } });
+    invalidateByPrefix(bannersCachePrefix(tenantId));
   },
 
   async reorder(
@@ -145,5 +160,6 @@ export const StoreBannersDB = {
         })
       )
     );
+    invalidateByPrefix(bannersCachePrefix(tenantId));
   },
 };
