@@ -27,9 +27,11 @@ export default function ConditionalSecondaryNav() {
           mega-menú. */}
       <MarketplaceCategoriesBar />
 
-      {/* Desktop: mega-menú + accesos rápidos. En tiendas-only se oculta —
-          /tiendas tiene su propio bloque de filtros + hero de búsqueda. */}
-      {mode !== "tiendas-only" && <MarketplaceSecondaryNav />}
+      {/* Desktop: mega-menú + filtros rápidos. Aparece en full/minimo/custom;
+          se oculta en tiendas-only. Esperamos a que `mode` resuelva (≠ null)
+          antes de renderizar para evitar el flash "aparece 1 frame y se oculta"
+          al hidratar (el hook arranca null en SSR). Brandon 2026-05-30. */}
+      {mode !== null && mode !== "tiendas-only" && <MarketplaceSecondaryNav />}
     </>
   );
 }

@@ -13,16 +13,29 @@
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "@buleje/design-system/icons";
+import {
+  ChevronDown,
+  LayoutGrid,
+  Truck,
+  Sparkles,
+  Flame,
+  MapPin,
+  type LucideIcon,
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import CategoryMegaMenu from "@/components/marketplace/CategoryMegaMenu";
 import { FreeShippingIndicator } from "@/components/marketplace/MarketplaceFreeShippingBar";
 import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 
-// ── Links rápidos de la barra secundaria ────────────────────────────────────
+// ── Filtros rápidos de la barra secundaria ───────────────────────────────────
+// REGLA "sin repetir": acá NO van "Ofertas" ni "Tiendas" — ambos ya son links
+// del nav principal (PRIMARY_LINKS en MarketplaceNavbar). El sub-nav es
+// complementario: el mega-menú de Categorías + atajos de filtrado del catálogo
+// que el nav no ofrece. Brandon 2026-05-30.
 type QuickLink = {
   label: string;
   href: string;
+  icon: LucideIcon;
   matchPrefix?: string;
 };
 
@@ -30,27 +43,26 @@ const QUICK_LINKS: readonly QuickLink[] = [
   {
     label: "Delivery gratis",
     href: "/marketplace/explorar?delivery=free",
+    icon: Truck,
     matchPrefix: "/marketplace/explorar?delivery=free",
-  },
-  {
-    label: "Ofertas",
-    href: "/marketplace/ofertas",
-    matchPrefix: "/marketplace/ofertas",
-  },
-  {
-    label: "Tiendas",
-    href: "/tiendas",
-    matchPrefix: "/tiendas",
   },
   {
     label: "Nuevos",
     href: "/marketplace/explorar?sort=newest",
+    icon: Sparkles,
     matchPrefix: "/marketplace/explorar?sort=newest",
   },
   {
     label: "Más vendidos",
     href: "/marketplace/explorar?sort=best-sellers",
+    icon: Flame,
     matchPrefix: "/marketplace/explorar?sort=best-sellers",
+  },
+  {
+    label: "Cerca de mí",
+    href: "/tiendas?zone=true",
+    icon: MapPin,
+    matchPrefix: "/tiendas?zone=true",
   },
 ] as const;
 
@@ -107,10 +119,10 @@ export default function MarketplaceSecondaryNav() {
       )}
     >
       <div className="relative mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-7 h-12">
-          {/* ── Grupo trigger + menu con hover intent ─────────────────── */}
+        <div className="flex items-center gap-5 h-12">
+          {/* ── Trigger "Categorías" — pill primario con hover intent ──────── */}
           <div
-            className="relative"
+            className="relative shrink-0"
             onMouseEnter={openMenu}
             onMouseLeave={scheduleClose}
           >
@@ -123,14 +135,14 @@ export default function MarketplaceSecondaryNav() {
               onClick={() => setMenuOpen((o) => !o)}
               onFocus={openMenu}
               className={cn(
-                "inline-flex items-center gap-1.5 text-sm font-bold transition-colors h-12",
-                "border-b-[3px]",
+                "inline-flex items-center gap-2 rounded-full border px-3.5 h-9 text-sm font-bold tracking-tight transition-colors",
                 menuOpen
-                  ? "text-[var(--accent)] border-[var(--accent)]"
-                  : "text-[var(--text-primary)] border-transparent hover:text-[var(--accent)] hover:border-[var(--accent)]",
+                  ? "border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[var(--accent)]"
+                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]",
               )}
             >
-              Categoria
+              <LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              Categorías
               <ChevronDown
                 className={cn(
                   "h-3.5 w-3.5 transition-transform duration-150",
@@ -155,26 +167,35 @@ export default function MarketplaceSecondaryNav() {
 
           {/* Separador vertical sutil */}
           <div
-            className="h-4 w-px bg-[var(--rule-soft)] shrink-0"
+            className="h-5 w-px bg-[var(--rule-base)] shrink-0"
             aria-hidden="true"
           />
 
-          {/* ── Quick links ── */}
-          <nav aria-label="Accesos rapidos del marketplace" className="flex items-center gap-5 flex-1 min-w-0">
+          {/* ── Filtros rápidos (icono + label, sin repetir el nav) ── */}
+          <nav
+            aria-label="Filtros rápidos del marketplace"
+            className="flex items-center gap-1 flex-1 min-w-0"
+          >
             {QUICK_LINKS.map((link) => {
               const active = isQuickLinkActive(link);
+              const Icon = link.icon;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "text-sm transition-colors h-12 inline-flex items-center border-b-[3px] px-1",
+                    "inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-sm transition-colors",
                     active
-                      ? "font-bold text-[var(--accent)] border-[var(--accent)]"
-                      : "font-semibold text-[var(--text-primary)] border-transparent hover:text-[var(--accent)] hover:border-[var(--accent)]",
+                      ? "font-bold text-[var(--accent)] bg-[var(--accent)]/10"
+                      : "font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--surface-canvas)]",
                   )}
                 >
+                  <Icon
+                    className="h-4 w-4 shrink-0"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
                   {link.label}
                 </Link>
               );
@@ -182,7 +203,7 @@ export default function MarketplaceSecondaryNav() {
           </nav>
 
           {/* ── Indicador de envio gratis (solo si hay items en carrito) ── */}
-          <div className="ml-auto">
+          <div className="ml-auto shrink-0">
             <FreeShippingIndicator />
           </div>
         </div>

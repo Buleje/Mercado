@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
+import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
 import StoreProviders from "@/components/StoreProviders";
 import MotionProvider from "@/components/MotionProvider";
 import Footer from "@/components/Footer";
@@ -109,7 +111,15 @@ export default function VenderLandingPage() {
         <JsonLd data={venderBreadcrumbLd} />
         <JsonLd data={venderFaqLd} />
         <div className="min-h-screen bg-[var(--surface-canvas)]">
-          <MarketplaceNavbar />
+          {/* Navbar + sub-nav unificados (mismos que /marketplace, /tiendas,
+              /negocios). En Suspense porque acceden uncached data (cookies/brand)
+              — Next 16 cacheComponents lo exige. */}
+          <Suspense fallback={null}>
+            <MarketplaceNavbar />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ConditionalSecondaryNav />
+          </Suspense>
           <main id="main-content">
             {/*
               SEO 2026-05-28 audit: VenderHero renderiza el H1 visual via prop

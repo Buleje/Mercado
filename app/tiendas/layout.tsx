@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import MarketplaceStoreProviders from "@/components/MarketplaceStoreProviders";
 import MotionProvider from "@/components/MotionProvider";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
+import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
 import QuickAddDrawer from "@/components/marketplace/QuickAddDrawer";
 import BottomNav from "@/components/marketplace/BottomNav";
 import Footer from "@/components/Footer";
@@ -19,17 +20,15 @@ import MainWithBackKey from "@/components/marketplace/MainWithBackKey";
  *   - Providers: Store + Motion + QuickAdd + AddedToCartDrawer.
  *   - Sólo el `<main>` interior se re-renderiza al cambiar de ruta.
  *
- * Anti-flash 2026-05-21 (Brandon):
- *   · ConditionalPromoBar y ConditionalSecondaryNav fueron removidos del
- *     árbol: ambos dependen del hook client `useMarketplaceNavMode()` que
- *     arranca `null` en SSR y resuelve después → producía un swap visible
- *     (PromoBar y SecondaryNav aparecían 1 frame y luego se ocultaban).
- *     En `/tiendas` la decisión es estática: nunca se muestran.
- *   · `MarketplaceNavbar` recibe `modeOverride="tiendas-only"` para evitar
- *     el flash de links (sin el prop, el hook recortaba "Bodegas" post-
- *     hidratación → reflow del navbar visible).
- *   · El Suspense del navbar se removió: no había async hijo que lo
- *     justificara y producía 1 frame sin chrome.
+ * Unificación nav/sub-nav 2026-05-30 (Brandon):
+ *   · `/tiendas` ya NO fuerza `modeOverride="tiendas-only"`. El modo lo decide
+ *     el superadmin (/superadmin/stores → Navegación). Así el nav + sub-nav
+ *     son IDÉNTICOS en todas las páginas marketplace (/marketplace, /explorar,
+ *     /tienda, /negocios, /vender, /tiendas) y "Marketplace completo" se
+ *     refleja en todas a la vez.
+ *   · `ConditionalSecondaryNav` montado de nuevo: internamente decide según el
+ *     modo (full/minimo → muestra; tiendas-only → oculta). El sub-nav es la
+ *     barra de Categorías + filtros rápidos (sin repetir links del nav).
  */
 /**
  * NavbarSkeleton — fallback del Suspense del MarketplaceNavbar.
@@ -68,7 +67,14 @@ export default function TiendasLayout({
                   permite que el resto del layout streame mientras el navbar
                   resuelve. Fallback con la altura exacta para evitar CLS. */}
               <Suspense fallback={<NavbarSkeleton />}>
-                <MarketplaceNavbar modeOverride="tiendas-only" />
+                <MarketplaceNavbar />
+              </Suspense>
+              {/* Sub-nav unificado — Categorías + filtros rápidos. Aparece solo
+                  cuando el superadmin tiene "Marketplace completo" (o "Mínimo");
+                  en "Solo Tiendas" se auto-oculta. Mismo componente que el resto
+                  del marketplace → 100% consistente. */}
+              <Suspense fallback={null}>
+                <ConditionalSecondaryNav />
               </Suspense>
               {/*
                 MainWithBackKey: detecta back-nav desde /marketplace/[slug] y
@@ -80,7 +86,7 @@ export default function TiendasLayout({
                 <MainWithBackKey>{children}</MainWithBackKey>
               </Suspense>
               <Suspense fallback={null}>
-                <Footer modeOverride="tiendas-only" />
+                <Footer />
               </Suspense>
               <Suspense fallback={null}>
                 <QuickAddDrawer />
