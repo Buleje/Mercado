@@ -56,10 +56,6 @@ const NotificationsMenu = dynamic(
 // Brandon 2026-05-27 (audit perf bundle): estos 3 viven en el navbar que está
 // en TODAS las páginas del storefront, pero solo aparecen al interactuar
 // (lupa / hamburguesa / mega-menú). Lazy → fuera del bundle del primer paint.
-const DiscoverMegaMenu = dynamic(
-  () => import("@/components/marketplace/navbar/DiscoverMegaMenu"),
-  {},
-);
 const MobileSearchOverlay = dynamic(
   () => import("@/components/marketplace/MobileSearchOverlay"),
   { ssr: false },
@@ -69,6 +65,7 @@ const SharedMobileNavDrawer = dynamic(
   { ssr: false },
 );
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
+import MarketplaceNavLinks from "@/components/marketplace/navbar/MarketplaceNavLinks";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
@@ -89,7 +86,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 //
 // `matchEquals` para links exact (evita que "Bodegas" matchee en sub-rutas).
 // `matchPrefix` para links de sección (cubre sub-rutas).
-type NavLink = {
+export type NavLink = {
   /** ID canonico — debe coincidir con NAV_LINK_CATALOG.marketplace[*].id */
   id: string;
   href: string;
@@ -412,25 +409,33 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   // usamos como verdad absoluta. Esto evita el flash post-hidratación, porque
   // el hook arranca `null` en SSR y resuelve después → con override el primer
   // render ya conoce el modo correcto.
-  const navMode = modeOverride ?? navModeHook;
+  //
+  // FIX FOUC (Brandon 2026-05-30): mientras el hook resuelve (`null` en SSR y
+  // primer render cliente), asumimos "tiendas-only" — que es el DEFAULT real
+  // del sistema (`defaultStore()` → tiendas-only) y lo que ve ~todo visitante
+  // sin localStorage. Antes asumíamos "completo" → al recargar en modo tiendas
+  // se veía 1 frame el nav completo y colapsaba (flash grave). Ahora el primer
+  // paint ya es Solo Tiendas; el modo "completo" (solo navegador del superadmin)
+  // resuelve por efecto sin flash perceptible.
+  const navMode = modeOverride ?? navModeHook ?? "tiendas-only";
   const isTiendasOnly = navMode === "tiendas-only";
   // Brandon 2026-05-18 v3: gate "Ofertas" si no hay descuentos activos en
   // ningún tenant. Antes el link estaba forzado visible en modo tiendas-only,
   // ahora gatea por dato real (no prometer descuentos inexistentes).
   const hasActiveOffers = useHasActiveOffers();
-  // En modo tiendas-only forzamos siempre visible "como-pagar" — utilitario
-  // que ayuda a comprar. "Ofertas" ya no se fuerza: respeta hasActiveOffers.
-  const FORCE_VISIBLE_IN_TIENDAS_ONLY = new Set(["como-pagar"]);
   const visibleLinks = PRIMARY_LINKS.filter((l) => {
     // Ofertas — solo visible si hay ofertas activas (independiente de superadmin).
     if (l.id === "ofertas" && hasActiveOffers !== true) return false;
-    if (isTiendasOnly && FORCE_VISIBLE_IN_TIENDAS_ONLY.has(l.id)) return true;
     return navVisibility[l.id] !== false;
   });
-  // En modo tiendas-only el chip "Bodegas" sobra: ya estamos en /tiendas
-  // y el navbar debe priorizar el buscador centrado.
+  // Brandon 2026-05-30: el modo "Solo Tiendas" es un nav mínimo intencional —
+  // SOLO Inicio + Tiendas. Se ocultan Bodegas (ya estamos en el directorio),
+  // Cómo pagar, Negocios y Abre tu tienda (utilitarios/B2B que distraen del
+  // foco "elegí tu tienda"). El modo manda sobre los toggles individuales:
+  // ponés "Solo Tiendas" en superadmin → el público ve solo Inicio + Tiendas.
+  const TIENDAS_ONLY_LINKS = new Set(["inicio", "tiendas"]);
   const renderedLinks = isTiendasOnly
-    ? visibleLinks.filter((l) => l.id !== "bodegas")
+    ? PRIMARY_LINKS.filter((l) => TIENDAS_ONLY_LINKS.has(l.id))
     : visibleLinks;
 
   const handleOpenCart = useCallback(() => {
@@ -552,8 +557,56 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               )}
             </Link>
 
-            {/* ── Search bar autocomplete (desktop + tablet) ── */}
-            <div data-tour="search" className="hidden md:block flex-1 max-w-[680px]">
+            {/* ── Modo SOLO TIENDAS · tabs Inicio·Tiendas a la izquierda ──
+                Brandon 2026-05-30: el directorio de tiendas prioriza la
+                búsqueda. Los 2 enlaces van como tabs limpios pegados al logo
+                (no flotando) y el search pasa a ser protagonista (abajo). El
+                modo "Marketplace completo" usa otra disposición (search +
+                nav con overflow "Más ▾"). */}
+            {isTiendasOnly && (
+              <nav
+                aria-label="Navegación de tiendas"
+                className="hidden lg:flex items-center gap-1 shrink-0"
+              >
+                {renderedLinks.map((link) => {
+                  const active = isActive(link);
+                  const LinkIcon = link.icon;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-bold transition-colors",
+                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+                        active
+                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                      )}
+                    >
+                      <LinkIcon
+                        className="h-4 w-4 shrink-0"
+                        strokeWidth={1.75}
+                        aria-hidden="true"
+                      />
+                      {t(link.labelKey)}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
+
+            {/* ── Search bar autocomplete (desktop + tablet) ──
+                · Solo Tiendas → protagonista: flex-1 ancho, es la acción estrella.
+                · Marketplace completo → comparte la pista 3:4 con el nav (flex-[3]).
+                Brandon 2026-05-30. */}
+            <div
+              data-tour="search"
+              className={cn(
+                "hidden md:block",
+                isTiendasOnly ? "flex-1 max-w-[820px]" : "flex-[3] max-w-[560px]",
+              )}
+            >
               <NavbarSearchAutocomplete
                 className="block"
                 storesOnly={isTiendasOnly}
@@ -565,50 +618,19 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               />
             </div>
 
-            {/* ── Nav links transaccionales (lg+).
-                Brandon mayo 2026: misma capsula pill que LandingHeader
-                para consistencia entre pre-auth y post-auth.
-                Active state = pill bg sólido (no más underline). */}
-            <div className="hidden lg:inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)]/60 backdrop-blur-md p-1 shadow-sm">
-              {renderedLinks.map((link) => {
-                if (link.discover) {
-                  return <DiscoverMegaMenu key="discover" variant="desktop" />;
-                }
-                const active = isActive(link);
-                const LinkIcon = link.icon;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "rounded-full px-3 py-1.5 text-sm font-semibold transition-all inline-flex items-center gap-1.5",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-                      active
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/70 hover:text-[var(--text-primary)]",
-                    )}
-                  >
-                    <LinkIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
-                    <span>{t(link.labelKey)}</span>
-                    {link.showLiveDot && hasActiveLive && (
-                      <span
-                        aria-label={t("nav.liveNow")}
-                        className="relative ml-0.5 inline-flex h-1.5 w-1.5"
-                      >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error-500)] opacity-75" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)]" />
-                      </span>
-                    )}
-                    {link.showNewBadge && (
-                      <span className="ml-0.5 inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-500)]">
-                        {t("nav.new")}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
+            {/* ── Nav links transaccionales (lg+) con overflow adaptativo —
+                SOLO en Marketplace completo/custom. En Solo Tiendas se usan los
+                tabs de arriba (a la izquierda). Mide el ancho real
+                (ResizeObserver + capa fantasma) y pliega bajo "Más ▾" lo que no
+                entra. Nunca se desborda (hasta 11 links). Brandon 2026-05-30. */}
+            {!isTiendasOnly && (
+              <MarketplaceNavLinks
+                links={renderedLinks}
+                isActive={isActive}
+                t={t}
+                hasActiveLive={hasActiveLive}
+              />
+            )}
 
             {/* ── Right cluster (desktop) ── */}
             <div className="hidden md:flex items-center gap-1.5 ml-auto">

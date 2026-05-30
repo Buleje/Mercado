@@ -80,10 +80,10 @@ const NAV_MODES: NavMode[] = [
     id: "tiendas-only",
     label: "Solo Tiendas",
     short: "Tiendas",
-    description: "Estilo PedidosYa / Rappi — directo al listado de bodegas, sin distracciones.",
+    description: "Estilo PedidosYa / Rappi — nav mínimo: solo Inicio y Tiendas. Oculta Cómo pagar, Negocios y Abre tu tienda.",
     icon: Building2,
     tone: "violet",
-    preview: "Bodegas",
+    preview: "Inicio · Tiendas",
     marketplace: {
       explorar: false,
       bodegas: true,
