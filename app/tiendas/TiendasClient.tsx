@@ -17,7 +17,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 // Brandon 2026-05-18 v3: iconos List, Map (toggle removido), Truck/Wallet/Gift
 // (KPIs hero removidos) ya no se usan en este archivo.
 import {
@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
 import SubcategoryChips from "@/components/marketplace/tiendas/SubcategoryChips";
 import QuickFilterToggle from "@/components/marketplace/tiendas/QuickFilterToggle";
+import { useTiendasUrlSync } from "./use-tiendas-url-sync";
 import { deriveActiveZones } from "@/lib/marketplace-zones";
 import {
   useMarketplaceGeo,
@@ -211,8 +212,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
   // ── TS-26 URL sync — leer estado inicial de query params ──
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
-  const initialSyncDone = useRef(false);
+  // pathname + initialSyncDone (URL write-back) viven ahora en useTiendasUrlSync.
 
   // ── Auth gate — secciones personalizadas (mis pedidos, destacadas
   // cerca tuyo, repetir último) sólo se muestran al cliente logueado.
@@ -399,35 +399,8 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── TS-26 URL sync — escribir back cuando cambia el estado ──
-  //
-  // Brandon 2026-05-18 perf P0 #1: debounce 220ms. Antes cada keystroke
-  // del input "buscar" disparaba `router.replace` inmediato, lo que en
-  // Next 16 fuerza un re-render del segmento y un re-procesamiento de
-  // los URL params (cascada down al MarketplaceStoresView). En mobile
-  // 3G se sentía pegajoso. Ahora el sync espera 220ms tras la última
-  // pulsación — los cambios de chip/zone/cat sí son inmediatos en UI
-  // (state local) y la URL se actualiza tras la pausa natural.
-  useEffect(() => {
-    if (!initialSyncDone.current) {
-      initialSyncDone.current = true;
-      return;
-    }
-    const timeout = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (search.trim()) params.set("q", search.trim());
-      if (category !== "todos") params.set("cat", category);
-      // En /tiendas/[zona] no duplicamos zona en la query — viene del path.
-      if (zone && zone !== initialZone) params.set("zona", zone);
-      if (sortKey !== "relevance") params.set("sort", sortKey);
-      if (activeChips.size > 0) params.set("chips", [...activeChips].join(","));
-      if (subCategoryId) params.set("subcat", subCategoryId);
-      const qs = params.toString();
-      const next = qs ? `${pathname}?${qs}` : pathname;
-      router.replace(next, { scroll: false });
-    }, 220);
-    return () => clearTimeout(timeout);
-  }, [search, category, zone, sortKey, activeChips, subCategoryId, pathname, router, initialZone]);
+  // ── TS-26 URL sync — escribir back al cambiar el estado (hook dedicado) ──
+  useTiendasUrlSync({ search, category, zone, sortKey, activeChips, subCategoryId, initialZone });
 
   // ── Geo hook ──
   const {
