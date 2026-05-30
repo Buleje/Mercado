@@ -210,15 +210,18 @@ export default function CarritoPage() {
   // in-place en vez de navegar a /checkout/auth — el botón antes mostraba
   // "Te pedimos iniciar sesión" pero no abría nada.
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
-  const continueHref = loggedCustomer ? "/checkout/datos" : undefined;
+  // Checkout invitado (Brandon 2026-05-30): el cliente puede continuar SIN
+  // login. El login queda opcional (para puntos/seguimiento) vía el modal. El
+  // form de datos (nombre + WhatsApp) se completa en /checkout/datos.
+  const continueHref = "/checkout/datos";
   const handleContinueWithoutAuth = useCallback(() => openAuthModal(), [openAuthModal]);
 
   // Prefetch del próximo paso para que la transición sea instantánea
   useEffect(() => {
-    if (!isEmpty && loggedCustomer) {
+    if (!isEmpty) {
       router.prefetch("/checkout/datos");
     }
-  }, [isEmpty, loggedCustomer, router]);
+  }, [isEmpty, router]);
 
   // Si el usuario se loggea con el modal abierto, redirigir automáticamente
   useEffect(() => {
@@ -521,20 +524,29 @@ export default function CarritoPage() {
               hace falta duplicar resumen abajo del listado en celular. */}
           <div className="hidden lg:block">
             <CheckoutSummary
-              ctaLabel={loggedCustomer ? "Continuar al checkout" : "Iniciar sesión y continuar"}
+              ctaLabel="Continuar al checkout"
               ctaHref={continueHref}
-              onCtaClick={loggedCustomer ? undefined : handleContinueWithoutAuth}
+              onCtaClick={undefined}
               showItems={false}
               couponDiscount={couponDiscount}
               helperText={
                 loggedCustomer
                   ? "Pago al recibir o por Yape · sin sorpresas"
-                  : "Te pedimos iniciar sesión para continuar"
+                  : "Sin cuenta — solo tus datos. Pago al recibir o Yape."
               }
               beforeBreakdown={
                 <CartCouponSection subtotal={grandTotal} onDiscountChange={setCouponDiscount} />
               }
             />
+            {!loggedCustomer && (
+              <p className="mt-3 text-center text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+                ¿Ya tenés cuenta?{" "}
+                <button type="button" onClick={handleContinueWithoutAuth} className="font-bold text-[var(--accent)] underline underline-offset-2">
+                  Iniciá sesión
+                </button>{" "}
+                para acumular puntos y seguir tu pedido.
+              </p>
+            )}
           </div>
 
           {/* Cupón solo accesible mobile (el desktop lo muestra dentro del summary) */}
@@ -557,10 +569,10 @@ export default function CarritoPage() {
         <CheckoutMobileCtaBar
           primaryLabel="Total"
           total={Math.max(0, grandTotal - couponDiscount)}
-          ctaLabel={loggedCustomer ? "Continuar al checkout" : "Iniciar sesión"}
-          ctaHref={loggedCustomer ? continueHref : undefined}
-          ctaOnClick={loggedCustomer ? undefined : handleContinueWithoutAuth}
-          helperText={loggedCustomer ? "Pago al recibir o por Yape" : "Te pedimos iniciar sesión"}
+          ctaLabel="Continuar al checkout"
+          ctaHref={continueHref}
+          ctaOnClick={undefined}
+          helperText={loggedCustomer ? "Pago al recibir o por Yape" : "Sin cuenta · pago al recibir o Yape"}
         />
       )}
     </div>

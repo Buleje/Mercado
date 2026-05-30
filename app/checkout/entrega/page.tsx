@@ -729,7 +729,11 @@ export default function CheckoutEntregaPage() {
     });
   }, [byStore, totalByStore, paymentConfigs, payment.method]);
 
+  // Invitado (sin sesión) paga AL RECIBIR — no puede subir comprobante (eso
+  // requiere login). Pago efectivo tampoco necesita comprobante. Brandon
+  // 2026-05-30: el invitado yapea/paga cuando llega el repartidor.
   const allProofsReady =
+    !savedCustomer ||
     payment.method === "efectivo" ||
     storesNeedingProof.every((s) =>
       !s.methodAvailable ? true : Boolean(paymentProofs[s.storeSlug]),

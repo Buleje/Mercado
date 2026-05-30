@@ -115,6 +115,14 @@ export default function CheckoutConfirmarPage() {
     router.prefetch("/tiendas");
   }, [router]);
 
+  // Checkout invitado (Brandon 2026-05-30): si el cliente llegó con datos
+  // válidos sin loguearse (vino del form de invitado en /datos), activamos
+  // guestMode automáticamente — no le pedimos elegir "login o invitado" otra
+  // vez. El login sigue disponible en el banner si querés cuenta.
+  useEffect(() => {
+    if (!loggedCustomer && isCustomerValid) setGuestMode(true);
+  }, [loggedCustomer, isCustomerValid]);
+
   const storeIds = Object.keys(byStore);
 
    

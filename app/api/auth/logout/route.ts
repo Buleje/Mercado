@@ -46,8 +46,13 @@ export async function POST(req: NextRequest) {
     // Tenant scoping cookies (visibles al cliente — sameSite lax)
     response.cookies.set("active-tenant", "", clearOptsClient);
     response.cookies.set("active-tenant-slug", "", clearOptsClient);
-    // Customer storefront session (si existía un cliente logueado)
+    // Customer storefront session (si existía un cliente logueado).
+    // FIX 2026-05-30: el nombre real de la cookie es `buleje-customer-sess`
+    // (ver lib/auth/customer-session.ts) — antes se limpiaba "buleje-customer-
+    // session" (con "ion"), un typo que dejaba la sesión del cliente VIVA tras
+    // el logout. Limpiamos el correcto + el viejo por compat.
     response.cookies.set("customer-token", "", clearOpts);
+    response.cookies.set("buleje-customer-sess", "", clearOpts);
     response.cookies.set("buleje-customer-session", "", clearOpts);
     // CSRF double-submit token
     response.cookies.set("csrf-token", "", clearOpts);

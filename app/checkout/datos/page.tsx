@@ -19,7 +19,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeft,
@@ -59,16 +59,12 @@ export default function CheckoutDatosPage() {
     if (cartReady && itemCount === 0) router.replace("/marketplace/carrito");
   }, [cartReady, itemCount, router]);
 
-  // Sin login → al gate. /carrito ya tiene este check via AuthModal pero
-  // protegemos por si el cliente abre /checkout/datos directo (deep link,
-  // back-forward del browser, etc.).
-  useEffect(() => {
-    if (!cartReady) return;
-    if (!savedCustomer) {
-      const returnTo = encodeURIComponent("/checkout/datos");
-      router.replace(`/checkout/auth?returnTo=${returnTo}`);
-    }
-  }, [cartReady, savedCustomer, router]);
+  // Checkout invitado (Brandon 2026-05-30): si no hay sesión, NO se redirige a
+  // login — se muestra un form de invitado (nombre + WhatsApp) más abajo. El
+  // login queda opcional. La API acepta pedidos invitado sin comprobante
+  // pre-subido (pago al recibir / Yape al recibir).
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
 
   // Prefetch del proximo paso
   useEffect(() => {
@@ -117,7 +113,58 @@ export default function CheckoutDatosPage() {
     }
   }, [savedCustomer, profileComplete, navigateTo]);
 
-  if (itemCount === 0 || !savedCustomer) return null;
+  if (itemCount === 0) return null;
+
+  // ── Modo INVITADO (Brandon 2026-05-30) ──────────────────────────────────
+  // Sin sesión → form simple (nombre + WhatsApp). Guarda en checkoutData y va a
+  // /entrega para la dirección. El pedido se cierra con pago al recibir / Yape
+  // (sin comprobante pre-subido, que sí requiere login).
+  if (!savedCustomer) {
+    const phoneOk = /^9\d{8}$/.test(guestPhone.trim());
+    const guestValid = guestName.trim().length >= 2 && phoneOk;
+    const handleGuestContinue = () => {
+      if (!guestValid) return;
+      setCustomer({ name: guestName.trim(), phone: guestPhone.trim(), email: "" });
+      navigateTo("/checkout/entrega", "Calculando tu entrega");
+    };
+    return (
+      <>
+        <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
+        <div className="pt-4 sm:pt-8 pb-5 sm:pb-6">
+          <Link href="/marketplace/carrito" className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3">
+            <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Volver al carrito
+          </Link>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">Tus datos</h1>
+          <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+            <span className="font-semibold text-[var(--text-primary)]">Paso 2 de 4.</span> Dejanos tu nombre y WhatsApp para coordinar la entrega.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
+          <div className="space-y-5">
+            <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-7 space-y-4">
+              <div>
+                <label htmlFor="guest-name" className="mb-1.5 flex items-center gap-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)]"><UserCircle className="h-4 w-4" aria-hidden /> Nombre completo</label>
+                <input id="guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+              </div>
+              <div>
+                <label htmlFor="guest-phone" className="mb-1.5 flex items-center gap-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)]"><Phone className="h-4 w-4" aria-hidden /> WhatsApp</label>
+                <input id="guest-phone" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="9XXXXXXXX" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+                {guestPhone.length > 0 && !phoneOk && <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--data-error-600)]">Tu WhatsApp debe tener 9 dígitos y empezar con 9.</p>}
+              </div>
+              <button type="button" disabled={!guestValid} onClick={handleGuestContinue} className="h-12 w-full rounded-2xl bg-[var(--accent)] text-base font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 lg:hidden">
+                Continuar a la entrega
+              </button>
+              <p className="text-center text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">¿Ya tenés cuenta? <Link href="/checkout/auth?returnTo=%2Fcheckout%2Fdatos" className="font-bold text-[var(--accent)] underline underline-offset-2">Iniciá sesión</Link></p>
+            </div>
+          </div>
+          <div className="hidden lg:block">
+            <CheckoutSummary ctaLabel="Continuar a la entrega" onCtaClick={handleGuestContinue} ctaDisabled={!guestValid} showItems={false} helperText="Pago al recibir o Yape · sin sorpresas" />
+          </div>
+        </div>
+        <CheckoutMobileCtaBar primaryLabel="Total" total={grandTotal} ctaLabel="Continuar" ctaOnClick={handleGuestContinue} helperText="Pago al recibir o Yape" />
+      </>
+    );
+  }
 
   const ubicacionTexto = [
     savedCustomer.districtName,
