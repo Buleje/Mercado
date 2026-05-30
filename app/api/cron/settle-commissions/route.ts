@@ -27,14 +27,31 @@ export const GET = withCronHealth("settle-commissions", async (_req: NextRequest
     const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     // Buscar pending > 7 días — cross-tenant porque es cron de plataforma
-    const pending = await prisma.commissionLedger.findMany({
+    const pendingRaw = await prisma.commissionLedger.findMany({
       where: { status: "pending", createdAt: { lt: cutoff } },
-      select: { id: true, tenantId: true, storeId: true, partnerId: true, type: true, amount: true },
+      select: { id: true, tenantId: true, storeId: true, partnerId: true, type: true, amount: true, orderId: true },
     });
 
-    if (pending.length === 0) {
+    if (pendingRaw.length === 0) {
       logger.info("[cron/settle-commissions] No pending commissions to settle");
       return NextResponse.json({ settled: 0, totalAmount: 0, byTenant: [] });
+    }
+
+    // Defensa (audit 2026-05-29): NO liquidar comisiones de órdenes canceladas —
+    // serían "comisión fantasma" (venta que no ocurrió). Normalmente la
+    // cancelación ya las marca refunded; esto cubre el caso en que ese refund
+    // no corrió.
+    const orderIds = [...new Set(pendingRaw.map((c) => c.orderId).filter((x): x is string => !!x))];
+    const cancelled = orderIds.length
+      ? await prisma.order.findMany({ where: { id: { in: orderIds }, status: "cancelado" }, select: { id: true } })
+      : [];
+    const cancelledSet = new Set(cancelled.map((o) => o.id));
+    const pending = pendingRaw.filter((c) => !c.orderId || !cancelledSet.has(c.orderId));
+    const skippedCancelled = pendingRaw.length - pending.length;
+
+    if (pending.length === 0) {
+      logger.info("[cron/settle-commissions] Solo había comisiones de órdenes canceladas — nada que liquidar", { skippedCancelled });
+      return NextResponse.json({ settled: 0, totalAmount: 0, byTenant: [], skippedCancelled });
     }
 
     const ids = pending.map((c) => c.id);
@@ -70,6 +87,7 @@ export const GET = withCronHealth("settle-commissions", async (_req: NextRequest
       settled: pending.length,
       totalAmount,
       byTenant: tenantsArray,
+      skippedCancelled,
     });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);

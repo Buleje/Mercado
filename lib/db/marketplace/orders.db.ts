@@ -523,6 +523,19 @@ export const MarketplaceOrdersDB = {
           });
         }
       });
+
+      // Revertir comisiones del marketplace de esta orden (audit 2026-05-29):
+      // antes la cancelación devolvía stock pero NO la comisión → el dueño
+      // terminaba pagando comisión por ventas que nunca ocurrieron. Idempotente
+      // (solo revierte comisiones activas). Error propio para no marcar
+      // STOCK_DRIFT_RISK si el stock SÍ se revirtió bien.
+      try {
+        await CommissionsDB.refundCommissionsByOrder(tenantId, orderId, reason);
+      } catch (commErr) {
+        logger.error("[MarketplaceOrdersDB] refundCommissionsByOrder failed on cancel", {
+          orderId, tenantId, err: commErr instanceof Error ? commErr.message : String(commErr),
+        });
+      }
     } catch (err) {
       // Si la compensating falla, la orden queda pendiente pero el stock
       // ya fue decrementado — marcar [STOCK_DRIFT_RISK] para reconciliación.
