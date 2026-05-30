@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { VendorDashboardData } from "@/components/admin/vendor-dashboard/vendor-dashboard.types";
+import { usePlanTier } from "@/hooks/use-plan-tier";
+import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
+import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { DashboardDataProvider } from "@/contexts/dashboard-data-context";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -102,6 +105,19 @@ const TABS: AdminTab[] = [
   { id: "marketplace", label: "Marketplace", icon: Store },
 ];
 
+// Mapea cada sub-tab del Inicio al módulo del que depende. Si el negocio NO
+// tiene ese módulo (plan no lo incluye o plantilla lo ocultó), el sub-tab y su
+// dashboard se ocultan automáticamente (Brandon 2026-05-29: "que inicio sea
+// referente a lo que tengo"). "general" (Resumen) no depende de un módulo.
+const SUBTAB_MODULE: Partial<Record<string, Tab>> = {
+  ventas: "ventas-caja",
+  caja: "ventas-caja",
+  inventario: "inventario",
+  compras: "compras",
+  clientes: "clientes",
+  marketplace: "marketplace",
+};
+
 const REFRESH_INTERVAL_MS = 30_000;
 
 export default function VendorDashboardModule() {
@@ -112,6 +128,24 @@ export default function VendorDashboardModule() {
   const [tab, setTab] = useState<InicioTab>("general");
   const [storeSlug, setStoreSlug] = useState("main");
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange);
+
+  // ── Inicio referente a lo que el negocio TIENE (Brandon 2026-05-29) ──
+  // Cada sub-tab depende de un módulo; si el negocio no lo tiene (plan o
+  // plantilla), el sub-tab + su dashboard se ocultan automáticamente.
+  const { hasTab } = usePlanTier();
+  const { isHiddenByTemplate } = useAdminTemplateOverlay();
+  const moduleAvailable = useCallback(
+    (m?: Tab) => !m || (hasTab(m) && !isHiddenByTemplate(m)),
+    [hasTab, isHiddenByTemplate],
+  );
+  const availableTabs = useMemo(
+    () => TABS.filter((t) => moduleAvailable(SUBTAB_MODULE[t.id])),
+    [moduleAvailable],
+  );
+  // Si el sub-tab activo dejó de estar disponible, volver a Resumen.
+  useEffect(() => {
+    if (!availableTabs.some((t) => t.id === tab)) setTab("general");
+  }, [availableTabs, tab]);
 
   useEffect(() => {
     let active = true;
@@ -216,7 +250,7 @@ export default function VendorDashboardModule() {
         )}
       </AdminModuleHeader>
 
-      <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
+      <AdminTabBar tabs={availableTabs} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
             {/* Inicio / Principal — lo más importante de un vistazo:
