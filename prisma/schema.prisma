@@ -1083,6 +1083,9 @@ model PriceHistory {
   @@index([productId])
   @@index([changedAt])
   @@index([tenantId])
+  // Perf 2026-05-29: compuesto para getByProduct/getByProducts (filtra tenant +
+  // productId, ordena changedAt desc) — sirve el batch del sparkline de inventario.
+  @@index([tenantId, productId, changedAt(sort: Desc)])
 }
 
 // ─── Delivery Slots ─────────────────────────────────────
@@ -1639,6 +1642,9 @@ model Batch {
   @@index([expiryDate])
   @@index([productId])
   @@index([warehouseId])
+  // Perf 2026-05-29: compuesto para getExpiring (filtra tenant + rango expiryDate,
+  // ordena expiryDate asc) — el widget de lotes por vencer (7 consumidores).
+  @@index([tenantId, expiryDate])
 }
 
 // ─── Saved Filters ───────────────────────────────────────
