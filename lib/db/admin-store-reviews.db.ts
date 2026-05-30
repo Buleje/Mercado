@@ -9,6 +9,7 @@
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 
 export type ReviewStatus = "pending" | "approved" | "rejected" | "hidden";
 
@@ -135,11 +136,11 @@ export const AdminStoreReviewsDB = {
    * @param updateData Campos a actualizar (status y/o adminReply)
    */
   async updateStatus(
-    _tenantId: string,
+    tenantId: string,
     reviewId: string,
     updateData: Record<string, unknown>,
   ): Promise<ReviewMutationResult> {
-    return prisma.review.update({
+    const row = await prisma.review.update({
       where: { id: reviewId },
       data: updateData,
       select: {
@@ -147,7 +148,17 @@ export const AdminStoreReviewsDB = {
         status: true,
         adminReply: true,
         adminReplyDate: true,
+        storeId: true,
       },
     });
+    // Audit #8 (Brandon 2026-05-30): si cambió el status de una review de
+    // tienda marketplace, re-materializar Store.rating/reviewCount (las cards
+    // del directorio + el SEO leen el campo materializado). Fire-and-forget.
+    if ("status" in updateData && row.storeId) {
+      // recalcStoreRating tiene try/catch interno total → nunca rechaza; void
+      // lo marca como fire-and-forget intencional (no bloquea la respuesta).
+      void StoreReviewsDB.recalcStoreRating(tenantId, row.storeId);
+    }
+    return row;
   },
 };

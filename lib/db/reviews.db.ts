@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 
 /**
  * lib/db/reviews.db.ts — Bloque D3 del Marketplace (Reviews verificadas)
@@ -431,6 +432,21 @@ export const ReviewsMarketplaceDB = {
     // por prefix `reviews:agg` nunca matcheaba y los aggregates quedaban
     // stale tras moderate/delete.
     invalidateByPrefix(`reviews:${tenantId}:agg`);
+    // Audit #8 (Brandon 2026-05-30): si la review es de una tienda marketplace
+    // (storeId != null), re-materializar Store.rating/reviewCount — las cards
+    // del directorio y el SEO leen el campo materializado. Fire-and-forget +
+    // try/catch total (no puede romper la moderación ni en tests con prisma mock).
+    void (async () => {
+      try {
+        const r = await prisma.review.findUnique({
+          where: { id: reviewId },
+          select: { storeId: true },
+        });
+        if (r?.storeId) await StoreReviewsDB.recalcStoreRating(tenantId, r.storeId);
+      } catch {
+        /* fire-and-forget: el rating se re-materializa en la próxima moderación */
+      }
+    })();
     logger.info("[Reviews] moderated", { tenantId, reviewId, status });
     // SECURITY 2026-05-05 (audit reviews #5): audit trail.
     logActivity(

@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { m } from "framer-motion";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { StoreCardCanonical } from "@buleje/design-system";
@@ -269,12 +268,13 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   // Destacada: anillo teal + leve realce para distinguirla de las estándar
   // sin ocupar fila completa (premium usa su propia card).
   const isFeatured = store.displayTier === "featured";
+  // Brandon 2026-05-30 (audit #5): era <m.div> con initial={false} + animate
+  // estático = animación NO-OP que arrastraba framer-motion (~30KB) al bundle
+  // inicial de /tiendas. <div> plano = comportamiento idéntico (el card ya
+  // renderizaba en su estado final, sin transición visible).
   return (
-    <m.div
+    <div
       ref={cardRef}
-      initial={false}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: index * 0.04 }}
       className={`relative ${isFeatured ? "rounded-2xl p-0.5 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] shadow-lg shadow-[var(--accent)]/20" : ""}`}
     >
       {/* Wrapper interno para que el anillo teal envuelva la card en Destacada */}
@@ -390,7 +390,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         <FollowStoreButton slug={store.slug} storeName={store.name} />
       </div>
       </div>
-    </m.div>
+    </div>
   );
 }, (prev, next) =>
   prev.store.id === next.store.id &&

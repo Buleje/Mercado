@@ -145,4 +145,33 @@ export const StoreReviewsDB = {
       return { reviews: [], summary: EMPTY_SUMMARY };
     }
   },
+
+  /**
+   * Re-materializa Store.rating + Store.reviewCount desde las reviews APROBADAS
+   * de la tienda. Llamar tras moderar una review: el storefront recalcula el
+   * rating en vivo (listByStoreId), pero las CARDS del directorio y el SEO
+   * (metadata + JSON-LD aggregateRating) leen el campo materializado Store.rating
+   * — que quedaba stale. Defensivo: si falla, loguea y sigue (no rompe la
+   * moderación). Scoped por tenantId. Brandon 2026-05-30 (audit #8).
+   */
+  async recalcStoreRating(tenantId: string, storeId: string): Promise<void> {
+    try {
+      const agg = await prisma.review.aggregate({
+        where: { tenantId, storeId, status: "approved", deletedAt: null },
+        _avg: { rating: true },
+        _count: { rating: true },
+      });
+      const avg = agg._avg.rating ?? 0;
+      const count = agg._count.rating ?? 0;
+      await prisma.store.updateMany({
+        where: { id: storeId, tenantId },
+        data: { rating: Math.round(avg * 10) / 10, reviewCount: count },
+      });
+    } catch (err) {
+      logger.warn("[store-reviews] recalcStoreRating failed", {
+        storeId,
+        error: String(err).slice(0, 200),
+      });
+    }
+  },
 };
