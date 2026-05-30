@@ -24,6 +24,7 @@
  *   broadcastSpecsChanged(); // ver export más abajo
  */
 import { useEffect, useState, useCallback } from "react";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 interface SpecResponse {
   keys: string[];
@@ -89,15 +90,17 @@ export function useEnabledSpecs(): UseEnabledSpecsResult {
     // Cache se aplica como initial value (UI inmediato) pero igual fetch.
     let cancelled = false;
     setIsLoading(true);
-    fetch("/api/admin/me/specializations", {
-      credentials: "include",
-      cache: "no-store",
-    })
-      .then((r) => (r.ok ? r.json() : { keys: [], moduleIds: [] }))
-      .then((d: SpecResponse) => {
+    // cachedJson con clave por `version`: varios componentes montan este hook a
+    // la vez → antes cada uno disparaba su /api/admin/me/specializations (2×).
+    // La clave `?v=${version}` preserva el "siempre fresco": un bump de versión
+    // (toggle del superadmin vía SSE) genera key nueva = fetch real; los mounts
+    // concurrentes con la misma versión comparten 1 request. Perf 2026-05-29.
+    cachedJson<SpecResponse>(`/api/admin/me/specializations?v=${version}`, 5000, { cache: "no-store" })
+      .then((d) => {
         if (cancelled) return;
-        setData(d);
-        writeCache(d);
+        const dd = d ?? { keys: [], moduleIds: [] };
+        setData(dd);
+        writeCache(dd);
       })
       .catch(() => {
         if (!cancelled) setData({ keys: [], moduleIds: [] });

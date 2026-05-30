@@ -15,6 +15,7 @@
 
 import { useEffect, useState } from "react";
 import { TrialCountdownBanner } from "./TrialCountdownBanner";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 interface PlanResponse {
   plan: string;
@@ -29,8 +30,8 @@ export function TrialCountdownBannerLoader() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/plan", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
+    // cachedJson: comparte la /api/plan con TrialExpiredGuard (misma carga).
+    cachedJson<PlanResponse>("/api/plan", 60_000)
       .then((j) => {
         if (!cancelled && j) setData(j);
       })

@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Batch as PBatch } from "@/lib/generated/prisma/client";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { getOrSet } from "@/lib/cache";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -257,19 +258,24 @@ export const BatchesDB = {
    * Incluye solo lotes con stock disponible.
    */
   async getExpiring(tenantId: string, days = 7): Promise<DbBatch[]> {
-    const now = new Date();
-    const cutoff = new Date(now);
-    cutoff.setDate(cutoff.getDate() + days);
-    const rows = await prisma.batch.findMany({
-      where: {
-        tenantId,
-        expiryDate: { gte: now, lte: cutoff },
-        quantity: { gt: 0 },
-      },
-      orderBy: { expiryDate: "asc" },
-      include: { product: { select: { id: true, name: true } } },
+    // Cache 60s + dedup in-flight: 7 widgets del admin (bell, hub, dashboard…)
+    // pegan a /api/batches/expiring por carga y la query tardaba ~1.8s. Los
+    // vencimientos no cambian al segundo → 60s es seguro. Perf 2026-05-29.
+    return getOrSet(`batches-expiring:${tenantId}:${days}`, 60, async () => {
+      const now = new Date();
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() + days);
+      const rows = await prisma.batch.findMany({
+        where: {
+          tenantId,
+          expiryDate: { gte: now, lte: cutoff },
+          quantity: { gt: 0 },
+        },
+        orderBy: { expiryDate: "asc" },
+        include: { product: { select: { id: true, name: true } } },
+      });
+      return rows.map(mapBatch);
     });
-    return rows.map(mapBatch);
   },
 
   /** Lotes vencidos que aún tienen stock (pérdida potencial). */

@@ -11,11 +11,20 @@ export async function GET(req: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const { tenantId } = auth;
-    const db = prismaForTenant(tenantId);
 
     // Fetch tenant metadata — audit 2026-05-19: migrado a findTenantByIdOrSlug (cacheado).
     const tenant = await findTenantByIdOrSlug(tenantId);
     const plan = tenant?.plan ?? "free";
+
+    // Fast path: `?tier=1` devuelve SOLO el plan (lookup de tenant cacheado),
+    // sin las 3 COUNT queries de uso. Lo usa usePlanTier() en cada componente
+    // del admin — antes pedía /api/plan completo 5× por carga (3 counts c/u
+    // tirados a la basura). Perf 2026-05-29.
+    if (new URL(req.url).searchParams.get("tier") === "1") {
+      return NextResponse.json({ plan });
+    }
+
+    const db = prismaForTenant(tenantId);
     const planDef = getPlanDef(plan);
     const limits = getPlanLimits(plan);
 

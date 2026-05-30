@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 interface OrderNotification {
   id: string;
@@ -80,9 +81,10 @@ export function useAdminNotifications() {
       };
     }
 
-    // Gate inicial: solo conectar SSE si hay sesion admin confirmada
-    fetch("/api/auth/me")
-      .then((r) => r.json())
+    // Gate inicial: solo conectar SSE si hay sesion admin confirmada.
+    // cachedJson dedup: este hook lo usan varios componentes (bell, hub…) →
+    // antes cada uno disparaba su /api/auth/me (4× por carga). Perf 2026-05-29.
+    cachedJson<{ role?: string }>("/api/auth/me", 60_000)
       .then((d) => {
         if (!cancelled && d?.role === "admin") connect();
       })

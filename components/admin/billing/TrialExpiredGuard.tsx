@@ -26,6 +26,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldAlert, Sparkles, ArrowRight, CheckCircle2 } from "@buleje/design-system/icons";
 import { PageTitle, CardTitle } from "@buleje/design-system";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 interface PlanResponse {
   plan: string;
@@ -44,9 +45,10 @@ export function TrialExpiredGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/plan", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j: PlanResponse | null) => {
+    // cachedJson: comparte 1 sola /api/plan con TrialCountdownBannerLoader +
+    // demás consumidores (antes cada uno disparaba la suya). Perf 2026-05-29.
+    cachedJson<PlanResponse>("/api/plan", 60_000)
+      .then((j) => {
         if (cancelled) return;
         if (!j) {
           setStatus("ok");

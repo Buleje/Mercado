@@ -23,6 +23,7 @@ import {
   setCurrentPlan,
 } from "@/lib/billing/plan-tiers";
 import { planIdToTier } from "@/lib/billing/plan-mapping";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 
 export interface UsePlanTierResult {
@@ -45,9 +46,11 @@ export function usePlanTier(): UsePlanTierResult {
   // Fire-and-forget: si falla, dejamos el localStorage como source-of-truth.
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/plan", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { plan?: string } | null) => {
+    // cachedJson: dedup en-vuelo + cache 60s → los N componentes que usan este
+    // hook comparten 1 sola request (antes: 1 /api/plan por consumidor = 5×).
+    // `?tier=1`: endpoint liviano que NO corre las 3 COUNT queries de uso.
+    cachedJson<{ plan?: string }>("/api/plan?tier=1", 60_000)
+      .then((data) => {
         if (cancelled || !data?.plan) return;
         const serverTier = planIdToTier(data.plan as never);
         const localTier = getCurrentPlan();
