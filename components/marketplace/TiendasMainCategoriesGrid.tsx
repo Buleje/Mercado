@@ -11,6 +11,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import Image from "next/image";
 import {
   ChevronLeft,
@@ -90,15 +91,16 @@ export default function TiendasMainCategoriesGrid({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/marketplace/categories", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+    // Brandon 2026-05-30 (audit #2): cachedJson dedupea + cachea 2min las
+    // categorías (cambian rara vez) → coalescing con otros consumidores del
+    // mismo URL en /tiendas, en vez de no-store ×N.
+    cachedJson<{ categories?: Array<{ id: string; label: string; imageUrl: string | null }> }>(
+      "/api/marketplace/categories",
+      120_000,
+    )
       .then((json) => {
-        if (cancelled) return;
-        const list = (json?.categories ?? []) as Array<{
-          id: string;
-          label: string;
-          imageUrl: string | null;
-        }>;
+        if (cancelled || !json) return;
+        const list = json.categories ?? [];
         if (list.length > 0) setCategories(list);
       })
       .catch(() => {
