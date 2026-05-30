@@ -196,10 +196,17 @@ function AdminPage() {
 
   const visibleCategories = useVisibleCategories(categoryOrder);
 
-  const { allowedTabs, filteredTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
+  const { allowedTabs, filteredTabs, visibleTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
     userRole, savedRolePerms, hiddenTabs, selectedCategory, visibleCategories,
     sidebarSearch, favoriteTabs, recentTabs, currentTab: tab, fuzzyMatch,
   });
+
+  // Set de módulos actuales del negocio para el Command Palette (solo busca
+  // estos — sin historial). Brandon 2026-05-29.
+  const visibleTabIdSet = React.useMemo(
+    () => new Set(visibleTabs.map((t) => t.id as string)),
+    [visibleTabs],
+  );
 
   const customShortcutItems = useCustomShortcuts(ALL_TABS);
 
@@ -210,7 +217,7 @@ function AdminPage() {
     resolvedShortcuts, availableForShortcut,
   } = useSidebarShortcuts(ALL_TABS, allowedTabs);
 
-  const commandItems = useCommandItems(navigateTab);
+  const commandItems = useCommandItems(navigateTab, visibleTabIdSet);
 
   // Find active category based on current tab — drives the sub-sidebar
   const activeCategory = visibleCategories.find(cat => cat.tabs.includes(tab));

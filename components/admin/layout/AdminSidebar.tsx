@@ -39,6 +39,11 @@ import {
 // Cambiar a true para reactivar el link al storefront propio.
 const SHOW_MI_TIENDA_LINK = false;
 
+// Umbral de categorización del sidebar (Brandon 2026-05-29): con MÁS de N
+// módulos visibles se agrupan en categorías desplegables; con N o menos se
+// muestran como links sueltos (sin categorización).
+const MODULE_FLAT_THRESHOLD = 15;
+
 // ─── Tipos del tab-item que se usa en esta pantalla ───────────────────────────
 type TabItem = {
   id: Tab;
@@ -524,6 +529,40 @@ export function AdminSidebar({
     return result;
   }, [visibleCategories, categoryOrder, hiddenCategories]);
 
+  // ── Modo "suelto" vs categorizado (Brandon 2026-05-29) ──────────────────
+  // Regla: ≤15 módulos visibles → links SUELTOS (sin agrupar en categorías);
+  // >15 → se categorizan en grupos desplegables. En modo suelto cada tab se
+  // vuelve una pseudo-categoría de 1 tab → el render existente la pinta como
+  // enlace directo (isSingleTab), sin headers ni acordeones.
+  const flattenedVisibleTabIds = React.useMemo(() => {
+    const ids: Tab[] = [];
+    for (const category of orderedVisibleCategories) {
+      const rbac = category.tabs.filter(
+        (t) =>
+          allowedTabs.includes(t) &&
+          !hiddenTabs.has(t) &&
+          !hiddenSubTabs.has(t) &&
+          !isHiddenByTemplate(t),
+      );
+      const { visible } = applyVerticalFilter(rbac);
+      for (const id of visible) ids.push(id as Tab);
+    }
+    return ids;
+  }, [orderedVisibleCategories, allowedTabs, hiddenTabs, hiddenSubTabs, isHiddenByTemplate, applyVerticalFilter]);
+
+  const navCategories = React.useMemo<TabCategory[]>(() => {
+    if (flattenedVisibleTabIds.length > MODULE_FLAT_THRESHOLD) return orderedVisibleCategories;
+    return flattenedVisibleTabIds.map((id) => {
+      const info = allTabs.find((t) => t.id === id);
+      return {
+        id: `flat:${id}`,
+        label: info?.label ?? String(id),
+        icon: info?.icon ?? Globe,
+        tabs: [id],
+      } as TabCategory;
+    });
+  }, [flattenedVisibleTabIds, orderedVisibleCategories, allTabs]);
+
   /* 3 temas editoriales del sidebar:
      - cristal: slate-900 profundo con acento teal (inspirado en iOS/Linear)
      - dark:    zinc-950 minimalista con texto zinc-300
@@ -899,7 +938,7 @@ export function AdminSidebar({
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
           {/* ── Main modules (expanded mode) ── */}
-          {!effectiveCompact && orderedVisibleCategories.map((category, catIdx) => {
+          {!effectiveCompact && navCategories.map((category, catIdx) => {
             // 1. Filtros previos (RBAC + hidden user + template)
             const rbacFiltered = category.tabs.filter(
               t =>

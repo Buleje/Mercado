@@ -72,6 +72,10 @@ const MODULES: ModuleEntry[] = [
   { id: "asistente-ia",     label: "Asistente IA",           icon: "",  category: "Negocio" },
   { id: "ventas-caja",      label: "Ventas & Caja",          icon: "",  category: "Negocio" },
   { id: "pedidos",          label: "Pedidos",                icon: "",  category: "Negocio" },
+  { id: "promociones",      label: "Promociones & Ofertas",  icon: "",  category: "Negocio" },
+  { id: "marketplace",      label: "Marketplace",            icon: "",  category: "Negocio" },
+  { id: "pagina-inicio",    label: "Mi tienda pública",      icon: "",  category: "Negocio" },
+  { id: "store-customizer", label: "Identidad y tema",       icon: "",  category: "Negocio" },
   { id: "analytics-pro",    label: "Analytics Pro",          icon: "",  category: "Negocio" },
   { id: "fiados",           label: "Fiados",                 icon: "",  category: "Negocio" },
   { id: "turnos",           label: "Turnos de Caja",         icon: "",  category: "Negocio" },
@@ -83,6 +87,7 @@ const MODULES: ModuleEntry[] = [
   // ── Dinero ──
   { id: "plata",            label: "Mi Plata (Finanzas)",    icon: "",  category: "Dinero" },
   { id: "clientes",         label: "Mis Clientes (CRM)",     icon: "",  category: "Dinero" },
+  { id: "adelantos",        label: "Adelantos",              icon: "",  category: "Dinero" },
   // ── Documento ──
   { id: "cotizaciones",     label: "Cotizaciones",           icon: "",  category: "Documento" },
   { id: "guias-remision",   label: "Guias de Remision",      icon: "",  category: "Documento" },
@@ -95,9 +100,20 @@ const MODULES: ModuleEntry[] = [
   { id: "auditoria",        label: "Auditoria",              icon: "",  category: "Sistema" },
 ];
 
-export function useCommandItems(navigateTab: (id: Tab) => void): CommandItem[] {
+/**
+ * @param visibleTabIds Set de los módulos que el negocio TIENE ACTUALMENTE
+ *   visibles (del sidebar). Si se pasa, el palette solo busca/ofrece esos
+ *   módulos (Brandon 2026-05-29: "que solo se busque de acuerdo a los módulos
+ *   actuales"). Si es undefined, muestra todo el catálogo (compat).
+ */
+export function useCommandItems(
+  navigateTab: (id: Tab) => void,
+  visibleTabIds?: ReadonlySet<string>,
+): CommandItem[] {
   return useMemo<CommandItem[]>(() => {
-    const items: CommandItem[] = MODULES.map((m) => {
+    const has = (id: Tab) => !visibleTabIds || visibleTabIds.has(id);
+
+    const items: CommandItem[] = MODULES.filter((m) => has(m.id)).map((m) => {
       const info = MODULE_INFO[m.id];
       return {
         ...m,
@@ -109,14 +125,19 @@ export function useCommandItems(navigateTab: (id: Tab) => void): CommandItem[] {
       };
     });
 
-    // Quick actions
-    items.push(
-      { id: "action-new-sale",     label: "Nueva venta",        category: "Accion", onSelect: () => navigateTab("pedidos") },
-      { id: "action-new-product",  label: "Nuevo producto",     category: "Accion", onSelect: () => navigateTab("productos") },
-      { id: "action-new-customer", label: "Nuevo cliente",      category: "Accion", onSelect: () => navigateTab("clientes") },
-      { id: "action-inventario",   label: "Ver stock",          category: "Accion", onSelect: () => navigateTab("inventario") },
-    );
+    // Quick actions — solo si su módulo destino está visible.
+    const actions: Array<{ id: string; label: string; target: Tab }> = [
+      { id: "action-new-sale",     label: "Nueva venta",    target: "pedidos" },
+      { id: "action-new-product",  label: "Nuevo producto", target: "productos" },
+      { id: "action-new-customer", label: "Nuevo cliente",  target: "clientes" },
+      { id: "action-inventario",   label: "Ver stock",      target: "inventario" },
+    ];
+    for (const a of actions) {
+      if (has(a.target)) {
+        items.push({ id: a.id, label: a.label, category: "Accion", onSelect: () => navigateTab(a.target) });
+      }
+    }
 
     return items;
-  }, [navigateTab]);
+  }, [navigateTab, visibleTabIds]);
 }

@@ -109,18 +109,23 @@ export function useAdminTabsDerived(params: Params) {
     });
   }, [userRole, savedRolePerms, planUnlockedTabs]);
 
+  // Set base de módulos VISIBLES del negocio (rol + plan + ocultos + plantilla +
+  // specs), SIN el narrowing por categoría/búsqueda del sidebar. Es "los módulos
+  // que se tienen actuales" — lo usa el Command Palette (Brandon 2026-05-29).
+  const visibleTabs = useMemo(
+    () =>
+      enhancedTabs.filter(
+        t =>
+          allowedTabs.includes(t.id) &&
+          !hiddenTabs.has(t.id) &&
+          !isHiddenByTemplate(t.id) &&
+          (!SPEC_GATED_MODULE_IDS.has(t.id) || enabledSpecModuleIds.has(t.id)),
+      ),
+    [enhancedTabs, allowedTabs, hiddenTabs, isHiddenByTemplate, enabledSpecModuleIds],
+  );
+
   const filteredTabs = useMemo(() => {
-    // Filtra por permisos de rol + tabs ocultos manualmente + plan tier +
-    // plantilla del superadmin (módulos marcados como invisibles por default) +
-    // especializaciones habilitadas (ADR-124 — spec-gated tabs solo si la
-    // feature flag está ON para el tenant).
-    let result = enhancedTabs.filter(
-      t =>
-        allowedTabs.includes(t.id) &&
-        !hiddenTabs.has(t.id) &&
-        !isHiddenByTemplate(t.id) &&
-        (!SPEC_GATED_MODULE_IDS.has(t.id) || enabledSpecModuleIds.has(t.id)),
-    );
+    let result = visibleTabs;
 
     // Filtra por categoría seleccionada en el sidebar
     if (selectedCategory) {
@@ -135,7 +140,7 @@ export function useAdminTabsDerived(params: Params) {
     }
 
     return result;
-  }, [enhancedTabs, allowedTabs, hiddenTabs, isHiddenByTemplate, enabledSpecModuleIds, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
+  }, [visibleTabs, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
 
   const favoriteTabItems = useMemo(
     () =>
@@ -164,5 +169,5 @@ export function useAdminTabsDerived(params: Params) {
     [enhancedTabs, recentTabs, currentTab, favoriteTabs, allowedTabs, isHiddenByTemplate],
   );
 
-  return { allowedTabs, filteredTabs, favoriteTabItems, recentTabItems };
+  return { allowedTabs, filteredTabs, visibleTabs, favoriteTabItems, recentTabItems };
 }
