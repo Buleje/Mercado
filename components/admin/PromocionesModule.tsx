@@ -227,24 +227,32 @@ export default function PromocionesModule() {
       if (res.ok) {
         const updated = await res.json();
         setPromos(prev => prev.map(p => p.id === id ? updated : p));
+      } else {
+        setFormError("No se pudo cambiar el estado de la promoción.");
       }
     } catch {
-      // silencioso
+      setFormError("Error de conexión. Intentá de nuevo.");
     } finally {
       setSaving(false);
     }
   }, [promos]);
 
   const handleDelete = useCallback(async (id: string) => {
+    // Confirmación: el botón de basura está a un toque del toggle; en móvil un
+    // error de dedo borraba una promo activa sin deshacer (audit 2026-05-29).
+    if (!window.confirm("¿Eliminar esta promoción? No se puede deshacer.")) return;
+    setFormError(null);
     setSaving(true);
     try {
       const res = await fetch(`/api/discount-rules/${id}`, { method: "DELETE" });
       if (res.ok) {
         setPromos(prev => prev.filter(p => p.id !== id));
         setSuccessMsg("Promoción eliminada");
+      } else {
+        setFormError("No se pudo eliminar la promoción. Intentá de nuevo.");
       }
     } catch {
-      // silencioso
+      setFormError("Error de conexión al eliminar la promoción.");
     } finally {
       setSaving(false);
     }

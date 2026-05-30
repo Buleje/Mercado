@@ -107,6 +107,7 @@ export default function StoreBannerArea({
                 alt={`Logo de ${name}`}
                 width={112}
                 height={112}
+                sizes="(max-width: 768px) 112px, 144px"
                 className="object-cover w-full h-full"
               />
             ) : (

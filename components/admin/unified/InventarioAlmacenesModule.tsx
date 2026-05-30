@@ -492,16 +492,10 @@ function InventoryAnalyticsDashboard() {
         </div>
       </div>
 
-      {/* ── 4. Análisis de Rotacion ── */}
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
-        <div className="flex items-center justify-between mb-1">
-          <h4 className="text-sm font-bold text-[var(--text-primary)]">Análisis de Rotacion</h4>
-          <FavStar id="rotacion" favs={invFavs} />
-        </div>
-        <p className="text-sm text-[var(--text-muted)] py-6 text-center">
-          Sin datos suficientes — se necesita historial de ventas para calcular rotación
-        </p>
-      </div>
+      {/* ── 4. Análisis de Rotación: sección placeholder eliminada (audit
+          2026-05-29) — siempre mostraba "Sin datos suficientes" y generaba
+          desconfianza ("¿está roto?"). La rotación real ya está en el KPI de
+          arriba. Re-agregar como sección solo cuando se implemente de verdad. ── */}
 
       {/* ── 5. Productos mas rentables (por margen real) ── */}
       {(() => {
