@@ -9,6 +9,7 @@ import ChatBubble from "@/components/marketplace/ChatBubble/ChatBubbleLazy";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
 import StoreDetailLoading from "./loading";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
 // Deduplicate getBySlug across generateMetadata + page render in the same
 // request tree. Without this React.cache wrapper Next 16 invokes the lookup
@@ -296,21 +297,18 @@ function StoreJsonLd({
     ],
   };
 
-  const safe = (obj: object) =>
-    JSON.stringify(obj)
-      .replace(/</g, "\\u003c")
-      .replace(/\u2028/g, "\\u2028")
-      .replace(/\u2029/g, "\\u2029");
-
+  // Brandon 2026-05-30 (audit): usar la util de producci\u00f3n safeJsonLdStringify
+  // (escapa < > & U+2028 U+2029) en vez del `safe()` inline que solo escapaba
+  // < y los separadores Unicode \u2014 defensa m\u00e1s completa contra XSS en JSON-LD.
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safe(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safe(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbLd) }}
       />
     </>
   );
@@ -388,17 +386,11 @@ function ProductsItemListJsonLd({
     itemListElement: items,
   };
 
-  const safe = (obj: object) =>
-    JSON.stringify(obj)
-      .replace(/</g, "\\u003c")
-      .replace(/\u2028/g, "\\u2028")
-      .replace(/\u2029/g, "\\u2029");
-
   return (
     <script
       type="application/ld+json"
       data-store-slug={storeSlug}
-      dangerouslySetInnerHTML={{ __html: safe(itemListLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(itemListLd) }}
     />
   );
 }
