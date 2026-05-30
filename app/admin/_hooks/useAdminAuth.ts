@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import type { StoreMode } from "@/lib/jsondb";
 
 export type AdminRole = "admin" | "cajero" | "almacenero";
@@ -61,22 +62,20 @@ export function useAdminAuth(onUnauth: () => void): UseAdminAuthResult {
   const [storeMode, setStoreModeState] = useState<StoreMode>("whatsapp");
 
   useEffect(() => {
-    // 1. Settings (mode + role permissions overrides)
-    fetch("/api/settings")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: SettingsResponse | null) => {
+    // 1. Settings (mode + role permissions overrides) — cachedJson colapsa el
+    // doble-invoke de StrictMode (dev). Perf 2026-05-29.
+    cachedJson<SettingsResponse>("/api/settings", 30_000)
+      .then((d) => {
         if (!d) return;
         if (d.mode) setStoreModeState(d.mode);
         if (d.rolePermissions) setSavedRolePerms(d.rolePermissions);
       })
       .catch(() => {});
 
-    // 2. Auth me (autoritativo) — ahora devuelve 200 con role:null si no hay sesion
-    fetch("/api/auth/me")
-      .then((r) => {
-        if (!r.ok) throw new Error("unauth");
-        return r.json() as Promise<AuthMeResponse>;
-      })
+    // 2. Auth me (autoritativo) — ahora devuelve 200 con role:null si no hay sesion.
+    // cachedJson: comparte 1 /api/auth/me con use-admin-notifications + colapsa el
+    // doble-invoke de StrictMode (dev). null = !ok → cae al fallback. Perf 2026-05-29.
+    cachedJson<AuthMeResponse>("/api/auth/me", 60_000)
       .then((d) => {
         if (!d?.role) throw new Error("no-session");
         setUserRole(d.role);

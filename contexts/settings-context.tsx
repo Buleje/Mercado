@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { type HomepageContent, DEFAULT_HOMEPAGE, NEW_STORE_DEFAULTS } from "@/lib/homepage-content";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 export type StoreMode = "whatsapp" | "checkout";
 
@@ -171,12 +172,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         : "main";
     const isMainTenant = tenantSlug === "main";
 
-    fetch("/api/settings", {
+    // cachedJson con clave por tenant (`?_t=`, el server lo ignora): colapsa el
+    // doble-invoke de StrictMode (dev) sin mezclar settings entre tenants en
+    // navegaciones /t/[slug]. Mantiene el header x-tenant-id. Perf 2026-05-29.
+    cachedJson<Record<string, unknown>>(`/api/settings?_t=${encodeURIComponent(tenantSlug)}`, 30_000, {
       cache: "no-store",
       headers: { "x-tenant-id": tenantSlug },
     })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: Record<string, unknown> | null) => {
+      .then((data) => {
         if (data) {
           if (data.mode) setModeState(data.mode as StoreMode);
           if (data.businessName) setBusinessName(data.businessName as string);
