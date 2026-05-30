@@ -469,6 +469,9 @@ model Order {
   @@index([tenantId, deliveryStatus], name: "Order_deliveryStatus_idx")
   @@index([driverId], name: "Order_driverId_idx")
   @@index([paymentApprovalId], name: "Order_paymentApprovalId_idx")
+  // Audit #3 (Brandon 2026-05-30): KPIs públicos del marketplace (activity feed,
+  // live stats, top hoy, popularity 30d) filtran por source + deletedAt + createdAt.
+  @@index([source, deletedAt, createdAt])
 }
 
 model OrderItem {
@@ -2631,6 +2634,10 @@ model Store {
   conversationThreads ConversationThread[]
 
   @@index([tenantId])
+  // Audit #3 (Brandon 2026-05-30): listado del directorio /tiendas ordena por
+  // rating/reviewCount y filtra por isPublished + zona. Antes: seq scan sobre Store.
+  @@index([isPublished, rating(sort: Desc), reviewCount(sort: Desc)])
+  @@index([isPublished, zone])
 }
 
 model StoreBanner {
@@ -2678,6 +2685,8 @@ model StoreProduct {
   @@index([storeId])
   @@index([productId])
   @@index([discountUntil])
+  // Audit #3 (Brandon 2026-05-30): todo query de catálogo filtra isActive + storeId.
+  @@index([storeId, isActive])
 }
 
 model DeliveryPartner {
