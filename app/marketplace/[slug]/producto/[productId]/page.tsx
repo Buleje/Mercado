@@ -20,6 +20,10 @@ import { ProductDetailClient } from "@/components/marketplace/product-detail/Pro
 import BackToStoreButton from "@/components/marketplace/product-detail/BackToStoreButton";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import type { RelatedProduct } from "@/components/marketplace/product-detail/ProductRelated";
+// generateStaticParams (build-time) usa la DB class directamente — no es prisma
+// directo (regla #1) y en build no hay base URL para el fetch REST. El render
+// del page sigue usando la API REST pública.
+import { MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
 
 // ── Types desde la API ─────────────────────────────────────────────────────────
 
@@ -211,11 +215,23 @@ function pricingValidUntil(now: number): string {
   return datePart ?? isoString;
 }
 
-function ProductJsonLd({ product, slug, productId, now }: {
+// Brandon 2026-05-30 (audit #1): bajo Next 16 cacheComponents NO se puede leer
+// `Date.now()` directo en un Server Component (error next-prerender-current-time)
+// — antes estaba enmascarado porque la ruta era 100% dinámica (sin
+// generateStaticParams). Lo envolvemos en "use cache": el now queda congelado por
+// cacheLife (recomputado a diario), suficiente para priceValidUntil del Offer
+// (validez 30 días). El fix sancionado por el propio mensaje de Next.
+async function getPriceValidUntil(): Promise<string> {
+  "use cache";
+  cacheLife("days");
+  return pricingValidUntil(Date.now());
+}
+
+function ProductJsonLd({ product, slug, productId, priceValidUntil }: {
   product: ApiProduct;
   slug: string;
   productId: string;
-  now: number;
+  priceValidUntil: string;
 }) {
   const base = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
   const inStock = product.stock === null || product.stock > 0;
@@ -241,7 +257,7 @@ function ProductJsonLd({ product, slug, productId, now }: {
       "@type": "Offer",
       price: priceFormatted,
       priceCurrency: "PEN",
-      priceValidUntil: pricingValidUntil(now),
+      priceValidUntil,
       availability: inStock
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
@@ -288,6 +304,30 @@ function ProductJsonLd({ product, slug, productId, now }: {
   );
 }
 
+// ── generateStaticParams ─────────────────────────────────────────────────────────
+// Brandon 2026-05-30 (audit #1): mismo fix que el storefront [slug]. Sin esta
+// función, este segmento dinámico anidado no puede prerenderar shell estático
+// bajo Next 16 cacheComponents → warning "Uncached data outside <Suspense>"
+// atribuido al RootLayout. Devolvemos [] (los productos son demasiados para
+// prerenderar en build): basta con que la función EXISTA para habilitar el
+// shell; cada producto rendea on-demand vía dynamicParams=true (default), sin
+// warning y sin staleness (los datos siguen dinámicos por request).
+export async function generateStaticParams(): Promise<
+  Array<{ slug: string; productId: string }>
+> {
+  try {
+    const params = await MarketplaceStoreProductsDB.listPublishedProductParams(100);
+    if (params.length > 0) {
+      return params.map((p) => ({ slug: p.slug, productId: String(p.productId) }));
+    }
+  } catch {
+    // DB no accesible en build → cae al placeholder.
+  }
+  // cacheComponents EXIGE ≥1 entry. Placeholder: el render hace notFound() para
+  // un productId inexistente. Los productos reales se prerenderan cuando existen.
+  return [{ slug: "__validate__", productId: "0" }];
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 interface PageProps {
@@ -329,9 +369,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
     { name: product.name, url: `${base}/marketplace/${slug}/producto/${productId}` },
   ];
 
+  // priceValidUntil vía "use cache" — evita Date.now() directo en el Server
+  // Component (next-prerender-current-time bajo cacheComponents).
+  const priceValidUntil = await getPriceValidUntil();
+
   return (
     <>
-      <ProductJsonLd product={product} slug={slug} productId={productId} now={Date.now()} />
+      <ProductJsonLd product={product} slug={slug} productId={productId} priceValidUntil={priceValidUntil} />
 
       {/*
         SEO 2026-05-28 audit P4: H1 sr-only server-side. ProductDetailClient

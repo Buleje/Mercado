@@ -270,6 +270,31 @@ export const MarketplaceStoresDB = {
   },
 
   /**
+   * Slugs de tiendas publicadas (cross-tenant) para `generateStaticParams`
+   * del storefront `/marketplace/[slug]`. Liviano: solo `slug`, sin filtro de
+   * suscripción (el render maneja trial/oculto vía `getBySlug` → notFound).
+   *
+   * Por qué existe: bajo Next 16 cacheComponents, un segmento dinámico SIN
+   * generateStaticParams no puede prerenderar un shell estático — los `params`
+   * son request-time, y eso dispara el warning "Uncached data outside
+   * <Suspense>" atribuido al RootLayout (la ruta entera queda sin shell).
+   * Con esta lista (o incluso []), la ruta gana shell estático; los slugs no
+   * listados rendean on-demand vía dynamicParams=true. (audit #1, 2026-05-30)
+   *
+   * Cap `limit` para no explotar el build si hay miles de tiendas — las que
+   * superen el tope rendean dinámicas igual (sin prerender, pero sin warning).
+   */
+  async listPublishedSlugs(limit = 200): Promise<string[]> {
+    const rows = await prisma.store.findMany({
+      where:   { isPublished: true },
+      select:  { slug: true },
+      orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
+      take:    limit,
+    });
+    return rows.map((r) => r.slug);
+  },
+
+  /**
    * Obtener tienda por slug (pública).
    */
   async getBySlug(slug: string): Promise<(DbStore & { vacationMode: boolean; vacationMessage: string | null; whatsappPublic: string | null }) | null> {

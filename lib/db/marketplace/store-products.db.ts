@@ -96,6 +96,29 @@ export const MarketplaceStoreProductsDB = {
   },
 
   /**
+   * Params (slug + productId) de productos activos de tiendas publicadas, para
+   * `generateStaticParams` de `/marketplace/[slug]/producto/[productId]`.
+   * Cross-store. Liviano: solo `store.slug` + `productId`.
+   *
+   * Por qué: bajo Next 16 cacheComponents un segmento dinámico DEBE tener
+   * generateStaticParams con ≥1 entry (build error si [] — ver
+   * nextjs.org/docs/messages/empty-generate-static-params). Prerenderamos los
+   * productos más recientes (buen SEO en las páginas más indexadas); el resto
+   * rendea on-demand vía dynamicParams=true. (audit #1, 2026-05-30)
+   */
+  async listPublishedProductParams(
+    limit = 100,
+  ): Promise<Array<{ slug: string; productId: number }>> {
+    const rows = await prisma.storeProduct.findMany({
+      where:   { isActive: true, store: { isPublished: true } },
+      select:  { productId: true, store: { select: { slug: true } } },
+      orderBy: { id: "desc" },
+      take:    limit,
+    });
+    return rows.map((r) => ({ slug: r.store.slug, productId: r.productId }));
+  },
+
+  /**
    * Agregar o actualizar un producto en una tienda.
    * Si ya existe la combinación storeId+productId, lo actualiza (upsert).
    */
