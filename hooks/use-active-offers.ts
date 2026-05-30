@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 min — alineado al cache server
 
@@ -28,11 +29,17 @@ export function useHasActiveOffers(): boolean | null {
     let cancelled = false;
 
     const fetchOnce = () => {
-      fetch("/api/marketplace/stores?limit=100")
-        .then((r) => (r.ok ? r.json() : null))
+      // Brandon 2026-05-30 (audit #2 dedup): vía cachedJson — coalesce de
+      // requests en vuelo + cache 60s. Este hook lo usan varios componentes a
+      // la vez (navbar gate "Ofertas" + sección promo /tiendas) y cada uno
+      // hacía su propio fetch de stores?limit=100 (la duplicación ×N del audit).
+      cachedJson<{ data?: Array<{ activePromos?: number }> }>(
+        "/api/marketplace/stores?limit=100",
+        60_000,
+      )
         .then((data) => {
           if (cancelled || !data) return;
-          const stores = (data.data ?? []) as Array<{ activePromos?: number }>;
+          const stores = data.data ?? [];
           const has = stores.some((s) => (s.activePromos ?? 0) > 0);
           setHasOffers(has);
         })
