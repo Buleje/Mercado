@@ -50,7 +50,7 @@ const ExplorarTracker = dynamic(
 // dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
 // import estático para no romper el tipado de DEFAULT_FILTERS.
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
-import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal } from "@buleje/design-system/icons";
+import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal, Clock } from "@buleje/design-system/icons";
 // CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
 import { CupSoda } from "lucide-react";
 // Brandon 2026-05-21 v3: removido import default de QuickFilterChips (chips
@@ -1141,6 +1141,25 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
               <Star className={cn("h-3.5 w-3.5", activeChips.has("top_rated") && "fill-current")} strokeWidth={2} />
               <span>4+ estrellas</span>
             </button>
+            {/* Brandon 2026-05-30 (audit #11): toggle "Abierto ahora" — el chip
+                open_now + su filtro YA existían (MarketplaceStoresView.passesChips),
+                solo faltaba surfacearlo en el filter bar mobile. El vecino que
+                pide AHORA quiere ver solo lo que está abierto. */}
+            <button
+              type="button"
+              onClick={() => setActiveChips((prev) => { const n = new Set(prev); if (n.has("open_now")) n.delete("open_now"); else n.add("open_now"); return n; })}
+              aria-pressed={activeChips.has("open_now")}
+              className={cn(
+                "shrink-0 [scroll-snap-align:start] inline-flex items-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
+                activeChips.has("open_now")
+                  ? "bg-[var(--accent)] text-white border border-[var(--accent)]"
+                  : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border border-[var(--rule-base)] hover:border-[var(--accent)]/50",
+              )}
+              title="Solo tiendas abiertas en este momento"
+            >
+              <Clock className="h-3.5 w-3.5" strokeWidth={2} />
+              <span>Abierto ahora</span>
+            </button>
             <div className="shrink-0 [scroll-snap-align:start]">
               <MarketplaceFilters
                 filters={productFilters}
@@ -1191,6 +1210,27 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
               >
                 <Star className={cn("h-4 w-4", activeChips.has("top_rated") && "fill-current")} strokeWidth={2} />
                 <span>4 estrellas o más</span>
+              </button>
+            </div>
+            {/* DISPONIBILIDAD — toggle "Abierto ahora" (audit #11). Filtro ya
+                cableado en MarketplaceStoresView; acá solo el control desktop. */}
+            <div className="border-t border-[var(--rule-soft)] pt-3">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+                Disponibilidad
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveChips((prev) => { const n = new Set(prev); if (n.has("open_now")) n.delete("open_now"); else n.add("open_now"); return n; })}
+                aria-pressed={activeChips.has("open_now")}
+                className={cn(
+                  "w-full inline-flex items-center gap-2 h-11 px-3.5 rounded-xl text-sm font-bold transition-all border-2",
+                  activeChips.has("open_now")
+                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50",
+                )}
+              >
+                <Clock className="h-4 w-4" strokeWidth={2} />
+                <span>Abierto ahora</span>
               </button>
             </div>
           </div>
