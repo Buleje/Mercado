@@ -378,6 +378,21 @@ export const PriceHistoryDB = {
   async getByProduct(tenantId: string, productId: number): Promise<DbPriceHistory[]> {
     return (await prisma.priceHistory.findMany({ where: { productId, tenantId }, orderBy: { changedAt: "desc" } })).map(mapPriceHistory);
   },
+  /**
+   * Batch: historial de N productos en UNA query (productId IN ids). Mata el N+1
+   * del sparkline del inventario (84 productos = 84 requests → 1). Perf 2026-05-29.
+   */
+  async getByProducts(tenantId: string, productIds: number[]): Promise<Record<number, DbPriceHistory[]>> {
+    if (productIds.length === 0) return {};
+    const rows = await prisma.priceHistory.findMany({
+      where: { tenantId, productId: { in: productIds } },
+      orderBy: { changedAt: "desc" },
+    });
+    const map: Record<number, DbPriceHistory[]> = {};
+    for (const id of productIds) map[id] = [];
+    for (const r of rows) (map[r.productId] ??= []).push(mapPriceHistory(r));
+    return map;
+  },
   async getAll(tenantId: string, limit = 100): Promise<DbPriceHistory[]> {
     return (await prisma.priceHistory.findMany({ where: { tenantId }, orderBy: { changedAt: "desc" }, take: limit })).map(mapPriceHistory);
   },

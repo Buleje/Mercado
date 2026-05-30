@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import { loadPriceHistory } from "@/lib/price-history-loader";
 
 type PricePoint = { date: string; price: number };
 
@@ -10,17 +11,13 @@ export default function PriceSparkline({ productId }: { productId: number }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/price-history?productId=${productId}`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((d: unknown) => {
+    // loadPriceHistory batea TODOS los sparklines de la tabla en 1 request
+    // (antes: 1 fetch por fila = N+1). Perf 2026-05-29.
+    loadPriceHistory(productId)
+      .then((d) => {
         if (cancelled) return;
         if (Array.isArray(d) && d.length >= 2) {
-          setData(
-            d.map((p: { date?: string; createdAt?: string; price: number }) => ({
-              date: p.date || p.createdAt || "",
-              price: p.price,
-            }))
-          );
+          setData(d.map((p) => ({ date: p.date || p.createdAt || "", price: p.price })));
         }
       })
       .catch(() => {
