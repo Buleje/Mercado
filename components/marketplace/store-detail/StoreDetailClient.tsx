@@ -26,7 +26,7 @@ import {
   ArrowLeft, Search, X, Menu, LayoutGrid, List, Heart, Info,
   MapPin, Clock, Wallet, Phone, UserCircle,
   Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
-  ShoppingCart, Star,
+  ShoppingCart, Star, MessageCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCustomer } from "@/contexts/customer-context";
@@ -855,12 +855,33 @@ export default function StoreDetailClient({
         open={navDrawerOpen}
         onClose={() => setNavDrawerOpen(false)}
       />
-      {/* NOTA (audit #6, Brandon 2026-05-30): un WhatsApp FAB flotante quedó
-          PENDIENTE — el modelo Store NO tiene campo `whatsapp` público (solo
-          `ownerPhone`, PII del dueño). El StoreInfoModal ya castea a un
-          `whatsapp` inexistente (su sección WhatsApp tampoco aparece). Para un
-          FAB funcional hace falta una decisión de producto: agregar
-          `store.whatsappPublic` o exponer ownerPhone. No se shipea UI inerte. */}
+      {/* ── WhatsApp FAB (md:hidden) ────────────────────────────────────
+           Brandon 2026-05-30 (audit #6): el vecino de Pucallpa pide por
+           WhatsApp. FAB flotante = 1 tap (antes el número estaba 2 taps adentro
+           del modal). Solo mobile + solo si el dueño configuró whatsappPublic
+           (Store.whatsappPublic, editable desde su panel de tienda). */}
+      {(() => {
+        const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(/\D/g, "");
+        if (!raw) return null;
+        const intl = raw.startsWith("51") ? raw : `51${raw}`;
+        const msg = encodeURIComponent(
+          `Hola ${store.name}, vengo de Buleje y quiero hacer un pedido`,
+        );
+        return (
+          <a
+            href={`https://wa.me/${intl}?text=${msg}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Escribir a ${store.name} por WhatsApp`}
+            className="md:hidden fixed bottom-24 right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full shadow-lg active:scale-95 transition-transform"
+            // #25D366 = verde oficial de WhatsApp (logo de tercero). Excepción
+            // justificada al DS, igual que Yape usa su morado de marca.
+            style={{ backgroundColor: "#25D366" }}
+          >
+            <MessageCircle className="h-7 w-7 text-white" strokeWidth={2} aria-hidden />
+          </a>
+        );
+      })()}
     </div>
   );
 }
@@ -1203,8 +1224,9 @@ function StoreInfoModal({
             </div>
           )}
 
-          {/* WhatsApp / Contacto */}
-          {(store as { whatsapp?: string; phone?: string }).whatsapp && (
+          {/* WhatsApp / Contacto — usa Store.whatsappPublic (audit #6, antes
+              casteaba a `whatsapp` inexistente → nunca aparecía). */}
+          {(store as { whatsappPublic?: string | null }).whatsappPublic && (
             <div className="flex items-start gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
                 <Phone className="h-5 w-5" strokeWidth={2.25} />
@@ -1214,7 +1236,7 @@ function StoreInfoModal({
                   WhatsApp
                 </p>
                 <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
-                  {(store as { whatsapp?: string }).whatsapp}
+                  {(store as { whatsappPublic?: string | null }).whatsappPublic}
                 </p>
               </div>
             </div>

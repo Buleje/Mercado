@@ -269,6 +269,7 @@ export async function GET(req: NextRequest) {
           description:     true,
           vacationMode:    true,
           vacationMessage: true,
+          whatsappPublic:  true, // FAB WhatsApp del storefront + carga en panel del dueño
           createdAt:       true,
           tenantId:        true, // necesario para batched lookup (Settings/Promotion)
           lat:             true, // TS-04 mapa
@@ -647,6 +648,7 @@ export async function GET(req: NextRequest) {
         description: s.description,
         vacationMode: s.vacationMode,
         vacationMessage: s.vacationMessage,
+        whatsappPublic: (s as { whatsappPublic?: string | null }).whatsappPublic ?? null,
         underConstruction: Boolean(construction?.enabled),
         underConstructionMessage: construction?.message ?? null,
         coverageZones: extrasMap.get(slug)?.coverageZones ?? [],

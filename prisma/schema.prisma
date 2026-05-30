@@ -2616,6 +2616,7 @@ model Store {
   isPublished         Boolean              @default(false)
   vacationMode        Boolean              @default(false)
   vacationMessage     String?
+  whatsappPublic      String? // WhatsApp público que el dueño publica para que los clientes le escriban (FAB del storefront). Distinto de ownerPhone (PII interna del dueño).
   commission          Decimal              @default(5.0) @db.Decimal(5, 2) // marketplace commission %, e.g. 5.00
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt

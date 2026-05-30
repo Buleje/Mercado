@@ -32,12 +32,14 @@ interface BrandingState {
   logo: string | null;
   banner: string | null;
   category: string;
+  whatsappPublic: string | null;
 }
 
 export default function MarketplaceBrandingTab() {
   const [state, setState] = useState<BrandingState | null>(null);
   const [logoInput, setLogoInput] = useState("");
   const [bannerInput, setBannerInput] = useState("");
+  const [whatsappInput, setWhatsappInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,9 +65,11 @@ export default function MarketplaceBrandingTab() {
         logo: myStore.logo ?? null,
         banner: myStore.banner ?? null,
         category: myStore.category ?? "bodega",
+        whatsappPublic: myStore.whatsappPublic ?? null,
       });
       setLogoInput(myStore.logo ?? "");
       setBannerInput(myStore.banner ?? "");
+      setWhatsappInput(myStore.whatsappPublic ?? "");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error desconocido");
     } finally {
@@ -86,6 +90,7 @@ export default function MarketplaceBrandingTab() {
           body: JSON.stringify({
             logo: logoInput.trim(),
             banner: bannerInput.trim(),
+            whatsappPublic: whatsappInput.trim(),
           }),
         },
       );
@@ -100,7 +105,7 @@ export default function MarketplaceBrandingTab() {
       }
       const updated = await res.json();
       setState((s) =>
-        s ? { ...s, logo: updated.logo, banner: updated.banner } : s,
+        s ? { ...s, logo: updated.logo, banner: updated.banner, whatsappPublic: updated.whatsappPublic } : s,
       );
       setSavedAt(Date.now());
     } catch (e) {
@@ -194,6 +199,37 @@ export default function MarketplaceBrandingTab() {
           onChange={setLogoInput}
           onClear={() => setLogoInput("")}
         />
+
+        {/* WhatsApp público — muestra un botón flotante en el storefront mobile
+            para que los clientes te escriban directo. Audit #6 (Brandon). */}
+        <div>
+          <label className="text-sm font-semibold text-[var(--text-primary)]">
+            WhatsApp de contacto (opcional)
+          </label>
+          <p className="text-xs text-[var(--text-tertiary)] mt-0.5 mb-1.5">
+            Si lo cargás, los clientes ven un botón de WhatsApp en tu tienda (mobile). Ej: 999 888 777.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="tel"
+              inputMode="tel"
+              value={whatsappInput}
+              onChange={(e) => setWhatsappInput(e.target.value)}
+              placeholder="999 888 777"
+              className="flex-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 h-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+            />
+            {whatsappInput && (
+              <button
+                type="button"
+                onClick={() => setWhatsappInput("")}
+                aria-label="Limpiar"
+                className="inline-flex h-12 w-12 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Errors / saved feedback */}
@@ -211,6 +247,7 @@ export default function MarketplaceBrandingTab() {
           onClick={() => {
             setLogoInput(state.logo ?? "");
             setBannerInput(state.banner ?? "");
+            setWhatsappInput(state.whatsappPublic ?? "");
           }}
           className={ADMIN_TOKENS.btnGhost}
         >

@@ -32,9 +32,18 @@ const AllowedUrlOrEmpty = z
     z.null(),
   ]);
 
+// WhatsApp público que el dueño configura para el FAB del storefront.
+// Acepta dígitos/espacios/+/() (6-20 chars), o "" / null para limpiar.
+const WhatsappOrEmpty = z.union([
+  z.string().regex(/^\+?[\d\s()-]{6,20}$/, "Número de WhatsApp inválido"),
+  z.literal(""),
+  z.null(),
+]);
+
 const BrandingSchema = z.object({
-  logo:   AllowedUrlOrEmpty.optional(),
-  banner: AllowedUrlOrEmpty.optional(),
+  logo:           AllowedUrlOrEmpty.optional(),
+  banner:         AllowedUrlOrEmpty.optional(),
+  whatsappPublic: WhatsappOrEmpty.optional(),
 });
 
 export const PATCH = withApiHandler("marketplace-store-branding", async (
@@ -79,12 +88,15 @@ export const PATCH = withApiHandler("marketplace-store-branding", async (
   }
 
   // Normalizar empty string → null para limpiar el campo en DB.
-  const payload: { logo?: string | null; banner?: string | null } = {};
+  const payload: { logo?: string | null; banner?: string | null; whatsappPublic?: string | null } = {};
   if (parsed.data.logo !== undefined) {
     payload.logo = parsed.data.logo === "" ? null : parsed.data.logo;
   }
   if (parsed.data.banner !== undefined) {
     payload.banner = parsed.data.banner === "" ? null : parsed.data.banner;
+  }
+  if (parsed.data.whatsappPublic !== undefined) {
+    payload.whatsappPublic = parsed.data.whatsappPublic ? parsed.data.whatsappPublic.trim() : null;
   }
 
   if (Object.keys(payload).length === 0) {
@@ -94,7 +106,7 @@ export const PATCH = withApiHandler("marketplace-store-branding", async (
   const updated = await db.store.update({
     where: { id: store.id },
     data: payload,
-    select: { id: true, slug: true, logo: true, banner: true },
+    select: { id: true, slug: true, logo: true, banner: true, whatsappPublic: true },
   });
 
   // Invalida los caches que dependen de los datos de la tienda.
