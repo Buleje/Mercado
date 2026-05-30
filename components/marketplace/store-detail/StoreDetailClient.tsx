@@ -26,7 +26,7 @@ import {
   ArrowLeft, Search, X, Menu, LayoutGrid, List, Heart, Info,
   MapPin, Clock, Wallet, Phone, UserCircle,
   Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
-  ShoppingCart, MessageCircle,
+  ShoppingCart, Star,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCustomer } from "@/contexts/customer-context";
@@ -375,6 +375,41 @@ export default function StoreDetailClient({
           </button>
         </div>
       </div>
+
+      {/* ── MOBILE trust strip (md:hidden) ──────────────────────────────
+           Brandon 2026-05-30 (audit #6): StoreHero es `hidden md:block`, así
+           que en mobile (<md, ~90% del tráfico) el rating y los métodos de pago
+           quedaban INVISIBLES — justo la info que da confianza para comprar.
+           Esta franja compacta los muestra debajo de la barra slim. Solo datos
+           reales (rating únicamente si > 0). StoreHero cubre md+. */}
+      {((store.rating ?? 0) > 0 || paymentMethods.length > 0) && (
+        <div className="md:hidden flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5">
+          {(store.rating ?? 0) > 0 && (
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-[var(--text-primary)]">
+              <Star
+                className="h-4 w-4 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
+                strokeWidth={0}
+                aria-hidden
+              />
+              {(store.rating ?? 0).toFixed(1)}
+              <span className="font-medium text-[var(--text-secondary)]">
+                ({store.reviewCount})
+              </span>
+            </span>
+          )}
+          {(store.rating ?? 0) > 0 && paymentMethods.length > 0 && (
+            <span aria-hidden className="h-4 w-px bg-[var(--rule-base)]" />
+          )}
+          {paymentMethods.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
+              <Wallet className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+              {paymentMethods
+                .map((m) => m.charAt(0).toUpperCase() + m.slice(1))
+                .join(" · ")}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── DESKTOP: Botón Volver bajo el banner ──────────────────────── */}
       <div className="hidden lg:block">
@@ -820,6 +855,12 @@ export default function StoreDetailClient({
         open={navDrawerOpen}
         onClose={() => setNavDrawerOpen(false)}
       />
+      {/* NOTA (audit #6, Brandon 2026-05-30): un WhatsApp FAB flotante quedó
+          PENDIENTE — el modelo Store NO tiene campo `whatsapp` público (solo
+          `ownerPhone`, PII del dueño). El StoreInfoModal ya castea a un
+          `whatsapp` inexistente (su sección WhatsApp tampoco aparece). Para un
+          FAB funcional hace falta una decisión de producto: agregar
+          `store.whatsappPublic` o exponer ownerPhone. No se shipea UI inerte. */}
     </div>
   );
 }
