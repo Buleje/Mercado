@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { useNotificationCenter } from "./useNotificationCenter";
 import NotificationHub from "./NotificationHub";
 
@@ -16,27 +17,28 @@ function useCriticalAlertCount() {
 
     async function check() {
       try {
-        const [statsRes, batchRes] = await Promise.all([
-          fetch("/api/admin/stats", { credentials: "include" }).catch(() => null),
-          fetch("/api/batches/expiring", { credentials: "include" }).catch(() => null),
+        // cachedJson: comparte stats/batches con NotificationHub + widgets del
+        // dashboard (antes cada uno disparaba su request). TTL 30s = el intervalo
+        // de 2min re-chequea fresco. Perf 2026-05-29.
+        const [stats, batches] = await Promise.all([
+          cachedJson<{ lowStockProducts?: number; pendingOrders?: number }>("/api/admin/stats", 30_000),
+          cachedJson<{ items?: unknown[] } | unknown[]>("/api/batches/expiring", 30_000),
         ]);
 
         if (cancelled) return;
         let critical = 0;
 
-        if (statsRes?.ok) {
-          const stats = await statsRes.json();
-          if (stats?.lowStockProducts > 10) critical++;
-          if (stats?.pendingOrders > 5) critical++;
+        if (stats) {
+          if ((stats.lowStockProducts ?? 0) > 10) critical++;
+          if ((stats.pendingOrders ?? 0) > 5) critical++;
         }
 
-        if (batchRes?.ok) {
-          const batches = await batchRes.json();
-          const items = Array.isArray(batches) ? batches : batches?.items ?? [];
+        if (batches) {
+          const items = (Array.isArray(batches) ? batches : batches.items ?? []) as Array<{ expiryDate?: string; fechaVencimiento?: string }>;
           const now = new Date();
           now.setHours(0, 0, 0, 0);
           for (const b of items) {
-            const exp = new Date(b.expiryDate || b.fechaVencimiento);
+            const exp = new Date(b.expiryDate || b.fechaVencimiento || 0);
             const days = Math.round((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             if (days <= 3) { critical++; break; }
           }

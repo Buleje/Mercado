@@ -82,14 +82,15 @@ const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 min
 // ─── Data fetcher ─────────────────────────────────────────────────────────────
 
 async function fetchKpiValues(): Promise<KpiValue[]> {
-  const [statsRes, ordersRes, customersRes, productsRes] = await Promise.all([
-    fetch("/api/admin/stats").catch(() => null),
+  // Perf 2026-05-29: se eliminó el fetch a /api/admin/stats — su resultado se
+  // descartaba ("reserved for future KPI expansion"), era 1 request inútil por
+  // carga del dashboard. Re-agregar solo si se consume de verdad.
+  const [ordersRes, customersRes, productsRes] = await Promise.all([
     fetch("/api/orders").catch(() => null),
     fetch("/api/customers").catch(() => null),
     fetch("/api/products").catch(() => null),
   ]);
 
-  await statsRes?.json().catch(() => ({})); // reserved for future KPI expansion
   const ordersRaw = ordersRes?.ok ? await ordersRes.json().catch(() => []) : [];
   const customersRaw = customersRes?.ok ? await customersRes.json().catch(() => []) : [];
   const productsRaw = productsRes?.ok ? await productsRes.json().catch(() => []) : [];

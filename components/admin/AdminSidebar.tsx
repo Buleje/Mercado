@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Brain,
@@ -928,9 +929,11 @@ export default function AdminSidebar({
     let cancelled = false;
     async function fetchDocBadges() {
       try {
-        const [docRes, statsRes, fiadosRes] = await Promise.all([
+        // stats vía cachedJson: comparte 1 request con NotificationBell + demás
+        // (antes cada widget disparaba su /api/admin/stats). Perf 2026-05-29.
+        const [docRes, stats, fiadosRes] = await Promise.all([
           fetch("/api/admin/doc-badges", { credentials: "include" }).catch(() => null),
-          fetch("/api/admin/stats", { credentials: "include" }).catch(() => null),
+          cachedJson<{ pendingOrders?: number; lowStockProducts?: number; overduePayables?: number }>("/api/admin/stats", 30_000),
           fetch("/api/fiados?status=ACTIVO", { credentials: "include" }).catch(() => null),
         ]);
         if (cancelled) return;
@@ -939,11 +942,10 @@ export default function AdminSidebar({
           const data = await docRes.json();
           Object.assign(badges, data ?? {});
         }
-        if (statsRes?.ok) {
-          const stats = await statsRes.json();
-          if (stats?.pendingOrders > 0) badges["pedidos"] = stats.pendingOrders;
-          if (stats?.lowStockProducts > 0) badges["inventario"] = stats.lowStockProducts;
-          if (stats?.overduePayables > 0) badges["compras"] = stats.overduePayables;
+        if (stats) {
+          if (stats.pendingOrders) badges["pedidos"] = stats.pendingOrders;
+          if (stats.lowStockProducts) badges["inventario"] = stats.lowStockProducts;
+          if (stats.overduePayables) badges["compras"] = stats.overduePayables;
         }
         if (fiadosRes?.ok) {
           try {
