@@ -20,7 +20,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Search, X, Menu, LayoutGrid, List, Heart, Info,
@@ -800,25 +799,10 @@ export default function StoreDetailClient({
         <StorePoliciesBlock />
       </div>
 
-      {/* ── Final CTA ──────────────────────────────────────────────────────── */}
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-[var(--surface-alt)] dark:bg-gray-900 p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-white mb-1">
-              ¿Sos el dueño de esta tienda?
-            </p>
-            <p className="text-sm text-[var(--text-secondary)] dark:text-gray-400">
-              Reclamá tu tienda y gestioná tu catálogo desde el panel de vendedor.
-            </p>
-          </div>
-          <Link
-            href="/marketplace/negocios"
-            className="flex-shrink-0 inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-          >
-            Registrar mi negocio
-          </Link>
-        </div>
-      </div>
+      {/* Brandon 2026-05-30 (audit #11): el CTA "¿Sos el dueño?" se removió del
+          storefront B2C — es ruido para el comprador (la captación de vendedores
+          vive en /marketplace/negocios y el footer). El storefront cierra en las
+          Policies, sin distracción del flujo de compra. */}
 
       {/* ── Mobile search overlay (expandible al tap en lupa del nav top) ── */}
       <MobileSearchOverlay

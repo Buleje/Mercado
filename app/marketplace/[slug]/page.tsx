@@ -228,6 +228,8 @@ function StoreJsonLd({
   reviewCount,
   hoursJson,
   phone,
+  lat,
+  lng,
 }: {
   name: string;
   description: string | null;
@@ -239,6 +241,8 @@ function StoreJsonLd({
   reviewCount: number;
   hoursJson?: unknown;
   phone?: string | null;
+  lat?: number | null;
+  lng?: number | null;
 }) {
   const baseUrl = "https://www.buleje.pe";
   const storeUrl = `${baseUrl}/marketplace/${slug}`;
@@ -266,10 +270,13 @@ function StoreJsonLd({
       addressRegion: "Ucayali",
       addressCountry: "PE",
     },
+    // Brandon 2026-05-30 (audit #7): coords reales de la tienda si el dueño las
+    // configuró (Store.lat/lng); fallback al centro de Pucallpa. Antes siempre
+    // hardcodeadas → Google mostraba TODAS las tiendas en el mismo punto del mapa.
     geo: {
       "@type": "GeoCoordinates",
-      latitude: -8.3791,
-      longitude: -74.5539,
+      latitude: lat ?? -8.3791,
+      longitude: lng ?? -74.5539,
     },
     ...(rating > 0 && reviewCount > 0 && {
       aggregateRating: {
@@ -581,6 +588,8 @@ async function StoreDetailContent({ slug }: { slug: string }) {
         reviewCount={store.reviewCount}
         hoursJson={hoursJson}
         phone={(store as { phone?: string | null }).phone ?? null}
+        lat={(store as { lat?: number | null }).lat ?? null}
+        lng={(store as { lng?: number | null }).lng ?? null}
       />
       {/* Brandon 2026-05-21 SEO round 3: ItemList con productos del catálogo.
           Habilita rich results de Google "Products from this store" — antes

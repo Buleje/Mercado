@@ -297,7 +297,7 @@ export const MarketplaceStoresDB = {
   /**
    * Obtener tienda por slug (pública).
    */
-  async getBySlug(slug: string): Promise<(DbStore & { vacationMode: boolean; vacationMessage: string | null; whatsappPublic: string | null }) | null> {
+  async getBySlug(slug: string): Promise<(DbStore & { vacationMode: boolean; vacationMessage: string | null; whatsappPublic: string | null; lat: number | null; lng: number | null }) | null> {
     const cacheKey = `marketplace:stores:slug:${slug}`;
 
     return getOrSet(cacheKey, 300, async () => {
@@ -313,6 +313,7 @@ export const MarketplaceStoresDB = {
           logo: true, banner: true, category: true, zone: true, rating: true,
           reviewCount: true, isPublished: true, commission: true, createdAt: true,
           vacationMode: true, vacationMessage: true, whatsappPublic: true,
+          lat: true, lng: true,
           tenant: {
             select: {
               active: true,
@@ -349,6 +350,8 @@ export const MarketplaceStoresDB = {
         vacationMode:    s.vacationMode ?? false,
         vacationMessage: s.vacationMessage ?? null,
         whatsappPublic:  s.whatsappPublic ?? null,
+        lat:             s.lat ?? null,
+        lng:             s.lng ?? null,
       };
     });
   },
