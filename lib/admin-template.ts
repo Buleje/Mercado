@@ -305,28 +305,52 @@ const API_ENDPOINT = "/api/platform/admin-template";
  * consumers reactivos (admin sidebars, overlay) re-renderen.
  * Si la red falla, devuelve la versión cacheada en localStorage.
  */
+// Dedup in-flight + TTL corto: useAdminTemplateOverlay lo usan ~6 componentes
+// del admin (sidebar, scope badge, tabs derived…) → antes cada mount disparaba
+// su /api/platform/admin-template (6× por carga). El cambio de plantilla se
+// propaga por el evento EVENT_NAME (no por re-fetch), así que un cache corto es
+// seguro y el reload (módulo nuevo) siempre trae fresco. Perf 2026-05-29.
+let _templateInFlight: Promise<AdminTemplate> | null = null;
+let _templateCache: { at: number; tpl: AdminTemplate } | null = null;
+const _TEMPLATE_TTL = 5000;
+
 export async function fetchAdminTemplate(): Promise<AdminTemplate> {
   if (typeof window === "undefined") return EMPTY_TEMPLATE;
-  try {
-    const res = await fetch(API_ENDPOINT, { cache: "no-store", credentials: "same-origin" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as { template?: Partial<AdminTemplate> };
-    const tpl: AdminTemplate = {
-      overrides: data.template?.overrides ?? {},
-      order: data.template?.order ?? [],
-      defaultSidebarStyle: data.template?.defaultSidebarStyle ?? "buleje",
-      version: data.template?.version ?? SCHEMA_VERSION,
-    };
+  if (_templateCache && Date.now() - _templateCache.at < _TEMPLATE_TTL) return _templateCache.tpl;
+  if (_templateInFlight) return _templateInFlight;
+
+  _templateInFlight = (async () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tpl));
-      window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: tpl }));
+      const res = await fetch(API_ENDPOINT, { cache: "no-store", credentials: "same-origin" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { template?: Partial<AdminTemplate> };
+      const tpl: AdminTemplate = {
+        overrides: data.template?.overrides ?? {},
+        order: data.template?.order ?? [],
+        defaultSidebarStyle: data.template?.defaultSidebarStyle ?? "buleje",
+        version: data.template?.version ?? SCHEMA_VERSION,
+      };
+      _templateCache = { at: Date.now(), tpl };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tpl));
+        window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: tpl }));
+      } catch {
+        // silencioso
+      }
+      return tpl;
     } catch {
-      // silencioso
+      return readAdminTemplate();
+    } finally {
+      _templateInFlight = null;
     }
-    return tpl;
-  } catch {
-    return readAdminTemplate();
-  }
+  })();
+  return _templateInFlight;
+}
+
+/** Invalida el cache in-memory del template (llamar tras guardar cambios). */
+export function invalidateAdminTemplateCache(): void {
+  _templateCache = null;
+  _templateInFlight = null;
 }
 
 export interface SaveResult {
@@ -366,6 +390,8 @@ export async function saveAdminTemplate(tpl: AdminTemplate): Promise<SaveResult>
       return { ok: false, error: data.error ?? `HTTP ${res.status}`, issues: data.issues };
     }
     const saved = data.template ?? tpl;
+    // Refresca el cache in-memory con lo guardado (no servir el TTL viejo).
+    _templateCache = { at: Date.now(), tpl: saved };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
       window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: saved }));
