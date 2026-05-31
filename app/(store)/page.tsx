@@ -41,6 +41,7 @@ import {
   Smartphone,
   ShoppingBag,
   MapPin,
+  Check,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -620,6 +621,9 @@ async function CategoriesGrid() {
               Explorá por{" "}
               <span className="italic font-serif text-[var(--accent)]">categoría</span>
             </h2>
+            <p className="mt-2 sm:mt-3 max-w-md text-base text-[var(--text-secondary)] leading-relaxed">
+              Todo lo que tu barrio vende, en un solo lugar — con delivery rápido en Pucallpa.
+            </p>
           </div>
           <Link
             href="/tiendas"
@@ -701,10 +705,10 @@ async function CategoriesGrid() {
               <Link
                 key={c.id}
                 href={hrefForCategory(c.id)}
-                className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-md transition-all"
+                className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 hover:-translate-y-1 hover:shadow-md transition-all"
               >
                 <span
-                  className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--accent-soft)]/60 overflow-hidden group-hover:scale-110 transition-transform shrink-0"
+                  className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--accent-soft)]/60 overflow-hidden ring-2 ring-[var(--accent)]/10 group-hover:ring-[var(--accent)]/30 group-hover:scale-110 transition-all shrink-0"
                 >
                   {c.imageUrl ? (
                     <Image
@@ -725,7 +729,7 @@ async function CategoriesGrid() {
                     );
                   })()}
                 </span>
-                <span className="text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2">
+                <span className="text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
                   {c.label}
                 </span>
               </Link>
@@ -1020,6 +1024,8 @@ interface JoinCard {
   desc: string;
   /** Beneficio principal en chip — gancho de un vistazo. */
   highlight: string;
+  /** 3 beneficios concretos (lista con check) — dan cuerpo y vencen objeciones. */
+  benefits: [string, string, string];
   cta: string;
   Icon: LucideIcon;
 }
@@ -1029,8 +1035,13 @@ const JOIN_CARDS: JoinCard[] = [
     href: "/negocios",
     eyebrow: "Para tiendas",
     title: "Registrá tu tienda",
-    desc: "Bodega, minimarket o tienda de barrio. Vendé online sin que te toque la tecnología.",
+    desc: "Bodega, minimarket o tienda de barrio — online sin que te toque la tecnología.",
     highlight: "0% comisión · 90 días",
+    benefits: [
+      "Catálogo y horarios listos en 5 minutos",
+      "Cobrás con Yape, Plin, tarjeta o efectivo",
+      "Pedidos directos a tu WhatsApp",
+    ],
     cta: "Abrir mi tienda",
     Icon: Store,
   },
@@ -1038,8 +1049,13 @@ const JOIN_CARDS: JoinCard[] = [
     href: "/negocios?tipo=comercio",
     eyebrow: "Para comercios",
     title: "Registrá tu comercio",
-    desc: "Restaurante, farmacia o licorería. Llegá a miles de vecinos que ya compran en Buleje.",
+    desc: "Restaurante, farmacia o licorería — llegá a los vecinos que ya compran en Buleje.",
     highlight: "Más clientes hoy",
+    benefits: [
+      "Aparecés en el buscador y el mapa",
+      "Sin pagar publicidad para empezar",
+      "Tracking de entrega en vivo",
+    ],
     cta: "Registrar comercio",
     Icon: Building2,
   },
@@ -1049,6 +1065,11 @@ const JOIN_CARDS: JoinCard[] = [
     title: "Unite como repartidor",
     desc: "Generá ingresos extra con tu moto, en los horarios que vos elijas.",
     highlight: "100% de las propinas",
+    benefits: [
+      "Vos elegís cuándo y cuánto trabajás",
+      "Te quedás el 100% de las propinas",
+      "Pagos rápidos y seguros",
+    ],
     cta: "Quiero repartir",
     Icon: Bike,
   },
@@ -1120,15 +1141,17 @@ function JoinUsSection() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
                   {c.eyebrow}
                 </p>
-                <h3 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+                {/* text-lg→2xl: títulos parejos (antes "Registrá tu comercio"
+                    wrappeaba a 3 líneas desbalanceando las cards). */}
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
                   {c.title}
                 </h3>
-                <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed flex-1">
+                <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-relaxed">
                   {c.desc}
                 </p>
-                {/* Chip de beneficio — gancho de un vistazo */}
+                {/* Chip gancho — beneficio principal de un vistazo */}
                 <span
-                  className={`mt-4 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
+                  className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
                     isFeatured
                       ? "bg-[var(--accent-600,var(--accent))] text-white"
                       : "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -1137,7 +1160,23 @@ function JoinUsSection() {
                   <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                   {c.highlight}
                 </span>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
+                {/* Lista de beneficios — da cuerpo + vence objeciones */}
+                <ul className="mt-4 space-y-2 flex-1">
+                  {c.benefits.map((b) => (
+                    <li
+                      key={b}
+                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-snug"
+                    >
+                      <Check
+                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]"
+                        strokeWidth={2.75}
+                        aria-hidden
+                      />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+                <span className="mt-5 inline-flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-4 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
                   {c.cta}
                   <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                 </span>
