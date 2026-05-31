@@ -37,7 +37,7 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
 
   // ── Texto del hero ────────────────────────────────────────────────────────
   // Defaults editoriales si el dueño no configuro nada en StoreCustomizer.
-  const badge    = storeTheme?.heroBadge?.trim()    || "Tu bodega en Pucallpa";
+  const badge    = storeTheme?.heroBadge?.trim()    || "Tu bodega en Ciudad Constitución";
   const title    = storeTheme?.heroTitle?.trim()    || "Todo lo que necesitas, en 25 minutos";
   const subtitle = storeTheme?.heroSubtitle?.trim() || `Frescos, calidos, con la confianza de tu barrio. ${storeName} te lleva la despensa completa a la puerta — Yape, Plin o efectivo.`;
   const ctaText  = storeTheme?.heroCTA?.trim()      || "Ver productos";
@@ -46,7 +46,7 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
   // Antes "Hecho en Pucallpa" estaba hardcoded — un negocio en Lima/Cusco mostraba
   // Pucallpa igual. Ahora lee storeTheme.heroOriginBadge con fallback editorial.
   const originBadge = (storeTheme as { heroOriginBadge?: string } | null | undefined)?.heroOriginBadge?.trim()
-    || "Hecho en Pucallpa";
+    || "Hecho en Ciudad Constitución";
 
   // ── Paleta dinámica según heroBg ──────────────────────────────────────────
   // Con imagen → overlay oscuro + texto blanco. Sin imagen → tokens del DS

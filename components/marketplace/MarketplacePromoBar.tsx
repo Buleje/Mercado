@@ -42,7 +42,7 @@ const PROMOS: readonly Promo[] = [
   {
     id: "free-shipping",
     href: "/marketplace",
-    text: "Envio gratis a Pucallpa desde S/50",
+    text: "Envio gratis a Ciudad Constitución desde S/50",
     cta: "Comprar ahora",
     Icon: Truck,
   },

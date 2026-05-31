@@ -170,7 +170,7 @@ export async function generateMetadata({
   const description =
     product.metaDescription ||
     product.description ||
-    `Compra ${product.name} en ${product.store.name} a través de Buleje Marketplace, Pucallpa.`;
+    `Compra ${product.name} en ${product.store.name} a través de Buleje Marketplace, Ciudad Constitución.`;
 
   const ogImage = product.ogImage || product.image;
   const pageUrl = `${base}/marketplace/${slug}/producto/${productId}`;
@@ -386,7 +386,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         {product.name} — S/{(() => {
           const n = typeof product.price === "number" ? product.price : Number(product.price);
           return Number.isFinite(n) ? n.toFixed(2) : "0.00";
-        })()} en {product.store.name} ({product.store.zone ?? "Pucallpa"})
+        })()} en {product.store.name} ({product.store.zone ?? "Ciudad Constitución"})
       </h1>
 
       {/* BreadcrumbSchema: JSON-LD para SERP + nav visible si visible=true */}

@@ -41,7 +41,7 @@ const HERO_BRAND: Portal = {
   eyebrow: "Tu mercado",
   title: "Encontrá tu bodega favorita",
   description:
-    "Cientos de tiendas de Pucallpa, una sola app. Comprá lo de siempre cerca de tu casa o descubrí algo nuevo.",
+    "Cientos de tiendas de Ciudad Constitución, una sola app. Comprá lo de siempre cerca de tu casa o descubrí algo nuevo.",
   preview: ["Pollerías", "Minimarkets", "Mayoristas", "Fruterías", "Veterinarias"],
   cta: "Ver bodegas",
   variant: "hero-brand",

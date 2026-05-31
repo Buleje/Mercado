@@ -70,7 +70,7 @@ const OFERTAS: OfertaCard[] = [
   },
   {
     id: "of-6",
-    title: "Paiche ahumado Pucallpa",
+    title: "Paiche ahumado Ciudad Constitución",
     discount: "-25%",
     subtitle: "Mercado Central",
     Illustration: PaicheEnOlla,

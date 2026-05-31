@@ -137,7 +137,7 @@ export default function StoreInfoCard({
           <MapaUcayaliAutentico size={100} strokeWidth={1.5} />
         </div>
         <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 text-center">
-          {zone ?? "Pucallpa"}, Ucayali
+          {zone ?? "Ciudad Constitución"}, Pasco
         </p>
         <a
           href={`https://www.google.com/maps/search/${encodeURIComponent(address ?? zone ?? "Pucallpa")}`}

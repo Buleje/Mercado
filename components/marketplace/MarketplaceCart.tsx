@@ -644,7 +644,7 @@ export default function MarketplaceCart({
                         type="text"
                         value={customerAddress}
                         onChange={(e) => setCustomerAddress(e.target.value)}
-                        placeholder="Ej: Jr. Los Olivos 123, Pucallpa"
+                        placeholder="Ej: Jr. Los Olivos 123, Ciudad Constitución"
                         className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-[var(--text-secondary)]"
                         maxLength={300}
                       />

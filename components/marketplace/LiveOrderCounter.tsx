@@ -77,7 +77,7 @@ export default function LiveOrderCounter({ variant = "inline", className }: Prop
           <strong className="text-[var(--text-primary)] tabular-nums">
             {stats.deliveredOrders.toLocaleString("es-PE")}
           </strong>
-          {" "}pedidos entregados esta semana en Pucallpa
+          {" "}pedidos entregados esta semana en Ciudad Constitución
           {stats.activeStores >= MIN_STORES_TO_SHOW && (
             <>
               {" · "}

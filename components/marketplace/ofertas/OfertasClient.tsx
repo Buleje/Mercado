@@ -163,7 +163,7 @@ function EmptyState() {
           Todavía no hay ofertas activas
         </h2>
         <p className="text-base text-[var(--text-secondary)] leading-relaxed mb-8 max-w-xl mx-auto">
-          Las bodegas de Pucallpa están subiendo sus descuentos. Volvé pronto — o explorá las tiendas activas y descubrí lo que ya está disponible.
+          Las bodegas de Ciudad Constitución están subiendo sus descuentos. Volvé pronto — o explorá las tiendas activas y descubrí lo que ya está disponible.
         </p>
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           <Link

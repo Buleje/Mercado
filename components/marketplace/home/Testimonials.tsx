@@ -82,7 +82,7 @@ export default function Testimonials() {
             Lo que dicen tus vecinos
           </h2>
           <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            Compradores reales de Pucallpa. Sin filtro.
+            Compradores reales de Ciudad Constitución. Sin filtro.
           </p>
         </header>
 

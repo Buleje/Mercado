@@ -26,7 +26,7 @@ export default function StoreAboutBlock({
   zone,
 }: StoreAboutBlockProps) {
   const since = foundedYear ? `desde ${foundedYear}` : "";
-  const defaultCopy = `Atendemos a las familias de ${zone ?? "Pucallpa"} con los mejores precios y productos frescos diarios${since ? " " + since : ""}. Pagás con Yape o al recibir. Tus compras llegan en 25 minutos a tu puerta.`;
+  const defaultCopy = `Atendemos a las familias de ${zone ?? "Ciudad Constitución"} con los mejores precios y productos frescos diarios${since ? " " + since : ""}. Pagás con Yape o al recibir. Tus compras llegan en 25 minutos a tu puerta.`;
 
   return (
     <div className="space-y-6">

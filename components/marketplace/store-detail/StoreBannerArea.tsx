@@ -197,7 +197,7 @@ function BulejeBrandBanner({ storeName }: { storeName: string }) {
           {storeName}
         </h2>
         <p className="mt-2 text-sm sm:text-base font-medium text-white/80 max-w-md">
-          Hecho con cariño en Pucallpa &middot; delivery rápido y atención local
+          Hecho con cariño en Ciudad Constitución &middot; delivery rápido y atención local
         </p>
       </div>
 
@@ -206,7 +206,7 @@ function BulejeBrandBanner({ storeName }: { storeName: string }) {
         aria-hidden
         className="absolute bottom-3 right-4 sm:bottom-5 sm:right-8 text-[length:var(--ts-2xs)] font-black uppercase tracking-[0.4em] text-white/40"
       >
-        Buleje &middot; Pucallpa &middot; PE
+        Buleje &middot; Ciudad Constitución &middot; PE
       </div>
     </div>
   );

@@ -163,7 +163,7 @@ export default function DireccionesPage() {
                 type="text"
                 value={form.location}
                 onChange={handleChange}
-                placeholder="Av. Lima 123, Pucallpa"
+                placeholder="Av. Lima 123, Ciudad Constitución"
                 className={cn(
                   "mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]",
                   errors.location

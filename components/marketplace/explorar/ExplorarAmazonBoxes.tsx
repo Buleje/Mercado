@@ -71,7 +71,7 @@ const BOXES: Box[] = [
     id: "envio-gratis",
     kicker: "Envio gratis",
     title: "Cerca tuyo en 25 min",
-    subtitle: "Pucallpa centro y Yarinacocha",
+    subtitle: "Ciudad Constitución y alrededores",
     href: "/marketplace/explorar?delivery=free",
     query: "limit=4",
   },

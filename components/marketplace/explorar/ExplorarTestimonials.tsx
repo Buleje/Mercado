@@ -53,7 +53,7 @@ export default function ExplorarTestimonials() {
             <span className="text-[var(--accent)]">5.4k</span> vecinos ya confían en Buleje
           </h2>
           <p className="mt-3 text-[var(--text-secondary)]">
-            Familias reales de Pucallpa contando lo que les gustó.
+            Familias reales de Ciudad Constitución contando lo que les gustó.
           </p>
         </header>
 
@@ -95,7 +95,7 @@ export default function ExplorarTestimonials() {
                   <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">
                     {r.name}
                   </p>
-                  <p className="text-xs text-[var(--text-tertiary)]">{r.zone}, Pucallpa</p>
+                  <p className="text-xs text-[var(--text-tertiary)]">{r.zone}, Ciudad Constitución</p>
                 </div>
               </div>
             </article>

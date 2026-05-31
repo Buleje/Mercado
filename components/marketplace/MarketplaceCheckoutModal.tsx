@@ -863,7 +863,7 @@ export default function MarketplaceCheckoutModal({
                           type="text"
                           value={address}
                           onChange={(e) => setAddress(e.target.value)}
-                          placeholder="Ej: Jr. Los Olivos 123, Pucallpa"
+                          placeholder="Ej: Jr. Los Olivos 123, Ciudad Constitución"
                           className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                           maxLength={300}
                         />

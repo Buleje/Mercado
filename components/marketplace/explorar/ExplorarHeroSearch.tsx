@@ -109,7 +109,7 @@ export default function ExplorarHeroSearch() {
 
         {/* ── Title + sub ───────────────────────────────────── */}
         <h1 className="text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.05] sm:text-5xl lg:text-6xl max-w-3xl">
-          Todo Pucallpa,{" "}
+          Todo Ciudad Constitución,{" "}
           <span className="text-[var(--accent)]">en un toque.</span>
         </h1>
 

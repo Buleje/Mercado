@@ -2,9 +2,9 @@
   "identity": {
     "name": "Buleje",
     "tagline": "El marketplace de tu barrio",
-    "description": "Conectamos vecinos con bodegas, restaurantes y servicios locales en Pucallpa. Pedí en minutos, pagá al recibir.",
+    "description": "Conectamos vecinos con bodegas, restaurantes y servicios locales en Ciudad Constitución. Pedí en minutos, pagá al recibir.",
     "since": "2024",
-    "city": "Pucallpa",
+    "city": "Ciudad Constitución",
     "country": "Perú"
   },
   "logos": {
@@ -29,7 +29,7 @@
     "email": "hola@buleje.com",
     "phone": "+51 929 340 532",
     "whatsapp": "+51 929 340 532",
-    "address": "Pucallpa, Ucayali — Perú",
+    "address": "Ciudad Constitución, Oxapampa, Pasco — Perú",
     "supportHours": "Lun a Sáb · 8:00 a 22:00"
   },
   "socials": {
@@ -40,10 +40,10 @@
     "youtube": ""
   },
   "seo": {
-    "metaTitle": "Buleje — Marketplace local de Pucallpa",
+    "metaTitle": "Buleje — Marketplace local de Ciudad Constitución",
     "metaDescription": "Pedí a tu bodega, restaurante o farmacia favorita y recibí en 25 minutos. Pago al recibir, sin tarjeta.",
     "ogTitle": "Buleje · El marketplace de tu barrio",
-    "ogDescription": "Pucallpa entera en una app. Bodegas, comida y delivery rápido."
+    "ogDescription": "Ciudad Constitución entera en una app. Bodegas, comida y delivery rápido."
   },
   "legal": {
     "legalName": "Buleje S.A.C.",

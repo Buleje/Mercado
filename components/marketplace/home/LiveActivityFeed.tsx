@@ -29,7 +29,7 @@ const EVENTS: ActivityEvent[] = [
   { id: "e1", initial: "M", name: "Maria", verb: "compro", target: "Paiche fresco (2 kg)", zone: "Yarinacocha", agoSec: 28 },
   { id: "e2", initial: "J", name: "Juan", verb: "suscribio a", target: "Arroz Costeno 5 kg (Bodega al Mes)", zone: "Callera", agoSec: 52 },
   { id: "e3", initial: "R", name: "Rosa", verb: "califico 5 estrellas a", target: "Bodega Don Pepe", zone: "Manantay", agoSec: 74 },
-  { id: "e4", initial: "C", name: "Carlos", verb: "compro", target: "Tacacho con cecina", zone: "Pucallpa centro", agoSec: 96 },
+  { id: "e4", initial: "C", name: "Carlos", verb: "compro", target: "Tacacho con cecina", zone: "Ciudad Constitución centro", agoSec: 96 },
   { id: "e5", initial: "L", name: "Lucia", verb: "canjeo cupon en", target: "Frutas de la Selva", zone: "Callera", agoSec: 118 },
   { id: "e6", initial: "A", name: "Andres", verb: "activo Socio Buleje", target: "(S/ 180/ano estimados)", zone: "Yarinacocha", agoSec: 142 },
 ];
@@ -72,7 +72,7 @@ export default function LiveActivityFeed() {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-500)]" />
           </span>
           <Kicker id="live-activity-title" className="text-[var(--text-tertiary)]">
-            Actividad en vivo en Pucallpa
+            Actividad en vivo en Ciudad Constitución
           </Kicker>
         </div>
 

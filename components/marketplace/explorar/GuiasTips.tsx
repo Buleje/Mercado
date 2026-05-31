@@ -45,7 +45,7 @@ const GUIAS: Guia[] = [
   {
     id: "recetas-pucallpa",
     kicker: "Regional",
-    title: "Recetas caseras de Pucallpa",
+    title: "Recetas caseras de Ciudad Constitución",
     summary: "Tacacho, juane, paiche a la jun y los clasicos que toda cocina amazonica deberia dominar.",
     readingTime: "9 min",
     Illustration: PaicheEnOlla,

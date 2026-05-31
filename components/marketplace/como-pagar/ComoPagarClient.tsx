@@ -211,7 +211,7 @@ export default function ComoPagarClient() {
         <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-9">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-7">
             <div className="max-w-2xl">
-              <Eyebrow>El más usado en Pucallpa</Eyebrow>
+              <Eyebrow>El más usado en Ciudad Constitución</Eyebrow>
               <h2 className={H2_CLS}>
                 Yape: <span className="italic font-serif text-[var(--accent)]">instantáneo</span> y sin comisión.
               </h2>

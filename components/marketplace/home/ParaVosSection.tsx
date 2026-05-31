@@ -164,7 +164,7 @@ export default function ParaVosSection() {
       title: "En tu zona",
       subtitle: customer?.location
         ? `Popular en ${customer.location}`
-        : "Popular en Pucallpa",
+        : "Popular en Ciudad Constitución",
       products: RECO_ZONA,
     },
   ];

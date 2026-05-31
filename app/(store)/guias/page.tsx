@@ -91,7 +91,7 @@ const BodegueroCelebrando = dynamic(
 export const metadata: Metadata = {
   title: "Guías y Consejos — Buleje",
   description:
-    "Guías prácticas para comprar mejor, cocinar con ingredientes amazónicos, ahorrar con cupones y gestionar tu bodega. Contenido de Pucallpa, para Pucallpa.",
+    "Guías prácticas para comprar mejor, cocinar con ingredientes amazónicos, ahorrar con cupones y gestionar tu bodega. Contenido de Ciudad Constitución, para Ciudad Constitución.",
   alternates: { canonical: "https://www.buleje.pe/guias" },
   openGraph: {
     title: "Guías y Consejos — Buleje",
@@ -256,7 +256,7 @@ export default async function GuiasPage({ searchParams }: GuiasPageProps) {
                 <Kicker className="mb-3 block">GUÍAS · CONTENIDO</Kicker>
                 <PageTitle className="mb-3">Aprende a comprar mejor</PageTitle>
                 <BodyText className="text-base text-[var(--text-secondary)] leading-relaxed">
-                  Consejos, trucos y guías para aprovechar al máximo tu bodega. Contenido real de Pucallpa, sin relleno.
+                  Consejos, trucos y guías para aprovechar al máximo tu bodega. Contenido real de Ciudad Constitución, sin relleno.
                 </BodyText>
               </div>
 

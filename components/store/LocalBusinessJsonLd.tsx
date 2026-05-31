@@ -6,18 +6,19 @@
 
 import { SettingsDB } from "@/lib/db/settings.db";
 import { headers } from "next/headers";
+import { BRAND_GEO } from "@/lib/geo";
 
 export default async function LocalBusinessJsonLd() {
   // Brandon 2026-05-20 v9 audit P0: fallback "Mi Tienda" → "Buleje".
   // Si SettingsDB falla en marketplace publico, mostrabamos "Mi Tienda"
   // generico — perjudica branding en Google Knowledge Graph.
   let name = "Buleje";
-  let description = "Marketplace de bodegas, restaurantes y tiendas con delivery en Pucallpa.";
+  let description = `Marketplace de bodegas, restaurantes y tiendas con delivery en ${BRAND_GEO.city}.`;
   let phone = "";
   let address = "";
   let logo = "/brand/buleje-logo.png";
-  let lat = -8.3791;
-  let lon = -74.5539;
+  let lat: number = BRAND_GEO.lat;
+  let lon: number = BRAND_GEO.lng;
 
   try {
     const hdrs = await headers();
@@ -53,10 +54,9 @@ export default async function LocalBusinessJsonLd() {
     address: {
       "@type": "PostalAddress",
       ...(address ? { streetAddress: address } : {}),
-      addressLocality: "Pucallpa",
-      addressRegion: "Ucayali",
-      postalCode: "25001",
-      addressCountry: "PE",
+      addressLocality: BRAND_GEO.city,
+      addressRegion: BRAND_GEO.region,
+      addressCountry: BRAND_GEO.countryCode,
     },
     geo: {
       "@type": "GeoCoordinates",
@@ -65,7 +65,7 @@ export default async function LocalBusinessJsonLd() {
     },
     areaServed: {
       "@type": "City",
-      name: "Pucallpa",
+      name: BRAND_GEO.city,
     },
     openingHoursSpecification: [
       {

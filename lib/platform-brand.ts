@@ -1,6 +1,7 @@
 import "server-only";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { BRAND_GEO } from "@/lib/geo";
 
 /**
  * Platform Brand — la marca de la plataforma Buleje (no de las tiendas).
@@ -95,9 +96,9 @@ const DEFAULTS: PlatformBrand = {
   identity: {
     name: "Buleje",
     tagline: "El marketplace de tu barrio",
-    description: "Marketplace local de Pucallpa.",
+    description: `Marketplace local de ${BRAND_GEO.city}.`,
     since: "2024",
-    city: "Pucallpa",
+    city: BRAND_GEO.city,
     country: "Perú",
   },
   logos: { logoLight: null, logoDark: null, logoSquare: null, favicon: null, ogImage: null },

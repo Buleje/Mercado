@@ -89,7 +89,7 @@ export default function RecetasHero() {
           </h1>
 
           <p className="mt-4 sm:mt-6 text-base sm:text-lg lg:text-xl text-[var(--text-secondary)] leading-relaxed max-w-2xl">
-            Recetas peruanas con ingredientes que encontras en bodegas de Pucallpa. Ceviche, lomo saltado, juane y mas. Compra todo en un toque.
+            Recetas peruanas con ingredientes que encontras en bodegas de Ciudad Constitución. Ceviche, lomo saltado, juane y mas. Compra todo en un toque.
           </p>
         </div>
 

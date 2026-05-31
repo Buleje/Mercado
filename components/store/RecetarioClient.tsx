@@ -782,7 +782,7 @@ export default function RecetarioClient() {
             Todos los ingredientes en un solo lugar
           </h2>
           <p className="text-[var(--text-tertiary)] mb-6 max-w-md mx-auto">
-            Buleje tiene todo lo que necesitas para preparar tus recetas favoritas. Delivery en Pucallpa.
+            Buleje tiene todo lo que necesitas para preparar tus recetas favoritas. Delivery en Ciudad Constitución.
           </p>
           <Link
             href="/marketplace"

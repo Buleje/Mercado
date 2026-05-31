@@ -105,7 +105,7 @@ const faqJsonLd = {
 const howToJsonLd = generateHowToLD({
   name: "Cómo comprar en Buleje",
   description:
-    "Pasos para hacer un pedido en el marketplace de bodegas de Pucallpa y pagar con Yape, Plin o efectivo.",
+    "Pasos para hacer un pedido en el marketplace de bodegas de Ciudad Constitución y pagar con Yape, Plin o efectivo.",
   steps: [
     { name: "Buscá tu bodega", text: "Entrá a buleje.pe y buscá una tienda por nombre, categoría o zona." },
     { name: "Armá tu pedido", text: "Agregá productos al carrito; ves el total real en vivo, sin sorpresas." },

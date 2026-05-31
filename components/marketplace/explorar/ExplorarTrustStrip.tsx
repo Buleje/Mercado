@@ -17,7 +17,7 @@ interface TrustItem {
 }
 
 const ITEMS: TrustItem[] = [
-  { icon: Store, big: "200+", label: "Bodegas activas", sub: "En toda Pucallpa" },
+  { icon: Store, big: "200+", label: "Bodegas activas", sub: "En toda Ciudad Constitución" },
   { icon: Users, big: "5.4k", label: "Vecinos felices", sub: "Este mes" },
   { icon: Truck, big: "25 min", label: "Promedio entrega", sub: "Puerta a puerta" },
   { icon: Wallet, big: "Yape · Plin", label: "Pago seguro", sub: "Efectivo también" },

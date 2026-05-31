@@ -97,7 +97,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${receta.nombre} — Receta peruana | Buleje`;
   const description =
     receta.descripcion ??
-    `Aprende a preparar ${receta.nombre}. Receta paso a paso con ingredientes que encontras en bodegas de Pucallpa.`;
+    `Aprende a preparar ${receta.nombre}. Receta paso a paso con ingredientes que encontras en bodegas de Ciudad Constitución.`;
   const url = `${BASE_URL}/marketplace/recetas/${receta.id}`;
 
   return {
@@ -176,7 +176,7 @@ function buildRecipeJsonLd(receta: RecetaSEO): Record<string, unknown> {
       ? { prepTime: `PT${(receta as { prepMinutos?: number }).prepMinutos}M` }
       : {}),
     totalTime: receta.tiempoMinutos ? `PT${receta.tiempoMinutos}M` : undefined,
-    keywords: [receta.nombre, "receta peruana", "Pucallpa", receta.categoria].filter(Boolean).join(", "),
+    keywords: [receta.nombre, "receta peruana", "Ciudad Constitución", receta.categoria].filter(Boolean).join(", "),
     recipeIngredient: ingredients.length > 0 ? ingredients : undefined,
     recipeInstructions: steps.length > 0 ? steps : undefined,
     author: {

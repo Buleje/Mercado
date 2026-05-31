@@ -74,7 +74,7 @@ export default function CategoriasShowcase() {
             Categorías destacadas
           </h2>
           <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            Lo más buscado por las familias de Pucallpa.
+            Lo más buscado por las familias de Ciudad Constitución.
           </p>
         </header>
 

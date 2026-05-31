@@ -122,7 +122,7 @@ export default function MarketplaceJungleProducts() {
   return (
     <MarketplaceSection
       id="selva"
-      kicker="Pucallpa · Ucayali"
+      kicker="Ciudad Constitución · Pasco"
       title="Productos de la selva"
       subtitle="Del árbol al mercado: frutos, granos y especias cultivadas por productores de Ucayali."
       actions={

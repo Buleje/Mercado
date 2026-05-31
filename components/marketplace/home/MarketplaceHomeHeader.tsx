@@ -25,13 +25,13 @@ export default function MarketplaceHomeHeader({
         en cel para ir al grano; dejamos solo un <h1> sr-only para no perder el
         anclaje SEO. En sm+ el header completo sigue visible. */}
     <h1 className="sm:hidden sr-only">
-      Tus bodegas y tiendas favoritas de Pucallpa, a un toque — delivery rápido
-      con Yape, tarjeta o efectivo
+      Tus bodegas y tiendas favoritas de Ciudad Constitución, a un toque —
+      delivery rápido con Yape, tarjeta o efectivo
     </h1>
     <header className="hidden sm:block border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-          Marketplace · Pucallpa
+          Marketplace · Ciudad Constitución
         </p>
         <h1 className="mt-2 text-2xl sm:text-4xl lg:text-5xl font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           Tus bodegas y tiendas favoritas,{" "}

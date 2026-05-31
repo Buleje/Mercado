@@ -383,8 +383,8 @@ export default function SearchFilters({
         ))}
       </FilterGroup>
 
-      {/* Zona Pucallpa */}
-      <FilterGroup title="Zona Pucallpa">
+      {/* Zona Ciudad Constitución */}
+      <FilterGroup title="Zona Ciudad Constitución">
         <RadioRow
           label="Todas"
           checked={filters.zone === null}

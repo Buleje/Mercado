@@ -317,7 +317,7 @@ export default function StoreRegistrationForm() {
               <span className="text-[var(--accent)]">5 minutos</span>
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-[var(--text-secondary)] leading-relaxed">
-              Vendé tus productos a toda Pucallpa desde el marketplace más grande de la ciudad.
+              Vendé tus productos a toda Ciudad Constitución desde el marketplace más grande de la ciudad.
               <strong className="font-bold text-[var(--text-primary)]"> Sin tarjeta. Sin permanencia.</strong>
             </p>
 

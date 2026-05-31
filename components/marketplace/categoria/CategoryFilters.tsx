@@ -384,7 +384,7 @@ export default function CategoryFilters({
       </FilterGroup>
 
       {/* Zona */}
-      <FilterGroup title="Zona Pucallpa">
+      <FilterGroup title="Zona Ciudad Constitución">
         <RadioRow
           label="Todas"
           checked={filters.zone === null}

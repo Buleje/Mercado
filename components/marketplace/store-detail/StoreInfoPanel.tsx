@@ -61,7 +61,7 @@ export default function StoreInfoPanel({
 }: StoreInfoPanelProps) {
   const ratingLabel = rating > 0 ? rating.toFixed(1) : null;
   const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent(
-    address ?? `${name} ${zone ?? "Pucallpa"}`,
+    address ?? `${name} ${zone ?? "Ciudad Constitución"}`,
   )}`;
   const waLink = whatsappNumber
     ? `https://wa.me/51${whatsappNumber.replace(/\D/g, "")}`
@@ -168,7 +168,7 @@ export default function StoreInfoPanel({
             Ubicación
           </p>
           <p className="text-sm font-medium text-[var(--text-primary)]">
-            {address ?? zone ?? "Pucallpa, Ucayali"}
+            {address ?? zone ?? "Ciudad Constitución, Pasco"}
           </p>
           <Link
             href={mapsHref}

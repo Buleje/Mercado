@@ -21,7 +21,7 @@ interface TrustItem {
 }
 
 const TRUST_ITEMS: TrustItem[] = [
-  { icon: Clock, label: "25 min", sub: "Delivery promedio en Pucallpa" },
+  { icon: Clock, label: "25 min", sub: "Delivery promedio en Ciudad Constitución" },
   { icon: HandCoins, label: "Pago en casa", sub: "Yape · Plin · Efectivo al recibir" },
   { icon: Leaf, label: "Fresco diario", sub: "Reposición cada mañana" },
   { icon: MessageCircle, label: "WhatsApp", sub: "Atención directa al instante" },

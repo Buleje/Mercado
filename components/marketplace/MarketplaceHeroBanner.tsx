@@ -43,7 +43,7 @@ function getDaypartSlide(): Slide {
   }
   if (h >= 13 && h < 18) {
     return {
-      eyebrow: "Buenas tardes · Pucallpa",
+      eyebrow: "Buenas tardes · Ciudad Constitución",
       title: "Lo que necesitás esta tarde,",
       titleAccent: "directo a tu puerta",
       subtitle: "Snacks, bebidas frías, helados y más. Delivery 30 min promedio.",
@@ -74,7 +74,7 @@ function getDaypartSlide(): Slide {
 
 const STATIC_SLIDES: Slide[] = [
   {
-    eyebrow: "Pucallpa · Ucayali",
+    eyebrow: "Ciudad Constitución · Pasco",
     title: "La bodega de tu barrio,",
     titleAccent: "ahora en tu bolsillo",
     subtitle:
@@ -87,7 +87,7 @@ const STATIC_SLIDES: Slide[] = [
     title: "Açaí, camu camu, aguaje —",
     titleAccent: "directo del productor",
     subtitle:
-      "Sabores de Ucayali seleccionados de familias locales. Entrega el mismo día.",
+      "Sabores de la selva central seleccionados de familias locales. Entrega el mismo día.",
     cta: "Ver la selva",
     href: "#selva",
   },
@@ -106,7 +106,7 @@ const STATIC_SLIDES: Slide[] = [
  * /tiendas reflejaba 6 reales (designer audit P0 inconsistencia de datos).
  * Ahora claims cualitativos verificables. */
 const HERO_STATS = [
-  { Icon: Store, value: "Pucallpa", label: "+ Ciudad Constitución" },
+  { Icon: Store, value: "Ciudad Constitución", label: "+ Oxapampa · Pasco" },
   { Icon: Truck, value: "Yape · Plin", label: "o efectivo al recibir" },
   { Icon: ShoppingBag, value: "WhatsApp", label: "soporte en tu zona" },
 ];

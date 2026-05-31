@@ -131,7 +131,7 @@ export default function SeasonalProducts() {
                 {temporada.nombre}
               </h2>
               <p className="text-xs text-[var(--text-tertiary)]">
-                Productos de temporada en Pucallpa
+                Productos de temporada en Ciudad Constitución
               </p>
             </div>
           </div>

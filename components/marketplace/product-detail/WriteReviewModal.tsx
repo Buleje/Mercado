@@ -181,7 +181,7 @@ export default function WriteReviewModal({
               ¡Gracias por tu reseña!
             </h3>
             <p className="mt-2 text-base text-[var(--text-secondary)] max-w-md mx-auto">
-              Tu opinión ayuda a otros vecinos de Pucallpa a comprar mejor.
+              Tu opinión ayuda a otros vecinos de Ciudad Constitución a comprar mejor.
             </p>
             <button
               type="button"

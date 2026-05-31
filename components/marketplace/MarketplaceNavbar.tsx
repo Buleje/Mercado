@@ -621,7 +621,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 storesOnly={isTiendasOnly}
                 placeholder={
                   isTiendasOnly
-                    ? "Buscar producto o tienda en Pucallpa..."
+                    ? "Buscar producto o tienda en Ciudad Constitución..."
                     : t("nav.searchPlaceholder")
                 }
               />

@@ -47,7 +47,7 @@ export default function RecetasPage() {
           search intent ("receta peruana fácil", "ceviche pucallpa", etc.).
         */}
         <h1 className="sr-only">
-          Recetas peruanas con ingredientes de bodega — Recetario Buleje Pucallpa
+          Recetas peruanas con ingredientes de bodega — Recetario Buleje Ciudad Constitución
         </h1>
         <RecetarioClient />
       </main>

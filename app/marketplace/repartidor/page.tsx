@@ -301,7 +301,7 @@ export default function RepartidorPage() {
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-4 h-9 text-sm font-extrabold">
               <LiveSignal className="h-2.5 w-2.5" active />
-              Buleje · Pucallpa
+              Buleje · Ciudad Constitución
             </span>
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[1.05] tracking-tight">
               Reparte en tu barrio,<br />
@@ -483,7 +483,7 @@ export default function RepartidorPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
-                      Cualquier zona de Pucallpa
+                      Cualquier zona de Ciudad Constitución
                     </p>
                     <p className="text-sm font-semibold text-[var(--text-secondary)] mt-0.5">
                       Recibe pedidos de toda la ciudad

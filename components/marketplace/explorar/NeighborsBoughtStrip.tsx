@@ -125,7 +125,7 @@ export default function NeighborsBoughtStrip() {
       <ExplorarSectionHeader
         kicker="Tendencias"
         title="Tus vecinos compran"
-        subtitle="Lo que mas se pide en Pucallpa esta semana"
+        subtitle="Lo que mas se pide en Ciudad Constitución esta semana"
         ctaLabel="Ver top hoy"
         ctaHref="/marketplace/explorar?ranking=top"
       />

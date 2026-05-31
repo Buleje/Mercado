@@ -191,7 +191,7 @@ export default function BodegasTrendingRow() {
       <ExplorarSectionHeader
         kicker="Bodegas activas"
         title="Tendencia esta semana"
-        subtitle="Las tiendas con más ventas en Pucallpa"
+        subtitle="Las tiendas con más ventas en Ciudad Constitución"
         ctaLabel="Ver todas las bodegas"
         ctaHref="/tiendas"
       />

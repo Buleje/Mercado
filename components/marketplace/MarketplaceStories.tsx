@@ -60,7 +60,7 @@ const STORY_PRESENTATIONS: Record<string, { title: string; slides: StorySlide[] 
       {
         id: "o3",
         headline: "Envío gratis desde S/50",
-        subheadline: "En todos los pedidos del marketplace Pucallpa.",
+        subheadline: "En todos los pedidos del marketplace Ciudad Constitución.",
         bg: "from-zinc-900 to-zinc-800",
         ctaLabel: "Empezar",
         ctaHref: "/marketplace",

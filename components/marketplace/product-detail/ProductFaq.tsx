@@ -21,7 +21,7 @@ const MOCK_FAQ: FaqItem[] = [
     id: "f1",
     question: "¿Cuánto demora la entrega?",
     answer:
-      "Generalmente entre 20 y 35 minutos dependiendo de tu ubicación en Pucallpa. El repartidor te confirmará el tiempo estimado al aceptar el pedido.",
+      "Generalmente entre 20 y 35 minutos dependiendo de tu ubicación en Ciudad Constitución. El repartidor te confirmará el tiempo estimado al aceptar el pedido.",
   },
   {
     id: "f2",

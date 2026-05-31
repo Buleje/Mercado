@@ -13,7 +13,7 @@ export interface ProductDescriptionProps {
 export function ProductDescription({ description, productName }: ProductDescriptionProps) {
   const text =
     description ||
-    `${productName} es un producto de calidad seleccionado directamente por las bodegas locales de Pucallpa. Fresco, de origen local y disponible para entrega rápida en tu zona.`;
+    `${productName} es un producto de calidad seleccionado directamente por las bodegas locales de Ciudad Constitución. Fresco, de origen local y disponible para entrega rápida en tu zona.`;
 
   return (
     <section

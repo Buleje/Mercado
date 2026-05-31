@@ -72,7 +72,7 @@ export default function DealsAlert() {
               </li>
               <li className="inline-flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" strokeWidth={2.5} aria-hidden />
-                Solo bodegas verificadas de Pucallpa
+                Solo bodegas verificadas de Ciudad Constitución
               </li>
             </ul>
           </div>

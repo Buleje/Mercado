@@ -55,7 +55,7 @@ export async function generateMetadata(props: {
       "bodegas online",
       "minimarkets delivery",
       "comprar abarrotes online",
-      "delivery Pucallpa",
+      "delivery Ciudad Constitución",
       "tiendas cerca de mí",
       "pagar con Yape",
       ...(zona ? [`bodegas ${zona}`, `delivery ${zona}`] : []),
