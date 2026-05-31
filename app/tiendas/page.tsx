@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import TiendasClient from "./TiendasClient";
+import { JoinUsSection } from "@/components/marketing/JoinUsSection";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
 import { getStoreShowcaseByCategory } from "@/lib/db/marketplace-featured.db";
 import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
@@ -347,18 +347,14 @@ export default async function TiendasPage() {
         >
           Delivery de bodegas, restaurantes y farmacias en {BRAND_GEO.city}
         </h2>
-        <div className="max-w-3xl space-y-4 text-base leading-relaxed text-[var(--text-secondary)]">
+        <div className="max-w-3xl text-base leading-relaxed text-[var(--text-secondary)]">
           <p>
             Buleje reúne las bodegas, minimarkets, restaurantes, pizzerías y
             farmacias de {BRAND_GEO.city} ({BRAND_GEO.province}, {BRAND_GEO.region})
             en un solo lugar. Pedís online desde tu celular y la tienda recibe tu
             pedido al instante por WhatsApp, lo prepara y te lo lleva a tu puerta —
-            normalmente en 25 a 35 minutos según tu zona.
-          </p>
-          <p>
-            Pagás como te quede cómodo: Yape, Plin, efectivo o tarjeta al recibir,
-            sin adelantar nada. Cada negocio define su propio costo de envío y lo
-            ves antes de confirmar, así no hay sorpresas.
+            normalmente en 25 a 35 minutos según tu zona. Pagás con Yape, Plin,
+            efectivo o tarjeta al recibir, sin adelantar nada.
           </p>
         </div>
 
@@ -386,20 +382,13 @@ export default async function TiendasPage() {
           ))}
         </ul>
 
-        {/* CTA dueño — copy local + alta de tienda. */}
-        <p className="mt-8 max-w-3xl text-base leading-relaxed text-[var(--text-secondary)]">
-          Somos un marketplace local: detrás de cada pedido hay un vecino atendiendo
-          a otro vecino. Empezamos en {BRAND_GEO.city} y de a poco sumamos más
-          negocios de {BRAND_GEO.province} y {BRAND_GEO.region}. ¿Tenés una tienda?{" "}
-          <Link
-            href="/abrir-tienda"
-            className="font-bold text-[var(--accent)] hover:underline"
-          >
-            Publicá tu catálogo gratis
-          </Link>{" "}
-          y llegá a más clientes de tu barrio.
-        </p>
       </section>
+
+      {/* Trabajá con nosotros — reclutamiento (tiendas/comercios/repartidores),
+          mismo componente que la home (single source). Brandon 2026-05-31:
+          reemplaza el CTA de dueño que vivía acá; el funnel de vendors se
+          centraliza en este bloque. */}
+      <JoinUsSection />
     </>
   );
 }

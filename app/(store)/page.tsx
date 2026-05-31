@@ -33,11 +33,11 @@ const MarketplaceTopToday = dynamic(
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
+import { JoinUsSection } from "@/components/marketing/JoinUsSection";
 import {
   Store,
   ArrowUpRight,
   Bike,
-  Building2,
   Sparkles,
   Star,
   UtensilsCrossed,
@@ -52,7 +52,8 @@ import {
   Smartphone,
   ShoppingBag,
   MapPin,
-  Check,
+  ChevronDown,
+  HelpCircle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -199,6 +200,33 @@ async function getTopStores(): Promise<TopStore[]> {
   }));
 }
 
+// ── FAQ — fuente única de verdad ────────────────────────────────────────────
+// Audit SEO 2026-05-31: estas preguntas alimentan DOS cosas a la vez:
+//   1. El FAQPage JSON-LD (Rich Results de Google).
+//   2. La sección <HomeFaqSection /> VISIBLE al final de la home.
+// Google exige que el contenido del FAQPage schema sea visible en la página
+// (si es solo schema = "content mismatch", no da rich result y arriesga acción
+// manual). Tener una sola lista evita que el schema y el texto se desincronicen.
+// Copy real del marketplace + geo de lanzamiento (Ciudad Constitución).
+const HOME_FAQS: { q: string; a: string }[] = [
+  {
+    q: "¿Cómo hago un pedido en Buleje?",
+    a: "Elegís tu tienda en /tiendas, seleccionás los productos y pagás con Yape, Plin o efectivo. Tu pedido llega en 25–35 minutos.",
+  },
+  {
+    q: `¿Buleje hace delivery en ${BRAND_GEO.city}?`,
+    a: `Sí. Hacemos delivery en ${BRAND_GEO.city} y zonas cercanas de ${BRAND_GEO.province} (${BRAND_GEO.region}). Tenemos bodegas, restaurantes, farmacias y más.`,
+  },
+  {
+    q: "¿Puedo pagar con Yape o Plin en Buleje?",
+    a: "Sí, aceptamos Yape, Plin y efectivo contra entrega en todos los pedidos del marketplace.",
+  },
+  {
+    q: "¿Cuánto tarda el delivery de Buleje?",
+    a: "El tiempo estimado es de 25 a 35 minutos según tu ubicación y la tienda elegida. Las tiendas con horario abierto entregan el mismo día.",
+  },
+];
+
 // ── JSON-LD B2C marketplace ──────────────────────────────────────────────────
 async function BulejeJsonLd() {
   // Audit 2026-05-17 02-P2-2: storeCount ya no se usa aquí (aggregateRating
@@ -247,45 +275,17 @@ async function BulejeJsonLd() {
   };
 
   // Brandon 2026-05-20 v10 audit P1: FAQPage schema para Rich Results
-  // (accordeon de preguntas directo en SERP). Las respuestas son del
-  // copy real del marketplace, no inventadas.
+  // (accordeon de preguntas directo en SERP). Audit SEO 2026-05-31: ahora
+  // derivado de HOME_FAQS (single source of truth) para mantener el schema
+  // en sync con la sección <HomeFaqSection /> VISIBLE en la página.
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "¿Cómo hago un pedido en Buleje?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Elegís tu tienda en /tiendas, seleccionás los productos y pagás con Yape, Plin o efectivo. Tu pedido llega en 25–35 minutos.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: `¿Buleje hace delivery en ${BRAND_GEO.city}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Sí. Hacemos delivery en ${BRAND_GEO.city} y zonas cercanas de ${BRAND_GEO.province} (${BRAND_GEO.region}). Tenemos bodegas, restaurantes, farmacias y más.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Puedo pagar con Yape o Plin en Buleje?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Sí, aceptamos Yape, Plin y efectivo contra entrega en todos los pedidos del marketplace.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Cuánto tarda el delivery de Buleje?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "El tiempo estimado es de 25 a 35 minutos según tu ubicación y la tienda elegida. Las tiendas con horario abierto entregan el mismo día.",
-        },
-      },
-    ],
+    mainEntity: HOME_FAQS.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
   };
 
   // SEO local (2026-05-26): LocalBusiness con geo + horario + contacto.
@@ -330,6 +330,23 @@ async function BulejeJsonLd() {
       },
     ],
     sameAs: ["https://instagram.com/buleje"],
+  };
+
+  // BreadcrumbList raíz (audit SEO 2026-05-31). La home es el nivel 1 de la
+  // jerarquía; declararlo da consistencia con /tiendas, storefronts y PDPs que
+  // ya emiten su propio breadcrumb, y Google lo usa para entender el árbol del
+  // sitio. Una sola entrada "Inicio" es válida y no resta.
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Inicio",
+        item: "https://www.buleje.pe",
+      },
+    ],
   };
 
   // ItemList de tiendas destacadas reales (solo si hay datos).
@@ -404,6 +421,10 @@ async function BulejeJsonLd() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbSchema) }}
       />
       {itemListSchema && (
         <script
@@ -1077,9 +1098,15 @@ async function TopStoresSection() {
             aria-label={`${destacadas.length} tiendas destacadas`}
             className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6"
           >
-            {destacadas.map((s, idx) => (
+            {destacadas.map((s) => (
               <li key={s.id}>
-                <FeaturedStoreCard s={s} priority={idx < 3} />
+                {/* Audit SEO 2026-05-31: SIN priority. Esta sección "Tiendas
+                    destacadas" va DEBAJO del fold (hero + categorías arriba),
+                    así que forzar priority en sus 3-6 imágenes (banner+logo)
+                    competía por ancho de banda con el LCP real del hero y las
+                    hacía cargar eager. Sin priority, next/image las lazy-loadea
+                    (loading="lazy") y mejora el LCP. */}
+                <FeaturedStoreCard s={s} />
               </li>
             ))}
           </ul>
@@ -1164,188 +1191,71 @@ function EmptyStoresPlaceholder() {
   );
 }
 
-// ── 4. Trabajá con nosotros — paleta de marca, sin acentos azul/naranja ──────
-// Brandon mayo 14 2026 v2: rediseñado con solo --accent + neutros. Antes
-// usaba #0ea5e9 y #f97316 que rompían visualmente con el resto del proyecto.
-// Ahora layout más editorial: hero card grande arriba + 3 sub-cards abajo.
-
-interface JoinCard {
-  href: string;
-  eyebrow: string;
-  title: string;
-  desc: string;
-  /** Beneficio principal en chip — gancho de un vistazo. */
-  highlight: string;
-  /** 3 beneficios concretos (lista con check) — dan cuerpo y vencen objeciones. */
-  benefits: [string, string, string];
-  cta: string;
-  Icon: LucideIcon;
-}
-
-const JOIN_CARDS: JoinCard[] = [
-  {
-    href: "/negocios",
-    eyebrow: "Para tiendas",
-    title: "Registrá tu tienda",
-    desc: "Bodega, minimarket o tienda de barrio — online sin que te toque la tecnología.",
-    highlight: "0% comisión · 90 días",
-    benefits: [
-      "Catálogo y horarios listos en 5 minutos",
-      "Cobrás con Yape, Plin, tarjeta o efectivo",
-      "Pedidos directos a tu WhatsApp",
-    ],
-    cta: "Abrir mi tienda",
-    Icon: Store,
-  },
-  {
-    href: "/negocios?tipo=comercio",
-    eyebrow: "Para comercios",
-    title: "Registrá tu comercio",
-    desc: "Restaurante, farmacia o licorería — llegá a los vecinos que ya compran en Buleje.",
-    highlight: "Más clientes hoy",
-    benefits: [
-      "Aparecés en el buscador y el mapa",
-      "Sin pagar publicidad para empezar",
-      "Tracking de entrega en vivo",
-    ],
-    cta: "Registrar comercio",
-    Icon: Building2,
-  },
-  {
-    href: "/marketplace/repartidor",
-    eyebrow: "Para repartidores",
-    title: "Unite como repartidor",
-    desc: "Generá ingresos extra con tu moto, en los horarios que vos elijas.",
-    highlight: "100% de las propinas",
-    benefits: [
-      "Vos elegís cuándo y cuánto trabajás",
-      "Te quedás el 100% de las propinas",
-      "Pagos rápidos y seguros",
-    ],
-    cta: "Quiero repartir",
-    Icon: Bike,
-  },
-];
-
-function JoinUsSection() {
-  return (
-    <section
-      aria-label="Sumate a Buleje"
-      className="relative overflow-hidden bg-[var(--surface-canvas)] border-t border-[var(--rule-soft)] py-16 sm:py-24"
-    >
-      <div
-        aria-hidden
-        className="hidden sm:block pointer-events-none absolute -top-32 right-1/4 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="hidden sm:block pointer-events-none absolute -bottom-32 left-1/4 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
-      />
-
-      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header editorial */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
-            <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
-            Sumate a Buleje
-            <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
-          </p>
-          <h2 className="text-3xl sm:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
-            Trabajá con{" "}
-            <span className="italic font-serif text-[var(--accent)]">nosotros</span>
-          </h2>
-          <p className="mt-3 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
-            Vendé, repartí o creá tu negocio digital. Buleje está armando la
-            red local de {BRAND_GEO.city}.
-          </p>
-        </div>
-
-        {/* 3 cards editorial — todas con paleta accent + neutros */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-          {JOIN_CARDS.map((c, i) => {
-            const Icon = c.Icon;
-            // Card central destacada con bg accent-soft, las otras con bg raised
-            const isFeatured = i === 0;
-            return (
-              <Link
-                key={c.href}
-                href={c.href}
-                className={`group relative flex flex-col rounded-3xl border-2 p-6 sm:p-8 transition-all overflow-hidden hover:-translate-y-1 ${
-                  isFeatured
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]/40 hover:bg-[var(--accent-soft)]/60 hover:shadow-2xl hover:shadow-[var(--accent)]/20"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:shadow-xl"
-                }`}
-              >
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[var(--accent)]/[0.10] blur-2xl group-hover:bg-[var(--accent)]/[0.20] transition-colors"
-                />
-                <span
-                  aria-hidden
-                  className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl mb-5 shrink-0 transition-colors ${
-                    isFeatured
-                      ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/30"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white"
-                  }`}
-                >
-                  <Icon className="h-7 w-7" strokeWidth={2} />
-                </span>
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-                  {c.eyebrow}
-                </p>
-                {/* text-lg→2xl: títulos parejos (antes "Registrá tu comercio"
-                    wrappeaba a 3 líneas desbalanceando las cards). */}
-                <h3 className="text-lg sm:text-xl lg:text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
-                  {c.title}
-                </h3>
-                <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-relaxed">
-                  {c.desc}
-                </p>
-                {/* Chip gancho — beneficio principal de un vistazo */}
-                <span
-                  className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
-                    isFeatured
-                      ? "bg-[var(--accent-600,var(--accent))] text-white"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)]"
-                  }`}
-                >
-                  <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-                  {c.highlight}
-                </span>
-                {/* Lista de beneficios — da cuerpo + vence objeciones */}
-                <ul className="mt-4 space-y-2 flex-1">
-                  {c.benefits.map((b) => (
-                    <li
-                      key={b}
-                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-snug"
-                    >
-                      <Check
-                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]"
-                        strokeWidth={2.75}
-                        aria-hidden
-                      />
-                      <span>{b}</span>
-                    </li>
-                  ))}
-                </ul>
-                <span className="mt-5 inline-flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-4 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
-                  {c.cta}
-                  <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
+// ── 4. Trabajá con nosotros ──────────────────────────────────────────────────
+// Brandon 2026-05-31: extraído a components/marketing/JoinUsSection.tsx (importado
+// arriba) para reusarlo en /tiendas sin copy-paste (single source of truth).
 
 // ── Main Home ────────────────────────────────────────────────────────────────
 // Brandon 2026-05-20 v5: LandingHeader y Footer REMOVIDOS de la página.
 // El chrome unificado (MarketplaceNavbar + ConditionalPromoBar +
 // ConditionalSecondaryNav + BottomNav + Footer) vive ahora en
 // app/(store)/layout.tsx — único punto compartido con /tiendas y /marketplace.
+// ── FAQ visible — server component, accordeón nativo <details> (sin JS) ──────
+// Audit SEO 2026-05-31: el FAQPage schema necesitaba contenido VISIBLE en la
+// página (política de Google) — antes era schema-only. Esto también suma copy
+// indexable con keywords long-tail locales ("delivery en {city}", "pagar con
+// Yape"). Nativo <details>/<summary>: accesible por teclado, 0 JavaScript.
+function HomeFaqSection() {
+  return (
+    <section
+      id="preguntas-frecuentes"
+      aria-labelledby="faq-heading"
+      className="py-12 sm:py-20 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
+    >
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 sm:mb-12">
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+            <HelpCircle className="h-3.5 w-3.5" aria-hidden />
+            Preguntas frecuentes
+          </p>
+          <h2
+            id="faq-heading"
+            className="text-2xl sm:text-4xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]"
+          >
+            Todo sobre comprar y pedir{" "}
+            <span className="italic font-serif text-[var(--accent)]">en {BRAND_GEO.city}</span>
+          </h2>
+        </div>
+
+        <div className="space-y-3">
+          {HOME_FAQS.map((f, i) => (
+            <details
+              key={i}
+              className="group rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] open:border-[var(--accent)] open:shadow-md transition-all"
+            >
+              <summary className="flex items-center justify-between gap-4 cursor-pointer list-none px-5 py-4 [&::-webkit-details-marker]:hidden">
+                <span className="text-base font-bold text-[var(--text-primary)]">
+                  {f.q}
+                </span>
+                <ChevronDown
+                  className="h-5 w-5 shrink-0 text-[var(--accent)] transition-transform duration-200 group-open:rotate-180"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              </summary>
+              <div className="px-5 pb-5 -mt-1">
+                <p className="text-base text-[var(--text-secondary)] leading-relaxed">
+                  {f.a}
+                </p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default async function Home() {
   return (
     <main id="main-content">
@@ -1384,6 +1294,12 @@ export default async function Home() {
           <ComoFuncionaSection />
         </Reveal>
       </Suspense>
+
+      {/* 4.5 Preguntas frecuentes — contenido VISIBLE que matchea el FAQPage
+          schema (política Google) + copy local indexable. */}
+      <Reveal>
+        <HomeFaqSection />
+      </Reveal>
 
       {/* 5. Trabajá con nosotros — paleta del proyecto */}
       <Reveal>
