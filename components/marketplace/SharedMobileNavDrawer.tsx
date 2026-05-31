@@ -93,6 +93,29 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
   const navMode = useMarketplaceNavMode();
   const tiendasOnly = navMode === "tiendas-only";
 
+  // Brandon 2026-05-30: transición limpia de ENTRADA y SALIDA. Antes el drawer
+  // hacía `return null` al cerrar → desaparecía de golpe (sin animación de
+  // salida) y el slide de entrada era de apenas 1rem. Ahora:
+  //  - `render` mantiene el nodo montado durante la animación de salida.
+  //  - `visible` dispara el slide completo (translate-x-full → 0) + fade del
+  //    backdrop. Doble rAF para que el navegador pinte el estado inicial antes
+  //    de animar (sino el transition no corre). Easing iOS-like (suave).
+  const [render, setRender] = useState(open);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setRender(true);
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setVisible(true));
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+    setVisible(false);
+    const t = setTimeout(() => setRender(false), 320);
+    return () => clearTimeout(t);
+  }, [open]);
+
   // Brandon 2026-05-18: rubros del marketplace SE FETCHEAN del backend
   // (las mismas que Brandon configura en /superadmin/marketplace > Categorías)
   // y se FILTRAN contra las tiendas reales — solo mostramos rubros que
@@ -120,7 +143,7 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
       fetch("/api/marketplace/categories", { signal: controller.signal })
         .then((r) => (r.ok ? r.json() : Promise.reject()))
         .catch(() => ({ categories: [] as MarketplaceCategory[] })),
-      fetch("/api/marketplace/stores?limit=200", { signal: controller.signal })
+      fetch("/api/marketplace/stores?limit=100", { signal: controller.signal })
         .then((r) => (r.ok ? r.json() : Promise.reject()))
         .catch(() => ({ stores: [] as Array<{ category?: string }> })),
     ])
@@ -139,7 +162,7 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
     return () => controller.abort();
   }, [open]);
 
-  if (!open) return null;
+  if (!render) return null;
 
   // Brandon 2026-05-18 v3: isLoggedIn ahora es la verdad del servidor (cookie
   // httpOnly), NO localStorage. Mientras `authenticated === null` (cargando)
@@ -206,9 +229,15 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
         type="button"
         onClick={onClose}
         aria-label="Cerrar menú"
-        className="absolute inset-0 bg-black/65 backdrop-blur-md animate-in fade-in-0 duration-200"
+        className={`absolute inset-0 bg-black/65 backdrop-blur-md transition-opacity duration-300 ease-out ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
       />
-      <aside className="relative flex flex-col w-full max-w-[340px] h-full bg-[var(--surface-canvas)] shadow-2xl rounded-r-3xl overflow-hidden animate-in slide-in-from-left-4 duration-300">
+      <aside
+        className={`relative flex flex-col w-full max-w-[340px] h-full bg-[var(--surface-canvas)] shadow-2xl rounded-r-3xl overflow-hidden will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          visible ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         {/* Hero con identidad de usuario */}
         <div className="relative overflow-hidden bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white px-5 pt-6 pb-5">
           <div

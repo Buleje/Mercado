@@ -21,10 +21,10 @@ const ComoFuncionaSection = dynamic(
 );
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
+import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import {
   Store,
   ArrowUpRight,
-  Search,
   Bike,
   Building2,
   Sparkles,
@@ -453,61 +453,6 @@ async function RappiStyleHero() {
           </span>
         </p>
 
-        {/* Buscador protagonista — visible en todos los tamaños de pantalla */}
-        <form
-          role="search"
-          action="/tiendas"
-          method="get"
-          className="mt-8 sm:mt-10 max-w-2xl mx-auto"
-        >
-          <div className="group relative">
-            <Search
-              className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors pointer-events-none"
-              aria-hidden
-              strokeWidth={2}
-            />
-            <input
-              type="search"
-              name="q"
-              placeholder="Buscá tu tienda, restaurante o producto…"
-              aria-label="Buscar tienda o producto"
-              autoComplete="off"
-              className="w-full h-14 sm:h-[4.5rem] rounded-2xl sm:rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] pl-14 sm:pl-16 pr-[5.5rem] sm:pr-44 text-base sm:text-lg font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all shadow-lg shadow-black/5 focus:border-[var(--accent)] focus:shadow-[0_8px_30px_rgba(0,180,166,0.18)] focus:ring-4 focus:ring-[var(--accent)]/15"
-            />
-            <button
-              type="submit"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 h-11 sm:h-14 px-4 sm:px-7 rounded-xl sm:rounded-full text-white text-sm sm:text-base font-extrabold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-              style={{ background: "var(--accent)" }}
-            >
-              <span className="hidden sm:inline">Buscar</span>
-              <Search className="h-4 w-4 sm:hidden" strokeWidth={2.5} aria-hidden />
-              <ArrowUpRight className="hidden sm:inline-block h-4 w-4" strokeWidth={2.5} aria-hidden />
-            </button>
-          </div>
-        </form>
-
-        {/* Chips de categorías rápidas — navegación instantánea + links
-            internos con anchor-text keyword (SEO). Brandon 2026-05-27. */}
-        <nav aria-label="Categorías populares" className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-2">
-          {[
-            { label: "Restaurantes", cat: "restaurante", Icon: UtensilsCrossed },
-            { label: "Bodegas", cat: "bodega", Icon: ShoppingCart },
-            { label: "Farmacias", cat: "farmacia", Icon: Pill },
-            { label: "Pollerías", cat: "polleria", Icon: Drumstick },
-            { label: "Panaderías", cat: "panaderia", Icon: Croissant },
-            { label: "Licorerías", cat: "licoreria", Icon: Wine },
-          ].map(({ label, cat, Icon }) => (
-            <Link
-              key={cat}
-              href={`/tiendas?cat=${cat}`}
-              className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md hover:-translate-y-0.5"
-            >
-              <Icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-              {label}
-            </Link>
-          ))}
-        </nav>
-
         {/* Stats reales + trust pill Yape */}
         {(storeCount > 0 || productCount > 0) && (
           <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
@@ -533,24 +478,9 @@ async function RappiStyleHero() {
           </div>
         )}
 
-        {/* CTAs */}
-        <div className="mt-6 sm:mt-8 flex items-center justify-center gap-3 flex-wrap">
-          <Link
-            href="/tiendas"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white px-6 h-11 sm:h-12 text-sm font-extrabold transition-all shadow-sm hover:shadow-md"
-          >
-            <Store className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            Ver todas las tiendas
-          </Link>
-          <Link
-            href="/marketplace/ofertas"
-            className="inline-flex items-center gap-2 rounded-full px-6 h-11 sm:h-12 text-sm font-extrabold text-white transition-all shadow-md shadow-[var(--accent)]/25 hover:shadow-lg hover:scale-[1.02]"
-            style={{ background: "var(--accent)" }}
-          >
-            <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            Ofertas del día
-          </Link>
-        </div>
+        {/* CTAs — "Ver todas las tiendas" primario + "Ofertas del día" solo
+            fuera de modo tienda (client: lee el nav-mode del marketplace). */}
+        <HeroCtas />
       </div>
     </section>
   );
@@ -588,10 +518,19 @@ function hrefForCategory(id: string): string {
 }
 
 async function CategoriesGrid() {
-  // Filtra categorías de sistema (id con prefijo "_", ej "_meta") que se
-  // colaban como una card vacía sin label ni imagen. (pulido home 2026-05-31)
-  const cats = (await getSuperadminCategories()).filter(
-    (c) => c.id && !c.id.startsWith("_"),
+  // Brandon 2026-05-30: solo mostramos rubros VINCULADOS a tiendas reales —
+  // cero categorías muertas. Cruzamos las categorías del superadmin con los
+  // `Store.category` de tiendas publicadas (case-insensitive: en la DB conviven
+  // "bodega" y "Abarrotes"). Una categoría sin ninguna tienda creada NO aparece.
+  const [allCats, activeSlugs] = await Promise.all([
+    getSuperadminCategories(),
+    MarketplaceStatsDB.getActiveStoreCategorySlugs(),
+  ]);
+  const activeSet = new Set(activeSlugs.map((s) => s.toLowerCase()));
+  const cats = allCats.filter(
+    // - sin ids de sistema (prefijo "_", ej "_meta") → card vacía
+    // - solo categorías con ≥1 tienda publicada vinculada
+    (c) => c.id && !c.id.startsWith("_") && activeSet.has(c.id.toLowerCase()),
   );
 
   // Particiona: las 2 destacadas primero (Restaurantes + Bodega), resto en grid chico

@@ -1464,6 +1464,34 @@ export const MarketplaceStatsDB = {
   },
 
   /**
+   * Slugs de categoría (`Store.category`) con ≥1 tienda PUBLICADA.
+   * Alimenta el filtro de la grilla de Categorías en la home: solo mostramos
+   * rubros vinculados a tiendas reales (cero categorías muertas).
+   * Devuelve los valores TAL CUAL están en la DB; el caller normaliza el casing.
+   * Cache: 10 min revalidate, 2 min stale, 30 min expire.
+   *
+   * @cross-tenant intentional (ADR-082) — agrega tiendas de todos los tenants.
+   */
+  async getActiveStoreCategorySlugs(): Promise<string[]> {
+    "use cache";
+    cacheLife({ revalidate: 600, stale: 120, expire: 1800 });
+    cacheTag("marketplace-top-stores");
+    try {
+
+      const rows = await prisma.store.findMany({
+        where: { isPublished: true },
+        select: { category: true },
+        distinct: ["category"],
+      });
+      return rows
+        .map((r) => (r.category ?? "").trim())
+        .filter((c) => c.length > 0);
+    } catch {
+      return [];
+    }
+  },
+
+  /**
    * Reviews publicas aprobadas con rating alto (4+) para social proof.
    * Cache: 10 min revalidate, 2 min stale, 30 min expire.
    */
