@@ -385,7 +385,7 @@ async function RappiStyleHero() {
         className="pointer-events-none absolute inset-0 opacity-[0.05]"
         style={{
           backgroundImage:
-            "radial-gradient(circle, #00B4A6 1px, transparent 1px)",
+            "radial-gradient(circle, var(--accent) 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }}
       />
@@ -394,12 +394,12 @@ async function RappiStyleHero() {
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-[0.18]"
-        style={{ background: "radial-gradient(circle, #33C4B8 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 70%)" }}
       />
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-40 -left-20 h-[400px] w-[400px] rounded-full opacity-[0.14]"
-        style={{ background: "radial-gradient(circle, #5fd6cb 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 70%)" }}
       />
 
       {/* Borde inferior sutil para separación de sección */}
@@ -439,8 +439,9 @@ async function RappiStyleHero() {
           en Pucallpa?
         </h1>
 
-        {/* Subtítulo — texto secundario sobre fondo claro */}
-        <p className="mt-4 sm:mt-6 max-w-2xl mx-auto text-sm sm:text-xl text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
+        {/* Subtítulo — text-base mín en mobile (regla bsm-typography: body
+            nunca <16px). Antes text-sm = 14px. audit home. */}
+        <p className="mt-4 sm:mt-6 max-w-2xl mx-auto text-base sm:text-xl text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
           <span className="sm:hidden">
             El marketplace de Pucallpa — delivery rápido, Yape o efectivo.
           </span>
