@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useCustomer } from "@/contexts/customer-context";
 import { EmptyState } from "@/components/ui-system/EmptyState";
 import type { DbFavoriteProduct } from "@/lib/db/favorites.db";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -25,10 +26,12 @@ export default function FavoritosPage() {
     setError(null);
     try {
       const params = new URLSearchParams({ phone, tenantId: "main" });
-      const res = await fetch(`/api/marketplace/mi-cuenta/favoritos?${params}`);
-      if (!res.ok) throw new Error("Error al cargar favoritos");
-      const data = (await res.json()) as { favorites: DbFavoriteProduct[] };
-      setFavorites(Array.isArray(data.favorites) ? data.favorites : []);
+      // cachedJson deduplica + cachea 60s (perf quick-win, audit mi-cuenta).
+      const data = await cachedJson<{ favorites: DbFavoriteProduct[] }>(
+        `/api/marketplace/mi-cuenta/favoritos?${params}`,
+        60_000,
+      );
+      setFavorites(Array.isArray(data?.favorites) ? data.favorites : []);
     } catch {
       // Si el endpoint no existe aun (stub), mostrar vacio sin error
       setFavorites([]);

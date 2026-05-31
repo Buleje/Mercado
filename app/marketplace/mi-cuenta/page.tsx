@@ -11,12 +11,9 @@
  *   - Datos de contacto al final
  */
 
-import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
-  Package,
-  Heart,
-  Tag,
   MapPin,
   Truck,
   Clock,
@@ -26,23 +23,21 @@ import {
   Phone,
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
-import { useWishlist } from "@/hooks/use-wishlist";
 import { useCustomerOrders } from "@/hooks/use-customer-orders";
-import { LastOrderBanner } from "@/components/marketplace/mi-cuenta/LastOrderBanner";
 import { cn } from "@/lib/utils";
+
+// LastOrderBanner: below-the-fold + hace su propio fetch (deduped por el
+// singleton de useCustomerOrders) → lazy para no engordar el bundle inicial.
+const LastOrderBanner = dynamic(
+  () =>
+    import("@/components/marketplace/mi-cuenta/LastOrderBanner").then(
+      (m) => m.LastOrderBanner,
+    ),
+);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type OrderStatus = "pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado";
-
-interface StatCard {
-  label: string;
-  value: string;
-  href: string;
-  description: string;
-  Icon: React.ElementType;
-  hasData: boolean;
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -102,84 +97,12 @@ const ACTIVE_STATUSES: OrderStatus[] = ["pendiente", "confirmado", "en_camino"];
 
 export default function MiCuentaPage() {
   const { customer } = useCustomer();
-  const { items: wishlistItems } = useWishlist();
-  // Sprint 7: singleton compartido — un solo fetch para mi-cuenta + LastOrderBanner
-  const { orders, loading: ordersLoading } = useCustomerOrders();
-  const [couponsCount, setCouponsCount] = useState<number | null>(null);
+  // Singleton compartido — un solo fetch para mi-cuenta + LastOrderBanner.
+  // (Los contadores por sección viven ahora en el nav del layout.)
+  const { orders } = useCustomerOrders();
 
-  const favoritesCount = wishlistItems.length;
-  const addressesCount = customer?.locations?.length ?? 0;
   const phone = customer?.phone;
-  const ordersCount = ordersLoading ? null : orders.length;
   const activeOrder = orders.find((o) => ACTIVE_STATUSES.includes(o.status));
-
-  // ── Cupones (localStorage) ────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem("marketplace-coupons:v1");
-      if (!raw) {
-        setCouponsCount(0);
-        return;
-      }
-      const parsed = JSON.parse(raw) as unknown;
-      setCouponsCount(Array.isArray(parsed) ? parsed.length : 0);
-    } catch {
-      setCouponsCount(0);
-    }
-  }, []);
-
-  // ── Stat cards ────────────────────────────────────────────────────────────
-
-  const formatCount = (n: number | null): string => (n === null ? "..." : String(n));
-
-  const stats: StatCard[] = [
-    {
-      label: "Pedidos",
-      value: formatCount(ordersCount),
-      href: "/marketplace/mi-cuenta/pedidos",
-      description:
-        ordersCount === null
-          ? "Cargando..."
-          : ordersCount > 0
-            ? "Ver tu historial"
-            : phone
-              ? "Aún sin pedidos"
-              : "Identifícate para ver",
-      Icon: Package,
-      hasData: (ordersCount ?? 0) > 0,
-    },
-    {
-      label: "Favoritos",
-      value: String(favoritesCount),
-      href: "/marketplace/mi-cuenta/favoritos",
-      description: favoritesCount > 0 ? "Ver guardados" : "Aún sin guardados",
-      Icon: Heart,
-      hasData: favoritesCount > 0,
-    },
-    {
-      label: "Cupones",
-      value: formatCount(couponsCount),
-      href: "/marketplace/mi-cuenta/cupones",
-      description:
-        couponsCount === null
-          ? "Cargando..."
-          : couponsCount > 0
-            ? "Ver disponibles"
-            : "Sin cupones por ahora",
-      Icon: Tag,
-      hasData: (couponsCount ?? 0) > 0,
-    },
-    {
-      label: "Direcciones",
-      value: String(addressesCount),
-      href: "/marketplace/mi-cuenta/direcciones",
-      description: addressesCount > 0 ? "Gestionar" : "Agregar una dirección",
-      Icon: MapPin,
-      hasData: addressesCount > 0,
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -250,62 +173,6 @@ export default function MiCuentaPage() {
         );
       })()}
 
-      {/* ── Stat cards rediseñados — números grandes + jerarquía editorial ─ */}
-      <section>
-        <div className="flex items-end justify-between gap-3 mb-3">
-          <div>
-            <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-              Resumen
-            </p>
-            <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-              Tu actividad
-            </h2>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {stats.map((stat) => {
-            const StatIcon = stat.Icon;
-            return (
-              <Link
-                key={stat.href}
-                href={stat.href}
-                className={cn(
-                  "group relative flex flex-col rounded-2xl border-2 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md overflow-hidden",
-                  stat.hasData
-                    ? "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]"
-                    : "border-dashed border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--rule-base)]",
-                )}
-              >
-                <div
-                  className={cn(
-                    "mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
-                    stat.hasData
-                      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                  )}
-                >
-                  <StatIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
-                </div>
-                <p className="text-3xl font-black tabular-nums text-[var(--text-primary)] leading-none">
-                  {stat.value}
-                </p>
-                <p className="mt-2 text-sm font-bold text-[var(--text-primary)]">
-                  {stat.label}
-                </p>
-                <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] line-clamp-1">
-                  {stat.description}
-                </p>
-                <ArrowRight
-                  className="absolute top-4 right-4 h-4 w-4 text-[var(--text-tertiary)] opacity-0 transition-all group-hover:opacity-100 group-hover:text-[var(--accent)] group-hover:translate-x-0.5"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
       {/* ── LastOrderBanner — repetir último pedido ───────────────────────── */}
       <LastOrderBanner />
 
@@ -317,7 +184,7 @@ export default function MiCuentaPage() {
               <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                 Tus datos
               </p>
-              <h3 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+              <h3 className="text-lg font-extrabold text-[var(--text-primary)] leading-snug">
                 Información de contacto
               </h3>
             </div>

@@ -252,10 +252,14 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
   // footer mete ruido visual y compite con el CTA "Continuar al checkout".
   // El cliente debe estar 100% enfocado en cerrar la compra, sin links salidos.
   // (Early return va abajo, tras todos los hooks, para no romper rules-of-hooks.)
+  // Brandon 2026-05-31: mi-cuenta es el panel personal del cliente — el footer
+  // de marketing (Explorar/Recetas/Gift Cards/redes) distrae y alarga. Lo
+  // ocultamos igual que el flujo de checkout. El BottomNav sigue dando navegación.
   const isCheckoutFlow =
     pathname === "/marketplace/carrito" ||
     pathname?.startsWith("/checkout/") ||
-    pathname === "/checkout";
+    pathname === "/checkout" ||
+    pathname?.startsWith("/marketplace/mi-cuenta");
 
   const isStoreMode = isStoreModePath(pathname);
   // Mayo 2026: footer simplificado en landing pages — antes 5 columnas

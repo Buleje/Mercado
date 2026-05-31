@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,16 +12,23 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
+import { useWishlist } from "@/hooks/use-wishlist";
+import { useCustomerOrders } from "@/hooks/use-customer-orders";
 import { cn } from "@/lib/utils";
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
+// ── Secciones (cards de navegación) ─────────────────────────────────────────────
+// Brandon 2026-05-31: antes era una fila de chips con overflow-x-auto → scroll
+// lateral en mobile. Ahora grid 2-col de cards (todo a la vista) con contador.
+// `countKey` mapea al número que muestra cada card (Perfil no lleva contador).
 
-const TABS: ReadonlyArray<{ label: string; href: string; Icon: LucideIcon }> = [
+type CountKey = "orders" | "favorites" | "coupons" | "addresses";
+
+const TABS: ReadonlyArray<{ label: string; href: string; Icon: LucideIcon; countKey?: CountKey }> = [
   { label: "Perfil",      href: "/marketplace/mi-cuenta",             Icon: User    },
-  { label: "Pedidos",     href: "/marketplace/mi-cuenta/pedidos",     Icon: Package },
-  { label: "Favoritos",   href: "/marketplace/mi-cuenta/favoritos",   Icon: Heart   },
-  { label: "Cupones",     href: "/marketplace/mi-cuenta/cupones",     Icon: Tag     },
-  { label: "Direcciones", href: "/marketplace/mi-cuenta/direcciones", Icon: MapPin  },
+  { label: "Pedidos",     href: "/marketplace/mi-cuenta/pedidos",     Icon: Package, countKey: "orders"    },
+  { label: "Favoritos",   href: "/marketplace/mi-cuenta/favoritos",   Icon: Heart,   countKey: "favorites" },
+  { label: "Cupones",     href: "/marketplace/mi-cuenta/cupones",     Icon: Tag,     countKey: "coupons"   },
+  { label: "Direcciones", href: "/marketplace/mi-cuenta/direcciones", Icon: MapPin,  countKey: "addresses" },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -43,6 +50,27 @@ export default function MiCuentaLayout({
   const { customer } = useCustomer();
   const router = useRouter();
   const pathname = usePathname();
+
+  // ── Contadores por sección (reusan hooks deduplicados) ──────────────────────
+  const { items: wishlistItems } = useWishlist();
+  const { orders, loading: ordersLoading } = useCustomerOrders();
+  const [couponsCount, setCouponsCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("marketplace-coupons:v1");
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      setCouponsCount(Array.isArray(parsed) ? parsed.length : 0);
+    } catch {
+      setCouponsCount(0);
+    }
+  }, []);
+  const counts: Record<CountKey, number | null> = {
+    orders: ordersLoading ? null : orders.length,
+    favorites: wishlistItems.length,
+    coupons: couponsCount,
+    addresses: customer?.locations?.length ?? 0,
+  };
 
   // Auth guard: sin customer → redirigir al marketplace
   useEffect(() => {
@@ -75,7 +103,7 @@ export default function MiCuentaLayout({
               <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Mi cuenta
               </p>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] truncate">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] truncate">
                 {customer.name}
               </h1>
               {customer.phone && (
@@ -88,43 +116,75 @@ export default function MiCuentaLayout({
         </div>
       </section>
 
-      {/* ── Tabs nav — chips grandes con icono ───────────────────────────── */}
-      <div className="sticky top-0 z-20 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur-md">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <nav
-            aria-label="Secciones de mi cuenta"
-            className="flex gap-1.5 overflow-x-auto scrollbar-hide py-2"
-          >
-            {TABS.map((tab) => {
-              const isActive =
-                tab.href === "/marketplace/mi-cuenta"
-                  ? pathname === "/marketplace/mi-cuenta"
-                  : pathname.startsWith(tab.href);
-              const Icon = tab.Icon;
+      {/* ── Secciones — grid 2-col de cards (todo a la vista, sin scroll lateral).
+            Direcciones ocupa la fila completa (cierra el 2-2-1). En desktop, 5
+            columnas. Cada card: ícono + label + contador + estado activo. ──── */}
+      <div className="mx-auto max-w-4xl px-4 pt-4 sm:px-6">
+        <nav
+          aria-label="Secciones de mi cuenta"
+          className="grid grid-cols-2 gap-2.5 sm:grid-cols-5"
+        >
+          {TABS.map((tab, i) => {
+            const isActive =
+              tab.href === "/marketplace/mi-cuenta"
+                ? pathname === "/marketplace/mi-cuenta"
+                : pathname.startsWith(tab.href);
+            const Icon = tab.Icon;
+            const count = tab.countKey ? counts[tab.countKey] : null;
+            const isLast = i === TABS.length - 1; // Direcciones → fila completa en mobile
 
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  aria-current={isActive ? "page" : undefined}
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "relative flex items-center gap-3 rounded-2xl border-2 px-3.5 h-16 transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:flex-col sm:h-auto sm:gap-1.5 sm:py-3 sm:text-center",
+                  isLast && "col-span-2 sm:col-span-1",
+                  isActive
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)]/60 shadow-sm"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20",
+                )}
+              >
+                <span
                   className={cn(
-                    "shrink-0 inline-flex items-center gap-2 rounded-full px-4 h-10 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+                    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
                     isActive
-                      ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/30"
-                      : "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]",
+                      ? "bg-[var(--accent-600,var(--accent))] text-white"
+                      : "bg-[var(--accent-soft)] text-[var(--accent)]",
                   )}
                 >
-                  <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  {tab.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+                  <Icon className="h-4.5 w-4.5" strokeWidth={2} aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1 sm:flex-none">
+                  <span
+                    className={cn(
+                      "block truncate text-sm font-extrabold",
+                      isActive ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
+                    )}
+                  >
+                    {tab.label}
+                  </span>
+                  {count != null && (
+                    <span className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
+                      {count} {count === 1 ? "ítem" : "ítems"}
+                    </span>
+                  )}
+                </span>
+                {/* Badge de contador (>0) — solo mobile, a la derecha */}
+                {count != null && count > 0 && (
+                  <span className="ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-white sm:hidden">
+                    {count}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       {/* ── Page content ─────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">{children}</div>
+      <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-8">{children}</div>
     </div>
   );
 }

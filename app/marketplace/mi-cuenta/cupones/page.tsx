@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useCustomer } from "@/contexts/customer-context";
 import { EmptyState } from "@/components/ui-system/EmptyState";
 import type { DbCustomerCoupon } from "@/lib/db/customer-coupons.db";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { cn } from "@/lib/utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -45,10 +46,13 @@ export default function CuponesPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ phone, tenantId: "main" });
-      const res = await fetch(`/api/marketplace/mi-cuenta/cupones?${params}`);
-      if (!res.ok) throw new Error();
-      const data = (await res.json()) as { coupons: DbCustomerCoupon[] };
-      setCoupons(Array.isArray(data.coupons) ? data.coupons : []);
+      // cachedJson deduplica + cachea 60s: si el cliente alterna entre tabs,
+      // no re-fetchea los cupones (perf quick-win, audit mi-cuenta 2026-05-31).
+      const data = await cachedJson<{ coupons: DbCustomerCoupon[] }>(
+        `/api/marketplace/mi-cuenta/cupones?${params}`,
+        60_000,
+      );
+      setCoupons(Array.isArray(data?.coupons) ? data.coupons : []);
     } catch {
       setCoupons([]);
     } finally {

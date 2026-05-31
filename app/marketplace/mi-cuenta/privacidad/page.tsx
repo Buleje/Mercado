@@ -197,7 +197,7 @@ function ConsentsCard() {
         <div className="flex-1 min-w-0">
           <h2
             id="consents-title"
-            className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tracking-tight"
+            className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]"
           >
             Mis consentimientos
           </h2>
@@ -377,7 +377,7 @@ export default function PrivacidadPage() {
           <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
           Tu privacidad
         </p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] leading-snug">
           Control de tus datos
         </h1>
         <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
@@ -398,7 +398,7 @@ export default function PrivacidadPage() {
           <div className="flex-1 min-w-0">
             <h2
               id="export-title"
-              className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tracking-tight"
+              className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]"
             >
               Descargá tus datos
             </h2>
@@ -440,7 +440,7 @@ export default function PrivacidadPage() {
           <div className="flex-1 min-w-0">
             <h2
               id="rtbf-title"
-              className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tracking-tight"
+              className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]"
             >
               Eliminar mi cuenta
             </h2>
