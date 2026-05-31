@@ -49,6 +49,7 @@ import { SkipLink } from "@/components/ui-system/SkipLink";
 import NavProgress from "@/components/NavProgress";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { BRAND_GEO, GEO_PLACENAME, GEO_POSITION } from "@/lib/geo";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.buleje.pe"),
@@ -58,7 +59,7 @@ export const metadata: Metadata = {
     template: "%s | Buleje",
   },
   description:
-    "Buleje: marketplace de bodegas y software ERP para tiendas de todo el Perú. Comprá con delivery rápido o gestioná tu bodega con inventario en tiempo real, POS, fiado digital y facturación SUNAT. Originado en Pucallpa, disponible en Lima, Arequipa, Trujillo, Cusco, Chiclayo, Iquitos y más. Yape, Plin y efectivo.",
+    "Buleje: marketplace de bodegas y software ERP para tiendas del Perú. Comprá con delivery rápido o gestioná tu bodega con inventario en tiempo real, POS, fiado digital y facturación SUNAT. Lanzamiento en Ciudad Constitución (Oxapampa, Pasco) — creciendo en la Selva Central y todo el país. Yape, Plin y efectivo.",
   keywords: [
     // Marketplace nacional
     "marketplace bodegas peru",
@@ -68,7 +69,11 @@ export const metadata: Metadata = {
     "bodegas arequipa delivery",
     "tiendas online trujillo",
     "bodegas cusco",
-    "delivery pucallpa",
+    // Lanzamiento — Ciudad Constitución / Oxapampa / Pasco (Selva Central)
+    "delivery Ciudad Constitución",
+    "bodegas Ciudad Constitución",
+    "delivery Oxapampa",
+    "bodegas Pasco",
     // ERP / software
     "software para bodegas",
     "ERP tienda peru",
@@ -88,7 +93,7 @@ export const metadata: Metadata = {
     // Brand + origen
     "Buleje",
     "Buleje Peru",
-    "Buleje Pucallpa",
+    "Buleje Ciudad Constitución",
   ],
   authors: [{ name: "Buleje" }],
   creator: "Buleje",
@@ -106,7 +111,7 @@ export const metadata: Metadata = {
     title:
       "Buleje — Marketplace y ERP para Bodegas de Todo el Perú",
     description:
-      "Marketplace + sistema completo para bodegas del Perú. Comprá con delivery rápido o gestioná tu tienda: inventario, POS, fiado digital y facturación SUNAT. Yape, Plin, efectivo. Originado en Pucallpa, disponible en todo el país.",
+      "Marketplace + sistema completo para bodegas del Perú. Comprá con delivery rápido o gestioná tu tienda: inventario, POS, fiado digital y facturación SUNAT. Yape, Plin, efectivo. Lanzamiento en Ciudad Constitución (Oxapampa, Pasco) — creciendo en todo el país.",
     images: [
       {
         url: "/api/og",
@@ -150,14 +155,14 @@ export const metadata: Metadata = {
       "x-default": "https://www.buleje.pe",
     },
   },
-  // Brandon 2026-05-20 v10 audit P2 SEO local: geo meta tags ayudan a
-  // Google Maps / Local Pack a posicionarnos por busquedas "[query]
-  // Pucallpa". Coords del centro de Pucallpa (Jr. Ucayali zona comercial).
+  // SEO local: geo meta tags ayudan a Google Maps / Local Pack a posicionarnos
+  // por búsquedas "[query] Ciudad Constitución". Lanzamiento en Ciudad
+  // Constitución (Oxapampa, Pasco) — Selva Central. Centralizado en lib/geo.ts.
   other: {
-    "geo.region": "PE-UCA",
-    "geo.placename": "Pucallpa, Ucayali, Perú",
-    "geo.position": "-8.3791;-74.5539",
-    "ICBM": "-8.3791, -74.5539",
+    "geo.region": BRAND_GEO.regionCode,
+    "geo.placename": GEO_PLACENAME,
+    "geo.position": GEO_POSITION,
+    "ICBM": `${BRAND_GEO.lat}, ${BRAND_GEO.lng}`,
   },
 };
 

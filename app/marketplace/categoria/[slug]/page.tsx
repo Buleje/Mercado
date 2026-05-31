@@ -33,7 +33,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${def.label} — Explorar en Buleje Pucallpa`,
+    title: `${def.label} — Explorar en Buleje Ciudad Constitución`,
     description: `Todos los productos de ${def.label} en bodegas cerca tuyo. ${def.subtitle}`,
     alternates: {
       canonical: `${BASE_URL}/marketplace/categoria/${slug}`,

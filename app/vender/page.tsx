@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { BRAND_GEO } from "@/lib/geo";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
 import StoreProviders from "@/components/StoreProviders";
@@ -29,7 +30,7 @@ const venderSoftwareLd = {
   name: "Buleje — Vende en el marketplace",
   url: VENDER_URL,
   description:
-    "Plataforma para que tu bodega venda online en Pucallpa: catálogo, pedidos por WhatsApp, delivery con repartidores locales y pagos Yape/Plin. Primer mes gratis.",
+    `Plataforma para que tu bodega venda online en ${BRAND_GEO.city}: catálogo, pedidos por WhatsApp, delivery con repartidores locales y pagos Yape/Plin. Primer mes gratis.`,
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   inLanguage: "es-PE",
@@ -59,31 +60,31 @@ const venderFaqLd = {
 };
 
 export const metadata: Metadata = {
-  title: "Vende en Buleje — Abre tu tienda en Pucallpa en 5 minutos",
+  title: `Vende en Buleje — Abre tu tienda en ${BRAND_GEO.city} en 5 minutos`,
   description:
-    "Suma tu bodega al marketplace de Ucayali. Sin letra chica, sin comisiones escondidas. Gratis el primer mes, soporte en español, pagos con Yape.",
+    `Suma tu bodega al marketplace de ${BRAND_GEO.region}. Sin letra chica, sin comisiones escondidas. Gratis el primer mes, soporte en español, pagos con Yape.`,
   keywords: [
-    "vender en Pucallpa",
+    `vender en ${BRAND_GEO.city}`,
     "abrir tienda online",
     "marketplace para bodegas",
-    "vender por internet Ucayali",
+    `vender por internet ${BRAND_GEO.region}`,
     "software para bodega",
     "delivery para mi negocio",
   ],
   openGraph: {
     title: "Vende en Buleje",
     description:
-      "Abre tu tienda online con la plataforma que usan las bodegas de Pucallpa. Gratis el primer mes.",
+      `Abre tu tienda online con la plataforma que usan las bodegas de ${BRAND_GEO.city}. Gratis el primer mes.`,
     url: "https://www.buleje.pe/vender",
     siteName: "Buleje",
     locale: "es_PE",
     type: "website",
-    images: [{ url: "/api/og", width: 1200, height: 630, alt: "Vende en Buleje — tu tienda online en Pucallpa" }],
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: `Vende en Buleje — tu tienda online en ${BRAND_GEO.city}` }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Vende en Buleje — Abre tu tienda en 5 minutos",
-    description: "Suma tu bodega al marketplace de Ucayali. Gratis el primer mes, pagos con Yape.",
+    description: `Suma tu bodega al marketplace de ${BRAND_GEO.region}. Gratis el primer mes, pagos con Yape.`,
     images: ["/api/og"],
   },
   alternates: {
@@ -129,7 +130,7 @@ export default function VenderLandingPage() {
               romper el diseño hero, accesible a screen readers y crawlers.
             */}
             <h1 className="sr-only">
-              Vende tu bodega en Pucallpa — Marketplace Buleje sin comisiones
+              {`Vende tu bodega en ${BRAND_GEO.city} — Marketplace Buleje sin comisiones`}
             </h1>
             <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">

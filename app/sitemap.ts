@@ -3,6 +3,8 @@ import { categories, slugify } from "@/data/products";
 import { zones } from "@/data/zones";
 import { districts } from "@/data/districts";
 import { prisma } from "@/lib/prisma";
+import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
+import { BRAND_GEO } from "@/lib/geo";
 
 const realCategories = categories.filter((c) => c.id !== "todos");
 
@@ -481,7 +483,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Brandon 2026-05-20 v10 audit P0: la URL /tiendas YA está en staticPages
   // arriba (línea ~60) — duplicarla aquí causaba que Google la flagee como
   // mala calidad técnica. Mantenemos solo las rutas por zona long-tail.
-  const TIENDAS_ZONES = ["centro", "manantay", "calleria", "yarinacocha", "campo_verde"] as const;
+  //
+  // Brandon 2026-05-30 (audit SEO geo): el lanzamiento es en CIUDAD CONSTITUCIÓN.
+  // Antes hardcodeaba 5 zonas de Pucallpa (centro/manantay/...) → metía URLs de
+  // Pucallpa en el sitemap, confundiendo la señal local. Ahora derivamos del
+  // catálogo (lib/marketplace-zones.ts) SOLO las zonas de la ciudad objetivo.
+  const TIENDAS_ZONES = MARKETPLACE_ZONES.filter((z) => z.city === BRAND_GEO.city).map((z) => z.id);
   const tiendasPages: MetadataRoute.Sitemap = TIENDAS_ZONES.map((z) => ({
     url: `${baseUrl}/tiendas/${z}`,
     lastModified,

@@ -16,7 +16,7 @@ const BASE_URL = "https://www.buleje.pe";
  * (lib/marketplace-zones.ts) — agregar zonas allí genera rutas SEO nuevas.
  */
 
-const ZONES = MARKETPLACE_ZONES.map((z) => ({ id: z.id, label: z.label }));
+const ZONES = MARKETPLACE_ZONES.map((z) => ({ id: z.id, label: z.label, city: z.city }));
 
 type ZoneSlug = string;
 
@@ -37,8 +37,8 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const z = findZone(zona);
   if (!z) return { title: "Tiendas no encontradas | Buleje" };
 
-  const title = `Bodegas y tiendas en ${z.label} — Pucallpa | Buleje`;
-  const description = `Descubre las bodegas, minimarkets y tiendas con delivery rápido en ${z.label}, Pucallpa. Paga con Yape o efectivo. Recibe en 25 min.`;
+  const title = `Bodegas y tiendas en ${z.label} — ${z.city} | Buleje`;
+  const description = `Descubre las bodegas, minimarkets y tiendas con delivery rápido en ${z.label}, ${z.city}. Paga con Yape o efectivo. Recibe en 25 min.`;
   const url = `${BASE_URL}/tiendas/${z.id}`;
 
   return {
@@ -80,7 +80,7 @@ export default async function TiendasZonaPage(props: PageProps) {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: `Tiendas en ${z.label}`,
-    description: `Directorio de bodegas y tiendas con delivery en ${z.label}, Pucallpa.`,
+    description: `Directorio de bodegas y tiendas con delivery en ${z.label}, ${z.city}.`,
     url: `${BASE_URL}/tiendas/${z.id}`,
   };
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { BRAND_GEO } from "@/lib/geo";
 import {
   Store,
   ChevronDown,
@@ -58,18 +59,18 @@ const BodegaScene = dynamic(
 const PAGE_URL = "https://www.buleje.pe/abrir-tienda";
 
 export const metadata: Metadata = {
-  title: "Abre tu tienda online gratis en 5 minutos — Pucallpa",
+  title: `Abre tu tienda online gratis en 5 minutos — ${BRAND_GEO.city}`,
   description:
-    "Crea tu tienda online y vendé hoy: catálogo, pagos Yape/Plin, delivery y reportes en una app. Gratis para empezar, sin tarjeta ni comisión, en Pucallpa.",
+    `Crea tu tienda online y vendé hoy: catálogo, pagos Yape/Plin, delivery y reportes en una app. Gratis para empezar, sin tarjeta ni comisión, en ${BRAND_GEO.city}.`,
   keywords: [
     "abrir tienda online",
     "crear tienda online Perú",
-    "vender por internet Pucallpa",
+    `vender por internet ${BRAND_GEO.city}`,
     "software para bodega",
     "POS bodega",
     "tienda online gratis",
     "pagos Yape Plin",
-    "delivery Pucallpa",
+    `delivery ${BRAND_GEO.city}`,
     "facturación SUNAT",
     "ecommerce sin comisión",
   ],
@@ -189,7 +190,7 @@ const PATHS: {
     verdict: "Te hace vender más",
     cost: "Gratis para empezar · sin tarjeta",
     points: [
-      "Tu puesto en el marketplace de Pucallpa: miles de vecinos te ven cada día",
+      `Tu puesto en el marketplace de ${BRAND_GEO.city}: miles de vecinos te ven cada día`,
       "Tu propia tienda online con tu marca — vendés aunque la bodega esté cerrada",
       "Cobrás con Yape, Plin, efectivo o tarjeta — la plata llega directo a vos",
       "Tus clientes te piden por WhatsApp y vos despachás con delivery",
@@ -517,7 +518,7 @@ const FOUNDER_PERKS = [
   },
   {
     icon: MapPin,
-    title: "En el mapa de Pucallpa desde el día 1",
+    title: `En el mapa de ${BRAND_GEO.city} desde el día 1`,
     sub: "Miles de vecinos te encuentran apenas abrís.",
     value: "incluido",
   },
@@ -537,7 +538,7 @@ function SocialProofSection() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
             </span>
-            Plan Fundador · Pucallpa
+            Plan Fundador · Ciudad Constitución
           </p>
           <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1]">
             Sé de las primeras{" "}
@@ -545,7 +546,7 @@ function SocialProofSection() {
             <br className="hidden sm:block" /> y arrancá con todo gratis.
           </h2>
           <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-2xl mx-auto">
-            Elegimos a los primeros negocios de Pucallpa para crecer juntos.
+            Elegimos a los primeros negocios de Ciudad Constitución para crecer juntos.
             Lo que normalmente se cobra aparte, hoy lo hacés{" "}
             <strong className="text-[var(--text-primary)]">sin pagar un sol</strong>.
           </p>
@@ -644,7 +645,7 @@ function SocialProofSection() {
                 })}
               </div>
               <p className="mt-3 text-sm text-[var(--text-secondary)]">
-                <strong className="text-[var(--text-primary)] font-extrabold tabular-nums">{libres} de {CUPOS_TOTAL}</strong> cupos libres este mes en Pucallpa.
+                <strong className="text-[var(--text-primary)] font-extrabold tabular-nums">{libres} de {CUPOS_TOTAL}</strong> cupos libres este mes en Ciudad Constitución.
               </p>
 
               {/* Prueba social */}

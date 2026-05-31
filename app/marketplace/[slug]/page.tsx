@@ -1,6 +1,7 @@
 import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { BRAND_GEO } from "@/lib/geo";
 import { cacheLife, cacheTag } from "next/cache";
 // Brandon 2026-05-21 perf v6: ChatBubble vía wrapper client-only con
 // dynamic({ ssr: false }) — saca ~20KB / 496 LOC del bundle inicial del
@@ -85,7 +86,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const baseUrl = "https://www.buleje.pe";
   const storeUrl = `${baseUrl}/marketplace/${slug}`;
-  const zone = store.zone ?? "Pucallpa";
+  const zone = store.zone ?? BRAND_GEO.city;
   const baseDesc = getStoreTagline({
     slug,
     name: store.name,
@@ -247,14 +248,14 @@ function StoreJsonLd({
     "@type": isRestaurant ? "Restaurant" : "LocalBusiness",
     "@id": `${storeUrl}#store`,
     name,
-    description: description ?? `Tienda ${category} en ${zone ?? "Pucallpa"}, Perú. Delivery rápido.`,
+    description: description ?? `Tienda ${category} en ${zone ?? BRAND_GEO.city}, Perú. Delivery rápido.`,
     url: storeUrl,
     ...(logo && { image: logo, logo }),
     ...(formattedPhone && { telephone: formattedPhone }),
     address: {
       "@type": "PostalAddress",
-      addressLocality: zone ?? "Pucallpa",
-      addressRegion: "Ucayali",
+      addressLocality: zone ?? BRAND_GEO.city,
+      addressRegion: BRAND_GEO.region,
       addressCountry: "PE",
     },
     // Brandon 2026-05-30 (audit #7): coords reales de la tienda si el dueño las
@@ -277,7 +278,7 @@ function StoreJsonLd({
     priceRange: "S/ 5 - S/ 100",
     currenciesAccepted: "PEN",
     paymentAccepted: "Cash, Yape, Plin",
-    areaServed: { "@type": "City", name: zone ?? "Pucallpa" },
+    areaServed: { "@type": "City", name: zone ?? BRAND_GEO.city },
     ...(isRestaurant && { servesCuisine: ["Peruana", category] }),
     ...(openingHours.length > 0 && { openingHoursSpecification: openingHours }),
     ...(formattedPhone && {
@@ -311,7 +312,7 @@ function StoreJsonLd({
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Inicio", item: baseUrl },
-      { "@type": "ListItem", position: 2, name: "Tiendas en Pucallpa", item: `${baseUrl}/tiendas` },
+      { "@type": "ListItem", position: 2, name: `Tiendas en ${BRAND_GEO.city}`, item: `${baseUrl}/tiendas` },
       { "@type": "ListItem", position: 3, name, item: storeUrl },
     ],
   };
@@ -400,7 +401,7 @@ function ProductsItemListJsonLd({
     "@type": "ItemList",
     "@id": `${storeUrl}#catalog`,
     name: `Cat\u00e1logo de ${storeName}`,
-    description: `Productos disponibles en ${storeName} con delivery en Pucallpa`,
+    description: `Productos disponibles en ${storeName} con delivery en ${BRAND_GEO.city}`,
     numberOfItems: items.length,
     itemListElement: items,
   };

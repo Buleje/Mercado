@@ -60,29 +60,30 @@ import {
 // explícito ("Buleje") + twitter card. Antes faltaba siteName → Facebook/
 // LinkedIn no podían armar el snippet con el sitio.
 export const metadata: Metadata = {
-  title: "Delivery de bodegas, restaurantes y farmacias en Pucallpa",
-  description:
-    "Pedí online en Pucallpa: bodegas, restaurantes y farmacias con delivery rápido. Paga con Yape, Plin o efectivo. Tu marketplace local en Ucayali.",
+  title: `Delivery en ${BRAND_GEO.city} — bodegas, restaurantes y farmacias`,
+  description: `Pedí online en ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}): bodegas, restaurantes y farmacias con delivery rápido. Paga con Yape, Plin o efectivo. Tu marketplace local de la Selva Central.`,
   keywords: [
-    "delivery Pucallpa",
-    "marketplace Pucallpa",
-    "bodegas Pucallpa",
-    "restaurantes Pucallpa delivery",
-    "farmacias delivery Pucallpa",
-    "comida a domicilio Pucallpa",
+    "delivery Ciudad Constitución",
+    "marketplace Ciudad Constitución",
+    "bodegas Ciudad Constitución",
+    "restaurantes Ciudad Constitución delivery",
+    "farmacias Ciudad Constitución",
+    "comida a domicilio Ciudad Constitución",
+    "delivery Oxapampa",
+    "delivery Pasco",
+    "delivery Selva Central",
     "pagar con Yape",
     "Plin delivery",
-    "comprar online Ucayali",
-    "tiendas cerca de mí Pucallpa",
+    "tiendas cerca de mí Ciudad Constitución",
+    "Buleje Ciudad Constitución",
   ],
   alternates: {
     canonical: "https://www.buleje.pe",
     languages: { "es-PE": "https://www.buleje.pe", es: "https://www.buleje.pe" },
   },
   openGraph: {
-    title: "Pide lo que quieras, te lo llevamos | Buleje",
-    description:
-      "Bodegas, restaurantes y farmacias con delivery rápido. Yape y efectivo.",
+    title: `Pide lo que quieras, te lo llevamos en ${BRAND_GEO.city} | Buleje`,
+    description: `Bodegas, restaurantes y farmacias de ${BRAND_GEO.city} con delivery rápido. Yape, Plin o efectivo.`,
     url: "https://www.buleje.pe",
     siteName: "Buleje",
     type: "website",
@@ -92,15 +93,14 @@ export const metadata: Metadata = {
         url: "/api/og",
         width: 1200,
         height: 630,
-        alt: "Buleje — Marketplace de Bodegas y Tiendas del Perú",
+        alt: `Buleje — Marketplace de ${BRAND_GEO.city}, ${BRAND_GEO.region}`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pide lo que quieras, te lo llevamos | Buleje",
-    description:
-      "Bodegas, restaurantes y farmacias con delivery rápido en Pucallpa. Yape y efectivo.",
+    title: `Pide lo que quieras, te lo llevamos en ${BRAND_GEO.city} | Buleje`,
+    description: `Bodegas, restaurantes y farmacias con delivery rápido en ${BRAND_GEO.city}. Yape y efectivo.`,
     images: ["/api/og"],
   },
 };
@@ -146,7 +146,8 @@ async function getSuperadminCategories(): Promise<SuperadminCategory[]> {
 // con eslint-disable como excusa cross-tenant. Ahora vive en
 // `lib/db/marketplace-public.db.ts` (MarketplaceStatsDB) — único punto que
 // accede a prisma, con `use cache` + cacheLife + cacheTag homogéneos.
-import { MarketplaceStatsDB } from "@/lib/db/marketplace-public.db";
+import { MarketplaceStatsDB, type FeaturedStorePreview } from "@/lib/db/marketplace-public.db";
+import { BRAND_GEO } from "@/lib/geo";
 
 async function getMarketplaceStats() {
   const { storeCount, productCount } = await MarketplaceStatsDB.getPublicMarketplaceStats();
@@ -200,8 +201,7 @@ async function BulejeJsonLd() {
     "@type": "WebSite",
     name: "Buleje",
     url: "https://www.buleje.pe",
-    description:
-      "Marketplace de bodegas, restaurantes y tiendas del Perú. Compra online con delivery rápido. Yape y efectivo.",
+    description: `Marketplace de bodegas, restaurantes y tiendas de ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}). Compra online con delivery rápido. Yape y efectivo.`,
     potentialAction: {
       "@type": "SearchAction",
       target: "https://www.buleje.pe/tiendas?q={search_term_string}",
@@ -219,14 +219,16 @@ async function BulejeJsonLd() {
       address: [
         {
           "@type": "PostalAddress",
-          addressLocality: "Pucallpa",
-          addressRegion: "Ucayali",
-          addressCountry: "PE",
+          addressLocality: BRAND_GEO.city,
+          addressRegion: BRAND_GEO.region,
+          addressCountry: BRAND_GEO.countryCode,
         },
       ],
       areaServed: [
-        { "@type": "City", name: "Pucallpa" },
-        { "@type": "Country", name: "Perú" },
+        { "@type": "City", name: BRAND_GEO.city },
+        { "@type": "AdministrativeArea", name: BRAND_GEO.province },
+        { "@type": "AdministrativeArea", name: BRAND_GEO.region },
+        { "@type": "Country", name: BRAND_GEO.country },
       ],
     },
   };
@@ -248,10 +250,10 @@ async function BulejeJsonLd() {
       },
       {
         "@type": "Question",
-        name: "¿Buleje hace delivery en Pucallpa?",
+        name: `¿Buleje hace delivery en ${BRAND_GEO.city}?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Sí. Hacemos delivery en Pucallpa y zonas cercanas de Ucayali. Tenemos bodegas, restaurantes, farmacias y más.",
+          text: `Sí. Hacemos delivery en ${BRAND_GEO.city} y zonas cercanas de ${BRAND_GEO.province} (${BRAND_GEO.region}). Tenemos bodegas, restaurantes, farmacias y más.`,
         },
       },
       {
@@ -282,29 +284,29 @@ async function BulejeJsonLd() {
     "@type": "LocalBusiness",
     "@id": "https://www.buleje.pe/#localbusiness",
     name: "Buleje",
-    description:
-      "Marketplace de bodegas, restaurantes y farmacias de Pucallpa con delivery rápido. Pago con Yape, Plin o efectivo.",
+    description: `Marketplace de bodegas, restaurantes y farmacias de ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}) con delivery rápido. Pago con Yape, Plin o efectivo.`,
     url: "https://www.buleje.pe",
     image: "https://www.buleje.pe/brand/buleje-logo.png",
     logo: "https://www.buleje.pe/brand/buleje-logo.png",
-    telephone: "+51929340532",
+    telephone: BRAND_GEO.phone,
     priceRange: "S/",
     currenciesAccepted: "PEN",
     paymentAccepted: "Yape, Plin, Efectivo, Tarjeta",
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Pucallpa",
-      addressRegion: "Ucayali",
-      addressCountry: "PE",
+      addressLocality: BRAND_GEO.city,
+      addressRegion: BRAND_GEO.region,
+      addressCountry: BRAND_GEO.countryCode,
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: -8.3791,
-      longitude: -74.5539,
+      latitude: BRAND_GEO.lat,
+      longitude: BRAND_GEO.lng,
     },
     areaServed: [
-      { "@type": "City", name: "Pucallpa" },
-      { "@type": "AdministrativeArea", name: "Ucayali" },
+      { "@type": "City", name: BRAND_GEO.city },
+      { "@type": "AdministrativeArea", name: BRAND_GEO.province },
+      { "@type": "AdministrativeArea", name: BRAND_GEO.region },
     ],
     openingHoursSpecification: [
       {
@@ -323,7 +325,7 @@ async function BulejeJsonLd() {
       ? {
           "@context": "https://schema.org",
           "@type": "ItemList",
-          name: "Tiendas destacadas en Buleje Pucallpa",
+          name: `Tiendas destacadas en Buleje ${BRAND_GEO.city}`,
           itemListOrder: "https://schema.org/ItemListOrderDescending",
           numberOfItems: topStores.length,
           itemListElement: topStores.map((s, i) => ({
@@ -420,15 +422,15 @@ async function RappiStyleHero() {
             <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 sm:animate-ping" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
           </span>
-          Pedí online en Pucallpa
+          Pedí online en {BRAND_GEO.city}
           <span
             aria-hidden
             className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-[var(--accent)]/40"
           />
         </p>
 
-        {/* H1 híbrido (Brandon 2026-05-27): gancho emocional + keyword geo
-            "Pucallpa" dentro del propio H1 (Google pesa mucho el H1 de la home). */}
+        {/* H1 híbrido: gancho emocional + keyword geo (la ciudad objetivo)
+            dentro del propio H1 (Google pesa mucho el H1 de la home). */}
         <h1 className="text-[clamp(2.25rem,8.5vw,5.5rem)] font-extrabold leading-[1.0] tracking-[-0.035em] text-[var(--text-primary)] max-w-4xl mx-auto">
           ¿Qué se te{" "}
           <span
@@ -437,19 +439,19 @@ async function RappiStyleHero() {
           >
             antoja hoy
           </span>{" "}
-          en Pucallpa?
+          en {BRAND_GEO.city}?
         </h1>
 
         {/* Subtítulo — text-base mín en mobile (regla bsm-typography: body
             nunca <16px). Antes text-sm = 14px. audit home. */}
         <p className="mt-4 sm:mt-6 max-w-2xl mx-auto text-base sm:text-xl text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
           <span className="sm:hidden">
-            El marketplace de Pucallpa — delivery rápido, Yape o efectivo.
+            El marketplace de {BRAND_GEO.city} — delivery rápido, Yape o efectivo.
           </span>
           <span className="hidden sm:inline">
-            El marketplace #1 de Pucallpa, Ucayali. Bodegas, restaurantes y
-            farmacias de tus vecinos en la Amazonía peruana — delivery rápido
-            con Yape, Plin o efectivo.
+            El marketplace #1 de {BRAND_GEO.city}, {BRAND_GEO.region}. Bodegas,
+            restaurantes y farmacias de tus vecinos en la Selva Central del Perú
+            — delivery rápido con Yape, Plin o efectivo.
           </span>
         </p>
 
@@ -561,7 +563,7 @@ async function CategoriesGrid() {
               <span className="italic font-serif text-[var(--accent)]">categoría</span>
             </h2>
             <p className="mt-2 sm:mt-3 max-w-md text-base text-[var(--text-secondary)] leading-relaxed">
-              Todo lo que tu barrio vende, en un solo lugar — con delivery rápido en Pucallpa.
+              Todo lo que tu barrio vende, en un solo lugar — con delivery rápido en {BRAND_GEO.city}.
             </p>
           </div>
           <Link
@@ -596,7 +598,7 @@ async function CategoriesGrid() {
                   {c.imageUrl ? (
                     <Image
                       src={c.imageUrl}
-                      alt={`${c.label} en Pucallpa con delivery rápido`}
+                      alt={`${c.label} en ${BRAND_GEO.city} con delivery rápido`}
                       fill
                       sizes="(min-width: 640px) 96px, 80px"
                       className="object-cover"
@@ -652,7 +654,7 @@ async function CategoriesGrid() {
                   {c.imageUrl ? (
                     <Image
                       src={c.imageUrl}
-                      alt={`${c.label} con delivery en Pucallpa`}
+                      alt={`${c.label} con delivery en ${BRAND_GEO.city}`}
                       width={64}
                       height={64}
                       className="object-cover w-full h-full"
@@ -716,7 +718,10 @@ function StoreRatingStars({ rating, reviewCount }: { rating: number; reviewCount
  * v4 2026-05-27: rediseño de card centrada → listado pro con cover.
  * Reusada por Tiendas destacadas (grid) y Recomendadas para vos (rail).
  */
-function StoreCard({ s, priority = false }: { s: TopStore; priority?: boolean }) {
+// Acepta TopStore o FeaturedStorePreview (superset): el rail "Recomendadas"
+// reusa StoreCard con los datos del showcase. Evita la trampa de mantenimiento
+// del duck-typing implícito (audit code-review #3).
+function StoreCard({ s, priority = false }: { s: TopStore | FeaturedStorePreview; priority?: boolean }) {
   const initial = s.name.trim().charAt(0).toUpperCase();
   // Ícono de la categoría para el watermark del cover — rellena el espacio
   // antes vacío con una señal visual del rubro. (pulido home 2026-05-31)
@@ -821,16 +826,168 @@ function StoreCard({ s, priority = false }: { s: TopStore; priority?: boolean })
   );
 }
 
+// ── FeaturedStoreCard — card showcase XL para las 3 tiendas destacadas ──────
+// Brandon 2026-05-30: banner de portada (o gradiente de marca si no hay) +
+// logo avatar + rating/categoría/zona + PREVIEW del catálogo (hasta 4 productos
+// con imagen). "Lo que ofrecen" de un vistazo. Card entera clickeable (stretched
+// link a la tienda). Reemplaza la grilla de 10 cards chicas por 3 cards ricas.
+function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; priority?: boolean }) {
+  const initial = s.name.trim().charAt(0).toUpperCase();
+  const CoverIcon = CATEGORY_ICONS[s.category] ?? Store;
+  const extraProducts = Math.max(0, s.productCount - s.preview.length);
+  return (
+    <article
+      className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border bg-[var(--surface-raised)] transition-all duration-[var(--dur-base)] hover:-translate-y-1 hover:shadow-2xl ${
+        s.featuredHome
+          ? "border-[var(--accent)] shadow-lg shadow-[var(--accent)]/15"
+          : "border-[var(--rule-base)] hover:border-[var(--accent)]"
+      }`}
+    >
+      {/* Banner de portada — imagen real o gradiente de marca con watermark */}
+      <div className="relative h-32 sm:h-36 overflow-hidden bg-linear-to-br from-[var(--accent)]/25 via-[var(--accent)]/12 to-[var(--surface-sunken)]">
+        {s.banner ? (
+          <Image
+            src={s.banner}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 420px, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            priority={priority}
+          />
+        ) : (
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                backgroundImage: "radial-gradient(circle, var(--accent) 1px, transparent 1px)",
+                backgroundSize: "16px 16px",
+                maskImage: "linear-gradient(to bottom, black, transparent)",
+                WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+                opacity: 0.16,
+              }}
+            />
+            <CoverIcon
+              aria-hidden
+              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-20 w-20 -rotate-12 text-[var(--accent)]/30"
+              strokeWidth={1.25}
+            />
+          </>
+        )}
+        {/* Velo inferior para que el logo/nombre respiren sobre el banner */}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-black/35 to-transparent" />
+        {/* Rating badge (si tiene reseñas reales) */}
+        {s.rating > 0 && (
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[var(--surface-canvas)]/95 px-2.5 py-1 text-xs font-black tabular-nums text-[var(--text-primary)] shadow ring-1 ring-[var(--rule-soft)]">
+            <Star className="h-3 w-3 fill-[var(--accent)] text-[var(--accent)]" aria-hidden />
+            {s.rating.toFixed(1)}
+          </span>
+        )}
+        {/* Badge "Destacada" (beneficio superadmin) */}
+        {s.featuredHome && (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow">
+            <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
+            Destacada
+          </span>
+        )}
+      </div>
+
+      {/* Logo avatar solapando el banner + identidad */}
+      <div className="flex items-start gap-3 px-4 sm:px-5 -mt-8">
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[var(--surface-canvas)] ring-4 ring-[var(--surface-raised)] shadow-md">
+          {s.logo ? (
+            <Image src={s.logo} alt="" fill sizes="64px" className="object-cover" priority={priority} />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-2xl font-black text-white">
+              {initial}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 pt-9">
+          <h3 className="text-lg sm:text-xl font-black tracking-tight leading-tight text-[var(--text-primary)] line-clamp-1 transition-colors group-hover:text-[var(--accent)]">
+            {s.name}
+          </h3>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {s.category && (
+              <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-bold capitalize text-[var(--accent)]">
+                {s.category}
+              </span>
+            )}
+            {s.zone && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
+                <MapPin className="h-2.5 w-2.5" strokeWidth={2} aria-hidden />
+                {s.zone}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Preview del catálogo — "lo que ofrecen" */}
+      <div className="flex flex-1 flex-col px-4 sm:px-5 pt-3.5 pb-4">
+        {s.preview.length > 0 ? (
+          <>
+            <p className="mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Algunos de sus productos
+            </p>
+            <div className="mb-4 grid grid-cols-4 gap-2">
+              {s.preview.map((p, i) => (
+                <div
+                  key={p.id}
+                  className="relative aspect-square overflow-hidden rounded-xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]"
+                >
+                  <Image
+                    src={p.image}
+                    alt={p.name}
+                    fill
+                    sizes="80px"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  {i === s.preview.length - 1 && extraProducts > 0 && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-black text-white">
+                      +{extraProducts}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-tertiary)]">
+            <Bike className="h-4 w-4" strokeWidth={2} aria-hidden />
+            <span>Delivery · 25–35 min</span>
+            {s.productCount > 0 && (
+              <>
+                <span aria-hidden className="opacity-50">·</span>
+                <span>{s.productCount} productos</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* CTA — stretched link: toda la card es clickeable, 1 solo enlace (a11y) */}
+        <Link
+          href={`/marketplace/${s.slug}`}
+          aria-label={`Ver tienda ${s.name}`}
+          className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-sm font-extrabold text-white shadow-md shadow-[var(--accent)]/25 transition-all after:absolute after:inset-0 after:content-[''] hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        >
+          Ver tienda
+          <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
 async function TopStoresSection() {
-  const stores = await getTopStores();
+  // Brandon 2026-05-30: showcase de 3 tiendas destacadas RICAS (banner + logo +
+  // rating + preview de catálogo). El resto va al rail "Recomendadas".
+  const stores = await MarketplaceStatsDB.getFeaturedStoresWithPreview(12);
   if (stores.length === 0) {
     return <EmptyStoresPlaceholder />;
   }
-  // Recomendadas: el OVERFLOW que NO se muestra en Destacadas (slice 0-10) →
-  // tiendas genuinamente distintas, no la misma lista reordenada. Si no hay
-  // suficientes (≤10 tiendas), el guard `recommended.length > 0` oculta la
-  // sección — sin contenido duplicado. (audit home 2026-05-31)
-  const recommended = stores.slice(10);
+  const destacadas = stores.slice(0, 3);
+  const recommended = stores.slice(3);
   return (
     <>
       <section
@@ -846,7 +1003,7 @@ async function TopStoresSection() {
               </p>
               <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
                 Las más elegidas{" "}
-                <span className="italic font-serif text-[var(--accent)]">esta semana</span>
+                <span className="italic font-serif text-[var(--accent)]">en {BRAND_GEO.city}</span>
               </h2>
             </div>
             <Link
@@ -858,15 +1015,15 @@ async function TopStoresSection() {
             </Link>
           </div>
 
-          {/* Grid: 2 cols mobile / 3 tablet / 5 desktop. */}
+          {/* 3 cards showcase: 1 col mobile / 3 cols ≥640px */}
           <ul
             role="list"
-            aria-label={`${stores.length} tiendas destacadas`}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"
+            aria-label={`${destacadas.length} tiendas destacadas`}
+            className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6"
           >
-            {stores.slice(0, 10).map((s, idx) => (
+            {destacadas.map((s, idx) => (
               <li key={s.id}>
-                <StoreCard s={s} priority={idx < 3} />
+                <FeaturedStoreCard s={s} priority={idx < 3} />
               </li>
             ))}
           </ul>
@@ -936,7 +1093,7 @@ function EmptyStoresPlaceholder() {
           Las primeras tiendas están abriendo
         </h2>
         <p className="mt-2 text-base text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-          Estamos arrancando con los primeros negocios de Pucallpa. ¿Tenés
+          Estamos arrancando con los primeros negocios de {BRAND_GEO.city}. ¿Tenés
           una tienda? Sumate al Plan Fundador y arrancá hoy mismo.
         </p>
         <Link
@@ -1043,7 +1200,7 @@ function JoinUsSection() {
           </h2>
           <p className="mt-3 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
             Vendé, repartí o creá tu negocio digital. Buleje está armando la
-            red local de Pucallpa.
+            red local de {BRAND_GEO.city}.
           </p>
         </div>
 

@@ -97,6 +97,33 @@ export type DbStoreLocation = {
   logo: string | null;
 };
 
+/** Producto del preview de catálogo en el showcase de tiendas destacadas. */
+export type StorePreviewProduct = {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+};
+
+/** Tienda destacada con vistazo de catálogo (home showcase). */
+export type FeaturedStorePreview = {
+  id: string;
+  slug: string;
+  name: string;
+  logo: string | null;
+  banner: string | null;
+  category: string;
+  zone: string | null;
+  rating: number;
+  reviewCount: number;
+  /** Beneficio "Destacar en Home" (superadmin). */
+  featuredHome: boolean;
+  /** Total de productos activos de la tienda. */
+  productCount: number;
+  /** Hasta 4 productos con imagen para el preview. */
+  preview: StorePreviewProduct[];
+};
+
 // ── MarketplacePublicDB ───────────────────────────────────────────────────────
 
 export const MarketplacePublicDB = {
@@ -1487,6 +1514,117 @@ export const MarketplaceStatsDB = {
         .map((r) => (r.category ?? "").trim())
         .filter((c) => c.length > 0);
     } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Tiendas destacadas con PREVIEW de catálogo para el showcase de la home.
+   *
+   * Devuelve hasta `limit` tiendas publicadas con: banner, logo, rating,
+   * categoría/zona, conteo de productos y hasta 4 productos (imagen + nombre +
+   * precio) como "vistazo de lo que ofrecen". Ordena para que el showcase luzca:
+   *   1) tiendas con preview real (productos con imagen) primero,
+   *   2) luego las destacadas por el superadmin (benefits.featuredHome),
+   *   3) luego por rating + reseñas.
+   * Una tienda sin productos/imagen NO encabeza el showcase (no se puede
+   * mostrar un catálogo vacío) — cae al rail "Recomendadas".
+   *
+   * Cache: 10 min revalidate, 2 min stale, 30 min expire.
+   * @cross-tenant intentional (ADR-082) — agrega tiendas de todos los tenants.
+   */
+  async getFeaturedStoresWithPreview(limit: number = 3): Promise<FeaturedStorePreview[]> {
+    "use cache";
+    cacheLife({ revalidate: 600, stale: 120, expire: 1800 });
+    cacheTag("marketplace-top-stores");
+    try {
+
+      const stores = await prisma.store.findMany({
+        where: { isPublished: true },
+        select: {
+          id: true, slug: true, name: true, logo: true, banner: true,
+          category: true, zone: true, rating: true, reviewCount: true,
+          _count: { select: { products: { where: { isActive: true } } } },
+          products: {
+            where: {
+              isActive: true,
+              // Product.image es String (no-null en schema); en SQL `<> ''`
+              // descarta tanto cadenas vacías como NULL (drift). Solo productos
+              // con foto entran al preview.
+              product: { active: true, deletedAt: null, image: { not: "" } },
+            },
+            orderBy: { id: "asc" },
+            take: 4,
+            select: {
+              id: true,
+              retailPrice: true,
+              product: { select: { name: true, image: true } },
+            },
+          },
+        },
+        orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
+        take: 12,
+      });
+
+      // Excluir tiendas de PRUEBA / plataforma del showcase público (mismo
+      // criterio que app/sitemap.ts): "main"/"buleje" son tenants plataforma y
+      // "tienda-3"/*prueba*/*test* son demos con banners/datos falsos (ej. el
+      // banner test.com). El lanzamiento no debe mostrarlas como destacadas.
+      const TEST_SLUG_BLOCKLIST = new Set(["tienda-3", "buleje", "main", "demo"]);
+      const TEST_SLUG_PATTERN = /(test|prueba|demo|sandbox)/i;
+      const visibleStores = stores.filter(
+        (s) =>
+          !TEST_SLUG_BLOCKLIST.has(s.slug.toLowerCase()) &&
+          !TEST_SLUG_PATTERN.test(s.slug) &&
+          !TEST_SLUG_PATTERN.test(s.name ?? ""),
+      );
+
+      // featuredHome: beneficio "Destacar en Home" (jsonb fuera del schema).
+      let featuredIds = new Set<string>();
+      try {
+        const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+          `SELECT id FROM "Store" WHERE "isPublished"=true AND COALESCE((benefits->>'featuredHome')::boolean, false)=true`,
+        );
+        featuredIds = new Set(rows.map((r) => r.id));
+      } catch { /* sin columna benefits → ninguna destacada */ }
+
+      const mapped: FeaturedStorePreview[] = visibleStores.map((s) => ({
+        id: s.id,
+        slug: s.slug,
+        name: s.name,
+        logo: s.logo,
+        banner: s.banner,
+        category: s.category,
+        zone: s.zone,
+        rating: toNumOrZero(s.rating),
+        reviewCount: s.reviewCount,
+        featuredHome: featuredIds.has(s.id),
+        productCount: s._count.products,
+        preview: s.products
+          .filter((sp) => sp.product.image)
+          .map((sp) => ({
+            id: sp.id,
+            name: sp.product.name,
+            image: sp.product.image as string,
+            price: Number(sp.retailPrice),
+          })),
+      }));
+
+      // Showcase primero las que SÍ tienen catálogo visible; luego destacadas;
+      // luego rating. Una tienda vacía no encabeza (caería al rail).
+      mapped.sort((a, b) => {
+        const aHas = a.preview.length > 0 ? 1 : 0;
+        const bHas = b.preview.length > 0 ? 1 : 0;
+        if (aHas !== bHas) return bHas - aHas;
+        if (a.featuredHome !== b.featuredHome) return a.featuredHome ? -1 : 1;
+        return b.rating - a.rating || b.reviewCount - a.reviewCount;
+      });
+
+      return mapped.slice(0, limit);
+    } catch (err: unknown) {
+      // No tragamos el error en silencio: un fallo real de DB (timeout, pool)
+      // se loguea para distinguirlo de "no hay tiendas" (audit code-review).
+      logger.warn("[marketplace] getFeaturedStoresWithPreview failed", { error: String(err) });
       return [];
     }
   },

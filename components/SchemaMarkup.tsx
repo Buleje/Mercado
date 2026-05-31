@@ -1,3 +1,5 @@
+import { BRAND_GEO } from "@/lib/geo";
+
 export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue?: string; ratingCount?: string } = {}) {
   // Solo incluir aggregateRating si hay reviews reales — nunca fallback a números fake.
   // Structured data con rating falso = riesgo de penalización manual de Google.
@@ -16,52 +18,41 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
       "Buleje Perú",
       "Marketplace de Bodegas del Perú",
     ],
-    description:
-      "Marketplace de bodegas, minimarkets y tiendas de barrio en todo el Perú. Compra online con delivery rápido en tu ciudad. Paga con Yape, Plin o efectivo. Originado en Pucallpa, operando a nivel nacional.",
+    description: `Marketplace de bodegas, minimarkets y tiendas de barrio de ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}), en la Selva Central del Perú. Compra online con delivery rápido. Paga con Yape, Plin o efectivo.`,
     url: "https://www.buleje.pe",
-    telephone: "+51929340532",
+    telephone: BRAND_GEO.phone,
     email: "contacto@buleje.pe",
     foundingDate: "2011",
     foundingLocation: {
       "@type": "Place",
       name: "Pucallpa, Ucayali, Perú",
     },
-    slogan: "Tu bodega de confianza en todo el Perú — delivery rápido, pago fácil",
+    slogan: `Tu marketplace de confianza en ${BRAND_GEO.city} — delivery rápido, pago fácil`,
     knowsLanguage: "es",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Jr. Ucayali 450",
-      addressLocality: "Pucallpa",
-      addressRegion: "Ucayali",
-      postalCode: "25000",
-      addressCountry: "PE",
+      addressLocality: BRAND_GEO.city,
+      addressRegion: BRAND_GEO.region,
+      addressCountry: BRAND_GEO.countryCode,
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: -8.38006,
-      longitude: -74.53561,
+      latitude: BRAND_GEO.lat,
+      longitude: BRAND_GEO.lng,
     },
     areaServed: [
       {
+        "@type": "City",
+        name: BRAND_GEO.city,
+        sameAs: "https://es.wikipedia.org/wiki/Ciudad_Constituci%C3%B3n_(Per%C3%BA)",
+      },
+      { "@type": "AdministrativeArea", name: BRAND_GEO.province },
+      { "@type": "AdministrativeArea", name: BRAND_GEO.region },
+      {
         "@type": "Country",
-        name: "Perú",
+        name: BRAND_GEO.country,
         sameAs: "https://es.wikipedia.org/wiki/Per%C3%BA",
       },
-      {
-        "@type": "City",
-        name: "Pucallpa",
-        sameAs: "https://es.wikipedia.org/wiki/Pucallpa",
-      },
-      { "@type": "City", name: "Lima" },
-      { "@type": "City", name: "Arequipa" },
-      { "@type": "City", name: "Trujillo" },
-      { "@type": "City", name: "Cusco" },
-      { "@type": "City", name: "Chiclayo" },
-      { "@type": "City", name: "Iquitos" },
-      { "@type": "City", name: "Piura" },
-      { "@type": "City", name: "Tarapoto" },
-      { "@type": "AdministrativeArea", name: "Ucayali" },
-      { "@type": "AdministrativeArea", name: "Lima Metropolitana" },
     ],
     openingHoursSpecification: [
       {
@@ -151,20 +142,17 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     name: "Buleje",
     url: "https://www.buleje.pe",
     logo: "https://www.buleje.pe/og-image.jpg",
-    description:
-      "Tienda virtual de abarrotes con delivery rápido. Bebidas, golosinas, carne, pollo, limpieza y más. Pago con Yape o efectivo.",
-    telephone: "+51929340532",
+    description: `Marketplace de bodegas y tiendas de ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}) con delivery rápido. Abarrotes, bebidas, comida, farmacia y más. Pago con Yape, Plin o efectivo.`,
+    telephone: BRAND_GEO.phone,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Jr. Ucayali 450",
-      addressLocality: "Pucallpa",
-      addressRegion: "Ucayali",
-      postalCode: "25000",
-      addressCountry: "PE",
+      addressLocality: BRAND_GEO.city,
+      addressRegion: BRAND_GEO.region,
+      addressCountry: BRAND_GEO.countryCode,
     },
     // SEO E-E-A-T: al crear Google Business Profile, agregar su URL de Maps
-    // acá (máxima señal de entidad local Pucallpa) + YouTube/TikTok si existen.
-    // No inventar perfiles — Google penaliza sameAs falso.
+    // acá (máxima señal de entidad local en Ciudad Constitución) + YouTube/
+    // TikTok si existen. No inventar perfiles — Google penaliza sameAs falso.
     sameAs: [
       "https://www.facebook.com/buleje",
       "https://www.instagram.com/buleje",

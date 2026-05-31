@@ -7,12 +7,12 @@ const URL = `${BASE_URL}/marketplace/como-pagar`;
 export const metadata: Metadata = {
   title: "Cómo pagar — Yape, Plin, efectivo o transferencia",
   description:
-    "Pagá tu pedido como prefieras: Yape, Plin, transferencia o efectivo al recibir. Sin tarjeta obligatoria, sin comisión. Buleje · Pucallpa, Ucayali, Perú.",
+    "Pagá tu pedido como prefieras: Yape, Plin, transferencia o efectivo al recibir. Sin tarjeta obligatoria, sin comisión. Buleje · Ciudad Constitución, Pasco, Perú.",
   keywords: [
     "pagar con Yape",
     "pagar con Plin",
-    "pago contra entrega Pucallpa",
-    "delivery efectivo Pucallpa",
+    "pago contra entrega Ciudad Constitución",
+    "delivery efectivo Ciudad Constitución",
     "formas de pago bodega",
     "comprar online sin tarjeta Perú",
     "pago transferencia bodega",

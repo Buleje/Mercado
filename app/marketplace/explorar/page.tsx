@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import ExplorarClient from "@/components/marketplace/explorar/ExplorarClient";
 import JsonLd from "@/components/JsonLd";
+import { BRAND_GEO } from "@/lib/geo";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -20,9 +21,9 @@ const explorarCollectionLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
   "@id": `${BASE_URL}/marketplace/explorar`,
-  name: "Explorar el catálogo de Buleje Pucallpa",
+  name: `Explorar el catálogo de Buleje ${BRAND_GEO.city}`,
   description:
-    "Bodegas, ofertas, categorías y ocasiones de todo Pucallpa en un solo lugar. Delivery rápido, pago con Yape, Plin o efectivo.",
+    `Bodegas, ofertas, categorías y ocasiones de todo ${BRAND_GEO.city} en un solo lugar. Delivery rápido, pago con Yape, Plin o efectivo.`,
   url: `${BASE_URL}/marketplace/explorar`,
   inLanguage: "es-PE",
   isPartOf: { "@type": "WebSite", name: "Buleje", url: BASE_URL },
@@ -31,7 +32,7 @@ const explorarCollectionLd = {
 export const metadata: Metadata = {
   title: "Explorar — Todo el catálogo de Buleje",
   description:
-    "Descubri bodegas, ofertas, categorias y ocasiones en un solo lugar. Tu hub de compras en Pucallpa con delivery rápido y pago Yape o efectivo.",
+    `Descubri bodegas, ofertas, categorias y ocasiones en un solo lugar. Tu hub de compras en ${BRAND_GEO.city} con delivery rápido y pago Yape o efectivo.`,
   alternates: {
     canonical: `${BASE_URL}/marketplace/explorar`,
   },
@@ -42,17 +43,17 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Explorar — Todo el catálogo de Buleje",
     description:
-      "Descubri bodegas, ofertas y categorias de todo Pucallpa en un solo lugar. Delivery rápido, pago Yape o efectivo.",
+      `Descubri bodegas, ofertas y categorias de todo ${BRAND_GEO.city} en un solo lugar. Delivery rápido, pago Yape o efectivo.`,
     url: `${BASE_URL}/marketplace/explorar`,
     siteName: "Buleje",
     locale: "es_PE",
     type: "website",
-    images: [{ url: "/api/og", width: 1200, height: 630, alt: "Explorá el catálogo de Buleje Pucallpa" }],
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: `Explorá el catálogo de Buleje ${BRAND_GEO.city}` }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Explorar — Todo el catálogo de Buleje",
-    description: "Bodegas, ofertas y categorías de todo Pucallpa en un solo lugar. Delivery rápido, pago Yape o efectivo.",
+    description: `Bodegas, ofertas y categorías de todo ${BRAND_GEO.city} en un solo lugar. Delivery rápido, pago Yape o efectivo.`,
     images: ["/api/og"],
   },
 };
@@ -92,7 +93,7 @@ export default async function ExplorarPage() {
         el server con keyword de búsqueda principal.
       */}
       <h1 className="sr-only">
-        Explora bodegas, restaurantes y farmacias en Pucallpa — Buleje
+        {`Explora bodegas, restaurantes y farmacias en ${BRAND_GEO.city} — Buleje`}
       </h1>
       <ExplorarClient />
     </>

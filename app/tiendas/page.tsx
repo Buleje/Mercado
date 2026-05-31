@@ -4,6 +4,7 @@ import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
 import { getStoreShowcaseByCategory } from "@/lib/db/marketplace-featured.db";
 import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
+import { BRAND_GEO } from "@/lib/geo";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -27,25 +28,26 @@ export const metadata: Metadata = {
   // de marca aquí — Brandon 2026-05-20 SEO fix.
   // 2026-05-28 audit: title antes 64 chars (truncado en mobile SERP).
   // Ahora 53 chars — keyword "Bodegas en Pucallpa" + intent "delivery" + brand.
-  title: "Bodegas en Pucallpa · Delivery Yape · Buleje",
+  title: `Tiendas en ${BRAND_GEO.city} · Delivery Yape · Buleje`,
   // Brandon 2026-05-20 v2: 135 chars (target 70-155). Antes 159 chars
   // dispara warning de SEO auditors (Google trunca a ~155). Mantiene las
   // keywords clave (bodegas, farmacias, restaurantes, Pucallpa, delivery,
   // Yape, Plin) + cierre con valor agregado ("tu bodega del barrio, ahora
   // online" → conecta con la audiencia local).
   description:
-    "Comprá en bodegas, restaurantes, mercados y farmacias de Pucallpa con delivery rápido. Paga con Yape, Plin o efectivo. Todo el barrio, ahora online.",
+    `Comprá en bodegas, restaurantes, mercados y farmacias de ${BRAND_GEO.city} con delivery rápido. Paga con Yape, Plin o efectivo. Todo el barrio, ahora online.`,
   keywords: [
-    "bodegas Pucallpa",
-    "restaurantes Pucallpa",
-    "mercados Pucallpa",
-    "delivery Pucallpa",
-    "comprar online Pucallpa",
-    "tiendas Ucayali",
-    "minimarket Pucallpa",
-    "Yape Pucallpa",
-    "comida a domicilio Pucallpa",
-    "delivery Ciudad Constitución",
+    `bodegas ${BRAND_GEO.city}`,
+    `restaurantes ${BRAND_GEO.city}`,
+    `mercados ${BRAND_GEO.city}`,
+    `delivery ${BRAND_GEO.city}`,
+    `comprar online ${BRAND_GEO.city}`,
+    `tiendas ${BRAND_GEO.region}`,
+    `minimarket ${BRAND_GEO.city}`,
+    `Yape ${BRAND_GEO.city}`,
+    `comida a domicilio ${BRAND_GEO.city}`,
+    "delivery Oxapampa",
+    "delivery Pasco",
     "marketplace Perú",
     "Buleje",
   ],
@@ -66,9 +68,9 @@ export const metadata: Metadata = {
     "max-snippet": -1,
   },
   openGraph: {
-    title: "Bodegas, restaurantes y mercados en Pucallpa | Buleje",
+    title: `Bodegas, restaurantes y mercados en ${BRAND_GEO.city} | Buleje`,
     description:
-      "Comprá en bodegas, restaurantes, mercados y farmacias de Pucallpa. Delivery rápido · Yape, Plin o efectivo.",
+      `Comprá en bodegas, restaurantes, mercados y farmacias de ${BRAND_GEO.city}. Delivery rápido · Yape, Plin o efectivo.`,
     url: `${BASE_URL}/tiendas`,
     siteName: "Buleje",
     locale: "es_PE",
@@ -81,20 +83,20 @@ export const metadata: Metadata = {
         url: `${BASE_URL}/api/og`,
         width: 1200,
         height: 630,
-        alt: "Buleje — tiendas y bodegas en Pucallpa con delivery",
+        alt: `Buleje — tiendas y bodegas en ${BRAND_GEO.city} con delivery`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bodegas, restaurantes y mercados en Pucallpa | Buleje",
+    title: `Bodegas, restaurantes y mercados en ${BRAND_GEO.city} | Buleje`,
     description:
-      "Comprá en bodegas, restaurantes, mercados y farmacias de Pucallpa. Delivery rápido · Yape, Plin o efectivo.",
+      `Comprá en bodegas, restaurantes, mercados y farmacias de ${BRAND_GEO.city}. Delivery rápido · Yape, Plin o efectivo.`,
     // Brandon 2026-05-20 v11 audit P2: twitter:image:alt requerido por
     // X/Twitter para accesibilidad de la preview cuando se comparte.
     images: [{
       url: `${BASE_URL}/api/og`,
-      alt: "Buleje — tiendas y bodegas con delivery rápido en Pucallpa, Ucayali",
+      alt: `Buleje — tiendas y bodegas con delivery rápido en ${BRAND_GEO.cityRegion}`,
     }],
   },
 };
@@ -157,9 +159,9 @@ export default async function TiendasPage() {
     "@type": "CollectionPage",
     "@id": `${BASE_URL}/tiendas`,
     url: `${BASE_URL}/tiendas`,
-    name: "Tiendas y bodegas en Pucallpa",
+    name: `Tiendas y bodegas en ${BRAND_GEO.city}`,
     description:
-      "Directorio de bodegas, restaurantes, mercados, minimarkets y farmacias locales en Pucallpa y Ciudad Constitución con delivery rápido y pago con Yape, Plin o efectivo.",
+      `Directorio de bodegas, restaurantes, mercados, minimarkets y farmacias locales en ${BRAND_GEO.cityRegion} con delivery rápido y pago con Yape, Plin o efectivo.`,
     inLanguage: "es-PE",
     isPartOf: {
       "@type": "WebSite",
@@ -183,11 +185,11 @@ export default async function TiendasPage() {
           priceRange: "S/",
           currenciesAccepted: "PEN",
           paymentAccepted: "Yape, Plin, Efectivo, Tarjeta",
-          areaServed: { "@type": "City", name: s.zone ?? "Pucallpa" },
+          areaServed: { "@type": "City", name: s.zone ?? BRAND_GEO.city },
           address: {
             "@type": "PostalAddress",
-            addressLocality: s.zone ?? "Pucallpa",
-            addressRegion: "Ucayali",
+            addressLocality: s.zone ?? BRAND_GEO.city,
+            addressRegion: BRAND_GEO.region,
             addressCountry: "PE",
           },
           ...(s.rating > 0 && s.reviewCount > 0
@@ -220,10 +222,10 @@ export default async function TiendasPage() {
     mainEntity: [
       {
         "@type": "Question",
-        name: "¿Cómo pido delivery en las tiendas de Pucallpa por Buleje?",
+        name: `¿Cómo pido delivery en las tiendas de ${BRAND_GEO.city} por Buleje?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Elegí una bodega o restaurante del directorio, agregá productos al carrito y confirmá. La tienda recibe tu pedido al instante por WhatsApp y coordina el delivery a tu dirección en Pucallpa.",
+          text: `Elegí una bodega o restaurante del directorio, agregá productos al carrito y confirmá. La tienda recibe tu pedido al instante por WhatsApp y coordina el delivery a tu dirección en ${BRAND_GEO.city}.`,
         },
       },
       {
@@ -239,7 +241,7 @@ export default async function TiendasPage() {
         name: "¿Cuánto cuesta el delivery?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "El costo de envío lo define cada tienda según tu zona en Pucallpa (Centro, Yarinacocha, Manantay, Callería, Campo Verde). Lo ves antes de confirmar el pedido, sin sorpresas.",
+          text: `El costo de envío lo define cada tienda según tu zona en ${BRAND_GEO.city}. Lo ves antes de confirmar el pedido, sin sorpresas.`,
         },
       },
       {
@@ -247,7 +249,7 @@ export default async function TiendasPage() {
         name: "¿Qué tipos de tiendas hay en Buleje?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Bodegas y minimarkets, mercados, restaurantes y pizzerías, farmacias, panaderías y ferreterías locales de Pucallpa y Ciudad Constitución, todas con catálogo online y delivery.",
+          text: `Bodegas y minimarkets, mercados, restaurantes y pizzerías, farmacias, panaderías y ferreterías locales de ${BRAND_GEO.cityRegion}, todas con catálogo online y delivery.`,
         },
       },
       {
@@ -281,7 +283,7 @@ export default async function TiendasPage() {
         diseño y da H1 semántico desde el primer byte del HTML.
       */}
       <h1 className="sr-only">
-        Tiendas y bodegas en Pucallpa con delivery — Buleje Marketplace
+        {`Tiendas y bodegas en ${BRAND_GEO.city} con delivery — Buleje Marketplace`}
       </h1>
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
     </>

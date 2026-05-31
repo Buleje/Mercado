@@ -60,8 +60,8 @@ function JsonLd() {
       name: "Buleje",
       address: {
         "@type": "PostalAddress",
-        addressLocality: "Pucallpa",
-        addressRegion: "Ucayali",
+        addressLocality: "Ciudad Constitución",
+        addressRegion: "Pasco",
         addressCountry: "PE",
       },
     },
@@ -362,7 +362,7 @@ function HeroSection() {
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary dark:border-primary/30 dark:bg-primary/10"
         >
           <span className="size-2 animate-pulse rounded-full bg-primary" />
-          Hecho para bodegas de Pucallpa
+          Hecho para bodegas de Ciudad Constitución
         </motion.div>
 
         {/* Titular */}
@@ -372,7 +372,7 @@ function HeroSection() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-4xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-5xl lg:text-6xl"
         >
-          Tu bodega en Pucallpa{" "}
+          Tu bodega en Ciudad Constitución{" "}
           <span className="text-primary">merece un sistema inteligente</span>
         </motion.h1>
 
@@ -594,7 +594,7 @@ function SocialProofSection() {
           transition={{ duration: 0.4 }}
           className="mb-10 text-center text-sm font-semibold uppercase tracking-widest text-muted"
         >
-          Hecho para bodegas de Pucallpa — y de todo el Peru
+          Hecho para bodegas de Ciudad Constitución — y de todo el Peru
         </motion.p>
 
         {/* Stats */}

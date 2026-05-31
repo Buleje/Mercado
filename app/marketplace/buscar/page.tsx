@@ -25,8 +25,8 @@ export async function generateMetadata({
     : "Buscar productos — Buleje";
 
   const description = q
-    ? `Encuentra "${q}" en bodegas y tiendas cerca tuyo en Pucallpa. Delivery rápido, Yape y efectivo.`
-    : "Busca productos en todas las bodegas y tiendas del marketplace Buleje. Pucallpa, Perú.";
+    ? `Encuentra "${q}" en bodegas y tiendas cerca tuyo en Ciudad Constitución. Delivery rápido, Yape y efectivo.`
+    : "Busca productos en todas las bodegas y tiendas del marketplace Buleje. Ciudad Constitución, Pasco, Perú.";
 
   return {
     title,
@@ -106,8 +106,8 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       */}
       <h1 className="sr-only">
         {q
-          ? `Resultados de búsqueda para "${q}" en bodegas de Pucallpa`
-          : "Busca productos en bodegas y tiendas de Pucallpa — Buleje"}
+          ? `Resultados de búsqueda para "${q}" en bodegas de Ciudad Constitución`
+          : "Busca productos en bodegas y tiendas de Ciudad Constitución — Buleje"}
       </h1>
       <BuscarClient
         initialQuery={q}
