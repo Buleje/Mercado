@@ -55,30 +55,17 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// ── generateStaticParams ─────────────────────────────────────────────────────────
-// Brandon 2026-05-30 (audit #1 — fix warning "Uncached data outside <Suspense>"):
-// `[slug]` es un segmento dinámico. Bajo Next 16 cacheComponents, SIN esta
-// función no hay shell estático posible (los `params` son request-time), y Next
-// reporta el "blocking-route" atribuido al RootLayout. Confirmado empíricamente:
-// con la función presente (aunque devuelva []), el warning desaparece para TODOS
-// los slugs — los listados se prerenderan al build; los nuevos rendean on-demand
-// (dynamicParams=true por default). NO era culpa de los helpers getOrSet (la
-// hipótesis previa); los dejamos intactos → la invalidación instantánea por
-// `invalidateByPrefix` sigue igual, sin riesgo de data stale.
-export async function generateStaticParams() {
-  try {
-    const slugs = await MarketplaceStoresDB.listPublishedSlugs(200);
-    if (slugs.length > 0) return slugs.map((slug) => ({ slug }));
-  } catch {
-    // DB no accesible en build (p.ej. preview sin DIRECT_URL) → cae al placeholder.
-  }
-  // cacheComponents EXIGE ≥1 entry (build error si [] — ver
-  // nextjs.org/docs/messages/empty-generate-static-params). Si no hay tiendas
-  // publicadas o la DB falló, devolvemos un placeholder: getBySlug("__validate__")
-  // → null → notFound() (branch válido para la validación de build). Las tiendas
-  // reales se prerenderan cuando existen; las nuevas rendean on-demand.
-  return [{ slug: "__validate__" }];
-}
+// NOTA (Brandon 2026-05-30): se REVIRTIÓ generateStaticParams. Quitar el warning
+// dev "Uncached data outside <Suspense>" vía generateStaticParams habilitaba el
+// PRERENDER del storefront, pero la capa DB usa `Date.now()` en el render path
+// (proxy Prisma → query-monitor.trackQuery + getBySlug trial-check), prohibido
+// bajo cacheComponents → el prerender LANZABA y rompía la tienda (404/"Cargando…"
+// atascado). El warning original era cosmético (no-bloqueante, la página
+// funciona); un storefront roto NO. El storefront queda DINÁMICO (rendea
+// on-demand, sin prerender) — que es lo correcto: sus datos son dinámicos
+// (getOrSet + Date.now). Para matar el warning de verdad habría que volver
+// prerender-safe toda la capa DB (mover Date.now dentro de "use cache"),
+// trabajo mayor fuera de alcance. Ver [[project_storefront_blocking_route]].
 
 // ── generateMetadata ───────────────────────────────────────────────────────────
 
