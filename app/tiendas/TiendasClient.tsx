@@ -25,6 +25,7 @@ import {
   Search as SearchIcon, ShoppingBag, ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { BRAND_GEO } from "@/lib/geo";
 // Brandon 2026-05-18 + audit-sprint 2026-05-20:
 // SearchAutocomplete + MarketplaceStoresView declarados como dynamic() abajo
 // (después del `import dynamic from "next/dynamic"`) para reducir initial
@@ -866,6 +867,27 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
                 Hay {stores.length - 3} resultados más en el listado de abajo.
               </p>
             )}
+
+            {/* A3 — búsqueda por PRODUCTO cross-tienda. El vecino busca
+                "gaseosa", no "bodega": le ofrecemos saltar a la búsqueda de
+                productos en TODAS las tiendas (que sí matchea por producto). */}
+            <Link
+              href={`/marketplace/buscar?q=${encodeURIComponent(search.trim())}`}
+              className="mt-4 flex items-center gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-3.5 transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/40"
+            >
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <ShoppingBag className="h-5 w-5" strokeWidth={2} aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-extrabold text-[var(--text-primary)]">
+                  ¿Buscás un producto?
+                </span>
+                <span className="block text-xs font-semibold text-[var(--text-secondary)] truncate">
+                  Ver &quot;{search.trim()}&quot; en productos de todas las tiendas
+                </span>
+              </span>
+              <ArrowUpRight className="h-4.5 w-4.5 shrink-0 text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
+            </Link>
           </div>
         </section>
       )}
@@ -976,13 +998,13 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
 
         {/* h1 sr-only mobile — SEO presente, sin ocupar viewport */}
         <h1 className="sm:hidden sr-only">
-          Tiendas y bodegas en Pucallpa con delivery
+          Tiendas y bodegas en {BRAND_GEO.city} con delivery
         </h1>
 
         {/* h1 desktop compacto — 1 línea, sin párrafos extra */}
         <h1 className="hidden sm:block text-2xl lg:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight mb-6">
           Tiendas en{" "}
-          <span className="text-[var(--accent)]">Pucallpa</span>
+          <span className="text-[var(--accent)]">{BRAND_GEO.city}</span>
         </h1>
 
         {/* ── DESKTOP SIDEBAR LAYOUT — lg:grid-cols-[280px_1fr]

@@ -11,6 +11,8 @@ import {
   HardHat,
   Moon,
   Bike,
+  ShoppingBag,
+  ArrowUpRight,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -656,14 +658,29 @@ export default function MarketplaceStoresView({
           </h3>
           <p className="text-sm text-[var(--text-secondary)] max-w-md">
             {search
-              ? `No hay tiendas que coincidan con "${search}". Prueba con otro nombre.`
+              ? `No hay tiendas con el nombre "${search}".`
               : "Aún no hay tiendas publicadas en esta categoría. ¡Pronto habrá más!"}
           </p>
+
+          {/* A3 — si buscó un término de PRODUCTO ("gaseosa", "arroz"), no hay
+              tienda con ese nombre pero SÍ puede haber productos. Le ofrecemos
+              la búsqueda cross-tienda como acción PRIMARIA. */}
+          {search && (
+            <Link
+              href={`/marketplace/buscar?q=${encodeURIComponent(search.trim())}`}
+              className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 h-12 text-sm font-extrabold text-white shadow-md shadow-[var(--accent)]/25 transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+            >
+              <ShoppingBag className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />
+              Buscar &quot;{search.trim()}&quot; en productos
+              <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+            </Link>
+          )}
+
           {(search || category !== "todos" || zone || geoActive) && (
             <button
               onClick={onClearAll}
               aria-label="Quitar todos los filtros y ver todas las tiendas"
-              className="mt-4 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+              className="mt-3 px-6 py-2.5 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-bold hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
               Ver todas las tiendas
             </button>

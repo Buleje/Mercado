@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 import { ChevronRight, Home } from "@buleje/design-system/icons";
+import { BRAND_GEO } from "@/lib/geo";
 
 interface Crumb {
   label: string;
@@ -28,7 +29,7 @@ export default function TiendasBreadcrumb({ zonaLabel }: Props) {
   // items con item URL — GSC valida correctamente.
   const crumbs: Crumb[] = [
     { label: "Inicio", href: "/" },
-    { label: zonaLabel ? "Tiendas" : "Tiendas en Pucallpa", href: "/tiendas" },
+    { label: zonaLabel ? "Tiendas" : `Tiendas en ${BRAND_GEO.city}`, href: "/tiendas" },
   ];
   if (zonaLabel) {
     crumbs.push({ label: zonaLabel });
