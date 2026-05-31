@@ -184,14 +184,8 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
       badge?: number | string;
     }>;
   }> = [
-    {
-      title: "Mi cuenta",
-      links: [
-        { href: "/marketplace/mi-cuenta/pedidos", label: "Mis pedidos", desc: "Historial y tracking", Icon: Package },
-        { href: "/marketplace/mi-cuenta/favoritos", label: "Favoritos", desc: "Tiendas y productos guardados", Icon: Heart },
-        { href: "/marketplace/mi-cuenta", label: "Perfil", desc: "Datos, direcciones, cupones", Icon: UserCircle },
-      ],
-    },
+    // Brandon 2026-05-30: "Explorar Buleje" PRIMERO (navegación principal del
+    // consumidor), "Mi cuenta" debajo. La grilla "Categorías" va después (abajo).
     {
       title: "Explorar Buleje",
       links: [
@@ -202,6 +196,14 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
         ...(!tiendasOnly && hasActiveOffers === true
           ? [{ href: "/marketplace/ofertas", label: "Ofertas del día", Icon: Tag }]
           : []),
+      ],
+    },
+    {
+      title: "Mi cuenta",
+      links: [
+        { href: "/marketplace/mi-cuenta/pedidos", label: "Mis pedidos", desc: "Historial y tracking", Icon: Package },
+        { href: "/marketplace/mi-cuenta/favoritos", label: "Favoritos", desc: "Tiendas y productos guardados", Icon: Heart },
+        { href: "/marketplace/mi-cuenta", label: "Perfil", desc: "Datos, direcciones, cupones", Icon: UserCircle },
       ],
     },
     // "Para tu negocio" (B2B) solo fuera de modo tienda.
@@ -383,15 +385,16 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
             </div>
           ))}
 
-          {/* Brandon 2026-05-18: Categorías base del marketplace
-              (gestionadas desde superadmin/marketplace > Categorías).
-              Solo muestran las que tienen ≥1 tienda real asociada — evita
-              rubros muertos. La imagen viene del superadmin; si todavía no
-              tiene foto subida, usa emoji fallback para identificación visual. */}
-          {!tiendasOnly && availableCategories.length > 0 && (
+          {/* ── Categorías ── Brandon 2026-05-30: visible SIEMPRE (también en
+              modo tienda — filtrar por rubro es navegación de consumidor). Cada
+              tile lleva a /tiendas?cat=<id> YA FILTRADO. Solo rubros con ≥1
+              tienda real (sin rubros muertos). Imagen del superadmin o emoji
+              fallback. (fix: antes usaba ?category= → no filtraba; el filtro
+              de /tiendas lee ?cat=). */}
+          {availableCategories.length > 0 && (
             <div>
-              <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Explorar por rubro
+              <p className="px-2 mb-2.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Categorías
               </p>
               <div className="grid grid-cols-4 gap-2">
                 {availableCategories.map((cat) => {
@@ -399,20 +402,21 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
                   return (
                     <Link
                       key={cat.id}
-                      href={`/tiendas?category=${cat.id}`}
+                      href={`/tiendas?cat=${encodeURIComponent(cat.id)}`}
                       onClick={onClose}
-                      className="group flex flex-col items-center gap-1.5 rounded-2xl p-2.5 bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 active:scale-95 transition-all"
+                      aria-label={`Ver tiendas de ${cat.label}`}
+                      className="group flex flex-col items-center gap-1.5 rounded-2xl p-2 bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/40 hover:-translate-y-0.5 active:scale-95 transition-all"
                     >
                       <span
                         aria-hidden
-                        className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] overflow-hidden group-hover:scale-110 transition-transform shrink-0"
+                        className="relative inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-canvas)] ring-1 ring-[var(--rule-base)] overflow-hidden group-hover:ring-[var(--accent)]/40 group-hover:scale-105 transition-all shrink-0"
                       >
                         {cat.imageUrl ? (
                           <Image
                             src={cat.imageUrl}
                             alt=""
-                            width={48}
-                            height={48}
+                            width={56}
+                            height={56}
                             className="h-full w-full object-cover"
                             unoptimized
                           />
@@ -420,7 +424,7 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
                           <span className="text-2xl">{emoji}</span>
                         )}
                       </span>
-                      <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)] leading-tight text-center truncate w-full">
+                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] leading-tight text-center line-clamp-2 w-full group-hover:text-[var(--accent)] transition-colors">
                         {cat.label}
                       </span>
                     </Link>

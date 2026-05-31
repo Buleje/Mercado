@@ -30,6 +30,8 @@ import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { extractWaNumber } from "@/lib/wa-number";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { readNavVisibility, subscribeNavVisibility, type NavVisibilityMap } from "@/lib/nav-visibility";
+import { BRAND_GEO } from "@/lib/geo";
 
 
 // ── Columna 1: Marketplace ──────────────────────────────────────────────
@@ -148,22 +150,10 @@ const storeModeLinks = [
   { href: "/marketplace/registrar", label: "Crear tienda" },
 ];
 
-// Footer simplificado para /tiendas en modo "Solo Tiendas" (NavegacionTab
-// preset por defecto). Brandon mayo 2026: cuando el superadmin tiene el
-// modo "Solo Tiendas" activo, el footer NO debe mostrar el ecosistema
-// completo de marketplace (Explorar, Recetas, Comparar, Gift Cards, etc.).
-// Al volver al modo "Marketplace completo" se renderea el mega footer.
-const tiendasOnlyLinks = [
-  { href: "/", label: "Inicio" },
-  { href: "/tiendas", label: "Tiendas" },
-  { href: "/marketplace/ofertas", label: "Ofertas" },
-  { href: "/marketplace/como-pagar", label: "Cómo pagar" },
-  { href: "/abrir-tienda", label: "Abre tu tienda" },
-  { href: "/cuenta/pedidos", label: "Mis pedidos" },
-  { href: "/ayuda", label: "Ayuda" },
-  { href: "/terminos", label: "Términos" },
-  { href: "/privacidad", label: "Privacidad" },
-];
+// Brandon 2026-05-30: el footer "Solo Tiendas" (tiendasFooterLinks) ahora se
+// construye DINÁMICO dentro del componente — gateado por la config del
+// superadmin (lib/nav-visibility) + Inicio/Tiendas siempre. Ver el cuerpo de
+// Footer(). Se usa en TODAS las páginas en modo tienda (footer único).
 
 // ── LinkGroup ─────────────────────────────────────────────────────────────
 // Grupo de links del footer v2. En mobile funciona como acordeón
@@ -293,16 +283,53 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
   // sumamos su altura al padding inferior solo en mobile.
   const { itemCount } = useMarketplaceCart();
   const hasCart = itemCount > 0;
+  // Brandon 2026-05-30: el footer de tiendas (rico, "Solo Tiendas") ahora se usa
+  // en TODAS las páginas (inicio incluido) cuando el superadmin tiene el modo
+  // tienda activo — footer ÚNICO y consistente. Antes solo aplicaba en /tiendas;
+  // la home caía en isLandingMode (2 columnas), rompiendo la consistencia.
+  // Excluye el storefront de un vendor (isStoreMode tiene su propio footer).
+  // navMode === null (SSR / antes de hidratar el hook) se trata como
+  // "tiendas-only" porque ES el default del marketplace → evita el FOUC
+  // (mega-footer parpadeando antes de recortar al footer de tiendas).
   const isTiendasOnlyMode =
-    pathname.startsWith("/tiendas") && navMode === "tiendas-only";
+    (navMode === "tiendas-only" || navMode === null) && !isStoreMode;
+
+  // Links del footer modo tienda gateados por la config del superadmin
+  // (lib/nav-visibility). Inicio + Tiendas siempre; los demás solo si están
+  // habilitados. Cómo pagar / Ayuda / legal son esenciales (siempre).
+  // Init con los defaults SSR-safe (readNavVisibility devuelve defaultStore en
+  // el server) → el render inicial YA respeta el modo tienda (ofertas/recetas/
+  // explorar/en-vivo ocultos por default) sin flash de "todos los links".
+  const [navVis, setNavVis] = useState<NavVisibilityMap>(() => readNavVisibility().marketplace);
+  useEffect(() => {
+    const read = () => setNavVis(readNavVisibility().marketplace);
+    read();
+    return subscribeNavVisibility(read);
+  }, []);
+  const linkOn = (id: string) => navVis[id] ?? true;
+  const tiendasFooterLinks = [
+    { href: "/", label: "Inicio" },
+    { href: "/tiendas", label: "Tiendas" },
+    ...(linkOn("ofertas") ? [{ href: "/marketplace/ofertas", label: "Ofertas" }] : []),
+    ...(linkOn("recetas") ? [{ href: "/recetas", label: "Recetas" }] : []),
+    ...(linkOn("explorar") ? [{ href: "/marketplace/explorar", label: "Explorar" }] : []),
+    ...(linkOn("en-vivo") ? [{ href: "/marketplace/en-vivo", label: "En Vivo" }] : []),
+    ...(linkOn("negocios") ? [{ href: "/negocios", label: "Negocios" }] : []),
+    ...(linkOn("abrir-tienda") ? [{ href: "/abrir-tienda", label: "Abre tu tienda" }] : []),
+    { href: "/marketplace/como-pagar", label: "Cómo pagar" },
+    { href: "/cuenta/pedidos", label: "Mis pedidos" },
+    { href: "/ayuda", label: "Ayuda" },
+    { href: "/terminos", label: "Términos" },
+    { href: "/privacidad", label: "Privacidad" },
+  ];
   // Marca de la plataforma (gestionada en /superadmin/marca).
   // Cuando storeTheme está vacío, la marca de la plataforma se usa como fallback.
   const { brand } = usePlatformBrand();
   const platformName = brand?.identity.name || "Buleje";
   const platformPhone = brand?.contact.phone ?? "";
   const platformWa = brand?.contact.whatsapp ?? "";
-  const platformCity = brand?.identity.city || "Pucallpa";
-  const platformRegion = brand?.identity.country || "Ucayali";
+  const platformCity = brand?.identity.city || BRAND_GEO.city;
+  const platformRegion = brand?.identity.country || BRAND_GEO.region;
   const fbUrl = brand?.socials.facebook || "";
   const igUrl = brand?.socials.instagram || "";
 
@@ -349,8 +376,10 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
         </div>
       )}
 
-      {/* Landing mode — footer minimalista 2 columnas honesto pre-launch */}
-      {isLandingMode && (
+      {/* Landing mode — footer minimalista 2 columnas honesto pre-launch.
+          Solo si NO estamos en modo tienda (tiendas-only tiene precedencia →
+          footer único consistente en inicio + tiendas + demás). */}
+      {isLandingMode && !isTiendasOnlyMode && (
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-16">
             {/* Empresa */}
@@ -513,7 +542,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
 
           {/* ── Links: una fila limpia, sin badge de jerga interna ── */}
           <nav aria-label="Enlaces de tiendas" className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2.5">
-            {tiendasOnlyLinks.map((link) => (
+            {tiendasFooterLinks.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
