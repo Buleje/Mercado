@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef, memo, useMemo } from "react";
+import { useRef, memo, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import {
   MapPin,
   Star,
@@ -16,7 +18,44 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import type { FeaturedNearbyStore } from "@/lib/db/marketplace-featured.db";
 import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
+
+// Drawer "Vista rápida" (peek + add sin salir de /tiendas). Lazy — usa
+// framer-motion; solo se carga al primer click en una card premium.
+const StoreQuickPreviewDrawer = dynamic(
+  () => import("@/components/marketplace/StoreQuickPreviewDrawer"),
+);
+
+// Mapea una MarketplaceStore + sus productos premium al shape que espera el
+// drawer (FeaturedNearbyStore con productosDestacados embebidos). Sin fetch.
+function toFeaturedStore(
+  store: MarketplaceStore,
+  products: import("./PremiumStoreCard").PremiumProduct[],
+): FeaturedNearbyStore {
+  return {
+    id: store.id,
+    slug: store.slug,
+    name: store.name,
+    logo: store.logo ?? null,
+    banner: store.cover ?? null,
+    category: store.category ?? "",
+    zone: store.zone ?? null,
+    rating: store.rating ?? 0,
+    reviewCount: store.reviewCount ?? 0,
+    description: null,
+    distanceKm: 0,
+    productosDestacados: products.map((p) => ({
+      id: String(p.productId),
+      productId: p.productId,
+      name: p.name,
+      image: p.image,
+      retailPrice: p.retailPrice,
+      discountPrice: p.discountPrice ?? null,
+      discountLabel: null,
+    })),
+  };
+}
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { StoreCardCanonical } from "@buleje/design-system";
 import PremiumStoreCard from "./PremiumStoreCard";
@@ -552,6 +591,12 @@ export default function MarketplaceStoresView({
 }: MarketplaceStoresViewProps) {
   const chips = activeChips ?? new Set<QuickChipId>();
 
+  // A2 — drawer "Vista rápida": peek de productos sin salir de /tiendas. El
+  // "agregar" navega al producto (el carrito cross-store del checkout necesita
+  // storeProductId + modifiers que no tenemos en el preview).
+  const [quickViewStore, setQuickViewStore] = useState<FeaturedNearbyStore | null>(null);
+  const router = useRouter();
+
   // TS-08 — mapa storeSlug → último pedido del cliente (cache 5min)
   const lastOrdersByStore = useLastOrdersByStore();
 
@@ -752,6 +797,11 @@ export default function MarketplaceStoresView({
                     reviewCount={store.reviewCount}
                     verified={store.verified}
                     products={premiumProducts[store.slug] ?? []}
+                    onQuickView={
+                      (premiumProducts[store.slug]?.length ?? 0) > 0
+                        ? () => setQuickViewStore(toFeaturedStore(store, premiumProducts[store.slug] ?? []))
+                        : undefined
+                    }
                   />
                 </div>
               );
@@ -776,6 +826,18 @@ export default function MarketplaceStoresView({
           Ordenado por cercanía
         </p>
       )}
+
+      {/* A2 — drawer "Vista rápida": productos de la tienda con add-to-cart
+          sin salir del directorio. Se monta lazy al primer click. */}
+      <StoreQuickPreviewDrawer
+        store={quickViewStore}
+        open={quickViewStore !== null}
+        onClose={() => setQuickViewStore(null)}
+        onAddToCart={(p) => {
+          const slug = quickViewStore?.slug;
+          if (slug) router.push(`/marketplace/${slug}/producto/${p.productId}`);
+        }}
+      />
     </>
   );
 }

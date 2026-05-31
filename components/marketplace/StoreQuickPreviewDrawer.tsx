@@ -37,6 +37,13 @@ interface Props {
   store: FeaturedNearbyStore | null;
   open: boolean;
   onClose: () => void;
+  /**
+   * Override del "agregar". En el storefront (default) agrega al carrito del
+   * tenant vía useCart. En el MARKETPLACE (/tiendas) ese carrito NO es el que
+   * usa el checkout (es cross-store y necesita storeProductId + modifiers), así
+   * que el caller pasa un handler que NAVEGA al producto para agregar bien allá.
+   */
+  onAddToCart?: (p: FeaturedNearbyProduct) => void;
 }
 
 type DrawerTab = "destacados" | "top";
@@ -44,7 +51,7 @@ type DrawerTab = "destacados" | "top";
 const fmtPEN = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN", minimumFractionDigits: 2 }).format(n);
 
-export default function StoreQuickPreviewDrawer({ store, open, onClose }: Props) {
+export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToCart }: Props) {
   const { addItem } = useCart();
   const drawerRef = useRef<HTMLDivElement>(null);
   const [addedFlash, setAddedFlash] = useState<string | null>(null);
@@ -106,6 +113,12 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose }: Props)
   if (!store) return null;
 
   const handleAdd = (p: FeaturedNearbyProduct) => {
+    // Marketplace context: delega (navega al producto). No agrega al carrito
+    // del tenant — sería el carrito equivocado para el checkout cross-store.
+    if (onAddToCart) {
+      onAddToCart(p);
+      return;
+    }
     const price = p.discountPrice ?? p.retailPrice;
     addItem({
       id: p.productId,
