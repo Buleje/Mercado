@@ -1,20 +1,20 @@
-# Buleje — Software para bodegas y tiendas + Marketplace en Pucallpa, Perú
+# Buleje — Software para bodegas y tiendas + Marketplace en Ciudad Constitución, Perú
 # https://www.buleje.pe
-# Última actualización: 2026-05-27
+# Última actualización: 2026-05-30
 
 ## Qué es Buleje
 Buleje es una plataforma peruana todo-en-uno con dos caras:
-1. **Software (B2B)** para bodegas, minimarkets, restaurantes, farmacias y tiendas: POS, inventario, delivery, fiado digital, facturación electrónica SUNAT y pagos con Yape/Plin. Abrís tu tienda online en 5 minutos.
-2. **Marketplace (B2C)** donde vecinos de Pucallpa (Ucayali, Perú) compran con delivery a tiendas locales.
+1. **Software (B2B)** para bodegas, minimarkets, restaurantes, farmacias y tiendas: POS, inventario, delivery, fiado digital, facturación electrónica SUNAT y pagos con Yape/Plin. Abrís tu tienda online en 5 minutos. Disponible en todo el Perú.
+2. **Marketplace (B2C)** donde vecinos de Ciudad Constitución (Oxapampa, Pasco, Perú) compran con delivery a tiendas locales.
 
-Operación principal: Pucallpa, Ucayali, Perú. Idioma: español (es-PE).
+Operación del marketplace: lanzamiento en Ciudad Constitución, Oxapampa, Pasco, Perú (Selva Central); en expansión a Pucallpa y todo el país. El software B2B es nacional. Idioma: español (es-PE).
 
 ## Para tu negocio (B2B) — página principal: https://www.buleje.pe/negocios
 - Abrí tu tienda online en 5 minutos, sin tarjeta de crédito.
 - 0% de comisión por venta: el dinero llega directo a tu Yape, cuenta o caja. Solo pagás el plan mensual.
 - Incluye: POS, inventario, delivery propio o repartidores Buleje, fiado digital, CRM de clientes, facturación electrónica SUNAT (boletas, cotizaciones, guías de remisión).
 - Pagos aceptados por tus clientes: Yape, Plin, efectivo y tarjeta (vía Stripe).
-- Plan Fundador: primeros 10 negocios de Pucallpa con setup 1-a-1, 90 días de acompañamiento por WhatsApp, sesión de fotos sin costo y 0% comisión los primeros 90 días.
+- Plan Fundador: primeros 10 negocios de Ciudad Constitución con setup 1-a-1, 90 días de acompañamiento por WhatsApp, sesión de fotos sin costo y 0% comisión los primeros 90 días.
 - Registro / abrir tienda: https://www.buleje.pe/abrir-tienda
 
 ## Planes y precios (vigentes 2026)
@@ -30,10 +30,10 @@ Todos los planes pagos arrancan con el primer mes gratis y se cambian o cancelan
 3. Compartí el link de tu tienda; recibís pedidos por WhatsApp y cobrás con Yape/Plin/efectivo.
 
 ## Marketplace (lado consumidor) — directorio: https://www.buleje.pe/tiendas
-- Vecinos de Pucallpa compran con delivery a bodegas, farmacias, restaurantes, pizzerías, panaderías, mercados y ferreterías locales.
+- Vecinos de Ciudad Constitución (Oxapampa, Pasco) compran con delivery a bodegas, farmacias, restaurantes, pizzerías, panaderías, mercados y ferreterías locales.
 - Cómo comprar: elegís tienda → armás carrito → confirmás → la tienda recibe el pedido y coordina el delivery.
 - Pagos: Yape, Plin, efectivo y tarjeta (directo a cada tienda).
-- Cobertura por zonas: Centro, Yarinacocha, Manantay, Callería, Campo Verde, Ciudad Constitución.
+- Cobertura por zonas en Ciudad Constitución: Centro, Sector Norte, Sector Sur.
 - El costo de envío lo define cada tienda según la zona y se ve antes de confirmar.
 
 ## Para quién es el software
@@ -47,6 +47,7 @@ Todos los planes pagos arrancan con el primer mes gratis y se cambian o cancelan
 - ¿Buleje cobra comisión por venta? No. 0% comisión; el dinero va directo a tu Yape/cuenta. Solo pagás el plan mensual.
 - ¿Funciona con SUNAT? Sí, los planes Pro y Business incluyen facturación electrónica (boletas, cotizaciones, guías de remisión).
 - ¿En cuánto tiempo está lista mi tienda? En unos 5 minutos; el Plan Fundador incluye setup 1-a-1.
+- ¿Dónde hace delivery el marketplace? En Ciudad Constitución (Oxapampa, Pasco) y zonas cercanas de la Selva Central; en expansión.
 - ¿Puedo pagar con Yape como cliente del marketplace? Sí — Yape, Plin, efectivo y tarjeta.
 
 ## Stack tecnológico

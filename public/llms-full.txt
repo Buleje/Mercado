@@ -1,23 +1,23 @@
-# Buleje — Marketplace de bodegas en Pucallpa + Software ERP para tiendas
+# Buleje — Marketplace de bodegas en Ciudad Constitución + Software ERP para tiendas
 
 > Buleje es dos cosas en una plataforma: (1) un **marketplace** donde los vecinos
-> de Pucallpa, Perú compran a bodegas, minimarkets y restaurantes locales con
+> de Ciudad Constitución (Oxapampa, Pasco), Perú compran a bodegas, minimarkets y restaurantes locales con
 > delivery rápido; y (2) un **software ERP/SaaS** que esas mismas tiendas usan
 > para gestionar ventas, inventario, fiados y delivery desde el celular.
 
-Sitio: https://buleje.pe · Idioma: español (es-PE) · Ubicación: Pucallpa, Ucayali, Perú
+Sitio: https://buleje.pe · Idioma: español (es-PE) · Ubicación: Ciudad Constitución, Oxapampa, Pasco, Perú
 
 ---
 
 ## 1. Marketplace (para compradores / vecinos)
 
-Buleje conecta a los vecinos de Pucallpa con cientos de bodegas, minimarkets,
+Buleje conecta a los vecinos de Ciudad Constitución con las bodegas, minimarkets,
 pollerías, fruterías, farmacias y restaurantes de su zona. Es como tener todas
 las tiendas del barrio en una sola app.
 
 ### Cómo comprar en Buleje (paso a paso)
-1. Entrá a buleje.pe y buscá tu bodega por nombre, categoría o zona (Manantay,
-   Yarinacocha, Callería, etc.).
+1. Entrá a buleje.pe y buscá tu bodega por nombre, categoría o zona (Centro,
+   Sector Norte, Sector Sur).
 2. Armá tu pedido agregando productos al carrito. Ves el total real en vivo, sin
    sorpresas.
 3. Elegí cómo pagar: **Yape, Plin o efectivo** al recibir. No necesitás tarjeta.
@@ -29,10 +29,10 @@ las tiendas del barrio en una sola app.
 - Efectivo contra entrega
 No se requiere tarjeta de crédito ni registro complejo.
 
-### Cobertura en Pucallpa
-Buleje opera en las principales zonas y distritos de Pucallpa: Callería,
-Manantay, Yarinacocha, y barrios aledaños. Cada zona tiene su propia página con
-las bodegas disponibles: buleje.pe/zona/pucallpa
+### Cobertura en Ciudad Constitución
+Buleje opera en Ciudad Constitución (Oxapampa, Pasco): Centro, Sector Norte,
+Sector Sur y zonas cercanas de la Selva Central. Cada zona tiene su propia página
+con las bodegas disponibles: buleje.pe/zona/ciudad-constitucion
 
 ### Tipos de tienda en el marketplace
 Bodegas y minimarkets, pollerías, fruterías y verdulerías, carnicerías,
@@ -82,7 +82,7 @@ Comprar es gratis para el vecino. Pagás solo tus productos + el delivery que
 defina la tienda. Aceptamos Yape, Plin y efectivo.
 
 **¿Cuánto tarda el delivery?**
-25 minutos en promedio dentro de Pucallpa, según la zona y la tienda.
+25 minutos en promedio dentro de Ciudad Constitución, según la zona y la tienda.
 
 **¿Necesito tarjeta de crédito?**
 No. Pagás con Yape, Plin o efectivo al recibir.
@@ -95,8 +95,8 @@ Gratis en buleje.pe/abrir-tienda. El plan Free no tiene costo y el setup toma
 El POS del ERP funciona offline y sincroniza cuando vuelve la conexión.
 
 **¿En qué ciudades opera Buleje?**
-Nació en Pucallpa (Ucayali) y es el foco principal del marketplace. El software
-ERP sirve a tiendas de todo Perú y Latinoamérica.
+El marketplace lanza en Ciudad Constitución (Oxapampa, Pasco) y se expande a
+Pucallpa y el resto del Perú. El software ERP sirve a tiendas de todo Perú y Latinoamérica.
 
 **¿Es seguro pagar con Yape en Buleje?**
 Sí. El pago se hace directo a la tienda o contra entrega; Buleje no almacena
@@ -116,8 +116,8 @@ datos de tarjetas.
 ## 5. Contacto
 - Web: https://buleje.pe
 - WhatsApp: pedidos y soporte vía el botón de WhatsApp en el sitio
-- Ubicación: Pucallpa, Ucayali, Perú
+- Ubicación: Ciudad Constitución, Oxapampa, Pasco, Perú
 
 ---
-Última actualización: 2026-05-24. Contenido en español peruano (es-PE).
+Última actualización: 2026-05-30. Contenido en español peruano (es-PE).
 Buleje — tu mercado desde la selva amazónica.
