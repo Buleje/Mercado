@@ -110,9 +110,15 @@ export default function BottomNav() {
           router.push(homeHref);
           break;
         case "buscar":
-          router.push(
-            isTiendasOnly ? "/tiendas?focus=search" : "/marketplace/buscar",
-          );
+          // Brandon 2026-05-31: abre EL MISMO overlay de búsqueda del navbar
+          // (full-screen, sugerencias en vivo) en vez de navegar a otra página.
+          // El navbar escucha "buleje:open-search". Fallback: navegar si el
+          // navbar no está montado (no debería pasar en el chrome marketplace).
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("buleje:open-search"));
+          } else {
+            router.push(isTiendasOnly ? "/tiendas" : "/marketplace/buscar");
+          }
           break;
         case "carrito":
           router.push("/marketplace/carrito");

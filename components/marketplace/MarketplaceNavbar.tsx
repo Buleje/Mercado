@@ -451,6 +451,15 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
     return () => window.removeEventListener("buleje:open-cart", onOpenCart);
   }, [router]);
 
+  // Brandon 2026-05-31: el BottomNav mobile "Buscar" dispara este evento para
+  // abrir EL MISMO overlay de búsqueda que el pill del navbar (misma acción,
+  // un solo buscador). Antes navegaba a /tiendas?focus=search (distinto).
+  useEffect(() => {
+    const onOpenSearch = () => setMobileSearchOpen(true);
+    window.addEventListener("buleje:open-search", onOpenSearch);
+    return () => window.removeEventListener("buleje:open-search", onOpenSearch);
+  }, []);
+
   // El search mobile ahora abre MobileSearchOverlay (panel full-screen con
   // sugerencias/recientes). El form solo previene el submit nativo y abre el
   // overlay — la query real se escribe dentro del overlay.
