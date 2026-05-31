@@ -7,9 +7,14 @@ import type { MetadataRoute } from "next";
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  let name = "Mi Tienda - Delivery";
-  let shortName = "Tienda";
-  let description = "Compra online con delivery a domicilio.";
+  // Defaults branded para el PWA de la plataforma (marketplace Buleje). Si el
+  // request trae un tenant con businessName propio (storefront white-label),
+  // se sobreescriben abajo. Antes el default era genérico "Mi Tienda - Delivery"
+  // → al instalar el marketplace decía "Mi Tienda" en vez de Buleje (audit SEO).
+  let name = "Buleje — Bodegas y tiendas con delivery";
+  let shortName = "Buleje";
+  let description =
+    "Pedí a bodegas, restaurantes y farmacias de tu barrio con delivery. Yape, Plin o efectivo.";
   let themeColor = "var(--accent)";
 
   try {

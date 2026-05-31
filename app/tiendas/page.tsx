@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import TiendasClient from "./TiendasClient";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
 import { getStoreShowcaseByCategory } from "@/lib/db/marketplace-featured.db";
@@ -278,6 +279,45 @@ export default async function TiendasPage() {
     ],
   };
 
+  // ── JSON-LD: ItemList de Productos (Product + Offer) — audit SEO 2026-05-31 ──
+  // Los previews de tiendas premium muestran productos con precio. Emitimos
+  // Product+Offer (ItemList) → habilita rich snippets de precio en Google.
+  const storeNameBySlug: Record<string, string> = Object.fromEntries(
+    initialStores.map((s) => [s.slug, s.name]),
+  );
+  const previewProducts = Object.entries(productsBySlug).flatMap(([slug, items]) =>
+    items.map((p) => ({ ...p, storeSlug: slug, storeName: storeNameBySlug[slug] ?? "" })),
+  );
+  const productListSchema =
+    previewProducts.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: `Productos destacados de tiendas en ${BRAND_GEO.city}`,
+          numberOfItems: previewProducts.length,
+          itemListElement: previewProducts.map((p, idx) => ({
+            "@type": "ListItem",
+            position: idx + 1,
+            item: {
+              "@type": "Product",
+              name: p.name,
+              ...(p.image ? { image: p.image } : {}),
+              ...(p.category ? { category: p.category } : {}),
+              offers: {
+                "@type": "Offer",
+                price: Number(p.discountPrice ?? p.retailPrice).toFixed(2),
+                priceCurrency: "PEN",
+                availability: "https://schema.org/InStock",
+                url: `${BASE_URL}/marketplace/${p.storeSlug}`,
+                ...(p.storeName
+                  ? { seller: { "@type": "Organization", name: p.storeName } }
+                  : {}),
+              },
+            },
+          })),
+        }
+      : null;
+
   return (
     <>
       {/* SEC 2026-05-26: safeJsonLdStringify escapa < > & U+2028/2029 — evita
@@ -295,6 +335,12 @@ export default async function TiendasPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbSchema) }}
       />
+      {productListSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(productListSchema) }}
+        />
+      )}
       {/*
         SEO 2026-05-28 audit: TiendasClient (client component) renderiza el
         H1 visual, pero el HTML SSR initial no lo tenía → Google veía la
@@ -305,6 +351,47 @@ export default async function TiendasPage() {
         {`Tiendas y bodegas en ${BRAND_GEO.city} con delivery — Buleje Marketplace`}
       </h1>
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
+
+      {/* SEO outro — contenido textual indexable para una página de categoría
+          local (audit 2026-05-31: la página tenía poco texto crawlable).
+          Server-rendered, ~150 palabras, keywords locales naturales. */}
+      <section
+        aria-labelledby="tiendas-seo-heading"
+        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 mt-8 border-t border-[var(--rule-soft)]"
+      >
+        <h2
+          id="tiendas-seo-heading"
+          className="text-lg font-extrabold text-[var(--text-primary)] mb-3"
+        >
+          Delivery de bodegas, restaurantes y farmacias en {BRAND_GEO.city}
+        </h2>
+        <div className="max-w-3xl space-y-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+          <p>
+            Buleje reúne las bodegas, minimarkets, restaurantes, pizzerías y
+            farmacias de {BRAND_GEO.city} ({BRAND_GEO.province}, {BRAND_GEO.region})
+            en un solo lugar. Pedís online desde tu celular y la tienda recibe tu
+            pedido al instante por WhatsApp, lo prepara y te lo lleva a tu puerta —
+            normalmente en 25 a 35 minutos según tu zona.
+          </p>
+          <p>
+            Pagás como te quede cómodo: Yape, Plin, efectivo o tarjeta al recibir,
+            sin adelantar nada. Cada negocio define su propio costo de envío y lo
+            ves antes de confirmar, así no hay sorpresas. Compará precios entre
+            tiendas, mirá las más pedidas de la semana y descubrí productos frescos
+            de la selva central.
+          </p>
+          <p>
+            Somos un marketplace local: detrás de cada pedido hay un vecino
+            atendiendo a otro vecino. Empezamos en {BRAND_GEO.city} y de a poco
+            sumamos más negocios de {BRAND_GEO.province} y {BRAND_GEO.region}.
+            ¿Tenés una tienda?{" "}
+            <Link href="/abrir-tienda" className="font-semibold text-[var(--accent)] hover:underline">
+              Publicá tu catálogo gratis
+            </Link>{" "}
+            y llegá a más clientes de tu barrio.
+          </p>
+        </div>
+      </section>
     </>
   );
 }
