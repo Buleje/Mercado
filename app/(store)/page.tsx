@@ -587,7 +587,11 @@ function hrefForCategory(id: string): string {
 }
 
 async function CategoriesGrid() {
-  const cats = await getSuperadminCategories();
+  // Filtra categorías de sistema (id con prefijo "_", ej "_meta") que se
+  // colaban como una card vacía sin label ni imagen. (pulido home 2026-05-31)
+  const cats = (await getSuperadminCategories()).filter(
+    (c) => c.id && !c.id.startsWith("_"),
+  );
 
   // Particiona: las 2 destacadas primero (Restaurantes + Bodega), resto en grid chico
   const featured = FEATURED_SLUGS
@@ -644,14 +648,14 @@ async function CategoriesGrid() {
                 />
                 {/* Imagen superadmin si existe, sino icono Lucide como fallback */}
                 <span
-                  className="relative inline-flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-[var(--surface-canvas)] shrink-0 shadow-md ring-4 ring-[var(--accent)]/10 group-hover:scale-110 transition-transform overflow-hidden"
+                  className="relative inline-flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-[var(--surface-canvas)] shrink-0 shadow-md ring-4 ring-[var(--accent)]/10 group-hover:scale-110 transition-transform overflow-hidden"
                 >
                   {c.imageUrl ? (
                     <Image
                       src={c.imageUrl}
                       alt={`${c.label} en Pucallpa con delivery rápido`}
                       fill
-                      sizes="(min-width: 640px) 112px, 80px"
+                      sizes="(min-width: 640px) 96px, 80px"
                       className="object-cover"
                       // Audit 2026-05-17 02-P1-02: featured[0] (Restaurante) es LCP
                       // candidate above-the-fold mobile. priority elimina ~200ms.
@@ -669,7 +673,10 @@ async function CategoriesGrid() {
                   })()}
                 </span>
                 <div className="relative min-w-0 flex-1">
-                  <h3 className="text-xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+                  {/* text-xl hasta lg para que "Restaurantes" (12 chars) entre
+                      en 1 línea al lado de la imagen; text-3xl solo en lg+ donde
+                      la card es ancha. Sin break-words (rompía a mitad de palabra). */}
+                  <h3 className="text-xl lg:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
                     {c.label}
                   </h3>
                   {c.description && (
@@ -768,6 +775,9 @@ function StoreRatingStars({ rating, reviewCount }: { rating: number; reviewCount
  */
 function StoreCard({ s, priority = false }: { s: TopStore; priority?: boolean }) {
   const initial = s.name.trim().charAt(0).toUpperCase();
+  // Ícono de la categoría para el watermark del cover — rellena el espacio
+  // antes vacío con una señal visual del rubro. (pulido home 2026-05-31)
+  const CoverIcon = CATEGORY_ICONS[s.category] ?? Store;
   return (
     <Link
       href={`/marketplace/${s.slug}`}
@@ -786,6 +796,13 @@ function StoreCard({ s, priority = false }: { s: TopStore; priority?: boolean })
             WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
             opacity: 0.12,
           }}
+        />
+        {/* Watermark del rubro — rellena el cover (antes vacío) con señal visual
+            de la categoría, abajo-derecha para no chocar con el avatar (izq). */}
+        <CoverIcon
+          aria-hidden
+          className="pointer-events-none absolute right-2.5 bottom-1 h-11 w-11 sm:h-12 sm:w-12 text-[var(--accent)]/25 -rotate-12 group-hover:scale-110 group-hover:text-[var(--accent)]/35 transition-all"
+          strokeWidth={1.5}
         />
         {/* Badge Destacada (beneficio superadmin "Destacar en Home") */}
         {s.featuredHome && (
@@ -847,10 +864,14 @@ function StoreCard({ s, priority = false }: { s: TopStore; priority?: boolean })
           </div>
         )}
 
-        {/* Pie: delivery disponible (honesto — sin minutos inventados) */}
+        {/* Pie: delivery + estimación de entrega. "25–35 min" = estimación de
+            plataforma para Pucallpa (igual que el hero "delivery en 25 min" y el
+            storefront), no un dato inventado por tienda. Rellena la card. */}
         <div className="mt-auto flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5 text-[10px] sm:text-xs font-bold text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors">
           <Bike className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-          Delivery a domicilio
+          <span>Delivery</span>
+          <span aria-hidden className="opacity-50">·</span>
+          <span>25–35 min</span>
         </div>
       </div>
     </Link>
