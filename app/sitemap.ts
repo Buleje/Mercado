@@ -274,22 +274,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // ────────────────────────────────────────────────────────────────────────
 
   // Marketplace stores + store products — dynamic from DB.
-  // Brandon 2026-05-20 v10 audit P0: filtramos tiendas de prueba/test
-  // (slug contiene "test", "prueba", "demo" o exactos "buleje"/"main"/
-  // "tienda-3") — Google indexaba 13+ urls de "Tienda 3 Pruebas" con
-  // contenido vacío, dañando la calidad del sitio.
-  const TEST_SLUG_BLOCKLIST = new Set(["tienda-3", "buleje", "main", "demo"]);
-  const TEST_SLUG_PATTERN = /(test|prueba|demo|sandbox)/i;
   const marketplacePages: MetadataRoute.Sitemap = [];
 
-  // 2026-05-28 audit BUG-03: `stores` viene de la Promise.all() unificada arriba.
-  // Filtramos blocklist/pattern aquí (no se puede aplicar como where en Prisma).
-  const filteredStores = stores.filter(
-    (s) =>
-      !TEST_SLUG_BLOCKLIST.has(s.slug.toLowerCase()) &&
-      !TEST_SLUG_PATTERN.test(s.slug) &&
-      !TEST_SLUG_PATTERN.test(s.name ?? ""),
-  );
+  // 2026-05-31: visibilidad = SOLO isPublished (la query de `stores` ya filtra
+  // isPublished:true). Removido el blocklist de slugs/nombres test/demo — para
+  // sacar una tienda del sitemap, el superadmin la despublica (criterio único,
+  // consistente con la API y el SSR del marketplace).
+  const filteredStores = stores;
 
   // Add marketplace hub
   marketplacePages.push({

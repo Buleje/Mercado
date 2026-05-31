@@ -1566,18 +1566,11 @@ export const MarketplaceStatsDB = {
         take: 12,
       });
 
-      // Excluir tiendas de PRUEBA / plataforma del showcase público (mismo
-      // criterio que app/sitemap.ts): "main"/"buleje" son tenants plataforma y
-      // "tienda-3"/*prueba*/*test* son demos con banners/datos falsos (ej. el
-      // banner test.com). El lanzamiento no debe mostrarlas como destacadas.
-      const TEST_SLUG_BLOCKLIST = new Set(["tienda-3", "buleje", "main", "demo"]);
-      const TEST_SLUG_PATTERN = /(test|prueba|demo|sandbox)/i;
-      const visibleStores = stores.filter(
-        (s) =>
-          !TEST_SLUG_BLOCKLIST.has(s.slug.toLowerCase()) &&
-          !TEST_SLUG_PATTERN.test(s.slug) &&
-          !TEST_SLUG_PATTERN.test(s.name ?? ""),
-      );
+      // 2026-05-31: visibilidad = SOLO isPublished (la query ya filtra
+      // isPublished:true). Removido el blocklist de slugs/nombres test/demo:
+      // para sacar una tienda del showcase, el superadmin la despublica
+      // (criterio único, consistente con sitemap, API y SSR).
+      const visibleStores = stores;
 
       // featuredHome: beneficio "Destacar en Home" (jsonb fuera del schema).
       let featuredIds = new Set<string>();

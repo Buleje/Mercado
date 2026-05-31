@@ -240,18 +240,12 @@ export async function GET(req: NextRequest) {
       stores = await prisma.store.findMany({
         where: {
           isPublished: true,
-          // Brandon 2026-05-20 v11 audit P0: bloquear slugs reservados de
-          // test/demo del listado público (mismo filtro que initial-stores
-          // SSR). NOT IN para excluirlos en query, sin overhead client-side.
-          slug: { notIn: ["tienda-3", "buleje", "main", "demo"] },
-          // Adicional: bloqueamos cualquier slug con patrón test/prueba/demo
-          NOT: [
-            { slug: { contains: "test", mode: "insensitive" as const } },
-            { slug: { contains: "prueba", mode: "insensitive" as const } },
-            { slug: { contains: "demo", mode: "insensitive" as const } },
-            { name: { contains: "prueba", mode: "insensitive" as const } },
-            { name: { contains: "test", mode: "insensitive" as const } },
-          ],
+          // Visibilidad = SOLO isPublished (controlado por el superadmin).
+          // 2026-05-31: removido el blocklist hardcodeado de slugs/nombres
+          // test/demo — quedaba desincronizado con el SSR (getInitialMarketplace
+          // Stores ya filtra solo isPublished) → mostraba 3 acá vs 6 en el SSR
+          // (test stores publicadas). Para ocultar una tienda, el superadmin la
+          // despublica (criterio único, consistente en API + SSR + sitemap).
           ...zoneClause,
           ...categoryClause,
           ...(search && { name: { contains: search, mode: "insensitive" as const } }),
