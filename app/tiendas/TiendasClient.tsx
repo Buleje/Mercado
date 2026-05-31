@@ -996,16 +996,18 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
           <TiendasWelcomeBanner />
         </div>
 
-        {/* h1 sr-only mobile — SEO presente, sin ocupar viewport */}
-        <h1 className="sm:hidden sr-only">
+        {/* h2 — el H1 único de la página es el sr-only en app/tiendas/page.tsx
+            (server, SSR). Estos eran H1 duplicados (3 H1 → audit SEO 2026-05-31);
+            degradados a H2 para jerarquía limpia H1→H2→H3 (cards). */}
+        <h2 className="sm:hidden sr-only">
           Tiendas y bodegas en {BRAND_GEO.city} con delivery
-        </h1>
+        </h2>
 
-        {/* h1 desktop compacto — 1 línea, sin párrafos extra */}
-        <h1 className="hidden sm:block text-2xl lg:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight mb-6">
+        {/* h2 desktop compacto — 1 línea, sin párrafos extra */}
+        <h2 className="hidden sm:block text-2xl lg:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight mb-6">
           Tiendas en{" "}
           <span className="text-[var(--accent)]">{BRAND_GEO.city}</span>
-        </h1>
+        </h2>
 
         {/* ── DESKTOP SIDEBAR LAYOUT — lg:grid-cols-[280px_1fr]
              En < lg (mobile + tablet): los filtros y el grid quedan en flujo

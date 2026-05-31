@@ -71,8 +71,10 @@ import {
 // explícito ("Buleje") + twitter card. Antes faltaba siteName → Facebook/
 // LinkedIn no podían armar el snippet con el sitio.
 export const metadata: Metadata = {
-  title: `Delivery en ${BRAND_GEO.city} — bodegas, restaurantes y farmacias`,
-  description: `Pedí online en ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}): bodegas, restaurantes y farmacias con delivery rápido. Paga con Yape, Plin o efectivo. Tu marketplace local de la Selva Central.`,
+  // El template del root layout agrega " | Buleje" → mantener este título
+  // ≤51 chars para que el total quede ≤60 (Google trunca en SERP). Audit SEO.
+  title: `Delivery en ${BRAND_GEO.city} — bodegas y comida`,
+  description: `Pedí online en ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}): bodegas, restaurantes y farmacias con delivery rápido. Paga con Yape, Plin o efectivo.`,
   keywords: [
     "delivery Ciudad Constitución",
     "marketplace Ciudad Constitución",

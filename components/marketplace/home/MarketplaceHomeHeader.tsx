@@ -24,7 +24,10 @@ export default function MarketplaceHomeHeader({
         El header editorial (eyebrow + h1 + propuesta + trust strip) se oculta
         en cel para ir al grano; dejamos solo un <h1> sr-only para no perder el
         anclaje SEO. En sm+ el header completo sigue visible. */}
-    <h1 className="sm:hidden sr-only">
+    {/* H1 único de la home — sr-only en TODOS los breakpoints (siempre en el
+        árbol a11y/SEO). El heading visible de abajo es H2 para no duplicar H1
+        (audit SEO 2026-05-31). */}
+    <h1 className="sr-only">
       Tus bodegas y tiendas favoritas de Ciudad Constitución, a un toque —
       delivery rápido con Yape, tarjeta o efectivo
     </h1>
@@ -33,10 +36,10 @@ export default function MarketplaceHomeHeader({
         <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
           Marketplace · Ciudad Constitución
         </p>
-        <h1 className="mt-2 text-2xl sm:text-4xl lg:text-5xl font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+        <h2 className="mt-2 text-2xl sm:text-4xl lg:text-5xl font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           Tus bodegas y tiendas favoritas,{" "}
           <span className="text-[var(--accent)]">a un toque</span>
-        </h1>
+        </h2>
         <p className="mt-3 max-w-2xl text-sm sm:text-lg leading-relaxed text-[var(--text-secondary)]">
           Pedí de bodegas, minimarkets y tiendas del Perú en un solo lugar.
           Delivery rápido y pago con Yape, tarjeta o efectivo.

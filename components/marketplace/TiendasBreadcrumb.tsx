@@ -20,8 +20,6 @@ interface Props {
   zonaLabel?: string;
 }
 
-const BASE_URL = "https://www.buleje.pe";
-
 export default function TiendasBreadcrumb({ zonaLabel }: Props) {
   // Brandon 2026-05-20 v10 audit P0: el item de "Tiendas" siempre tiene
   // href (audit reporto BreadcrumbList con solo 1 item porque la pagina
@@ -35,29 +33,15 @@ export default function TiendasBreadcrumb({ zonaLabel }: Props) {
     crumbs.push({ label: zonaLabel });
   }
 
-  const ld = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: crumbs.map((c, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: c.label,
-      // Siempre emitir `item` cuando tenemos href (es el caso de Inicio
-      // y Tiendas; solo el último crumb de zona puede no tenerlo).
-      ...(c.href && { item: `${BASE_URL}${c.href}` }),
-    })),
-  };
-
+  // El BreadcrumbList JSON-LD ahora lo emite el server (app/tiendas/page.tsx y
+  // app/tiendas/[zona]/page.tsx) SIEMPRE — mode-independent. Este componente
+  // está gated por !isTiendasOnly, así que emitir el schema acá lo perdía en
+  // modo tiendas-only (default) y lo DUPLICABA en zona. Solo nav visible ahora.
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
-      />
-      <nav
-        aria-label="Migajas de pan"
-        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-4"
-      >
+    <nav
+      aria-label="Migajas de pan"
+      className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-4"
+    >
         <ol className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] flex-wrap">
           {crumbs.map((c, i) => (
             <li key={`${c.label}-${i}`} className="flex items-center gap-1.5">
@@ -90,7 +74,6 @@ export default function TiendasBreadcrumb({ zonaLabel }: Props) {
             </li>
           ))}
         </ol>
-      </nav>
-    </>
+    </nav>
   );
 }

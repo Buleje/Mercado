@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   // de marca aquí — Brandon 2026-05-20 SEO fix.
   // 2026-05-28 audit: title antes 64 chars (truncado en mobile SERP).
   // Ahora 53 chars — keyword "Bodegas en Pucallpa" + intent "delivery" + brand.
-  title: `Tiendas en ${BRAND_GEO.city} · Delivery Yape · Buleje`,
+  title: `Tiendas en ${BRAND_GEO.city} · Delivery Yape`,
   // Brandon 2026-05-20 v2: 135 chars (target 70-155). Antes 159 chars
   // dispara warning de SEO auditors (Google trunca a ~155). Mantiene las
   // keywords clave (bodegas, farmacias, restaurantes, Pucallpa, delivery,
@@ -208,9 +208,24 @@ export default async function TiendasPage() {
     },
   };
 
-  // Brandon 2026-05-20 v10: BreadcrumbList ya lo emite TiendasBreadcrumb
-  // dentro del TiendasClient (con item URL siempre presente — audit P0).
-  // No emitimos otro aquí para evitar duplicación.
+  // ── JSON-LD: BreadcrumbList (audit SEO 2026-05-31) ──
+  // Emitido server-side SIEMPRE (mode-independent). Antes vivía solo en
+  // TiendasBreadcrumb, pero ese componente está gated por !isTiendasOnly →
+  // en modo tiendas-only (el default real) Google NO recibía el breadcrumb.
+  // Ahora TiendasBreadcrumb solo renderiza el nav visible (sin su JSON-LD).
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: BASE_URL },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: `Tiendas en ${BRAND_GEO.city}`,
+        item: `${BASE_URL}/tiendas`,
+      },
+    ],
+  };
 
   // ── JSON-LD: FAQPage (Brandon 2026-05-25 SEO/IA) ──
   // Respuestas extraíbles por Google (rich result de FAQ) y por la IA
@@ -275,6 +290,10 @@ export default async function TiendasPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbSchema) }}
       />
       {/*
         SEO 2026-05-28 audit: TiendasClient (client component) renderiza el

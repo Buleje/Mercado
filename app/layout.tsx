@@ -133,6 +133,12 @@ export const metadata: Metadata = {
     : {
         index: true,
         follow: true,
+        // Directivas extendidas también a nivel raíz (no solo googleBot) →
+        // se emiten en <meta name="robots"> para Bing/otros + consistencia
+        // con /tiendas (audit SEO 2026-05-31).
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
         googleBot: {
           index: true,
           follow: true,
@@ -302,8 +308,9 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://www.clarity.ms" />
         <link rel="dns-prefetch" href="https://c.clarity.ms" />
         
-        {/* PWA Metadata */}
-        <link rel="manifest" href="/manifest.json" />
+        {/* PWA Metadata — el <link rel="manifest"> a /manifest.webmanifest lo
+            inyecta Next automáticamente desde app/manifest.ts. No declarar otro
+            manual a /manifest.json (duplicaba el manifest — audit SEO 2026-05-31). */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
