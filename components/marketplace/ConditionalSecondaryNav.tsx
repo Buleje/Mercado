@@ -18,20 +18,21 @@ const MarketplaceSecondaryNav = dynamic(
 
 export default function ConditionalSecondaryNav() {
   const mode = useMarketplaceNavMode();
+  // Brandon 2026-05-30 v2: en "modo tienda" (tiendas-only, el default) NO se
+  // muestra NINGUNA sub-nav — ni la barra de categorías de producto mobile
+  // (Frutas, Snacks…) ni el mega-menú desktop. El foco es el listado de
+  // tiendas; la página /tiendas ya trae sus propios filtros + buscador. Las
+  // categorías de producto vuelven solo en full/minimo/custom. Esperamos a que
+  // `mode` resuelva (≠ null) para evitar el flash "aparece 1 frame" al hidratar.
+  const showSubNav = mode !== null && mode !== "tiendas-only";
   return (
     <>
-      {/* Barra de categorías MOBILE (chips scrollables estilo storefront) —
-          SIEMPRE visible. NO depende del modo: el default del marketplace es
-          "tiendas-only", que ocultaba el secondary nav entero y dejaba el cel
-          sin categorías. Es md:hidden, así que en desktop no compite con el
-          mega-menú. */}
-      <MarketplaceCategoriesBar />
+      {/* Barra de categorías de PRODUCTO mobile (chips: Bebidas, Snacks…).
+          md:hidden — en desktop manda el mega-menú. Oculta en tiendas-only. */}
+      {showSubNav && <MarketplaceCategoriesBar />}
 
-      {/* Desktop: mega-menú + filtros rápidos. Aparece en full/minimo/custom;
-          se oculta en tiendas-only. Esperamos a que `mode` resuelva (≠ null)
-          antes de renderizar para evitar el flash "aparece 1 frame y se oculta"
-          al hidratar (el hook arranca null en SSR). Brandon 2026-05-30. */}
-      {mode !== null && mode !== "tiendas-only" && <MarketplaceSecondaryNav />}
+      {/* Desktop: mega-menú + filtros rápidos. Solo full/minimo/custom. */}
+      {showSubNav && <MarketplaceSecondaryNav />}
     </>
   );
 }

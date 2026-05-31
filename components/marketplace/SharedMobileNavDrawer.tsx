@@ -40,6 +40,7 @@ import { useCustomer } from "@/contexts/customer-context";
 import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
 import { useHasActiveOffers } from "@/hooks/use-active-offers";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 
 interface MarketplaceCategory {
   id: string;
@@ -84,6 +85,13 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
   // descuentos inexistentes).
   const hasActiveOffers = useHasActiveOffers();
   const { itemCount } = useMarketplaceCart();
+  // Brandon 2026-05-30: en "modo tienda" (tiendas-only, el default del super-
+  // admin) el drawer muestra SOLO las opciones de consumidor: Inicio · Tiendas
+  // · Pedidos · Favoritos · Perfil · WhatsApp soporte. Se ocultan los bloques
+  // B2B/descubrimiento (Para tu negocio, Explorar por rubro, Ofertas del día y
+  // el CTA "Abrí tu tienda"). En full/minimo se mantiene la experiencia full.
+  const navMode = useMarketplaceNavMode();
+  const tiendasOnly = navMode === "tiendas-only";
 
   // Brandon 2026-05-18: rubros del marketplace SE FETCHEAN del backend
   // (las mismas que Brandon configura en /superadmin/marketplace > Categorías)
@@ -167,18 +175,24 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
         { href: "/", label: "Inicio", Icon: HomeIcon },
         { href: "/tiendas", label: "Todas las tiendas", Icon: StoreIcon },
         // Brandon 2026-05-18 v3: "Ofertas del día" solo si hay activas.
-        ...(hasActiveOffers === true
+        // 2026-05-30: y nunca en modo tienda (tiendas-only).
+        ...(!tiendasOnly && hasActiveOffers === true
           ? [{ href: "/marketplace/ofertas", label: "Ofertas del día", Icon: Tag }]
           : []),
       ],
     },
-    {
-      title: "Para tu negocio",
-      links: [
-        { href: "/negocios", label: "Negocios", desc: "Software para bodegas", Icon: Building2 },
-        { href: "/abrir-tienda", label: "Abre tu Tienda", desc: "Planes y beneficios", Icon: Rocket },
-      ],
-    },
+    // "Para tu negocio" (B2B) solo fuera de modo tienda.
+    ...(!tiendasOnly
+      ? [
+          {
+            title: "Para tu negocio",
+            links: [
+              { href: "/negocios", label: "Negocios", desc: "Software para bodegas", Icon: Building2 },
+              { href: "/abrir-tienda", label: "Abre tu Tienda", desc: "Planes y beneficios", Icon: Rocket },
+            ],
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -345,7 +359,7 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
               Solo muestran las que tienen ≥1 tienda real asociada — evita
               rubros muertos. La imagen viene del superadmin; si todavía no
               tiene foto subida, usa emoji fallback para identificación visual. */}
-          {availableCategories.length > 0 && (
+          {!tiendasOnly && availableCategories.length > 0 && (
             <div>
               <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Explorar por rubro
@@ -421,16 +435,19 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
           </div>
         </nav>
 
-        <div className="border-t border-[var(--rule-base)] p-4">
-          <Link
-            href="/negocios"
-            onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full h-12 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-extrabold hover:bg-[var(--text-primary)]/90 active:scale-95 transition-all shadow-lg"
-          >
-            ¿Tenés una tienda? Abrila acá
-            <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-          </Link>
-        </div>
+        {/* CTA B2B "Abrí tu tienda" — oculto en modo tienda (tiendas-only). */}
+        {!tiendasOnly && (
+          <div className="border-t border-[var(--rule-base)] p-4">
+            <Link
+              href="/negocios"
+              onClick={onClose}
+              className="flex items-center justify-center gap-2 w-full h-12 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-extrabold hover:bg-[var(--text-primary)]/90 active:scale-95 transition-all shadow-lg"
+            >
+              ¿Tenés una tienda? Abrila acá
+              <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+            </Link>
+          </div>
+        )}
       </aside>
     </div>
   );

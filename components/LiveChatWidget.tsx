@@ -199,6 +199,11 @@ export default function LiveChatWidget() {
 
   if (!phone) return null;
 
+  // Brandon 2026-05-30: en el home (/) el globito flotante de chat se OCULTA en
+  // mobile — compite con el bottom-nav y satura la pantalla del cel. En desktop
+  // sí aparece (hay espacio sobrante a la derecha). Fuera del home, normal.
+  const isHome = pathname === "/";
+
   return (
     <>
       {/* Floating launcher — anclado al borde lateral derecho.
@@ -209,7 +214,10 @@ export default function LiveChatWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 h-14 sm:h-[60px] rounded-full px-5 gap-2.5 flex items-center justify-center transition-all duration-[var(--dur-base)] hover:gap-3 hover:shadow-[var(--shadow-xl)] active:scale-95"
+          className={cn(
+            "fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 h-14 sm:h-[60px] rounded-full px-5 gap-2.5 items-center justify-center transition-all duration-[var(--dur-base)] hover:gap-3 hover:shadow-[var(--shadow-xl)] active:scale-95",
+            isHome ? "hidden sm:flex" : "flex",
+          )}
           style={{
             background:
               "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
