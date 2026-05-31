@@ -6,6 +6,7 @@ import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceEmptyState from "@/components/marketplace/MarketplaceEmptyState";
+import { BRAND_GEO } from "@/lib/geo";
 
 interface TopProduct {
   storeProductId: string;
@@ -140,7 +141,7 @@ export default function MarketplaceTopToday() {
                 description:
                   p.soldUnits != null && p.soldUnits > 0
                     ? `${p.soldUnits} vendidos hoy · ranking ${idx + 1}`
-                    : `Top ${idx + 1} de hoy en Pucallpa`,
+                    : `Top ${idx + 1} de hoy en ${BRAND_GEO.city}`,
                 storeRating: p.avgRating,
               }}
             />

@@ -19,6 +19,17 @@ const ComoFuncionaSection = dynamic(
   () => import("@/components/landing/sections/ComoFuncionaSection"),
   { loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
 );
+// Brandon 2026-05-30 (conversión A1): rail de recompra para el cliente.
+//  - QuickReorder: "Volvé a pedir" tu último pedido (client, auth-gated, se
+//    auto-oculta si no hay pedido previo). Recompra en 1 toque.
+//  - TopToday: "Lo más pedido hoy" cross-tienda con quick-add directo al carrito
+//    (se auto-oculta si no hay datos). Ambos self-fetch + self-contained.
+const MarketplaceQuickReorder = dynamic(
+  () => import("@/components/marketplace/MarketplaceQuickReorder"),
+);
+const MarketplaceTopToday = dynamic(
+  () => import("@/components/marketplace/MarketplaceTopToday"),
+);
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
@@ -146,7 +157,7 @@ async function getSuperadminCategories(): Promise<SuperadminCategory[]> {
 // con eslint-disable como excusa cross-tenant. Ahora vive en
 // `lib/db/marketplace-public.db.ts` (MarketplaceStatsDB) — único punto que
 // accede a prisma, con `use cache` + cacheLife + cacheTag homogéneos.
-import { MarketplaceStatsDB, type FeaturedStorePreview } from "@/lib/db/marketplace-public.db";
+import { MarketplaceStatsDB, MarketplacePublicDB, type FeaturedStorePreview } from "@/lib/db/marketplace-public.db";
 import { BRAND_GEO } from "@/lib/geo";
 
 async function getMarketplaceStats() {
@@ -337,6 +348,43 @@ async function BulejeJsonLd() {
         }
       : null;
 
+  // ItemList de PRODUCTOS más pedidos (B5 SEO/IA): matchea el rail visible
+  // "Lo más pedido hoy" → carrusel de productos en SERP + alimenta a las IAs
+  // con el catálogo real (Product + Offer con precio). Solo datos reales.
+  const topProductsRes = await MarketplacePublicDB.getTopToday(10).catch(() => ({
+    items: [] as Awaited<ReturnType<typeof MarketplacePublicDB.getTopToday>>["items"],
+  }));
+  const productListSchema =
+    topProductsRes.items.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: `Lo más pedido en Buleje ${BRAND_GEO.city}`,
+          itemListOrder: "https://schema.org/ItemListOrderDescending",
+          numberOfItems: topProductsRes.items.length,
+          itemListElement: topProductsRes.items.map((p, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            item: {
+              "@type": "Product",
+              name: p.name,
+              ...(p.image ? { image: p.image } : {}),
+              url: `https://www.buleje.pe/marketplace/${p.store.slug}/producto/${p.productId}`,
+              offers: {
+                "@type": "Offer",
+                price: p.price,
+                priceCurrency: "PEN",
+                availability:
+                  p.stock > 0
+                    ? "https://schema.org/InStock"
+                    : "https://schema.org/OutOfStock",
+                seller: { "@type": "Organization", name: p.store.name },
+              },
+            },
+          })),
+        }
+      : null;
+
   return (
     <>
       {/* Brandon 2026-05-31 (audit home): safeJsonLdStringify escapa < > & y los
@@ -359,6 +407,12 @@ async function BulejeJsonLd() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(itemListSchema) }}
+        />
+      )}
+      {productListSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(productListSchema) }}
         />
       )}
     </>
@@ -1298,6 +1352,10 @@ export default async function Home() {
       {/* 1. Hero compacto con buscador */}
       <RappiStyleHero />
 
+      {/* 1.5 Volvé a pedir — recompra en 1 toque para el cliente que vuelve.
+          Self-hide si no hay pedido previo / no logueado (no molesta a nuevos). */}
+      <MarketplaceQuickReorder />
+
       {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas */}
       <Suspense fallback={<SectionSkeleton minH="min-h-[640px]" />}>
         <Reveal>
@@ -1311,6 +1369,12 @@ export default async function Home() {
           <TopStoresSection />
         </Reveal>
       </Suspense>
+
+      {/* 3.5 Lo más pedido hoy — productos cross-tienda con quick-add directo al
+          carrito (conversión: comprar sin entrar a cada tienda). Self-hide si vacío. */}
+      <Reveal>
+        <MarketplaceTopToday />
+      </Reveal>
 
       {/* 4. Cómo funciona — 4 pasos + stats + CTA */}
       <Suspense fallback={<SectionSkeleton minH="min-h-[620px]" />}>
