@@ -147,6 +147,54 @@ export const StoreReviewsDB = {
   },
 
   /**
+   * Agregado REAL de reseñas (avg + count) por storeId, leído de la tabla
+   * Review (status approved, no borradas). Audit SEO 2026-05-31: el JSON-LD
+   * aggregateRating debe basarse en reseñas REALES, NO en la columna sembrada
+   * Store.rating/reviewCount (que en lanzamiento puede tener data semilla sin
+   * filas Review detrás → "spammy structured markup" para Google). Un solo
+   * groupBy para N tiendas. Devuelve Map vacío ante cualquier fallo (el caller
+   * simplemente no emite aggregateRating = comportamiento honesto).
+   */
+  async getApprovedAggregatesByStoreIds(
+    storeIds: string[],
+  ): Promise<Map<string, { average: number; total: number }>> {
+    const map = new Map<string, { average: number; total: number }>();
+    const ids = storeIds.filter(Boolean);
+    if (ids.length === 0) return map;
+    try {
+      const groups = await prisma.review.groupBy({
+        by: ["storeId"],
+        where: { storeId: { in: ids }, status: "approved", deletedAt: null },
+        _avg: { rating: true },
+        _count: { rating: true },
+      });
+      for (const g of groups) {
+        if (!g.storeId) continue;
+        const total = g._count.rating ?? 0;
+        if (total <= 0) continue;
+        map.set(g.storeId, {
+          average: Math.round((g._avg.rating ?? 0) * 10) / 10,
+          total,
+        });
+      }
+      return map;
+    } catch (err) {
+      logger.warn("[store-reviews] getApprovedAggregatesByStoreIds failed", {
+        error: String(err).slice(0, 200),
+      });
+      return map;
+    }
+  },
+
+  /** Azúcar para una sola tienda. Devuelve null si no hay reseñas reales. */
+  async getApprovedAggregate(
+    storeId: string,
+  ): Promise<{ average: number; total: number } | null> {
+    const map = await this.getApprovedAggregatesByStoreIds([storeId]);
+    return map.get(storeId) ?? null;
+  },
+
+  /**
    * Re-materializa Store.rating + Store.reviewCount desde las reviews APROBADAS
    * de la tienda. Llamar tras moderar una review: el storefront recalcula el
    * rating en vivo (listByStoreId), pero las CARDS del directorio y el SEO

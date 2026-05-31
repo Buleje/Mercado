@@ -5,7 +5,17 @@ import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
 import { getStoreShowcaseByCategory } from "@/lib/db/marketplace-featured.db";
 import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import { BRAND_GEO } from "@/lib/geo";
+import {
+  Bike,
+  ShoppingCart,
+  UtensilsCrossed,
+  Pill,
+  Store,
+  Croissant,
+  Wrench,
+} from "@buleje/design-system/icons";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -123,38 +133,51 @@ export default async function TiendasPage() {
 
   // Productos para las cards Premium (beneficio superadmin): solo se necesitan
   // para las tiendas con displayTier "premium". Reusa el helper que ya embebe
-  // productos; mapeamos por slug. Fire-and-forget — si falla, premium muestra
-  // su card sin preview (degrade elegante).
+  // productos; mapeamos por slug. Si falla, premium muestra su card sin preview
+  // (degrade elegante).
   const premiumSlugs = new Set(
     initialStores.filter((s) => s.displayTier === "premium").map((s) => s.slug),
   );
-  let productsBySlug: Record<string, PremiumProduct[]> = {};
-  if (premiumSlugs.size > 0) {
-    try {
-      // 1 producto por categoría → el cliente ve la variedad de la tienda.
-      const showcase = await getStoreShowcaseByCategory([...premiumSlugs], 6);
-      productsBySlug = Object.fromEntries(
-        Object.entries(showcase).map(([slug, items]) => [
-          slug,
-          items.map((p) => ({
-            productId: p.productId,
-            name: p.name,
-            image: p.image,
-            retailPrice: p.retailPrice,
-            discountPrice: p.discountPrice,
-            category: p.category,
-          })),
-        ]),
-      );
-    } catch {
-      productsBySlug = {};
-    }
-  }
+  const topStores = initialStores.slice(0, 24);
+
+  // Perf (audit 2026-05-31): el showcase de premium y los agregados de reseñas
+  // solo dependen de initialStores → los resolvemos EN PARALELO con Promise.all.
+  // Antes eran 2 awaits en serie = un round-trip de DB extra en el TTFB de cada
+  // render. El showcase degrada a {} si falla (premium sin preview).
+  const emptyShowcase = {} as Awaited<
+    ReturnType<typeof getStoreShowcaseByCategory>
+  >;
+  const [showcase, storeReviewAgg] = await Promise.all([
+    premiumSlugs.size > 0
+      ? // 1 producto por categoría → el cliente ve la variedad de la tienda.
+        getStoreShowcaseByCategory([...premiumSlugs], 6).catch(() => emptyShowcase)
+      : Promise.resolve(emptyShowcase),
+    // Audit SEO 2026-05-31 ("schema honesto, UI sembrada"): el aggregateRating
+    // de cada tienda sale SOLO de reseñas REALES (tabla Review), no de la
+    // columna sembrada store.rating/reviewCount (que en lanzamiento tiene data
+    // semilla sin filas Review detrás → "spammy structured markup" para Google).
+    // Map vacío hoy → cero estrellas falsas; se auto-activa por tienda cuando
+    // lleguen reseñas reales. La UI (TiendasClient) sigue mostrando la semilla.
+    StoreReviewsDB.getApprovedAggregatesByStoreIds(topStores.map((s) => s.id)),
+  ]);
+
+  const productsBySlug: Record<string, PremiumProduct[]> = Object.fromEntries(
+    Object.entries(showcase).map(([slug, items]) => [
+      slug,
+      items.map((p) => ({
+        productId: p.productId,
+        name: p.name,
+        image: p.image,
+        retailPrice: p.retailPrice,
+        discountPrice: p.discountPrice,
+        category: p.category,
+      })),
+    ]),
+  );
 
   // ── JSON-LD: CollectionPage + ItemList con las tiendas top ──
   // Brandon 2026-05-25 SEO/IA: 12 → 24 tiendas + priceRange/pagos por tienda
   // (rich results + citabilidad en IA de Google).
-  const topStores = initialStores.slice(0, 24);
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -170,6 +193,8 @@ export default async function TiendasPage() {
       url: BASE_URL,
       name: "Buleje",
     },
+    // Une el grafo: la CollectionPage referencia su breadcrumb (audit 2026-05-31).
+    breadcrumb: { "@id": `${BASE_URL}/tiendas#breadcrumb` },
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: topStores.length,
@@ -193,17 +218,21 @@ export default async function TiendasPage() {
             addressRegion: BRAND_GEO.region,
             addressCountry: "PE",
           },
-          ...(s.rating > 0 && s.reviewCount > 0
-            ? {
-                aggregateRating: {
-                  "@type": "AggregateRating",
-                  ratingValue: s.rating,
-                  reviewCount: s.reviewCount,
-                  bestRating: 5,
-                  worstRating: 1,
-                },
-              }
-            : {}),
+          // Solo reseñas REALES (no la columna sembrada s.rating/reviewCount).
+          ...(() => {
+            const agg = storeReviewAgg.get(s.id);
+            return agg && agg.total > 0 && agg.average > 0
+              ? {
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: agg.average,
+                    reviewCount: agg.total,
+                    bestRating: 5,
+                    worstRating: 1,
+                  },
+                }
+              : {};
+          })(),
         },
       })),
     },
@@ -217,6 +246,7 @@ export default async function TiendasPage() {
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    "@id": `${BASE_URL}/tiendas#breadcrumb`,
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Inicio", item: BASE_URL },
       {
@@ -224,57 +254,6 @@ export default async function TiendasPage() {
         position: 2,
         name: `Tiendas en ${BRAND_GEO.city}`,
         item: `${BASE_URL}/tiendas`,
-      },
-    ],
-  };
-
-  // ── JSON-LD: FAQPage (Brandon 2026-05-25 SEO/IA) ──
-  // Respuestas extraíbles por Google (rich result de FAQ) y por la IA
-  // (AI Overviews / Gemini citan respuestas directas). Preguntas reales del
-  // comprador de Pucallpa.
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `¿Cómo pido delivery en las tiendas de ${BRAND_GEO.city} por Buleje?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Elegí una bodega o restaurante del directorio, agregá productos al carrito y confirmá. La tienda recibe tu pedido al instante por WhatsApp y coordina el delivery a tu dirección en ${BRAND_GEO.city}.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Puedo pagar con Yape o Plin?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Sí. Las tiendas en Buleje aceptan Yape, Plin, efectivo y tarjeta. Pagás directo a la tienda al recibir tu pedido o por transferencia, según lo que ofrezca cada negocio.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Cuánto cuesta el delivery?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `El costo de envío lo define cada tienda según tu zona en ${BRAND_GEO.city}. Lo ves antes de confirmar el pedido, sin sorpresas.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Qué tipos de tiendas hay en Buleje?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Bodegas y minimarkets, mercados, restaurantes y pizzerías, farmacias, panaderías y ferreterías locales de ${BRAND_GEO.cityRegion}, todas con catálogo online y delivery.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Tener mi tienda en Buleje cuesta algo?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Podés empezar gratis. Buleje te da catálogo online, bot de WhatsApp, POS e inventario. Hay planes pagos con más funciones para negocios que crecen.",
-        },
       },
     ],
   };
@@ -293,6 +272,8 @@ export default async function TiendasPage() {
       ? {
           "@context": "https://schema.org",
           "@type": "ItemList",
+          "@id": `${BASE_URL}/tiendas#productos`,
+          isPartOf: { "@id": `${BASE_URL}/tiendas` },
           name: `Productos destacados de tiendas en ${BRAND_GEO.city}`,
           numberOfItems: previewProducts.length,
           itemListElement: previewProducts.map((p, idx) => ({
@@ -329,10 +310,6 @@ export default async function TiendasPage() {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqSchema) }}
-      />
-      <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbSchema) }}
       />
       {productListSchema && (
@@ -352,20 +329,25 @@ export default async function TiendasPage() {
       </h1>
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
 
-      {/* SEO outro — contenido textual indexable para una página de categoría
-          local (audit 2026-05-31: la página tenía poco texto crawlable).
-          Server-rendered, ~150 palabras, keywords locales naturales. */}
+      {/* SEO + categorías — sección visible indexable (audit 2026-05-31, rediseño
+          visual 2026-05-31): de un muro de texto gris text-sm a un bloque con
+          jerarquía + tiles de categoría con icono. 100% server-rendered → sigue
+          siendo indexable y sin coste JS. La FAQ se movió a la home (/). */}
       <section
         aria-labelledby="tiendas-seo-heading"
-        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 mt-8 border-t border-[var(--rule-soft)]"
+        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-8 border-t border-[var(--rule-soft)]"
       >
+        <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+          <Bike className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+          Delivery local
+        </p>
         <h2
           id="tiendas-seo-heading"
-          className="text-lg font-extrabold text-[var(--text-primary)] mb-3"
+          className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] mb-4 max-w-2xl"
         >
           Delivery de bodegas, restaurantes y farmacias en {BRAND_GEO.city}
         </h2>
-        <div className="max-w-3xl space-y-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+        <div className="max-w-3xl space-y-4 text-base leading-relaxed text-[var(--text-secondary)]">
           <p>
             Buleje reúne las bodegas, minimarkets, restaurantes, pizzerías y
             farmacias de {BRAND_GEO.city} ({BRAND_GEO.province}, {BRAND_GEO.region})
@@ -376,21 +358,47 @@ export default async function TiendasPage() {
           <p>
             Pagás como te quede cómodo: Yape, Plin, efectivo o tarjeta al recibir,
             sin adelantar nada. Cada negocio define su propio costo de envío y lo
-            ves antes de confirmar, así no hay sorpresas. Compará precios entre
-            tiendas, mirá las más pedidas de la semana y descubrí productos frescos
-            de la selva central.
-          </p>
-          <p>
-            Somos un marketplace local: detrás de cada pedido hay un vecino
-            atendiendo a otro vecino. Empezamos en {BRAND_GEO.city} y de a poco
-            sumamos más negocios de {BRAND_GEO.province} y {BRAND_GEO.region}.
-            ¿Tenés una tienda?{" "}
-            <Link href="/abrir-tienda" className="font-semibold text-[var(--accent)] hover:underline">
-              Publicá tu catálogo gratis
-            </Link>{" "}
-            y llegá a más clientes de tu barrio.
+            ves antes de confirmar, así no hay sorpresas.
           </p>
         </div>
+
+        {/* Tiles de categoría — visual, on-brand, mismo patrón de tile que la home. */}
+        <ul className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { icon: ShoppingCart, label: "Bodegas y minimarkets" },
+            { icon: UtensilsCrossed, label: "Restaurantes y pizzerías" },
+            { icon: Pill, label: "Farmacias y boticas" },
+            { icon: Store, label: "Mercados" },
+            { icon: Croissant, label: "Panaderías" },
+            { icon: Wrench, label: "Ferreterías" },
+          ].map(({ icon: Icon, label }) => (
+            <li
+              key={label}
+              className="flex flex-col items-start gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
+              </span>
+              <span className="text-sm font-bold leading-snug text-[var(--text-primary)]">
+                {label}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        {/* CTA dueño — copy local + alta de tienda. */}
+        <p className="mt-8 max-w-3xl text-base leading-relaxed text-[var(--text-secondary)]">
+          Somos un marketplace local: detrás de cada pedido hay un vecino atendiendo
+          a otro vecino. Empezamos en {BRAND_GEO.city} y de a poco sumamos más
+          negocios de {BRAND_GEO.province} y {BRAND_GEO.region}. ¿Tenés una tienda?{" "}
+          <Link
+            href="/abrir-tienda"
+            className="font-bold text-[var(--accent)] hover:underline"
+          >
+            Publicá tu catálogo gratis
+          </Link>{" "}
+          y llegá a más clientes de tu barrio.
+        </p>
       </section>
     </>
   );

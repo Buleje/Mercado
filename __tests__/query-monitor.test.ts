@@ -23,6 +23,9 @@ describe("N+1 Query Monitor", () => {
     resetQueryMonitor();
     mockWarn.mockClear();
     vi.stubEnv("NODE_ENV", "development");
+    // El monitor es opt-in (Brandon 2026-05-31): por defecto OFF para no leer
+    // Date.now() durante el render de Server Components (Next 16 cacheComponents).
+    vi.stubEnv("QUERY_MONITOR", "1");
   });
 
   afterEach(() => {
@@ -80,6 +83,18 @@ describe("N+1 Query Monitor", () => {
     for (let i = 0; i < 5; i++) trackQuery("Product", "findMany", ["tenantId"]);
 
     expect(mockWarn).not.toHaveBeenCalled();
+  });
+
+  it("skips tracking unless QUERY_MONITOR=1 (opt-in, default off)", () => {
+    // Default OFF: evita Date.now() en el render de Server Components, que con
+    // Next 16 cacheComponents dispara next-prerender-current-time (lo destapó
+    // /tiendas). Ver lib/query-monitor.ts.
+    vi.stubEnv("QUERY_MONITOR", "");
+
+    for (let i = 0; i < 5; i++) trackQuery("Product", "findMany", ["tenantId"]);
+
+    expect(mockWarn).not.toHaveBeenCalled();
+    expect(getDetectedPatterns()).toHaveLength(0);
   });
 
   it("differentiates queries by operation type", () => {

@@ -31,8 +31,18 @@ const WINDOW_MS = 500;        // Time window to detect repeated queries (ms)
 const THRESHOLD = 3;          // Minimum repetitions to flag as N+1
 const MAX_TRACKED = 100;      // Maximum concurrent patterns to track
 
-function isDev(): boolean {
-  return process.env.NODE_ENV !== "production";
+// Brandon 2026-05-31: este monitor lee Date.now() en CADA query Prisma. Con
+// Next 16 cacheComponents, leer el reloj durante el render de un Server
+// Component dispara `next-prerender-current-time` (lo destapó /tiendas al correr
+// un groupBy fuera de scope "use cache"). NO se puede envolver en try/catch: eso
+// traga el signal interno con que Next hace bail-out a render dinámico. Solución
+// limpia: opt-in por env, default OFF → cero Date.now() en el path de render.
+// Para cazar N+1 en dev: `QUERY_MONITOR=1 npm run dev`.
+function isEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.QUERY_MONITOR === "1"
+  );
 }
 
 // ── In-memory tracker ────────────────────────────────────────────────────────
@@ -55,7 +65,7 @@ export function trackQuery(
   operation: string,
   keyFields: string[] = [],
 ): void {
-  if (!isDev()) return; // Only active in development
+  if (!isEnabled()) return; // Opt-in en dev (QUERY_MONITOR=1) — ver isEnabled()
 
   const pattern = `${tableName}.${operation}(${keyFields.sort().join(",")})`;
   const now = Date.now();
