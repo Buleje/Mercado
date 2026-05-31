@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 import { cn } from "@/lib/utils";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 interface ProductCategory {
   id: string;
@@ -40,11 +41,13 @@ export default function MarketplaceCategoriesBar() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/marketplace/product-categories")
-      .then((r) => (r.ok ? r.json() : null))
+    // Brandon 2026-05-31 (audit home #2 dedup): cachedJson dedupea + cachea 5min.
+    // Mismo URL que TiendasMainCategoriesGrid → comparten caché (coalescing), en
+    // vez de cada consumidor pidiendo product-categories por separado.
+    cachedJson<{ categories?: ProductCategory[] }>("/api/marketplace/product-categories", 300_000)
       .then((d) => {
-        if (cancelled) return;
-        const list = (d?.categories ?? []) as ProductCategory[];
+        if (cancelled || !d) return;
+        const list = d.categories ?? [];
         setCategories(list.filter((c) => c.id && c.count > 0));
       })
       .catch(() => {
