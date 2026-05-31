@@ -24,6 +24,7 @@ import type { RelatedProduct } from "@/components/marketplace/product-detail/Pro
 // directo (regla #1) y en build no hay base URL para el fetch REST. El render
 // del page sigue usando la API REST pública.
 import { MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 
 // ── Types desde la API ─────────────────────────────────────────────────────────
 
@@ -227,11 +228,12 @@ async function getPriceValidUntil(): Promise<string> {
   return pricingValidUntil(Date.now());
 }
 
-function ProductJsonLd({ product, slug, productId, priceValidUntil }: {
+function ProductJsonLd({ product, slug, productId, priceValidUntil, storeRealAgg }: {
   product: ApiProduct;
   slug: string;
   productId: string;
   priceValidUntil: string;
+  storeRealAgg: { average: number; total: number } | null;
 }) {
   const base = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
   const inStock = product.stock === null || product.stock > 0;
@@ -275,22 +277,18 @@ function ProductJsonLd({ product, slug, productId, priceValidUntil }: {
     },
   };
 
-  // AggregateRating: solo si store tiene reviewCount > 0
-  const rating = product.store.rating;
-  const reviewCount = product.store.reviewCount;
-  if (
-    typeof rating === "number" &&
-    rating > 0 &&
-    typeof reviewCount === "number" &&
-    reviewCount > 0
-  ) {
-    // 2026-05-28 audit P5: ratingValue antes era string ("5.0") por
-    // toFixed() — algunos parsers Google rechazan. Ahora Number con
-    // 1 decimal (5.0). bestRating/worstRating también pasan a number.
+  // AggregateRating: SOLO si la tienda tiene reseñas REALES (storeRealAgg).
+  // Audit SEO 2026-05-31: antes leía product.store.rating/reviewCount (columna
+  // sembrada) → arriesgaba "spammy structured markup" en Google si la semilla
+  // no tenía filas Review detrás. Ahora viene del agregado real de la tabla
+  // Review; si no hay reseñas reales (null) NO se emite.
+  if (storeRealAgg && storeRealAgg.total > 0 && storeRealAgg.average > 0) {
+    // 2026-05-28 audit P5: ratingValue como Number con 1 decimal (5.0) —
+    // algunos parsers Google rechazan el string ("5.0") de toFixed().
     jsonLd.aggregateRating = {
       "@type": "AggregateRating",
-      ratingValue: Number(rating.toFixed(1)),
-      reviewCount: reviewCount,
+      ratingValue: Number(storeRealAgg.average.toFixed(1)),
+      reviewCount: storeRealAgg.total,
       bestRating: 5,
       worstRating: 1,
     };
@@ -373,9 +371,15 @@ export default async function ProductDetailPage({ params }: PageProps) {
   // Component (next-prerender-current-time bajo cacheComponents).
   const priceValidUntil = await getPriceValidUntil();
 
+  // Audit SEO 2026-05-31 ("schema honesto, UI sembrada"): el aggregateRating
+  // del Product solo si la TIENDA tiene reseñas REALES (tabla Review), no la
+  // columna sembrada store.rating/reviewCount. null hoy → sin estrellas falsas;
+  // se auto-activa cuando la tienda acumule reseñas reales.
+  const storeRealAgg = await StoreReviewsDB.getApprovedAggregate(product.store.id);
+
   return (
     <>
-      <ProductJsonLd product={product} slug={slug} productId={productId} priceValidUntil={priceValidUntil} />
+      <ProductJsonLd product={product} slug={slug} productId={productId} priceValidUntil={priceValidUntil} storeRealAgg={storeRealAgg} />
 
       {/*
         SEO 2026-05-28 audit P4: H1 sr-only server-side. ProductDetailClient

@@ -14,6 +14,7 @@ import {
 } from "@/lib/marketplace/initial-stores";
 import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db";
 import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import { getStoreTagline } from "@/lib/store-tagline";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -173,6 +174,17 @@ export default async function MarketplacePage(props: {
     unitsSold: it.soldUnits,
   }));
 
+  // Audit SEO 2026-05-31 ("schema honesto, UI sembrada"): el aggregateRating
+  // del ItemList sale SOLO de reseñas REALES (tabla Review), no de la columna
+  // sembrada store.reviewCount. Map vacío hoy → cero estrellas falsas a Google;
+  // se auto-activa por tienda cuando lleguen reseñas reales.
+  const storeReviewAgg =
+    initialStores && initialStores.length > 0
+      ? await StoreReviewsDB.getApprovedAggregatesByStoreIds(
+          initialStores.slice(0, 20).map((s) => s.id),
+        )
+      : new Map<string, { average: number; total: number }>();
+
   return (
     <>
       <JsonLd data={websiteSchema} />
@@ -206,13 +218,13 @@ export default async function MarketplacePage(props: {
               category: store.category,
               existing: store.description,
             }),
-            aggregateRating:
-              store.reviewCount > 0
-                ? {
-                    ratingValue: store.rating,
-                    reviewCount: store.reviewCount,
-                  }
-                : undefined,
+            // Solo reseñas REALES (no la columna sembrada store.reviewCount).
+            aggregateRating: (() => {
+              const agg = storeReviewAgg.get(store.id);
+              return agg
+                ? { ratingValue: agg.average, reviewCount: agg.total }
+                : undefined;
+            })(),
           }))}
         />
       )}

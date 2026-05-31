@@ -560,6 +560,13 @@ async function StoreDetailContent({ slug }: { slug: string }) {
 
   return (
     <>
+      {/* Audit SEO 2026-05-31 (Brandon: "schema honesto, UI sembrada"): el
+          aggregateRating del JSON-LD usa el agregado REAL de la tabla Review
+          (reviewSummary.average/total), NO la columna sembrada store.rating/
+          reviewCount. Si no hay reseñas reales (total=0) el gate interno de
+          StoreJsonLd omite el aggregateRating → cero estrellas falsas a Google.
+          La UI de la tienda sigue mostrando store.rating (semilla de
+          lanzamiento) por separado. */}
       <StoreJsonLd
         name={store.name}
         description={getStoreTagline({
@@ -572,8 +579,8 @@ async function StoreDetailContent({ slug }: { slug: string }) {
         logo={store.logo}
         zone={store.zone}
         category={store.category}
-        rating={store.rating ?? 0}
-        reviewCount={store.reviewCount}
+        rating={reviewSummary.average}
+        reviewCount={reviewSummary.total}
         hoursJson={hoursJson}
         phone={(store as { phone?: string | null }).phone ?? null}
         lat={(store as { lat?: number | null }).lat ?? null}

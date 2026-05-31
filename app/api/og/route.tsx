@@ -155,6 +155,15 @@ export async function GET(req: NextRequest) {
     {
       width: 1200,
       height: 630,
+      // Audit SEO 2026-05-31: cache explícito. La imagen OG cambia poquísimo
+      // (solo si cambia title/subtitle), así que los scrapers de WhatsApp /
+      // Facebook / Twitter y el CDN de Vercel deben cachearla en vez de
+      // re-renderizarla en cada preview (era `no-store` → preview lento).
+      // immutable + s-maxage largo; stale-while-revalidate para refrescos suaves.
+      headers: {
+        "Cache-Control":
+          "public, immutable, no-transform, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+      },
     },
   );
 }

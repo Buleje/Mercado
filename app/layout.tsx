@@ -180,9 +180,12 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#00B4A6" },
     { media: "(prefers-color-scheme: dark)", color: "#34d4be" },
   ],
+  // A11y (audit SEO 2026-05-31): sin `maximumScale` — no limitamos el zoom
+  // del usuario. WCAG 1.4.4 exige zoom hasta 200%; cualquier cap (aunque sea
+  // 5x) es una mala práctica de accesibilidad innecesaria. Dejar que el
+  // usuario haga pinch-zoom libremente en mobile.
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
 };
 
 // Cache review stats con la directiva `'use cache'` de Next.js 16.
