@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 // Brandon 2026-05-20 v5: LandingHeader removido — chrome unificado vive
 // en app/(store)/layout.tsx (mismo que /tiendas y /marketplace).
 
@@ -165,7 +166,11 @@ interface TopStore {
 }
 
 async function getTopStores(): Promise<TopStore[]> {
-  const stores = await MarketplaceStatsDB.getTopMarketplaceStores(10);
+  // Brandon 2026-05-31 (audit home): traemos hasta 22 para que "Destacadas"
+  // (top 10) y "Recomendadas" (overflow, slice(10)) muestren tiendas DISTINTAS
+  // en vez de la misma lista reordenada. Con pocas tiendas, Recomendadas se
+  // oculta sola (guard length>0). getTopMarketplaceStores cachea (getOrSet).
+  const stores = await MarketplaceStatsDB.getTopMarketplaceStores(22);
   return stores.map((s) => ({
     id: s.id,
     slug: s.slug,
@@ -331,22 +336,26 @@ async function BulejeJsonLd() {
 
   return (
     <>
+      {/* Brandon 2026-05-31 (audit home): safeJsonLdStringify escapa < > & y los
+          separadores U+2028/U+2029 — los nombres de tienda vienen de vendors
+          (admin externo) y un `</script>` en el name rompía el tag (stored XSS).
+          JSON.stringify NO escapa eso. Mismo fix que el storefront. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(localBusinessSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqSchema) }}
       />
       {itemListSchema && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(itemListSchema) }}
         />
       )}
     </>
@@ -852,9 +861,11 @@ async function TopStoresSection() {
   if (stores.length === 0) {
     return <EmptyStoresPlaceholder />;
   }
-  // Recomendadas: mismo universo ordenado por rating (orden distinto al de
-  // destacadas, que viene por popularidad/destaque desde la DB).
-  const recommended = [...stores].sort((a, b) => b.rating - a.rating);
+  // Recomendadas: el OVERFLOW que NO se muestra en Destacadas (slice 0-10) →
+  // tiendas genuinamente distintas, no la misma lista reordenada. Si no hay
+  // suficientes (≤10 tiendas), el guard `recommended.length > 0` oculta la
+  // sección — sin contenido duplicado. (audit home 2026-05-31)
+  const recommended = stores.slice(10);
   return (
     <>
       <section
