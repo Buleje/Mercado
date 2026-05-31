@@ -1629,7 +1629,11 @@ export default function CheckoutEntregaPage() {
               ? "Subí los comprobantes"
               : undefined
         }
-        helperText="Un paso más para confirmar"
+        helperText={
+          isAddressValid && allProofsReady
+            ? "¡Todo listo! Solo falta confirmar."
+            : "Un paso más para confirmar"
+        }
       />
 
       <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />

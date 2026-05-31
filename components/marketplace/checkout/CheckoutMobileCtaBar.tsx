@@ -17,7 +17,7 @@
 
 import Link from "next/link";
 import { m as motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, AlertCircle } from "@buleje/design-system/icons";
+import { ArrowRight, AlertCircle, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 const fmt = (n: number) =>
@@ -38,6 +38,8 @@ interface CheckoutMobileCtaBarProps {
   helperText?: string;
   /** Cuando el CTA esta disabled, este motivo se muestra a la izquierda. */
   disabledReason?: string;
+  /** Mientras está true muestra spinner + deshabilita el botón — evita double-submit. */
+  ctaLoading?: boolean;
 }
 
 export default function CheckoutMobileCtaBar({
@@ -49,6 +51,7 @@ export default function CheckoutMobileCtaBar({
   ctaDisabled = false,
   helperText,
   disabledReason,
+  ctaLoading = false,
 }: CheckoutMobileCtaBarProps) {
   const showTotal = typeof total === "number";
 
@@ -56,7 +59,8 @@ export default function CheckoutMobileCtaBar({
     <button
       type="button"
       onClick={ctaOnClick}
-      disabled={ctaDisabled}
+      disabled={ctaDisabled || ctaLoading}
+      aria-busy={ctaLoading}
       className={cn(
         "group inline-flex items-center justify-center gap-2 rounded-full h-12 px-5",
         "text-sm font-extrabold tracking-tight transition-all duration-200 shrink-0",
@@ -66,8 +70,11 @@ export default function CheckoutMobileCtaBar({
         showTotal ? "min-w-[10rem]" : "w-full",
       )}
     >
+      {ctaLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+      ) : null}
       {ctaLabel}
-      <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+      {!ctaLoading && <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
     </button>
   );
 

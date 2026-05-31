@@ -939,9 +939,10 @@ export default function CheckoutConfirmarPage() {
       <CheckoutMobileCtaBar
         primaryLabel="Total"
         total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
-        ctaLabel={submitting ? "Procesando..." : "Confirmar pedido"}
+        ctaLabel={submitting ? "Procesando tu pedido..." : "Confirmar pedido"}
         ctaOnClick={handleConfirm}
         ctaDisabled={submitting}
+        ctaLoading={submitting}
         helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
       />
 

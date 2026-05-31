@@ -1,11 +1,16 @@
 "use client";
 
 /**
- * CheckoutStepper — barra horizontal de progreso entre las 4 páginas del
- * checkout: Carrito → Datos → Entrega y Pago → Confirmar.
+ * CheckoutStepper — barra horizontal de progreso de los pasos activos del
+ * checkout. Muestra 3 pasos (Datos → Entrega → Confirmar) — el "Carrito" es el
+ * paso 0 ya completado y no se renderiza para reducir la percepción de fricccion.
+ *
+ * Brandon 2026-05-30 (A4 conversión): quitamos "Carrito" del stepper para
+ * que el cliente vea "1 de 3" en lugar de "2 de 4". Sin cambios al router ni
+ * a la lógica de pagos — solo visual/UX.
  *
  * Versión editorial:
- *   - Bullets circulares h-9 w-9 (antes h-7 w-7)
+ *   - Bullets circulares h-9 w-9
  *   - Progress bar de gradiente accent fluida entre pasos completados
  *   - Estado current con ring accent-soft
  *   - Estado done con check icon y bg accent-soft
@@ -18,14 +23,16 @@ import { cn } from "@/lib/utils";
 
 export type CheckoutStep = "carrito" | "datos" | "entrega" | "confirmar";
 
+// Pasos VISIBLES al cliente (carrito ya fue — no lo mostramos).
 const STEPS: { key: CheckoutStep; label: string; href: string }[] = [
-  { key: "carrito", label: "Carrito", href: "/marketplace/carrito" },
-  { key: "datos", label: "Datos", href: "/checkout/datos" },
-  { key: "entrega", label: "Entrega y pago", href: "/checkout/entrega" },
-  { key: "confirmar", label: "Confirmar", href: "/checkout/confirmar" },
+  { key: "datos",     label: "Tus datos",     href: "/checkout/datos" },
+  { key: "entrega",   label: "Entrega y pago", href: "/checkout/entrega" },
+  { key: "confirmar", label: "Confirmar",       href: "/checkout/confirmar" },
 ];
 
 export default function CheckoutStepper({ current }: { current: CheckoutStep }) {
+  // "carrito" no aparece en STEPS, así que idx=-1 → todos los pasos se ven
+  // como pendientes (correcto: el usuario está entrando al checkout).
   const currentIdx = STEPS.findIndex((s) => s.key === current);
 
   return (

@@ -136,7 +136,7 @@ export default function CheckoutDatosPage() {
           </Link>
           <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">Tus datos</h1>
           <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
-            <span className="font-semibold text-[var(--text-primary)]">Paso 2 de 4.</span> Dejanos tu nombre y WhatsApp para coordinar la entrega.
+            <span className="font-semibold text-[var(--text-primary)]">Paso 1 de 3.</span> Dejanos tu nombre y WhatsApp para coordinar la entrega.
           </p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
@@ -192,7 +192,7 @@ export default function CheckoutDatosPage() {
           Tus datos
         </h1>
         <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
-          <span className="font-semibold text-[var(--text-primary)]">Paso 2 de 4.</span>{" "}
+          <span className="font-semibold text-[var(--text-primary)]">Paso 1 de 3.</span>{" "}
           Confirma con qué cuenta comprás hoy.
         </p>
       </div>
