@@ -130,7 +130,7 @@ export default function TiendasDestacadas({ initialStores }: { initialStores?: F
               <div className="flex items-start gap-3 px-3.5 pt-3">
                 {store.logo && (
                   <span className="relative -mt-8 h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 border-[var(--surface-raised)] bg-[var(--surface-raised)] shadow-sm">
-                    <Image src={store.logo} alt="" fill sizes="56px" className="object-cover" />
+                    <Image src={store.logo} alt={`Logo de ${store.name}`} fill sizes="56px" className="object-cover" />
                   </span>
                 )}
                 <div className="min-w-0 flex-1 pt-0.5">

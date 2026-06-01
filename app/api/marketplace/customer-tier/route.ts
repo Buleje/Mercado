@@ -58,10 +58,17 @@ export async function GET(req: NextRequest) {
 
   // Exigir customer-session con phone match (ADR-082 sigue cross-tenant
   // por diseño, pero solo el dueño del phone puede consultar SU tier).
+  //
+  // 2026-06-01: ante sesión ausente/no-match devolvemos 200 con tier null en
+  // vez de 401. El status 401 NO es el mecanismo de seguridad (lo es el match
+  // sesión↔phone); solo generaba ruido rojo en consola cuando un customer
+  // queda en localStorage pero la cookie expiró (la app re-pega en cada carga
+  // de home/tiendas). La anti-enumeración se mantiene: la respuesta es
+  // idéntica para cualquier phone sin sesión válida (no revela existencia).
   const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
   const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
   if (!session || session.customerId !== phone) {
-    return NextResponse.json({ tier: null, count: 0 }, { status: 401 });
+    return NextResponse.json({ tier: null, count: 0 });
   }
 
   try {

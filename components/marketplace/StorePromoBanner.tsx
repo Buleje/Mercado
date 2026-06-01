@@ -33,8 +33,16 @@ export default function StorePromoBanner({ slug, name, banner, cover, logo, cate
         {bg ? (
           <Image
             src={bg}
-            alt=""
+            // alt descriptivo (SEO 2026-06-01): el Link ya tiene aria-label, así
+            // que esto NO duplica para lectores de pantalla (aria-label gana),
+            // pero sí asocia la imagen con el nombre+zona de la tienda en Google
+            // Images. Reservar alt="" solo para íconos puramente decorativos.
+            alt={`${name}${zone ? ` en ${zone}` : ""} — tienda con delivery en Buleje`}
             fill
+            // Es el banner del hero de /tiendas — casi siempre el LCP. priority
+            // setea loading="eager" + fetchPriority="high" y mata el warning de
+            // Next ("LCP image should have priority").
+            priority
             sizes="(min-width:1024px) 960px, 100vw"
             className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />

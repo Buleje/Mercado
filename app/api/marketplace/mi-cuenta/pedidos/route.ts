@@ -44,13 +44,18 @@ export async function GET(req: NextRequest) {
     const { phone, tenantId } = parsed.data;
 
     // Auth gate: exigir customer-session cookie y validar phone match.
+    //
+    // 2026-06-01: ante sesión ausente/no-match devolvemos 200 con lista vacía
+    // en vez de 401. El status 401 NO es la protección (lo es el match
+    // sesión↔phone↔tenant); solo metía ruido rojo en consola cuando un customer
+    // queda en localStorage tras expirar la cookie y la UI lo re-pega en cada
+    // carga de /tiendas. No leakea PII: lista vacía idéntica para cualquiera
+    // sin sesión válida. La página de pedidos ya muestra "iniciá sesión" según
+    // el customer-context, no según este status.
     const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
     const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
     if (!session || session.customerId !== phone || session.tenantId !== tenantId) {
-      return NextResponse.json(
-        { orders: [], error: "No autorizado" },
-        { status: 401 },
-      );
+      return NextResponse.json({ orders: [] });
     }
     const orders = await CustomerOrdersDB.listByCustomer(tenantId, phone);
 

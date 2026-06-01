@@ -162,6 +162,7 @@ async function getSuperadminCategories(): Promise<SuperadminCategory[]> {
 // accede a prisma, con `use cache` + cacheLife + cacheTag homogéneos.
 import { MarketplaceStatsDB, MarketplacePublicDB, type FeaturedStorePreview } from "@/lib/db/marketplace-public.db";
 import { BRAND_GEO } from "@/lib/geo";
+import { storeListItem } from "@/lib/seo-store-schema";
 
 async function getMarketplaceStats() {
   const { storeCount, productCount } = await MarketplaceStatsDB.getPublicMarketplaceStats();
@@ -197,6 +198,22 @@ async function getTopStores(): Promise<TopStore[]> {
     rating: s.rating,
     reviewCount: s.reviewCount,
     featuredHome: s.featuredHome,
+  }));
+}
+
+// Ranking "Lo más pedido hoy" para el JSON-LD de la home. Va dentro de
+// `"use cache"` a propósito: getTopToday() lee `new Date()` (ventana 24h/7d) y,
+// sin un Cache Component que lo contenga, Next 16 dispara
+// `next-prerender-current-time` al prerenderear la ruta "/" (el acceso a la
+// hora actual fuera de cache/Request data no es prerendereable). Cachear el
+// resultado 120s — que es justo el TTL interno de getTopToday — resuelve el
+// error sin volver dinámica toda la home.
+async function getTopProductsForJsonLd() {
+  "use cache";
+  cacheLife({ revalidate: 120, stale: 300, expire: 600 });
+  cacheTag("marketplace-top-today");
+  return MarketplacePublicDB.getTopToday(10).catch(() => ({
+    items: [] as Awaited<ReturnType<typeof MarketplacePublicDB.getTopToday>>["items"],
   }));
 }
 
@@ -358,11 +375,13 @@ async function BulejeJsonLd() {
           name: `Tiendas destacadas en Buleje ${BRAND_GEO.city}`,
           itemListOrder: "https://schema.org/ItemListOrderDescending",
           numberOfItems: topStores.length,
+          // SEO local 2026-06-01: cada item es ahora un negocio local rico
+          // (Restaurant / GroceryStore / Pharmacy / Store) con address, no un
+          // ListItem plano. Ver lib/seo-store-schema.
           itemListElement: topStores.map((s, i) => ({
             "@type": "ListItem",
             position: i + 1,
-            url: `https://www.buleje.pe/marketplace/${s.slug}`,
-            name: s.name,
+            item: storeListItem(s),
           })),
         }
       : null;
@@ -370,9 +389,7 @@ async function BulejeJsonLd() {
   // ItemList de PRODUCTOS más pedidos (B5 SEO/IA): matchea el rail visible
   // "Lo más pedido hoy" → carrusel de productos en SERP + alimenta a las IAs
   // con el catálogo real (Product + Offer con precio). Solo datos reales.
-  const topProductsRes = await MarketplacePublicDB.getTopToday(10).catch(() => ({
-    items: [] as Awaited<ReturnType<typeof MarketplacePublicDB.getTopToday>>["items"],
-  }));
+  const topProductsRes = await getTopProductsForJsonLd();
   const productListSchema =
     topProductsRes.items.length > 0
       ? {
