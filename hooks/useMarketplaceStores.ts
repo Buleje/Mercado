@@ -49,6 +49,13 @@ interface UseMarketplaceStoresOptions {
   zone?: string;
   category?: string;
   search?: string;
+  /**
+   * Si `false`, el hook NO fetchea (defer). Default `true` (sin cambio para
+   * callers existentes). Brandon perf 2026-06-01: lo usa el autocomplete del
+   * navbar para no traer las top-stores en el first-paint de TODA página —
+   * solo cuando el usuario abre el buscador. Si ya hay cache, igual lo sirve.
+   */
+  enabled?: boolean;
 }
 
 interface UseMarketplaceStoresState {
@@ -146,18 +153,23 @@ async function fetchStoresDeduped(opts: UseMarketplaceStoresOptions): Promise<{
 export function useMarketplaceStores(
   opts: UseMarketplaceStoresOptions = {},
 ): UseMarketplaceStoresState {
+  const { enabled = true } = opts;
   const cacheKey = buildCacheKey(opts);
   const [state, setState] = useState<UseMarketplaceStoresState>(() => {
     const cached = readCache(cacheKey);
     return {
       stores: cached?.data ?? [],
       total: cached?.total ?? 0,
-      loading: !cached,
+      // Sin cache y deshabilitado → no mostramos spinner (no vamos a fetchear).
+      loading: enabled && !cached,
       error: null,
     };
   });
 
   useEffect(() => {
+    // Defer: mientras enabled sea false no fetcheamos. Al pasar a true el
+    // effect re-corre (enabled está en deps) y trae los datos.
+    if (!enabled) return;
     const cached = readCache(cacheKey);
     if (cached) {
       setState({ stores: cached.data, total: cached.total, loading: false, error: null });
@@ -181,7 +193,7 @@ export function useMarketplaceStores(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey]);
+  }, [cacheKey, enabled]);
 
   return state;
 }

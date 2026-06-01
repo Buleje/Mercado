@@ -99,8 +99,8 @@ function popularCategoriesAsSuggestions(): Suggestion[] {
 // stores. Ahora si TopStoresSection ya pidió limit=10 o initial-stores
 // trajo limit=30, este hook hace slice client-side sin fetch nuevo
 // (subset hint del hook). En el peor caso (sin cache previo), 1 fetch.
-function useTopStores(): Suggestion[] {
-  const { stores } = useMarketplaceStores({ limit: 5 });
+function useTopStores(enabled: boolean): Suggestion[] {
+  const { stores } = useMarketplaceStores({ limit: 5, enabled });
   return stores.slice(0, 5).map((s) => ({
     id: `ts:${s.id}`,
     type: "store",
@@ -157,6 +157,11 @@ export default function NavbarSearchAutocomplete({
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  // Perf 2026-06-01: latch para diferir el fetch de top-stores del dropdown
+  // hasta la PRIMERA apertura del buscador. El navbar vive en TODA página
+  // pública; traer las top-stores en cada first-paint era 1 request de más
+  // que el usuario casi nunca ve. Una vez abierto, queda cacheado (120s).
+  const [searchEverOpened, setSearchEverOpened] = useState(false);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [activeIdx, setActiveIdx] = useState(-1);
@@ -168,7 +173,12 @@ export default function NavbarSearchAutocomplete({
   const effectivePlaceholder = placeholder ?? rotatedPlaceholder;
 
   const popularCategories = useMemo(popularCategoriesAsSuggestions, []);
-  const topStores = useTopStores();
+  const topStores = useTopStores(searchEverOpened);
+
+  // Enciende el latch la primera vez que el buscador se abre (focus/click).
+  useEffect(() => {
+    if (open && !searchEverOpened) setSearchEverOpened(true);
+  }, [open, searchEverOpened]);
 
   // ── Búsquedas recientes (localStorage real) ──
   const [recent, setRecent] = useState<string[]>([]);

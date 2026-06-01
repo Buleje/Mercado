@@ -99,9 +99,14 @@ export default function LiveChatWidget() {
     if (!phone) return;
     let mounted = true;
     (async () => { if (mounted) await fetchMessages(); })();
-    intervalRef.current = setInterval(fetchMessages, 15000);
+    // Perf 2026-06-01: 15s con el chat ABIERTO (conversación en vivo), 30s
+    // CERRADO (solo refrescar el badge de no-leídos). Antes 15s fijo en TODA
+    // página para todo cliente logueado → el doble de invocaciones Vercel +
+    // batería. Al abrir, el effect re-corre y refresca al instante.
+    const everyMs = open ? 15000 : 30000;
+    intervalRef.current = setInterval(fetchMessages, everyMs);
     return () => { mounted = false; if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [phone, fetchMessages]);
+  }, [phone, fetchMessages, open]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -118,13 +123,19 @@ export default function LiveChatWidget() {
     if (open) setTimeout(() => inputRef.current?.focus(), 300);
   }, [open]);
 
-  // Fetch AI status on mount
+  // Fetch AI status SOLO al abrir el chat (Brandon perf 2026-06-01). El badge
+  // "IA activa · {provider}" solo se ve con el chat abierto; traerlo en el mount
+  // gastaba 1 request en el first-paint de TODAS las páginas (el chat se abre en
+  // ~5% de visitas). Ahora se trae una vez, al primer open. Cero pérdida visual.
+  const aiStatusFetched = useRef(false);
   useEffect(() => {
+    if (!open || aiStatusFetched.current) return;
+    aiStatusFetched.current = true;
     fetch("/api/ai/status")
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setAiStatus({ hasAI: data.hasAI, activeProviderName: data.activeProviderName }); })
       .catch(() => {});
-  }, []);
+  }, [open]);
 
   const getAutoReply = async (message: string): Promise<{ reply: string; type: "auto" | "fallback" }> => {
     try {
