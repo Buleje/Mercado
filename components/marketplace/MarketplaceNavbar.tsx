@@ -309,12 +309,13 @@ function useStorefrontLogo(pathname: string | null): {
     // pero ese endpoint NO acepta `slug` como param — devolvía todas las
     // tiendas. El correcto es /api/marketplace/stores/[slug] que retorna
     // el detail con logo + name + tenantSlug.
-    const ctrl = new AbortController();
-    fetch(`/api/marketplace/stores/${encodeURIComponent(slug)}`, {
-      signal: ctrl.signal,
-    })
+    // Flag `cancelled` en vez de AbortController: evita el ruido "Uncaught
+    // AbortError" de React 19 + Fast Refresh sin perder protección de stale.
+    let cancelled = false;
+    fetch(`/api/marketplace/stores/${encodeURIComponent(slug)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
+        if (cancelled) return;
         const store = j?.data;
         if (!store) {
           setData({ logo: null, name: null });
@@ -329,9 +330,11 @@ function useStorefrontLogo(pathname: string | null): {
         }
       })
       .catch(() => {
-        if (!ctrl.signal.aborted) setData({ logo: null, name: null });
+        if (!cancelled) setData({ logo: null, name: null });
       });
-    return () => ctrl.abort();
+    return () => {
+      cancelled = true;
+    };
   }, [pathname]);
 
   return data;

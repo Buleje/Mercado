@@ -347,8 +347,15 @@ export default function RootLayout({
         {/* Skip-link WCAG 2.4.1 — primer tabulable del body (ADR-075 tokens DS). */}
         <SkipLink />
         {/* Barra de progreso de navegación — feedback instantáneo al hacer
-            clic en cualquier link (cubre el micro-gap antes de loading.tsx). */}
-        <NavProgress />
+            clic en cualquier link (cubre el micro-gap antes de loading.tsx).
+            Brandon 2026-05-31: envuelto en Suspense porque usa useSearchParams()
+            → en Next 16 (cacheComponents) eso vuelve dinámica TODA la página y
+            dispara "Uncached data outside <Suspense>" en el RootLayout (afectaba
+            mi-pollo y toda ruta). El boundary aísla el opt-out de cache al
+            componente, no al árbol entero. */}
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
         <ThemeProvider>
         <LocaleProvider>
         <CurrencyProvider>

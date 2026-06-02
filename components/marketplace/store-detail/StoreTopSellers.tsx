@@ -160,29 +160,33 @@ export default function StoreTopSellers({
   const { addItem } = useMarketplaceCart();
 
   useEffect(() => {
-    const controller = new AbortController();
+    // Flag `cancelled` en vez de AbortController: evita el ruido "Uncaught
+    // AbortError" de React 19 + Fast Refresh sin perder protección de stale.
+    let cancelled = false;
     setLoading(true);
     setError(false);
 
     fetch(
       `/api/marketplace/catalog?storeSlug=${encodeURIComponent(storeSlug)}&sort=popular&limit=10`,
-      { signal: controller.signal },
     )
       .then((r) => {
         if (!r.ok) throw new Error("fetch-error");
         return r.json() as Promise<ApiResponse>;
       })
       .then(({ data }) => {
+        if (cancelled) return;
         setItems(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch((err) => {
-        if ((err as Error).name === "AbortError") return;
+      .catch(() => {
+        if (cancelled) return;
         setError(true);
         setLoading(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+    };
   }, [storeSlug]);
 
   // Auto-ocultar si vacío o error
