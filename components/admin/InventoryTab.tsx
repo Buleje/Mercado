@@ -901,8 +901,13 @@ export default function InventoryTab() {
 
   // ── Stats ──────────────────────────────────────────────────────────────────
 
+  // Brandon 2026-06-01 (fix KPI "Bajo stock"): usa default stockMin 5 (igual que
+  // `lowStockProducts` y el chip "Pocas existencias") en vez de exigir stockMin
+  // definido. Antes un producto con stock 0 SIN stockMin nunca contaba como bajo
+  // → el KPI mostraba "Stock saludable" aunque hubiera productos agotados.
+  // Excluye stock no gestionado (undefined) y productos inactivos.
   const isLowStock = (p: DbProduct) =>
-    p.stockMin !== undefined && p.stock !== undefined && p.stock <= p.stockMin;
+    Boolean(p.active) && p.stock !== undefined && p.stock <= (p.stockMin ?? 5);
 
   const isExpiringSoon = (p: DbProduct) => {
     const expiry = (p as DbProduct & { expiryDate?: string }).expiryDate;
@@ -1654,7 +1659,7 @@ export default function InventoryTab() {
                         {p.stockMin !== undefined && <span className="opacity-70"> / mín {p.stockMin}</span>}
                       </div>
                     ) : (
-                      <span className="text-xs text-[var(--text-tertiary)] dark:text-muted italic">Sin stock</span>
+                      <span className="text-xs text-[var(--text-tertiary)] dark:text-muted italic" title="Este producto no gestiona inventario">No controla stock</span>
                     )}
                     {p.barcode && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono ml-auto">#{p.barcode}</span>}
                   </div>
@@ -1733,8 +1738,13 @@ export default function InventoryTab() {
                             {/* Mejora 5R2: Semaforo de stock */}
                             {(() => {
                               const stockMin = p.stockMin ?? 5;
-                              const stock = p.stock ?? 0;
-                              if (stock === 0) return <span className="w-2.5 h-2.5 rounded-full bg-black inline-block shrink-0" title="Sin stock" />;
+                              // Brandon 2026-06-01: distinguir "no gestiona stock"
+                              // (undefined → restaurante que no controla inventario)
+                              // de "agotado" (stock 0). Antes `?? 0` pintaba ambos
+                              // como agotado.
+                              if (p.stock === undefined) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--rule-base)] inline-block shrink-0" title="Sin control de stock" />;
+                              const stock = p.stock;
+                              if (stock === 0) return <span className="w-2.5 h-2.5 rounded-full bg-black inline-block shrink-0" title="Agotado" />;
                               if (stock <= stockMin) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error-500)] inline-block shrink-0" title="Critico" />;
                               if (stock <= stockMin * 2) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning-500)] inline-block shrink-0" title="Bajo" />;
                               return <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent-soft)] inline-block shrink-0" title="OK" />;

@@ -54,17 +54,55 @@ async function flush() {
 
   await Promise.all(
     chunks.map(async (chunk) => {
-      try {
-        const res = await fetch(`/api/price-history?productIds=${chunk.join(",")}`, { credentials: "include" });
-        const map = (res.ok ? await res.json() : {}) as Record<string, PricePoint[]>;
-        for (const id of chunk) {
-          const data = Array.isArray(map[id]) ? map[id] : Array.isArray(map[String(id)]) ? map[String(id)] : [];
+      const map = await fetchChunk(chunk);
+      for (const id of chunk) {
+        if (map) {
+          const data = Array.isArray(map[id])
+            ? map[id]
+            : Array.isArray(map[String(id)])
+              ? map[String(id)]
+              : [];
           cache.set(id, { at: Date.now(), data });
           w.get(id)?.forEach((r) => r(data));
+        } else {
+          // Brandon 2026-06-01: el chunk falló incluso tras el retry (ej. 503
+          // transitorio por saturación de pool/pgBouncer). Resolvemos vacío para
+          // no colgar el render, pero NO cacheamos → el próximo render reintenta
+          // en vez de quedar 60s pegado con un sparkline vacío.
+          w.get(id)?.forEach((r) => r([]));
         }
-      } catch {
-        for (const id of chunk) w.get(id)?.forEach((r) => r([]));
       }
     }),
   );
+}
+
+/**
+ * Pide un chunk con 1 reintento ante fallo transitorio (5xx o red caída).
+ * El endpoint /api/price-history pega a Prisma; bajo ráfagas concurrentes el
+ * pool puede devolver 503 momentáneo → un solo retry con back-off corto lo
+ * resuelve sin propagar el error a la UI. Devuelve null si falla definitivamente.
+ */
+async function fetchChunk(
+  chunk: number[],
+): Promise<Record<string, PricePoint[]> | null> {
+  const url = `/api/price-history?productIds=${chunk.join(",")}`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(url, { credentials: "include" });
+      if (res.ok) return (await res.json()) as Record<string, PricePoint[]>;
+      // 5xx transitorio → reintentar una vez; 4xx → no insistir.
+      if (res.status >= 500 && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 400));
+        continue;
+      }
+      return null;
+    } catch {
+      if (attempt === 0) {
+        await new Promise((r) => setTimeout(r, 400));
+        continue;
+      }
+      return null;
+    }
+  }
+  return null;
 }

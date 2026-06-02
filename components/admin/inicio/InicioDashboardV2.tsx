@@ -102,41 +102,37 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   }, [dateRange?.from, dateRange?.to, dateRange?.preset]);
 
   useEffect(() => {
-    // Brandon 2026-05-16 (audit P1): agregado AbortController para
-    // cancelar fetches en vuelo cuando el usuario cambia el rango
-    // rápidamente. Antes el flag `active` evitaba el setState post-unmount
-    // pero el fetch igual viajaba a la red — múltiples fetches consumían
-    // BW/CPU innecesariamente.
-    const controller = new AbortController();
-    let active = true;
+    // Brandon 2026-06-01: flag `cancelled` en vez de AbortController. Abortar el
+    // fetch mientras `r.json()` lee el body genera un AbortError que escapa al
+    // `.catch` ("signal is aborted without reason") al cambiar de rango o
+    // desmontar (StrictMode double-mount lo dispara) y ensucia la consola.
+    // Dejamos terminar el fetch (GET barato) y solo ignoramos el resultado.
+    let cancelled = false;
     setLoading(true);
     setFetchError(null);
-    fetch(`/api/admin/overview${rangeQuery}`, { signal: controller.signal })
-      .then(async (r) => {
+    (async () => {
+      try {
+        const r = await fetch(`/api/admin/overview${rangeQuery}`);
+        if (cancelled) return;
         if (!r.ok) {
           setFetchError(`Error del servidor (${r.status}). Reintentá en unos segundos.`);
-          return null;
+          return;
         }
-        return r.json();
-      })
-      .then((json) => {
-        if (!active) return;
+        const json = await r.json();
+        if (cancelled) return;
         if (json && !json.error) {
           setData(json as OverviewData);
         } else if (json?.error) {
           setFetchError(typeof json.error === "string" ? json.error : "Respuesta inválida.");
         }
-      })
-      .catch((err) => {
-        if (!active || err?.name === "AbortError") return;
-        setFetchError("Error de red. Verificá tu conexión.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+      } catch {
+        if (!cancelled) setFetchError("Error de red. Verificá tu conexión.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => {
-      active = false;
-      controller.abort();
+      cancelled = true;
     };
   }, [rangeQuery]);
 

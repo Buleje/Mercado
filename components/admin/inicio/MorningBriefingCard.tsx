@@ -75,20 +75,31 @@ export default function MorningBriefingCard() {
       }
     } catch { /* silent */ }
 
-    const controller = new AbortController();
-    fetch("/api/admin/stats", { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((s) => {
-        if (!s) return;
+    // Brandon 2026-06-01: flag `cancelled` en vez de AbortController. Abortar el
+    // fetch mientras `r.json()` lee el body genera un AbortError que escapa al
+    // `.catch` ("signal is aborted without reason") al desmontar (StrictMode
+    // double-mount lo dispara siempre) y ensucia la consola. Dejamos terminar el
+    // fetch (es barato) y solo ignoramos el resultado si ya se desmontó.
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/stats");
+        if (cancelled || !r.ok) return;
+        const s = await r.json();
+        if (cancelled || !s) return;
         setStats({
           ventasAyer: s.salesYesterday ?? s.totalRevenue ?? 0,
           pedidosPendientes: s.pendingOrders ?? 0,
           stockBajo: s.lowStockCount ?? 0,
           fiadosVencidos: s.overdueDebts ?? 0,
         });
-      })
-      .catch(() => { /* silent — la tarjeta simplemente no aparece */ });
-    return () => controller.abort();
+      } catch {
+        /* silent — la tarjeta simplemente no aparece */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const dismiss = () => {
