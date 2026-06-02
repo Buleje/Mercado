@@ -1,6 +1,8 @@
 ---
 name: desktop-control
 description: Control TOTAL del Windows host de Brandon vía MCP desktop-control. Mouse, teclado, screenshots, navegación entre apps. Activar cuando la tarea involucre UI fuera del navegador, formularios externos, demos visuales, cross-app workflows, OCR de pantalla, o Brandon diga "controla mi pc", "abrime", "navegá", "tipea por mí", "pone esto en X app".
+model: sonnet
+argument-hint: "[acción o app a controlar]"
 ---
 
 # Desktop Control — Patrón blindado

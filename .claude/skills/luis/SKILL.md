@@ -1,6 +1,6 @@
 ---
 name: luis
-description: MODO MAXIMO — Arranque completo con todo el ecosistema. Carga 25 MCPs, 28 agentes, 47 skills, 11 hooks, auto-learning, sprint-autopilot. Diagnostica, propone y EJECUTA la accion mas ambiciosa sin pedir permiso.
+description: MODO MAXIMO — Arranque completo con todo el ecosistema. Carga 23 MCPs, 17 agentes, 65 skills, 31 hooks, auto-learning, sprint-autopilot. Diagnostica, propone y EJECUTA la accion mas ambiciosa sin pedir permiso.
 user-invocable: true
 model: opus
 context: fork
@@ -13,22 +13,22 @@ Cuando Brandon escribe **"luis"**, el sistema se despierta al 100% y arranca tra
 
 ## FASE 0.PRE — Confirmar bootstrap
 
-**Atajo:** si existe `session_handoff_next_luis.md` con fecha reciente → SALTAR verificacion, solo leer handoff como primer read.
+**Atajo:** si existe `.claude/session_handoff.md` con fecha reciente → SALTAR verificacion, solo leer handoff como primer read.
 
-Si no hay handoff reciente, confirmar en 1 tabla: pixel-agents (3456), timbre ding-dong, pre-push pentest, pre-commit gitleaks, MCPs (25), Agent Teams, auto-learning, loop continuo — todos activos via SessionStart/hooks.
+Si no hay handoff reciente, confirmar en 1 tabla: pixel-agents (3456), timbre ding-dong, pre-push pentest, pre-commit gitleaks, MCPs (23), Agent Teams, auto-learning, loop continuo — todos activos via SessionStart/hooks.
 
 ## FASE 0 — Cargar TODO (paralelo, 10 reads en 1 mensaje)
 
 ```
-1. session_handoff_next_luis.md (PRIMERO — evita re-diagnostico)
-2. CLAUDE.md (16 reglas)
-3. ROADMAP-24-WEEKS.md (Sprint activo)
-4. VISION_2027.md (norte: 100 bodegas)
-5. feedback_continuous_improvement_loop.md (LOOP + Agent Teams)
+1. .claude/session_handoff.md (PRIMERO — evita re-diagnostico)
+2. CLAUDE.md (reglas criticas + power rules)
+3. docs/ROADMAP-24-WEEKS.md (Sprint activo)
+4. docs/VISION_2027.md (norte: 100 bodegas)
+5. .claude/improvement-radar.md (mejoras pendientes)
 6. MEMORY.md (indice memorias)
-7. session-state.json (handoff interno)
-8. patterns.json (patrones aprendidos)
-9. evolution-log.json (evoluciones agentes)
+7. .claude/.state/session-state.json (handoff interno)
+8. .claude/learning/patterns.json (patrones aprendidos)
+9. .claude/metrics/agents.jsonl (costo/uso de agentes)
 10. Bash: git log --oneline -10
 ```
 
@@ -40,7 +40,7 @@ Si no hay handoff reciente, confirmar en 1 tabla: pixel-agents (3456), timbre di
 
 Mostrar tabla con: Branch, TypeScript OK/FAIL, Lint OK/FAIL, Archivos dirty, Session anterior, Patrones aprendidos, Evoluciones.
 
-Resumen ecosistema: 28 agentes, 47 skills, 11 hooks, 25 MCPs, 5 crons, 3 learning stores.
+Resumen ecosistema: 17 agentes, 65 skills, 31 hooks, 23 MCPs, 5 crons, 3 learning stores.
 
 ## FASE 3 — Detectar la accion mas ambiciosa
 
@@ -48,7 +48,7 @@ Prioridad:
 1. **ROJO: Build/tsc roto** → `/self-heal` inmediato
 2. **ROJO: Tests fallando** → `/self-heal test`
 3. **NARANJA: Handoff pendiente** → continuar sesion anterior
-4. **NARANJA: Patrones 3+ sin artifacts** → `/compound-learning-v2 generate`
+4. **NARANJA: Patrones 3+ sin artifacts** → `/evolve generate`
 5. **AMARILLO: Sprint items pendientes** → mayor impacto del ROADMAP
 6. **VERDE: Todo OK** → feature de VISION_2027
 
@@ -106,8 +106,8 @@ Criterios mejora valida (≥3/5): 5+ archivos, 2+ agencias, impacto medible, int
 | `/prod-to-code auto` | Errores produccion → auto-fix → deploy |
 | `/evolve analyze` | Agentes se auto-mejoran |
 | `/parallel-work [N]` | N agentes en worktrees |
-| `/agent-router [tarea]` | Auto-selecciona agente |
-| `/compound-learning-v2 scan` | Patrones → skills |
+| `/evolve scan` | Patrones → skills/hooks/agentes |
+| `/multi-agent-bg [N]` | N agentes en background |
 | `/session-handoff save` | Guarda estado |
 
 ## Reglas duras

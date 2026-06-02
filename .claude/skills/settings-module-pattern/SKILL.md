@@ -1,6 +1,8 @@
 ---
 name: settings-module-pattern
 description: Patrón blindado de SettingsModule.tsx + api/settings/route.ts. Activar SIEMPRE antes de tocar `components/admin/SettingsModule.tsx`, `app/api/settings/route.ts`, `lib/jsondb.ts` (campos de DbSettings), o cualquier sub-tab del módulo Configuración. Evita 5 bugs históricos: slug→cuid duplication, exposición de credentials, sync cross-modelo perdido, missing csrfHeaders, coverUrl no en schema.
+model: sonnet
+argument-hint: "[sub-tab o campo de Configuración]"
 ---
 
 # Settings Module — Patrón blindado
