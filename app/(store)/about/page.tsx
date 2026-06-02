@@ -17,12 +17,6 @@ import {
   ArrowUpRight,
   type LucideIcon,
 } from "lucide-react";
-// Mayo 2026 (designer audit): /about usaba Header (navbar de tienda
-// white-label con Inicio/Tienda/Tiendas/Ofertas/Cómo pagar) que rompía
-// el contexto corporativo. Ahora LandingHeader como el resto de pages
-// corporativas.
-import LandingHeader from "@/components/landing/LandingHeader";
-import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Acerca de Nosotros — Hecho en Ciudad Constitución, Perú",
@@ -102,8 +96,7 @@ export default async function AboutPage() {
 
   return (
     <>
-      <LandingHeader minimal />
-      <main className="pt-20 sm:pt-24 min-h-screen bg-white dark:bg-[var(--surface-canvas)]" id="main-content">
+      <main className="min-h-screen bg-white dark:bg-[var(--surface-canvas)]" id="main-content">
 
         {/* ── HERO ─ editorial dark ─ */}
         <section
@@ -391,7 +384,6 @@ export default async function AboutPage() {
         </section>
 
       </main>
-      <Footer />
     </>
   );
 }

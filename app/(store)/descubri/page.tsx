@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import { DescubriHero } from "@/components/descubri/DescubriHero";
 import { FeaturesGrid9 } from "@/components/descubri/FeaturesGrid9";
 import { PathsByProfile } from "@/components/descubri/PathsByProfile";
@@ -46,16 +45,9 @@ export const metadata: Metadata = {
   },
 };
 
-const MarketplaceNavbar = dynamic(
-  () => import("@/components/marketplace/MarketplaceNavbar"),
-  { ssr: true },
-);
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
-
 export default function DescubriHubPage() {
   return (
     <>
-      <MarketplaceNavbar />
       <main id="main-content" className="bg-[var(--surface-canvas)]">
         <DescubriHero />
         <FeaturesGrid9 />
@@ -65,7 +57,6 @@ export default function DescubriHubPage() {
         <DescubriFAQ />
         <DescubriCTAFinal />
       </main>
-      <Footer />
     </>
   );
 }

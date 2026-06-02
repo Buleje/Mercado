@@ -11,8 +11,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { ArrowLeft, ArrowRight, Clock, User, Share2 } from "@buleje/design-system/icons";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { JsonLd } from "@/components/JsonLd";
 import { generateArticleLD } from "@/lib/seo/json-ld";
@@ -412,9 +410,6 @@ export default async function GuiaSlugPage({ params }: PageProps) {
           body: guide.body,
         })}
       />
-      <Header />
-      <div className="h-[6.75rem] sm:h-[7.75rem]" />
-
       <main id="main-content" className="bg-[var(--surface-canvas)]">
         <div className="mx-auto max-w-3xl px-4 py-10">
           {/* ── Breadcrumb ──────────────────────────────────────────────── */}
@@ -550,10 +545,6 @@ export default async function GuiaSlugPage({ params }: PageProps) {
           </section>
         )}
       </main>
-
-      <Suspense fallback={null}>
-        <Footer />
-      </Suspense>
     </>
   );
 }

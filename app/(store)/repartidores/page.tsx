@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Bike, MapPin, Wallet, Clock } from "@buleje/design-system/icons";
-import LandingHeader from "@/components/landing/LandingHeader";
-import dynamic from "next/dynamic";
-
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
-
 export const metadata: Metadata = {
   title: "Manejá tu propia ruta — Repartidores",
   description:
@@ -25,8 +20,6 @@ export const metadata: Metadata = {
 export default function RepartidoresPage() {
   return (
     <main id="main-content">
-      <LandingHeader />
-
       {/* Hero */}
       <section
         aria-label="Maneja tu propia ruta"
@@ -141,8 +134,6 @@ export default function RepartidoresPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </main>
   );
 }

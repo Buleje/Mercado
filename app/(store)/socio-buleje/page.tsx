@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import { SocioHero } from "@/components/socio-buleje/SocioHero";
 import { SocioBeneficios } from "@/components/socio-buleje/SocioBeneficios";
 import { SocioCalculadora } from "@/components/socio-buleje/SocioCalculadora";
@@ -48,16 +47,9 @@ export const metadata: Metadata = {
   },
 };
 
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
-const MarketplaceNavbar = dynamic(
-  () => import("@/components/marketplace/MarketplaceNavbar"),
-  { ssr: true },
-);
-
 export default function SocioBulejePage() {
   return (
     <>
-      <MarketplaceNavbar />
       <main id="main-content" className="bg-[var(--surface-canvas)]">
         <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
@@ -73,7 +65,6 @@ export default function SocioBulejePage() {
         <SocioCTAFinal />
         <RelatedFeatures features={relatedFor("socio-buleje")} />
       </main>
-      <Footer />
     </>
   );
 }

@@ -11,8 +11,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { ArrowRight, Clock, Mail } from "@buleje/design-system/icons";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import {
   PageTitle,
@@ -232,9 +230,6 @@ export default async function GuiasPage({ searchParams }: GuiasPageProps) {
           { name: "Guías", url: "https://www.buleje.pe/guias" },
         ]}
       />
-      <Header />
-      <div className="h-[6.75rem] sm:h-[7.75rem]" />
-
       <main id="main-content" className="bg-[var(--surface-canvas)]">
         {/* ── Hero ──────────────────────────────────────────────────────── */}
         <section className="border-b border-[var(--rule-soft)]">
@@ -468,10 +463,6 @@ export default async function GuiasPage({ searchParams }: GuiasPageProps) {
           </div>
         </section>
       </main>
-
-      <Suspense fallback={null}>
-        <Footer />
-      </Suspense>
     </>
   );
 }

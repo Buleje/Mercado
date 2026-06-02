@@ -1,8 +1,4 @@
 import type { Metadata } from "next";
-import LandingHeader from "@/components/landing/LandingHeader";
-import dynamic from "next/dynamic";
-
-const Footer = dynamic(() => import("@/components/Footer"));
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones",
@@ -12,7 +8,6 @@ export const metadata: Metadata = {
 export default function TerminosPage() {
   return (
     <>
-    <LandingHeader minimal />
     {/* Designer audit P0: H1 antes era text-[var(--text-primary)] hardcoded → invisible
         en dark mode (contraste 1.2:1). Ahora token DS que se adapta. */}
     <main className="mx-auto max-w-3xl px-4 py-12 sm:py-16 text-[var(--text-primary)]">
@@ -153,7 +148,6 @@ export default function TerminosPage() {
         </section>
       </div>
     </main>
-    <Footer />
     </>
   );
 }
