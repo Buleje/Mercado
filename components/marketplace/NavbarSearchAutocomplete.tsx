@@ -147,12 +147,19 @@ interface Props {
    * tipo store siguen al storefront del vendor.
    */
   storesOnly?: boolean;
+  /**
+   * "Embebido": el input pierde su propio borde/fondo/redondeo para vivir
+   * DENTRO de una pastilla contenedora (rediseño nav B — location + search
+   * unidos). El ícono de lupa, clear y submit se mantienen.
+   */
+  embedded?: boolean;
 }
 
 export default function NavbarSearchAutocomplete({
   className,
   placeholder,
   storesOnly = false,
+  embedded = false,
 }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -348,11 +355,16 @@ export default function NavbarSearchAutocomplete({
           onKeyDown={onKeyDown}
           placeholder={effectivePlaceholder}
           className={cn(
-            "w-full h-12 rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]",
-            "pl-11 pr-14 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)]",
-            "placeholder:text-[var(--text-tertiary)] outline-none transition-all",
-            "hover:border-[var(--accent)]/40 hover:shadow-sm",
-            "focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:shadow-md focus:shadow-[var(--accent)]/15 focus:ring-4 focus:ring-[var(--accent)]/10",
+            embedded
+              ? // Embebido en una pastilla padre: transparente, sin borde propio.
+                "w-full h-11 bg-transparent border-0 rounded-none pl-11 pr-14 text-base font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-0 focus:shadow-none"
+              : cn(
+                  "w-full h-12 rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]",
+                  "pl-11 pr-14 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)]",
+                  "placeholder:text-[var(--text-tertiary)] outline-none transition-all",
+                  "hover:border-[var(--accent)]/40 hover:shadow-sm",
+                  "focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:shadow-md focus:shadow-[var(--accent)]/15 focus:ring-4 focus:ring-[var(--accent)]/10",
+                ),
             "buleje-search-input",
           )}
         />

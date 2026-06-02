@@ -36,6 +36,7 @@ import {
   Package,
   Wallet,
   ShoppingCart,
+  MapPin,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { CartBadge } from "@/components/marketplace/cart/CartBadge";
@@ -47,6 +48,7 @@ import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { cn } from "@/lib/utils";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
+import { BRAND_GEO } from "@/lib/geo";
 // NotificationsMenu lazy — framer-motion pesado + solo aparece al click.
 // Ahorra ~50kb del bundle initial del navbar.
 const NotificationsMenu = dynamic(
@@ -404,6 +406,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
       ? brand?.logos.logoDark ?? brand?.logos.logoLight ?? null
       : brand?.logos.logoLight ?? null;
   const brandName = brand?.identity.name ?? "Buleje";
+  const platformCity = brand?.identity.city ?? BRAND_GEO.city;
   // Visibilidad de enlaces controlada desde superadmin/stores → Navegación
   const navVisibility = useNavVisibility("marketplace");
   const navModeHook = useMarketplaceNavMode();
@@ -568,66 +571,47 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               )}
             </Link>
 
-            {/* ── Modo SOLO TIENDAS · tabs Inicio·Tiendas a la izquierda ──
-                Brandon 2026-05-30: el directorio de tiendas prioriza la
-                búsqueda. Los 2 enlaces van como tabs limpios pegados al logo
-                (no flotando) y el search pasa a ser protagonista (abajo). El
-                modo "Marketplace completo" usa otra disposición (search +
-                nav con overflow "Más ▾"). */}
+            {/* ── PASTILLA CENTRAL (rediseño B, Brandon 2026-06-02) ──
+                Estilo Airbnb/Uber Eats: ubicación + búsqueda unidas en un
+                único control redondeado, centrado. Minimalista — los tabs
+                Inicio/Tiendas se omiten de la barra (el logo va a home y el
+                directorio es la propia página). Solo modo tiendas, md+. */}
             {isTiendasOnly && (
-              <nav
-                aria-label="Navegación de tiendas"
-                className="hidden lg:flex items-center gap-1 shrink-0"
-              >
-                {renderedLinks.map((link) => {
-                  const active = isActive(link);
-                  const LinkIcon = link.icon;
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-bold transition-colors",
-                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-                        active
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-                      )}
-                    >
-                      <LinkIcon
-                        className="h-4 w-4 shrink-0"
-                        strokeWidth={1.75}
-                        aria-hidden="true"
-                      />
-                      {t(link.labelKey)}
-                    </Link>
-                  );
-                })}
-              </nav>
+              <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
+                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all hover:border-[var(--accent)]/40 focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] focus-within:shadow-md focus-within:shadow-[var(--accent)]/15">
+                  {/* Segmento ubicación */}
+                  <div className="flex items-center gap-1.5 pl-4 pr-3 h-full shrink-0 text-[var(--accent)]">
+                    <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden="true" />
+                    <span className="text-sm font-bold truncate max-w-[150px]">{platformCity}</span>
+                  </div>
+                  {/* Divisor */}
+                  <div className="h-6 w-px bg-[var(--rule-base)] shrink-0" aria-hidden="true" />
+                  {/* Búsqueda embebida (lupa + input + botón Buscar viven adentro) */}
+                  <NavbarSearchAutocomplete
+                    className="flex-1 min-w-0"
+                    storesOnly
+                    embedded
+                    placeholder="Buscar tienda o producto…"
+                  />
+                </div>
+              </div>
             )}
 
-            {/* ── Search bar autocomplete (desktop + tablet) ──
-                · Solo Tiendas → protagonista: flex-1 ancho, es la acción estrella.
-                · Marketplace completo → comparte la pista 3:4 con el nav (flex-[3]).
-                Brandon 2026-05-30. */}
-            <div
-              data-tour="search"
-              className={cn(
-                "hidden md:block",
-                isTiendasOnly ? "flex-1 max-w-[820px]" : "flex-[3] max-w-[560px]",
-              )}
-            >
-              <NavbarSearchAutocomplete
-                className="block"
-                storesOnly={isTiendasOnly}
-                placeholder={
-                  isTiendasOnly
-                    ? "Buscar producto o tienda en Ciudad Constitución..."
-                    : t("nav.searchPlaceholder")
-                }
-              />
-            </div>
+            {/* ── Search bar (fila 1) — SOLO Marketplace completo. En modo
+                tiendas la búsqueda vive dentro de la pastilla central
+                (rediseño B, Brandon 2026-06-02). ── */}
+            {!isTiendasOnly && (
+              <div
+                data-tour="search"
+                className="hidden md:block flex-[3] max-w-[560px]"
+              >
+                <NavbarSearchAutocomplete
+                  className="block"
+                  storesOnly={false}
+                  placeholder={t("nav.searchPlaceholder")}
+                />
+              </div>
+            )}
 
             {/* ── Nav links transaccionales (lg+) con overflow adaptativo —
                 SOLO en Marketplace completo/custom. En Solo Tiendas se usan los
