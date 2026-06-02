@@ -112,9 +112,9 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
             Tu tienda todavía no registra ventas en el marketplace
           </h3>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Cuando entren pedidos vas a ver acá tus números reales: ventas del mes,
-            ticket promedio, ventas diarias y tus productos más vendidos. No
-            mostramos números inventados.
+            Cuando entren pedidos vas a ver acá tus números reales: ventas de los
+            últimos 30 días, ticket promedio, ventas diarias y tus productos más
+            vendidos. No mostramos números inventados.
           </p>
         </div>
       </div>
@@ -128,11 +128,14 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
     orders: d.orders,
   }));
   const maxGmv = Math.max(...daily.map((d) => d.gmv), 1);
-  const weekTotal = daily.reduce((s, d) => s + d.gmv, 0);
+  const windowTotal = daily.reduce((s, d) => s + d.gmv, 0);
   const isDailyEmpty = daily.every((d) => d.gmv === 0);
 
   const topProducts = data.topProducts
     .filter((p) => p.revenue > 0 || p.qty > 0)
+    // Ordenar por ingreso real (qty × precio); la API los devuelve por suma de
+    // precio unitario, lo que dejaba el ranking visual desordenado.
+    .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5)
     .map((p) => ({
       name: p.name,
@@ -149,12 +152,12 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
       {/* ── KPIs reales del negocio ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard
-          label="Pedidos del mes"
+          label="Pedidos (30 días)"
           value={String(data.month.orders)}
           icon={ShoppingCart}
         />
         <StatCard
-          label="Ventas del mes"
+          label="Ventas (30 días)"
           value={fmtMoney(data.month.revenue)}
           icon={DollarSign}
           delta={data.month.revenueGrowth !== 0 ? data.month.revenueGrowth : null}
@@ -220,28 +223,29 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
         title="Tus ventas diarias"
         Icon={TrendingUp}
         height={280}
-        description="Cuánto vendió tu tienda cada día en el marketplace (últimos 7 días)."
+        description="Cuánto vendió tu tienda cada día en el marketplace (últimos 30 días)."
         isEmpty={isDailyEmpty}
-        emptyText="Sin ventas registradas en los últimos 7 días"
+        emptyText="Sin ventas registradas en los últimos 30 días"
         badge={
           <div className="text-right">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Total 7 días
+              Total 30 días
             </p>
             <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
-              {fmtMoney(weekTotal)}
+              {fmtMoney(windowTotal)}
             </p>
           </div>
         }
       >
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={daily} margin={{ top: 28, right: 16, left: 0, bottom: 4 }} barCategoryGap="18%">
+          <BarChart data={daily} margin={{ top: 28, right: 16, left: 0, bottom: 4 }} barCategoryGap="14%">
             <XAxis
               dataKey="dia"
               tick={{ fontSize: 11, fill: T.tickFill, fontWeight: 600 }}
               axisLine={false}
               tickLine={false}
               tickMargin={8}
+              interval={Math.max(0, Math.floor(daily.length / 6))}
             />
             <YAxis
               tick={{ fontSize: 12, fill: T.tickFill, fontWeight: 600 }}
@@ -252,20 +256,23 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
               width={50}
             />
             <Tooltip content={<ChartTooltip prefix="S/" />} cursor={{ fill: T.brand, fillOpacity: 0.08 }} />
-            <Bar dataKey="gmv" name="Ventas" radius={[6, 6, 0, 0]} maxBarSize={36}>
+            <Bar dataKey="gmv" name="Ventas" radius={[4, 4, 0, 0]} maxBarSize={22}>
               {daily.map((entry, i) => (
                 <Cell key={i} fill={T.brand} fillOpacity={entry.gmv === maxGmv && maxGmv > 0 ? 1 : 0.45} />
               ))}
-              <LabelList
-                dataKey="gmv"
-                position="top"
-                formatter={(v) => {
-                  const n = Number(v);
-                  if (!n) return "";
-                  return n >= 1000 ? `S/${(n / 1000).toFixed(1)}k` : `S/${Math.round(n)}`;
-                }}
-                style={{ fill: T.primary, fontSize: 10, fontWeight: 700 }}
-              />
+              {/* A 30 barras los labels por barra saturan → solo tooltip + eje Y. */}
+              {daily.length <= 10 && (
+                <LabelList
+                  dataKey="gmv"
+                  position="top"
+                  formatter={(v) => {
+                    const n = Number(v);
+                    if (!n) return "";
+                    return n >= 1000 ? `S/${(n / 1000).toFixed(1)}k` : `S/${Math.round(n)}`;
+                  }}
+                  style={{ fill: T.primary, fontSize: 10, fontWeight: 700 }}
+                />
+              )}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -277,9 +284,9 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
           title="Tus productos más vendidos"
           Icon={Package}
           height={240}
-          description="Lo que más se vende de tu tienda este mes."
+          description="Lo que más se vende de tu tienda (últimos 30 días)."
           isEmpty={topProducts.length === 0}
-          emptyText="Todavía no hay productos vendidos este mes"
+          emptyText="Todavía no hay productos vendidos en los últimos 30 días"
         >
           <MicroList items={topProducts} barColor={T.brand} showRank />
         </ChartCard>

@@ -395,12 +395,17 @@ export const MarketplacePublicDB = {
     storeId: string,
     dates: {
       todayStart: Date;
-      monthStart: Date;
-      prevMonthStart: Date;
+      /** Inicio de la ventana MÓVIL de 30 días (Brandon 2026-06-01, antes mes calendario). */
+      windowStart: Date;
+      /** Inicio de la ventana de 30 días PREVIA — para el % de crecimiento. */
+      prevWindowStart: Date;
+      /** 7 días — métrica "esta semana". */
       weekStart: Date;
+      /** Inicio del gráfico de ventas diarias (30 días). */
+      dailyStart: Date;
     },
   ) {
-    const { todayStart, monthStart, prevMonthStart, weekStart } = dates;
+    const { todayStart, windowStart, prevWindowStart, weekStart, dailyStart } = dates;
 
     return Promise.all([
       prisma.order.aggregate({
@@ -409,12 +414,12 @@ export const MarketplacePublicDB = {
         _sum: { total: true },
       }),
       prisma.order.aggregate({
-        where: { tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: monthStart } },
+        where: { tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: windowStart } },
         _count: true,
         _sum: { total: true },
       }),
       prisma.order.aggregate({
-        where: { tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: prevMonthStart, lt: monthStart } },
+        where: { tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: prevWindowStart, lt: windowStart } },
         _count: true,
         _sum: { total: true },
       }),
@@ -435,7 +440,7 @@ export const MarketplacePublicDB = {
       prisma.orderItem.groupBy({
         by: ["name"],
         where: {
-          order: { tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: monthStart } },
+          order: { tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: windowStart } },
         },
         _sum: { quantity: true, price: true },
         orderBy: { _sum: { price: "desc" } },
@@ -460,7 +465,7 @@ export const MarketplacePublicDB = {
           tenantId,
           source: "marketplace",
           deletedAt: null,
-          createdAt: { gte: weekStart },
+          createdAt: { gte: dailyStart },
         },
         _sum: { total: true },
         _count: true,
@@ -471,7 +476,7 @@ export const MarketplacePublicDB = {
         _sum: { total: true },
       }),
       prisma.order.aggregate({
-        where: { tenantId, deletedAt: null, createdAt: { gte: monthStart } },
+        where: { tenantId, deletedAt: null, createdAt: { gte: windowStart } },
         _count: true,
         _sum: { total: true },
       }),

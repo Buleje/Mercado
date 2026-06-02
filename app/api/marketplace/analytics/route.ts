@@ -41,12 +41,22 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    // Brandon 2026-06-01: ventana MÓVIL de 30 días (no mes calendario) para que
+    // el resumen muestre siempre actividad reciente, sin el bajón a "0" cuando
+    // recién arranca el mes. `month*` en la respuesta = últimos 30 días.
+    // windowStart = 30 días (hoy + 29 atrás); prevWindowStart = los 30 días
+    // anteriores (para el % de crecimiento); dailyStart = mismo inicio del
+    // gráfico diario; weekStart sigue siendo 7 días para "esta semana".
+    const windowStart = new Date(todayStart);
+    windowStart.setDate(windowStart.getDate() - 29);
+    const prevWindowStart = new Date(todayStart);
+    prevWindowStart.setDate(prevWindowStart.getDate() - 59);
+    const dailyStart = windowStart;
     const weekStart = new Date(todayStart);
-    weekStart.setDate(weekStart.getDate() - 7);
+    weekStart.setDate(weekStart.getDate() - 6);
 
-    // Run all queries in parallel via DB class
+    // Run all queries in parallel via DB class. `monthOrders`/`prevMonthOrders`
+    // ahora representan la ventana móvil de 30 días (nombres conservados).
     const [
       todayOrders,
       monthOrders,
@@ -64,14 +74,15 @@ export async function GET(req: NextRequest) {
       allChannelMonth,
     ] = await MarketplacePublicDB.getVendorAnalytics(auth.tenantId, store.id, {
       todayStart,
-      monthStart,
-      prevMonthStart,
+      windowStart,
+      prevWindowStart,
       weekStart,
+      dailyStart,
     });
 
-    // Aggregate daily sales into day buckets
+    // Aggregate daily sales into day buckets (30 días móviles)
     const salesByDay: Record<string, { revenue: number; orders: number }> = {};
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 29; i >= 0; i--) {
       const d = new Date(todayStart);
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
