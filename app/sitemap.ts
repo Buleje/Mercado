@@ -196,6 +196,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    {
+      url: `${baseUrl}/libro-de-reclamaciones`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.4,
+    },
   ];
 
   // Category pages (excluding "todos")

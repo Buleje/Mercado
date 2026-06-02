@@ -22,6 +22,8 @@ import {
   Briefcase,
   LifeBuoy,
   Leaf,
+  BookText,
+  Scale,
 } from "lucide-react";
 import { useSettingsSafe, DEFAULT_DELIVERY } from "@/contexts/settings-context";
 import { DEFAULT_HOMEPAGE } from "@/lib/homepage-content";
@@ -32,6 +34,7 @@ import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { readNavVisibility, subscribeNavVisibility, type NavVisibilityMap } from "@/lib/nav-visibility";
 import { BRAND_GEO } from "@/lib/geo";
+import { LEGAL, LEGAL_COMPLETO } from "@/lib/legal";
 
 
 // ── Columna 1: Marketplace ──────────────────────────────────────────────
@@ -325,6 +328,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
     { href: "/ayuda", label: "Ayuda" },
     { href: "/terminos", label: "Términos" },
     { href: "/privacidad", label: "Privacidad" },
+    { href: "/libro-de-reclamaciones", label: "Libro de Reclamaciones" },
   ];
   // Marca de la plataforma (gestionada en /superadmin/marca).
   // Cuando storeTheme está vacío, la marca de la plataforma se usa como fallback.
@@ -733,8 +737,30 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
               <a href="/privacidad" className="font-semibold hover:text-teal-200 transition-colors">Privacidad</a>
               <span aria-hidden className="text-teal-400/40">·</span>
               <a href="/terminos" className="font-semibold hover:text-teal-200 transition-colors">Términos</a>
+              <span aria-hidden className="text-teal-400/40">·</span>
+              <a
+                href="/libro-de-reclamaciones"
+                className="inline-flex items-center gap-1 font-semibold text-teal-200 hover:text-teal-100 transition-colors"
+              >
+                <BookText className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                Libro de Reclamaciones
+              </a>
             </p>
           </div>
+
+          {/* Identificación legal del titular (Ley 29571) — visible en todos los
+              modos. Solo se muestra cuando lib/legal.ts ya tiene los datos reales
+              (LEGAL_COMPLETO) para no publicar placeholders. */}
+          {LEGAL_COMPLETO && (
+            <p className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-white/10 pt-3 text-xs text-white/45 sm:justify-start">
+              <Scale className="h-3.5 w-3.5 text-white/40" strokeWidth={2.5} aria-hidden />
+              <span className="font-semibold text-white/60">{LEGAL.razonSocial}</span>
+              <span aria-hidden className="text-teal-400/30">·</span>
+              <span className="tabular-nums">RUC {LEGAL.ruc}</span>
+              <span aria-hidden className="text-teal-400/30">·</span>
+              <span>{LEGAL.domicilioFiscal}</span>
+            </p>
+          )}
         </div>
       </div>
     </footer>

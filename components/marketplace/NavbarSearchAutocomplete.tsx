@@ -426,7 +426,7 @@ export default function NavbarSearchAutocomplete({
           id="navbar-search-listbox"
           role="listbox"
           aria-label="Sugerencias"
-          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] shadow-black/10"
+          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[72vh] overflow-y-auto rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-xl)] shadow-black/10 sm:right-auto sm:w-[min(680px,90vw)] sm:p-3"
         >
           {loading && (
             <div className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-tertiary)]">
@@ -442,13 +442,17 @@ export default function NavbarSearchAutocomplete({
             </div>
           )}
 
-          {!loading &&
-            groups.map((g, gi) => {
+          {/* Panel horizontal multi-columna (mega-menú): los grupos
+              (productos · tiendas · categorías) se colocan lado a lado en
+              desktop con auto-fill; en mobile colapsa a una columna. */}
+          {!loading && groups.length > 0 && (
+          <div className="grid gap-x-3 gap-y-1 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+          {groups.map((g, gi) => {
               let runningIdx = 0;
               for (let k = 0; k < gi; k++) runningIdx += groups[k].items.length;
               return (
-                <div key={g.kind} className="border-b border-[var(--rule-soft)] last:border-b-0">
-                  <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                <section key={g.kind} className="min-w-0">
+                  <div className="flex items-center justify-between px-2 pt-1.5 pb-1">
                     <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                       {g.title}
                     </p>
@@ -465,7 +469,7 @@ export default function NavbarSearchAutocomplete({
                       </button>
                     )}
                   </div>
-                  <ul>
+                  <ul className="space-y-0.5">
                     {g.items.map((s, i) => {
                       const idx = runningIdx + i;
                       const active = idx === activeIdx;
@@ -505,7 +509,7 @@ export default function NavbarSearchAutocomplete({
                             }}
                             onMouseEnter={() => setActiveIdx(idx)}
                             className={cn(
-                              "flex items-center gap-3 px-4 py-2 text-sm transition-colors",
+                              "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition-colors",
                               active
                                 ? "bg-[var(--accent-soft)] text-[var(--text-primary)]"
                                 : "hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
@@ -513,11 +517,11 @@ export default function NavbarSearchAutocomplete({
                           >
                             <SearchSuggestionThumb variant={variant} image={s.image} Icon={Icon} size={40} />
                             <div className="min-w-0 flex-1">
-                              <p className="font-bold text-[var(--text-primary)] truncate">
+                              <p className="text-base font-bold text-[var(--text-primary)] truncate">
                                 {s.label}
                               </p>
                               {(s.subtitle || hasRating) && (
-                                <p className="flex items-center gap-1 text-xs text-[var(--text-tertiary)] truncate">
+                                <p className="flex items-center gap-1 text-sm text-[var(--text-tertiary)] truncate">
                                   {hasRating && (
                                     <span className="inline-flex items-center gap-0.5 font-bold text-[var(--text-secondary)]">
                                       <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={0} aria-hidden />
@@ -539,9 +543,26 @@ export default function NavbarSearchAutocomplete({
                       );
                     })}
                   </ul>
-                </div>
+                </section>
               );
             })}
+          </div>
+          )}
+
+          {/* CTA cierre: ver todos los resultados en /tiendas */}
+          {!loading && groups.length > 0 && query.trim().length > 0 && (
+            <Link
+              href={`/tiendas?q=${encodeURIComponent(query.trim())}`}
+              onClick={() => {
+                addRecentSearch(query.trim());
+                setOpen(false);
+              }}
+              className="mt-1.5 flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] px-3 py-2.5 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+            >
+              <Search className="h-4 w-4" aria-hidden />
+              Ver todos los resultados de &quot;{query.trim()}&quot;
+            </Link>
+          )}
         </div>
       )}
     </form>
