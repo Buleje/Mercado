@@ -166,6 +166,10 @@ const InvitaVecinoCard = dynamic(
   () => import("@/components/marketplace/InvitaVecinoCard"),
   { ssr: false, loading: () => null },
 );
+const CuponBienvenidaBar = dynamic(
+  () => import("@/components/marketplace/CuponBienvenidaBar"),
+  { ssr: false, loading: () => null },
+);
 const MisPedidosFavoritosStrip = dynamic(
   () => import("@/components/marketplace/MisPedidosFavoritosStrip"),
   { ssr: false, loading: () => null },
@@ -824,6 +828,11 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
           mensajes editoriales. Debe ver filtros + tiendas directo. La
           información comercial (h1 "Las mejores tiendas de tu barrio",
           stats, descripción) vive en home (/). */}
+
+      {/* ── Cupón de bienvenida (Brandon 2026-06-02) — ARRIBA del hero, visible
+           al abrir, solo para usuarios nuevos (el componente se auto-gatea por
+           primer-pedido + dismiss). Saca el cupón de adentro del hero rotante. */}
+      {search.trim().length === 0 && <CuponBienvenidaBar />}
 
       {/* ── Banner rotante de promos (gestionado desde superadmin) ─────
            Aparece solo cuando NO hay búsqueda activa para no competir
