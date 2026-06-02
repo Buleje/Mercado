@@ -38,34 +38,42 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
   const [reviewModal, setReviewModal] = useState<ReviewModalState>({ open: false });
 
   useEffect(() => {
-    // Fetch from server; fall back to localStorage cache if fetch fails
-    fetch("/api/reviews")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: Review[] | null) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setReviews(data);
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
-        } else {
-          // API returned empty — try localStorage as fallback
-          try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-              const parsed = JSON.parse(saved);
-              if (Array.isArray(parsed) && parsed.length > 0) setReviews(parsed);
-            }
-          } catch {}
-        }
-      })
-      .catch(() => {
-        // Network error — try localStorage cache
-        try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) setReviews(parsed);
+    // Perf (2026-06-02): hidrata instantáneo desde localStorage y difiere el
+    // fetch al server a tiempo idle, para no competir con los fetches del primer
+    // pintado. Las reseñas no son críticas para el render inicial.
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) setReviews(parsed);
+      }
+    } catch {}
+    const run = () =>
+      fetch("/api/reviews")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: Review[] | null) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setReviews(data);
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
           }
-        } catch {}
-      });
+        })
+        .catch((err) => {
+          // offline/red: la UI ya muestra el cache de localStorage.
+          console.warn("[reviews] reconcile failed", String(err));
+        });
+    let idleId: number | undefined;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(run, { timeout: 3000 });
+    } else {
+      timerId = setTimeout(run, 1200);
+    }
+    return () => {
+      if (idleId !== undefined && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timerId !== undefined) clearTimeout(timerId);
+    };
   }, []);
 
   const addReview = useCallback((r: Omit<Review, "id" | "date">) => {

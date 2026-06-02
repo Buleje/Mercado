@@ -21,17 +21,35 @@ export function PromotionsProvider({ children }: { children: ReactNode }) {
   const [promotions, setPromotions] = useState<DbPromotion[]>([]);
 
   useEffect(() => {
-    fetch("/api/promotions")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: DbPromotion[]) => {
-        const now = new Date();
-        setPromotions(
-          data.filter(
-            (p) => p.active && (!p.expiresAt || new Date(p.expiresAt) > now)
-          )
-        );
-      })
-      .catch(() => {});
+    // Perf (2026-06-02): las promociones no se necesitan en el primer pintado
+    // (recién en carrito/checkout). Difiere el fetch a idle para no competir con
+    // los fetches críticos del home.
+    const run = () =>
+      fetch("/api/promotions")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data: DbPromotion[]) => {
+          const now = new Date();
+          setPromotions(
+            data.filter((p) => p.active && (!p.expiresAt || new Date(p.expiresAt) > now)),
+          );
+        })
+        .catch((err) => {
+          // offline/red: reintenta en la próxima carga; no es crítico.
+          console.warn("[promotions] reconcile failed", String(err));
+        });
+    let idleId: number | undefined;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(run, { timeout: 3000 });
+    } else {
+      timerId = setTimeout(run, 1200);
+    }
+    return () => {
+      if (idleId !== undefined && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timerId !== undefined) clearTimeout(timerId);
+    };
   }, []);
 
   const getBestPromotion = useCallback(
