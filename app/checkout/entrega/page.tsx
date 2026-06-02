@@ -673,17 +673,31 @@ export default function CheckoutEntregaPage() {
       setLoyaltyAvailable(0);
       return;
     }
-    const ctrl = new AbortController();
+    // Brandon 2026-06-01: flag `cancelled` en vez de AbortController. Abortar el
+    // fetch mientras `r.json()` lee el body produce un rejection del stream que
+    // escapa al `.catch` → "Uncaught (in promise) AbortError: signal is aborted
+    // without reason" al desmontar (StrictMode dev double-mount lo dispara
+    // siempre). Es una carga de bajo costo: dejamos terminar el fetch y solo
+    // ignoramos el resultado si el componente ya se desmontó.
+    let cancelled = false;
     setLoyaltyLoading(true);
-    fetch(`/api/marketplace/loyalty?phone=${encodeURIComponent(phone)}`, { signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+    (async () => {
+      try {
+        const r = await fetch(`/api/marketplace/loyalty?phone=${encodeURIComponent(phone)}`);
+        if (cancelled) return;
+        const d = r.ok ? await r.json() : null;
+        if (cancelled) return;
         const pts = d?.data?.points ?? 0;
         setLoyaltyAvailable(typeof pts === "number" ? pts : 0);
-      })
-      .catch(() => {})
-      .finally(() => setLoyaltyLoading(false));
-    return () => ctrl.abort();
+      } catch {
+        /* red caída / JSON inválido → loyalty queda en su valor previo */
+      } finally {
+        if (!cancelled) setLoyaltyLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [customer.phone]);
 
   // ── Métodos de pago disponibles (intersección de tiendas) ──────────
@@ -1110,7 +1124,11 @@ export default function CheckoutEntregaPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Brandon 2026-06-01: ubigeo compacto. Mobile: Departamento +
+                Provincia en una fila, Distrito a fila completa (entran los
+                nombres sin truncar). Desktop: 3 columnas. Antes: 3 filas
+                apiladas. Son campos que el geo autollena. */}
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
               <div>
                 <Label htmlFor="ck-dept">Departamento</Label>
                 <select
@@ -1153,7 +1171,7 @@ export default function CheckoutEntregaPage() {
                   ))}
                 </select>
               </div>
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <Label htmlFor="ck-dist">Distrito</Label>
                 <select
                   id="ck-dist"
@@ -1212,18 +1230,21 @@ export default function CheckoutEntregaPage() {
           {/* ── PAGO ──────────────────────────────────────────────── */}
           <SectionBox kicker="Método de pago" title="¿Cómo te queda más cómodo?" icon={Wallet}>
             {paymentConfigsLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-24 rounded-2xl bg-[var(--surface-sunken)] animate-pulse"
+                    className="h-20 sm:h-24 rounded-2xl bg-[var(--surface-sunken)] animate-pulse"
                   />
                 ))}
               </div>
             ) : (
               <div
                 className={cn(
-                  "grid grid-cols-1 gap-3",
+                  // Brandon 2026-06-01: 2 columnas en mobile (antes apiladas) —
+                  // el caso típico (efectivo + Yape) entra en 1 fila.
+                  "grid gap-2.5 sm:gap-3",
+                  availableMethods.length === 1 ? "grid-cols-1" : "grid-cols-2",
                   availableMethods.length === 1 && "sm:grid-cols-1",
                   availableMethods.length === 2 && "sm:grid-cols-2",
                   availableMethods.length === 3 && "sm:grid-cols-3",
