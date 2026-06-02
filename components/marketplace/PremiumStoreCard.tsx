@@ -10,6 +10,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, MapPin, Bike, ShieldCheck, Eye, Award, Moon, Star } from "@buleje/design-system/icons";
+import ShareStoreButton from "./ShareStoreButton";
 
 export interface PremiumProduct {
   productId: number;
@@ -117,6 +118,15 @@ export default function PremiumStoreCard({
             <Eye className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </button>
         )}
+
+        {/* Compartir tienda por WhatsApp — cada cliente trae 2-3 vecinos
+            (Brandon 2026-06-02). z-20 sobre el stretched-link "Ver tienda";
+            a la izquierda del botón de vista rápida si existe. */}
+        <ShareStoreButton
+          slug={slug}
+          name={name}
+          className={`absolute top-3 z-20 ${onQuickView ? "right-[3.75rem]" : "right-3"}`}
+        />
 
         {/* ── Identidad ── */}
         <div className="flex gap-3 sm:w-[300px] sm:shrink-0 sm:flex-col sm:gap-3 sm:border-r sm:border-[var(--rule-soft)] sm:pr-5">

@@ -64,6 +64,7 @@ import PremiumStoreCard from "./PremiumStoreCard";
 import StorePromoBanner from "./StorePromoBanner";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
+import ShareStoreButton from "@/components/marketplace/ShareStoreButton";
 import {
   useLastOrdersByStore,
   formatDaysAgo,
@@ -452,8 +453,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           </Link>
         )}
       />
-      {/* TS-15 follow store — fuera del Link para no anidar interactivos */}
-      <div className="absolute top-3 right-3 z-10">
+      {/* TS-15 follow store + compartir — fuera del Link para no anidar interactivos */}
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+        <ShareStoreButton slug={store.slug} name={store.name} />
         <FollowStoreButton slug={store.slug} storeName={store.name} />
       </div>
       </div>
