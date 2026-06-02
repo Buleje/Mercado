@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   BookText,
@@ -38,14 +39,18 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6">
-      <h2 className="mb-4 flex items-center gap-2.5 text-lg font-extrabold text-[var(--text-primary)]">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)] sm:p-6">
+      <header className="mb-5 flex items-center gap-3">
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
           <Icon className="h-5 w-5" strokeWidth={2.5} />
         </span>
-        <span className="text-sm font-bold text-[var(--text-tertiary)]">{step}.</span>
-        {title}
-      </h2>
+        <div>
+          <p className="text-2xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Paso {step}
+          </p>
+          <h2 className="text-lg font-extrabold text-[var(--text-primary)]">{title}</h2>
+        </div>
+      </header>
       <div className="grid gap-4">{children}</div>
     </section>
   );
@@ -111,7 +116,7 @@ export default function LibroReclamacionesForm() {
 
   if (done) {
     return (
-      <div className="rounded-3xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)] p-8 text-center">
+      <div className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] p-8 text-center shadow-[var(--shadow-sm)]">
         <CheckCircle2 className="mx-auto h-14 w-14 text-[var(--accent)]" strokeWidth={2} />
         <h2 className="mt-4 text-2xl font-extrabold text-[var(--text-primary)]">
           Reclamo registrado
@@ -126,12 +131,12 @@ export default function LibroReclamacionesForm() {
           Te enviamos una copia a tu correo. Responderemos en un plazo máximo de{" "}
           <strong className="text-[var(--text-primary)]">{done.plazoDias} días hábiles</strong>.
         </p>
-        <a
+        <Link
           href="/tiendas"
           className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white transition-transform hover:-translate-y-0.5"
         >
           Volver a las tiendas
-        </a>
+        </Link>
       </div>
     );
   }
@@ -139,9 +144,9 @@ export default function LibroReclamacionesForm() {
   return (
     <form onSubmit={handleSubmit} className="grid gap-5">
       {/* Tipo de solicitud */}
-      <section className="rounded-3xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6">
-        <h2 className="mb-3 flex items-center gap-2.5 text-lg font-extrabold text-[var(--text-primary)]">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+      <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)] sm:p-6">
+        <h2 className="mb-4 flex items-center gap-3 text-lg font-extrabold text-[var(--text-primary)]">
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
             <MessageSquareWarning className="h-5 w-5" strokeWidth={2.5} />
           </span>
           ¿Qué deseas registrar?
@@ -268,7 +273,7 @@ export default function LibroReclamacionesForm() {
       </Section>
 
       {/* Declaración + envío */}
-      <div className="rounded-3xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5 sm:p-6">
+      <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5 sm:p-6">
         <label className="flex items-start gap-3 text-base text-[var(--text-secondary)]">
           <input
             type="checkbox"
@@ -282,6 +287,14 @@ export default function LibroReclamacionesForm() {
             no me impide acudir al <strong className="text-[var(--text-primary)]">INDECOPI</strong> u otras vías de solución.
           </span>
         </label>
+        <p className="mt-3 pl-8 text-sm leading-relaxed text-[var(--text-tertiary)]">
+          Tratamos tus datos únicamente para atender y dar seguimiento a tu reclamo,
+          conforme a la Ley N° 29733 de Protección de Datos Personales.{" "}
+          <a href="/privacidad" className="font-bold text-[var(--accent)] hover:underline">
+            Política de Privacidad
+          </a>
+          .
+        </p>
 
         {error && (
           <p className="mt-4 flex items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-base font-medium text-[var(--data-error-600)]">
@@ -293,7 +306,7 @@ export default function LibroReclamacionesForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white shadow-[0_4px_14px_rgba(0,180,166,0.35)] transition-transform hover:-translate-y-0.5 disabled:opacity-60 sm:w-auto"
+          className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white shadow-[var(--shadow-sm)] transition-transform hover:-translate-y-0.5 disabled:opacity-60 sm:w-auto"
         >
           {submitting ? (
             <>
