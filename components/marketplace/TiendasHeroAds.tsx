@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, ArrowRight, Tag } from "@buleje/design-system/icons";
 import PromoBannerRenderer, { type PromoBanner } from "./PromoBannerRenderer";
 
 const ROTATE_MS = 6000;
@@ -41,34 +41,58 @@ function trackBanner(event: "impression" | "click", ids: string[]) {
  * CTA). Permite ver varias ofertas de un vistazo sin esperar la rotación del hero.
  */
 function PromoMiniCard({ banner }: { banner: PromoBanner }) {
+  const hasImage = !!banner.imageUrl;
   return (
     <Link
       href={banner.ctaHref || "#"}
       aria-label={banner.title || "Oferta"}
       onClick={() => trackBanner("click", [banner.id])}
-      className="group block overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+      className="group relative block aspect-[16/10] overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      style={
+        hasImage
+          ? undefined
+          : { background: `linear-gradient(135deg, ${banner.bgFrom || "#0f766e"}, ${banner.bgTo || "#0d3b3b"})` }
+      }
     >
-      <div
-        className="relative aspect-[2/1] w-full overflow-hidden"
-        style={banner.imageUrl ? undefined : { background: `linear-gradient(135deg, ${banner.bgFrom}, ${banner.bgTo})` }}
-      >
-        {banner.imageUrl && (
-          <Image
-            src={banner.imageUrl}
-            alt={banner.title || "Oferta"}
-            fill
-            sizes="(min-width: 1024px) 280px, (min-width: 640px) 33vw, 50vw"
-            loading="lazy"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+      {banner.imageUrl && (
+        <Image
+          src={banner.imageUrl}
+          alt={banner.title || "Oferta"}
+          fill
+          sizes="(min-width: 1024px) 380px, (min-width: 640px) 33vw, 50vw"
+          loading="lazy"
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+        />
+      )}
+      {/* Decoración para gradiente sin imagen — blobs + grilla de puntos
+          (saca la sensación de "rectángulo plano de color"). */}
+      {!hasImage && (
+        <>
+          <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl transition-colors group-hover:bg-white/25" />
+          <div aria-hidden className="pointer-events-none absolute -left-8 -bottom-10 h-28 w-28 rounded-full bg-black/10 blur-xl" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute right-3 top-3 h-14 w-14 opacity-40"
+            style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.65) 1.5px, transparent 1.5px)", backgroundSize: "9px 9px" }}
           />
-        )}
-      </div>
-      <div className="p-3.5">
-        <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{banner.title}</p>
+        </>
+      )}
+      {/* Scrim para legibilidad del texto sobre imagen/gradiente */}
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+      {/* Badge superior */}
+      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-primary)] shadow-sm backdrop-blur">
+        <Tag className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+        Oferta
+      </span>
+      {/* Contenido inferior — título + subtítulo + CTA sólido */}
+      <div className="absolute inset-x-0 bottom-0 p-4">
+        <p className="line-clamp-1 text-base sm:text-lg font-extrabold leading-tight text-white drop-shadow-sm">
+          {banner.title}
+        </p>
         {banner.subtitle && (
-          <p className="mt-0.5 truncate text-xs text-[var(--text-tertiary)]">{banner.subtitle}</p>
+          <p className="mt-0.5 line-clamp-1 text-sm font-medium text-white/85 drop-shadow-sm">{banner.subtitle}</p>
         )}
-        <span className="mt-2 inline-flex items-center gap-1 text-xs font-extrabold text-[var(--accent)]">
+        <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-extrabold text-[var(--text-primary)] shadow-md transition-all group-hover:gap-2.5">
           {banner.ctaLabel || "Ver oferta"}
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
         </span>

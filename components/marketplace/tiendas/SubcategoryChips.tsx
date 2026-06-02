@@ -13,7 +13,7 @@
  */
 
 import Image from "next/image";
-import { Boxes } from "@buleje/design-system/icons";
+import { Boxes, ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export interface SubcategoryChipOption {
@@ -122,9 +122,10 @@ export default function SubcategoryChips({
           );
         }
 
-        // ── ROW: sidebar desktop — card grande tappable (filtro estrella) ──
-        // Brandon 2026-06-02: es el filtro principal del sidebar ("lo que se te
-        // antoja"). Tamaño grande, border-2, hover lift — no fila chiquita.
+        // ── ROW: sidebar desktop — card tappable proporcionada (filtro estrella) ──
+        // Brandon 2026-06-02 v2: tamaño acorde al contenido (label corto) sin
+        // perder calidad — más compacta que v1, con chevron que llena el aire
+        // y señala "tap para filtrar".
         return (
           <button
             key={`sidebar-${s.id}`}
@@ -132,7 +133,7 @@ export default function SubcategoryChips({
             aria-pressed={active}
             title={s.description || s.label}
             className={cn(
-              "group w-full flex items-center gap-3 rounded-2xl border-2 px-3 py-2.5 text-base font-bold transition-all text-left hover:-translate-y-0.5 hover:shadow-sm",
+              "group w-full flex items-center gap-2.5 rounded-xl border-2 px-2.5 py-2 text-base font-bold transition-all text-left hover:-translate-y-0.5",
               active
                 ? "bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--accent)] shadow-sm"
                 : "bg-[var(--surface-sunken)] border-transparent text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--text-primary)]",
@@ -140,7 +141,7 @@ export default function SubcategoryChips({
           >
             <span
               className={cn(
-                "h-10 w-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 transition-all",
+                "h-9 w-9 rounded-lg overflow-hidden flex items-center justify-center shrink-0 transition-all",
                 active
                   ? "bg-[var(--accent)] text-white shadow-sm"
                   : "bg-[var(--surface-raised)] text-[var(--text-tertiary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
@@ -150,19 +151,26 @@ export default function SubcategoryChips({
                 <Image
                   src={s.imageUrl}
                   alt=""
-                  width={40}
-                  height={40}
-                  sizes="40px"
+                  width={36}
+                  height={36}
+                  sizes="36px"
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <Boxes className="h-5 w-5" strokeWidth={2} aria-hidden />
+                <Boxes className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
               )}
             </span>
             <span className="truncate flex-1">{s.label}</span>
-            {active && (
-              <span aria-hidden className="ml-auto inline-flex h-2 w-2 rounded-full bg-[var(--accent)] shrink-0" />
-            )}
+            <ChevronRight
+              aria-hidden
+              className={cn(
+                "h-4 w-4 shrink-0 transition-all",
+                active
+                  ? "text-[var(--accent)] translate-x-0"
+                  : "text-[var(--text-tertiary)] -translate-x-0.5 opacity-60 group-hover:translate-x-0 group-hover:opacity-100 group-hover:text-[var(--accent)]",
+              )}
+              strokeWidth={2.5}
+            />
           </button>
         );
       })}
