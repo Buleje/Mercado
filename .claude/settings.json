@@ -1,6 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "_comment": "Settings locales del proyecto Buleje. Activados 2026-04-08 tras el plan maestro FLUJO_PRO_v6 nivel 3 (ver docs/adr/017-claude-code-agent-architecture-v3.md \u2014 pendiente). Este archivo ES versionado en git para que viaje con el repo. Los hooks personales globales del usuario viven en ~/.claude/settings.json y se heredan autom\u00e1ticamente.",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "BSM_PROJECT_ROOT": "${CLAUDE_PROJECT_DIR}",
@@ -226,7 +225,6 @@
   },
   "permissions": {
     "defaultMode": "acceptEdits",
-    "_comment_autonomy": "2026-04-09 (v2) \u2014 Brandon refin\u00f3 el mandato: cierre con 3 tablas fijas (antes/despues, hecho, mejoras+agentes). Autonom\u00eda v2 arranca siguiente iniciativa automatico sin esperar si. Instalaci\u00f3n de libs/MCPs/skills/agentes directa. Commit + push directo si tests verdes. Ver memoria feedback_autonomous_chief.md seccion 6.2.",
     "allow": [
       "Bash(npm *)",
       "Bash(npx prisma *)",
@@ -284,21 +282,7 @@
       "Bash(docker compose ps*)",
       "Bash(vercel *)",
       "Bash(supabase *)",
-      "Bash(curl -s http*)",
-      "Bash(curl -sS http*)",
-      "Bash(curl -s -o /dev/null *)",
-      "Bash(curl -sS -o /dev/null *)",
-      "Bash(curl -s -b /tmp/*)",
-      "Bash(curl -s -c /tmp/*)",
-      "Bash(curl -s -b *)",
-      "Bash(claude mcp list*)",
-      "Bash(claude mcp get*)",
-      "Bash(claude mcp add*)",
-      "Bash(claude mcp remove*)",
-      "Bash(node scripts/dev-helpers/*)",
       "Bash(source /tmp/bsm-auth.env*)",
-      "Bash(printf * > /tmp/bsm-dz-bypass-*)",
-      "Bash(echo * > /tmp/bsm-dz-bypass-*)",
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_snapshot",
       "mcp__playwright__browser_take_screenshot",
@@ -442,7 +426,6 @@
       "Bash(chmod -R 777*)",
       "Bash(chmod 777 /*)",
       "Bash(env)"
-    ],
-    "_comment_env_deny": "Los Read/Write/Edit a .env* estan en deny como hard guard contra subagentes auto-spawned. El main agent (heredando permisos del usuario) puede sobrepasarlo si Brandon lo aprueba interactivamente, asi se permite editar SUPERADMIN_PASSWORD u otras vars sin abrir un agujero permanente. Ver Sprint C 2026-04-26."
+    ]
   }
 }
