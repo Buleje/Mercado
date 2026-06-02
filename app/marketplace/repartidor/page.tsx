@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, Loader2, Check } from "@buleje/design-system/icons";
+import { ArrowRight, ArrowLeft, Loader2, Check, ChevronDown } from "@buleje/design-system/icons";
 import {
   MotoIcon,
   BiciIcon,
@@ -59,7 +59,40 @@ type FormState = {
 
 // ─── Datos estáticos ──────────────────────────────────────────────────────
 
-const ZONES = ["Centro", "Manantay", "Callería", "Yarinacocha", "Campo Verde"];
+const ZONES = ["Centro", "Norte", "Sur", "Este", "Oeste"];
+
+// ─── Contenido de venta (landing de reclutamiento) ────────────────────────
+const PERKS: { Icon: typeof MotoIcon; title: string; desc: string }[] = [
+  { Icon: ClockBadge, title: "Horario libre", desc: "Vos elegís cuándo y cuánto trabajás. Sin jefes ni turnos fijos." },
+  { Icon: CashIcon, title: "Cobrás por entrega", desc: "Tarifa base por cada pedido, al instante. Más pedidos, más ganás." },
+  { Icon: CheckBadge, title: "100% de tus propinas", desc: "Lo que el cliente te deja es tuyo. Sin descuentos." },
+  { Icon: MapBadge, title: "Repartí en tu zona", desc: "Tomá pedidos cerca de tu casa, en el barrio que conocés." },
+  { Icon: PackageIcon, title: "Pedidos seguidos", desc: "Cada vez más tiendas activas = más entregas para vos." },
+  { Icon: ShieldBadge, title: "Soporte 24/7", desc: "WhatsApp directo con el equipo cuando lo necesites." },
+];
+
+const HOW_STEPS: { n: string; title: string; desc: string }[] = [
+  { n: "1", title: "Inscribite", desc: "Completá el formulario en 4 pasos. Toma 2 minutos." },
+  { n: "2", title: "Validamos tus datos", desc: "Revisamos tu DNI y documentos. Te activamos en menos de 24 h." },
+  { n: "3", title: "Recibí pedidos", desc: "Te llegan pedidos de tiendas cercanas directo a la app." },
+  { n: "4", title: "Entregá y cobrá", desc: "Llevás el pedido y cobrás tarifa + propina al instante." },
+];
+
+const REQUISITOS: string[] = [
+  "Ser mayor de 18 años y tener DNI vigente.",
+  "Un smartphone con internet para usar la app.",
+  "Una movilidad: moto, bicicleta, auto o a pie (según tu zona).",
+  "Para moto o auto: licencia de conducir y SOAT vigentes.",
+];
+
+const REPARTIDOR_FAQS: { q: string; a: string }[] = [
+  { q: "¿Cuánto puedo ganar?", a: "Depende de cuántos pedidos tomes. Cobrás una tarifa base por entrega y te quedás con el 100% de las propinas. Mientras más repartís, más ganás." },
+  { q: "¿Cuándo y cómo cobro?", a: "Cobrás por cada entrega. Los pagos en efectivo los recibís directo del cliente y se liquidan según el esquema de tu zona." },
+  { q: "¿Necesito tener moto?", a: "No. Podés repartir en moto, bicicleta, auto o incluso a pie, según la zona y el tipo de pedido." },
+  { q: "¿Qué documentos necesito?", a: "Tu DNI vigente. Si usás moto o auto, además te pedimos tu licencia de conducir y SOAT vigentes." },
+  { q: "¿Cuánto tarda la activación?", a: "Revisamos tus datos y te activamos en menos de 24 horas hábiles. Te avisamos por WhatsApp." },
+  { q: "¿Tiene algún costo inscribirme?", a: "No. La inscripción es totalmente gratis y sin compromiso." },
+];
 
 const VEHICLES: { id: VehicleType; label: string; desc: string; Icon: typeof MotoIcon }[] = [
   { id: "moto", label: "Moto", desc: "Pedidos rápidos · zona amplia", Icon: MotoIcon },
@@ -308,9 +341,23 @@ export default function RepartidorPage() {
               gana en tu tiempo.
             </h1>
             <p className="mt-3 max-w-xl text-base lg:text-lg text-white/85 leading-relaxed">
-              Completa tu inscripción en 4 pasos rápidos. Revisamos tus documentos y te
-              activamos en menos de 24 horas.
+              Generá ingresos extra con tu moto, bici o auto, en los horarios que vos elijas.
+              Cobrás por cada entrega y te quedás con el <strong className="font-extrabold text-white">100% de tus propinas</strong>.
             </p>
+            <ul className="mt-5 flex flex-wrap gap-2">
+              {["Horario libre", "Cobrás al instante", "100% de propinas", "Activación < 24 h"].map((c) => (
+                <li key={c} className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-bold text-white">
+                  <Check className="h-4 w-4" />
+                  {c}
+                </li>
+              ))}
+            </ul>
+            <a
+              href="#inscripcion"
+              className="mt-7 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-6 text-base font-extrabold text-[var(--accent)] shadow-[var(--shadow-md)] transition-transform hover:-translate-y-0.5"
+            >
+              Inscribite gratis <ArrowRight className="h-5 w-5" />
+            </a>
           </div>
 
           <div className="hidden lg:flex items-center justify-center">
@@ -321,8 +368,97 @@ export default function RepartidorPage() {
         </div>
       </section>
 
+      {/* ── Por qué repartir con Buleje ───────────────────────── */}
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
+        <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+          Por qué Buleje
+        </p>
+        <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
+          Repartí como te conviene
+        </h2>
+        <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {PERKS.map(({ Icon, title, desc }) => (
+            <div
+              key={title}
+              className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]"
+            >
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <Icon className="h-6 w-6" />
+              </span>
+              <h3 className="mt-3 text-base font-extrabold text-[var(--text-primary)]">{title}</h3>
+              <p className="mt-1 text-base leading-relaxed text-[var(--text-secondary)]">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Cómo funciona ─────────────────────────────────────── */}
+      <section className="border-y border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
+          <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+            Cómo funciona
+          </p>
+          <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
+            De cero a repartiendo en menos de 24 horas
+          </h2>
+          <ol className="relative mt-8 grid gap-8 sm:grid-cols-4">
+            <div className="pointer-events-none absolute inset-x-0 top-6 hidden h-px bg-[var(--rule-soft)] sm:block" />
+            {HOW_STEPS.map((s) => (
+              <li key={s.n} className="relative">
+                <span className="relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-lg font-extrabold text-[var(--accent)] shadow-[var(--shadow-sm)]">
+                  {s.n}
+                </span>
+                <h3 className="mt-4 text-lg font-extrabold text-[var(--text-primary)]">{s.title}</h3>
+                <p className="mt-1 text-base leading-relaxed text-[var(--text-secondary)]">{s.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ── Requisitos ────────────────────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
+        <div className="grid items-center gap-8 lg:grid-cols-2">
+          <div>
+            <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+              Requisitos
+            </p>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
+              Lo que necesitás para empezar
+            </h2>
+            <p className="mt-3 max-w-md text-base leading-relaxed text-[var(--text-secondary)]">
+              Sin inversión inicial ni costo de inscripción. Solo lo básico para repartir seguro.
+            </p>
+            <a
+              href="#inscripcion"
+              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white shadow-[var(--shadow-sm)] transition-transform hover:-translate-y-0.5"
+            >
+              Empezar mi inscripción <ArrowRight className="h-5 w-5" />
+            </a>
+          </div>
+          <ul className="space-y-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-sm)]">
+            {REQUISITOS.map((r) => (
+              <li key={r} className="flex gap-3 text-base leading-relaxed text-[var(--text-secondary)]">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <Check className="h-4 w-4" />
+                </span>
+                {r}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       {/* ── Wizard ───────────────────────────────────────────── */}
-      <section className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+      <section id="inscripcion" className="mx-auto max-w-3xl scroll-mt-20 px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+        <div className="mb-6 text-center">
+          <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--accent)]">
+            Inscripción gratuita
+          </p>
+          <h2 className="mt-1 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
+            Inscribite en 4 pasos
+          </h2>
+        </div>
         <Stepper currentStep={step} validations={validations} onStepClick={(n) => setStep(n)} />
 
         <form
@@ -852,6 +988,45 @@ export default function RepartidorPage() {
             desc="Tarifa base + propina al instante."
           />
           <Benefit Icon={ShieldBadge} title="Soporte 24/7" desc="WhatsApp directo con el equipo." />
+        </div>
+      </section>
+
+      {/* ── FAQ repartidores ─────────────────────────────────── */}
+      <section className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+        <div className="mx-auto grid max-w-5xl gap-10 px-4 sm:px-6 lg:px-10 py-12 lg:py-16 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+              Preguntas frecuentes
+            </p>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
+              Lo que todo repartidor pregunta
+            </h2>
+            <p className="mt-4 max-w-md text-base leading-relaxed text-[var(--text-secondary)]">
+              ¿No encontrás tu duda?{" "}
+              <a
+                href="https://wa.me/51929340532?text=Hola%20Buleje%2C%20quiero%20ser%20repartidor%20y%20tengo%20una%20duda."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[var(--accent)] hover:underline"
+              >
+                Escribinos por WhatsApp
+              </a>{" "}
+              y te ayudamos.
+            </p>
+          </div>
+          <ul className="space-y-3">
+            {REPARTIDOR_FAQS.map(({ q, a }) => (
+              <li key={q}>
+                <details className="group rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] transition-colors open:border-[var(--accent)]/30 open:shadow-[var(--shadow-sm)] [&_summary::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-base font-bold text-[var(--text-primary)] sm:text-lg">
+                    {q}
+                    <ChevronDown className="h-5 w-5 shrink-0 text-[var(--accent)] transition-transform duration-200 group-open:rotate-180" />
+                  </summary>
+                  <p className="px-5 pb-5 text-base leading-relaxed text-[var(--text-secondary)]">{a}</p>
+                </details>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
     </main>
