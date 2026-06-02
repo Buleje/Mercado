@@ -17,7 +17,7 @@ model: haiku
 ### 1. Analizar cambios
 
 ```bash
-cd buleje && git status && git diff --staged && git diff
+git status && git diff --staged && git diff
 ```
 
 ### 2. Clasificar tipo (Conventional Commits)

@@ -32,7 +32,6 @@ Normalizar el nombre:
 ### 2. Crear branch desde master actualizado
 
 ```bash
-cd buleje
 git checkout master
 git pull origin master
 git checkout -b feat/$ARGUMENTS

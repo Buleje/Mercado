@@ -6,7 +6,6 @@ description: |
   local.
   Usar cuando Brandon diga "qué pasa en prod", "errores de producción",
   "production sync", "sync prod", "health check", "status de prod".
-model: sonnet
 disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, WebFetch, Agent

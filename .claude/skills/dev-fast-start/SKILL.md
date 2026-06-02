@@ -43,7 +43,7 @@ CHECK_PID=$!
 wait $CHECK_PID
 
 # Si != 200 → arrancar dev
-cd bodega-san-martin && npm run dev &
+npm run dev &
 
 # Mientras compila, setup admin + onboarding completed
 node -r dotenv/config scripts/create-qa-admin-raw.mjs &

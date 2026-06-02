@@ -40,7 +40,6 @@ GAP: "No puedo generar facturas PDF con QR SUNAT sin 200 lineas de jsPDF"
 
 ### 4. Instalar con seguridad
 ```bash
-cd bodega-san-martin
 npm install <paquete>@<version>  # siempre version pinneada
 npm run lint && npx tsc --noEmit && npm run test
 ```

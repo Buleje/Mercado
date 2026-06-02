@@ -1,6 +1,6 @@
 # CLAUDE.md — Buleje (Bodega San Martín)
 
-> **Última verificación:** 2026-05-04 · Fuente: `package.json`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
+> **Última verificación:** 2026-06-02 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
 
 **Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa.
 
@@ -11,6 +11,7 @@
 | Item | Valor |
 |---|---|
 | Negocio real | Bodega/minimarket familiar en **Pucallpa, Perú** |
+| Lanzamiento B2C | **Ciudad Constitución** (Pasco, Selva Central); Pucallpa = fase posterior. SaaS = nacional. `lib/geo.ts` = single source |
 | Producto digital | **ERP + e-commerce + POS + Marketplace multi-tenant** SaaS |
 | Tipos de usuario | vecino (cliente), admin (dueño/cajero/almacenero), repartidor, proveedor, superadmin, vendor (marketplace) |
 | Tenancy | Multi-tenant por `slug` (subdominio) o `customDomain`. Aislamiento app-level vía `tenantId` + middleware (no RLS de Postgres) |
@@ -18,7 +19,7 @@
 | Mensajería | WhatsApp (Twilio) — AI-first webhook (ADR-058) |
 | Tributación | SUNAT (facturación electrónica), IGV |
 | Compliance | Ley 29733 PE — audit log, GDPR-equivalent export, derecho de acceso |
-| Planes SaaS | `free | pro | business`, programa Socio Buleje, Bodega al Mes |
+| Planes SaaS | `free | starter | pro | enterprise` (`lib/billing/wire-up/usage-tiers.ts`), programa Socio Buleje, Bodega al Mes |
 
 **Ámbito funcional:** 133 tabs en panel admin, 14 fases ERP completadas (detalle histórico en `docs/HISTORY.md`) + Marketplace multi-vendor + POS móvil + Kiosk + Delivery app.
 
@@ -29,8 +30,8 @@
 ### Core
 | Capa | Tecnología | Versión |
 |---|---|---|
-| Framework | Next.js (App Router, Turbopack) | **16.2.3** |
-| UI | React | **19.2.3** |
+| Framework | Next.js (App Router, Turbopack) | **16.2.6** |
+| UI | React | **19.2.6** |
 | Lenguaje | TypeScript (strict) | 5 |
 | Estilos | Tailwind CSS | **4** (`@theme` tokens) |
 | ORM | Prisma + `@prisma/adapter-pg` | **7.4.2** |
@@ -71,13 +72,13 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 | `delivery/`, `delivery-app/` | Repartidor (+ Capacitor) |
 | `supplier/` | Portal proveedores |
 | `t/[tenantSlug]/` | Storefront por tenant (white-label) |
-| `api/` | **903 endpoints** REST |
+| `api/` | **~924 endpoints** REST |
 | `checkout/`, `pedido/`, `tracking/`, `venta/` | Flujos de compra y POS |
 | `pricing/`, `vender/`, `tiendas/` | Marketing SaaS |
 | `playground/`, `design-system/`, `api-docs/` | Internos / dev |
 
 ### `lib/` (~222 archivos)
-- **`lib/db/`** (≈196 clases `*.db.ts`) — única vía de acceso a Prisma. Cada clase: `tenantId` 1er param, cache + audit + invalidate.
+- **`lib/db/`** (≈203 clases `*.db.ts`) — única vía de acceso a Prisma. Cada clase: `tenantId` 1er param, cache + audit + invalidate.
 - **`lib/auth/`** — sesiones, RBAC `role-permissions.ts` (26 recursos × 6 roles).
 - **`lib/middleware/`, `proxy.ts`** — auth, CSP, rate limit, multi-tenant guard.
 - **`lib/ai/`, `lib/agents/`, `claude-router.ts`** — features IA (chef, asistente, recomendaciones).
@@ -92,7 +93,7 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 ### `contexts/` (19)
 `cart` · `customer` · `theme` · `settings` · `tenant` · `favorites` · `wishlist` · `compare` · `currency` · `locale` · `vocabulary` · `subscription` · `socio-buleje` · `promotions` · `quick-add` · `reviews` · `module-tabs` · `dashboard-data` · `assistant` · `toast`.
 
-### `prisma/schema.prisma` — **177 modelos**
+### `prisma/schema.prisma` — **189 modelos**
 Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · Sale/SaleItem · Supplier · PurchaseOrder · Promotion · Coupon · CashRegister · Batch · Review · AdminUser/SuperadminUser · Notification · WhatsAppConversation · StripeWebhookQueue · CMS (Page/PageBlock/Media) · Treasury · Fiado · Turno · Receta · Cotizacion · GuiaRemision · NotaCredito · etc.
 
 ### `docs/adr/` (ADRs vivos)
@@ -165,7 +166,7 @@ Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hu
 | `lib/db/orders.db.ts` | State machine de órdenes |
 | `lib/auth/role-permissions.ts` | 26 recursos × 6 roles |
 | `proxy.ts`, `lib/middleware/**` | Auth + CSP + rate limit + multi-tenant |
-| `prisma/schema.prisma` | **177 modelos**, requiere DIRECT_URL |
+| `prisma/schema.prisma` | **189 modelos**, requiere DIRECT_URL |
 | `contexts/cart-context.tsx` | BroadcastChannel multi-tab |
 | `lib/db/marketplace.db.ts`, `commissions.ts` | Dinero cross-vendor |
 

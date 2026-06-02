@@ -1,12 +1,11 @@
 ---
 name: adr-manager
 description: |
-  Gestiona Architecture Decision Records (ADR) en `bodega-san-martin/docs/adr/`.
+  Gestiona Architecture Decision Records (ADR) en `docs/adr/`.
   Implementa el comando `/adr [título]`: crea ADR-XXX.md con estructura
   Contexto / Decisión / Consecuencias / Alternativas / Referencias.
   Auto-numera el siguiente ADR libre. Usar SIEMPRE que un cambio impacte
   arquitectura, contratos públicos, schema DB, o seguridad.
-model: sonnet
 disable-model-invocation: false
 user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TaskCreate

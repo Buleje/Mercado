@@ -18,7 +18,6 @@ Ejecutar el proceso completo de deploy para el proyecto Buleje.
 Ejecutar los siguientes comandos en orden desde `buleje/`. Si alguno falla, DETENER el proceso y reportar el error.
 
 ```bash
-cd buleje
 npm run lint
 ```
 

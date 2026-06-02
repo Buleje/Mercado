@@ -18,13 +18,11 @@ argument-hint: "[full|quick]"
 
 ### Quick (lint + tsc)
 ```bash
-cd bodega-san-martin
 npm run lint && npx tsc --noEmit
 ```
 
 ### Full (todo)
 ```bash
-cd bodega-san-martin
 
 # 1. Codigo limpio
 npm run lint
