@@ -14,6 +14,7 @@ import {
   Bike,
 } from "@buleje/design-system/icons";
 import T from "@/components/T";
+import { cn } from "@/lib/utils";
 
 const PASOS = [
   { num: "01", icon: Search,      keyTitle: "landing.how.step1.title", keyDesc: "landing.how.step1.desc", keyTag: "landing.how.step1.tag", time: "2 min" },
@@ -27,7 +28,7 @@ export default function ComoFuncionaSection() {
     <section
       id="como-funciona"
       aria-label="Cómo funciona"
-      className="relative overflow-hidden bg-[var(--surface-raised)] py-20 sm:py-28 lg:py-32 scroll-mt-20"
+      className="relative overflow-hidden bg-[var(--surface-raised)] py-10 sm:py-28 lg:py-32 scroll-mt-20"
     >
       {/* Líneas decorativas */}
       <div
@@ -42,9 +43,9 @@ export default function ComoFuncionaSection() {
 
       <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header editorial */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16 sm:mb-20">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 sm:gap-6 mb-8 sm:mb-20">
           <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3 sm:mb-6">
               <span
                 aria-hidden
                 className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
@@ -75,60 +76,70 @@ export default function ComoFuncionaSection() {
             className="hidden lg:block absolute top-[88px] left-[7%] right-[7%] h-[2px] bg-[repeating-linear-gradient(to_right,var(--accent)_0,var(--accent)_6px,transparent_6px,transparent_12px)] opacity-40 z-0"
           />
 
-          <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 z-10">
+          {/* Mobile (Brandon 2026-06-01): FILA COMPACTA (icono + paso/título +
+              tiempo). Oculta el número fantasma, la desc y el tag → ocupa ~1/3.
+              md+ (2 cols) y lg (4 cols): card vertical editorial completa. */}
+          <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-5 lg:gap-6 z-10">
             {PASOS.map(({ num, icon: Icon, keyTitle, keyDesc, keyTag, time }) => (
               <article
                 key={num}
-                className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 lg:p-7 transition-all duration-[var(--dur-base)] hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
+                className={cn(
+                  "group relative overflow-hidden border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] transition-all duration-[var(--dur-base)]",
+                  "flex flex-row items-center gap-3 rounded-2xl p-3.5",
+                  "md:flex-col md:items-stretch md:gap-0 md:p-7",
+                  "md:hover:border-[var(--accent)] md:hover:-translate-y-1 md:hover:shadow-[var(--shadow-lg)]",
+                )}
               >
-                {/* Número fantasma editorial — watermark grande que ancla la
-                    card y aporta jerarquía premium. Se tiñe de accent en hover. */}
+                {/* Número fantasma editorial — solo desktop (en mobile no entra). */}
                 <span
                   aria-hidden
-                  className="absolute -top-2 right-3 text-[4.5rem] lg:text-[5.5rem] font-black tabular-nums tracking-[-0.05em] text-[var(--rule-base)]/70 leading-none select-none transition-colors duration-[var(--dur-base)] group-hover:text-[var(--accent)]/25"
+                  className="hidden md:block absolute -top-2 right-3 text-[4.5rem] lg:text-[5.5rem] font-black tabular-nums tracking-[-0.05em] text-[var(--rule-base)]/70 leading-none select-none transition-colors duration-[var(--dur-base)] group-hover:text-[var(--accent)]/25"
                 >
                   {num}
                 </span>
 
-                {/* Icon box bigger + accent solid on hover */}
-                <div className="relative mb-5">
+                {/* Icon box — más chico en mobile */}
+                <div className="relative shrink-0 md:mb-5">
                   <span
                     aria-hidden
-                    className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] transition-all duration-[var(--dur-base)] group-hover:bg-[var(--accent)] group-hover:text-white group-hover:scale-105 shadow-sm"
+                    className="inline-flex h-11 w-11 md:h-14 md:w-14 items-center justify-center rounded-xl md:rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm transition-all duration-[var(--dur-base)] md:group-hover:bg-[var(--accent)] md:group-hover:text-white md:group-hover:scale-105"
                   >
-                    <Icon className="h-6 w-6" strokeWidth={2} />
+                    <Icon className="h-5 w-5 md:h-6 md:w-6" strokeWidth={2} />
                   </span>
                 </div>
 
-                {/* Step label + tiempo */}
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                    <T k="landing.how.step" fallback="Paso" /> {num}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
-                    {time}
-                  </span>
+                <div className="min-w-0 flex-1 md:flex-none">
+                  {/* Step label + tiempo */}
+                  <div className="flex items-center justify-between gap-2 md:mb-3">
+                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                      <T k="landing.how.step" fallback="Paso" /> {num}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
+                      {time}
+                    </span>
+                  </div>
+
+                  <h3 className="text-base md:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+                    <T k={keyTitle} />
+                  </h3>
+                  {/* desc — oculta en mobile (compacto) */}
+                  <p className="hidden md:block mt-2.5 text-sm text-[var(--text-secondary)] leading-relaxed">
+                    <T k={keyDesc} />
+                  </p>
+
+                  {/* Tag mini bottom — oculto en mobile */}
+                  <p className="hidden md:inline-flex mt-4 items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <T k={keyTag} />
+                  </p>
                 </div>
-
-                <h3 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-                  <T k={keyTitle} />
-                </h3>
-                <p className="mt-2.5 text-sm text-[var(--text-secondary)] leading-relaxed">
-                  <T k={keyDesc} />
-                </p>
-
-                {/* Tag mini bottom */}
-                <p className="mt-4 inline-flex items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  <T k={keyTag} />
-                </p>
               </article>
             ))}
           </div>
         </div>
 
         {/* Stats de soporte + CTA */}
-        <div className="mt-16 sm:mt-20 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 items-center">
-          <div className="grid grid-cols-3 gap-6 sm:gap-8">
+        <div className="mt-8 sm:mt-20 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 sm:gap-12 items-center">
+          <div className="grid grid-cols-3 gap-4 sm:gap-8">
             {[
               { keyVal: "landing.how.stat1.value", keyLab: "landing.how.stat1.label" },
               { keyVal: "landing.how.stat2.value", keyLab: "landing.how.stat2.label" },

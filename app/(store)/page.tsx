@@ -54,6 +54,7 @@ import {
   MapPin,
   ChevronDown,
   HelpCircle,
+  MessageCircle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -1229,10 +1230,10 @@ function HomeFaqSection() {
       aria-labelledby="faq-heading"
       className="py-12 sm:py-20 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
     >
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 sm:mb-12">
           <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            <HelpCircle className="h-3.5 w-3.5" aria-hidden />
+            <HelpCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             Preguntas frecuentes
           </p>
           <h2
@@ -1244,29 +1245,66 @@ function HomeFaqSection() {
           </h2>
         </div>
 
-        <div className="space-y-3">
-          {HOME_FAQS.map((f, i) => (
-            <details
-              key={i}
-              className="group rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] open:border-[var(--accent)] open:shadow-md transition-all"
-            >
-              <summary className="flex items-center justify-between gap-4 cursor-pointer list-none px-5 py-4 [&::-webkit-details-marker]:hidden">
-                <span className="text-base font-bold text-[var(--text-primary)]">
-                  {f.q}
-                </span>
-                <ChevronDown
-                  className="h-5 w-5 shrink-0 text-[var(--accent)] transition-transform duration-200 group-open:rotate-180"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-              </summary>
-              <div className="px-5 pb-5 -mt-1">
-                <p className="text-base text-[var(--text-secondary)] leading-relaxed">
-                  {f.a}
-                </p>
-              </div>
-            </details>
+        {/* 2 columnas masonry (Brandon 2026-06-01): llena el ancho y cada
+            columna se expande independiente al abrir un acordeón (sin saltos de
+            la otra). Reparto par/impar preservando el número original. Sigue
+            siendo native <details> → 0 JS, indexable, accesible. */}
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 md:items-start">
+          {[0, 1].map((colIdx) => (
+            <div key={colIdx} className="space-y-3 sm:space-y-4">
+              {HOME_FAQS.filter((_, i) => i % 2 === colIdx).map((f) => {
+                const n = HOME_FAQS.indexOf(f) + 1;
+                return (
+                  <details
+                    key={n}
+                    className="group rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] open:border-[var(--accent)] open:bg-[var(--accent-soft)]/30 open:shadow-md transition-all"
+                  >
+                    <summary className="flex items-center gap-3 cursor-pointer list-none px-4 sm:px-5 py-4 [&::-webkit-details-marker]:hidden">
+                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[length:var(--ts-xs)] font-black tabular-nums text-[var(--accent)] transition-colors group-open:bg-[var(--accent)] group-open:text-white">
+                        {String(n).padStart(2, "0")}
+                      </span>
+                      <span className="flex-1 text-base font-bold leading-snug text-[var(--text-primary)]">
+                        {f.q}
+                      </span>
+                      <ChevronDown
+                        className="h-5 w-5 shrink-0 text-[var(--accent)] transition-transform duration-200 group-open:rotate-180"
+                        strokeWidth={2.5}
+                        aria-hidden
+                      />
+                    </summary>
+                    <div className="pl-[3.75rem] pr-5 pb-5 -mt-1">
+                      <p className="text-base text-[var(--text-secondary)] leading-relaxed">
+                        {f.a}
+                      </p>
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
           ))}
+        </div>
+
+        {/* Cierre — duda no resuelta → WhatsApp directo */}
+        <div className="mt-6 sm:mt-8 flex flex-col gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 sm:px-7 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">
+              ¿Te quedó otra duda?
+            </p>
+            <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+              Escribinos por WhatsApp y te respondemos al toque.
+            </p>
+          </div>
+          <a
+            href={`https://wa.me/${BRAND_GEO.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+              `Hola Buleje, tengo una pregunta sobre pedir en ${BRAND_GEO.city}`,
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 h-12 text-sm font-extrabold text-white shadow-md transition-all hover:gap-3 hover:shadow-lg active:scale-95"
+          >
+            <MessageCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            Escribir por WhatsApp
+          </a>
         </div>
       </div>
     </section>

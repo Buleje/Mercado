@@ -297,6 +297,33 @@ export default function UnifiedProductCard({
     setModifierModalOpen(true);
   }, [isOutOfStock]);
 
+  // Brandon 2026-05-31: add-to-cart DIRECTO (sin abrir modal) — lo usa el
+  // "Ver rápido" (QuickViewModal), donde el cliente YA eligió la cantidad
+  // dentro de ese modal. Antes su onAddToCart llamaba a handleAdd() → abría
+  // ProductModifierModal ENCIMA del QuickView (modal anidado roto: parecía que
+  // "no agregaba"). Ahora agrega directo con precio base y sin modificadores.
+  const addDirect = useCallback(
+    (quantity: number) => {
+      // Mismo shape que el onConfirm del ProductModifierModal (ya tipado OK).
+      addItem({
+        storeId: product.storeId ?? "",
+        storeName: product.storeName ?? "",
+        storeSlug: product.storeSlug ?? "",
+        storeProductId: product.storeProductId ?? String(product.id),
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        basePrice: product.price,
+        image: product.image ?? null,
+        unit: product.unit ?? null,
+        modifiers: [],
+        modifierHash: modifierHashOf([]),
+        quantity: Math.max(1, quantity),
+      });
+    },
+    [addItem, product],
+  );
+
   /* ── Badges top-left ───────────────────────────────────────────── */
   const showOfertaBadge =
     variant === "flash" || variant === "liquidation" ||
@@ -700,8 +727,21 @@ export default function UnifiedProductCard({
                   : undefined,
           }}
           storeName={product.storeName}
-          onAddToCart={async (qty) => {
-            for (let i = 0; i < qty; i++) handleAdd();
+          onAddToCart={(qty) => {
+            // Brandon 2026-05-31 fix: antes llamaba handleAdd() → abría el
+            // ProductModifierModal ENCIMA del QuickView (modal anidado) y el
+            // item NO entraba al carrito ("no agrega" reportado). Ahora:
+            //  - con adicionales → cierra el peek y abre "Armá tu pedido"
+            //  - sin adicionales → agrega DIRECTO la cantidad elegida y cierra.
+            if ((product.modifierGroups?.length ?? 0) > 0) {
+              setQuickViewOpen(false);
+              setModifierModalOpen(true);
+            } else {
+              addDirect(qty);
+              setQuickViewOpen(false);
+              setJustAdded(true);
+              setTimeout(() => setJustAdded(false), 1200);
+            }
           }}
         />
       )}

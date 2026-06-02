@@ -136,30 +136,54 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
   }, [open, onClose]);
 
   // Fetch rubros + stores en paralelo, filtra solo los que tienen tiendas.
+  // Brandon 2026-05-31: antes usaba Promise.reject() sin argumento en el `.then`
+  // y un `.catch` por fetch. Al cerrar el drawer, controller.abort() interrumpía
+  // el `r.json()` en vuelo → la rejección AbortError se escapaba como
+  // "Uncaught (in promise) AbortError: signal is aborted without reason".
+  // Fix: helper safeFetch que traga SIEMPRE (devuelve fallback, nunca rechaza)
+  // + flag cancelled + guard de signal.aborted antes del setState.
+  // Brandon 2026-05-31: SIN AbortController. Abortar mientras `r.json()` lee el
+  // body produce un rejection interno del stream (Chromium) que escapa al catch
+  // → "Uncaught (in promise) AbortError". Es un fetch fire-and-forget barato:
+  // dejamos que termine e ignoramos el resultado si el drawer ya se cerró.
   useEffect(() => {
     if (!open) return;
-    const controller = new AbortController();
-    Promise.all([
-      fetch("/api/marketplace/categories", { signal: controller.signal })
-        .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .catch(() => ({ categories: [] as MarketplaceCategory[] })),
-      fetch("/api/marketplace/stores?limit=100", { signal: controller.signal })
-        .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .catch(() => ({ stores: [] as Array<{ category?: string }> })),
-    ])
-      .then(([catRes, storeRes]) => {
-        const baseList = (catRes?.categories ?? []) as MarketplaceCategory[];
-        const storeList = (storeRes?.stores ?? storeRes?.data ?? []) as Array<{ category?: string | null }>;
-        const storeCategoryIds = new Set(
-          storeList.map((s) => s.category).filter((c): c is string => typeof c === "string"),
-        );
-        const filtered = baseList.filter((c) => storeCategoryIds.has(c.id));
-        setAvailableCategories(filtered);
-      })
-      .catch(() => {
-        // Silent fail — la sección simplemente no aparece
-      });
-    return () => controller.abort();
+    let cancelled = false;
+
+    async function safeFetch<T>(url: string, fallback: T): Promise<T> {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) return fallback;
+        return (await r.json()) as T;
+      } catch {
+        return fallback; // red caída → fallback silencioso
+      }
+    }
+
+    (async () => {
+      const [catRes, storeRes] = await Promise.all([
+        safeFetch<{ categories?: MarketplaceCategory[] }>(
+          "/api/marketplace/categories",
+          { categories: [] },
+        ),
+        safeFetch<{ stores?: Array<{ category?: string | null }>; data?: Array<{ category?: string | null }> }>(
+          "/api/marketplace/stores?limit=100",
+          { stores: [] },
+        ),
+      ]);
+      // No tocar el state si el drawer se cerró/desmontó mientras esperábamos.
+      if (cancelled) return;
+      const baseList = catRes?.categories ?? [];
+      const storeList = storeRes?.stores ?? storeRes?.data ?? [];
+      const storeCategoryIds = new Set(
+        storeList.map((s) => s.category).filter((c): c is string => typeof c === "string"),
+      );
+      setAvailableCategories(baseList.filter((c) => storeCategoryIds.has(c.id)));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   if (!render) return null;
@@ -236,149 +260,113 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
         }`}
       />
       <aside
-        className={`relative flex flex-col w-full max-w-[340px] h-full bg-[var(--surface-canvas)] shadow-2xl rounded-r-3xl overflow-hidden will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`relative flex flex-col w-full max-w-[330px] h-full bg-[var(--surface-canvas)] shadow-2xl overflow-hidden will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           visible ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Hero con identidad de usuario */}
-        <div className="relative overflow-hidden bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white px-5 pt-6 pb-5">
-          <div
+        {/* ── Header minimalista (Brandon 2026-05-31 rediseño) ──
+            Antes: bloque accent saturado con gradiente + 2 blur blobs + chips +
+            descripciones. Ahora: header limpio sobre surface — avatar accent
+            contenido + saludo + cerrar. El color vive solo en el avatar; la
+            identidad respira. */}
+        <div className="flex items-center gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3.5 border-b border-[var(--rule-soft)]">
+          <span
             aria-hidden
-            className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-white/12 blur-2xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-20 -left-12 h-32 w-32 rounded-full bg-white/8 blur-2xl"
-          />
-          <div className="relative">
-            {/* Fila superior: marca + cerrar */}
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <span className="inline-flex items-center gap-1.5 h-7 pl-1.5 pr-3 rounded-full bg-white/15 ring-1 ring-white/20 backdrop-blur-sm">
-                <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white text-[var(--accent)] text-[10px] font-black leading-none">
-                  b
-                </span>
-                <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white leading-none">
-                  Buleje
-                </span>
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"
+          >
+            {isLoggedIn ? (
+              <span className="text-lg font-black leading-none uppercase">
+                {greetingName.charAt(0)}
               </span>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Cerrar menú"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-95 transition-all shrink-0 ring-1 ring-white/15"
-              >
-                <X className="h-5 w-5" strokeWidth={2.5} />
-              </button>
-            </div>
-
-            {/* Identidad: avatar (inicial logueado / icono anónimo) + saludo */}
-            <div className="flex items-center gap-3 mb-4">
-              <span
-                aria-hidden
-                className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/30 backdrop-blur-sm shadow-inner"
-              >
-                {isLoggedIn ? (
-                  <span className="text-2xl font-black text-white leading-none uppercase">
-                    {greetingName.charAt(0)}
-                  </span>
-                ) : (
-                  <UserCircle className="h-8 w-8 text-white" strokeWidth={2} />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                {isLoggedIn ? (
-                  <>
-                    <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/70 leading-tight mb-0.5">
-                      Hola de nuevo
-                    </p>
-                    <p className="text-xl font-black tracking-tight leading-tight truncate capitalize">
-                      {greetingName}
-                    </p>
-                    <p className="text-[length:var(--ts-xs)] font-bold text-white/80 leading-tight mt-0.5 truncate">
-                      {customer?.email}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/70 leading-tight mb-0.5">
-                      Bienvenido a Buleje
-                    </p>
-                    <p className="text-xl font-black tracking-tight leading-tight">
-                      Tu barrio, a domicilio
-                    </p>
-                    <p className="text-[length:var(--ts-xs)] font-bold text-white/80 leading-tight mt-0.5">
-                      Iniciá sesión para ver tus pedidos
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              {itemCount > 0 && (
-                <Link
-                  href="/marketplace/carrito"
-                  onClick={onClose}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-white text-[var(--accent)] text-[length:var(--ts-xs)] font-black tabular-nums active:scale-95 transition-transform shadow-md"
-                >
-                  <ShoppingCart className="h-3.5 w-3.5" strokeWidth={2.75} />
-                  {itemCount} en carrito
-                  <ArrowRight className="h-3 w-3" strokeWidth={2.75} />
-                </Link>
-              )}
-              {!isLoggedIn && (
+            ) : (
+              <UserCircle className="h-6 w-6" strokeWidth={2} />
+            )}
+          </span>
+          <div className="min-w-0 flex-1">
+            {isLoggedIn ? (
+              <>
+                <p className="text-base font-black tracking-tight leading-tight text-[var(--text-primary)] truncate capitalize">
+                  {greetingName}
+                </p>
+                <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] leading-tight truncate">
+                  {customer?.email ?? "Mi cuenta Buleje"}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-black tracking-tight leading-tight text-[var(--text-primary)]">
+                  Tu barrio, a domicilio
+                </p>
                 <Link
                   href="/marketplace/mi-cuenta"
                   onClick={onClose}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-white text-[var(--accent)] text-[length:var(--ts-xs)] font-black active:scale-95 transition-transform shadow-md"
+                  className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] leading-tight hover:gap-1.5 transition-all"
                 >
                   Iniciar sesión
                   <ArrowRight className="h-3 w-3" strokeWidth={2.75} />
                 </Link>
-              )}
-            </div>
+              </>
+            )}
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar menú"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all shrink-0"
+          >
+            <X className="h-5 w-5" strokeWidth={2.25} />
+          </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5" aria-label="Navegación principal">
-          {SECTIONS.map((section) => (
+        {/* Carrito activo — banda accent solo si hay items (acción contextual) */}
+        {itemCount > 0 && (
+          <Link
+            href="/marketplace/carrito"
+            onClick={onClose}
+            className="flex items-center gap-2.5 mx-3 mt-3 rounded-2xl bg-[var(--accent)] px-3.5 h-12 text-white active:scale-[0.98] transition-transform"
+          >
+            <ShoppingCart className="h-4.5 w-4.5 shrink-0" strokeWidth={2.5} />
+            <span className="flex-1 text-[length:var(--ts-sm)] font-extrabold leading-tight">
+              Ver mi carrito
+            </span>
+            <span className="inline-flex items-center justify-center rounded-full bg-white/20 px-2 h-6 text-[length:var(--ts-xs)] font-black tabular-nums">
+              {itemCount}
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+          </Link>
+        )}
+
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-3 space-y-4" aria-label="Navegación principal">
+          {SECTIONS.map((section, si) => (
             <div key={section.title}>
-              <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                {section.title}
-              </p>
-              <div className="space-y-1">
-                {section.links.map(({ href, label, desc, Icon, badge }) => (
+              {/* Primera sección sin label (navegación primaria); el resto con
+                  eyebrow sutil. Menos texto = más limpio. */}
+              {si > 0 && (
+                <p className="px-3 mb-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  {section.title}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {section.links.map(({ href, label, Icon, badge }) => (
                   <Link
                     key={href}
                     href={href}
                     onClick={onClose}
-                    className="group flex items-center gap-3 rounded-2xl p-2.5 hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all"
+                    className="group flex items-center gap-3 rounded-xl px-3 h-12 hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all"
                   >
-                    <span
+                    <Icon
+                      className="h-5 w-5 text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors shrink-0"
+                      strokeWidth={2}
                       aria-hidden
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white transition-colors shrink-0"
-                    >
-                      <Icon className="h-4.5 w-4.5" strokeWidth={2.25} />
+                    />
+                    <span className="flex-1 min-w-0 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] truncate">
+                      {label}
                     </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">
-                        {label}
-                      </p>
-                      {desc && (
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-tight mt-0.5 font-medium">
-                          {desc}
-                        </p>
-                      )}
-                    </div>
                     {badge !== undefined && (
-                      <span className="shrink-0 inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-[var(--accent)] px-2 text-[length:var(--ts-2xs)] font-black text-white tabular-nums">
+                      <span className="shrink-0 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-2xs)] font-black text-white tabular-nums">
                         {badge}
                       </span>
                     )}
-                    <ArrowRight
-                      className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0"
-                      strokeWidth={2.25}
-                    />
                   </Link>
                 ))}
               </div>
@@ -388,15 +376,14 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
           {/* ── Categorías ── Brandon 2026-05-30: visible SIEMPRE (también en
               modo tienda — filtrar por rubro es navegación de consumidor). Cada
               tile lleva a /tiendas?cat=<id> YA FILTRADO. Solo rubros con ≥1
-              tienda real (sin rubros muertos). Imagen del superadmin o emoji
-              fallback. (fix: antes usaba ?category= → no filtraba; el filtro
-              de /tiendas lee ?cat=). */}
+              tienda real. Brandon 2026-05-31: rediseño minimalista — chips
+              horizontales (icono + label) 2-col en vez de grid de tiles altos. */}
           {availableCategories.length > 0 && (
             <div>
-              <p className="px-2 mb-2.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <p className="px-3 mb-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Categorías
               </p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
                 {availableCategories.map((cat) => {
                   const emoji = CATEGORY_EMOJI_FALLBACK[cat.id] ?? "🏪";
                   return (
@@ -405,26 +392,26 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
                       href={`/tiendas?cat=${encodeURIComponent(cat.id)}`}
                       onClick={onClose}
                       aria-label={`Ver tiendas de ${cat.label}`}
-                      className="group flex flex-col items-center gap-1.5 rounded-2xl p-2 bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/40 hover:-translate-y-0.5 active:scale-95 transition-all"
+                      className="group flex items-center gap-2.5 rounded-xl px-2.5 h-12 bg-[var(--surface-sunken)] hover:bg-[var(--accent-soft)]/50 active:scale-[0.97] transition-all"
                     >
                       <span
                         aria-hidden
-                        className="relative inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-canvas)] ring-1 ring-[var(--rule-base)] overflow-hidden group-hover:ring-[var(--accent)]/40 group-hover:scale-105 transition-all shrink-0"
+                        className="relative inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-canvas)] overflow-hidden shrink-0"
                       >
                         {cat.imageUrl ? (
                           <Image
                             src={cat.imageUrl}
                             alt=""
-                            width={56}
-                            height={56}
+                            width={32}
+                            height={32}
                             className="h-full w-full object-cover"
                             unoptimized
                           />
                         ) : (
-                          <span className="text-2xl">{emoji}</span>
+                          <span className="text-base">{emoji}</span>
                         )}
                       </span>
-                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] leading-tight text-center line-clamp-2 w-full group-hover:text-[var(--accent)] transition-colors">
+                      <span className="flex-1 min-w-0 text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight truncate group-hover:text-[var(--accent)] transition-colors">
                         {cat.label}
                       </span>
                     </Link>
@@ -434,9 +421,9 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
             </div>
           )}
 
-          {/* Ayuda */}
+          {/* Ayuda — WhatsApp soporte (fila limpia, sin caja de icono pesada) */}
           <div>
-            <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            <p className="px-3 mb-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Ayuda
             </p>
             <a
@@ -444,40 +431,31 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
               target="_blank"
               rel="noopener noreferrer"
               onClick={onClose}
-              className="group flex items-center gap-3 rounded-2xl p-2.5 hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all"
+              className="group flex items-center gap-3 rounded-xl px-3 h-12 hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all"
             >
-              <span
-                aria-hidden
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#25D366]/15 text-[#25D366] group-hover:bg-[#25D366] group-hover:text-white transition-colors shrink-0"
-              >
-                <MessageCircle className="h-4.5 w-4.5" strokeWidth={2.25} />
+              <MessageCircle className="h-5 w-5 text-[#25D366] shrink-0" strokeWidth={2} aria-hidden />
+              <span className="flex-1 min-w-0 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] truncate">
+                WhatsApp soporte
               </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">
-                  WhatsApp soporte
-                </p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-tight mt-0.5 font-medium">
-                  Te respondemos en menos de 10 min
-                </p>
-              </div>
               <ArrowRight
-                className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] shrink-0"
+                className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0"
                 strokeWidth={2.25}
               />
             </a>
           </div>
         </nav>
 
-        {/* CTA B2B "Abrí tu tienda" — oculto en modo tienda (tiendas-only). */}
+        {/* CTA B2B "Abrí tu tienda" — oculto en modo tienda (tiendas-only).
+            Ghost/outline (menos peso visual que el botón sólido anterior). */}
         {!tiendasOnly && (
-          <div className="border-t border-[var(--rule-base)] p-4">
+          <div className="border-t border-[var(--rule-soft)] px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <Link
               href="/negocios"
               onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full h-12 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-extrabold hover:bg-[var(--text-primary)]/90 active:scale-95 transition-all shadow-lg"
+              className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-[length:var(--ts-sm)] font-bold hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-[0.98] transition-all"
             >
-              ¿Tenés una tienda? Abrila acá
-              <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+              <Rocket className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Abrí tu tienda
             </Link>
           </div>
         )}
