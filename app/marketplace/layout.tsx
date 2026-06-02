@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { BRAND_GEO } from "@/lib/geo";
 import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import MarketplaceStoreProviders from "@/components/MarketplaceStoreProviders";
 import MotionProvider from "@/components/MotionProvider";
@@ -24,11 +25,10 @@ import MainWithBackKey from "@/components/marketplace/MainWithBackKey";
 // se hereda el template root "%s | Buleje" para todas las rutas marketplace.
 export const metadata: Metadata = {
   title: {
-    default: "Marketplace — Bodegas y Tiendas del Perú",
+    default: `Marketplace — Bodegas y Tiendas en ${BRAND_GEO.city}`,
     template: "%s | Buleje",
   },
-  description:
-    "Encuentra bodegas, minimarkets y tiendas del Perú en un solo lugar. Delivery rápido, pago con Yape o efectivo.",
+  description: `Encuentra bodegas, minimarkets y tiendas en ${BRAND_GEO.cityRegion} en un solo lugar. Delivery rápido, pago con Yape o efectivo.`,
 };
 
 /**

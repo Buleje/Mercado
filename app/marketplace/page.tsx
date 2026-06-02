@@ -8,6 +8,7 @@ import MarketplaceHomeHeader from "@/components/marketplace/home/MarketplaceHome
 const PromoHeroSlot = dynamic(() => import("@/components/marketplace/TiendasHeroAds"));
 import JsonLd from "@/components/JsonLd";
 import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
+import { BRAND_GEO } from "@/lib/geo";
 import {
   getInitialMarketplaceStores,
   getPublishedStoreCount,
@@ -43,10 +44,10 @@ export async function generateMetadata(props: {
   // NO duplicar "Buleje" en titles de child pages, y "Perú" con tilde.
   const title = zona
     ? `Marketplace en ${zona.charAt(0).toUpperCase() + zona.slice(1)} — Bodegas y Tiendas`
-    : "Marketplace — Bodegas y Tiendas del Perú";
+    : `Marketplace — Bodegas y Tiendas en ${BRAND_GEO.city}`;
   const description = zona
     ? `Bodegas, minimarkets, restaurantes y farmacias en ${zona}. Pedí online con delivery rápido y pago con Yape, Plin o efectivo.`
-    : "Bodegas, minimarkets, restaurantes y farmacias del Perú en un solo lugar. Pedí online con delivery rápido y pago con Yape, Plin o efectivo.";
+    : `Bodegas, minimarkets, restaurantes y farmacias en ${BRAND_GEO.cityRegion} en un solo lugar. Pedí online con delivery rápido y pago con Yape, Plin o efectivo.`;
 
   return {
     title,
