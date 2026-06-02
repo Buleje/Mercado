@@ -5,6 +5,7 @@ import { districts } from "@/data/districts";
 import { prisma } from "@/lib/prisma";
 import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
 import { BRAND_GEO } from "@/lib/geo";
+import { CATEGORIAS } from "@/lib/constants/marketplace-categories";
 
 const realCategories = categories.filter((c) => c.id !== "todos");
 
@@ -487,6 +488,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }));
 
+  // Brandon 2026-06-02: rutas SEO por categoría (/tiendas/categoria/[slug]).
+  // Captura long-tail local "abarrotes/farmacia/carnes con delivery en CC".
+  // Slugs estables desde lib/constants/marketplace-categories.ts.
+  const tiendasCategoriaPages: MetadataRoute.Sitemap = Object.keys(CATEGORIAS).map((slug) => ({
+    url: `${baseUrl}/tiendas/categoria/${slug}`,
+    lastModified,
+    changeFrequency: "weekly" as const,
+    priority: 0.85,
+    alternates: withHreflang(`${baseUrl}/tiendas/categoria/${slug}`),
+  }));
+
   return [
     ...staticPages,
     ...categoryPages,
@@ -498,5 +510,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...zoneProductPages,
     ...districtPages,       // District landing + district × category
     ...tiendasPages,        // TS-43: directorio + rutas por zona
+    ...tiendasCategoriaPages, // rutas SEO por categoría
   ];
 }

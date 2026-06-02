@@ -29,6 +29,9 @@ export interface TiendasUrlState {
   subCategoryId: string | null;
   /** Zona que viene del path (/tiendas/[zona]) — no se duplica en la query. */
   initialZone?: string;
+  /** Categoría que viene del path (/tiendas/categoria/[categoria]) — no se
+   *  duplica en la query (mantiene la URL SEO limpia). */
+  initialCategory?: string;
 }
 
 export function useTiendasUrlSync({
@@ -39,6 +42,7 @@ export function useTiendasUrlSync({
   activeChips,
   subCategoryId,
   initialZone,
+  initialCategory,
 }: TiendasUrlState): void {
   const router = useRouter();
   const pathname = usePathname();
@@ -52,7 +56,8 @@ export function useTiendasUrlSync({
     const timeout = setTimeout(() => {
       const params = new URLSearchParams();
       if (search.trim()) params.set("q", search.trim());
-      if (category !== "todos") params.set("cat", category);
+      // En /tiendas/categoria/[cat] no duplicamos la categoría en la query.
+      if (category !== "todos" && category !== initialCategory) params.set("cat", category);
       // En /tiendas/[zona] no duplicamos zona en la query — viene del path.
       if (zone && zone !== initialZone) params.set("zona", zone);
       if (sortKey !== "relevance") params.set("sort", sortKey);
@@ -63,5 +68,5 @@ export function useTiendasUrlSync({
       router.replace(next, { scroll: false });
     }, 220);
     return () => clearTimeout(timeout);
-  }, [search, category, zone, sortKey, activeChips, subCategoryId, pathname, router, initialZone]);
+  }, [search, category, zone, sortKey, activeChips, subCategoryId, pathname, router, initialZone, initialCategory]);
 }

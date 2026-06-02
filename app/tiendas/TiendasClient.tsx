@@ -211,6 +211,9 @@ const DEFAULT_FILTERS: MarketplaceFiltersState = {
 interface TiendasClientProps {
   /** Zona prefijada por la ruta SSG `/tiendas/[zona]`. Override de query params. */
   initialZone?: string;
+  /** Categoría prefijada por la ruta SSG `/tiendas/categoria/[categoria]`.
+   *  Override de query params (siembra el filtro de categoría para SEO). */
+  initialCategory?: string;
   /** Stores pre-fetched en el server (fix bug back-nav cross-layout Next 16).
    *  El HTML server-rendered ya tiene la lista materializada, así que aunque
    *  la hidratación cliente quede frozen tras un back nav, los items siguen
@@ -220,7 +223,7 @@ interface TiendasClientProps {
   premiumProducts?: Record<string, import("@/components/marketplace/PremiumStoreCard").PremiumProduct[]>;
 }
 
-export default function TiendasClient({ initialZone, initialStores = [], premiumProducts = {} }: TiendasClientProps = {}) {
+export default function TiendasClient({ initialZone, initialCategory, initialStores = [], premiumProducts = {} }: TiendasClientProps = {}) {
   // ── TS-26 URL sync — leer estado inicial de query params ──
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -263,7 +266,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [category, setCategory] = useState(
-    () => searchParams.get("cat") ?? "todos",
+    () => initialCategory ?? searchParams.get("cat") ?? "todos",
   );
   const [zone, setZone] = useState(
     () => initialZone ?? searchParams.get("zona") ?? "",
@@ -418,7 +421,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
   }, []);
 
   // ── TS-26 URL sync — escribir back al cambiar el estado (hook dedicado) ──
-  useTiendasUrlSync({ search, category, zone, sortKey, activeChips, subCategoryId, initialZone });
+  useTiendasUrlSync({ search, category, zone, sortKey, activeChips, subCategoryId, initialZone, initialCategory });
 
   // ── Geo hook ──
   const {
