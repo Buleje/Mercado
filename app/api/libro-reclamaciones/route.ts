@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Resend } from "resend";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ReclamosDB } from "@/lib/db/reclamos.db";
 import {
   LEGAL,
   EMAIL_RECLAMOS,
@@ -44,13 +45,6 @@ const schema = z.object({
   aceptaVeracidad: z.literal(true, { message: "Debes declarar la veracidad de los datos" }),
 });
 
-function makeCodigo(): string {
-  const d = new Date();
-  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `LR-${ymd}-${rand}`;
-}
-
 const RESEND_KEY = process.env.RESEND_API_KEY;
 const resend = RESEND_KEY ? new Resend(RESEND_KEY) : null;
 const FROM = process.env.RESEND_FROM_EMAIL ?? "Buleje <noreply@buleje.pe>";
@@ -87,7 +81,49 @@ export async function POST(req: NextRequest) {
   }
 
   const r = parsed.data;
-  const codigo = makeCodigo();
+
+  // ── Persistencia DB-first: el Libro debe conservar la hoja (D.S. 011-2011-PCM,
+  // retención >= 2 años). Si falla, NO confirmamos: nunca decimos "registrado" sin
+  // registro. El email es solo acuse secundario. ──
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+  const userAgent = req.headers.get("user-agent") || null;
+
+  let codigo: string;
+  try {
+    const saved = await ReclamosDB.create({
+      nombre: r.nombre,
+      tipoDocumento: r.tipoDocumento,
+      numeroDocumento: r.numeroDocumento,
+      domicilio: r.domicilio,
+      telefono: r.telefono,
+      email: r.email,
+      esMenor: r.esMenor,
+      apoderado: r.apoderado,
+      tipoBien: r.tipoBien,
+      montoReclamado: r.montoReclamado,
+      descripcionBien: r.descripcionBien,
+      numeroPedido: r.numeroPedido,
+      tienda: r.tienda,
+      tenantId: null,
+      tipoReclamo: r.tipoReclamo,
+      detalle: r.detalle,
+      pedidoConsumidor: r.pedidoConsumidor,
+      ip,
+      userAgent,
+    });
+    codigo = saved.codigo;
+  } catch (err) {
+    console.error("[libro-reclamaciones] DB persist failed", String(err));
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "No pudimos registrar tu reclamo en este momento. Intenta de nuevo en unos minutos.",
+      },
+      { status: 500 },
+    );
+  }
+
   const fecha = new Date().toLocaleDateString("es-PE", {
     day: "2-digit",
     month: "long",

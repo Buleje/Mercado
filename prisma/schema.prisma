@@ -4467,23 +4467,23 @@ model AdelantoRecurrente {
 }
 
 model Adelanto {
-  id              String                   @id @default(cuid())
-  tenantId        String
-  beneficiarioId  String
-  modalidad       AdelantoModalidad        @default(CUENTA_CORRIENTE)
-  montoAdelantado Decimal                  @db.Decimal(12, 2)
-  moneda          String                   @default("PEN")
-  fechaAdelanto   DateTime                 @default(now())
-  status          AdelantoStatus           @default(ABIERTO)
+  id               String                   @id @default(cuid())
+  tenantId         String
+  beneficiarioId   String
+  modalidad        AdelantoModalidad        @default(CUENTA_CORRIENTE)
+  montoAdelantado  Decimal                  @db.Decimal(12, 2)
+  moneda           String                   @default("PEN")
+  fechaAdelanto    DateTime                 @default(now())
+  status           AdelantoStatus           @default(ABIERTO)
   // Mantenido por backend: montoAdelantado - SUM(entregas.valor). Negativo => EXCEDIDO.
-  saldoPendiente  Decimal                  @db.Decimal(12, 2)
-  notas           String?
-  comprobanteUrl  String? // ADR-118: foto/comprobante del adelanto
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
-  tenant          Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  beneficiario    AdelantoBeneficiario     @relation(fields: [beneficiarioId], references: [id], onDelete: Restrict)
-  entregas        AdelantoEntrega[]
+  saldoPendiente   Decimal                  @db.Decimal(12, 2)
+  notas            String?
+  comprobanteUrl   String? // ADR-118: foto/comprobante del adelanto
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  tenant           Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  beneficiario     AdelantoBeneficiario     @relation(fields: [beneficiarioId], references: [id], onDelete: Restrict)
+  entregas         AdelantoEntrega[]
   entregasPactadas AdelantoEntregaPactada[]
 
   @@index([tenantId, status])
@@ -4492,39 +4492,39 @@ model Adelanto {
 }
 
 model AdelantoEntrega {
-  id          String              @id @default(cuid())
-  adelantoId  String
-  fecha       DateTime            @default(now())
-  tipo        AdelantoEntregaTipo @default(LIBRE)
-  descripcion String?
+  id             String                  @id @default(cuid())
+  adelantoId     String
+  fecha          DateTime                @default(now())
+  tipo           AdelantoEntregaTipo     @default(LIBRE)
+  descripcion    String?
   // Solo tipo PRODUCTO: referencia suelta a Product.id (sin relacion formal — desacople).
-  productId   Int?
-  cantidad    Decimal?            @db.Decimal(12, 3)
+  productId      Int?
+  cantidad       Decimal?                @db.Decimal(12, 3)
   // Valor en S/ que descuenta del saldo — SIEMPRE calculado en backend.
-  valor       Decimal             @db.Decimal(12, 2)
-  sumadoAStock Boolean            @default(false)
-  notas       String?
+  valor          Decimal                 @db.Decimal(12, 2)
+  sumadoAStock   Boolean                 @default(false)
+  notas          String?
   comprobanteUrl String? // ADR-118: foto/comprobante de la entrega
-  createdAt   DateTime            @default(now())
-  adelanto    Adelanto            @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
-  pactada     AdelantoEntregaPactada?
+  createdAt      DateTime                @default(now())
+  adelanto       Adelanto                @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
+  pactada        AdelantoEntregaPactada?
 
   @@index([adelantoId])
   @@index([adelantoId, fecha])
 }
 
 model AdelantoEntregaPactada {
-  id                String           @id @default(cuid())
-  adelantoId        String
-  numero            Int
+  id                  String           @id @default(cuid())
+  adelantoId          String
+  numero              Int
   descripcionEsperada String
-  valorEsperado     Decimal          @db.Decimal(12, 2)
-  fechaEsperada     DateTime?
-  cumplidaEn        DateTime?
+  valorEsperado       Decimal          @db.Decimal(12, 2)
+  fechaEsperada       DateTime?
+  cumplidaEn          DateTime?
   // Link a la entrega real que la cumplio (1:1 opcional).
-  entregaId         String?          @unique
-  adelanto          Adelanto         @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
-  entrega           AdelantoEntrega? @relation(fields: [entregaId], references: [id], onDelete: SetNull)
+  entregaId           String?          @unique
+  adelanto            Adelanto         @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
+  entrega             AdelantoEntrega? @relation(fields: [entregaId], references: [id], onDelete: SetNull)
 
   @@index([adelantoId])
 }
@@ -4548,38 +4548,38 @@ model AdelantoEntregaPactada {
 // integración / sync.
 
 enum WoodEntryStatus {
-  pendiente    // Recién ingresado, esperando validación
-  validado     // Validado por responsable (firmado)
-  rechazado    // Documentación incompleta o inconsistencias
-  procesado    // Madera ya transformada / consumida en producción
-  anulado      // Anulado (error de tipeo, no contó); soft-history
+  pendiente // Recién ingresado, esperando validación
+  validado // Validado por responsable (firmado)
+  rechazado // Documentación incompleta o inconsistencias
+  procesado // Madera ya transformada / consumida en producción
+  anulado // Anulado (error de tipeo, no contó); soft-history
 }
 
 enum WoodOriginType {
-  concesion           // Concesión forestal (titular habilitante)
-  predio_privado      // Predio privado con plan de manejo
-  comunidad_nativa    // Comunidad nativa / campesina
-  reforestacion       // Plantación / proyecto de reforestación
-  retroaserradero     // Re-entrada desde otro aserradero (origen CTP)
+  concesion // Concesión forestal (titular habilitante)
+  predio_privado // Predio privado con plan de manejo
+  comunidad_nativa // Comunidad nativa / campesina
+  reforestacion // Plantación / proyecto de reforestación
+  retroaserradero // Re-entrada desde otro aserradero (origen CTP)
   otro
 }
 
 enum WoodProductType {
-  rolliza             // Madera rolliza (troncos sin procesar)
-  aserrada            // Aserrada (tabla/tablón cortado)
-  tablones            // Tablones específicamente
-  listones            // Listones (medidas estandarizadas)
-  durmientes          // Durmientes (railway ties)
-  pulgada             // Comercializada en pulgadas (medida tradicional)
-  carbon              // Carbón vegetal
-  lena                // Leña / firewood
+  rolliza // Madera rolliza (troncos sin procesar)
+  aserrada // Aserrada (tabla/tablón cortado)
+  tablones // Tablones específicamente
+  listones // Listones (medidas estandarizadas)
+  durmientes // Durmientes (railway ties)
+  pulgada // Comercializada en pulgadas (medida tradicional)
+  carbon // Carbón vegetal
+  lena // Leña / firewood
   otro
 }
 
 enum DocumentType {
   RUC
   DNI
-  CE                  // Carnet de Extranjería
+  CE // Carnet de Extranjería
   PASAPORTE
 }
 
@@ -4587,53 +4587,53 @@ enum DocumentType {
 // 1 entry = 1 GTF + 1 especie + 1 product type. Si la GTF trae múltiples
 // especies/productos, se crean N entries con el mismo gtfNumber.
 model WoodEntry {
-  id                    String           @id @default(cuid())
-  tenantId              String
+  id       String @id @default(cuid())
+  tenantId String
 
   // ── Fecha + Guía de Transporte Forestal (SERFOR) ─────
-  entryDate             DateTime         @default(now())
-  gtfNumber             String           // "Número de Guía de Transporte Forestal"
-  gtfDate               DateTime?
-  gtfSeries             String?          // Serie de la GTF (si aplica)
+  entryDate DateTime  @default(now())
+  gtfNumber String // "Número de Guía de Transporte Forestal"
+  gtfDate   DateTime?
+  gtfSeries String? // Serie de la GTF (si aplica)
 
   // ── Proveedor / Titular Habilitante ──────────────────
-  providerName          String
-  providerDocument      String?          // RUC/DNI/CE/PASAPORTE number
-  providerDocumentType  DocumentType?
+  providerName         String
+  providerDocument     String? // RUC/DNI/CE/PASAPORTE number
+  providerDocumentType DocumentType?
 
   // ── Origen del material ──────────────────────────────
-  originType            WoodOriginType   @default(otro)
-  originCode            String?          // Número de concesión, predio o comunidad
-  originRegion          String?          // Loreto, Ucayali, Madre de Dios, etc.
-  originDistrict        String?          // Distrito específico
+  originType     WoodOriginType @default(otro)
+  originCode     String? // Número de concesión, predio o comunidad
+  originRegion   String? // Loreto, Ucayali, Madre de Dios, etc.
+  originDistrict String? // Distrito específico
 
   // ── Especie ──────────────────────────────────────────
-  speciesCommonName     String           // "Tornillo", "Capirona", "Shihuahuaco"
-  speciesScientificName String?          // "Cedrelinga catenaeformis"
-  speciesCites          Boolean          @default(false) // ¿En CITES (protegida)?
+  speciesCommonName     String // "Tornillo", "Capirona", "Shihuahuaco"
+  speciesScientificName String? // "Cedrelinga catenaeformis"
+  speciesCites          Boolean @default(false) // ¿En CITES (protegida)?
 
   // ── Producto ─────────────────────────────────────────
-  productType           WoodProductType  @default(rolliza)
-  volumeM3              Decimal          @db.Decimal(12, 4) // 4 decimales — precisión forestal
-  pieces                Int              @default(0)
-  avgLengthM            Decimal?         @db.Decimal(8, 2)  // Largo promedio metros
-  avgDiameterCm         Decimal?         @db.Decimal(8, 2)  // Diámetro promedio cm (rolliza)
-  humidityPct           Decimal?         @db.Decimal(5, 2)  // % humedad
-  defectsNotes          String?          // Defectos visibles (nudos, podredumbre)
+  productType   WoodProductType @default(rolliza)
+  volumeM3      Decimal         @db.Decimal(12, 4) // 4 decimales — precisión forestal
+  pieces        Int             @default(0)
+  avgLengthM    Decimal?        @db.Decimal(8, 2) // Largo promedio metros
+  avgDiameterCm Decimal?        @db.Decimal(8, 2) // Diámetro promedio cm (rolliza)
+  humidityPct   Decimal?        @db.Decimal(5, 2) // % humedad
+  defectsNotes  String? // Defectos visibles (nudos, podredumbre)
 
   // ── Trazabilidad ─────────────────────────────────────
-  notes                 String?
-  photos                Json?            // Array de URLs de fotos
-  status                WoodEntryStatus  @default(pendiente)
-  validatedBy           String?          // AdminUser.id que validó
-  validatedAt           DateTime?
-  rejectionReason       String?          // Si status=rechazado, razón
+  notes           String?
+  photos          Json? // Array de URLs de fotos
+  status          WoodEntryStatus @default(pendiente)
+  validatedBy     String? // AdminUser.id que validó
+  validatedAt     DateTime?
+  rejectionReason String? // Si status=rechazado, razón
 
   // ── Auditoría ────────────────────────────────────────
-  createdBy             String           // AdminUser.id que registró
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  deletedAt             DateTime?
+  createdBy String // AdminUser.id que registró
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([tenantId, entryDate(sort: Desc)])
   @@index([tenantId, status])
@@ -4650,14 +4650,14 @@ model WoodEntry {
 
 /// Carátula del libro (Anexo 1). Un registro por tomo / documento de gestión.
 model ForestLothCaratula {
-  id                 String    @id @default(cuid())
-  tenantId           String
+  id       String @id @default(cuid())
+  tenantId String
 
-  registroNumber     String?   // N° de registro del libro (otorgado por la ARFFS)
-  tomo               String?   // N° de tomo (por documento de gestión)
-  titularName        String    // Titular del título habilitante (persona/razón social)
-  representanteLegal String?    // Si es persona jurídica
-  tituloHabilitante  String?   // N° de título habilitante (contrato/permiso/autorización)
+  registroNumber     String? // N° de registro del libro (otorgado por la ARFFS)
+  tomo               String? // N° de tomo (por documento de gestión)
+  titularName        String // Titular del título habilitante (persona/razón social)
+  representanteLegal String? // Si es persona jurídica
+  tituloHabilitante  String? // N° de título habilitante (contrato/permiso/autorización)
   ruc                String?
   dni                String?
   domicilio          String?
@@ -4666,16 +4666,16 @@ model ForestLothCaratula {
   distrito           String?
   telefono           String?
   email              String?
-  docGestionType     String?   // PO | PMFI | DEMA
-  docGestionName     String?   // Nombre/periodo del documento de gestión
-  resolucionNumber   String?   // N° de resolución de aprobación
+  docGestionType     String? // PO | PMFI | DEMA
+  docGestionName     String? // Nombre/periodo del documento de gestión
+  resolucionNumber   String? // N° de resolución de aprobación
   resolucionDate     DateTime?
 
-  isActive           Boolean   @default(true)
-  createdBy          String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
+  isActive  Boolean   @default(true)
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([tenantId, isActive])
   @@index([deletedAt])
@@ -4683,62 +4683,62 @@ model ForestLothCaratula {
 
 /// Entrada unificada de las 6 secciones del LO-TH (discriminador `section`).
 model ForestLothEntry {
-  id                String    @id @default(cuid())
-  tenantId          String
-  caratulaId        String?   // libro/tomo al que pertenece (ref. app-level)
-  planId            String?   // Plan de Manejo de origen (ADR-127 — flujo data-driven)
+  id         String  @id @default(cuid())
+  tenantId   String
+  caratulaId String? // libro/tomo al que pertenece (ref. app-level)
+  planId     String? // Plan de Manejo de origen (ADR-127 — flujo data-driven)
 
   // tala | trozado | despacho_troza | consumo_troza | producto_terminado | despacho_producto
-  section           String
-  lineNo            Int       // correlativo por sección/tomo (item N°), calculado max+1
-  entryDate         DateTime  @default(now())
+  section   String
+  lineNo    Int // correlativo por sección/tomo (item N°), calculado max+1
+  entryDate DateTime @default(now())
 
   // ── Trazabilidad por código ──────────────────────────
-  treeCode          String?   // Código del árbol (tala, trozado)
-  trozaCode         String?   // Código de troza (trozado, despacho, consumo)
-  despachoCode      String?   // Código de despacho distinto (despacho_troza)
-  isRama            Boolean   @default(false) // "R" — rama aprovechable (X)
+  treeCode     String? // Código del árbol (tala, trozado)
+  trozaCode    String? // Código de troza (trozado, despacho, consumo)
+  despachoCode String? // Código de despacho distinto (despacho_troza)
+  isRama       Boolean @default(false) // "R" — rama aprovechable (X)
 
   // ── Especie ──────────────────────────────────────────
   speciesCommon     String?
   speciesScientific String?
-  cites             Boolean   @default(false)
+  cites             Boolean @default(false)
 
   // ── Medidas dasométricas (tala, trozado) ─────────────
-  diamMayorM        Decimal?  @db.Decimal(8, 3) // Ø sección mayor (m)
-  diamMenorM        Decimal?  @db.Decimal(8, 3) // Ø sección menor (m)
-  lengthM           Decimal?  @db.Decimal(8, 2) // longitud (aprovechable) (m)
-  volumeM3          Decimal?  @db.Decimal(12, 4) // Smalian
+  diamMayorM Decimal? @db.Decimal(8, 3) // Ø sección mayor (m)
+  diamMenorM Decimal? @db.Decimal(8, 3) // Ø sección menor (m)
+  lengthM    Decimal? @db.Decimal(8, 2) // longitud (aprovechable) (m)
+  volumeM3   Decimal? @db.Decimal(12, 4) // Smalian
 
   // ── Producto (producto_terminado, despacho_producto) ─
-  productType       String?   // tipo de producto terminado (lista SERFOR)
-  quantity          Decimal?  @db.Decimal(14, 4)
-  unit              String?   // m3 | kg | unidad
-  pieces            Int?      // cantidad de piezas (despacho_producto)
+  productType String? // tipo de producto terminado (lista SERFOR)
+  quantity    Decimal? @db.Decimal(14, 4)
+  unit        String? // m3 | kg | unidad
+  pieces      Int? // cantidad de piezas (despacho_producto)
 
   // ── Despacho ─────────────────────────────────────────
-  gtfNumber         String?   // despacho_troza, despacho_producto
+  gtfNumber String? // despacho_troza, despacho_producto
 
   // ── Georreferencia + evidencia de campo (Batch 4) ────
-  gpsLat            Decimal?  @db.Decimal(10, 7) // latitud captura en campo
-  gpsLng            Decimal?  @db.Decimal(10, 7) // longitud captura en campo
-  photoUrl          String?   // foto-evidencia (tocón/troza) vía /api/upload
+  gpsLat   Decimal? @db.Decimal(10, 7) // latitud captura en campo
+  gpsLng   Decimal? @db.Decimal(10, 7) // longitud captura en campo
+  photoUrl String? // foto-evidencia (tocón/troza) vía /api/upload
 
   // ── Flags + observaciones ────────────────────────────
-  discarded         Boolean   @default(false) // "descartado"
-  consumoInterno    Boolean   @default(false) // "consumo interno"
-  observations      String?
+  discarded      Boolean @default(false) // "descartado"
+  consumoInterno Boolean @default(false) // "consumo interno"
+  observations   String?
 
   // ── Subsanación SERFOR (corrección visible, no borrar) ─
-  correctsLineNo    Int?      // esta línea corrige a la línea N
-  correctionNote    String?
+  correctsLineNo Int? // esta línea corrige a la línea N
+  correctionNote String?
 
-  status            String    @default("registrado") // registrado | anulado
-  annulledReason    String?
-  createdBy         String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  status         String    @default("registrado") // registrado | anulado
+  annulledReason String?
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, caratulaId, section, lineNo])
@@ -4756,37 +4756,37 @@ model ForestLothEntry {
 
 /// Plan de Manejo / Permiso aprobado por la ARFFS (PMFI | PO | DEMA).
 model ForestPlan {
-  id                 String    @id @default(cuid())
-  tenantId           String
-  caratulaId         String?   // vínculo a la carátula del libro (ref. app-level)
+  id         String  @id @default(cuid())
+  tenantId   String
+  caratulaId String? // vínculo a la carátula del libro (ref. app-level)
 
-  planType           String    @default("PO") // PMFI | PO | DEMA
-  planNumber         String?
-  tituloHabilitante  String?
-  resolucionNumber   String?
-  resolucionDate     DateTime?
-  titularName        String
-  arffs              String?   // Autoridad Regional Forestal y de Fauna Silvestre
-  region             String?
-  parcelaCorta       String?
-  areaHa             Decimal?  @db.Decimal(12, 2)
-  uitRef             Decimal?  @db.Decimal(10, 2) // UIT vigente para cálculo de pago
+  planType          String    @default("PO") // PMFI | PO | DEMA
+  planNumber        String?
+  tituloHabilitante String?
+  resolucionNumber  String?
+  resolucionDate    DateTime?
+  titularName       String
+  arffs             String? // Autoridad Regional Forestal y de Fauna Silvestre
+  region            String?
+  parcelaCorta      String?
+  areaHa            Decimal?  @db.Decimal(12, 2)
+  uitRef            Decimal?  @db.Decimal(10, 2) // UIT vigente para cálculo de pago
 
   // Costeo (Batch 3 · frente D): costos operativos por m³ para calcular margen.
-  costoExtraccionM3      Decimal?  @db.Decimal(12, 2) // tala + arrastre + patio (S//m³)
-  costoTransformacionM3  Decimal?  @db.Decimal(12, 2) // aserrío / transformación (S//m³)
-  costoFleteM3           Decimal?  @db.Decimal(12, 2) // transporte a destino (S//m³)
+  costoExtraccionM3     Decimal? @db.Decimal(12, 2) // tala + arrastre + patio (S//m³)
+  costoTransformacionM3 Decimal? @db.Decimal(12, 2) // aserrío / transformación (S//m³)
+  costoFleteM3          Decimal? @db.Decimal(12, 2) // transporte a destino (S//m³)
 
-  vigenciaDesde      DateTime?
-  vigenciaHasta      DateTime?
-  estado             String    @default("vigente") // vigente | vencido | cerrado | suspendido
+  vigenciaDesde DateTime?
+  vigenciaHasta DateTime?
+  estado        String    @default("vigente") // vigente | vencido | cerrado | suspendido
 
-  notes              String?
-  isActive           Boolean   @default(true)
-  createdBy          String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
+  notes     String?
+  isActive  Boolean   @default(true)
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([tenantId, isActive])
   @@index([deletedAt])
@@ -4794,23 +4794,23 @@ model ForestPlan {
 
 /// Especie APROBADA en el plan, con volumen autorizado y datos comerciales.
 model ForestPlanSpecies {
-  id                      String    @id @default(cuid())
-  tenantId                String
-  planId                  String
+  id       String @id @default(cuid())
+  tenantId String
+  planId   String
 
-  speciesCommon           String
-  speciesScientific       String?
-  cites                   Boolean   @default(false)
-  categoria               String?   // categoría SERFOR (1–4) para VEN
+  speciesCommon     String
+  speciesScientific String?
+  cites             Boolean @default(false)
+  categoria         String? // categoría SERFOR (1–4) para VEN
 
-  volumenAutorizadoM3     Decimal   @db.Decimal(12, 4)
+  volumenAutorizadoM3     Decimal  @db.Decimal(12, 4)
   arbolesAutorizados      Int?
-  valorEstadoNaturalSoles Decimal?  @db.Decimal(12, 2) // VEN S//m³ (pago derecho)
-  precioVentaSoles        Decimal?  @db.Decimal(12, 2) // precio de venta S//m³ (comercial)
+  valorEstadoNaturalSoles Decimal? @db.Decimal(12, 2) // VEN S//m³ (pago derecho)
+  precioVentaSoles        Decimal? @db.Decimal(12, 2) // precio de venta S//m³ (comercial)
 
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-  deletedAt               DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([tenantId, planId])
   @@index([deletedAt])
@@ -4818,33 +4818,33 @@ model ForestPlanSpecies {
 
 /// Árbol del censo forestal: georreferenciado, con volumen estimado.
 model ForestCensusTree {
-  id                String    @id @default(cuid())
-  tenantId          String
-  planId            String
+  id       String @id @default(cuid())
+  tenantId String
+  planId   String
 
-  treeCode          String    // código único del árbol censado
+  treeCode          String // código único del árbol censado
   speciesCommon     String
   speciesScientific String?
-  cites             Boolean   @default(false)
+  cites             Boolean @default(false)
 
-  dapM              Decimal?  @db.Decimal(8, 3)  // diámetro a la altura del pecho (m)
-  alturaComercialM  Decimal?  @db.Decimal(8, 2)  // altura comercial Hc (m)
-  factorForma       Decimal?  @db.Decimal(5, 3)  // ff (default operativo ~0.65)
-  volumenEstimadoM3 Decimal?  @db.Decimal(12, 4) // 0.7854 × DAP² × Hc × ff
+  dapM              Decimal? @db.Decimal(8, 3) // diámetro a la altura del pecho (m)
+  alturaComercialM  Decimal? @db.Decimal(8, 2) // altura comercial Hc (m)
+  factorForma       Decimal? @db.Decimal(5, 3) // ff (default operativo ~0.65)
+  volumenEstimadoM3 Decimal? @db.Decimal(12, 4) // 0.7854 × DAP² × Hc × ff
 
-  utmZona           String?
-  utmX              Decimal?  @db.Decimal(12, 2)
-  utmY              Decimal?  @db.Decimal(12, 2)
-  parcelaCorta      String?
-  calidad           String?
+  utmZona      String?
+  utmX         Decimal? @db.Decimal(12, 2)
+  utmY         Decimal? @db.Decimal(12, 2)
+  parcelaCorta String?
+  calidad      String?
 
-  estado            String    @default("en_pie") // en_pie | talado | descartado
-  notes             String?
+  estado String  @default("en_pie") // en_pie | talado | descartado
+  notes  String?
 
-  createdBy         String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([tenantId, planId])
   @@index([tenantId, treeCode])
@@ -4854,13 +4854,13 @@ model ForestCensusTree {
 
 /// Guía de Transporte Forestal (GTF) — ADR-126 Fase 4. Interna, no oficial.
 model ForestGtf {
-  id                String    @id @default(cuid())
-  tenantId          String
-  planId            String?
+  id       String  @id @default(cuid())
+  tenantId String
+  planId   String?
 
-  gtfNumber         String
-  gtfDate           DateTime?
-  tipo              String    @default("trozas") // trozas | producto
+  gtfNumber String
+  gtfDate   DateTime?
+  tipo      String    @default("trozas") // trozas | producto
 
   titularName       String?
   tituloHabilitante String?
@@ -4874,17 +4874,17 @@ model ForestGtf {
   origen            String?
   destino           String?
 
-  items             Json?     // lista de trozas/productos (snapshot)
-  volumenTotalM3    Decimal?  @db.Decimal(12, 4)
-  piezasTotal       Int?
-  observations      String?
+  items          Json? // lista de trozas/productos (snapshot)
+  volumenTotalM3 Decimal? @db.Decimal(12, 4)
+  piezasTotal    Int?
+  observations   String?
 
-  status            String    @default("emitida") // emitida | anulada
-  annulledReason    String?
-  createdBy         String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  status         String    @default("emitida") // emitida | anulada
+  annulledReason String?
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   @@index([tenantId, status])
   @@index([tenantId, gtfNumber])
@@ -4893,42 +4893,42 @@ model ForestGtf {
 
 /// Libro CTP — producción/transformación + despacho (ADR-127). Ingreso = WoodEntry.
 model ForestCtpEntry {
-  id                String    @id @default(cuid())
-  tenantId          String
+  id       String @id @default(cuid())
+  tenantId String
 
-  section           String    // produccion | despacho
-  lineNo            Int
-  entryDate         DateTime  @default(now())
+  section   String // produccion | despacho
+  lineNo    Int
+  entryDate DateTime @default(now())
 
   // Origen / materia prima
-  gtfIngreso        String?   // GTF con la que ingresó la materia prima
-  materiaPrimaRef   String?   // referencia libre a la materia prima / lote
+  gtfIngreso      String? // GTF con la que ingresó la materia prima
+  materiaPrimaRef String? // referencia libre a la materia prima / lote
 
   speciesCommon     String?
   speciesScientific String?
-  cites             Boolean   @default(false)
+  cites             Boolean @default(false)
 
   // Producción
-  productType       String?   // producto terminado
-  volumeInputM3     Decimal?  @db.Decimal(12, 4) // materia prima consumida
-  rendimientoPct    Decimal?  @db.Decimal(5, 2)  // output/input %
+  productType    String? // producto terminado
+  volumeInputM3  Decimal? @db.Decimal(12, 4) // materia prima consumida
+  rendimientoPct Decimal? @db.Decimal(5, 2) // output/input %
 
   // Cantidad producida / despachada
-  quantity          Decimal?  @db.Decimal(14, 4)
-  unit              String?   // m3 | kg | unidad | pt
-  pieces            Int?
+  quantity Decimal? @db.Decimal(14, 4)
+  unit     String? // m3 | kg | unidad | pt
+  pieces   Int?
 
   // Despacho
-  gtfNumber         String?   // GTF de salida del producto
-  destino           String?
+  gtfNumber String? // GTF de salida del producto
+  destino   String?
 
-  observations      String?
-  status            String    @default("registrado") // registrado | anulado
-  annulledReason    String?
-  createdBy         String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  observations   String?
+  status         String    @default("registrado") // registrado | anulado
+  annulledReason String?
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, gtfNumber])
@@ -4942,23 +4942,23 @@ model ForestCtpEntry {
 
 /// Productor de cacao (master). Base para trazabilidad y liquidación.
 model CacaoProducer {
-  id                String    @id @default(cuid())
-  tenantId          String
-  codigo            String?   // P-001 (correlativo legible)
-  nombre            String
-  dni               String?
-  sector            String?   // caserío / sector / comunidad
-  parcelaHa         Decimal?  @db.Decimal(10, 2) // hectáreas de cacao
-  variedad          String?   // CCN-51 | criollo | trinitario | forastero | nacional
-  certificacion     String?   // organico | comercio_justo | convencional
-  altitudMsnm       Int?
-  telefono          String?
-  observaciones     String?
-  status            String    @default("activo") // activo | inactivo
-  createdBy         String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  id            String    @id @default(cuid())
+  tenantId      String
+  codigo        String? // P-001 (correlativo legible)
+  nombre        String
+  dni           String?
+  sector        String? // caserío / sector / comunidad
+  parcelaHa     Decimal?  @db.Decimal(10, 2) // hectáreas de cacao
+  variedad      String? // CCN-51 | criollo | trinitario | forastero | nacional
+  certificacion String? // organico | comercio_justo | convencional
+  altitudMsnm   Int?
+  telefono      String?
+  observaciones String?
+  status        String    @default("activo") // activo | inactivo
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
 
   @@index([tenantId, status])
   @@index([tenantId, nombre])
@@ -4967,43 +4967,43 @@ model CacaoProducer {
 
 /// Lote de acopio de cacao + control de calidad (prueba de corte) + liquidación.
 model CacaoLote {
-  id                 String    @id @default(cuid())
-  tenantId           String
-  loteCode           String    // L-2026-001
-  productorId        String?   // ref. app-level a CacaoProducer
-  productorNombre    String?   // snapshot del nombre al momento del acopio
-  fecha              DateTime  @default(now())
+  id              String   @id @default(cuid())
+  tenantId        String
+  loteCode        String // L-2026-001
+  productorId     String? // ref. app-level a CacaoProducer
+  productorNombre String? // snapshot del nombre al momento del acopio
+  fecha           DateTime @default(now())
 
-  variedad           String?
-  tipoGrano          String    @default("seco") // humedo | seco
-  pesoKg             Decimal   @db.Decimal(12, 2)
-  humedadPct         Decimal?  @db.Decimal(5, 2) // NTP-ISO 2291; meta ≤ 7%
+  variedad   String?
+  tipoGrano  String   @default("seco") // humedo | seco
+  pesoKg     Decimal  @db.Decimal(12, 2)
+  humedadPct Decimal? @db.Decimal(5, 2) // NTP-ISO 2291; meta ≤ 7%
 
   // Liquidación al productor
-  precioPorKg        Decimal?  @db.Decimal(10, 2)
-  premioPorKg        Decimal?  @db.Decimal(10, 2) // premio por calidad / fino de aroma
-  totalPagado        Decimal?  @db.Decimal(14, 2) // (precio + premio) × pesoKg
+  precioPorKg Decimal? @db.Decimal(10, 2)
+  premioPorKg Decimal? @db.Decimal(10, 2) // premio por calidad / fino de aroma
+  totalPagado Decimal? @db.Decimal(14, 2) // (precio + premio) × pesoKg
 
   // Prueba de corte (NTP-ISO 1114) — % sobre granos evaluados
-  cutGranos          Int?      // n° de granos evaluados
-  pctBienFermentado  Decimal?  @db.Decimal(5, 2) // marrón
-  pctVioleta         Decimal?  @db.Decimal(5, 2) // parcialmente fermentado
-  pctPizarroso       Decimal?  @db.Decimal(5, 2) // slaty / no fermentado
-  pctMohoso          Decimal?  @db.Decimal(5, 2) // moldy
+  cutGranos          Int? // n° de granos evaluados
+  pctBienFermentado  Decimal? @db.Decimal(5, 2) // marrón
+  pctVioleta         Decimal? @db.Decimal(5, 2) // parcialmente fermentado
+  pctPizarroso       Decimal? @db.Decimal(5, 2) // slaty / no fermentado
+  pctMohoso          Decimal? @db.Decimal(5, 2) // moldy
   granosPor100g      Int?
-  pctCascara         Decimal?  @db.Decimal(5, 2)
-  pctImpurezas       Decimal?  @db.Decimal(5, 2)
-  indiceFermentacion Decimal?  @db.Decimal(5, 2) // computado
-  grado              String?   // computado: I | II | fuera_norma
+  pctCascara         Decimal? @db.Decimal(5, 2)
+  pctImpurezas       Decimal? @db.Decimal(5, 2)
+  indiceFermentacion Decimal? @db.Decimal(5, 2) // computado
+  grado              String? // computado: I | II | fuera_norma
 
-  destino            String?
-  observaciones      String?
-  status             String    @default("registrado") // registrado | anulado
-  annulledReason     String?
-  createdBy          String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
+  destino        String?
+  observaciones  String?
+  status         String    @default("registrado") // registrado | anulado
+  annulledReason String?
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   @@index([tenantId, fecha(sort: Desc)])
   @@index([tenantId, productorId])
@@ -5014,37 +5014,37 @@ model CacaoLote {
 /// Beneficio (post-cosecha) de un lote: fermentación + secado (ADR-128 v2).
 /// Determinante de la calidad/fino de aroma. NTP 208.040 buenas prácticas.
 model CacaoBeneficio {
-  id                String    @id @default(cuid())
-  tenantId          String
-  loteId            String?   // ref. app-level a CacaoLote
-  loteCode          String?   // snapshot
+  id       String  @id @default(cuid())
+  tenantId String
+  loteId   String? // ref. app-level a CacaoLote
+  loteCode String? // snapshot
 
   // Fermentación
-  fermInicio        DateTime?
-  fermDias          Int?      // días en fermentación (típico 5-7)
-  fermVolteos       Int?      // n° de volteos
-  fermTempMaxC      Decimal?  @db.Decimal(5, 2) // temperatura máxima alcanzada
-  tipoFermentador   String?   // cajon | saco | monton | tina
+  fermInicio      DateTime?
+  fermDias        Int? // días en fermentación (típico 5-7)
+  fermVolteos     Int? // n° de volteos
+  fermTempMaxC    Decimal?  @db.Decimal(5, 2) // temperatura máxima alcanzada
+  tipoFermentador String? // cajon | saco | monton | tina
 
   // Secado
-  secInicio         DateTime?
-  secDias           Int?
-  metodoSecado      String?   // solar | tunel | mecanico
-  humedadInicial    Decimal?  @db.Decimal(5, 2)
-  humedadFinal      Decimal?  @db.Decimal(5, 2) // meta ≤ 7% (NTP 208.040)
+  secInicio      DateTime?
+  secDias        Int?
+  metodoSecado   String? // solar | tunel | mecanico
+  humedadInicial Decimal?  @db.Decimal(5, 2)
+  humedadFinal   Decimal?  @db.Decimal(5, 2) // meta ≤ 7% (NTP 208.040)
 
   // Rendimiento (merma húmedo→seco, típico ~60%)
-  pesoHumedoKg      Decimal?  @db.Decimal(12, 2)
-  pesoSecoKg        Decimal?  @db.Decimal(12, 2)
-  mermaPct          Decimal?  @db.Decimal(5, 2) // computado
+  pesoHumedoKg Decimal? @db.Decimal(12, 2)
+  pesoSecoKg   Decimal? @db.Decimal(12, 2)
+  mermaPct     Decimal? @db.Decimal(5, 2) // computado
 
-  estado            String    @default("fermentando") // fermentando | secando | terminado
-  observaciones     String?
-  status            String    @default("registrado") // registrado | anulado
-  createdBy         String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  estado        String    @default("fermentando") // fermentando | secando | terminado
+  observaciones String?
+  status        String    @default("registrado") // registrado | anulado
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
 
   @@index([tenantId, estado])
   @@index([tenantId, loteId])
@@ -5056,16 +5056,16 @@ model CacaoBeneficio {
 model CacaoVenta {
   id              String    @id @default(cuid())
   tenantId        String
-  ventaCode       String    // V-2026-001 (correlativo)
+  ventaCode       String // V-2026-001 (correlativo)
   fecha           DateTime  @default(now())
   compradorNombre String?
-  canal           String?   // cooperativa | exportador | mercado_local | otro
+  canal           String? // cooperativa | exportador | mercado_local | otro
   pesoKg          Decimal   @db.Decimal(12, 2) // kg seco vendido
   moneda          String    @default("PEN") // PEN | USD
   precioPorKg     Decimal?  @db.Decimal(10, 2) // en `moneda`
-  tipoCambio      Decimal?  @db.Decimal(8, 4)  // USD→PEN si moneda=USD
+  tipoCambio      Decimal?  @db.Decimal(8, 4) // USD→PEN si moneda=USD
   totalPen        Decimal?  @db.Decimal(14, 2) // computado en soles
-  esFob           Boolean   @default(false)    // exportación FOB
+  esFob           Boolean   @default(false) // exportación FOB
   variedad        String?
   grado           String?
   observaciones   String?
@@ -5079,4 +5079,52 @@ model CacaoVenta {
   @@index([tenantId, fecha(sort: Desc)])
   @@index([tenantId, status])
   @@index([deletedAt])
+}
+
+/// Libro de Reclamaciones Virtual (ADR-129). Platform-level: el Libro es de la
+/// plataforma, no de un tenant (endpoint público sin tenantId). `numero` =
+/// correlativo legal (D.S. 011-2011-PCM); `codigo` = LR-AAAA-NNNNNN derivado.
+model Reclamo {
+  id     String  @id @default(cuid())
+  numero Int     @unique @default(autoincrement())
+  codigo String? @unique
+
+  // ── Identificación del consumidor ──
+  nombre          String
+  tipoDocumento   String
+  numeroDocumento String
+  domicilio       String
+  telefono        String
+  email           String
+  esMenor         Boolean @default(false)
+  apoderado       String?
+
+  // ── Identificación del bien contratado ──
+  tipoBien        String
+  montoReclamado  Decimal? @db.Decimal(12, 2)
+  descripcionBien String
+  numeroPedido    String?
+  tienda          String?
+  tenantId        String?
+
+  // ── Detalle de la reclamación ──
+  tipoReclamo      String
+  detalle          String
+  pedidoConsumidor String
+
+  // ── Gestión / respuesta del proveedor ──
+  estado       String    @default("pendiente")
+  respuesta    String?
+  respondidoEn DateTime?
+
+  // ── Auditoría / retención (>= 2 años) ──
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt(sort: Desc)])
+  @@index([estado])
+  @@index([email])
+  @@index([tenantId])
 }
