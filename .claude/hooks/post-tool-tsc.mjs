@@ -108,9 +108,13 @@ if (currentTs !== myTs) {
 // Cierra el ciclo "3+ tsc apilados → mem-guard bloquea Edit/Bash" que se daba
 // cuando varios edits llegaban con >3s de separación y los tsc previos no
 // terminaban. Match estricto por tsBuildInfo para no tocar tsc de otros proyectos.
+// 2026-06-02: regex anterior sobre-escapado (\\\\$&) no matcheaba el path →
+// los tsc se apilaban igual (3 a la vez en el log). pkill -f con el path del
+// tsBuildInfo es simple y confiable. NO se auto-mata: el proceso de este hook
+// es "node post-tool-tsc.mjs", no contiene "tsc --noEmit", y aun no lanzo tsc.
 try {
   execSync(
-    `pgrep -af "tsc --noEmit.*${tsBuildInfo.replace(/[.*+?^${}()|[\]\\]/g, "\\\\$&")}" | awk '{print $1}' | xargs -r kill -9 2>/dev/null || true`,
+    `pkill -9 -f "tsc --noEmit --incremental --tsBuildInfoFile ${tsBuildInfo}" 2>/dev/null || true`,
     { shell: "/bin/bash", timeout: 2000, stdio: "ignore" },
   );
 } catch {}

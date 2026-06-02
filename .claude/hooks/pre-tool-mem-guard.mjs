@@ -24,9 +24,13 @@ import { execSync } from "node:child_process";
 import { dirname } from "node:path";
 
 const MIN_FREE_MB = 500;
-const MAX_TSC = 2;
-const MAX_ORPHAN_CHROMIUM = 3;
-const MAX_LOAD_1MIN = 14;
+const MAX_TSC = 3;
+const MAX_ORPHAN_CHROMIUM = 4;
+// 2026-06-02: subido 14 → 28 (aprobado por Brandon). La maquina tiene 12 nucleos
+// (nproc=12); load 14 es solo ~1.2x cores = ocupada, NO saturada. Bloqueaba 9
+// veces/dia abortando tools normales (el "congelamiento" reportado). El freeze
+// real de WSL es por RAM (guardada en MIN_FREE_MB), no por load de CPU. 28 ≈ 2.3x cores.
+const MAX_LOAD_1MIN = 28;
 
 function readInput() {
   try { return JSON.parse(readFileSync(0, "utf8")); } catch { return null; }
