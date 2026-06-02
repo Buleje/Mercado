@@ -59,14 +59,6 @@ const TodayHub = dynamic(
   { ssr: false, loading: DashboardLoading },
 );
 
-// Brandon 2026-05-27 — "Inicio / Principal": command center con mini-resúmenes
-// financieros (ingresos/gastos/ganancia) + accesos directos a módulos, en
-// marco de computadora (estética del mockup de /negocios adaptada a desktop).
-const VendorCommandCenter = dynamic(
-  () => import("@/components/admin/inicio/VendorCommandCenter"),
-  { ssr: false, loading: DashboardLoading },
-);
-
 // ADR-066 Ola M — InicioDashboardV2 con compound charts + multi-signal KPIs
 const InicioDashboardV2 = dynamic(
   () => import("@/components/admin/inicio/InicioDashboardV2"),
@@ -253,17 +245,20 @@ export default function VendorDashboardModule() {
       <AdminTabBar tabs={availableTabs} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
-            {/* Inicio / Principal — lo más importante de un vistazo:
-                mini-resúmenes financieros + accesos directos a módulos. */}
-            <VendorCommandCenter />
-            {/* Briefing accionable del día (reemplaza el modal bloqueante).
-                Se auto-oculta si no hay nada que resolver. */}
-            <MorningBriefingCard />
-            {/* Hub "Hoy" — saludo dinámico + hero KPI scoped al rango activo.
-                hideAlerts=true porque InicioDashboardV2 las renderea side-by-side
-                con la Meta del mes (v2 mayo 2026). */}
+            {/* Brandon 2026-06-01 (dedup Resumen): se quitó VendorCommandCenter
+                de acá — duplicaba el saludo ("Buenas noches") y las cifras de
+                ventas (INGRESOS/GANANCIA) que ya muestran TodayHub e
+                InicioDashboardV2. Flujo limpio: hero (un solo saludo + KPIs) →
+                accionable → analítica profunda, sin repetir "ventas". */}
+            {/* 1) Hero "Hoy" — saludo dinámico + hero KPI multi-señal del rango.
+                   hideAlerts=true porque InicioDashboardV2 las renderea junto a
+                   la Meta del mes. Es el ÚNICO saludo del Resumen. */}
             <TodayHub dateRange={dateRange} hideAlerts />
-            {/* Dashboard denso con compound charts + multi-signal KPIs scoped al rango */}
+            {/* 2) Briefing accionable del día — se auto-oculta si no hay nada
+                   que resolver (pedidos pendientes, fiados, stock). */}
+            <MorningBriefingCard />
+            {/* 3) Dashboard denso: meta del mes + compound charts. Su hero se
+                   removió para complementar a TodayHub (no duplica KPIs). */}
             <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} />
           </div>
         )}
