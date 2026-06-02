@@ -28,16 +28,26 @@ if (process.env.BSM_ALLOW_INSTALL === "1") process.exit(0);
 const BLOCK_PATTERNS = [
   // ── Filesystem destructivo ──────────────────────────────────────────
   {
-    pattern: /\brm\s+(-[rRfF]+|--recursive|--force)\s+(?!-)/,
-    label: "rm -rf",
+    // Bloquea SOLO si hay flag recursivo (-r/-R/--recursive). `rm -f archivo`
+    // (force sin recursión sobre un archivo) es seguro y NO se bloquea.
+    pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/,
+    label: "rm -rf (recursivo)",
     severity: "critical",
     reason: "Borrado recursivo peligroso. Usá `git rm` o `rimraf` si es para node_modules."
   },
   {
-    pattern: /\brm\s+(-[rRfF]+\s*){1,}.*\/[^\/]*$/,
-    label: "rm -rf path absoluto",
+    // rm recursivo apuntando a un path (absoluto o anidado con `/`).
+    pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b.*\/[^\/]*$/,
+    label: "rm -rf path",
     severity: "critical",
-    reason: "rm con path absoluto. Validá dos veces antes."
+    reason: "rm recursivo sobre un path. Validá dos veces antes."
+  },
+  {
+    // rm --no-preserve-root o rm forzado sobre la raíz / o $HOME.
+    pattern: /\brm\b.*(--no-preserve-root|\s\/(?:\s|$)|\s~(?:\s|$|\/))/,
+    label: "rm sobre / o ~",
+    severity: "critical",
+    reason: "rm apuntando a la raíz o home. Bloqueado siempre."
   },
   {
     pattern: /\bsudo\b/,

@@ -52,7 +52,7 @@
         ]
       },
       {
-        "matcher": "Skill|Bash",
+        "matcher": "Skill",
         "hooks": [
           {
             "type": "command",
@@ -114,7 +114,9 @@
           },
           {
             "type": "command",
-            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-rubric-check.mjs"
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-rubric-check.mjs",
+            "timeout": 15,
+            "async": true
           }
         ]
       },

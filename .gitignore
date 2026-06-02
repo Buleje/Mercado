@@ -206,3 +206,15 @@ docs/security/vercel-env-backups/
 # Skill telemetry (runtime, no commitear)
 .claude/.skill-usage.jsonl
 .claude/.skill-usage.jsonl.1
+
+# Claude Code — artefactos runtime/zombie (audit 2026-06-02)
+/.claude/_archive-swarm/
+/.claude/hub-metrics/
+/.claude/agents-dashboard/
+/.claude/learnings/
+/.claude/agent-memory/
+/.claude/evolution-log.json
+/.claude/a2a-state.json
+/.claude/*.bak
+/.claude/skills/**/*.bak
+/.claude/hooks/**/*.bak
