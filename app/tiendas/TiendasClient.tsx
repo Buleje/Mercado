@@ -30,7 +30,10 @@ import { BRAND_GEO } from "@/lib/geo";
 // SearchAutocomplete + MarketplaceStoresView declarados como dynamic() abajo
 // (después del `import dynamic from "next/dynamic"`) para reducir initial
 // bundle y permitir streaming del listing.
-import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
+import MarketplaceStoresView, {
+  passesChips,
+  type StoreChipFields,
+} from "@/components/marketplace/MarketplaceStoresView";
 import SubcategoryChips from "@/components/marketplace/tiendas/SubcategoryChips";
 import QuickFilterToggle from "@/components/marketplace/tiendas/QuickFilterToggle";
 import { useTiendasUrlSync } from "./use-tiendas-url-sync";
@@ -310,14 +313,18 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
   useEffect(() => { subCategoryIdRef.current = subCategoryId; }, [subCategoryId]);
 
   useEffect(() => {
-    const ctrl = new AbortController();
+    // Flag `cancelled` en vez de AbortController: evita el stale-overwrite al
+    // cambiar de categoría SIN generar el ruido "Uncaught AbortError" que React
+    // 19 + Fast Refresh loguea al abortar fetches en el cleanup.
+    let cancelled = false;
     const url =
       category === "todos"
         ? "/api/marketplace/subcategories"
         : `/api/marketplace/subcategories?category=${encodeURIComponent(category)}`;
-    fetch(url, { signal: ctrl.signal })
+    fetch(url)
       .then((r) => (r.ok ? r.json() : { subcategories: [] }))
       .then((j) => {
+        if (cancelled) return;
         const all = (j.subcategories ?? []) as SubCategoryOption[];
         const subs = all.filter(
           (s) =>
@@ -331,9 +338,11 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
         }
       })
       .catch(() => {
-        if (!ctrl.signal.aborted) setSubcategories([]);
+        if (!cancelled) setSubcategories([]);
       });
-    return () => ctrl.abort();
+    return () => {
+      cancelled = true;
+    };
   }, [category]);
 
   const activeSubcategory = subCategoryId
@@ -421,6 +430,20 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
         setGeoActive(false);
         setUserCoords(null);
       }
+    },
+    [setGeoActive, setUserCoords],
+  );
+
+  // audit #5 (Brandon 2026-05-31): elegir un orden del dropdown toma el control
+  // del listado → apagamos el geo-sort. Antes geoActive quedaba prendido y el
+  // grid mostraba el sort elegido (ej. "Mejor rating") pero el aria-live seguía
+  // anunciando "Ordenado por cercanía" (estado contradictorio). Si el cliente
+  // quiere cercanía, tiene la opción "Más cerca" en el mismo dropdown.
+  const handleSortChange = useCallback(
+    (next: StoresSortKey) => {
+      setSortKey(next);
+      setGeoActive(false);
+      setUserCoords(null);
     },
     [setGeoActive, setUserCoords],
   );
@@ -668,16 +691,31 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
   // cliente que veía "CERRADA AHORA" justo en la primera fila. Ahora se
   // priorizan las abiertas (sortBy aplicado) y las cerradas van al fondo.
   const finalStores = useMemo(() => {
-    const opened: typeof subcategoryFiltered = [];
-    const closed: typeof subcategoryFiltered = [];
-    for (const s of subcategoryFiltered) {
+    // audit #4 (Brandon 2026-05-31): aplicar los quick-filter chips ACÁ además
+    // de dentro de MarketplaceStoresView. Antes el filtrado por chips vivía solo
+    // en el grid → el contador del header ("· 3") usaba la lista sin chips y
+    // quedaba desincronizado con "Mostrando 1 tienda" del grid. Ahora ambos
+    // derivan del mismo set (el grid re-filtra idempotente). Misma fuente de
+    // verdad para el contador y el listado.
+    const base =
+      activeChips.size === 0
+        ? subcategoryFiltered
+        : subcategoryFiltered.filter((s) =>
+            passesChips(
+              s as MarketplaceStore & Partial<StoreChipFields>,
+              activeChips,
+            ),
+          );
+    const opened: typeof base = [];
+    const closed: typeof base = [];
+    for (const s of base) {
       const isClosed = (s as { isOpenNow?: boolean }).isOpenNow === false;
       const onVacation = (s as { vacationMode?: boolean }).vacationMode === true;
       if (isClosed || onVacation) closed.push(s);
       else opened.push(s);
     }
     return [...opened, ...closed];
-  }, [subcategoryFiltered]);
+  }, [subcategoryFiltered, activeChips]);
 
   // Brandon 2026-05-18 perf P2 #10: antes `stores.some(...)` se evaluaba
   // inline en JSX (en cada render). Ahora memoizado contra `stores` solo.
@@ -717,7 +755,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
   // consciente: claridad UX > -50kb JS mobile.
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div className="min-h-screen overflow-x-clip bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="tiendas_directorio" />
 
       {/* ── Sticky subcategory bar (mobile only) ──
@@ -991,7 +1029,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
         {/* ── MOBILE TOP STACK (Rappi-style) — sin padding extra
              1. LocationBar (1 línea, tap → modal customer profile)
              2. WelcomeBanner (compacto, solo si NO logueado) */}
-        <div className="sm:hidden flex flex-col gap-2 mb-3">
+        <div className="sm:hidden flex flex-col gap-1.5 mb-2">
           <TiendasLocationBar />
           <TiendasWelcomeBanner />
         </div>
@@ -1041,7 +1079,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
              En mobile/tablet: flujo inline idéntico al anterior (mb-4). */}
         <aside
           aria-label="Filtros de tiendas"
-          className="space-y-4 mb-4 lg:mb-0 lg:sticky lg:top-20 lg:self-start lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-soft)] lg:p-5 lg:shadow-sm"
+          className="space-y-3 mb-3 lg:space-y-4 lg:mb-0 lg:sticky lg:top-20 lg:self-start lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-soft)] lg:p-5 lg:shadow-sm"
         >
           {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
               filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
@@ -1084,15 +1122,16 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
               - Sin justify-end (rompía mobile: el primer chip quedaba oculto).
               - Mobile: chips h-9 compactos, scroll-x natural desde la izquierda.
               - Desktop: tamaño normal con flex-wrap, sin scroll. */}
-          {/* ── MOBILE/TABLET: fila compacta con scroll (orden + 4+ + drawer) ── */}
-          <div className="flex lg:hidden items-center gap-2 sm:gap-3 mb-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
-            <div className="shrink-0 [scroll-snap-align:start]">
-              <span className="sm:hidden">
-                <StoresSortSelector value={sortKey} onChange={setSortKey} compact />
-              </span>
-              <span className="hidden sm:inline-flex">
-                <StoresSortSelector value={sortKey} onChange={setSortKey} />
-              </span>
+          {/* ── MOBILE/TABLET: fila compacta con scroll (orden + 4+ + abierto + drawer) ──
+               Brandon 2026-05-31: gap más ajustado y sin margen extra (lo da el
+               space-y del aside) → menos aire entre filtros y subcategorías. */}
+          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
+            {/* Sort "Relevancia" — OCULTO en celular (Brandon 2026-05-31): el
+                orden vive dentro del drawer "Filtros" (extraSort) para que la
+                fila quede limpia → 4+ · Abierto · Filtros. Visible desde sm
+                (tablet) donde hay más ancho. */}
+            <div className="hidden sm:flex shrink-0 [scroll-snap-align:start]">
+              <StoresSortSelector value={sortKey} onChange={handleSortChange} />
             </div>
             <QuickFilterToggle
               active={activeChips.has("top_rated")}
@@ -1126,7 +1165,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
                 onZoneChange={setZone}
                 extraSort={{
                   value: sortKey,
-                  onChange: (v) => setSortKey(v as StoresSortKey),
+                  onChange: (v) => handleSortChange(v as StoresSortKey),
                   options: STORES_SORT_OPTIONS,
                 }}
                 onClearAll={resetAllFilters}
@@ -1143,7 +1182,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
                 Ordenar
               </p>
-              <StoresSortSelector value={sortKey} onChange={setSortKey} className="w-full justify-between" />
+              <StoresSortSelector value={sortKey} onChange={handleSortChange} className="w-full justify-between" />
             </div>
             {/* CALIFICACIÓN */}
             <div className="border-t border-[var(--rule-soft)] pt-3">

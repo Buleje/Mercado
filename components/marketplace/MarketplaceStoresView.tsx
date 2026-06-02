@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   MapPin,
   Star,
+  Award,
   Package,
   LocateFixed,
   ShieldCheck,
@@ -15,6 +16,7 @@ import {
   Bike,
   ShoppingBag,
   ArrowUpRight,
+  Tag,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -220,6 +222,33 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   // ── Overlay sobre el cover: rating pill + promo + vacaciones ──
   const coverOverlay = (
     <>
+      {/* Nivel (superadmin): Destacada / Premium — icon-only, inline en el
+          cluster top-left del cover. Brandon 2026-05-31: antes flotaba
+          top-right y chocaba con el botón Seguir; ahora fluye junto al rating. */}
+      {(store.displayTier === "featured" || store.displayTier === "premium") && (
+        <span
+          className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] p-1.5 text-white shadow-sm"
+          title={store.displayTier === "premium" ? "Tienda premium" : "Tienda destacada"}
+          aria-label={store.displayTier === "premium" ? "Tienda premium" : "Tienda destacada"}
+        >
+          {store.displayTier === "premium" ? (
+            <Award className="h-3 w-3" strokeWidth={2.75} aria-hidden="true" />
+          ) : (
+            <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+          )}
+        </span>
+      )}
+      {/* Verificada — icon-only, mismo cluster (antes flotaba top-left y se
+          montaba sobre el rating cuando ambos existían). */}
+      {store.verified && (
+        <span
+          className="inline-flex items-center justify-center rounded-full bg-[var(--data-info-500,#0ea5e9)] p-1.5 text-white shadow-sm"
+          title="Tienda verificada por Buleje"
+          aria-label="Tienda verificada por Buleje"
+        >
+          <ShieldCheck className="h-3 w-3" strokeWidth={2.75} aria-hidden="true" />
+        </span>
+      )}
       {store.rating > 0 && (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/90 backdrop-blur-sm shadow-sm text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)]">
           <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
@@ -232,8 +261,13 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </span>
       )}
       {store.activePromos != null && store.activePromos > 0 && (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-500 text-white text-[length:var(--ts-2xs)] font-extrabold shadow-sm">
-          {store.activePromos} {store.activePromos === 1 ? "oferta" : "ofertas"}
+        <span
+          className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[length:var(--ts-2xs)] font-extrabold shadow-sm tabular-nums"
+          title={`${store.activePromos} ${store.activePromos === 1 ? "oferta" : "ofertas"}`}
+          aria-label={`${store.activePromos} ${store.activePromos === 1 ? "oferta" : "ofertas"}`}
+        >
+          <Tag className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden="true" />
+          {store.activePromos}
         </span>
       )}
       {lastOrder && (
@@ -243,9 +277,12 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </span>
       )}
       {store.vacationMode && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/90 backdrop-blur-sm text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-warning-500)] shadow-sm">
-          <Plane className="h-2.5 w-2.5" strokeWidth={2} aria-hidden="true" />
-          Vacaciones
+        <span
+          className="inline-flex items-center justify-center p-1 rounded-full bg-white/95 dark:bg-gray-950/90 backdrop-blur-sm text-[var(--data-warning-500)] shadow-sm"
+          title="De vacaciones"
+          aria-label="De vacaciones"
+        >
+          <Plane className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
         </span>
       )}
     </>
@@ -291,9 +328,12 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
         <div className="flex items-center gap-1.5">
           {store.freeDelivery && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
-              <Bike className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden="true" />
-              Envío gratis
+            <span
+              className="inline-flex items-center justify-center p-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)]"
+              title="Envío gratis"
+              aria-label="Envío gratis"
+            >
+              <Bike className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
             </span>
           )}
           {store.minOrderAmount != null && store.minOrderAmount > 0 && (
@@ -320,23 +360,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     >
       {/* Wrapper interno para que el anillo teal envuelva la card en Destacada */}
       <div className={isFeatured ? "rounded-[14px] overflow-hidden bg-[var(--surface-raised)]" : "contents"}>
-      {/* Badge de nivel (superadmin): Destacada / Premium. z-20 sobre overlays. */}
-      {(store.displayTier === "featured" || store.displayTier === "premium") && (
-        <span className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-md">
-          <Star className="h-3 w-3 fill-current" aria-hidden="true" />
-          {store.displayTier === "premium" ? "Premium" : "Destacada"}
-        </span>
-      )}
-      {/* Badge Verificada (beneficio superadmin) — top-left, no choca con nivel. */}
-      {store.verified && (
-        <span
-          className="absolute top-2 left-2 z-20 inline-flex items-center gap-1 rounded-full bg-[var(--data-info-500,#0ea5e9)] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-md"
-          title="Tienda verificada por Buleje"
-        >
-          <ShieldCheck className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
-          Verificada
-        </span>
-      )}
+      {/* Badges de nivel + verificada movidos al cluster `coverOverlay`
+          (top-left, icon-only) — Brandon 2026-05-31. Antes flotaban sueltos y
+          el de nivel chocaba con el botón Seguir (top-right). */}
 
       {/* Overlay status (cerrado / construcción) — sobrepuesto al canonical
           card limitado al área del cover (aspect-[16/9] mobile, [4/3] desktop)
@@ -467,7 +493,7 @@ interface MarketplaceStoresViewProps {
  * Returns true when the store passes every active quick-filter chip.
  * Fields that don't exist on a given store are skipped (tolerant).
  */
-function passesChips(
+export function passesChips(
   store: MarketplaceStore & Partial<StoreChipFields>,
   chips: Set<QuickChipId>,
 ): boolean {
@@ -476,6 +502,15 @@ function passesChips(
   for (const chip of chips) {
     switch (chip) {
       case "open_now": {
+        // Brandon 2026-05-31: preferir el flag `isOpenNow` derivado server-side
+        // de businessHours (getStoreOpenStatus). Es la fuente real — sin esto el
+        // toggle "Abierto ahora" no filtraba NADA porque las stores de /tiendas
+        // no traen el array legacy `openHours`. El bloque de abajo queda como
+        // fallback para consumers que sí lo provean.
+        if (typeof (store as MarketplaceStore).isOpenNow === "boolean") {
+          if (!(store as MarketplaceStore).isOpenNow) return false;
+          break;
+        }
         // Only filter if the store carries openHours data.
         // PENTEST 2026-05-18 Fase 2 P0 #28: openHours puede venir como
         // Array<DayHours> O como Record<string, unknown> (JSONB del backend
@@ -564,7 +599,7 @@ interface DayHours {
   closeMin: number;
 }
 
-interface StoreChipFields {
+export interface StoreChipFields {
   openHours: DayHours[] | null;
   deliveryFee: number;
   freeDelivery: boolean;
@@ -796,6 +831,8 @@ export default function MarketplaceStoresView({
                     rating={store.rating}
                     reviewCount={store.reviewCount}
                     verified={store.verified}
+                    isOpenNow={store.isOpenNow}
+                    nextOpeningLabel={formatNextOpening(store.nextOpeningAt)}
                     products={premiumProducts[store.slug] ?? []}
                     onQuickView={
                       (premiumProducts[store.slug]?.length ?? 0) > 0

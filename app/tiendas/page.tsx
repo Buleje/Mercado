@@ -7,15 +7,6 @@ import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import { BRAND_GEO } from "@/lib/geo";
-import {
-  Bike,
-  ShoppingCart,
-  UtensilsCrossed,
-  Pill,
-  Store,
-  Croissant,
-  Wrench,
-} from "@buleje/design-system/icons";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -40,13 +31,12 @@ export const metadata: Metadata = {
   // 2026-05-28 audit: title antes 64 chars (truncado en mobile SERP).
   // Ahora 53 chars — keyword "Bodegas en Pucallpa" + intent "delivery" + brand.
   title: `Tiendas en ${BRAND_GEO.city} · Delivery Yape`,
-  // Brandon 2026-05-20 v2: 135 chars (target 70-155). Antes 159 chars
-  // dispara warning de SEO auditors (Google trunca a ~155). Mantiene las
-  // keywords clave (bodegas, farmacias, restaurantes, Pucallpa, delivery,
-  // Yape, Plin) + cierre con valor agregado ("tu bodega del barrio, ahora
-  // online" → conecta con la audiencia local).
+  // Brandon 2026-06-01 SEO: 144 chars (target 70-155). El nombre largo de la
+  // ciudad ("Ciudad Constitución", 19 chars) había empujado la versión previa
+  // a 159 → se truncaba en SERP. Saqué "mercados" y acorté el cierre. Mantiene
+  // keywords clave (bodegas, restaurantes, farmacias, delivery, Yape, Plin).
   description:
-    `Comprá en bodegas, restaurantes, mercados y farmacias de ${BRAND_GEO.city} con delivery rápido. Paga con Yape, Plin o efectivo. Todo el barrio, ahora online.`,
+    `Comprá en bodegas, restaurantes y farmacias de ${BRAND_GEO.city} con delivery rápido. Paga con Yape, Plin o efectivo. Tu barrio, ahora online.`,
   keywords: [
     `bodegas ${BRAND_GEO.city}`,
     `restaurantes ${BRAND_GEO.city}`,
@@ -328,61 +318,6 @@ export default async function TiendasPage() {
         {`Tiendas y bodegas en ${BRAND_GEO.city} con delivery — Buleje Marketplace`}
       </h1>
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
-
-      {/* SEO + categorías — sección visible indexable (audit 2026-05-31, rediseño
-          visual 2026-05-31): de un muro de texto gris text-sm a un bloque con
-          jerarquía + tiles de categoría con icono. 100% server-rendered → sigue
-          siendo indexable y sin coste JS. La FAQ se movió a la home (/). */}
-      <section
-        aria-labelledby="tiendas-seo-heading"
-        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-8 border-t border-[var(--rule-soft)]"
-      >
-        <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-          <Bike className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          Delivery local
-        </p>
-        <h2
-          id="tiendas-seo-heading"
-          className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] mb-4 max-w-2xl"
-        >
-          Delivery de bodegas, restaurantes y farmacias en {BRAND_GEO.city}
-        </h2>
-        <div className="max-w-3xl text-base leading-relaxed text-[var(--text-secondary)]">
-          <p>
-            Buleje reúne las bodegas, minimarkets, restaurantes, pizzerías y
-            farmacias de {BRAND_GEO.city} ({BRAND_GEO.province}, {BRAND_GEO.region})
-            en un solo lugar. Pedís online desde tu celular y la tienda recibe tu
-            pedido al instante por WhatsApp, lo prepara y te lo lleva a tu puerta —
-            normalmente en 25 a 35 minutos según tu zona. Pagás con Yape, Plin,
-            efectivo o tarjeta al recibir, sin adelantar nada.
-          </p>
-        </div>
-
-        {/* Tiles de categoría — visual, on-brand, mismo patrón de tile que la home. */}
-        <ul className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {[
-            { icon: ShoppingCart, label: "Bodegas y minimarkets" },
-            { icon: UtensilsCrossed, label: "Restaurantes y pizzerías" },
-            { icon: Pill, label: "Farmacias y boticas" },
-            { icon: Store, label: "Mercados" },
-            { icon: Croissant, label: "Panaderías" },
-            { icon: Wrench, label: "Ferreterías" },
-          ].map(({ icon: Icon, label }) => (
-            <li
-              key={label}
-              className="flex flex-col items-start gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
-              </span>
-              <span className="text-sm font-bold leading-snug text-[var(--text-primary)]">
-                {label}
-              </span>
-            </li>
-          ))}
-        </ul>
-
-      </section>
 
       {/* Trabajá con nosotros — reclutamiento (tiendas/comercios/repartidores),
           mismo componente que la home (single source). Brandon 2026-05-31:
