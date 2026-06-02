@@ -1,103 +1,84 @@
 /**
- * /ayuda — Centro de Ayuda Buleje.
+ * /ayuda — Centro de Ayuda Buleje (completo).
  *
- * Server Component puro (sin "use client" en este archivo).
- * FAQ con details/summary nativo para 0-JS expand/collapse.
- * Ilustraciones DS, tokens DS, 0 emojis, estilo Holded enterprise.
+ * Server Component puro (sin "use client"). FAQ con <details> nativo (0-JS).
+ * Estilo "página de negocio" (igual que /libro-de-reclamaciones y /privacidad):
+ * max-w-7xl, hero + tarjeta de contacto, índice por tema, cards 1px + shadow.
+ * Contenido en lib/help-content.ts (9 temas, ~45 preguntas: clientes, negocios y
+ * repartidores). Contacto real desde lib/legal.ts. SEO: FAQPage + HowTo +
+ * Speakable + BreadcrumbList JSON-LD.
  */
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import {
   MessageCircle,
   Phone,
   Mail,
-  MessageSquare,
   ChevronDown,
+  ChevronRight,
+  Search,
   ShoppingCart,
   CreditCard,
+  Truck,
   User,
   Tag,
   RotateCcw,
   Store,
-  Shield,
-  Info,
-} from "@buleje/design-system/icons";
+  Bike,
+  ShieldCheck,
+  LifeBuoy,
+  Clock,
+  type LucideIcon,
+} from "lucide-react";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { JsonLd } from "@/components/JsonLd";
+import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
 import { generateHowToLD, generateSpeakableLD } from "@/lib/seo/json-ld";
-import {
-  PageTitle,
-  SectionTitle,
-  CardTitle,
-  BodyText,
-  Caption,
-  Kicker,
-} from "@buleje/design-system";
-import { FEATURED_FAQS } from "@/lib/mock-faq";
+import { buildWaLink } from "@/lib/wa-number";
+import { LEGAL } from "@/lib/legal";
+import { HELP_TOPICS, ALL_HELP_FAQS } from "@/lib/help-content";
 
-// Ilustraciones via dynamic para no bloquear SSR con SVG pesado
-const CorazonLatiendo = dynamic(
-  () =>
-    import("@/components/ui-system/illustrations/contextual").then(
-      (m) => m.CorazonLatiendo
-    ),
-  { ssr: true }
-);
-const BodegaAbriendo = dynamic(
-  () =>
-    import("@/components/ui-system/illustrations/contextual").then(
-      (m) => m.BodegaAbriendo
-    ),
-  { ssr: true }
-);
-const PedidoLlegando = dynamic(
-  () =>
-    import("@/components/ui-system/illustrations/empty-states").then(
-      (m) => m.PedidoLlegando
-    ),
-  { ssr: true }
-);
-const DoniaElena = dynamic(
-  () =>
-    import("@/components/ui-system/illustrations/pucallpa-locals").then(
-      (m) => m.DoniaElena
-    ),
-  { ssr: true }
-);
-const MotoRuta = dynamic(
-  () =>
-    import("@/components/ui-system/illustrations/contextual").then(
-      (m) => m.MotoRuta
-    ),
-  { ssr: true }
-);
+const SUPPORT_EMAIL = "contacto@buleje.pe";
+
+const CARD =
+  "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]";
+
+/** Mapa clave-string → componente Lucide (los datos de help-content son puros). */
+const ICONS: Record<string, LucideIcon> = {
+  ShoppingCart,
+  CreditCard,
+  Truck,
+  User,
+  Tag,
+  RotateCcw,
+  Store,
+  Bike,
+  ShieldCheck,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const { buildTenantTitle } = await import("@/lib/store-metadata");
   return {
     ...(await buildTenantTitle(
       "Centro de Ayuda",
-      "Preguntas frecuentes, guías de uso y soporte directo por WhatsApp.",
+      "Guía completa de Buleje: pedidos, pagos, delivery, cuenta, devoluciones, vender en la plataforma, repartidores y soporte por WhatsApp.",
     )),
     alternates: { canonical: "https://www.buleje.pe/ayuda" },
   };
 }
 
-// ─── JSON-LD FAQPage ───────────────────────────────────────────────────────────
+// ─── JSON-LD ───────────────────────────────────────────────────────────────
 const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: FEATURED_FAQS.map((faq) => ({
+  mainEntity: ALL_HELP_FAQS.map((faq) => ({
     "@type": "Question",
-    name: faq.question,
-    acceptedAnswer: { "@type": "Answer", text: faq.answer },
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
   })),
 };
 
-// ─── JSON-LD HowTo (cómo comprar) + Speakable (búsqueda por voz) ───────────────
 const howToJsonLd = generateHowToLD({
   name: "Cómo comprar en Buleje",
   description:
@@ -110,268 +91,148 @@ const howToJsonLd = generateHowToLD({
   ],
 });
 
-// Speakable apunta a las respuestas de las FAQ (clases del bloque FAQ).
 const speakableJsonLd = generateSpeakableLD([".faq-question", ".faq-answer"]);
 
-// ─── Secciones de categorias ───────────────────────────────────────────────────
-const HELP_CATEGORIES = [
-  {
-    icon: ShoppingCart,
-    title: "Pedidos y entrega",
-    description: "Cómo hacer, seguir y cancelar pedidos",
-    articles: 8,
-    illustration: PedidoLlegando,
-    href: "/ayuda#pedidos",
-  },
-  {
-    icon: CreditCard,
-    title: "Pagos",
-    description: "Yape, Plin, efectivo y transferencia",
-    articles: 5,
-    illustration: null,
-    href: "/ayuda#pagos",
-  },
-  {
-    icon: User,
-    title: "Mi cuenta",
-    description: "Perfil, direcciones y puntos de lealtad",
-    articles: 6,
-    illustration: DoniaElena,
-    href: "/ayuda#cuenta",
-  },
-  {
-    icon: Tag,
-    title: "Cupones y promos",
-    description: "Descuentos, referidos y beneficios",
-    articles: 4,
-    illustration: null,
-    href: "/ayuda#cupones",
-  },
-  {
-    icon: RotateCcw,
-    title: "Devoluciones",
-    description: "Cambios y reembolsos paso a paso",
-    articles: 3,
-    illustration: null,
-    href: "/ayuda#devoluciones",
-  },
-  {
-    icon: Store,
-    title: "Tu bodega online",
-    description: "Registro, planes y configuración",
-    articles: 12,
-    illustration: BodegaAbriendo,
-    href: "/negocios",
-  },
-  {
-    icon: Shield,
-    title: "Seguridad",
-    description: "Privacidad y protección de tu cuenta",
-    articles: 4,
-    illustration: null,
-    href: "/privacidad",
-  },
-  {
-    icon: Info,
-    title: "Sobre Buleje",
-    description: "Quiénes somos, misión y valores",
-    articles: 5,
-    illustration: null,
-    href: "/about",
-  },
-] as const;
+// ─── Datos de contacto (reales) ──────────────────────────────────────────────
+const waHelp = buildWaLink(LEGAL.whatsapp, "Hola Buleje, necesito ayuda.");
+const telHref = `tel:${LEGAL.telefono.replace(/\s/g, "")}`;
 
-// ─── Quick actions ─────────────────────────────────────────────────────────────
-const QUICK_ACTIONS = [
-  {
-    icon: MessageCircle,
-    title: "WhatsApp",
-    subtitle: "Respondemos en 5 min",
-    href: "https://wa.me/51900000000?text=Hola%20Buleje%2C%20necesito%20ayuda",
-    external: true,
-    accent: true,
-  },
-  {
-    icon: Phone,
-    title: "Llamar ahora",
-    subtitle: "Lun-Sáb 8am-8pm",
-    href: "tel:+51900000000",
-    external: false,
-    accent: false,
-  },
-  {
-    icon: Mail,
-    title: "Email",
-    subtitle: "Respuesta en 24h",
-    href: "mailto:soporte@buleje.pe",
-    external: false,
-    accent: false,
-  },
-  {
-    icon: MessageSquare,
-    title: "Chat soporte",
-    subtitle: "Próximamente",
-    href: "#",
-    external: false,
-    accent: false,
-  },
+const CONTACT = [
+  { icon: MessageCircle, title: "WhatsApp", sub: "Respondemos en minutos", href: waHelp, external: true },
+  { icon: Phone, title: LEGAL.telefono, sub: "Lun a Sáb, 8am–8pm", href: telHref, external: false },
+  { icon: Mail, title: SUPPORT_EMAIL, sub: "Respuesta en 24h", href: `mailto:${SUPPORT_EMAIL}`, external: false },
 ] as const;
 
 // ─── Componentes ───────────────────────────────────────────────────────────────
-
-function FaqItem({ question, answer }: { question: string; answer: string }) {
+function FaqItem({ q, a }: { q: string; a: string }) {
   return (
-    <details className="group border-b border-[var(--rule-soft)] last:border-0">
-      <summary className="flex cursor-pointer items-center justify-between gap-4 py-4 text-sm font-medium text-[var(--text-primary)] hover:text-[var(--brand-ink)] transition-colors duration-[var(--dur-fast)] list-none select-none">
-        <span className="faq-question">{question}</span>
+    <details className="group rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] transition-colors open:border-[var(--accent)]/30 open:shadow-[var(--shadow-sm)] [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-base font-bold text-[var(--text-primary)] sm:text-lg">
+        <span className="faq-question">{q}</span>
         <ChevronDown
-          className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform duration-[var(--dur-fast)] group-open:rotate-180"
+          className="h-5 w-5 shrink-0 text-[var(--accent)] transition-transform duration-200 group-open:rotate-180"
+          strokeWidth={2.5}
           aria-hidden="true"
         />
       </summary>
-      <div className="faq-answer pb-4 pr-8 text-sm leading-relaxed text-[var(--text-secondary)]">
-        {answer}
-      </div>
+      <p className="faq-answer px-5 pb-5 text-base leading-relaxed text-[var(--text-secondary)]">{a}</p>
     </details>
   );
 }
 
-function CategoryCard({
-  icon: Icon,
-  title,
-  description,
-  articles,
-  href,
-}: (typeof HELP_CATEGORIES)[number]) {
-  return (
-    <Link
-      href={href}
-      className="group flex flex-col gap-3 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition-shadow duration-[var(--dur-fast)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)] focus-visible:ring-offset-2"
-    >
-      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--surface-sunken)]">
-        <Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" />
-      </div>
-      <div>
-        <CardTitle className="mb-1 text-sm">{title}</CardTitle>
-        <BodyText className="text-xs text-[var(--text-secondary)] leading-snug">
-          {description}
-        </BodyText>
-      </div>
-      <Caption className="mt-auto font-medium text-[var(--brand-ink)]">
-        {articles} artículos
-      </Caption>
-    </Link>
-  );
-}
-
 // ─── Page ──────────────────────────────────────────────────────────────────────
-
 export default function AyudaPage() {
   return (
     <>
-      {/* SEO 2026-05-24: FAQ (safeJsonLdStringify), HowTo (featured snippet
-          "cómo comprar") + Speakable (búsqueda por voz / Google Assistant). */}
       <JsonLd data={faqJsonLd} />
       <JsonLd data={howToJsonLd} />
       <JsonLd data={speakableJsonLd} />
       <BreadcrumbSchema
+        visible={false}
         items={[
           { name: "Buleje", url: "https://www.buleje.pe" },
           { name: "Ayuda", url: "https://www.buleje.pe/ayuda" },
         ]}
       />
+
       <main id="main-content" className="bg-[var(--surface-canvas)]">
-        {/* ── Hero ─────────────────────────────────────────────────────── */}
-        <section className="border-b border-[var(--rule-soft)]">
-          <div className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
-            <nav aria-label="Breadcrumb" className="mb-6">
-              <ol className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
-                <li>
-                  <Link href="/" className="hover:text-[var(--text-secondary)] transition-colors">
-                    Inicio
-                  </Link>
-                </li>
-                <li aria-hidden="true">/</li>
-                <li className="text-[var(--text-secondary)] font-medium">Ayuda</li>
-              </ol>
-            </nav>
+        {/* ── Breadcrumb ── */}
+        <div className="border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+          <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
+            <Breadcrumbs items={[{ label: "Centro de Ayuda" }]} />
+          </div>
+        </div>
 
-            <div className="flex items-center justify-between gap-8">
-              <div className="max-w-xl">
-                <Kicker className="mb-3 block">AYUDA · ESTAMOS PARA VOS</Kicker>
-                <PageTitle className="mb-3">
-                  ¿En qué podemos ayudarte?
-                </PageTitle>
-                <BodyText className="mb-8 text-base text-[var(--text-secondary)] leading-relaxed">
-                  Encuentra respuestas rápidas o contáctanos por WhatsApp. Nuestro equipo responde en menos de 5 minutos.
-                </BodyText>
-
-                {/* Search decorativo — sin JS, redirige a buscar */}
-                <Link
-                  href="/buscar"
-                  className="flex w-full max-w-md items-center gap-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm text-[var(--text-tertiary)] transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
-                  aria-label="Buscar en la ayuda"
-                >
-                  <svg
-                    className="h-4 w-4 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 5.25 5.25a7.5 7.5 0 0 0 11.4 11.4z"
-                    />
-                  </svg>
-                  Buscar en la ayuda...
-                </Link>
-              </div>
-
-              {/* Ilustración hero — oculta en mobile */}
-              <div
-                className="hidden shrink-0 text-[var(--text-tertiary)] opacity-70 dark:opacity-50 lg:block"
-                aria-hidden="true"
+        {/* ── Hero (2 columnas) ── */}
+        <section className="relative overflow-hidden border-b border-[var(--rule-soft)] bg-gradient-to-b from-[var(--accent-soft)]/60 to-[var(--surface-raised)]">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[var(--accent)]/10 blur-3xl" />
+          <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-16">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/25 bg-[var(--surface-raised)] px-3 py-1 text-sm font-bold text-[var(--accent)] shadow-[var(--shadow-sm)]">
+                <LifeBuoy className="h-4 w-4" strokeWidth={2.5} />
+                Centro de Ayuda · estamos para vos
+              </span>
+              <h1 className="mt-5 text-4xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-5xl">
+                ¿En qué podemos ayudarte?
+              </h1>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
+                Guías y respuestas para clientes, negocios y repartidores. Si no
+                encuentras lo que buscas, escríbenos por WhatsApp y respondemos en minutos.
+              </p>
+              <Link
+                href="/buscar"
+                className="mt-6 flex w-full max-w-md items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-base text-[var(--text-tertiary)] shadow-[var(--shadow-sm)] transition-colors hover:border-[var(--accent)]/40"
+                aria-label="Buscar en la ayuda"
               >
-                <CorazonLatiendo size={200} />
-              </div>
+                <Search className="h-5 w-5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} aria-hidden="true" />
+                Buscar productos, tiendas o temas…
+              </Link>
             </div>
+
+            {/* Tarjeta de contacto directo */}
+            <aside className="lg:justify-self-end">
+              <div className={`${CARD} w-full overflow-hidden lg:w-[380px]`}>
+                <div className="flex items-center gap-2 bg-[var(--accent)] px-5 py-4 text-base font-extrabold text-white">
+                  <MessageCircle className="h-5 w-5" strokeWidth={2.25} /> Contacto directo
+                </div>
+                <div className="divide-y divide-[var(--rule-soft)]">
+                  {CONTACT.map(({ icon: Icon, title, sub, href, external }) =>
+                    href ? (
+                      <a
+                        key={title}
+                        href={href}
+                        {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                        className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-[var(--accent-soft)]"
+                      >
+                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                          <Icon className="h-5 w-5" strokeWidth={2.25} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-base font-bold text-[var(--text-primary)]">{title}</span>
+                          <span className="block text-sm text-[var(--text-tertiary)]">{sub}</span>
+                        </span>
+                        <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2.5} aria-hidden="true" />
+                      </a>
+                    ) : null,
+                  )}
+                </div>
+              </div>
+            </aside>
           </div>
         </section>
 
-        {/* ── Quick actions ─────────────────────────────────────────────── */}
+        {/* ── Categorías (jump links) ── */}
         <section className="border-b border-[var(--rule-soft)]">
-          <div className="mx-auto max-w-5xl px-4 py-8">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {QUICK_ACTIONS.map((action) => {
-                const Icon = action.icon;
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+            <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+              Explora por tema
+            </p>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
+              Ayuda para todo tipo de uso
+            </h2>
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {HELP_TOPICS.map((topic) => {
+                const Icon = ICONS[topic.icon] ?? ShoppingCart;
                 return (
                   <a
-                    key={action.title}
-                    href={action.href}
-                    {...(action.external
-                      ? { target: "_blank", rel: "noopener noreferrer" }
-                      : {})}
-                    className={[
-                      "flex flex-col items-center gap-2 rounded-lg border p-4 text-center transition-shadow duration-[var(--dur-fast)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)] focus-visible:ring-offset-2",
-                      action.accent
-                        ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white hover:opacity-90"
-                        : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)]",
-                    ].join(" ")}
+                    key={topic.id}
+                    href={`#${topic.id}`}
+                    className={`${CARD} group flex flex-col gap-3 p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/30`}
                   >
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                    <span className="text-xs font-semibold">{action.title}</span>
-                    <Caption
-                      className={
-                        action.accent
-                          ? "text-white/80"
-                          : "text-[var(--text-tertiary)]"
-                      }
-                    >
-                      {action.subtitle}
-                    </Caption>
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                        <Icon className="h-5 w-5" strokeWidth={2.25} />
+                      </span>
+                      <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-bold text-[var(--text-tertiary)]">
+                        {topic.audience}
+                      </span>
+                    </div>
+                    <span className="text-base font-extrabold text-[var(--text-primary)]">{topic.title}</span>
+                    <span className="text-base leading-relaxed text-[var(--text-secondary)]">{topic.intro}</span>
+                    <span className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-[var(--accent)]">
+                      {topic.faqs.length} preguntas
+                      <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+                    </span>
                   </a>
                 );
               })}
@@ -379,148 +240,122 @@ export default function AyudaPage() {
           </div>
         </section>
 
-        {/* ── Categorias ────────────────────────────────────────────────── */}
-        <section className="border-b border-[var(--rule-soft)]">
-          <div className="mx-auto max-w-5xl px-4 py-12">
-            <div className="mb-6">
-              <Kicker className="mb-2 block">TEMAS POPULARES</Kicker>
-              <SectionTitle>Navega por categoría</SectionTitle>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {HELP_CATEGORIES.map((cat) => (
-                <CategoryCard key={cat.title} {...cat} />
-              ))}
+        {/* ── Contenido por tema (índice + secciones) ── */}
+        <section className="bg-[var(--surface-raised)]">
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:py-16">
+            {/* Índice */}
+            <nav aria-label="Índice de temas" className="hidden lg:block lg:sticky lg:top-24">
+              <p className="mb-3 text-xs font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+                Temas
+              </p>
+              <ul className="space-y-1">
+                {HELP_TOPICS.map((topic) => (
+                  <li key={topic.id}>
+                    <a
+                      href={`#${topic.id}`}
+                      className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
+                    >
+                      {topic.title}
+                      <span className="tabular-nums text-[var(--text-tertiary)]">{topic.faqs.length}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* Secciones */}
+            <div className="space-y-10">
+              {HELP_TOPICS.map((topic) => {
+                const Icon = ICONS[topic.icon] ?? ShoppingCart;
+                return (
+                  <section key={topic.id} id={topic.id} className="scroll-mt-24">
+                    <div className="mb-4 flex items-center gap-3">
+                      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                        <Icon className="h-5 w-5" strokeWidth={2.25} />
+                      </span>
+                      <div>
+                        <h2 className="text-xl font-extrabold tracking-[-0.01em] text-[var(--text-primary)] sm:text-2xl">
+                          {topic.title}
+                        </h2>
+                        <p className="text-sm text-[var(--text-tertiary)]">{topic.intro}</p>
+                      </div>
+                    </div>
+                    <ul className="space-y-3">
+                      {topic.faqs.map((faq) => (
+                        <li key={faq.q}>
+                          <FaqItem q={faq.q} a={faq.a} />
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* ── FAQ ──────────────────────────────────────────────────────── */}
-        <section className="border-b border-[var(--rule-soft)]" id="faq">
-          <div className="mx-auto max-w-5xl px-4 py-12">
-            <div className="grid gap-10 lg:grid-cols-[280px_1fr]">
-              {/* Columna izquierda — copy + ilustracion */}
-              <div>
-                <Kicker className="mb-2 block">FRECUENTES</Kicker>
-                <SectionTitle className="mb-3">
-                  Preguntas más comunes
-                </SectionTitle>
-                <BodyText className="text-[var(--text-secondary)] leading-relaxed">
-                  Estas son las consultas que recibimos con más frecuencia. Si no encuentras lo que buscas, el equipo de soporte está disponible por WhatsApp.
-                </BodyText>
-
-                <div
-                  className="mt-8 hidden text-[var(--text-tertiary)] opacity-60 dark:opacity-40 lg:block"
-                  aria-hidden="true"
+        {/* ── No encontraste / contacto ── */}
+        <section className="border-t border-[var(--rule-soft)]">
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+            <div className={`${CARD} bg-[var(--surface-sunken)] p-6 text-center sm:p-10`}>
+              <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
+                ¿No encontraste lo que buscabas?
+              </h2>
+              <p className="mx-auto mt-2 max-w-xl text-base leading-relaxed text-[var(--text-secondary)]">
+                Nuestro equipo te ayuda en minutos. Elige el canal que prefieras.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                {waHelp && (
+                  <a
+                    href={waHelp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white shadow-[var(--shadow-sm)] transition-transform hover:-translate-y-0.5"
+                  >
+                    <MessageCircle className="h-5 w-5" strokeWidth={2.5} /> Escribir por WhatsApp
+                  </a>
+                )}
+                <a
+                  href={telHref}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-6 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]/40"
                 >
-                  <MotoRuta size={160} />
+                  <Phone className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.5} /> Llamar
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── CTA negocios + links útiles ── */}
+        <section>
+          <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+            <div className={`${CARD} flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8`}>
+              <div className="flex items-center gap-4">
+                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <Store className="h-6 w-6" strokeWidth={2.25} />
+                </span>
+                <div>
+                  <h2 className="text-lg font-extrabold text-[var(--text-primary)]">¿Tienes una bodega o negocio?</h2>
+                  <p className="mt-0.5 text-base text-[var(--text-secondary)]">Abre tu tienda online en Buleje en minutos.</p>
                 </div>
               </div>
-
-              {/* Columna derecha — accordion nativo */}
-              <div className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 divide-y-0">
-                {FEATURED_FAQS.map((faq) => (
-                  <FaqItem
-                    key={faq.id}
-                    question={faq.question}
-                    answer={faq.answer}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Contacto ─────────────────────────────────────────────────── */}
-        <section className="border-b border-[var(--rule-soft)]" id="contacto">
-          <div className="mx-auto max-w-5xl px-4 py-12">
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-8">
-              <div className="mb-6">
-                <Kicker className="mb-2 block">
-                  ¿NO ENCONTRASTE LO QUE BUSCABAS?
-                </Kicker>
-                <SectionTitle className="mb-2">
-                  Nuestro equipo te responde
-                </SectionTitle>
-                <BodyText className="text-[var(--text-secondary)]">
-                  Elige el canal que prefieras. Siempre hay alguien disponible.
-                </BodyText>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                {/* WhatsApp */}
-                <a
-                  href="https://wa.me/51900000000?text=Hola%20Buleje%2C%20necesito%20ayuda"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-col gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
-                >
-                  <MessageCircle className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden="true" />
-                  <CardTitle className="text-sm">WhatsApp</CardTitle>
-                  <Caption className="text-[var(--text-tertiary)]">
-                    Respondemos en 5 min
-                  </Caption>
-                </a>
-
-                {/* Email */}
-                <a
-                  href="mailto:soporte@buleje.pe"
-                  className="flex flex-col gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
-                >
-                  <Mail className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden="true" />
-                  <CardTitle className="text-sm">Email</CardTitle>
-                  <Caption className="text-[var(--text-tertiary)]">
-                    Respuesta en 24h
-                  </Caption>
-                </a>
-
-                {/* Teléfono */}
-                <a
-                  href="tel:+51900000000"
-                  className="flex flex-col gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
-                >
-                  <Phone className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden="true" />
-                  <CardTitle className="text-sm">Teléfono</CardTitle>
-                  <Caption className="text-[var(--text-tertiary)]">
-                    Lun-Sáb 8am-8pm
-                  </Caption>
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── CTA final + links útiles ─────────────────────────────────── */}
-        <section>
-          <div className="mx-auto max-w-5xl px-4 py-10">
-            <div className="flex flex-col items-center gap-6 text-center">
-              <BodyText className="text-[var(--text-secondary)]">
-                ¿Sos dueño de una bodega?
-              </BodyText>
               <Link
                 href="/negocios"
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-medium text-[var(--text-primary)] transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ink)]"
+                className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white shadow-[var(--shadow-sm)] transition-transform hover:-translate-y-0.5"
               >
-                <Store className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" />
-                Ver Buleje para negocios
+                Buleje para negocios <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
               </Link>
+            </div>
 
-              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-[var(--text-tertiary)]">
-                <Link href="/guias" className="hover:text-[var(--text-secondary)] transition-colors">
-                  Guías y consejos
-                </Link>
-                <Link href="/pricing" className="hover:text-[var(--text-secondary)] transition-colors">
-                  Ver planes
-                </Link>
-                <Link href="/recetas" className="hover:text-[var(--text-secondary)] transition-colors">
-                  Recetario
-                </Link>
-                <Link href="/privacidad" className="hover:text-[var(--text-secondary)] transition-colors">
-                  Privacidad
-                </Link>
-                <Link href="/terminos" className="hover:text-[var(--text-secondary)] transition-colors">
-                  Términos
-                </Link>
-              </div>
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-[var(--text-tertiary)]">
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} /> Soporte Lun–Sáb, 8am–8pm
+              </span>
+              <Link href="/guias" className="hover:text-[var(--accent)]">Guías y consejos</Link>
+              <Link href="/recetas" className="hover:text-[var(--accent)]">Recetario</Link>
+              <Link href="/privacidad" className="hover:text-[var(--accent)]">Privacidad</Link>
+              <Link href="/terminos" className="hover:text-[var(--accent)]">Términos</Link>
+              <Link href="/libro-de-reclamaciones" className="hover:text-[var(--accent)]">Libro de Reclamaciones</Link>
             </div>
           </div>
         </section>
