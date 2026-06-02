@@ -26,8 +26,6 @@ export default function PanelPage() {
           "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
       }}
     >
-      <AnnouncementBar />
-      <Header />
 
       <main
         id="main-content"
@@ -37,7 +35,6 @@ export default function PanelPage() {
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }

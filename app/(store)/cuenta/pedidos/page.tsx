@@ -265,8 +265,6 @@ export default function PedidosPage() {
           { name: "Pedidos", url: "https://www.buleje.pe/cuenta/pedidos" },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       <main
         id="main-content"
@@ -374,7 +372,6 @@ export default function PedidosPage() {
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }

@@ -94,8 +94,6 @@ export default function SuscripcionesClient() {
           },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3">

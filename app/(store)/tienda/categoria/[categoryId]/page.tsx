@@ -7,8 +7,6 @@ import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import { categories, type Category } from "@/data/products";
 import { ProductsDB } from "@/lib/db/products.db";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import { ProductGridSkeleton } from "@/components/LoadingSkeleton";
 import CategoryCatalogClient from "@/components/CategoryCatalogClient";
@@ -196,10 +194,6 @@ async function CategoryPageContent({ params }: Props) {
           }),
         }}
       />
-      <AnnouncementBar />
-      <Header />
-      {/* Spacer for fixed header */}
-      <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <Breadcrumbs
         items={[
           { label: "Inicio", href: "/" },
@@ -266,12 +260,10 @@ async function CategoryPageContent({ params }: Props) {
           <CategoryCatalogClient categoryId={cat.id} categoryLabel={cat.label} categoryEmoji={cat.emoji} />
         </Suspense>
       </main>
-      <Footer />
       <CartSidebar />
       <CustomerModal />
       <CookieConsent />
       <StickyCartBar />
-      <MobileBottomNav />
     </>
   );
 }

@@ -2,17 +2,13 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Coffee, Cookie, Milk, Sparkles, SprayCan, Package } from "lucide-react";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
-import Footer from "@/components/Footer";
 import { buildTenantTitle } from "@/lib/store-metadata";
 import { SearchTrigger } from "./SearchTrigger";
 
 const ProductCatalog = dynamic(() => import("@/components/ProductCatalog"));
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const CustomerModal = dynamic(() => import("@/components/CustomerModal"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const UserAccountModal = dynamic(() => import("@/components/UserAccountModal"));
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -78,18 +74,12 @@ export default async function BuscarPage({
           { name: "Buscar", url: "https://www.buleje.pe/buscar" },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
-      {/* Spacer for fixed header */}
-      <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content" className="min-h-screen">
         <SearchTrigger />
         {hasQuery ? <ProductCatalog /> : <BuscarEmptyState />}
       </main>
-      <Footer />
       <CartSidebar />
       <CustomerModal />
-      <MobileBottomNav />
       <UserAccountModal />
     </>
   );

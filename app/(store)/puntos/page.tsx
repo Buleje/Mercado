@@ -734,8 +734,6 @@ export default function PuntosPage() {
             "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
         }}
       >
-        <AnnouncementBar />
-        <Header />
         <main className="max-w-md mx-auto px-4 sm:px-6 pt-32 pb-28">
           <div
             className="rounded-3xl p-8 text-center space-y-5"
@@ -789,8 +787,6 @@ export default function PuntosPage() {
           { name: "Mis puntos", url: "https://www.buleje.pe/puntos" },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       {/* ── Hero compacto ─────────────────────────────────────── */}
       <div

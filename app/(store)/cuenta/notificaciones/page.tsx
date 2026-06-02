@@ -728,8 +728,6 @@ export default function NotificacionesPage() {
           },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       {/* ── Hero compacto ─────────────────────────────────────── */}
       <div
@@ -989,7 +987,6 @@ export default function NotificacionesPage() {
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }

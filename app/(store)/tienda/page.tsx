@@ -4,8 +4,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import TiendaClientShell from "@/components/TiendaClientShell";
 import type { TiendaSectionKey } from "@/components/admin/StorefrontEditor";
@@ -221,10 +219,6 @@ export default async function TiendaPage() {
         ) : null;
       })()}
       
-      <AnnouncementBar />
-      <Header />
-      {/* Spacer to push content below fixed header (h-11 announcement + h-16/h-20 header) */}
-      <div className="h-[6.75rem] sm:h-[7.75rem]" />
       {/* Breadcrumbs — Inicio > Tienda */}
       <Breadcrumbs
         items={[
@@ -296,13 +290,6 @@ export default async function TiendaPage() {
         </section>
       )}
 
-      {/* Footer condicional: en `/t/<slug>/tienda` usamos un footer dedicado
-          al comercio, sin columnas de marketplace cross-store. */}
-      {isTenantStoreRoute ? (
-        <TenantFooter slug={tenantSlug} storeName={storeName} />
-      ) : (
-        <Footer />
-      )}
     </>
   );
 }

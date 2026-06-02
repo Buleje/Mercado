@@ -189,8 +189,6 @@ export default function DireccionesPage() {
           { name: "Direcciones", url: "https://www.buleje.pe/cuenta/direcciones" },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       {/* ── Hero — brand gradient ─────────────────────────────── */}
       <div
@@ -365,7 +363,6 @@ export default function DireccionesPage() {
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }

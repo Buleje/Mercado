@@ -33,8 +33,6 @@ export function CuentaLayoutShell({ children }: CuentaLayoutShellProps) {
           "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas))",
       }}
     >
-      <AnnouncementBar />
-      <Header />
 
       <div className="pt-28 sm:pt-32 pb-28">
         <CuentaMobileTabs className="sticky top-16 z-30" />
@@ -52,7 +50,6 @@ export function CuentaLayoutShell({ children }: CuentaLayoutShellProps) {
       </div>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }

@@ -1356,8 +1356,6 @@ export default function MisPedidosPage() {
           { name: "Mis pedidos", url: "https://www.buleje.pe/mis-pedidos" },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       {/* ── Hero compacto ─────────────────────────────────────────── */}
       <div
@@ -1720,7 +1718,6 @@ export default function MisPedidosPage() {
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
 
       {selectedOrder && (
         <OrderDetailModal

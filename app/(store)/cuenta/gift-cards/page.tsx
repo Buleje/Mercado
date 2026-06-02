@@ -31,7 +31,6 @@ export default async function CuentaGiftCardsPage() {
 
   return (
     <>
-      <Header />
       <GiftCardsClient received={received} sent={sent} usage={usage} />
     </>
   );

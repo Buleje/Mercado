@@ -51,15 +51,12 @@ export default async function SeguimientoPage({ params }: PageProps) {
           { name: "Seguimiento", url: "https://www.buleje.pe/cuenta/pedidos/seguimiento" },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       <main id="main-content" className="max-w-5xl mx-auto px-4 sm:px-6 pt-32 sm:pt-36 pb-28">
         <SeguimientoClient initialSnapshot={snapshot} />
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }

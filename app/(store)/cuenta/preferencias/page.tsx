@@ -402,8 +402,6 @@ export default function PreferenciasPage() {
           },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       {/* ── Hero compacto ─────────────────────────────────────── */}
       <div
@@ -741,7 +739,6 @@ export default function PreferenciasPage() {
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }

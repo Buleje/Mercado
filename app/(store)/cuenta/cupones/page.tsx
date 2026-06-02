@@ -28,7 +28,6 @@ export default async function CuponesPage() {
 
   return (
     <>
-      <Header />
       <CuponesClient available={available} history={history} />
     </>
   );

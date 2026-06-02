@@ -101,8 +101,6 @@ export default function PagosPage() {
           { name: "Metodos de pago", url: "https://www.buleje.pe/cuenta/pagos" },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       {/* Hero */}
       <div
@@ -185,7 +183,6 @@ export default function PagosPage() {
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }

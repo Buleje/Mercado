@@ -279,8 +279,6 @@ export default function FavoritosPage() {
           { name: "Favoritos", url: "https://www.buleje.pe/favoritos" },
         ]}
       />
-      <AnnouncementBar />
-      <Header />
 
       {/* ── Hero — brand gradient ───────────────────────────────── */}
       <div
@@ -699,7 +697,6 @@ export default function FavoritosPage() {
       </main>
 
       <CartSidebar />
-      <MobileBottomNav />
     </div>
   );
 }
