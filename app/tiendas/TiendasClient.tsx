@@ -1079,7 +1079,7 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
              En mobile/tablet: flujo inline idéntico al anterior (mb-4). */}
         <aside
           aria-label="Filtros de tiendas"
-          className="space-y-3 mb-3 lg:space-y-4 lg:mb-0 lg:sticky lg:top-32 lg:self-start lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-soft)] lg:p-5 lg:shadow-sm"
+          className="space-y-3 mb-3 lg:space-y-4 lg:mb-0 lg:sticky lg:top-20 lg:self-start lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-soft)] lg:p-5 lg:shadow-sm"
         >
           {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
               filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
