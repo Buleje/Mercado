@@ -13,7 +13,6 @@ import {
   ClockBadge,
   ShieldBadge,
   CheckBadge,
-  HeroDeliveryIllustration,
   LiveSignal,
   MapBadge,
   PackageIcon,
@@ -325,141 +324,61 @@ export default function RepartidorPage() {
 
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* ── Hero ────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[var(--accent)] to-[var(--brand-primary-light)] text-white">
-        <div className="absolute -top-40 -right-32 h-96 w-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-40 -left-20 h-96 w-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-10 lg:py-14 grid lg:grid-cols-[1.2fr_1fr] gap-8 items-center">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-4 h-9 text-sm font-extrabold">
+      {/* ── Top: info (izq) + formulario (der), lado a lado ── */}
+      <section id="inscripcion" className="mx-auto max-w-7xl scroll-mt-20 px-4 sm:px-6 lg:px-10 py-8 lg:py-14">
+        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-12">
+          {/* Info — izquierda (sticky en desktop) */}
+          <div className="lg:sticky lg:top-24">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3.5 py-1.5 text-sm font-bold text-[var(--accent)]">
               <LiveSignal className="h-2.5 w-2.5" active />
               Buleje · Ciudad Constitución
             </span>
-            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[1.05] tracking-tight">
+            <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-[var(--text-primary)] sm:text-5xl">
               Reparte en tu barrio,<br />
               gana en tu tiempo.
             </h1>
-            <p className="mt-3 max-w-xl text-base lg:text-lg text-white/85 leading-relaxed">
-              Generá ingresos extra con tu moto, bici o auto, en los horarios que vos elijas.
-              Cobrás por cada entrega y te quedás con el <strong className="font-extrabold text-white">100% de tus propinas</strong>.
+            <p className="mt-4 max-w-md text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
+              Generá ingresos extra con tu moto, bici o auto, en los horarios que vos
+              elijas. Cobrás por cada entrega y te quedás con el{" "}
+              <strong className="text-[var(--text-primary)]">100% de tus propinas</strong>.
             </p>
-            <ul className="mt-5 flex flex-wrap gap-2">
-              {["Horario libre", "Cobrás al instante", "100% de propinas", "Activación < 24 h"].map((c) => (
-                <li key={c} className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-bold text-white">
-                  <Check className="h-4 w-4" />
-                  {c}
+            <ul className="mt-7 grid gap-3.5 sm:max-w-sm">
+              {PERKS.slice(0, 4).map(({ Icon, title, desc }) => (
+                <li key={title} className="flex items-start gap-3">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-base font-extrabold text-[var(--text-primary)]">{title}</span>
+                    <span className="block text-sm leading-snug text-[var(--text-secondary)]">{desc}</span>
+                  </span>
                 </li>
               ))}
             </ul>
-            <a
-              href="#inscripcion"
-              className="mt-7 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-6 text-base font-extrabold text-[var(--accent)] shadow-[var(--shadow-md)] transition-transform hover:-translate-y-0.5"
-            >
-              Inscribite gratis <ArrowRight className="h-5 w-5" />
-            </a>
-          </div>
-
-          <div className="hidden lg:flex items-center justify-center">
-            <div className="text-white/90">
-              <HeroDeliveryIllustration className="h-56 w-auto" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Por qué repartir con Buleje ───────────────────────── */}
-      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
-        <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
-          Por qué Buleje
-        </p>
-        <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
-          Repartí como te conviene
-        </h2>
-        <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PERKS.map(({ Icon, title, desc }) => (
-            <div
-              key={title}
-              className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]"
-            >
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Icon className="h-6 w-6" />
-              </span>
-              <h3 className="mt-3 text-base font-extrabold text-[var(--text-primary)]">{title}</h3>
-              <p className="mt-1 text-base leading-relaxed text-[var(--text-secondary)]">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Cómo funciona ─────────────────────────────────────── */}
-      <section className="border-y border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
-          <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
-            Cómo funciona
-          </p>
-          <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
-            De cero a repartiendo en menos de 24 horas
-          </h2>
-          <ol className="relative mt-8 grid gap-8 sm:grid-cols-4">
-            <div className="pointer-events-none absolute inset-x-0 top-6 hidden h-px bg-[var(--rule-soft)] sm:block" />
-            {HOW_STEPS.map((s) => (
-              <li key={s.n} className="relative">
-                <span className="relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-lg font-extrabold text-[var(--accent)] shadow-[var(--shadow-sm)]">
-                  {s.n}
+            <div className="mt-7 flex flex-wrap gap-2">
+              {["Inscripción gratis", "Activación < 24 h", "Sin jefe ni horario fijo"].map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1.5 text-sm font-bold text-[var(--text-secondary)]"
+                >
+                  <Check className="h-4 w-4 text-[var(--accent)]" />
+                  {t}
                 </span>
-                <h3 className="mt-4 text-lg font-extrabold text-[var(--text-primary)]">{s.title}</h3>
-                <p className="mt-1 text-base leading-relaxed text-[var(--text-secondary)]">{s.desc}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+              ))}
+            </div>
+          </div>
 
-      {/* ── Requisitos ────────────────────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
-        <div className="grid items-center gap-8 lg:grid-cols-2">
+          {/* Formulario — derecha */}
           <div>
-            <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
-              Requisitos
-            </p>
-            <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
-              Lo que necesitás para empezar
-            </h2>
-            <p className="mt-3 max-w-md text-base leading-relaxed text-[var(--text-secondary)]">
-              Sin inversión inicial ni costo de inscripción. Solo lo básico para repartir seguro.
-            </p>
-            <a
-              href="#inscripcion"
-              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white shadow-[var(--shadow-sm)] transition-transform hover:-translate-y-0.5"
-            >
-              Empezar mi inscripción <ArrowRight className="h-5 w-5" />
-            </a>
-          </div>
-          <ul className="space-y-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-sm)]">
-            {REQUISITOS.map((r) => (
-              <li key={r} className="flex gap-3 text-base leading-relaxed text-[var(--text-secondary)]">
-                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-                  <Check className="h-4 w-4" />
-                </span>
-                {r}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* ── Wizard ───────────────────────────────────────────── */}
-      <section id="inscripcion" className="mx-auto max-w-3xl scroll-mt-20 px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
-        <div className="mb-6 text-center">
-          <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--accent)]">
-            Inscripción gratuita
-          </p>
-          <h2 className="mt-1 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
-            Inscribite en 4 pasos
-          </h2>
-        </div>
-        <Stepper currentStep={step} validations={validations} onStepClick={(n) => setStep(n)} />
+            <div className="mb-4 flex items-baseline justify-between gap-3">
+              <h2 className="text-xl font-extrabold tracking-[-0.01em] text-[var(--text-primary)]">
+                Inscribite en 4 pasos
+              </h2>
+              <span className="shrink-0 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-extrabold text-[var(--accent)]">
+                Gratis · 2 min
+              </span>
+            </div>
+            <Stepper currentStep={step} validations={validations} onStepClick={(n) => setStep(n)} />
 
         <form
           onSubmit={handleSubmit}
@@ -967,27 +886,71 @@ export default function RepartidorPage() {
           )}
         </form>
 
-        {/* Acceso secundario */}
-        <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
-          ¿Ya eres repartidor?{" "}
-          <Link href="/delivery-app/login" className="font-extrabold text-[var(--accent)]">
-            Ingresa aquí →
-          </Link>
-        </p>
+            {/* Acceso secundario */}
+            <p className="mt-5 text-center text-sm text-[var(--text-secondary)]">
+              ¿Ya eres repartidor?{" "}
+              <Link href="/delivery-app/login" className="font-extrabold text-[var(--accent)]">
+                Ingresa aquí →
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
 
-        {/* Beneficios — abajo, no compite con el wizard */}
-        <div className="mt-12 grid sm:grid-cols-3 gap-4">
-          <Benefit
-            Icon={ClockBadge}
-            title="Tú eliges el horario"
-            desc="Sin jefes ni horarios fijos."
-          />
-          <Benefit
-            Icon={CashIcon}
-            title="Cobras por entrega"
-            desc="Tarifa base + propina al instante."
-          />
-          <Benefit Icon={ShieldBadge} title="Soporte 24/7" desc="WhatsApp directo con el equipo." />
+      {/* ── Cómo funciona ─────────────────────────────────────── */}
+      <section className="border-y border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
+          <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+            Cómo funciona
+          </p>
+          <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
+            De cero a repartiendo en menos de 24 horas
+          </h2>
+          <ol className="relative mt-8 grid gap-8 sm:grid-cols-4">
+            <div className="pointer-events-none absolute inset-x-0 top-6 hidden h-px bg-[var(--rule-soft)] sm:block" />
+            {HOW_STEPS.map((s) => (
+              <li key={s.n} className="relative">
+                <span className="relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-lg font-extrabold text-[var(--accent)] shadow-[var(--shadow-sm)]">
+                  {s.n}
+                </span>
+                <h3 className="mt-4 text-lg font-extrabold text-[var(--text-primary)]">{s.title}</h3>
+                <p className="mt-1 text-base leading-relaxed text-[var(--text-secondary)]">{s.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ── Requisitos ────────────────────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
+        <div className="grid items-center gap-8 lg:grid-cols-2">
+          <div>
+            <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+              Requisitos
+            </p>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
+              Lo que necesitás para empezar
+            </h2>
+            <p className="mt-3 max-w-md text-base leading-relaxed text-[var(--text-secondary)]">
+              Sin inversión inicial ni costo de inscripción. Solo lo básico para repartir seguro.
+            </p>
+            <a
+              href="#inscripcion"
+              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white shadow-[var(--shadow-sm)] transition-transform hover:-translate-y-0.5"
+            >
+              Empezar mi inscripción <ArrowRight className="h-5 w-5" />
+            </a>
+          </div>
+          <ul className="space-y-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-sm)]">
+            {REQUISITOS.map((r) => (
+              <li key={r} className="flex gap-3 text-base leading-relaxed text-[var(--text-secondary)]">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <Check className="h-4 w-4" />
+                </span>
+                {r}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -1184,24 +1147,3 @@ function Consent({
   );
 }
 
-function Benefit({
-  Icon,
-  title,
-  desc,
-}: {
-  Icon: typeof ClockBadge;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 flex gap-3">
-      <div className="h-11 w-11 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">{title}</p>
-        <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">{desc}</p>
-      </div>
-    </div>
-  );
-}
