@@ -74,7 +74,6 @@ import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 // Brandon 2026-05-21: `useNavScrollHide` removido — navbar siempre fijo.
 import { useLocale } from "@/contexts/locale-context";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import ThemeToggle from "@/components/ThemeToggle";
 
 // MarketplaceCheckoutModal y MarketplaceCart sidebar fueron deprecados —
 // ahora el flujo es 100% pages: /marketplace/carrito -> /checkout/datos ->
@@ -646,17 +645,21 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
 
             {/* ── Right cluster (desktop) ── */}
             <div className="hidden md:flex items-center gap-1.5 ml-auto">
-              {/* Language + Theme — siempre arrancan en español + light.
-                  Brandon mayo 2026: el selector de idioma solo aparece
-                  cuando el superadmin tiene activo el modo "Marketplace
-                  completo". En Solo Tiendas (default) es ruido — los
-                  vecinos de Pucallpa solo hablan español. */}
-              {!isTiendasOnly && <LanguageSwitcher />}
-              <ThemeToggle className="!h-10 !w-10" />
-              <div
-                className="mx-0.5 h-6 w-px bg-[var(--rule-soft)]"
-                aria-hidden="true"
-              />
+              {/* Selector de idioma — solo en modo "Marketplace completo"
+                  (en Solo Tiendas los vecinos solo hablan español).
+                  Theme toggle REMOVIDO del navbar (Brandon 2026-06-02): el
+                  cambio claro/oscuro ya vive dentro del menú de perfil/cuenta
+                  → un solo lugar, nav más limpio. El separator se agrupa con el
+                  idioma para no dejar una línea suelta en Solo Tiendas. */}
+              {!isTiendasOnly && (
+                <>
+                  <LanguageSwitcher />
+                  <div
+                    className="mx-0.5 h-6 w-px bg-[var(--rule-soft)]"
+                    aria-hidden="true"
+                  />
+                </>
+              )}
 
               {/* Order tracker badge — visible cuando hay pedido reciente,
                   reabre el OrderSuccessModal con animación pulse. */}

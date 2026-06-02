@@ -1104,6 +1104,48 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
             )}
           </div>
 
+          {/* ── LO QUE SE TE ANTOJA — filtro PRINCIPAL por subcategoría.
+               Brandon 2026-06-02: movido al TOPE del sidebar (lo primero que ve
+               el cliente para filtrar por antojo) + tamaño grande. En mobile
+               aparece como tira scrollable; en desktop como cards apiladas. */}
+          {subcategories.length > 0 && (
+            <div
+              ref={subcategorySectionRef}
+              className="lg:pb-4 lg:mb-1 lg:border-b lg:border-[var(--rule-soft)]"
+            >
+              <p className="mb-2.5 flex items-center gap-2 text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                <Sparkles className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+                Lo que se te antoja
+              </p>
+              {/* Mobile/tablet: tira horizontal con cards icono + label */}
+              <div
+                role="group"
+                aria-label="Filtrá por categoría"
+                className="flex lg:hidden items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+              >
+                <SubcategoryChips
+                  subcategories={subcategories}
+                  activeId={subCategoryId}
+                  onSelect={setSubCategoryId}
+                  variant="card"
+                />
+              </div>
+              {/* Desktop sidebar: cards grandes apiladas (filtro estrella) */}
+              <div
+                role="group"
+                aria-label="Filtrá por categoría"
+                className="hidden lg:flex flex-col gap-2"
+              >
+                <SubcategoryChips
+                  subcategories={subcategories}
+                  activeId={subCategoryId}
+                  onSelect={setSubCategoryId}
+                  variant="row"
+                />
+              </div>
+            </div>
+          )}
+
           {/* "Lo más pedido" — antes label era "Subcategoría" (técnico, suena
               a panel admin). Brandon 2026-05-18 v3: renombrado a copy comercial
               que activa social proof y guía la elección del cliente.
@@ -1214,43 +1256,8 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
             </div>
           </div>
 
-          {subcategories.length > 0 && (
-            <div ref={subcategorySectionRef} className="lg:pt-1 lg:border-t lg:border-[var(--rule-soft)]">
-              {/* Mini-label minimalista encima de subcategorías */}
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5 lg:mb-2">
-                Lo que se te antoja
-              </p>
-              {/* Mobile/tablet: scroll horizontal (chips con icono+label) */}
-              <div
-                role="group"
-                aria-label="Filtrá por categoría"
-                className="flex lg:hidden items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1"
-              >
-                {/* Brandon 2026-05-21 v3 — chips más chicos en mobile:
-                    icono h-10 w-10 mobile / h-12 w-12 desktop. Label ts-2xs.
-                    min-w 64 mobile / 80 desktop. Caben 4–5 en viewport sin scroll. */}
-                <SubcategoryChips
-                  subcategories={subcategories}
-                  activeId={subCategoryId}
-                  onSelect={setSubCategoryId}
-                  variant="card"
-                />
-              </div>
-              {/* Desktop sidebar: lista vertical con fila icono+label */}
-              <div
-                role="group"
-                aria-label="Filtrá por categoría"
-                className="hidden lg:flex flex-col gap-0.5"
-              >
-                <SubcategoryChips
-                  subcategories={subcategories}
-                  activeId={subCategoryId}
-                  onSelect={setSubCategoryId}
-                  variant="row"
-                />
-              </div>
-            </div>
-          )}
+          {/* "Lo que se te antoja" se movió al TOPE del sidebar (Brandon
+              2026-06-02) — ver bloque justo debajo del header "Filtrar tiendas". */}
 
           {/* Filtrar por zona = botón único que abre modal.
               Brandon mayo 14 2026: las cajitas inline de zonas saturaban

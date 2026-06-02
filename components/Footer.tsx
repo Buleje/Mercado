@@ -479,10 +479,14 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
             {/* IZQ — wordmark + tagline + chips de confianza */}
             <div>
               {/* Logo blanco con glow teal sutil — firma de marca que se
-                  despega del fondo grafito sin saturar (minimalista). */}
+                  despega del fondo grafito sin saturar (minimalista).
+                  forceDark: el footer es SIEMPRE oscuro (grafito→negro) sin
+                  importar el tema de la página, así que forzamos la "b" blanca
+                  (mark-dark). Sin esto, en modo claro salía la "b oscura" →
+                  negro sobre negro, sin contraste (fix Brandon 2026-06-02). */}
               <BulejeWordmark
+                forceDark
                 size={46}
-                strokeWidth={1.75}
                 textSize={28}
                 className="text-white drop-shadow-[0_0_28px_rgba(45,212,191,0.28)]"
               />

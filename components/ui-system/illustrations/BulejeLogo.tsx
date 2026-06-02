@@ -28,14 +28,41 @@ interface LogoProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, "childre
   /** @deprecated solo por compat — el PNG no usa stroke. */
   strokeWidth?: number;
   className?: string;
+  /**
+   * Fuerza la variante "b blanca" (mark-dark) SIEMPRE, ignorando el tema de la
+   * página. Útil sobre fondos oscuros fijos (footer grafito/negro, banners
+   * dark) donde la "b oscura" del light-mode no contrastaría. Default false.
+   */
+  forceDark?: boolean;
 }
 
 /**
  * BulejeMark — "b" con swoosh teal. Cuadrado 1:1, sin texto.
  * Usar en navbar (36–48px), app icons, avatares, watermarks.
  */
-export function BulejeMark({ size = 40, className, ...rest }: LogoProps) {
+export function BulejeMark({ size = 40, className, forceDark = false, ...rest }: LogoProps) {
   delete (rest as { strokeWidth?: number }).strokeWidth;
+  // forceDark: una sola imagen (b blanca) sin alternancia por tema — para fondos
+  // oscuros fijos como el footer, donde la "b oscura" desaparecería.
+  if (forceDark) {
+    return (
+      <span
+        className={cn("inline-flex items-center justify-center shrink-0 relative", className)}
+        style={{ width: size, height: size }}
+        {...rest}
+      >
+        <Image
+          src={MARK_DARK_SRC}
+          alt="Buleje"
+          width={size}
+          height={size}
+          priority={size >= 48}
+          className="object-contain block"
+          sizes={`${size}px`}
+        />
+      </span>
+    );
+  }
   return (
     <span
       className={cn("inline-flex items-center justify-center shrink-0 relative", className)}
@@ -85,6 +112,7 @@ export function BulejeWordmark({
   textSize,
   showText = true,
   className,
+  forceDark = false,
   ...rest
 }: WordmarkProps) {
   delete (rest as { strokeWidth?: number }).strokeWidth;
@@ -99,7 +127,7 @@ export function BulejeWordmark({
       style={{ color: "var(--accent-600, var(--accent))" }}
       {...rest}
     >
-      <BulejeMark size={size} />
+      <BulejeMark size={size} forceDark={forceDark} />
       {showText && (
         <span
           className="font-extrabold tracking-tight leading-none"
