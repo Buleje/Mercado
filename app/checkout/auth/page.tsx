@@ -15,7 +15,7 @@
  * Si el usuario cierra el modal (X o ESC) lo mandamos de vuelta al carrito.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ShieldCheck, ArrowLeft } from "@buleje/design-system/icons";
@@ -37,24 +37,38 @@ export default function CheckoutAuthGate() {
   const searchParams = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const { customer } = useCustomer();
-  const { itemCount } = useMarketplaceCart();
+  const { itemCount, hydrated: cartHydrated } = useMarketplaceCart();
   // Guardamos el customer que había al montar para detectar "login nuevo"
   const [initialPhone] = useState<string | null>(() => customer?.phone ?? null);
+  // Brandon 2026-06-01 (fix login con otra cuenta): una vez que detectamos el
+  // login y redirigimos a returnTo, NO debemos dejar que el onClose diferido del
+  // AuthModal (setTimeout 1.5s tras verificar OTP) dispare handleClose → eso
+  // rebotaba al usuario recién logueado a /marketplace/carrito en vez de dejarlo
+  // en /checkout/datos. Este ref hace que handleClose sea no-op tras el redirect.
+  const redirectedRef = useRef(false);
 
-  // Si el carrito está vacío, no tiene sentido el gate
+  // Si el carrito está vacío, no tiene sentido el gate.
+  // Brandon 2026-06-01 (fix "iniciar sesión con otra cuenta"): esperar a que el
+  // carrito HIDRATE desde localStorage antes de chequear. Antes `itemCount` era
+  // 0 en el primer render (pre-hidratación) → el gate rebotaba SIEMPRE a
+  // /marketplace/carrito apenas entrabas, antes de poder loguearte. Igual que
+  // datos/entrega/confirmar, que ya esperan `cartHydrated`.
   useEffect(() => {
-    if (itemCount === 0) router.replace("/marketplace/carrito");
-  }, [itemCount, router]);
+    if (cartHydrated && itemCount === 0) router.replace("/marketplace/carrito");
+  }, [cartHydrated, itemCount, router]);
 
   // Detecta cuando se completó el login (phone distinto al inicial, o antes null)
   useEffect(() => {
     if (!customer?.phone) return;
-    if (customer.phone !== initialPhone) {
+    if (customer.phone !== initialPhone && !redirectedRef.current) {
+      redirectedRef.current = true;
       router.replace(returnTo);
     }
   }, [customer, initialPhone, returnTo, router]);
 
   const handleClose = () => {
+    // Ya redirigimos tras un login exitoso → no rebotar a carrito.
+    if (redirectedRef.current) return;
     // Si el usuario insiste en cerrar, volvemos a la ruta de origen
     router.replace(returnTo === "/checkout/datos" ? "/marketplace/carrito" : returnTo);
   };

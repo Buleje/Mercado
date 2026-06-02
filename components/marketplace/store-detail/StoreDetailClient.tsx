@@ -884,16 +884,11 @@ function BackButton({ storeSlug }: { storeSlug?: string }) {
   void storeSlug; // referencia futura por contexto
   const router = useRouter();
   const handleBack = useCallback(() => {
-    // Brandon 2026-05-31: retroceso NATIVO real (window.history.back), no
-    // router.back() de Next (soft-nav que a veces se desviaba). El botón "←"
-    // vuelve EXACTAMENTE de donde vino el usuario, nunca a una página fija.
-    // Solo si no hay historial (entrada directa por URL/QR) caemos a /tiendas
-    // para no dejarlo en blanco fuera del sitio.
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-    } else {
-      router.push("/tiendas");
-    }
+    // Brandon 2026-06-01: el ← de la tienda SIEMPRE vuelve al directorio
+    // /tiendas (destino determinístico). Antes usaba window.history.back(), que
+    // si el usuario llegaba desde el checkout (o un deep-link) lo mandaba de
+    // vuelta al checkout en lugar de a las tiendas.
+    router.push("/tiendas");
   }, [router]);
 
   return (
@@ -1250,16 +1245,11 @@ function BackToTiendasButton({
   const [favorited, setFavorited] = useState(false);
 
   const handleBack = useCallback(() => {
-    // Brandon 2026-05-31: retroceso NATIVO real (window.history.back), no
-    // router.back() de Next (soft-nav que a veces se desviaba). El botón "←"
-    // vuelve EXACTAMENTE de donde vino el usuario, nunca a una página fija.
-    // Solo si no hay historial (entrada directa por URL/QR) caemos a /tiendas
-    // para no dejarlo en blanco fuera del sitio.
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-    } else {
-      router.push("/tiendas");
-    }
+    // Brandon 2026-06-01: el ← de la tienda SIEMPRE vuelve al directorio
+    // /tiendas (destino determinístico). Antes usaba window.history.back(), que
+    // si el usuario llegaba desde el checkout (o un deep-link) lo mandaba de
+    // vuelta al checkout en lugar de a las tiendas.
+    router.push("/tiendas");
   }, [router]);
 
   const scrollToCatalog = useCallback((e: React.MouseEvent) => {
