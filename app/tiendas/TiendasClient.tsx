@@ -162,6 +162,10 @@ const RepetirUltimoPedido = dynamic(
   () => import("@/components/marketplace/RepetirUltimoPedido"),
   { ssr: false, loading: () => null },
 );
+const InvitaVecinoCard = dynamic(
+  () => import("@/components/marketplace/InvitaVecinoCard"),
+  { ssr: false, loading: () => null },
+);
 const MisPedidosFavoritosStrip = dynamic(
   () => import("@/components/marketplace/MisPedidosFavoritosStrip"),
   { ssr: false, loading: () => null },
@@ -1509,6 +1513,11 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
         </div>{/* /lg:grid sidebar layout */}
       </section>
 
+      {/* ── Referido por WhatsApp (Brandon 2026-06-02) — crecimiento viral.
+           Después del grid: el cliente ya vio las tiendas, ahora lo invitamos
+           a traer vecinos. Logueado = link personal + 50 puntos c/u; anónimo =
+           share genérico que igual trae tráfico. ── */}
+      {search.trim().length === 0 && <InvitaVecinoCard />}
 
       {/* Brandon 2026-05-20 v7: SECCIÓN "Sumate a Buleje" REMOVIDA de /tiendas.
           Era una intrusión B2B (bodegueros/repartidores) en una página B2C
