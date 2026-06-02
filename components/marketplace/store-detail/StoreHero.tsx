@@ -236,9 +236,12 @@ export default function StoreHero({
         {/* ── Trust chips strip — payment methods + sello marca ───────
             Mobile: oculto junto al stats strip (Brandon, mayo 14 2026). */}
         <div className="hidden md:flex flex-wrap items-center gap-2 p-4 sm:px-7 sm:py-4 lg:px-8 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-3xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 px-3 py-1 text-xs font-bold text-[var(--data-success-500)]">
-            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-            Tienda verificada
+          <span
+            className="inline-flex items-center justify-center rounded-full border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 p-1.5 text-[var(--data-success-500)]"
+            title="Tienda verificada"
+            aria-label="Tienda verificada"
+          >
+            <ShieldCheck className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           </span>
           {paymentMethods.length > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]">

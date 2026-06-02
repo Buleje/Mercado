@@ -604,10 +604,10 @@ export default function CheckoutConfirmarPage() {
 
           <div className="relative pt-2 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/marketplace"
+              href="/tiendas"
               className="inline-flex items-center justify-center rounded-full border border-[var(--rule-base)] px-6 h-11 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
-              Volver al marketplace
+              Volver a tiendas
             </Link>
             {failed.length > 0 && (
               <button

@@ -441,8 +441,10 @@ export default function StoreDetailClient({
         scheduleLabel="Lun a Dom · 7am – 11pm"
       />
 
-      {/* ── Lo más pedido de esta tienda ── */}
-      <StoreTopSellers storeSlug={store.slug} storeId={store.id} storeName={store.name} />
+      {/* ── Lo más pedido de esta tienda — oculto en celular (Brandon 2026-05-31) ── */}
+      <div className="hidden md:block">
+        <StoreTopSellers storeSlug={store.slug} storeId={store.id} storeName={store.name} />
+      </div>
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
       <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
@@ -882,8 +884,13 @@ function BackButton({ storeSlug }: { storeSlug?: string }) {
   void storeSlug; // referencia futura por contexto
   const router = useRouter();
   const handleBack = useCallback(() => {
+    // Brandon 2026-05-31: retroceso NATIVO real (window.history.back), no
+    // router.back() de Next (soft-nav que a veces se desviaba). El botón "←"
+    // vuelve EXACTAMENTE de donde vino el usuario, nunca a una página fija.
+    // Solo si no hay historial (entrada directa por URL/QR) caemos a /tiendas
+    // para no dejarlo en blanco fuera del sitio.
     if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
+      window.history.back();
     } else {
       router.push("/tiendas");
     }
@@ -1243,8 +1250,13 @@ function BackToTiendasButton({
   const [favorited, setFavorited] = useState(false);
 
   const handleBack = useCallback(() => {
+    // Brandon 2026-05-31: retroceso NATIVO real (window.history.back), no
+    // router.back() de Next (soft-nav que a veces se desviaba). El botón "←"
+    // vuelve EXACTAMENTE de donde vino el usuario, nunca a una página fija.
+    // Solo si no hay historial (entrada directa por URL/QR) caemos a /tiendas
+    // para no dejarlo en blanco fuera del sitio.
     if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
+      window.history.back();
     } else {
       router.push("/tiendas");
     }

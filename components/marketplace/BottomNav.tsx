@@ -23,6 +23,7 @@
 import { useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
+  Home,
   Search,
   ShoppingCart,
   User,
@@ -38,7 +39,7 @@ const fmtPEN = (n: number) =>
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type TabId = "tiendas" | "buscar" | "carrito" | "cuenta";
+type TabId = "inicio" | "tiendas" | "buscar" | "carrito" | "cuenta";
 
 interface Tab {
   id: TabId;
@@ -46,7 +47,11 @@ interface Tab {
   Icon: React.ElementType;
 }
 
+// Brandon 2026-06-01: "Inicio" agregado como PRIMER tab (→ la home `/`).
+// Antes el primer tab era "Tiendas" (catálogo). Ahora el vecino vuelve a la
+// home de un toque.
 const TABS: Tab[] = [
+  { id: "inicio", label: "Inicio", Icon: Home },
   { id: "tiendas", label: "Tiendas", Icon: StoreIcon },
   { id: "buscar", label: "Buscar", Icon: Search },
   { id: "carrito", label: "Carrito", Icon: ShoppingCart },
@@ -86,13 +91,13 @@ export default function BottomNav() {
     if (pathname?.startsWith("/marketplace/buscar")) return "buscar";
     if (pathname?.startsWith("/marketplace/carrito")) return "carrito";
     if (pathname?.startsWith("/marketplace/mi-cuenta")) return "cuenta";
+    if (pathname === "/") return "inicio";
     if (
-      pathname === "/" ||
       pathname?.startsWith("/marketplace") ||
       pathname?.startsWith("/tiendas")
     )
       return "tiendas";
-    return "tiendas";
+    return "inicio";
   }, [pathname]);
 
   const handleTab = useCallback(
@@ -106,6 +111,9 @@ export default function BottomNav() {
         }
       }
       switch (id) {
+        case "inicio":
+          router.push("/");
+          break;
         case "tiendas":
           router.push(homeHref);
           break;
