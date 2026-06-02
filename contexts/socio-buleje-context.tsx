@@ -170,9 +170,26 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
       return loaded.isSocio || loaded.status ? loaded : prev;
     });
     setIsLoading((prev) => (prev ? false : prev));
-    refresh().catch((err) => {
-      console.warn("[socio-buleje] server hydrate failed", String(err));
-    });
+    // Perf: la UI ya está hidratada desde localStorage. La reconciliación con el
+    // server se difiere a tiempo idle para NO competir con los fetches críticos
+    // del primer pintado (medición 2026-06-02: era 1 de 20 requests al cargar).
+    const run = () =>
+      refresh().catch((err) => {
+        console.warn("[socio-buleje] server hydrate failed", String(err));
+      });
+    let idleId: number | undefined;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(run, { timeout: 3000 });
+    } else {
+      timerId = setTimeout(run, 1200);
+    }
+    return () => {
+      if (idleId !== undefined && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timerId !== undefined) clearTimeout(timerId);
+    };
   }, [storageKey, refresh]);
 
   const subscribe = useCallback(
