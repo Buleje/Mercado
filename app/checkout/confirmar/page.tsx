@@ -634,26 +634,27 @@ export default function CheckoutConfirmarPage() {
     <>
       {/* Brandon 2026-05-18: header consistente con /carrito y /datos.
           Back link sutil, h1 grande, paso del flow visible para reducir
-          ansiedad ("¿cuánto falta?"). */}
-      <div className="pt-4 sm:pt-8 pb-5 sm:pb-6">
+          ansiedad ("¿cuánto falta?"). Brandon 2026-06-01: compactado en mobile
+          (h1 más chico, subtítulo 1 línea) para que el contenido entre antes. */}
+      <div className="pt-3 sm:pt-8 pb-3 sm:pb-6">
         <Link
           href="/checkout/entrega"
-          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3"
+          className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] sm:text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-2 sm:mb-3"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           Volver a entrega
         </Link>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
+        <h1 className="text-2xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
           Revisá tu pedido
         </h1>
-        <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+        <p className="mt-1.5 sm:mt-2 text-[length:var(--ts-xs)] sm:text-base text-[var(--text-secondary)] leading-snug">
           <span className="font-semibold text-[var(--text-primary)]">Último paso.</span>{" "}
           Verificá que todo esté bien antes de confirmar.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
-        <div className="space-y-5">
+        <div className="space-y-3.5 sm:space-y-5">
           {/* Auth gate v2 — Brandon 2026-05-18: compactado.
               Antes: aside con padding p-5/p-6 + iframe italic font-serif
               + descripción larga + 2 botones — competía con el CTA primario
@@ -696,20 +697,24 @@ export default function CheckoutConfirmarPage() {
           )}
 
           {/* Banner de descuento por tier (Cliente Frecuente / VIP / Embajador) */}
-          <div className="mb-4">
+          <div className="empty:hidden">
             <TierDiscountBanner
               customerPhone={customer.phone}
               total={grandTotal}
             />
           </div>
 
-          {/* Grid de review cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Grid de review cards — Brandon 2026-06-01: 2 columnas también en
+              mobile. Datos y Entrega ocupan fila completa (contenido multi-campo);
+              Pago y Pedido van lado a lado (contenido corto) → la sección de
+              resumen ocupa 3 filas en vez de 4 cajas apiladas. */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
             <ReviewCard
               kicker="Datos"
               title="Quién recibe"
               icon={User}
               editHref="/checkout/datos"
+              className="col-span-2 sm:col-span-1"
             >
               <dl className="space-y-1.5 text-[length:var(--ts-sm)]">
                 <Row label="Nombre" value={customer.name} />
@@ -723,6 +728,7 @@ export default function CheckoutConfirmarPage() {
               title="Dónde te llega"
               icon={MapPin}
               editHref="/checkout/entrega"
+              className="col-span-2 sm:col-span-1"
             >
               <dl className="space-y-1.5 text-[length:var(--ts-sm)]">
                 <Row label="Dirección" value={address.address} />
@@ -736,6 +742,7 @@ export default function CheckoutConfirmarPage() {
               title="Cómo pagás"
               icon={Wallet}
               editHref="/checkout/entrega"
+              dense
             >
               <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] capitalize">
                 {payment.method}
@@ -755,6 +762,7 @@ export default function CheckoutConfirmarPage() {
               title={`${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
               icon={ShoppingBag}
               editHref="/marketplace/carrito"
+              dense
             >
               <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] tabular-nums">
                 {fmt(grandTotal)}
@@ -820,7 +828,7 @@ export default function CheckoutConfirmarPage() {
           )}
 
           {/* Productos detallados */}
-          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-7 space-y-5">
+          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-7 space-y-4 sm:space-y-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
@@ -863,12 +871,12 @@ export default function CheckoutConfirmarPage() {
               </div>
             </div>
 
-            <div className="space-y-5 divide-y divide-[var(--rule-soft)]">
+            <div className="space-y-4 sm:space-y-5 divide-y divide-[var(--rule-soft)]">
               {storeIds.map((sid) => {
                 const g = byStore[sid];
                 const sub = totalByStore[sid]?.total ?? 0;
                 return (
-                  <div key={sid} className="space-y-2 pt-5 first:pt-0">
+                  <div key={sid} className="space-y-2 pt-4 sm:pt-5 first:pt-0">
                     <div className="flex justify-between items-baseline gap-3">
                       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                         {g.storeName}
@@ -993,6 +1001,8 @@ function ReviewCard({
   editHref,
   children,
   wide,
+  dense,
+  className,
 }: {
   kicker: string;
   title: string;
@@ -1000,42 +1010,69 @@ function ReviewCard({
   editHref: string;
   children: React.ReactNode;
   wide?: boolean;
+  /** Cards a media columna (Pago/Pedido): icono + lápiz arriba, título a ancho
+   *  completo debajo → no envuelve en mobile y queda como "stat card". */
+  dense?: boolean;
+  className?: string;
 }) {
+  const editLink = (
+    <Link
+      href={editHref}
+      aria-label={`Editar ${title}`}
+      className="inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:scale-95 transition-all shrink-0"
+    >
+      <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+    </Link>
+  );
+  const iconChip = (
+    <span
+      aria-hidden
+      className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"
+    >
+      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2.25} />
+    </span>
+  );
   return (
     <section
       className={cn(
         // Brandon 2026-05-18: card más fina. Antes p-5/p-6 + eyebrow con
         // pseudo-line accent + kicker uppercase. Ahora layout más limpio:
         // icono cuadrado accent + título inline. Edit con ícono lápiz sutil.
-        "group rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5 transition-all hover:border-[var(--accent)]/40 hover:shadow-sm",
-        wide && "sm:col-span-2",
+        // Brandon 2026-06-01: header más compacto en mobile (icon/pencil h-7).
+        "group rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3.5 sm:p-5 transition-all hover:border-[var(--accent)]/40 hover:shadow-sm",
+        wide && "col-span-2",
+        className,
       )}
     >
-      <div className="flex items-start justify-between mb-3 gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span
-            aria-hidden
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"
-          >
-            <Icon className="h-4 w-4" strokeWidth={2.25} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
-              {kicker}
-            </p>
-            <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5 truncate">
-              {title}
-            </h3>
+      {dense ? (
+        <div className="mb-2.5 sm:mb-3">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            {iconChip}
+            {editLink}
           </div>
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+            {kicker}
+          </p>
+          <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
+            {title}
+          </h3>
         </div>
-        <Link
-          href={editHref}
-          aria-label={`Editar ${title}`}
-          className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:scale-95 transition-all shrink-0"
-        >
-          <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-        </Link>
-      </div>
+      ) : (
+        <div className="flex items-start justify-between mb-2.5 sm:mb-3 gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            {iconChip}
+            <div className="min-w-0">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+                {kicker}
+              </p>
+              <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
+                {title}
+              </h3>
+            </div>
+          </div>
+          {editLink}
+        </div>
+      )}
       {children}
     </section>
   );
