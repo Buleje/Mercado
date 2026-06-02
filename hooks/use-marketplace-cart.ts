@@ -91,14 +91,26 @@ function readStorage(): CartState {
   }
 }
 
-function writeStorage(state: CartState) {
+/** Solo escribe a localStorage (sin efectos React). Seguro de llamar síncrono. */
+function persistStorage(state: CartState) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    window.dispatchEvent(new CustomEvent("marketplace-cart-update", { detail: state }));
   } catch {
     // storage lleno — silent fail
   }
+}
+
+/** Notifica a las otras instancias del hook en la MISMA pestaña (mini-cart,
+ *  navbar, etc.). Dispara setState en ellas → NO llamar durante un render. */
+function broadcastCartUpdate(state: CartState) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("marketplace-cart-update", { detail: state }));
+}
+
+function writeStorage(state: CartState) {
+  persistStorage(state);
+  broadcastCartUpdate(state);
 }
 
 // PERF 2026-05-26: el hook lo consumen ~50 componentes (cada UnifiedProductCard,
@@ -141,11 +153,20 @@ export function useMarketplaceCart() {
     if (stored.length === 0) return; // no marcar: revalidar cuando haya items
     cartValidatedThisSession = true;
     const idsQuery = stored.map(i => i.productId).join(",");
-    const controller = new AbortController();
-    fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}`, { signal: controller.signal })
-      .then(r => r.ok ? r.json() : null)
-      .then((data: { existingIds?: number[]; missingIds?: number[] } | null) => {
-        if (!data || !Array.isArray(data.existingIds)) return;
+
+    // Brandon 2026-05-31: NO usamos AbortController acá. Abortar el fetch mientras
+    // `r.json()` lee el body produce un rejection interno del stream (Chromium)
+    // que escapa a `.catch` → "Uncaught (in promise) AbortError: signal is aborted
+    // without reason" al desmontar (StrictMode dev double-mount lo dispara siempre).
+    // Es una validación fire-and-forget de bajo costo: dejamos que el fetch
+    // termine y SOLO ignoramos el resultado si el componente ya se desmontó.
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}`);
+        if (!r.ok || cancelled) return;
+        const data = (await r.json()) as { existingIds?: number[]; missingIds?: number[] } | null;
+        if (cancelled || !data || !Array.isArray(data.existingIds)) return;
         const existing = new Set<number>(data.existingIds);
         const cleaned = stored.filter(i => existing.has(i.productId));
         // Guard: preservar carrito si TODOS "desaparecerian" (senal dudosa).
@@ -154,9 +175,11 @@ export function useMarketplaceCart() {
           setItems(cleaned);
           writeStorage({ items: cleaned });
         }
-      })
-      .catch(() => { /* silently ignore — cart stays as-is or aborted */ });
-    return () => { controller.abort(); };
+      } catch {
+        /* red caída / JSON inválido → carrito queda como está */
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Sincronizar si otra pestaña cambia el carrito
@@ -178,13 +201,28 @@ export function useMarketplaceCart() {
     };
   }, []);
 
-  // Persistir cuando cambian los items — pero NO antes de hidratar
-  // (si no, el primer mount con items=[] pisaría el localStorage y
-  // borraría el carrito de otras instancias del hook).
-  useEffect(() => {
-    if (!hydrated) return;
-    writeStorage({ items });
-  }, [items, hydrated]);
+  // Persistencia SÍNCRONA (Brandon 2026-06-01 — fix "items regresan al borrar"):
+  // cada mutación escribe a localStorage + emite el evento de sync EN EL MOMENTO,
+  // dentro del updater. Antes la persistencia vivía en un `useEffect([items])`
+  // diferido → si un re-mount (Fast Refresh en dev, o navegación SPA rápida)
+  // re-hidrataba ANTES de que ese effect corriera, restauraba el item recién
+  // borrado. Escribir dentro del updater cierra esa ventana de carrera.
+  const commit = useCallback(
+    (updater: (prev: CartItem[]) => CartItem[]) => {
+      setItems((prev) => {
+        const next = updater(prev);
+        // Persistencia SÍNCRONA a localStorage — cierra la carrera del
+        // re-hydrate (el item borrado no "regresa" tras un full reload).
+        persistStorage({ items: next });
+        // El broadcast cross-instancia se DIFIERE a un microtask: dispararlo
+        // dentro del updater haría setState en otras instancias DURANTE el
+        // render → "Cannot update a component while rendering a different one".
+        queueMicrotask(() => broadcastCartUpdate({ items: next }));
+        return next;
+      });
+    },
+    [],
+  );
 
   // ---------- acciones ----------
 
@@ -198,7 +236,7 @@ export function useMarketplaceCart() {
         modifierHash: incomingHash,
       };
 
-      setItems((prev) => {
+      commit((prev) => {
         // Unicidad por (storeId, productId, modifierHash) — mismo producto con
         // modifiers distintos = lineas distintas en el carrito.
         const idx = prev.findIndex(
@@ -226,12 +264,12 @@ export function useMarketplaceCart() {
         return [...prev, normalized];
       });
     },
-    []
+    [commit]
   );
 
   const removeItem = useCallback(
     (storeId: string, productId: number, modifierHash?: string) => {
-      setItems((prev) =>
+      commit((prev) =>
         prev.filter((i) => {
           if (i.storeId !== storeId || i.productId !== productId) return true;
           // Si se pasa modifierHash, solo borra esa linea especifica.
@@ -243,7 +281,7 @@ export function useMarketplaceCart() {
         }),
       );
     },
-    [],
+    [commit],
   );
 
   const updateQuantity = useCallback(
@@ -252,7 +290,7 @@ export function useMarketplaceCart() {
         removeItem(storeId, productId, modifierHash);
         return;
       }
-      setItems((prev) =>
+      commit((prev) =>
         prev.map((i) => {
           if (i.storeId !== storeId || i.productId !== productId) return i;
           if (modifierHash !== undefined && (i.modifierHash ?? "") !== modifierHash) {
@@ -266,16 +304,16 @@ export function useMarketplaceCart() {
         }),
       );
     },
-    [removeItem]
+    [removeItem, commit]
   );
 
   const clearStore = useCallback((storeId: string) => {
-    setItems((prev) => prev.filter((i) => i.storeId !== storeId));
-  }, []);
+    commit((prev) => prev.filter((i) => i.storeId !== storeId));
+  }, [commit]);
 
   const clearAll = useCallback(() => {
-    setItems([]);
-  }, []);
+    commit(() => []);
+  }, [commit]);
 
   // ---------- derivados ----------
 

@@ -66,11 +66,11 @@ function ItemRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 16, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0, borderWidth: 0 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="flex gap-3 sm:gap-4 py-4 sm:py-5 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
+      className="flex gap-3 sm:gap-4 py-3 sm:py-5 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
     >
       <Link
         href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-        className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 rounded-2xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
+        className="relative h-16 w-16 sm:h-24 sm:w-24 shrink-0 rounded-xl sm:rounded-2xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
       >
         {item.image ? (
           <Image
@@ -399,8 +399,8 @@ export default function CarritoPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5 sm:gap-6 lg:gap-8 items-start pb-8">
-          <section aria-label="Productos en tu carrito" className="space-y-4 sm:space-y-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-3 sm:gap-6 lg:gap-8 items-start pb-8">
+          <section aria-label="Productos en tu carrito" className="space-y-3 sm:space-y-5">
             {/* Progreso hacia envío gratis */}
             <FreeShippingProgress />
 

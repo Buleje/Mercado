@@ -69,13 +69,14 @@ export default function CartSuggestions() {
       setSuggestions([]);
       return;
     }
-    const ctrl = new AbortController();
+    // Flag `cancelled` en vez de AbortController: evita el ruido "Uncaught
+    // AbortError" de React 19 + Fast Refresh (sugerencias son best-effort).
+    let cancelled = false;
     // Máx 2 tiendas para acotar requests (multi-vendor).
     Promise.all(
       stores.slice(0, 2).map((s) =>
         fetch(
           `/api/marketplace/catalog?storeSlug=${encodeURIComponent(s.slug)}&sort=popular&limit=12`,
-          { signal: ctrl.signal },
         )
           .then((r) => (r.ok ? r.json() : { data: [] }))
           .then((j) => ({ store: s, rows: (j.data ?? []) as Array<Record<string, unknown>> }))
@@ -117,9 +118,13 @@ export default function CartSuggestions() {
         out.push(m);
         if (out.length >= 10) break;
       }
-      setSuggestions(out);
+      if (!cancelled) setSuggestions(out);
+    }).catch(() => {
+      // Sugerencias best-effort: si algo falla, no mostramos nada.
     });
-    return () => ctrl.abort();
+    return () => {
+      cancelled = true;
+    };
   }, [stores, excludedIds, cartCats]);
 
   const recentFiltered = useMemo(
