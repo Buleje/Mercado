@@ -11,11 +11,9 @@
  * Auto-redirect a /carrito si esta vacio o /datos si faltan datos cliente.
  */
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft,
   ArrowRight,
   MapPin,
   StickyNote,
@@ -36,6 +34,7 @@ import { useCustomer } from "@/contexts/customer-context";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCard";
+import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
 import AddressPicker from "@/components/marketplace/checkout/AddressPicker";
 import AddAddressFlowModal from "@/components/marketplace/checkout/AddAddressFlowModal";
 import CashChangeModal from "@/components/marketplace/checkout/CashChangeModal";
@@ -165,7 +164,7 @@ function SectionBox({
     <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-7 space-y-4 sm:space-y-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <p className="hidden sm:inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+          <p className="hidden sm:flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
             <span
               aria-hidden
               className="inline-flex h-[3px] w-6 rounded-full bg-[var(--accent)]"
@@ -893,33 +892,18 @@ export default function CheckoutEntregaPage() {
 
   return (
     <>
-      {/* Header rediseñado mobile (Brandon, mayo 14 2026): compacto, link
-          "Volver" inline con el titulo, sin subtitulo redundante. Desktop
-          mantiene el layout amplio editorial. */}
-      <div className="pt-4 sm:pt-8 pb-4 sm:pb-6">
-        <div className="flex items-center gap-2 mb-2 sm:mb-3">
-          <Link
-            href="/checkout/datos"
-            aria-label="Volver a tus datos"
-            className="inline-flex items-center justify-center sm:gap-2 h-10 w-10 sm:w-auto sm:h-9 sm:px-3 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all shadow-sm shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
-            <span className="hidden sm:inline">Volver a tus datos</span>
-          </Link>
-          <h1 className="sm:hidden text-lg font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] truncate">
-            Entrega y pago
-          </h1>
-        </div>
-        <h1 className="hidden sm:block text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-          Entrega y pago
-        </h1>
-        <p className="hidden sm:block mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-          Elige dónde recibes y cómo pagás.
-        </p>
-      </div>
+      {/* Header compartido (Brandon 2026-06-01): mismo formato que datos y
+          confirmar — back link + h1 + subtítulo, tamaños y padding unificados. */}
+      <CheckoutStepHeader
+        backHref="/checkout/datos"
+        backLabel="Volver a tus datos"
+        title="Entrega y pago"
+        lead="Paso 2 de 3."
+        subtitle="Elegí a dónde te lo llevamos y cómo pagás."
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-8 items-start pb-28 lg:pb-16">
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6" noValidate>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
           {/* ── Direcciones guardadas (si hay) ───────────────────────
                 Brandon, mayo 14 2026: el boton "Usar otra direccion" del
                 picker abre AddAddressFlowModal (paso 1: CTA "Poner ubicacion

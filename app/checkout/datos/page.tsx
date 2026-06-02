@@ -22,7 +22,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useCallback, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowLeft,
   ArrowRight,
   Phone,
   Mail,
@@ -37,6 +36,7 @@ import { useCustomer, isCustomerProfileComplete } from "@/contexts/customer-cont
 import { useCheckoutData } from "@/hooks/use-checkout-data";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
+import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
 import AccountPicker from "@/components/marketplace/checkout/AccountPicker";
 import {
   CheckoutTransitionOverlay,
@@ -130,28 +130,26 @@ export default function CheckoutDatosPage() {
     return (
       <>
         <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
-        <div className="pt-4 sm:pt-8 pb-5 sm:pb-6">
-          <Link href="/marketplace/carrito" className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3">
-            <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Volver al carrito
-          </Link>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">Tus datos</h1>
-          <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
-            <span className="font-semibold text-[var(--text-primary)]">Paso 1 de 3.</span> Dejanos tu nombre y WhatsApp para coordinar la entrega.
-          </p>
-        </div>
+        <CheckoutStepHeader
+          backHref="/marketplace/carrito"
+          backLabel="Volver al carrito"
+          title="Tus datos"
+          lead="Paso 1 de 3."
+          subtitle="Dejanos tu nombre y WhatsApp para coordinar la entrega."
+        />
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
-          <div className="space-y-5">
-            <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-7 space-y-4">
+          <div className="space-y-4 sm:space-y-5">
+            <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-7 space-y-4">
               <div>
-                <label htmlFor="guest-name" className="mb-1.5 flex items-center gap-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)]"><UserCircle className="h-4 w-4" aria-hidden /> Nombre completo</label>
-                <input id="guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+                <label htmlFor="guest-name" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Nombre completo</label>
+                <input id="guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-[length:var(--ts-sm)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
               </div>
               <div>
-                <label htmlFor="guest-phone" className="mb-1.5 flex items-center gap-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)]"><Phone className="h-4 w-4" aria-hidden /> WhatsApp</label>
-                <input id="guest-phone" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="9XXXXXXXX" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
-                {guestPhone.length > 0 && !phoneOk && <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--data-error-600)]">Tu WhatsApp debe tener 9 dígitos y empezar con 9.</p>}
+                <label htmlFor="guest-phone" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">WhatsApp</label>
+                <input id="guest-phone" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="9XXXXXXXX" className="h-12 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-[length:var(--ts-sm)] font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
+                {guestPhone.length > 0 && !phoneOk && <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">Tu WhatsApp debe tener 9 dígitos y empezar con 9.</p>}
               </div>
-              <button type="button" disabled={!guestValid} onClick={handleGuestContinue} className="h-12 w-full rounded-2xl bg-[var(--accent)] text-base font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 lg:hidden">
+              <button type="button" disabled={!guestValid} onClick={handleGuestContinue} className="h-12 w-full rounded-full bg-[var(--accent)] text-base font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 lg:hidden">
                 Continuar a la entrega
               </button>
               <p className="text-center text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">¿Ya tenés cuenta? <Link href="/checkout/auth?returnTo=%2Fcheckout%2Fdatos" className="font-bold text-[var(--accent)] underline underline-offset-2">Iniciá sesión</Link></p>
@@ -178,27 +176,16 @@ export default function CheckoutDatosPage() {
 
   return (
     <>
-      <div className="pt-4 sm:pt-8 pb-5 sm:pb-6">
-        {/* Brandon 2026-05-18: back link sutil estilo /carrito (sin border-pill
-            pesado que competía con el CTA primario). Consistencia entre pasos. */}
-        <Link
-          href="/marketplace/carrito"
-          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3"
-        >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          Volver al carrito
-        </Link>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
-          Tus datos
-        </h1>
-        <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
-          <span className="font-semibold text-[var(--text-primary)]">Paso 1 de 3.</span>{" "}
-          Confirma con qué cuenta comprás hoy.
-        </p>
-      </div>
+      <CheckoutStepHeader
+        backHref="/marketplace/carrito"
+        backLabel="Volver al carrito"
+        title="Tus datos"
+        lead="Paso 1 de 3."
+        subtitle="Confirmá con qué cuenta comprás hoy."
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5">
           {/* ── AccountPicker — siempre que haya cuentas guardadas ────
                 Incluye "Iniciar sesion con otra cuenta" abajo.            */}
           {accounts.length >= 1 && (
@@ -211,8 +198,8 @@ export default function CheckoutDatosPage() {
                 - Datos en grid: cada dato como mini-pill con icono compact.
                 - "Verificado" badge inline cuando el perfil está completo.
                 - CTA primary full-width destacado + "Editar" como link sutil. */}
-          <div className="rounded-3xl border-2 border-[var(--accent)]/25 bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-canvas)] to-[var(--accent-soft)]/40 overflow-hidden shadow-sm">
-            <div className="relative p-5 sm:p-7">
+          <div className="rounded-2xl border border-[var(--accent)]/25 bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-canvas)] to-[var(--accent-soft)]/40 overflow-hidden shadow-sm">
+            <div className="relative p-4 sm:p-7">
               <div
                 aria-hidden
                 className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[var(--accent)]/[0.12] blur-3xl"

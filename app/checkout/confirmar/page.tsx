@@ -23,7 +23,6 @@ import {
   Sparkles,
   ShieldCheck,
   ArrowRight,
-  ArrowLeft,
   Eye,
   Pencil,
 } from "@buleje/design-system/icons";
@@ -36,6 +35,7 @@ import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CheckoutUpsell from "@/components/marketplace/checkout/CheckoutUpsell";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
+import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
 import { CheckoutTransitionOverlay } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
@@ -632,29 +632,18 @@ export default function CheckoutConfirmarPage() {
 
   return (
     <>
-      {/* Brandon 2026-05-18: header consistente con /carrito y /datos.
-          Back link sutil, h1 grande, paso del flow visible para reducir
-          ansiedad ("¿cuánto falta?"). Brandon 2026-06-01: compactado en mobile
-          (h1 más chico, subtítulo 1 línea) para que el contenido entre antes. */}
-      <div className="pt-3 sm:pt-8 pb-3 sm:pb-6">
-        <Link
-          href="/checkout/entrega"
-          className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] sm:text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-2 sm:mb-3"
-        >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          Volver a entrega
-        </Link>
-        <h1 className="text-2xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
-          Revisá tu pedido
-        </h1>
-        <p className="mt-1.5 sm:mt-2 text-[length:var(--ts-xs)] sm:text-base text-[var(--text-secondary)] leading-snug">
-          <span className="font-semibold text-[var(--text-primary)]">Último paso.</span>{" "}
-          Verificá que todo esté bien antes de confirmar.
-        </p>
-      </div>
+      {/* Header compartido (Brandon 2026-06-01): mismo formato que datos y
+          entrega — back link + h1 + subtítulo, tamaños y padding unificados. */}
+      <CheckoutStepHeader
+        backHref="/checkout/entrega"
+        backLabel="Volver a entrega"
+        title="Revisá tu pedido"
+        lead="Último paso."
+        subtitle="Verificá que todo esté bien antes de confirmar."
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
-        <div className="space-y-3.5 sm:space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           {/* Auth gate v2 — Brandon 2026-05-18: compactado.
               Antes: aside con padding p-5/p-6 + iframe italic font-serif
               + descripción larga + 2 botones — competía con el CTA primario
