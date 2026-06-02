@@ -571,11 +571,42 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               )}
             </Link>
 
+            {/* ── Enlaces Inicio/Tiendas (Brandon 2026-06-02) — re-agregados en
+                modo tiendas, pegados al logo (antes de la pastilla). En lg+ para
+                no apretar el tablet. ── */}
+            {isTiendasOnly && (
+              <nav
+                aria-label="Navegación de tiendas"
+                className="hidden lg:flex items-center gap-1 shrink-0"
+              >
+                {renderedLinks.map((link) => {
+                  const active = isActive(link);
+                  const LinkIcon = link.icon;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-sm font-bold transition-colors",
+                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+                        active
+                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                      )}
+                    >
+                      <LinkIcon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+                      {t(link.labelKey)}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
+
             {/* ── PASTILLA CENTRAL (rediseño B, Brandon 2026-06-02) ──
                 Estilo Airbnb/Uber Eats: ubicación + búsqueda unidas en un
-                único control redondeado, centrado. Minimalista — los tabs
-                Inicio/Tiendas se omiten de la barra (el logo va a home y el
-                directorio es la propia página). Solo modo tiendas, md+. */}
+                único control redondeado, centrado. Los tabs Inicio/Tiendas
+                vuelven pegados al logo (arriba). Solo modo tiendas, md+. */}
             {isTiendasOnly && (
               <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
                 <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all hover:border-[var(--accent)]/40 focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] focus-within:shadow-md focus-within:shadow-[var(--accent)]/15">

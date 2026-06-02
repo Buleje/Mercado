@@ -57,7 +57,7 @@ const ExplorarTracker = dynamic(
 // dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
 // import estático para no romper el tipado de DEFAULT_FILTERS.
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
-import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal, Clock } from "@buleje/design-system/icons";
+import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal, Clock, List, Map as MapIcon } from "@buleje/design-system/icons";
 // CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
 import { CupSoda } from "lucide-react";
 // Brandon 2026-05-21 v3: removido import default de QuickFilterChips (chips
@@ -84,8 +84,14 @@ import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 // `dynamic` ya está importado al top — usado por ExplorarTracker, MarketplaceFilters,
 // SearchAutocomplete y los strips desktop-only (Tiendas*Strip).
 
-// Brandon 2026-05-18 v3: TiendasMap dynamic removido — toggle Lista/Mapa
-// eliminado del toolbar.
+// Brandon 2026-06-02: toggle Lista/Mapa RE-AGREGADO. TiendasMap (Leaflet) lazy
+// — ssr:false (usa window/document). Placeholder con altura para evitar CLS.
+const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[520px] w-full animate-pulse rounded-2xl bg-[var(--surface-sunken)]" />
+  ),
+});
 
 // Brandon 2026-05-18 perf P0 #2: MarketplaceFilters (691 LOC) lazy.
 // El placeholder ocupa el slot visual hasta que el chunk carga, así no hay
@@ -401,10 +407,8 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
     });
   }, []);
 
-  // Brandon 2026-05-18 v3: viewMode state removido. Antes alternaba lista/mapa
-  // (TiendasMap Leaflet). El cliente del directorio busca por filtros, no por
-  // ubicación visual — y los chips de zona ya cubren el caso geográfico. El
-  // import dynamic de TiendasMap también se eliminó del top del archivo.
+  // Brandon 2026-06-02: toggle Lista/Mapa re-agregado. "list" por default.
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   // ── TS-22 Sort selector (con persistencia) ──
   const [sortKey, setSortKey] = useState<StoresSortKey>(() => {
@@ -1492,13 +1496,46 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                   · {finalStores.length}
                 </span>
               </p>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                Entrega hoy
-              </p>
+              {/* Toggle Lista / Mapa (Brandon 2026-06-02) — re-agregado. */}
+              <div className="inline-flex shrink-0 items-center rounded-full border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-pressed={viewMode === "list"}
+                  aria-label="Ver como lista"
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition-colors",
+                    viewMode === "list"
+                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("map")}
+                  aria-pressed={viewMode === "map"}
+                  aria-label="Ver en el mapa"
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition-colors",
+                    viewMode === "map"
+                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Mapa
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Listado de tiendas — vista mapa removida (Brandon 2026-05-18 v3). */}
+          {/* Listado o Mapa según viewMode (Brandon 2026-06-02). */}
+          {viewMode === "map" ? (
+            <TiendasMap stores={finalStores} userCoords={userCoords} />
+          ) : (
           <MarketplaceStoresView
             stores={stores}
             premiumProducts={premiumProducts}
@@ -1520,6 +1557,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
               setSortKey("relevance");
             }}
           />
+          )}
         </div>{/* /main grid */}
 
         </div>{/* /lg:grid sidebar layout */}
