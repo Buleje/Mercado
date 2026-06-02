@@ -4,29 +4,39 @@
  * /cuenta/pedidos — Lista de pedidos del cliente.
  *
  * Conecta a `GET /api/me/order-history` (requireCustomer + tenantId scope).
- * Antes (P1 Bug Hunter Report 2026-04-30): usaba MOCK_ORDERS — el cliente
- * veía pedidos falsos en su historial.
- *
- * Muestra `OrderTrackingMini` (widget compacto) en los pedidos activos.
+ * Chrome del layout (store): NO renderiza Header/Footer propios. Tabs de filtro,
+ * resumen de gasto, miniaturas de productos y método de pago. Mini-tracker en
+ * pedidos activos. Tokens DS (sin colores hardcodeados ni --accent-dark roto).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
-  Clock, CheckCircle2, Truck, XCircle, ChevronRight, ArrowLeft,
-  ShoppingBag, Loader2,
+  Clock,
+  CheckCircle2,
+  Truck,
+  XCircle,
+  ChevronRight,
+  ShoppingBag,
+  Loader2,
+  Package,
+  Wallet,
+  CreditCard,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
 import { OrderTrackingMini, type MiniStatus } from "@/components/customer/pedidos/OrderTrackingMini";
 import { PedidoLlegando } from "@/components/ui-system/illustrations";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 type UiStatus = "pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado";
+
+interface UiItem {
+  name: string;
+  image: string;
+}
 
 interface UiOrder {
   id: string;
@@ -34,7 +44,10 @@ interface UiOrder {
   createdAt: string;
   total: number;
   status: UiStatus;
+  items: UiItem[];
+  itemCount: number;
   itemsPreview: string;
+  paymentMethod: string | null;
   miniStatus?: MiniStatus;
   etaMinutes?: number;
 }
@@ -48,99 +61,110 @@ interface ApiOrder {
   createdAt: string;
   updatedAt: string;
   notes: string | null;
-  items: Array<{
-    name: string;
-    price: number;
-    quantity: number;
-    unit: string;
-    image: string;
-    productId: number | null;
-  }>;
+  items: Array<{ name: string; price: number; quantity: number; unit: string; image: string; productId: number | null }>;
   itemCount: number;
   canCancel: boolean;
   canReorder: boolean;
 }
 
-// ── Mapeo status → mini-tracker (los activos muestran widget de progreso) ──
+const CARD =
+  "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]";
+
 function statusToMiniStatus(status: UiStatus): MiniStatus | undefined {
-  switch (status) {
-    case "confirmado": return "preparing";
-    case "en_camino":  return "shipping";
-    default:           return undefined;
-  }
+  if (status === "confirmado") return "preparing";
+  if (status === "en_camino") return "shipping";
+  return undefined;
 }
 
 function buildItemsPreview(items: ApiOrder["items"]): string {
-  if (!items.length) return "";
   const names = items.map((i) => i.name).filter(Boolean);
+  if (!names.length) return "";
   const preview = names.slice(0, 3).join(", ");
   return names.length > 3 ? `${preview} +${names.length - 3} más` : preview;
 }
 
 const STATUS_META: Record<
   UiStatus,
-  {
-    label: string;
-    icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-    tone: string;
-    dot: string;
-  }
+  { label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; chip: string; dot: string }
 > = {
   pendiente: {
     label: "Pendiente",
     icon: Clock,
-    tone: "text-[var(--data-warning-700)] bg-amber-50 dark:bg-amber-900/20 dark:text-amber-300",
-    dot: "bg-amber-400",
+    chip: "bg-[var(--data-warning-50)] text-[var(--data-warning-700)]",
+    dot: "bg-[var(--data-warning-500)]",
   },
   confirmado: {
     label: "Confirmado",
     icon: CheckCircle2,
-    tone: "text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-surface",
-    dot: "bg-foreground",
+    chip: "bg-[var(--accent-soft)] text-[var(--accent)]",
+    dot: "bg-[var(--accent)]",
   },
   en_camino: {
     label: "En camino",
     icon: Truck,
-    tone: "text-primary bg-primary/10",
-    dot: "bg-primary",
+    chip: "bg-[var(--accent-soft)] text-[var(--accent)]",
+    dot: "bg-[var(--accent)]",
   },
   entregado: {
     label: "Entregado",
     icon: CheckCircle2,
-    tone: "text-[var(--accent-dark)] bg-teal-50 dark:bg-teal-900/20 dark:text-teal-300",
-    dot: "bg-teal-400",
+    chip: "bg-[var(--data-success-50)] text-[var(--data-success-700)]",
+    dot: "bg-[var(--data-success-500)]",
   },
   cancelado: {
     label: "Cancelado",
     icon: XCircle,
-    tone: "text-[var(--data-error-700)] bg-red-50 dark:bg-red-900/20 dark:text-red-300",
-    dot: "bg-red-400",
+    chip: "bg-[var(--data-error-50)] text-[var(--data-error-700)]",
+    dot: "bg-[var(--data-error-500)]",
   },
 };
 
+const PAYMENT_LABEL: Record<string, string> = {
+  yape: "Yape",
+  plin: "Plin",
+  efectivo: "Efectivo",
+  tarjeta: "Tarjeta",
+  card: "Tarjeta",
+  cash: "Efectivo",
+};
+
+function paymentLabel(pm: string | null): string | null {
+  if (!pm) return null;
+  return PAYMENT_LABEL[pm.toLowerCase()] ?? pm;
+}
+
 function fmtDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
   } catch {
     return iso;
   }
 }
 
-function fmtSoles(n: number): string {
-  return `S/${n.toFixed(2)}`;
+const fmtSoles = (n: number) => `S/ ${n.toFixed(2)}`;
+
+const TABS = [
+  { key: "todos", label: "Todos" },
+  { key: "curso", label: "En curso" },
+  { key: "entregados", label: "Entregados" },
+  { key: "cancelados", label: "Cancelados" },
+] as const;
+type TabKey = (typeof TABS)[number]["key"];
+
+function matchesTab(status: UiStatus, tab: TabKey): boolean {
+  if (tab === "todos") return true;
+  if (tab === "curso") return status === "pendiente" || status === "confirmado" || status === "en_camino";
+  if (tab === "entregados") return status === "entregado";
+  return status === "cancelado";
 }
 
-function OrderListCard({ order }: { order: UiOrder }) {
+function OrderCard({ order }: { order: UiOrder }) {
   const meta = STATUS_META[order.status];
-  const Icon = meta.icon;
-  const isActive = order.status === "en_camino" || order.status === "confirmado" || order.status === "pendiente";
   const hasMini =
-    !!order.miniStatus &&
-    (order.miniStatus === "shipping" || order.miniStatus === "preparing" || order.miniStatus === "nearby");
+    !!order.miniStatus && ["shipping", "preparing", "nearby"].includes(order.miniStatus);
+  const thumbs = order.items.filter((i) => i.image).slice(0, 4);
+  const extra = order.itemCount - thumbs.length;
+  const pm = paymentLabel(order.paymentMethod);
 
   return (
     <li className="space-y-2">
@@ -154,52 +178,66 @@ function OrderListCard({ order }: { order: UiOrder }) {
       )}
       <Link
         href={`/cuenta/pedidos/${encodeURIComponent(order.id)}/seguimiento`}
-        className={cn(
-          "block rounded-xl border bg-[var(--surface-raised)] p-4 transition-colors",
-          isActive
-            ? "border-[var(--rule-base)] hover:border-gray-200 dark:hover:border-[var(--rule-base)]/80"
-            : "border-[var(--rule-base)] hover:border-gray-200",
-        )}
+        className={`${CARD} block p-4 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/30 sm:p-5`}
       >
-        <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              "h-10 w-10 rounded-xl inline-flex items-center justify-center shrink-0",
-              meta.tone,
-            )}
-            aria-hidden
-          >
-            <Icon className="h-5 w-5" strokeWidth={1.75} />
+        {/* Top: estado + tienda + fecha */}
+        <div className="flex items-center gap-2">
+          <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold", meta.chip)}>
+            <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
+            {meta.label}
           </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
-                  meta.tone,
-                )}
-              >
-                <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
-                {meta.label}
-              </span>
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted truncate">
-                {order.storeName}
-              </span>
+          <span className="truncate text-sm font-bold text-[var(--text-secondary)]">{order.storeName}</span>
+          <span className="ml-auto shrink-0 text-sm text-[var(--text-tertiary)]">{fmtDate(order.createdAt)}</span>
+        </div>
+
+        {/* Medio: miniaturas + detalle */}
+        <div className="mt-3 flex items-center gap-3">
+          {thumbs.length > 0 ? (
+            <div className="flex shrink-0 -space-x-2">
+              {thumbs.map((it, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={i}
+                  src={it.image}
+                  alt={it.name}
+                  loading="lazy"
+                  className="h-11 w-11 rounded-xl border-2 border-[var(--surface-raised)] bg-[var(--surface-sunken)] object-cover"
+                />
+              ))}
+              {extra > 0 && (
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[var(--surface-raised)] bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-secondary)]">
+                  +{extra}
+                </span>
+              )}
             </div>
-            <p className="text-sm font-semibold text-[var(--text-primary)] truncate mt-0.5">
-              #{order.id.slice(-8).toUpperCase()}
-            </p>
-            <p className="text-[length:var(--ts-2xs)] text-muted truncate">
-              {order.itemsPreview}
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
-              {fmtSoles(order.total)}
+          ) : (
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <Package className="h-5 w-5" strokeWidth={2} />
             </span>
-            <span className="text-[length:var(--ts-2xs)] text-muted">{fmtDate(order.createdAt)}</span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-extrabold text-[var(--text-primary)]">
+              Pedido #{order.id.slice(-8).toUpperCase()}
+            </p>
+            <p className="truncate text-sm text-[var(--text-tertiary)]">
+              {order.itemCount} {order.itemCount === 1 ? "producto" : "productos"}
+              {order.itemsPreview ? ` · ${order.itemsPreview}` : ""}
+            </p>
           </div>
-          <ChevronRight className="h-4 w-4 text-muted shrink-0" />
+          <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" />
+        </div>
+
+        {/* Abajo: pago + total */}
+        <div className="mt-3 flex items-center justify-between border-t border-[var(--rule-soft)] pt-3">
+          {pm ? (
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
+              {pm === "Tarjeta" ? <CreditCard className="h-4 w-4" strokeWidth={2} /> : <Wallet className="h-4 w-4" strokeWidth={2} />}
+              {pm}
+            </span>
+          ) : (
+            <span />
+          )}
+          <span className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{fmtSoles(order.total)}</span>
         </div>
       </Link>
     </li>
@@ -209,34 +247,35 @@ function OrderListCard({ order }: { order: UiOrder }) {
 export default function PedidosPage() {
   const [orders, setOrders] = useState<UiOrder[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabKey>("todos");
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/me/order-history?limit=50", { credentials: "include" })
       .then((r) => {
-        if (r.status === 401 || r.status === 403) {
-          // Sesión expirada o anon → mostrar empty state legítimo
-          return { orders: [] };
-        }
+        // 204 (sin contenido) / 401 / 403 → invitado o sin pedidos: empty state limpio.
+        if (r.status === 204 || r.status === 401 || r.status === 403) return { orders: [] };
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then((data: { orders?: ApiOrder[]; storeName?: string }) => {
         if (cancelled) return;
         const apiOrders = data.orders ?? [];
-        // Audit project-wide 2026-05-19 (QA P1 #1): usar el nombre real
-        // de la tienda. Antes hardcoded "Buleje" — multi-tenant roto.
         const defaultStore = data.storeName ?? "Tienda";
-        const mapped: UiOrder[] = apiOrders.map((o) => ({
-          id: o.id,
-          storeName: o.storeName ?? defaultStore,
-          createdAt: o.createdAt,
-          total: o.total,
-          status: o.status,
-          itemsPreview: buildItemsPreview(o.items),
-          miniStatus: statusToMiniStatus(o.status),
-        }));
-        setOrders(mapped);
+        setOrders(
+          apiOrders.map((o) => ({
+            id: o.id,
+            storeName: o.storeName ?? defaultStore,
+            createdAt: o.createdAt,
+            total: o.total,
+            status: o.status,
+            items: (o.items ?? []).map((i) => ({ name: i.name, image: i.image })),
+            itemCount: o.itemCount ?? o.items?.length ?? 0,
+            itemsPreview: buildItemsPreview(o.items ?? []),
+            paymentMethod: o.paymentMethod,
+            miniStatus: statusToMiniStatus(o.status),
+          })),
+        );
       })
       .catch((err) => {
         if (cancelled) return;
@@ -249,16 +288,29 @@ export default function PedidosPage() {
   }, []);
 
   const isLoading = orders === null;
-  const active = (orders ?? []).filter(
-    (o) => o.status !== "entregado" && o.status !== "cancelado",
-  );
-  const past = (orders ?? []).filter(
-    (o) => o.status === "entregado" || o.status === "cancelado",
+  const all = useMemo(() => orders ?? [], [orders]);
+
+  const counts = useMemo(() => {
+    const c: Record<TabKey, number> = { todos: all.length, curso: 0, entregados: 0, cancelados: 0 };
+    for (const o of all) {
+      if (matchesTab(o.status, "curso")) c.curso++;
+      else if (o.status === "entregado") c.entregados++;
+      else if (o.status === "cancelado") c.cancelados++;
+    }
+    return c;
+  }, [all]);
+
+  const totalSpent = useMemo(
+    () => all.filter((o) => o.status === "entregado").reduce((s, o) => s + o.total, 0),
+    [all],
   );
 
+  const filtered = all.filter((o) => matchesTab(o.status, tab));
+
   return (
-    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background">
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
       <BreadcrumbSchema
+        visible={false}
         items={[
           { name: "Inicio", url: "https://www.buleje.pe/" },
           { name: "Mi cuenta", url: "https://www.buleje.pe/cuenta" },
@@ -266,108 +318,112 @@ export default function PedidosPage() {
         ]}
       />
 
-      <main
-        id="main-content"
-        className="max-w-4xl mx-auto px-4 sm:px-6 pt-32 sm:pt-36 pb-28 space-y-8"
-      >
-        <div>
-          <Link
-            href="/cuenta"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-[var(--text-primary)] transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Volver a mi cuenta
-          </Link>
-          <div className="mt-4">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
-              Historial
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] mt-1">
-              Mis pedidos
-            </h1>
-            <p className="mt-2 text-sm text-muted">
-              Revisa el estado de tus pedidos y haz seguimiento en tiempo real.
-            </p>
-          </div>
+      {/* Breadcrumb */}
+      <div className="border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+        <div className="mx-auto max-w-4xl px-4 py-3 sm:px-6">
+          <Breadcrumbs items={[{ label: "Mi cuenta", href: "/cuenta" }, { label: "Pedidos" }]} />
         </div>
+      </div>
 
-        {isLoading ? (
-          <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 text-center">
-            <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
-            <p className="mt-3 text-sm text-muted">Cargando tus pedidos…</p>
-          </section>
-        ) : error ? (
-          <section className="rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/40 dark:bg-red-900/10 px-6 py-8 text-center">
-            <XCircle className="h-8 w-8 mx-auto text-[var(--data-error-500)]" />
-            <p className="mt-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-red-300">
-              No pudimos cargar tus pedidos
-            </p>
-            <p className="mt-1 text-xs text-muted">{error}</p>
-          </section>
-        ) : active.length > 0 ? (
-          <section aria-labelledby="active-orders-heading">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
-                  En curso
-                </span>
-                <h2
-                  id="active-orders-heading"
-                  className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
-                >
-                  {active.length} {active.length === 1 ? "pedido" : "pedidos"} activos
-                </h2>
+      <main id="main-content" className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 sm:py-10">
+        {/* Encabezado + resumen */}
+        <header>
+          <h1 className="text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-4xl">
+            Mis pedidos
+          </h1>
+          <p className="mt-2 text-base text-[var(--text-secondary)]">
+            Revisa el estado de tus pedidos y haz seguimiento en tiempo real.
+          </p>
+          {!isLoading && !error && all.length > 0 && (
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:max-w-md">
+              <div className={`${CARD} p-4`}>
+                <p className="text-sm font-medium text-[var(--text-tertiary)]">Pedidos</p>
+                <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{all.length}</p>
+              </div>
+              <div className={`${CARD} p-4`}>
+                <p className="text-sm font-medium text-[var(--text-tertiary)]">Total gastado</p>
+                <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-[var(--accent)]">{fmtSoles(totalSpent)}</p>
               </div>
             </div>
-            <ul className="space-y-3">
-              {active.map((o) => (
-                <OrderListCard key={o.id} order={o} />
-              ))}
-            </ul>
+          )}
+        </header>
+
+        {/* Tabs de filtro */}
+        {!isLoading && !error && all.length > 0 && (
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filtrar pedidos">
+            {TABS.map((t) => {
+              const activeTab = tab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab}
+                  onClick={() => setTab(t.key)}
+                  className={cn(
+                    "inline-flex h-10 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition-colors",
+                    activeTab
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40",
+                  )}
+                >
+                  {t.label}
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 text-xs tabular-nums",
+                      activeTab ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                    )}
+                  >
+                    {counts[t.key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Contenido */}
+        {isLoading ? (
+          <section className={`${CARD} px-6 py-12 text-center`}>
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-[var(--accent)]" />
+            <p className="mt-3 text-base text-[var(--text-secondary)]">Cargando tus pedidos…</p>
           </section>
-        ) : (
-          <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 text-center">
-            <div className="flex justify-center text-muted" aria-hidden="true">
+        ) : error ? (
+          <section className="rounded-2xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-6 py-8 text-center">
+            <XCircle className="mx-auto h-8 w-8 text-[var(--data-error-500)]" />
+            <p className="mt-3 text-base font-bold text-[var(--data-error-700)]">No pudimos cargar tus pedidos</p>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">{error}</p>
+          </section>
+        ) : all.length === 0 ? (
+          <section className={`${CARD} px-6 py-12 text-center`}>
+            <div className="flex justify-center text-[var(--text-tertiary)]" aria-hidden="true">
               <PedidoLlegando size={180} />
             </div>
-            <p className="mt-4 text-base font-extrabold text-[var(--text-primary)] tracking-tight">
+            <p className="mt-4 text-lg font-extrabold tracking-[-0.01em] text-[var(--text-primary)]">
               Tu próximo pedido te espera
             </p>
-            <p className="mt-1 text-sm text-muted max-w-sm mx-auto leading-relaxed">
-              Realizá un pedido y podrás hacerle seguimiento en tiempo real desde
-              aquí — con ETA y estado en cada paso.
+            <p className="mx-auto mt-1 max-w-sm text-base leading-relaxed text-[var(--text-secondary)]">
+              Realiza un pedido y podrás hacerle seguimiento en tiempo real desde aquí, con ETA y estado en cada paso.
             </p>
             <Link
               href="/tienda"
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-xs font-bold text-background hover:opacity-90 transition-opacity"
+              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-6 text-base font-bold text-white shadow-[var(--shadow-sm)] transition-transform hover:-translate-y-0.5"
             >
-              <ShoppingBag className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <ShoppingBag className="h-5 w-5" strokeWidth={2.25} />
               Empieza a comprar
             </Link>
           </section>
-        )}
-
-        {!isLoading && !error && past.length > 0 && (
-          <section aria-labelledby="past-orders-heading">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
-                  Historial
-                </span>
-                <h2
-                  id="past-orders-heading"
-                  className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
-                >
-                  Anteriores
-                </h2>
-              </div>
-            </div>
-            <ul className="space-y-3">
-              {past.map((o) => (
-                <OrderListCard key={o.id} order={o} />
-              ))}
-            </ul>
+        ) : filtered.length === 0 ? (
+          <section className={`${CARD} px-6 py-10 text-center`}>
+            <p className="text-base font-bold text-[var(--text-primary)]">Nada por aquí</p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">No tienes pedidos en esta categoría.</p>
           </section>
+        ) : (
+          <ul className="space-y-3">
+            {filtered.map((o) => (
+              <OrderCard key={o.id} order={o} />
+            ))}
+          </ul>
         )}
       </main>
 
