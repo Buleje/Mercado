@@ -58,7 +58,7 @@ Prioridad:
 🏛️ Orquestador Principal: yo (Claude Opus)
 Objetivo: [1 frase, mejora GRANDE — no refactor cosmetico]
 
-Agencias: ARQ (solution-architect), DB (database-engineer),
+Agencias: ARQ (architect), DB (database),
 BACKEND (backend + integration), FRONTEND (frontend + UX),
 QA (qa + pentester), GOBERNANZA (reviewer + docs)
 

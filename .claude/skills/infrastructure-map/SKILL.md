@@ -58,7 +58,7 @@ Ejemplo de red de agentes:
 flowchart TB
     DO[Director Orchestrator] --> BA[Backend Engineer]
     IO[Initiative Orchestrator] --> DO
-    SP[Security Pentester] -.->|pre-merge| DO
+    SP[security] -.->|pre-merge| DO
 ```
 
 ## Reglas

@@ -1,6 +1,6 @@
 ---
 name: checkout-squad
-description: Dispara el equipo especializado de checkout (frontend + backend + qa + checkout-specialist) de forma coordinada para cualquier tarea que toque CheckoutModal, CartSidebar, componentes/checkout/** o el flujo de pago. Usar cuando el trabajo tenga riesgo de afectar pagos, cupones, reservas o state machine de order.
+description: Dispara el equipo especializado de checkout (frontend + backend + qa + backend) de forma coordinada para cualquier tarea que toque CheckoutModal, CartSidebar, componentes/checkout/** o el flujo de pago. Usar cuando el trabajo tenga riesgo de afectar pagos, cupones, reservas o state machine de order.
 disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Agent, TaskCreate, TaskUpdate
@@ -56,10 +56,10 @@ Usar `Agent` tool con estos 4 subagent_types **en paralelo**, una sola respuesta
 
 | Subagent | Rol en el squad | Briefing |
 |---|---|---|
-| `checkout-specialist` | Líder técnico — conoce los 2018 LoC del monolito original y el refactor | Describir el cambio + pedir diseño mínimo |
-| `frontend-engineer` | UI, accesibilidad, animación | Pedir propuesta de componentes + hooks afectados |
-| `backend-platform-engineer` | Route handlers, DB classes, Zod | Pedir revisión de seguridad multi-tenant + idempotency |
-| `qa-reliability-engineer` | Red de seguridad | Pedir lista de tests nuevos obligatorios (vitest + playwright) |
+| `backend` | Líder técnico — conoce los 2018 LoC del monolito original y el refactor | Describir el cambio + pedir diseño mínimo |
+| `frontend` | UI, accesibilidad, animación | Pedir propuesta de componentes + hooks afectados |
+| `backend` | Route handlers, DB classes, Zod | Pedir revisión de seguridad multi-tenant + idempotency |
+| `tester` | Red de seguridad | Pedir lista de tests nuevos obligatorios (vitest + playwright) |
 
 **Briefing común para los 4:**
 
@@ -76,7 +76,7 @@ Usar `Agent` tool con estos 4 subagent_types **en paralelo**, una sola respuesta
 
 Después de recibir las 4 respuestas:
 
-1. Consolidar el plan — priorizando lo que diga `checkout-specialist`.
+1. Consolidar el plan — priorizando lo que diga `backend`.
 2. Crear TaskList con los pasos.
 3. Ejecutar en orden: backend primero, frontend después, tests al final.
 4. Correr `npx tsc --noEmit` + `npm run test -- __tests__/checkout` antes de cerrar.
@@ -95,6 +95,6 @@ Después de recibir las 4 respuestas:
 
 - **NUNCA** saltar el diagnóstico inicial
 - **NUNCA** dispatchar sin leer las reglas del paso 2
-- **NUNCA** mergear si `qa-reliability-engineer` flaggeó un test faltante
+- **NUNCA** mergear si `tester` flaggeó un test faltante
 - Si el cambio es >5 archivos, proponer split en ≥2 PRs
-- Si el cambio toca schema.prisma, delegar también a `database-engineer` y `migration-planner`
+- Si el cambio toca schema.prisma, delegar también a `database` y `migration-planner`

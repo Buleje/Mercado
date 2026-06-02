@@ -135,7 +135,7 @@ El skill genera:
 4. Rollback plan explícito
 5. Observability checklist
 
-Antes de commit, pasa por review del database-engineer subagent.
+Antes de commit, pasa por review del database subagent.
 
 ## Anti-patrones explícitos
 

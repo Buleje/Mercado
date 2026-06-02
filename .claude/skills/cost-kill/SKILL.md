@@ -3,7 +3,7 @@ name: cost-kill
 description: |
   Mata agentes o procesos que se desbocan en tokens sin producir output
   útil. Reporta el consumo estimado antes de matar.
-  Usar cuando un agente lleve demasiado tiempo, cuando el finops-guard
+  Usar cuando un agente lleve demasiado tiempo, cuando el data-qa
   detecte exceso, o cuando Brandon diga "mata ese agente", "está
   gastando mucho", "cost kill", "para eso".
 disable-model-invocation: false
@@ -68,5 +68,5 @@ model: haiku
 
 ## Referencia
 
-- Agente: `finops-guard` (22)
+- Agente: `data-qa` (22)
 - Skill: `/token-optimizer`

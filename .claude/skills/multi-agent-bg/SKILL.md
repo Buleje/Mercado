@@ -59,10 +59,10 @@ argument-hint: "[N=3-8] [tipo-tarea]"
 ```ts
 // 1) Decompose (Coordinator, sync — vos)
 const subtasks = [
-  { name: "audit-security",  dir: "lib/auth/",       agent: "Security Auditor" },
-  { name: "audit-perf",       dir: "lib/db/",         agent: "performance-engineer" },
+  { name: "audit-security",  dir: "lib/auth/",       agent: "security" },
+  { name: "audit-perf",       dir: "lib/db/",         agent: "optimizer" },
   { name: "audit-a11y",       dir: "components/",     agent: "dark-mode-auditor" },
-  { name: "audit-deps",       dir: ".",                agent: "Security Pentester" },
+  { name: "audit-deps",       dir: ".",                agent: "security" },
 ];
 
 // 2) Fan-out paralelo (BG, mismo mensaje)

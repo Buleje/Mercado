@@ -89,4 +89,4 @@ DETECTAR (git log, metrics, self-heal)
 | agent-metrics | Fuente de datos |
 | self-heal | Fuente de errores + destino de reglas |
 | session-recap | Trigger automatico al final |
-| orchestrator-config.json | Destino de cambios model/routing/squads |
+| director-config.json | Destino de cambios model/routing/squads |

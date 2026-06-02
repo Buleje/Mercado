@@ -99,7 +99,7 @@ Reportar para el dominio detectado: ADRs relevantes (titulo + 1 linea), archivos
 | Sistema | Como se conecta |
 |---|---|
 | **agent-router** | Invoca pre-task-intel automaticamente antes de despachar |
-| **orchestrator-config.json** | Campo `preTask` en cada route referencia dominios |
+| **director-config.json** | Campo `preTask` en cada route referencia dominios |
 | **audit-first** | Si dominio es danger zone, sugiere /audit-first |
 | **a2a-bus** | Publica Context Packet como broadcast para agentes del squad |
 

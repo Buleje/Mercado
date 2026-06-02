@@ -35,23 +35,23 @@ OBJETIVO: [1 frase — qué métrica de negocio mueve]
 NIVEL: 4 Enterprise (≥ 10/12 checkpoints)
 
 SPRINT 1 — FOUNDATIONS
-├── 1.1 DB + Schema (database-engineer)
-├── 1.2 DB classes (backend-platform-engineer)
-├── 1.3 Tests unitarios DB (qa-reliability-engineer)
+├── 1.1 DB + Schema (database)
+├── 1.2 DB classes (backend)
+├── 1.3 Tests unitarios DB (tester)
 └── Gate 1 — tsc + eslint + tests + prisma validate (BLOQUEANTE)
 
 SPRINT 2 — INTEGRATION
-├── 2.1 API routes (backend-platform-engineer)
-├── 2.2 UI components (frontend-engineer)
-├── 2.3 Workers/integraciones (integration-specialist)
-├── 2.4 Tests e2e (qa-reliability-engineer)
+├── 2.1 API routes (backend)
+├── 2.2 UI components (frontend)
+├── 2.3 Workers/integraciones (integrator)
+├── 2.4 Tests e2e (tester)
 └── Gate 2 — e2e + smoke + build verde (BLOQUEANTE)
 
 SPRINT 3 — HARDENING
-├── 3.1 Observabilidad (devops-release-engineer)
-├── 3.2 Feature flag + rollback (devops-release-engineer)
+├── 3.1 Observabilidad (deployer)
+├── 3.2 Feature flag + rollback (deployer)
 ├── 3.3 ADR + docs (doc-updater)
-├── 3.4 Security OWASP (security-auditor)
+├── 3.4 Security OWASP (security)
 └── Gate 3 — deploy preview + rollback probado + ADR + security (BLOQUEANTE)
 
 DEMO FINAL — Happy path e2e contra preview URL
@@ -82,20 +82,20 @@ Esta matriz es el tracker. Se actualiza en cada respuesta.
 
 | Teammate | Para qué |
 |---|---|
-| `database-engineer` | Schema, índices, migrations, pooler |
-| `backend-platform-engineer` | Routes, Zod, RBAC, DB classes, webhooks |
-| `frontend-engineer` | React, Tailwind, accessibility, state |
-| `checkout-specialist` | CheckoutModal, CartSidebar, pagos |
-| `integration-specialist` | WhatsApp, RENIEC, Stripe, SUNAT, email |
-| `mobile-engineer` | Capacitor, iOS/Android, push |
-| `performance-engineer` | Bundle, CWV, lazy loading, cache |
-| `qa-reliability-engineer` | Tests unitarios, e2e, smoke, coverage |
-| `security-auditor` | OWASP, multi-tenant leaks, secrets |
-| `devops-release-engineer` | Deploy, env vars, crons, monitoring |
-| `data-analyst` | KPIs, dashboards, reportes |
+| `database` | Schema, índices, migrations, pooler |
+| `backend` | Routes, Zod, RBAC, DB classes, webhooks |
+| `frontend` | React, Tailwind, accessibility, state |
+| `backend` | CheckoutModal, CartSidebar, pagos |
+| `integrator` | WhatsApp, RENIEC, Stripe, SUNAT, email |
+| `frontend` | Capacitor, iOS/Android, push |
+| `optimizer` | Bundle, CWV, lazy loading, cache |
+| `tester` | Tests unitarios, e2e, smoke, coverage |
+| `security` | OWASP, multi-tenant leaks, secrets |
+| `deployer` | Deploy, env vars, crons, monitoring |
+| `data-qa` | KPIs, dashboards, reportes |
 | `migration-planner` | Migraciones Prisma complejas |
-| `product-uiux-strategist` | Flujos, UX |
-| `seo-growth-strategist` | Metadata, JSON-LD, sitemap |
+| `frontend` | Flujos, UX |
+| `integrator` | Metadata, JSON-LD, sitemap |
 
 **Mínimo 5 teammates** o no es enterprise.
 

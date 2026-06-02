@@ -75,9 +75,9 @@ intento 1-3: fix automatico basico (tabla arriba)
     ↓ si falla
 intento 4: escalar a agente especialista:
     - TS complejo → ecc:build-error-resolver
-    - Test/logica → bug-hunter
-    - Lint complejo → refactoring-expert
-    - Build/webpack → performance-engineer
+    - Test/logica → reviewer
+    - Lint complejo → reviewer
+    - Build/webpack → optimizer
     El agente recibe: error completo, archivos involucrados, fixes intentados (diffs)
     ↓ si tampoco resuelve
 intento 5: ESCALAR A BRANDON con: todos los intentos, diff acumulado, diagnostico del agente, sugerencia de accion manual, opcion de revertir

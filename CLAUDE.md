@@ -154,7 +154,7 @@ Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · S
 | **DANGER** | Zona peligrosa | Squad + security | Full pipeline |
 | **INITIATIVE** | 5+ archivos, ≥2 áreas | Hub BUILD→QUALITY→OPS | Todos los gates |
 
-Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 14 agentes en roster canónico; 4 specialists adicionales fuera de Hub en `.claude/agents/`).
+Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 14 agentes canónicos + 3 specialists (dark-mode-auditor, storefront-visual-qa, typography-enforcer) = **17 agent defs activos** en `.claude/agents/`. 36 defs legacy absorbidos → archivados en `.claude/_agents-archive/`, NO se cargan; los skills referencian solo nombres canónicos).
 
 ---
 

@@ -79,7 +79,7 @@ async function outcomeLoop({ task, rubric, maxIter = 3 }) {
     // 2) Evaluator (corre EN PARALELO con cualquier otra cosa pendiente)
     const evalResult = await Agent({
       description: `Grade iter ${i+1}`,
-      subagent_type: "Code Reviewer",
+      subagent_type: "reviewer",
       run_in_background: false,
       prompt: `
 Vos sos un grader independiente. NO conocés el contexto del Generator.
@@ -107,7 +107,7 @@ Output (JSON estricto):
 
 ## 3 reglas duras
 
-1. **Evaluator NUNCA es el mismo subagent que Generator.** Contextos separados garantizan honestidad. Generator: `backend`. Evaluator: `Code Reviewer` o `security` o `tester`.
+1. **Evaluator NUNCA es el mismo subagent que Generator.** Contextos separados garantizan honestidad. Generator: `backend`. Evaluator: `reviewer` o `security` o `tester`.
 2. **Rubric es verificable, no opinable.** Cada criterio debe ser un comando bash/grep que devuelve 0/1, no "está bien escrito".
 3. **maxIter = 3.** Si en 3 iters no pasa, hay problema de diseño — escalá a humano. No loop infinito.
 
@@ -124,7 +124,7 @@ Output (JSON estricto):
 
 - Tareas <30s (lint fix, rename).
 - Cuando no podés definir rubric verificable (UX subjetivo, decisión de diseño).
-- Brainstorm / arquitectura — eso va `solution-architect`, no rubric.
+- Brainstorm / arquitectura — eso va `architect`, no rubric.
 
 ## Bibliografía
 

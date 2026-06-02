@@ -35,7 +35,7 @@ El skill crea/actualiza `bodega-san-martin/.claude/session-state.json` con:
     "Tests para recommender"
   ],
   "blockers": ["Necesita EXA_API_KEY para deep research"],
-  "agentsUsed": ["database-engineer", "backend-platform-engineer"],
+  "agentsUsed": ["database", "backend"],
   "adrsCreated": ["ADR-042"],
   "memoryUpdates": ["Actualizado project_sprint_roadmap.md"]
 }

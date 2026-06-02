@@ -43,7 +43,7 @@ Conecta la salud de producción con el entorno de desarrollo local.
    a. Identificar archivo fuente (app/api/[ruta]/route.ts)
    b. Leer el handler
    c. Proponer diagnóstico
-5. Si hay error crítico (500+), invocar agente bug-hunter
+5. Si hay error crítico (500+), invocar agente reviewer
 ```
 
 ### `/production-sync vitals`
@@ -55,7 +55,7 @@ Conecta la salud de producción con el entorno de desarrollo local.
    - LCP: < 2.5s ✅ | 2.5-4.0s ⚠️ | > 4.0s ❌
    - INP: < 100ms ✅ | 100-300ms ⚠️ | > 300ms ❌
    - CLS: < 0.1 ✅ | 0.1-0.25 ⚠️ | > 0.25 ❌
-3. Si alguno en rojo → invocar performance-engineer
+3. Si alguno en rojo → invocar optimizer
 ```
 
 ### `/production-sync full`
@@ -80,8 +80,8 @@ Ejecuta health + errors + vitals en secuencia.
 ### Plan de acción (si hay problemas)
 | Prioridad | Problema | Acción | Agente sugerido |
 |---|---|---|---|
-| 🔴 | Error 500 en /api/X | Invocar bug-hunter | bug-hunter |
-| 🟡 | LCP > 3s en /tienda | Optimizar images | performance-engineer |
+| 🔴 | Error 500 en /api/X | Invocar reviewer | reviewer |
+| 🟡 | LCP > 3s en /tienda | Optimizar images | optimizer |
 ```
 
 ## Reglas
@@ -94,6 +94,6 @@ Ejecuta health + errors + vitals en secuencia.
 
 ## Referencia
 
-- Agente: `sre-observability` — para monitoreo continuo
-- Agente: `bug-hunter` — para diagnóstico de errores
+- Agente: `observer` — para monitoreo continuo
+- Agente: `reviewer` — para diagnóstico de errores
 - Memoria: `reference_vercel_cli_observability.md` — estado del Vercel CLI

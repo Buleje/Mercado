@@ -76,6 +76,6 @@ Tabla: `# | Eval | Score | Tiempo | Estado` + score total + detalles de fallos.
 
 ## Referencia
 
-- Agente: `sre-observability` — requiere evals antes de auto-fix
-- Agente: `qa-reliability-engineer` — valida evals
+- Agente: `observer` — requiere evals antes de auto-fix
+- Agente: `tester` — valida evals
 - ADR-027 (futuro): Eval-driven self-healing

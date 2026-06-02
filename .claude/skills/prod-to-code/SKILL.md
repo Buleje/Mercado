@@ -34,15 +34,15 @@ Pipeline de 5 fases: Error en produccion → Detectar → Clasificar → Auto-fi
 
 | Patron de error | Severidad | Area | Agente |
 |---|---|---|---|
-| 500 Internal Server Error | P1 | backend | bug-hunter |
-| TypeError: Cannot read properties of null | P2 | fullstack | bug-hunter |
-| PrismaClientKnownRequestError | P2 | database | database-engineer |
-| NEXT_NOT_FOUND (404 masivo) | P3 | frontend/seo | seo-growth-strategist |
-| Rate limit exceeded | P3 | infra | devops-release-engineer |
+| 500 Internal Server Error | P1 | backend | reviewer |
+| TypeError: Cannot read properties of null | P2 | fullstack | reviewer |
+| PrismaClientKnownRequestError | P2 | database | database |
+| NEXT_NOT_FOUND (404 masivo) | P3 | frontend/seo | integrator |
+| Rate limit exceeded | P3 | infra | deployer |
 | JWT expired / auth error | P2 | auth | security-squad |
 | Timeout / function duration | P2 | performance | performance-squad |
-| CORS / CSP violation | P3 | security | backend-platform-engineer |
-| Unhandled promise rejection | P2 | backend | bug-hunter |
+| CORS / CSP violation | P3 | security | backend |
+| Unhandled promise rejection | P2 | backend | reviewer |
 | Out of memory | P1 | performance | performance-squad |
 | Multi-tenant data leak | **P0** | security | **security-squad + BLOQUEAR** |
 

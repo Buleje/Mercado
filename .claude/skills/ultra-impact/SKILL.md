@@ -77,9 +77,9 @@ Usar cuando: N tareas INDEPENDIENTES sin shared state.
 
 ```javascript
 // 1 mensaje con:
-Agent({ subagent_type: "frontend-engineer", description: "Migrate admin modules", prompt: "..." })
-Agent({ subagent_type: "backend-platform-engineer", description: "Add DB method", prompt: "..." })
-Agent({ subagent_type: "qa-reliability-engineer", description: "Fix test mocks", prompt: "..." })
+Agent({ subagent_type: "frontend", description: "Migrate admin modules", prompt: "..." })
+Agent({ subagent_type: "backend", description: "Add DB method", prompt: "..." })
+Agent({ subagent_type: "tester", description: "Fix test mocks", prompt: "..." })
 ```
 
 ### TeamCreate + SendMessage (sprint coordinado con memoria)
@@ -106,7 +106,7 @@ Agent({ run_in_background: true, subagent_type: "Explore", description: "Deep di
 Usar cuando: cambios grandes que podrían romper estado compartido.
 
 ```javascript
-Agent({ isolation: "worktree", subagent_type: "frontend-engineer", ... })
+Agent({ isolation: "worktree", subagent_type: "frontend", ... })
 // Si el agente no hace cambios, worktree se limpia solo — rollback gratis
 ```
 
@@ -149,7 +149,7 @@ Per CLAUDE.md del proyecto:
 | `lib/db/orders.db.ts`, `app/api/orders/**` | State machine | checkout-squad + squad security |
 | `lib/auth/role-permissions.ts` | RBAC 26×6 | backend + security |
 | `proxy.ts`, `lib/middleware/**` | Auth + CSP | devops + security |
-| `prisma/schema.prisma` | 177 modelos, DIRECT_URL | database-engineer |
+| `prisma/schema.prisma` | 177 modelos, DIRECT_URL | database |
 
 **Si una tarea toca estas zonas, dispatch squad. Nunca solo.**
 
@@ -200,7 +200,7 @@ Antes de declarar "listo":
 - [ ] Baseline pre/post capturado y committeado
 - [ ] Spec actualizado con delta
 - [ ] Roadmap maestro actualizado con estado del sub-proyecto
-- [ ] Peer review (ideal: subagent code-reviewer)
+- [ ] Peer review (ideal: subagent reviewer)
 - [ ] Todos los commits con Conventional Commits válidos
 - [ ] Ningún `HUSKY=0` bypass sin justificación en el commit message
 
@@ -222,8 +222,8 @@ O simplemente decir "ambicioso máximo" / "ultra impact" / "trabajo de varios em
 - 71 → 27 tests fallando (44 arreglados; 27 restantes en danger zone)
 - 2543 → 2835 tests passing (+292)
 - 27 commits atómicos, todos con mensaje Conventional Commits
-- 1 subagent dispatch (frontend-engineer para 17 admin modules)
-- 1 subagent dispatch (Code Reviewer para spec review)
+- 1 subagent dispatch (frontend para 17 admin modules)
+- 1 subagent dispatch (reviewer para spec review)
 - 0 regresiones introducidas
 - 0 uso de HUSKY=0 bypass
 

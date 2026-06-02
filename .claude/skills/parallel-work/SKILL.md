@@ -69,13 +69,13 @@ Brandon: "Necesito agregar pgvector recommender + WhatsApp concierge + billing m
 Orquestador detecta 3 frentes independientes:
 
 Frente 1 (DATABASE): pgvector extension + embeddings table + recommender DB class
-  → Agent: database-engineer, worktree, branch: feat/pgvector-recommender
+  → Agent: database, worktree, branch: feat/pgvector-recommender
 
 Frente 2 (INTEGRACIONES): WhatsApp Business API + webhook handler + concierge flow
-  → Agent: integration-specialist, worktree, branch: feat/whatsapp-concierge
+  → Agent: integrator, worktree, branch: feat/whatsapp-concierge
 
 Frente 3 (BACKEND): billing metering endpoint + usage tracking + Stripe integration
-  → Agent: backend-platform-engineer, worktree, branch: feat/billing-metering
+  → Agent: backend, worktree, branch: feat/billing-metering
 
 Los 3 corren en paralelo. Cero conflictos.
 ```
