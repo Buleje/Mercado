@@ -978,13 +978,12 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
             2. Categorías principales (grid grande)
             3. Pedidos favoritos
             4. Tiendas destacadas cerca */}
-      {/* "Repetir último pedido" — Brandon mayo 14: oculto en mobile
-          para minimizar ruido en cel. En sm+ visible cuando logueado. */}
-      {isLoggedIn && search.trim().length === 0 && (
-        <div className="hidden sm:block">
-          <RepetirUltimoPedido />
-        </div>
-      )}
+      {/* "Repetir último pedido" — barra sticky slim. Brandon 2026-06-02:
+          ahora TAMBIÉN en mobile (antes hidden sm:block) — la mayoría pide
+          desde el cel y repetir es la acción de retención #1. Solo aparece
+          si el cliente está logueado, sin búsqueda activa, y tiene un pedido
+          reciente en localStorage (grabado post-checkout). */}
+      {isLoggedIn && search.trim().length === 0 && <RepetirUltimoPedido />}
 
       {/* TiendasMainCategoriesGrid removido (Brandon mayo 14 2026 v2):
           las categorías principales del superadmin ahora viven en la home
@@ -1435,6 +1434,37 @@ export default function TiendasClient({ initialZone, initialStores = [], premium
 
         {/* ── MAIN: Grid de tiendas ── */}
         <div className="min-w-0">
+          {/* ── TIRA DE CATEGORÍAS (Brandon 2026-06-02) — acceso horizontal
+               rápido arriba del grid (desktop; en mobile/tablet ya están el
+               scroll del sidebar + la barra sticky). Misma data + mismo
+               subCategoryId que el sidebar → quedan sincronizados. ── */}
+          {subcategories.length > 0 && (
+            <div className="hidden lg:block mb-5">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+                <button
+                  type="button"
+                  onClick={() => setSubCategoryId(null)}
+                  aria-pressed={subCategoryId === null}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-extrabold transition-colors whitespace-nowrap",
+                    subCategoryId === null
+                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <Boxes className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                  Todas
+                </button>
+                <SubcategoryChips
+                  subcategories={subcategories}
+                  activeId={subCategoryId}
+                  onSelect={setSubCategoryId}
+                  variant="pill"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Mini-label minimalista arriba del grid de tiendas — solo cuando
               hay resultados. Brandon 2026-05-21: reemplaza el bloque h2+p
               largo anterior. Pattern: eyebrow uppercase con count tabular. */}
