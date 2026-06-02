@@ -25,6 +25,8 @@ export const LEGAL = {
   /** Domicilio fiscal completo (según ficha RUC SUNAT). */
   domicilioFiscal:
     "[PENDIENTE: Domicilio fiscal — calle/jr./av., número, distrito, provincia, región]",
+  /** Representante legal (nombre completo) — exigible por transparencia (Código de Consumo). */
+  representanteLegal: "[PENDIENTE: Representante legal — nombre completo]",
   /** Correo que recibe copia de cada reclamo del Libro de Reclamaciones. */
   emailReclamos: "[PENDIENTE: correo para reclamos — ej. reclamos@buleje.pe]",
   /** Teléfono de contacto del titular. */

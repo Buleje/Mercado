@@ -11,11 +11,16 @@ import {
   Truck,
   RotateCcw,
   Wine,
+  Gift,
+  Lock,
+  Megaphone,
   MessageSquare,
   Copyright,
   Ban,
   Briefcase,
+  Activity,
   ShieldCheck,
+  CloudOff,
   Scale,
   Power,
   RefreshCw,
@@ -28,6 +33,7 @@ import { LEGAL, LEGAL_COMPLETO } from "@/lib/legal";
 
 const BASE_URL = "https://www.buleje.pe";
 const LAST_UPDATED = "2 de junio de 2026";
+const HAS_REP = !LEGAL.representanteLegal.includes("PENDIENTE");
 
 const CARD =
   "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]";
@@ -35,7 +41,7 @@ const CARD =
 export const metadata: Metadata = {
   title: "Términos y Condiciones",
   description:
-    "Términos y Condiciones de uso de la plataforma Buleje: marketplace, pedidos, pagos, delivery, vendedores y solución de controversias. Conforme a la Ley N° 29571.",
+    "Términos y Condiciones de uso de la plataforma Buleje: marketplace, pedidos, pagos, delivery, datos personales, vendedores y solución de controversias. Conforme a la Ley N° 29571.",
   alternates: { canonical: `${BASE_URL}/terminos` },
   robots: { index: true, follow: true },
   openGraph: {
@@ -59,16 +65,21 @@ const TOC = [
   { id: "delivery", n: 8, title: "Delivery y entrega", icon: Truck },
   { id: "devoluciones", n: 9, title: "Cancelaciones y reembolsos", icon: RotateCcw },
   { id: "alcohol", n: 10, title: "Bebidas alcohólicas (+18)", icon: Wine },
-  { id: "contenido", n: 11, title: "Contenido del usuario", icon: MessageSquare },
-  { id: "propiedad", n: 12, title: "Propiedad intelectual", icon: Copyright },
-  { id: "uso", n: 13, title: "Uso aceptable", icon: Ban },
-  { id: "vendedores", n: 14, title: "Para vendedores y negocios", icon: Briefcase },
-  { id: "responsabilidad", n: 15, title: "Limitación de responsabilidad", icon: ShieldCheck },
-  { id: "indemnizacion", n: 16, title: "Indemnización", icon: Scale },
-  { id: "terminacion", n: 17, title: "Suspensión, baja y cesión", icon: Power },
-  { id: "modificaciones", n: 18, title: "Modificaciones", icon: RefreshCw },
-  { id: "ley", n: 19, title: "Ley aplicable e INDECOPI", icon: Gavel },
-  { id: "varios", n: 20, title: "Disposiciones varias y contacto", icon: Info },
+  { id: "fidelidad", n: 11, title: "Fidelidad, puntos y cupones", icon: Gift },
+  { id: "datos", n: 12, title: "Datos personales (Ley 29733)", icon: Lock },
+  { id: "marketing", n: 13, title: "Comunicaciones y marketing", icon: Megaphone },
+  { id: "contenido", n: 14, title: "Contenido que publicas", icon: MessageSquare },
+  { id: "propiedad", n: 15, title: "Propiedad intelectual y datos", icon: Copyright },
+  { id: "uso", n: 16, title: "Uso aceptable", icon: Ban },
+  { id: "vendedores", n: 17, title: "Vendedores: comisiones y contracargos", icon: Briefcase },
+  { id: "disponibilidad", n: 18, title: "Disponibilidad del servicio", icon: Activity },
+  { id: "responsabilidad", n: 19, title: "Limitación de responsabilidad", icon: ShieldCheck },
+  { id: "fuerza-mayor", n: 20, title: "Fuerza mayor", icon: CloudOff },
+  { id: "indemnizacion", n: 21, title: "Indemnización", icon: Scale },
+  { id: "terminacion", n: 22, title: "Suspensión, baja y cesión", icon: Power },
+  { id: "modificaciones", n: 23, title: "Modificaciones", icon: RefreshCw },
+  { id: "ley", n: 24, title: "Ley aplicable y disputas", icon: Gavel },
+  { id: "varios", n: 25, title: "Disposiciones varias y contacto", icon: Info },
 ] as const;
 
 function Section({
@@ -181,8 +192,9 @@ export default function TerminosPage() {
                     [
                       ["Titular", LEGAL.razonSocial],
                       ["RUC", LEGAL.ruc],
-                      ["Domicilio", LEGAL.domicilioFiscal],
+                      ["Domicilio fiscal", LEGAL.domicilioFiscal],
                       ["Nombre comercial", LEGAL.nombreComercial],
+                      ...(HAS_REP ? ([["Representante legal", LEGAL.representanteLegal]] as const) : []),
                     ] as const
                   ).map(([k, v]) => (
                     <div key={k}>
@@ -194,7 +206,8 @@ export default function TerminosPage() {
               ) : (
                 <p>
                   El titular de la plataforma es <B>{LEGAL.nombreComercial}</B>. Los datos
-                  completos de identificación del titular se publican en esta página.
+                  completos de identificación del titular (razón social, RUC, domicilio fiscal
+                  y representante legal) se publican en esta página.
                 </p>
               )}
               <p>
@@ -272,7 +285,29 @@ export default function TerminosPage() {
               </ul>
             </Section>
 
-            <Section id="contenido" n={11} title="Contenido que publicas" icon={MessageSquare}>
+            <Section id="fidelidad" n={11} title="Fidelidad, puntos, cupones y promociones" icon={Gift}>
+              <ul className="space-y-2">
+                <li className={LI}><Dot /><span>Los puntos, cupones, descuentos y beneficios son <B>promocionales</B>: no tienen valor monetario, no son canjeables por efectivo ni transferibles, y están sujetos a la vigencia y condiciones que se informen en cada caso.</span></li>
+                <li className={LI}><Dot /><span>Buleje y las tiendas pueden <B>crear, modificar, suspender o finalizar</B> estos programas, y <B>anular</B> puntos o cupones obtenidos por error, fraude o abuso, sin que ello genere derecho a compensación.</span></li>
+              </ul>
+            </Section>
+
+            <Section id="datos" n={12} title="Datos personales y privacidad (Ley N° 29733)" icon={Lock}>
+              <ul className="space-y-2">
+                <li className={LI}><Dot /><span>El tratamiento de tus datos personales se rige por nuestra <Link href="/privacidad" className="font-bold text-[var(--accent)] hover:underline">Política de Privacidad</Link>, que forma parte de estos Términos.</span></li>
+                <li className={LI}><Dot /><span>Al usar la plataforma <B>consientes</B> el tratamiento de tus datos para las finalidades allí descritas (operar el servicio, soporte, seguridad y mejora), conforme a la Ley N° 29733 de Protección de Datos Personales.</span></li>
+                <li className={LI}><Dot /><span>Buleje gestiona un <B>banco de datos personales</B> y respeta tus derechos <B>ARCO</B> (acceso, rectificación, cancelación y oposición), ejercibles según se indica en la Política de Privacidad.</span></li>
+              </ul>
+            </Section>
+
+            <Section id="marketing" n={13} title="Comunicaciones y marketing" icon={Megaphone}>
+              <ul className="space-y-2">
+                <li className={LI}><Dot /><span>Aceptas recibir <B>comunicaciones operativas</B> (sobre tu cuenta, pedidos y seguridad) por medios electrónicos como WhatsApp, correo o notificaciones.</span></li>
+                <li className={LI}><Dot /><span>El envío de <B>publicidad y promociones</B> requiere tu <B>consentimiento específico</B>, que puedes otorgar o retirar en cualquier momento desde tu cuenta o los enlaces de baja, sin afectar el servicio.</span></li>
+              </ul>
+            </Section>
+
+            <Section id="contenido" n={14} title="Contenido que publicas" icon={MessageSquare}>
               <ul className="space-y-2">
                 <li className={LI}><Dot /><span>Al publicar reseñas, fotos, calificaciones o comentarios declaras que son <B>veraces</B> y que tienes derecho a compartirlos.</span></li>
                 <li className={LI}><Dot /><span>Otorgas a Buleje una <B>licencia mundial, no exclusiva, gratuita, transferible y sublicenciable</B> para usar, reproducir, mostrar, adaptar y difundir ese contenido con el fin de operar y promocionar la plataforma, incluso después de cerrar tu cuenta.</span></li>
@@ -280,16 +315,14 @@ export default function TerminosPage() {
               </ul>
             </Section>
 
-            <Section id="propiedad" n={12} title="Propiedad intelectual" icon={Copyright}>
-              <p>
-                La plataforma, la marca <B>“Buleje”</B>, los logotipos, el diseño, el software
-                y los contenidos propios son propiedad de Buleje o de sus licenciantes y
-                están protegidos por la ley. No puedes copiarlos, modificarlos, realizar
-                ingeniería inversa ni explotarlos sin autorización escrita.
-              </p>
+            <Section id="propiedad" n={15} title="Propiedad intelectual y datos de la plataforma" icon={Copyright}>
+              <ul className="space-y-2">
+                <li className={LI}><Dot /><span>La plataforma, la marca <B>“Buleje”</B>, los logotipos, el diseño, el software y los contenidos propios son propiedad de Buleje o de sus licenciantes y están protegidos por la ley. No puedes copiarlos, modificarlos, realizar ingeniería inversa ni explotarlos sin autorización escrita.</span></li>
+                <li className={LI}><Dot /><span>Los <B>datos transaccionales agregados, las estadísticas y la inteligencia</B> generada por la plataforma (que no identifican a personas) son de <B>propiedad de Buleje</B>, que puede usarlos para operar, mejorar y desarrollar productos, sin perjuicio de la protección de los datos personales conforme a la Política de Privacidad.</span></li>
+              </ul>
             </Section>
 
-            <Section id="uso" n={13} title="Uso aceptable" icon={Ban}>
+            <Section id="uso" n={16} title="Uso aceptable" icon={Ban}>
               <p>Al usar Buleje te comprometes a NO:</p>
               <ul className="space-y-2">
                 <li className={LI}><Dot /><span>usar la plataforma para fines ilegales, fraudulentos o no autorizados;</span></li>
@@ -298,24 +331,44 @@ export default function TerminosPage() {
               </ul>
             </Section>
 
-            <Section id="vendedores" n={14} title="Para vendedores y negocios" icon={Briefcase}>
+            <Section id="vendedores" n={17} title="Vendedores: comisiones, retenciones y contracargos" icon={Briefcase}>
               <ul className="space-y-2">
                 <li className={LI}><Dot /><span>Registrarte como vendedor requiere <B>RUC vigente</B>, datos veraces y el cumplimiento de tus obligaciones tributarias y de protección al consumidor.</span></li>
-                <li className={LI}><Dot /><span>Las <B>comisiones, tarifas y planes</B> se rigen por el plan que contrates, informados en <Link href="/negocios" className="font-bold text-[var(--accent)] hover:underline">Buleje para negocios</Link> y en <Link href="/pricing" className="font-bold text-[var(--accent)] hover:underline">Planes</Link>; Buleje puede actualizarlos con aviso previo.</span></li>
-                <li className={LI}><Dot /><span>El vendedor es responsable de sus productos, precios, stock, comprobantes y, si aplica, su entrega, y mantiene <B>indemne</B> a Buleje frente a reclamos derivados de ello.</span></li>
-                <li className={LI}><Dot /><span>Buleje puede <B>suspender o dar de baja</B> tiendas que incumplan estos Términos o la ley.</span></li>
+                <li className={LI}><Dot /><span>Las <B>comisiones, tarifas, planes y la periodicidad de liquidación</B> se rigen por el plan que contrates, informados en <Link href="/negocios" className="font-bold text-[var(--accent)] hover:underline">Buleje para negocios</Link> y en <Link href="/pricing" className="font-bold text-[var(--accent)] hover:underline">Planes</Link>; Buleje puede actualizarlos con aviso previo.</span></li>
+                <li className={LI}><Dot /><span>Buleje puede <B>retener o compensar</B> de las liquidaciones los montos correspondientes a comisiones, reclamos, <B>contracargos (chargebacks)</B>, reembolsos, fraudes o deudas imputables al vendedor.</span></li>
+                <li className={LI}><Dot /><span>El vendedor <B>asume el costo</B> de los contracargos, fraudes y reembolsos atribuibles a él, mantiene <B>indemne</B> a Buleje, y puede ser penalizado, suspendido o dado de baja por incumplimientos.</span></li>
               </ul>
             </Section>
 
-            <Section id="responsabilidad" n={15} title="Limitación de responsabilidad y fuerza mayor" icon={ShieldCheck}>
+            <Section id="disponibilidad" n={18} title="Disponibilidad del servicio" icon={Activity}>
+              <p>
+                Procuramos la mayor disponibilidad posible, pero <B>no garantizamos</B> un
+                servicio ininterrumpido, oportuno o libre de errores. Podemos realizar
+                mantenimientos, actualizaciones o suspensiones técnicas, y modificar o
+                discontinuar funciones, sin que ello genere responsabilidad, en especial
+                frente a vendedores. Te avisaremos de interrupciones programadas cuando sea
+                razonable.
+              </p>
+            </Section>
+
+            <Section id="responsabilidad" n={19} title="Limitación de responsabilidad" icon={ShieldCheck}>
               <ul className="space-y-2">
                 <li className={LI}><Dot /><span>En la máxima medida permitida por la ley, la plataforma se ofrece <B>“tal cual” y “según disponibilidad”</B>.</span></li>
-                <li className={LI}><Dot /><span>Buleje no responde por los actos, productos o incumplimientos de los vendedores o repartidores terceros, ni por daños indirectos o lucro cesante. Esto <B>sin perjuicio</B> de los derechos irrenunciables del consumidor y de la responsabilidad que la ley imponga a la plataforma.</span></li>
-                <li className={LI}><Dot /><span>No somos responsables por demoras o fallas causadas por <B>fuerza mayor</B>: clima extremo, problemas viales, cortes de servicios, fallas de proveedores tecnológicos u otras circunstancias fuera de nuestro control.</span></li>
+                <li className={LI}><Dot /><span>Buleje no responde por los actos, productos o incumplimientos de los vendedores o repartidores terceros, ni por daños indirectos o lucro cesante. Esto <B>sin perjuicio</B> de los derechos irrenunciables del consumidor y de la responsabilidad que la ley imponga a la plataforma, incluida la solidaria que pueda corresponder.</span></li>
               </ul>
             </Section>
 
-            <Section id="indemnizacion" n={16} title="Indemnización" icon={Scale}>
+            <Section id="fuerza-mayor" n={20} title="Caso fortuito y fuerza mayor" icon={CloudOff}>
+              <p>
+                No seremos responsables por el incumplimiento o demora causados por hechos
+                fuera de nuestro control razonable, entre ellos: desastres naturales, clima
+                extremo, <B>pandemias</B>, conmoción social, cortes de energía o de internet,
+                <B> ciberataques</B>, fallas de proveedores o de las <B>pasarelas de pago</B>,
+                actos de autoridad u otras circunstancias de caso fortuito o fuerza mayor.
+              </p>
+            </Section>
+
+            <Section id="indemnizacion" n={21} title="Indemnización" icon={Scale}>
               <p>
                 Te comprometes a mantener indemne a Buleje, sus directivos y colaboradores
                 frente a cualquier reclamo, daño o gasto (incluidos honorarios legales
@@ -324,36 +377,36 @@ export default function TerminosPage() {
               </p>
             </Section>
 
-            <Section id="terminacion" n={17} title="Suspensión, baja y cesión" icon={Power}>
+            <Section id="terminacion" n={22} title="Suspensión, baja y cesión" icon={Power}>
               <ul className="space-y-2">
                 <li className={LI}><Dot /><span>Buleje puede <B>suspender o cancelar</B> cuentas que incumplan estos Términos o la ley, con o sin aviso según la gravedad. Puedes cerrar tu cuenta cuando quieras.</span></li>
                 <li className={LI}><Dot /><span>Buleje podrá <B>ceder o transferir</B> estos Términos y la operación de la plataforma —incluida una eventual venta, fusión o reorganización del negocio— a un tercero, que asumirá los mismos compromisos. Tú no puedes ceder tu cuenta sin nuestra autorización.</span></li>
               </ul>
             </Section>
 
-            <Section id="modificaciones" n={18} title="Modificaciones" icon={RefreshCw}>
-              <p>
-                Podemos modificar estos Términos en cualquier momento. Los cambios rigen
-                desde su publicación en el sitio y, cuando sean sustanciales, te avisaremos.
-                El uso continuado de la plataforma implica la aceptación de la versión vigente.
-              </p>
+            <Section id="modificaciones" n={23} title="Modificaciones" icon={RefreshCw}>
+              <ul className="space-y-2">
+                <li className={LI}><Dot /><span>Para <B>cambios menores</B>, los Términos modificados rigen desde su publicación y el uso continuado implica su aceptación.</span></li>
+                <li className={LI}><Dot /><span>Para <B>cambios sustanciales</B> que afecten precios, comisiones o tus derechos, te avisaremos previamente y, cuando la ley lo exija, solicitaremos tu <B>aceptación expresa</B>. Si no la otorgas, podrás dejar de usar el servicio sin penalidad.</span></li>
+              </ul>
             </Section>
 
-            <Section id="ley" n={19} title="Ley aplicable, controversias e INDECOPI" icon={Gavel}>
+            <Section id="ley" n={24} title="Ley aplicable, solución de disputas e INDECOPI" icon={Gavel}>
               <ul className="space-y-2">
-                <li className={LI}><Dot /><span>Estos Términos se rigen por las <B>leyes del Perú</B>.</span></li>
-                <li className={LI}><Dot /><span>Sin perjuicio del derecho del consumidor a acudir al <B>INDECOPI</B> y de sus derechos irrenunciables, las controversias que no se resuelvan de buena fe se someten a los jueces y tribunales competentes del domicilio del titular.</span></li>
-                <li className={LI}><Dot /><span>Ponemos a tu disposición el <Link href="/libro-de-reclamaciones" className="font-bold text-[var(--accent)] hover:underline">Libro de Reclamaciones Virtual</Link> (plazo de respuesta: 15 días hábiles). Presentar un reclamo no impide acudir a otras vías ni denunciar ante el{" "}
+                <li className={LI}><Dot /><span>Estos Términos se rigen por las <B>leyes del Perú</B>. Ante una controversia, las partes intentarán primero una <B>negociación directa de buena fe</B> (por WhatsApp o correo) dentro de un plazo razonable.</span></li>
+                <li className={LI}><Dot /><span><B>Consumidores:</B> conservas el derecho de acudir al <B>INDECOPI</B> y a los jueces de <B>tu domicilio</B>. Nada en estos Términos te obliga a litigar fuera de él ni implica renuncia a tus derechos irrenunciables.</span></li>
+                <li className={LI}><Dot /><span><B>Vendedores y relaciones B2B:</B> las controversias no resueltas se someten a <B>arbitraje de derecho en la ciudad de Lima</B> (un árbitro, bajo el reglamento de un centro de arbitraje reconocido) o, subsidiariamente, a los jueces y tribunales de Lima.</span></li>
+                <li className={LI}><Dot /><span>Ponemos a tu disposición el <Link href="/libro-de-reclamaciones" className="font-bold text-[var(--accent)] hover:underline">Libro de Reclamaciones Virtual</Link> (plazo: 15 días hábiles). Presentar un reclamo no impide acudir a otras vías ni denunciar ante el{" "}
                   <a href="https://www.gob.pe/indecopi" target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--accent)] hover:underline">INDECOPI</a>.</span></li>
               </ul>
             </Section>
 
-            <Section id="varios" n={20} title="Disposiciones varias y contacto" icon={Info}>
+            <Section id="varios" n={25} title="Disposiciones varias y contacto" icon={Info}>
               <ul className="space-y-2">
                 <li className={LI}><Dot /><span><B>Divisibilidad:</B> si una cláusula resulta inválida, las demás siguen vigentes.</span></li>
                 <li className={LI}><Dot /><span><B>Acuerdo íntegro:</B> estos Términos y la <Link href="/privacidad" className="font-bold text-[var(--accent)] hover:underline">Política de Privacidad</Link> constituyen el acuerdo completo entre tú y Buleje.</span></li>
                 <li className={LI}><Dot /><span><B>No renuncia:</B> que no ejerzamos un derecho no implica que renunciemos a él.</span></li>
-                <li className={LI}><Dot /><span><B>Comunicaciones electrónicas:</B> aceptas recibir avisos y comunicaciones por medios electrónicos (WhatsApp, correo, notificaciones).</span></li>
+                <li className={LI}><Dot /><span><B>Comunicaciones electrónicas:</B> aceptas recibir avisos por medios electrónicos (WhatsApp, correo, notificaciones).</span></li>
               </ul>
               <p>
                 Para consultas sobre estos Términos escríbenos por WhatsApp al{" "}
