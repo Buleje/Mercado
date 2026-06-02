@@ -21,6 +21,7 @@
 import { useEffect, useState } from "react";
 import { Crown, Sparkles, Award } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
+import { fetchCustomerTier } from "@/lib/customer-tier-cache";
 
 // LocalStorage key — solo se usa como fallback para clientes ANONIMOS
 // que aun no tienen sesion. Cliente con sesion -> server count.
@@ -91,22 +92,13 @@ export default function ClienteFrecuenteBadge({
   useEffect(() => {
     setHydrated(true);
 
-    // 1. Si hay cliente identificado → fetch tier real del servidor
+    // 1. Si hay cliente identificado → tier real del servidor (cacheado +
+    //    deduplicado en lib/customer-tier-cache para no reventar el rate-limit).
     if (customer?.phone) {
       let cancelled = false;
-      fetch(
-        `/api/marketplace/customer-tier?phone=${encodeURIComponent(customer.phone)}`,
-        { credentials: "include" },
-      )
-        .then((r) => (r.ok ? r.json() : { count: 0 }))
-        .then((data: { count?: number }) => {
-          if (cancelled) return;
-          if (typeof data.count === "number") setCount(data.count);
-        })
-        .catch(() => {
-          // Silent — sin sesión válida o endpoint caido, no mostrar badge
-          if (!cancelled) setCount(0);
-        });
+      fetchCustomerTier(customer.phone).then((data) => {
+        if (!cancelled) setCount(data.count);
+      });
       return () => {
         cancelled = true;
       };

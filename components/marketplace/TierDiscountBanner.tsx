@@ -11,12 +11,9 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles, Award, Crown } from "lucide-react";
+import { fetchCustomerTier, type CustomerTier } from "@/lib/customer-tier-cache";
 
-interface ServerTier {
-  level: "frecuente" | "vip" | "embajador";
-  label: string;
-  discountPct: number;
-}
+type ServerTier = CustomerTier;
 
 const ICON_MAP = {
   frecuente: Sparkles,
@@ -48,16 +45,12 @@ export default function TierDiscountBanner({
       setTier(null);
       return;
     }
-    const url = `/api/marketplace/customer-tier?phone=${encodeURIComponent(customerPhone.trim())}`;
     let cancelled = false;
-    fetch(url)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((json) => {
-        if (cancelled) return;
-        setTier(json?.tier ?? null);
-        setCount(json?.count ?? 0);
-      })
-      .catch(() => setTier(null));
+    fetchCustomerTier(customerPhone).then((data) => {
+      if (cancelled) return;
+      setTier(data.tier);
+      setCount(data.count);
+    });
     return () => {
       cancelled = true;
     };
