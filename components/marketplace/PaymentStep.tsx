@@ -27,6 +27,7 @@ import {
   QrCode,
   Clock,
   AlertCircle,
+  Sparkles,
 } from "@buleje/design-system/icons";
 import { PLANS, firstMonthPrice, type PlanTier } from "@/lib/billing/plan-tiers";
 import { PLATFORM_CONFIG_DEFAULTS, type PlatformConfig } from "@/lib/platform-config";
@@ -141,27 +142,34 @@ export default function PaymentStep({ data, onSuccess }: Props) {
         </div>
       </div>
 
-      {/* ── Selector de método ── */}
-      <div>
-        <p className="mb-2 text-xs font-bold text-[var(--text-secondary)]">¿Cómo querés pagar?</p>
-        <div role="tablist" className="grid grid-cols-2 gap-2">
-          {METHODS.map((m) => (
-            <MethodCard key={m.id} {...m} active={tab === m.id} onClick={() => setTab(m.id)} />
-          ))}
-        </div>
-      </div>
-
-      {/* ── Pane según método ── */}
-      {tab === "stripe" ? (
-        <StripePane amount={totalToPay} onSwitch={() => setTab("yape")} />
+      {totalToPay === 0 ? (
+        // Plan gratis (S/0): no hay nada que pagar — confirmación directa.
+        <FreePane data={data} onSuccess={onSuccess} />
       ) : (
-        <ManualPane
-          method={tab}
-          data={data}
-          amount={totalToPay}
-          onSuccess={onSuccess}
-          platformCfg={platformCfg}
-        />
+        <>
+          {/* ── Selector de método ── */}
+          <div>
+            <p className="mb-2 text-xs font-bold text-[var(--text-secondary)]">¿Cómo querés pagar?</p>
+            <div role="tablist" className="grid grid-cols-2 gap-2">
+              {METHODS.map((m) => (
+                <MethodCard key={m.id} {...m} active={tab === m.id} onClick={() => setTab(m.id)} />
+              ))}
+            </div>
+          </div>
+
+          {/* ── Pane según método ── */}
+          {tab === "stripe" ? (
+            <StripePane amount={totalToPay} onSwitch={() => setTab("yape")} />
+          ) : (
+            <ManualPane
+              method={tab}
+              data={data}
+              amount={totalToPay}
+              onSuccess={onSuccess}
+              platformCfg={platformCfg}
+            />
+          )}
+        </>
       )}
 
       {/* ── Sello de confianza ── */}
@@ -396,6 +404,7 @@ function ManualPane({
                   width={104}
                   height={104}
                   className="rounded-md"
+                  style={{ height: "auto" }}
                   unoptimized
                   onError={() => setQrBroken(true)}
                 />
@@ -506,6 +515,101 @@ function ManualPane({
       >
         {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" strokeWidth={2.5} />}
         Enviar comprobante
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Plan gratis — confirmación sin pago ni captura
+// ─────────────────────────────────────────────────────────────────────
+
+function FreePane({ data, onSuccess }: { data: RegistrationPayload; onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const submit = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("tenantSlug", data.tenantSlug);
+      fd.append("ownerName", data.ownerName);
+      fd.append("ownerPhone", data.ownerPhone);
+      if (data.ownerEmail) fd.append("ownerEmail", data.ownerEmail);
+      fd.append("storeName", data.storeName);
+      fd.append("category", data.category);
+      if (data.departamento) fd.append("departamento", data.departamento);
+      if (data.provincia) fd.append("provincia", data.provincia);
+      if (data.distrito) fd.append("distrito", data.distrito);
+      if (data.direccion) fd.append("direccion", data.direccion);
+      fd.append("planTier", data.planTier);
+      fd.append("billingCycle", data.billingCycle);
+      fd.append("amountPEN", "0"); // plan gratis
+      fd.append("method", "yape"); // default — el monto 0 indica plan gratis
+
+      const res = await fetch("/api/marketplace/payment-proof", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders(),
+        body: fd,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "No pudimos crear tu tienda. Intentá de nuevo.");
+        return;
+      }
+      setSuccess(true);
+      setTimeout(() => onSuccess(), 1200);
+    } catch {
+      setError("Error de red. Revisá tu conexión e intentá de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="rounded-2xl border border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-8 text-center">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
+          <CheckCircle className="h-9 w-9" strokeWidth={2.5} />
+        </div>
+        <h3 className="mt-4 text-xl font-black text-[var(--text-primary)]">¡Tienda registrada!</h3>
+        <p className="mt-2 text-sm text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed">
+          La estamos revisando. En cuanto la aprobemos te avisamos por WhatsApp con los datos para
+          entrar a tu panel.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-sm)] text-center space-y-4">
+      <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <Sparkles className="h-7 w-7" strokeWidth={2} />
+      </span>
+      <div>
+        <h3 className="text-lg font-black text-[var(--text-primary)]">Tu primer mes es gratis</h3>
+        <p className="mt-1.5 text-sm text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed">
+          No tenés que pagar nada ahora. Confirmá y creamos tu tienda — la aprobamos en menos de 1
+          hora y te avisamos por WhatsApp.
+        </p>
+      </div>
+      {error && (
+        <div className="flex items-start gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-3 py-2.5 text-left text-xs font-bold text-[var(--data-error-700)]">
+          <AlertCircle className="h-4 w-4 mt-px shrink-0" strokeWidth={2.25} />
+          {error}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={submit}
+        disabled={loading}
+        className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-[var(--shadow-md)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" strokeWidth={2.5} />}
+        Crear mi tienda gratis
       </button>
     </div>
   );

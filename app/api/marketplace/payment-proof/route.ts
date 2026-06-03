@@ -36,7 +36,8 @@ const SchemaFields = z.object({
   direccion: z.string().optional().nullable(),
   planTier: z.enum(["basico", "pro", "enterprise", "max"]),
   billingCycle: z.enum(["mensual", "anual"]),
-  amountPEN: z.coerce.number().min(1).max(100000),
+  // min(0): los planes gratis (primer mes S/0) registran sin pago ni captura.
+  amountPEN: z.coerce.number().min(0).max(100000),
   method: z.enum(["yape", "plin", "transfer"]),
   reference: z.string().optional().nullable(),
 });
@@ -78,15 +79,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
   }
 
-  const file = formData.get("file") as File | null;
-  if (!file) return NextResponse.json({ error: "Falta la captura" }, { status: 400 });
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return NextResponse.json({ error: "Tipo de archivo no permitido" }, { status: 400 });
-  }
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "Captura muy grande (máx 5 MB)" }, { status: 400 });
-  }
-
   const fields = Object.fromEntries(formData.entries());
   delete fields.file;
   const parsed = SchemaFields.safeParse(fields);
@@ -97,66 +89,85 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Optimizar imagen
-  let optimized: Buffer;
-  try {
-    const buf = Buffer.from(await file.arrayBuffer());
-
-    // F5: validar magic bytes reales (el Content-Type del cliente puede estar spoofed)
-    const isHeic = file.type === "image/heic" || file.type === "image/heif";
-    if (!isHeic && !validateMagicBytes(buf)) {
-      return NextResponse.json({ error: "Tipo de archivo no permitido (magic bytes inválidos)" }, { status: 400 });
+  // Plan gratis (S/0): el registro se confirma sin captura de pago.
+  const isFree = parsed.data.amountPEN === 0;
+  const file = formData.get("file") as File | null;
+  if (!isFree && !file) {
+    return NextResponse.json({ error: "Falta la captura" }, { status: 400 });
+  }
+  if (file) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: "Tipo de archivo no permitido" }, { status: 400 });
     }
-
-    optimized = await sharp(buf).rotate().resize({ width: 1000, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
-  } catch (err) {
-    logger.error("[payment-proof] sharp failed", { error: String(err) });
-    return NextResponse.json({ error: "No pudimos procesar la imagen" }, { status: 500 });
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "Captura muy grande (máx 5 MB)" }, { status: 400 });
+    }
   }
 
-  // PENTEST-002 cerrado: bucket privado `order-proofs` (sin acceso público).
-  const ts = Date.now();
-  const rand = randomBytes(24).toString("hex");
-  const path = `payment-proofs/${parsed.data.tenantSlug}-${ts}-${rand}.webp`;
+  // proofUrl queda "" para registros gratis (sin captura). Si hay archivo,
+  // se optimiza y sube a un bucket privado (URL firmada).
+  let proofUrl = "";
+  if (file) {
+    // Optimizar imagen
+    let optimized: Buffer;
+    try {
+      const buf = Buffer.from(await file.arrayBuffer());
 
-  // PENTEST-002: sin fallback a getPublicUrl. Bucket privado obligatorio.
-  const SIGNED_TTL_SEC = 7 * 24 * 3600; // 7 días para revisión de superadmin
-  let proofUrl: string;
-  try {
-    const supabase = getSupabaseAdmin();
-    const { error: upErr } = await supabase.storage
-      .from(BUCKET)
-      .upload(path, optimized, { contentType: "image/webp", upsert: false });
-    if (upErr) {
-      logger.error("[payment-proof] supabase upload failed", {
-        error: upErr.message,
-        bucket: BUCKET,
-      });
+      // F5: validar magic bytes reales (el Content-Type del cliente puede estar spoofed)
+      const isHeic = file.type === "image/heic" || file.type === "image/heif";
+      if (!isHeic && !validateMagicBytes(buf)) {
+        return NextResponse.json({ error: "Tipo de archivo no permitido (magic bytes inválidos)" }, { status: 400 });
+      }
+
+      optimized = await sharp(buf).rotate().resize({ width: 1000, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
+    } catch (err) {
+      logger.error("[payment-proof] sharp failed", { error: String(err) });
+      return NextResponse.json({ error: "No pudimos procesar la imagen" }, { status: 500 });
+    }
+
+    // PENTEST-002 cerrado: bucket privado `order-proofs` (sin acceso público).
+    const ts = Date.now();
+    const rand = randomBytes(24).toString("hex");
+    const path = `payment-proofs/${parsed.data.tenantSlug}-${ts}-${rand}.webp`;
+
+    // PENTEST-002: sin fallback a getPublicUrl. Bucket privado obligatorio.
+    const SIGNED_TTL_SEC = 7 * 24 * 3600; // 7 días para revisión de superadmin
+    try {
+      const supabase = getSupabaseAdmin();
+      const { error: upErr } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, optimized, { contentType: "image/webp", upsert: false });
+      if (upErr) {
+        logger.error("[payment-proof] supabase upload failed", {
+          error: upErr.message,
+          bucket: BUCKET,
+        });
+        return NextResponse.json({ error: "Error subiendo la imagen" }, { status: 500 });
+      }
+      const signed = await supabase.storage
+        .from(BUCKET)
+        .createSignedUrl(path, SIGNED_TTL_SEC);
+      if (!signed.data?.signedUrl) {
+        // Sin fallback público — PII protegida, Ley 29733.
+        Sentry.captureException(
+          new Error(`[payment-proof] createSignedUrl failed: ${signed.error?.message ?? "unknown"}`),
+          { extra: { path, bucket: BUCKET } },
+        );
+        logger.error("[payment-proof] createSignedUrl failed — PENTEST-002 no-fallback", {
+          error: signed.error?.message,
+          path,
+          bucket: BUCKET,
+        });
+        return NextResponse.json(
+          { error: "Error generando URL segura para la imagen" },
+          { status: 500 },
+        );
+      }
+      proofUrl = signed.data.signedUrl;
+    } catch (err) {
+      logger.error("[payment-proof] upload threw", { error: String(err) });
       return NextResponse.json({ error: "Error subiendo la imagen" }, { status: 500 });
     }
-    const signed = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrl(path, SIGNED_TTL_SEC);
-    if (!signed.data?.signedUrl) {
-      // Sin fallback público — PII protegida, Ley 29733.
-      Sentry.captureException(
-        new Error(`[payment-proof] createSignedUrl failed: ${signed.error?.message ?? "unknown"}`),
-        { extra: { path, bucket: BUCKET } },
-      );
-      logger.error("[payment-proof] createSignedUrl failed — PENTEST-002 no-fallback", {
-        error: signed.error?.message,
-        path,
-        bucket: BUCKET,
-      });
-      return NextResponse.json(
-        { error: "Error generando URL segura para la imagen" },
-        { status: 500 },
-      );
-    }
-    proofUrl = signed.data.signedUrl;
-  } catch (err) {
-    logger.error("[payment-proof] upload threw", { error: String(err) });
-    return NextResponse.json({ error: "Error subiendo la imagen" }, { status: 500 });
   }
 
   try {
