@@ -12,6 +12,7 @@ import {
   Leaf, UtensilsCrossed, Boxes, Droplets, Sparkles,
   Smartphone, CreditCard, HandCoins,
   Camera, Lightbulb, Timer, ClipboardList, RefreshCcw,
+  Trash2, TrendingUp, AlertTriangle,
 } from "@buleje/design-system/icons";
 
 // Mapeo de id de categoria → icono Lucide. Reemplaza los emojis originales
@@ -838,6 +839,93 @@ function POSIdleScreen({ onWake }: { onWake: () => void }) {
   );
 }
 
+// ── Feature 1: Resumen de hoy (strip compacto, read-only) ───────────────────
+// Fetchea GET /api/sales?today=1&limit=1000 una vez al montar.
+// Si falla o carga, el strip se oculta o muestra skeleton — nunca rompe el POS.
+
+function POSTodayStrip() {
+  const [state, setState] = useState<
+    | { status: "loading" }
+    | { status: "error" }
+    | { status: "ok"; count: number; total: number }
+  >({ status: "loading" });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/sales?today=1&limit=1000", {
+          signal: controller.signal,
+        });
+        if (!res.ok) { setState({ status: "error" }); return; }
+        const data = await res.json();
+        const records: { total: number }[] = Array.isArray(data) ? data : [];
+        const count = records.length;
+        const total = records.reduce((s, r) => s + (r.total || 0), 0);
+        setState({ status: "ok", count, total });
+      } catch (err) {
+        if ((err as { name?: string }).name !== "AbortError") {
+          setState({ status: "error" });
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, []);
+
+  // Si falla, no mostrar nada (no romper el POS)
+  if (state.status === "error") return null;
+
+  const ticket =
+    state.status === "ok" && state.count > 0
+      ? state.total / state.count
+      : 0;
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-1.5 bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] dark:border-card-border">
+      {state.status === "loading" ? (
+        /* Skeleton sutil mientras carga */
+        <>
+          {[56, 72, 60].map((w, i) => (
+            <div
+              key={i}
+              className="h-3.5 rounded bg-[var(--rule-soft)] dark:bg-card-border animate-pulse"
+              style={{ width: w }}
+            />
+          ))}
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Receipt className="h-3.5 w-3.5 text-[var(--text-tertiary)] dark:text-muted" aria-hidden />
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Hoy:</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-foreground">
+              {state.count} venta{state.count !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="h-3 w-px bg-[var(--rule-base)] dark:bg-card-border shrink-0" aria-hidden />
+          <div className="flex items-center gap-1 shrink-0">
+            <TrendingUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" aria-hidden />
+            <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-500)]">
+              {fmt(state.total)}
+            </span>
+          </div>
+          {state.count > 0 && (
+            <>
+              <div className="h-3 w-px bg-[var(--rule-base)] dark:bg-card-border shrink-0" aria-hidden />
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Ticket prom.:</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">
+                  {fmt(ticket)}
+                </span>
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function POSView() {
@@ -881,6 +969,10 @@ export default function POSView() {
   // Mejora 4: Devolucion rápida
   const [showReturn, setShowReturn] = useState(false);
   const [showMoreTools, setShowMoreTools] = useState(false);
+  // Feature 3: Confirmar antes de vaciar carrito (se resetea al vaciarse el carrito
+  // por cualquier vía porque ambos botones — Vaciar y confirmar — solo se muestran
+  // cuando cart.length > 0).
+  const [confirmClear, setConfirmClear] = useState(false);
 
   // IDEA 6: Pedido WhatsApp — parser de mensajes de clientes
   const [showWhatsAppOrder, setShowWhatsAppOrder] = useState(false);
@@ -1575,6 +1667,9 @@ export default function POSView() {
           "flex-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-hidden flex flex-col",
           expanded ? "min-h-[calc(100vh-12rem)]" : ""
         )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
+          {/* Feature 1: Resumen de hoy — strip compacto, read-only */}
+          <POSTodayStrip />
+
           {/* Search + Actions + Categories — acciones a la derecha de la search bar
               para compactar verticalmente (antes ocupaban una fila entera). */}
           <div className="p-3 space-y-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] relative">
@@ -1842,6 +1937,24 @@ export default function POSView() {
                             {inCart.quantity}
                           </div>
                         )}
+                        {/* Feature 2: Badge stock bajo — punto de advertencia sutil */}
+                        {!inCart && !outOfStock && p.stock != null && p.stock > 0 && p.stock <= 5 && (
+                          <div
+                            className="absolute top-1 right-1 z-10 group"
+                            role="img"
+                            aria-label={`Stock bajo: ${p.stock} unidad${p.stock !== 1 ? "es" : ""}`}
+                          >
+                            <AlertTriangle
+                              className="h-4 w-4 text-[var(--data-warning-500)] drop-shadow-sm"
+                              fill="var(--data-warning-100)"
+                              strokeWidth={2}
+                            />
+                            {/* Tooltip */}
+                            <span className="pointer-events-none absolute right-0 top-5 z-20 hidden group-hover:flex whitespace-nowrap bg-[var(--surface-raised)] dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-500)] shadow-[var(--shadow-sm)]">
+                              Stock bajo ({p.stock})
+                            </span>
+                          </div>
+                        )}
                         {outOfStock && (
                           <div className="absolute inset-0 bg-[var(--surface-raised)]/60 flex items-center justify-center">
                             <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded">Agotado</span>
@@ -1921,11 +2034,37 @@ export default function POSView() {
                     )}
                   </div>
                 )}
-                {cart.length > 0 && (
-                  <button onClick={clearCart} className="text-xs font-semibold text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors flex items-center gap-1">
+                {/* Feature 3: Vaciar carrito con confirmacion */}
+                {cart.length > 0 && !confirmClear && (
+                  <button
+                    onClick={() => setConfirmClear(true)}
+                    className="text-xs font-semibold text-[var(--data-error-500)] hover:text-[var(--data-error-600)] transition-colors flex items-center gap-1"
+                    title="Vaciar carrito (pide confirmacion)"
+                    aria-label="Vaciar carrito"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                     Vaciar
                     <kbd className="text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] px-1 rounded">F3</kbd>
                   </button>
+                )}
+                {cart.length > 0 && confirmClear && (
+                  <div className="flex items-center gap-1 animate-in fade-in duration-[var(--dur-fast)]" role="group" aria-label="Confirmar vaciar carrito">
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)]">Vaciar?</span>
+                    <button
+                      onClick={() => { clearCart(); setConfirmClear(false); }}
+                      className="px-2 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-600)] transition-colors"
+                      aria-label="Confirmar: vaciar carrito"
+                    >
+                      Si
+                    </button>
+                    <button
+                      onClick={() => setConfirmClear(false)}
+                      className="px-2 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                      aria-label="Cancelar: mantener carrito"
+                    >
+                      No
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
