@@ -1,7 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Plus, Minus, ShoppingBasket, ScanBarcode,
   Banknote, X, Check, Loader2,
@@ -25,6 +25,15 @@ const CATEGORY_ICONS: Record<string, typeof Package> = {
   "bebidas": Droplets,
   "limpieza": Sparkles,
 };
+
+/** Convierte un id/slug de categoría en una etiqueta legible (fallback). */
+function prettyCategory(id: string): string {
+  return id
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\p{L}/gu, (ch) => ch.toUpperCase());
+}
 import EmptyState from "@/components/admin/shared/EmptyState";
 import Image from "next/image";
 import { m } from "@/components/admin/providers";
@@ -951,6 +960,26 @@ export default function POSView() {
     setWaParsedItems(results);
   }, [products]);
 
+  // Categorías del POS derivadas del INVENTARIO real (productos cargados desde
+  // /api/products), no de la lista estática. Refleja exactamente las categorías
+  // que el dueño usa en su inventario (incluye las propias, ej. pollería).
+  const posCategories = useMemo(() => {
+    const seen = new Set<string>();
+    const present: string[] = [];
+    for (const p of products) {
+      const cat = (p.category ?? "").trim();
+      if (cat && !seen.has(cat)) {
+        seen.add(cat);
+        present.push(cat);
+      }
+    }
+    const knownLabel = new Map(categories.map((c) => [c.id, c.label]));
+    const ordered = present
+      .map((id) => ({ id, label: knownLabel.get(id) ?? prettyCategory(id) }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+    return [{ id: "todos", label: "Todos" }, ...ordered];
+  }, [products]);
+
   // Mejora 4: Global discount
   const [globalDiscount, setGlobalDiscount] = useState<{ monto: number; porcentaje: number }>({ monto: 0, porcentaje: 0 });
 
@@ -1735,21 +1764,12 @@ export default function POSView() {
                 <span className="hidden min-[390px]:inline sm:inline">{expanded ? "Reducir" : "Expandir"}</span>
               </button>
             </div>
-            {/* Categorias — cards grandes, sin emojis, iconos Lucide.
-                Reemplaza chips pequeños + acordeones "Más vendidos/Rápidos/Favoritos"
-                que generaban ruido visual. El selector de categoría es la
-                herramienta principal para filtrar el grid. */}
+            {/* Categorías compactas (chips h-10) derivadas del inventario real
+                (products de /api/products), no de la lista estática. Antes: cards
+                verticales 92×80 (muy altas). Ahora: pills bajas que se adaptan al
+                POS y reflejan exactamente las categorías que usa el dueño. */}
             <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x pt-1 pb-1">
-              {categories
-                // Brandon mayo 2026 v7: ocultar categorías sin productos
-                // visibles. "todos" siempre se muestra (es el catch-all).
-                // Las demás aparecen solo si tienen al menos un producto
-                // activo en el inventario actual.
-                .filter((c) => {
-                  if (c.id === "todos") return true;
-                  return products.some((p) => p.category === c.id);
-                })
-                .map((c) => {
+              {posCategories.map((c) => {
                 const Icon = CATEGORY_ICONS[c.id] ?? Package;
                 const active = category === c.id;
                 return (
@@ -1758,16 +1778,14 @@ export default function POSView() {
                     onClick={() => setCategory(c.id)}
                     aria-pressed={active}
                     className={cn(
-                      "snap-start shrink-0 flex flex-col items-center justify-center gap-1.5 w-[92px] h-[80px] rounded-xl border transition-all duration-[var(--dur-fast)]",
+                      "snap-start shrink-0 inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border text-sm font-semibold transition-all duration-[var(--dur-fast)]",
                       active
                         ? "bg-primary text-white border-primary shadow-[var(--shadow-sm)]"
-                        : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10"
+                        : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
                     )}
                   >
-                    <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-                    <span className="text-[length:var(--ts-2xs)] font-semibold leading-tight text-center px-1 truncate max-w-full">
-                      {c.label}
-                    </span>
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
+                    <span className="whitespace-nowrap">{c.label}</span>
                   </button>
                 );
               })}
