@@ -115,7 +115,7 @@ export interface PlanLimits {
 export const PLAN_BASICO: PlanDefinition = {
   id: "basico",
   label: "Free",
-  tagline: "Probá Buleje sin tarjeta · siempre gratis",
+  tagline: "El que recién arranca y quiere probar sin arriesgar un sol",
   monthlyPrice: 0,
   price: "S/ 0",
   period: "/mes",
@@ -163,7 +163,7 @@ export const PLAN_BASICO: PlanDefinition = {
 export const PLAN_PRO: PlanDefinition = {
   id: "pro",
   label: "Starter",
-  tagline: "Para bodegas con flujo diario que ya quieren crecer",
+  tagline: "La bodega que ya vende a diario y quiere dejar el cuaderno",
   monthlyPrice: 89,
   price: "S/ 89",
   period: "/mes",
@@ -208,7 +208,7 @@ export const PLAN_PRO: PlanDefinition = {
 export const PLAN_ENTERPRISE: PlanDefinition = {
   id: "enterprise",
   label: "Pro",
-  tagline: "Sweet spot: bodega establecida que ya vende online",
+  tagline: "El negocio establecido que quiere facturar y vender más",
   monthlyPrice: 179,
   price: "S/ 179",
   period: "/mes",
@@ -265,7 +265,7 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
 export const PLAN_MAX: PlanDefinition = {
   id: "max",
   label: "Business",
-  tagline: "Cadenas, productores y mayoristas · sin limites",
+  tagline: "Cadenas, mayoristas y productores con varios locales",
   monthlyPrice: 349,
   price: "S/ 349",
   period: "/mes",

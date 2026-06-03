@@ -325,23 +325,23 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "plans.firstMonth": { es: "1er mes", en: "1st month", shi: "1 killa" },
   "plans.idealFor": { es: "Ideal para", en: "Ideal for", shi: "Allinmi" },
   "plans.tagline.basico": {
-    es: "Probar sin riesgo antes de pagar nada · siempre gratis",
-    en: "Try risk-free before paying anything · always free",
+    es: "El que recién arranca y quiere probar sin arriesgar un sol",
+    en: "Just starting out and want to try without risking a cent",
     shi: "Buleje qhaway",
   },
   "plans.tagline.pro": {
-    es: "Para bodegas con flujo diario que ya quieren crecer",
-    en: "For shops with daily flow that want to grow",
+    es: "La bodega que ya vende a diario y quiere dejar el cuaderno",
+    en: "The shop that already sells daily and wants to ditch the notebook",
     shi: "Bodega punchaw",
   },
   "plans.tagline.enterprise": {
-    es: "Sweet spot: bodega establecida que ya vende online",
-    en: "Sweet spot: established shop already selling online",
+    es: "El negocio establecido que quiere facturar y vender más",
+    en: "An established business that wants to invoice and sell more",
     shi: "Bodega seguro",
   },
   "plans.tagline.max": {
-    es: "Cadenas, productores y mayoristas · sin limites",
-    en: "Chains, producers and wholesalers · no limits",
+    es: "Cadenas, mayoristas y productores con varios locales",
+    en: "Chains, wholesalers and producers with several locations",
     shi: "Cadena · mana límite",
   },
   "plans.afterMonthly": {
