@@ -298,6 +298,11 @@ export default function StoreRegistrationForm() {
   const stepIndex = step === "info" ? 1 : 2;
   const stepProgress = step === "info" ? 50 : 100;
 
+  // Validez por campo — para el check sutil de "campo listo".
+  const nameOk = ownerName.trim().length >= 2;
+  const phoneOk = ownerPhone.replace(/\D/g, "").length >= 6;
+  const storeOk = storeNameInput.trim().length >= 2;
+
   return (
     <div className="min-h-screen bg-[var(--surface-sunken)]">
       {/* Hero compacto */}
@@ -321,26 +326,18 @@ export default function StoreRegistrationForm() {
               <strong className="font-bold text-[var(--text-primary)]"> Sin tarjeta. Sin permanencia.</strong>
             </p>
 
-            {/* Trust badges */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+            {/* Trust inline — minimal */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2.5">
               {[
-                { icon: Zap, label: "Listo en 24h", tone: "amber" as const },
-                { icon: DollarSign, label: "Sin costo fijo", tone: "success" as const },
-                { icon: ShieldCheck, label: "Pagos seguros", tone: "accent" as const },
+                { icon: Zap, label: "Listo en 24h" },
+                { icon: DollarSign, label: "Sin costo fijo" },
+                { icon: ShieldCheck, label: "Pagos seguros" },
               ].map((b) => (
                 <span
                   key={b.label}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-1.5 text-xs font-bold",
-                    b.tone === "amber" &&
-                      "border-amber-300 bg-amber-50 text-[var(--data-warning-700)] dark:border-[var(--data-warning-500)]/30 dark:bg-[var(--data-warning-500)]/10 dark:text-amber-400",
-                    b.tone === "success" &&
-                      "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 text-[var(--data-success-500)]",
-                    b.tone === "accent" &&
-                      "border-[var(--accent)]/30 bg-[var(--accent-soft)] text-[var(--accent)]",
-                  )}
+                  className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-secondary)]"
                 >
-                  <b.icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  <b.icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                   {b.label}
                 </span>
               ))}
@@ -353,103 +350,69 @@ export default function StoreRegistrationForm() {
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,_1fr)_340px] lg:gap-8">
           {/* ── Form ──────────────────────────────────────────────── */}
-          <div className="order-2 lg:order-1 space-y-5">
-            {/* Stepper visual */}
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 shadow-sm">
-              <div className="flex items-baseline justify-between mb-3">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Paso {stepIndex} de 2
-                </p>
-                <p className="text-xs font-bold tabular-nums text-[var(--text-secondary)]">
-                  {stepProgress}% completo
-                </p>
-              </div>
-              <div
-                role="progressbar"
-                aria-valuenow={stepProgress}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)] mb-4"
-              >
-                <div
-                  className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
-                  style={{ width: `${stepProgress}%` }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStep("info")}
-                  className={cn(
-                    "flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-left transition-all",
-                    step === "info"
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                      : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black tabular-nums",
-                      step === "info"
-                        ? "bg-[var(--accent-600,var(--accent))] text-white"
-                        : stepIndex > 1
-                          ? "bg-[var(--data-success-500)] text-white"
-                          : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                    )}
-                  >
-                    {stepIndex > 1 ? <Check className="h-4 w-4" strokeWidth={3} /> : "1"}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
-                      Paso 1
-                    </p>
-                    <p className="mt-0.5 text-sm font-black text-[var(--text-primary)] truncate">
-                      Tus datos
-                    </p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      ownerName.trim().length >= 2 &&
-                      ownerPhone.replace(/\D/g, "").length >= 6
-                    ) {
+          <div className="order-1 space-y-5">
+            {/* Indicador de pasos — minimalista */}
+            <ol className="flex items-center gap-2 px-1">
+              {([
+                { n: 1, label: "Tus datos", go: () => setStep("info") },
+                {
+                  n: 2,
+                  label: "Tu tienda",
+                  go: () => {
+                    if (ownerName.trim().length >= 2 && ownerPhone.replace(/\D/g, "").length >= 6) {
                       setStep("details");
                     }
-                  }}
-                  className={cn(
-                    "flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-left transition-all",
-                    step === "details"
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                      : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black tabular-nums",
-                      step === "details"
-                        ? "bg-[var(--accent-600,var(--accent))] text-white"
-                        : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                  },
+                },
+              ] as const).map((s, i) => {
+                const active = stepIndex === s.n;
+                const done = stepIndex > s.n;
+                return (
+                  <li key={s.n} className="flex flex-1 items-center gap-2">
+                    <button type="button" onClick={s.go} className="group flex items-center gap-2.5 text-left">
+                      <span
+                        className={cn(
+                          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black tabular-nums transition-colors",
+                          done
+                            ? "bg-[var(--data-success-500)] text-white"
+                            : active
+                              ? "bg-[var(--accent)] text-white shadow-[var(--shadow-sm)]"
+                              : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)] ring-1 ring-[var(--rule-base)] group-hover:ring-[var(--accent)]/40",
+                        )}
+                      >
+                        {done ? <Check className="h-4 w-4" strokeWidth={3} /> : s.n}
+                      </span>
+                      <span className="hidden sm:block">
+                        <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
+                          Paso {s.n}
+                        </span>
+                        <span
+                          className={cn(
+                            "mt-1 block text-sm font-bold leading-none",
+                            active || done ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]",
+                          )}
+                        >
+                          {s.label}
+                        </span>
+                      </span>
+                    </button>
+                    {i === 0 && (
+                      <span className="h-0.5 flex-1 overflow-hidden rounded-full bg-[var(--rule-base)]">
+                        <span
+                          className={cn(
+                            "block h-full rounded-full bg-[var(--accent)] transition-all duration-500",
+                            done ? "w-full" : "w-0",
+                          )}
+                        />
+                      </span>
                     )}
-                  >
-                    2
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
-                      Paso 2
-                    </p>
-                    <p className="mt-0.5 text-sm font-black text-[var(--text-primary)] truncate">
-                      Tu tienda
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
+                  </li>
+                );
+              })}
+            </ol>
 
             {/* Form card */}
-            <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 shadow-sm sm:p-8 lg:p-10">
+            <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 shadow-[var(--shadow-sm)] sm:p-8 lg:p-10">
               {/* Step header */}
               <div className="mb-6 flex items-center gap-3">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-base font-black tabular-nums text-white shadow-sm">
@@ -483,37 +446,53 @@ export default function StoreRegistrationForm() {
                       <User className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Tu nombre completo <span className="text-[var(--data-error-500)]">*</span>
                     </label>
-                    <input
-                      id="reg-owner-name"
-                      type="text"
-                      name="ownerName"
-                      autoComplete="name"
-                      required
-                      minLength={2}
-                      value={ownerName}
-                      onChange={(e) => setOwnerName(e.target.value)}
-                      placeholder="Ej: María García"
-                      className={INPUT_BASE}
-                    />
+                    <div className="relative">
+                      <input
+                        id="reg-owner-name"
+                        type="text"
+                        name="ownerName"
+                        autoComplete="name"
+                        required
+                        minLength={2}
+                        value={ownerName}
+                        onChange={(e) => setOwnerName(e.target.value)}
+                        placeholder="Ej: María García"
+                        className={cn(INPUT_BASE, nameOk && "pr-11")}
+                      />
+                      {nameOk && (
+                        <CheckCircle
+                          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--data-success-500)]"
+                          strokeWidth={2.25}
+                        />
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label htmlFor="reg-owner-phone" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                       <Phone className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Tu WhatsApp <span className="text-[var(--data-error-500)]">*</span>
                     </label>
-                    <input
-                      id="reg-owner-phone"
-                      type="tel"
-                      name="ownerPhone"
-                      autoComplete="tel"
-                      inputMode="tel"
-                      required
-                      pattern="[0-9 \(\)+\-]{6,}"
-                      value={ownerPhone}
-                      onChange={(e) => setOwnerPhone(e.target.value)}
-                      placeholder="Ej: 961 234 567"
-                      className={INPUT_BASE}
-                    />
+                    <div className="relative">
+                      <input
+                        id="reg-owner-phone"
+                        type="tel"
+                        name="ownerPhone"
+                        autoComplete="tel"
+                        inputMode="tel"
+                        required
+                        pattern="[0-9 \(\)+\-]{6,}"
+                        value={ownerPhone}
+                        onChange={(e) => setOwnerPhone(e.target.value)}
+                        placeholder="Ej: 961 234 567"
+                        className={cn(INPUT_BASE, phoneOk && "pr-11")}
+                      />
+                      {phoneOk && (
+                        <CheckCircle
+                          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--data-success-500)]"
+                          strokeWidth={2.25}
+                        />
+                      )}
+                    </div>
                     <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
                       <MessageCircle className="h-3.5 w-3.5" strokeWidth={2.25} />
                       Te contactaremos por aquí
@@ -570,13 +549,21 @@ export default function StoreRegistrationForm() {
                       <Store className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Nombre de tu tienda <span className="text-[var(--data-error-500)]">*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={storeNameInput}
-                      onChange={(e) => setStoreNameInput(e.target.value)}
-                      placeholder="Ej: Bodega Don Pedro"
-                      className={INPUT_BASE}
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={storeNameInput}
+                        onChange={(e) => setStoreNameInput(e.target.value)}
+                        placeholder="Ej: Bodega Don Pedro"
+                        className={cn(INPUT_BASE, storeOk && "pr-11")}
+                      />
+                      {storeOk && (
+                        <CheckCircle
+                          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--data-success-500)]"
+                          strokeWidth={2.25}
+                        />
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -603,7 +590,7 @@ export default function StoreRegistrationForm() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-4">
+                  <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <h4 className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                         <MapPin className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
@@ -773,55 +760,28 @@ export default function StoreRegistrationForm() {
           </div>
 
           {/* ── Sidebar: value props + testimonio + soporte ─────── */}
-          <aside className="order-1 lg:order-2">
-            <div className="sticky top-24 space-y-4">
-              {/* Stats card */}
-              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 shadow-sm">
-                <p className="mb-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Bodegas en Buleje
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-3xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                      120<span className="text-[var(--accent)]">+</span>
-                    </p>
-                    <p className="mt-1 text-xs font-bold text-[var(--text-secondary)]">
-                      Tiendas activas
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                      4.8<span className="text-[var(--accent)]">★</span>
-                    </p>
-                    <p className="mt-1 text-xs font-bold text-[var(--text-secondary)]">
-                      Satisfacción
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                      24h
-                    </p>
-                    <p className="mt-1 text-xs font-bold text-[var(--text-secondary)]">
-                      Activación
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                      0%
-                    </p>
-                    <p className="mt-1 text-xs font-bold text-[var(--text-secondary)]">
-                      Costo fijo
-                    </p>
-                  </div>
+          <aside className="order-2">
+            <div className="lg:sticky lg:top-24 space-y-4">
+              {/* Confianza: stats + por qué (consolidado) */}
+              <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 shadow-[var(--shadow-sm)]">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                  {[
+                    { v: "120", suffix: "+", l: "Tiendas activas" },
+                    { v: "4.8", suffix: "★", l: "Satisfacción" },
+                    { v: "24h", suffix: "", l: "Activación" },
+                    { v: "0%", suffix: "", l: "Costo fijo" },
+                  ].map((s) => (
+                    <div key={s.l}>
+                      <p className="text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+                        {s.v}
+                        <span className="text-[var(--accent)]">{s.suffix}</span>
+                      </p>
+                      <p className="mt-0.5 text-xs font-semibold text-[var(--text-secondary)]">{s.l}</p>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              {/* Por qué Buleje */}
-              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 shadow-sm">
-                <p className="mb-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Por qué Buleje
-                </p>
-                <ul className="space-y-3">
+                <div className="my-5 h-px bg-[var(--rule-soft)]" />
+                <ul className="space-y-2.5">
                   {[
                     "Sin costo de inscripción",
                     "Comisión solo sobre ventas reales",
@@ -833,48 +793,39 @@ export default function StoreRegistrationForm() {
                       <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]">
                         <Check className="h-3 w-3" strokeWidth={3} />
                       </span>
-                      <span className="text-sm font-semibold text-[var(--text-primary)]">
-                        {vp}
-                      </span>
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{vp}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
               {/* Testimonio */}
-              <div className="rounded-2xl border-2 border-[var(--accent)]/20 bg-[var(--accent-soft)]/30 p-5 shadow-sm">
-                <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.5} />
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                    Bodegueros felices
-                  </p>
-                </div>
-                <p className="text-sm font-semibold leading-relaxed text-[var(--text-primary)]">
-                  &ldquo;En el primer mes recibí <strong>32 pedidos</strong> nuevos
-                  sin hacer publicidad. Es lo más simple que probé.&rdquo;
-                </p>
-                <p className="mt-3 text-xs font-bold text-[var(--text-secondary)]">
-                  — Don Pepe, Bodega Don Pepe
-                </p>
-              </div>
+              <figure className="rounded-2xl border border-[var(--accent)]/15 bg-[var(--accent-soft)]/40 p-5">
+                <blockquote className="text-sm font-medium leading-relaxed text-[var(--text-primary)]">
+                  &ldquo;En el primer mes recibí <strong className="font-bold">32 pedidos</strong> nuevos
+                  sin hacer publicidad. Lo más simple que probé.&rdquo;
+                </blockquote>
+                <figcaption className="mt-3 flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-[length:var(--ts-2xs)] font-black text-white">
+                    DP
+                  </span>
+                  Don Pepe · Bodega Don Pepe
+                </figcaption>
+              </figure>
 
               {/* Soporte */}
               <a
                 href="https://wa.me/51929340532?text=Hola%2C%20tengo%20una%20duda%20sobre%20cómo%20abrir%20mi%20tienda"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 shadow-sm transition-all hover:border-[var(--accent)] hover:shadow-md"
+                className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 shadow-[var(--shadow-sm)] transition-all hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)]"
               >
                 <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
                   <MessageCircle className="h-5 w-5" strokeWidth={2.25} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black text-[var(--text-primary)]">
-                    ¿Necesitás ayuda?
-                  </p>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)]">
-                    Escribinos por WhatsApp
-                  </p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">¿Necesitás ayuda?</p>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)]">Escribinos por WhatsApp</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={2.25} />
               </a>
