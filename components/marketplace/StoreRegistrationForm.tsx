@@ -3,8 +3,11 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import type { ComponentType } from "react";
 import PaymentStep, { type RegistrationPayload } from "@/components/marketplace/PaymentStep";
 import type { PlanTier } from "@/lib/billing/plan-tiers";
+import { SUPPORTED_INDUSTRIES, VERTICAL_REGISTRY, type Industry } from "@/lib/verticals/registry";
 import {
   Store,
   User,
@@ -23,21 +26,49 @@ import {
   MessageCircle,
   Check,
   Locate,
+  Search,
+  Building2,
+  TreePine,
+  UtensilsCrossed,
+  Pill,
+  Wrench,
+  Croissant,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = [
-  { value: "bodega", label: "Bodega" },
-  { value: "minimarket", label: "Minimarket" },
-  { value: "fruteria", label: "Frutería" },
-  { value: "panaderia", label: "Panadería" },
-  { value: "licoreria", label: "Licorería" },
-  { value: "farmacia", label: "Farmacia" },
-  { value: "libreria", label: "Librería" },
-  { value: "ferreteria", label: "Ferretería" },
-  { value: "restaurante", label: "Restaurante" },
-  { value: "otro", label: "Otro" },
-];
+const GeolocationPickerModal = dynamic(
+  () => import("@/components/marketplace/GeolocationPickerModal"),
+  { ssr: false },
+);
+
+// Iconos por vertical (los nombres viven en el registry; aquí se resuelven).
+const VERTICAL_ICON: Record<Industry, ComponentType<{ className?: string; strokeWidth?: number }>> = {
+  bodega: Store,
+  restaurante: UtensilsCrossed,
+  madereria: TreePine,
+  farmacia: Pill,
+  ferreteria: Wrench,
+  panaderia: Croissant,
+  otro: Building2,
+};
+
+// Categorías = verticales REALES soportadas (lib/verticals/registry), no inventadas.
+const CATEGORIES = SUPPORTED_INDUSTRIES.map((id) => ({
+  value: id,
+  label: VERTICAL_REGISTRY[id].label,
+  Icon: VERTICAL_ICON[id],
+}));
+
+interface RucData {
+  ruc: string;
+  razonSocial: string | null;
+  nombreComercial: string | null;
+  estado: string | null;
+  direccion: string | null;
+  departamento: string | null;
+  provincia: string | null;
+  distrito: string | null;
+}
 
 type FormStep = "info" | "details" | "payment" | "success";
 
@@ -80,6 +111,14 @@ export default function StoreRegistrationForm() {
   const [distritos, setDistritos] = useState<{ code: string; nombre: string }[]>([]);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [geoModalOpen, setGeoModalOpen] = useState(false);
+
+  // Modo de registro del nombre: "nuevo" (manual) o "sunat" (ya inscrito → por RUC).
+  const [regMode, setRegMode] = useState<"nuevo" | "sunat">("nuevo");
+  const [ruc, setRuc] = useState("");
+  const [rucLoading, setRucLoading] = useState(false);
+  const [rucData, setRucData] = useState<RucData | null>(null);
+  const [rucError, setRucError] = useState<string | null>(null);
 
   // Cargar departamentos al entrar al step de detalles.
   useEffect(() => {
@@ -114,65 +153,119 @@ export default function StoreRegistrationForm() {
       .catch((err) => console.warn("[registrar] distritos load failed", err));
   }, [departamento, provincia]);
 
-  // Botón "Usar mi ubicación actual" — geo + reverse-geocode + match ubigeo.
-  const handleUseMyLocation = useCallback(() => {
-    setGeoError(null);
-    if (!navigator.geolocation) {
-      setGeoError("Tu navegador no soporta geolocalización.");
-      return;
-    }
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const r = await fetch(`/api/marketplace/reverse-geocode?lat=${latitude}&lng=${longitude}`);
-          if (!r.ok) throw new Error("geocoder failed");
-          const data: {
-            departamento: string | null;
-            provincia: string | null;
-            distrito: string | null;
-            direccion: string | null;
-          } = await r.json();
-
-          // Buscar codigos correspondientes a los nombres devueltos.
-          if (data.departamento) {
-            const allDeps = await fetch("/api/marketplace/ubigeo").then((x) => x.json()) as { items: { code: string; nombre: string }[] };
-            const dep = allDeps.items.find((d) => d.nombre.toLowerCase() === data.departamento!.toLowerCase());
-            if (dep) {
-              setDepartamento(dep.code);
-              if (data.provincia) {
-                const provs = await fetch(`/api/marketplace/ubigeo?dep=${dep.code}`).then((x) => x.json()) as { items: { code: string; nombre: string }[] };
-                const prov = provs.items.find((p) => p.nombre.toLowerCase() === data.provincia!.toLowerCase());
-                if (prov) {
-                  setProvincia(prov.code);
-                  if (data.distrito) {
-                    const dists = await fetch(`/api/marketplace/ubigeo?dep=${dep.code}&prov=${prov.code}`).then((x) => x.json()) as { items: { code: string; nombre: string }[] };
-                    const dist = dists.items.find((d) => d.nombre.toLowerCase() === data.distrito!.toLowerCase());
-                    if (dist) setDistrito(dist.code);
-                  }
+  // Rellena los selects de ubigeo a partir de NOMBRES (departamento/provincia/
+  // distrito) matcheando contra el padrón. Reusado por geolocalización Y por el
+  // lookup de RUC de SUNAT.
+  const applyUbigeoNames = useCallback(
+    async (
+      depName: string | null,
+      provName: string | null,
+      distName: string | null,
+      direccionTxt: string | null,
+    ) => {
+      // SUNAT/Nominatim devuelven mayúsculas/acentos variables → normalizar.
+      const norm = (s: string) =>
+        s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+      try {
+        if (depName) {
+          const allDeps = (await fetch("/api/marketplace/ubigeo").then((x) => x.json())) as { items: { code: string; nombre: string }[] };
+          const dep = allDeps.items.find((d) => norm(d.nombre) === norm(depName));
+          if (dep) {
+            setDepartamento(dep.code);
+            if (provName) {
+              const provs = (await fetch(`/api/marketplace/ubigeo?dep=${dep.code}`).then((x) => x.json())) as { items: { code: string; nombre: string }[] };
+              const prov = provs.items.find((p) => norm(p.nombre) === norm(provName));
+              if (prov) {
+                setProvincia(prov.code);
+                if (distName) {
+                  const dists = (await fetch(`/api/marketplace/ubigeo?dep=${dep.code}&prov=${prov.code}`).then((x) => x.json())) as { items: { code: string; nombre: string }[] };
+                  const dist = dists.items.find((d) => norm(d.nombre) === norm(distName));
+                  if (dist) setDistrito(dist.code);
                 }
               }
             }
           }
-          if (data.direccion) setDireccion(data.direccion);
-        } catch {
-          setGeoError("No pudimos detectar tu dirección. Llená los campos manualmente.");
-        } finally {
-          setGeoLoading(false);
         }
-      },
-      (err) => {
+        if (direccionTxt) setDireccion(direccionTxt);
+      } catch {
+        setGeoError("No pudimos autocompletar la dirección. Llená los campos manualmente.");
+      }
+    },
+    [],
+  );
+
+  // Confirmación del modal de mapa: reverse-geocode de las coords → ubigeo.
+  const applyLocation = useCallback(
+    async (lat: number, lng: number) => {
+      setGeoError(null);
+      setGeoLoading(true);
+      try {
+        const r = await fetch(`/api/marketplace/reverse-geocode?lat=${lat}&lng=${lng}`);
+        if (!r.ok) throw new Error("geocoder failed");
+        const data: {
+          departamento: string | null;
+          provincia: string | null;
+          distrito: string | null;
+          direccion: string | null;
+        } = await r.json();
+        await applyUbigeoNames(data.departamento, data.provincia, data.distrito, data.direccion);
+      } catch {
+        setGeoError("No pudimos detectar tu dirección. Llená los campos manualmente.");
+      } finally {
         setGeoLoading(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setGeoError("Permiso de ubicación denegado. Llená los campos manualmente.");
-        } else {
-          setGeoError("No pudimos obtener tu ubicación. Llená los campos manualmente.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-    );
-  }, []);
+      }
+    },
+    [applyUbigeoNames],
+  );
+
+  // Lookup de RUC (debounced) cuando el modo es "sunat" y hay 11 dígitos válidos.
+  useEffect(() => {
+    if (regMode !== "sunat") return;
+    const digits = ruc.replace(/\D/g, "");
+    setRucError(null);
+    if (digits.length !== 11) {
+      setRucData(null);
+      return;
+    }
+    if (!/^[12]/.test(digits)) {
+      setRucData(null);
+      setRucError("El RUC debe empezar en 1 o 2.");
+      return;
+    }
+    let cancelled = false;
+    setRucLoading(true);
+    const t = setTimeout(() => {
+      fetch(`/api/marketplace/ruc-lookup?ruc=${digits}`)
+        .then(async (r) => {
+          const j = await r.json();
+          if (cancelled) return;
+          if (!r.ok) {
+            setRucData(null);
+            setRucError(j.error ?? "No se encontró el RUC en SUNAT.");
+          } else {
+            setRucData(j as RucData);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setRucError("No se pudo consultar SUNAT. Escribe el nombre manualmente.");
+        })
+        .finally(() => {
+          if (!cancelled) setRucLoading(false);
+        });
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [ruc, regMode]);
+
+  // Aplica los datos del RUC al formulario: nombre + dirección (ubigeo).
+  const applyRucData = useCallback(async () => {
+    if (!rucData) return;
+    const name = rucData.nombreComercial?.trim() || rucData.razonSocial?.trim() || "";
+    if (name) setStoreNameInput(name);
+    await applyUbigeoNames(rucData.departamento, rucData.provincia, rucData.distrito, rucData.direccion);
+  }, [rucData, applyUbigeoNames]);
 
   const handleSubmit = useCallback(async () => {
     setError(null);
@@ -549,21 +642,109 @@ export default function StoreRegistrationForm() {
                       <Store className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Nombre de tu tienda <span className="text-[var(--data-error-500)]">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={storeNameInput}
-                        onChange={(e) => setStoreNameInput(e.target.value)}
-                        placeholder="Ej: Bodega Don Pedro"
-                        className={cn(INPUT_BASE, storeOk && "pr-11")}
-                      />
-                      {storeOk && (
-                        <CheckCircle
-                          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--data-success-500)]"
-                          strokeWidth={2.25}
-                        />
-                      )}
+
+                    {/* Toggle: negocio nuevo vs ya inscrito en SUNAT */}
+                    <div className="mb-3 inline-flex w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
+                      {([
+                        { id: "nuevo", label: "Negocio nuevo", icon: Sparkles },
+                        { id: "sunat", label: "Ya inscrito (SUNAT)", icon: ShieldCheck },
+                      ] as const).map((mode) => (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          onClick={() => setRegMode(mode.id)}
+                          aria-pressed={regMode === mode.id}
+                          className={cn(
+                            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all",
+                            regMode === mode.id
+                              ? "bg-[var(--surface-canvas)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
+                              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                          )}
+                        >
+                          <mode.icon className="h-3.5 w-3.5" strokeWidth={2.25} />
+                          {mode.label}
+                        </button>
+                      ))}
                     </div>
+
+                    {regMode === "nuevo" ? (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={storeNameInput}
+                          onChange={(e) => setStoreNameInput(e.target.value)}
+                          placeholder="Ej: Bodega Don Pedro"
+                          className={cn(INPUT_BASE, storeOk && "pr-11")}
+                        />
+                        {storeOk && (
+                          <CheckCircle
+                            className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--data-success-500)]"
+                            strokeWidth={2.25}
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={2.25} />
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={ruc}
+                            onChange={(e) => setRuc(e.target.value.replace(/[^\d]/g, "").slice(0, 11))}
+                            placeholder="Ingresa tu RUC (11 dígitos)"
+                            className={cn(INPUT_BASE, "pl-10", rucLoading && "pr-11")}
+                          />
+                          {rucLoading && (
+                            <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-[var(--accent)]" />
+                          )}
+                        </div>
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
+                          <ShieldCheck className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+                          Escribe tu RUC y traemos tu razón social y dirección desde SUNAT.
+                        </p>
+
+                        {rucError && (
+                          <p className="rounded-lg bg-[var(--data-error-50)] px-3 py-2 text-xs font-semibold text-[var(--data-error-700)]">
+                            {rucError}
+                          </p>
+                        )}
+
+                        {rucData && (
+                          <button
+                            type="button"
+                            onClick={() => void applyRucData()}
+                            className="w-full rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] p-3.5 text-left transition-all hover:border-[var(--accent)] hover:shadow-[var(--shadow-sm)]"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">
+                                  {rucData.razonSocial ?? "Empresa"}
+                                </p>
+                                <p className="mt-0.5 text-xs font-semibold text-[var(--text-secondary)]">
+                                  RUC {rucData.ruc}
+                                  {rucData.estado ? ` · ${rucData.estado}` : ""}
+                                </p>
+                                {rucData.direccion && (
+                                  <p className="mt-1 text-xs text-[var(--text-tertiary)] truncate">{rucData.direccion}</p>
+                                )}
+                              </div>
+                              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-white">
+                                <Check className="h-3 w-3" strokeWidth={3} />
+                                Usar
+                              </span>
+                            </div>
+                          </button>
+                        )}
+
+                        {storeOk && (
+                          <p className="flex items-center gap-1.5 text-xs font-bold text-[var(--data-success-500)]">
+                            <CheckCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+                            Nombre cargado: {storeNameInput}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -572,21 +753,26 @@ export default function StoreRegistrationForm() {
                       Tipo de negocio
                     </label>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {CATEGORIES.map((cat) => (
-                        <button
-                          key={cat.value}
-                          type="button"
-                          onClick={() => setCategory(cat.value)}
-                          className={cn(
-                            "h-12 rounded-xl border-2 px-3 text-sm font-bold transition-all",
-                            category === cat.value
-                              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm"
-                              : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]",
-                          )}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
+                      {CATEGORIES.map((cat) => {
+                        const active = category === cat.value;
+                        return (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => setCategory(cat.value)}
+                            aria-pressed={active}
+                            className={cn(
+                              "flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-left text-sm font-bold transition-all",
+                              active
+                                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[var(--shadow-sm)]"
+                                : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]",
+                            )}
+                          >
+                            <cat.Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} />
+                            <span className="leading-tight">{cat.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -598,14 +784,14 @@ export default function StoreRegistrationForm() {
                       </h4>
                       <button
                         type="button"
-                        onClick={handleUseMyLocation}
+                        onClick={() => setGeoModalOpen(true)}
                         disabled={geoLoading}
                         className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:scale-[1.02] hover:shadow disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {geoLoading ? (
                           <>
                             <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />
-                            Detectando…
+                            Aplicando…
                           </>
                         ) : (
                           <>
@@ -833,6 +1019,13 @@ export default function StoreRegistrationForm() {
           </aside>
         </div>
       </main>
+
+      {/* Modal de ubicación con mapa (pin draggable) */}
+      <GeolocationPickerModal
+        open={geoModalOpen}
+        onClose={() => setGeoModalOpen(false)}
+        onConfirm={(lat, lng) => applyLocation(lat, lng)}
+      />
     </div>
   );
 }
