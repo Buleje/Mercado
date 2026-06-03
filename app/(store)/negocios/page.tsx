@@ -52,9 +52,13 @@ import {
 // · Twitter card agregada explícita (antes ausente)
 // · El template del root "%s | Buleje" agrega sufijo automáticamente
 export const metadata: Metadata = {
-  title: "Software para bodega y tienda en Perú | POS, ventas y delivery",
+  // Brandon 2026-06-03 SEO: title 71→52 chars (con sufijo "| Buleje") para no
+  // truncar en SERP. Description reescrita — antes mencionaba "Plan Fundador en
+  // Pucallpa" (se movió a /abrir-tienda + geo viejo). Ahora posiciona por
+  // "software para bodega" (intención B2B), nacional (SaaS), sin contenido stale.
+  title: "Software para bodegas y minimarkets en Perú",
   description:
-    "Vendé sin comisión 90 días. Tu bodega online en 5 minutos con Yape, POS y delivery. Sé de los primeros 10 del Plan Fundador en Pucallpa.",
+    "El software todo-en-uno para tu bodega: POS, inventario, fiado digital, facturación SUNAT y delivery. Cobrá con Yape, sin comisión.",
   // Brandon 2026-05-27 SEO profundo: keywords B2B de alta intención (long-tail
   // local + categoría). Google ya no rankea por meta keywords, pero ayudan a
   // buscadores secundarios, IAs y herramientas SEO. hreflang es-PE explícito.
@@ -86,9 +90,9 @@ export const metadata: Metadata = {
     "max-snippet": -1,
   },
   openGraph: {
-    title: "Software para bodega y tienda en Perú",
+    title: "Software para bodegas y minimarkets en Perú",
     description:
-      "Vendé sin comisión 90 días. Tu bodega online en 5 minutos.",
+      "POS, inventario, fiado digital, SUNAT y delivery en una sola app. Cobrá con Yape, sin comisión.",
     url: "https://www.buleje.pe/negocios",
     type: "website",
     locale: "es_PE",
@@ -104,9 +108,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Software para bodega y tienda en Perú",
+    title: "Software para bodegas y minimarkets en Perú",
     description:
-      "Vendé sin comisión 90 días. Tu bodega online en 5 minutos con Yape, POS y delivery.",
+      "POS, inventario, fiado digital, SUNAT y delivery en una sola app. Cobrá con Yape, sin comisión.",
     images: ["/api/og/negocios"],
   },
 };
@@ -131,14 +135,32 @@ async function BulejeJsonLd() {
     description:
       "Plataforma todo-en-uno para abrir tu tienda online en 5 minutos. POS, inventario, delivery, fiado digital, SUNAT y pagos con Yape/Plin.",
     applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
+    operatingSystem: "Web, Android, iOS",
     inLanguage: "es-PE",
-    offers: [
-      { "@type": "Offer", name: "Free", price: "0", priceCurrency: "PEN" },
-      { "@type": "Offer", name: "Starter", price: "89", priceCurrency: "PEN" },
-      { "@type": "Offer", name: "Pro", price: "179", priceCurrency: "PEN" },
-      { "@type": "Offer", name: "Business", price: "349", priceCurrency: "PEN" },
+    // featureList: ayuda a Google/IAs a entender el alcance del producto como
+    // entidad (rich understanding + citación en respuestas generativas).
+    featureList: [
+      "Punto de venta (POS) con Yape y Plin",
+      "Inventario en tiempo real y alertas de quiebre",
+      "Fiado digital con historial y recordatorios",
+      "Facturación electrónica SUNAT (boletas, guías, notas)",
+      "Delivery con zonas, tarifas y tracking en vivo",
+      "Pedidos por WhatsApp con asistente IA",
+      "Reportes de ventas, caja y flujo de dinero",
     ],
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "PEN",
+      lowPrice: "0",
+      highPrice: "349",
+      offerCount: 4,
+      offers: [
+        { "@type": "Offer", name: "Free", price: "0", priceCurrency: "PEN" },
+        { "@type": "Offer", name: "Starter", price: "89", priceCurrency: "PEN" },
+        { "@type": "Offer", name: "Pro", price: "179", priceCurrency: "PEN" },
+        { "@type": "Offer", name: "Business", price: "349", priceCurrency: "PEN" },
+      ],
+    },
     publisher: { "@id": `${baseUrl}/#organization` },
   };
 

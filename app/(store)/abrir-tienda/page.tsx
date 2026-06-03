@@ -59,9 +59,13 @@ const BodegaScene = dynamic(
 const PAGE_URL = "https://www.buleje.pe/abrir-tienda";
 
 export const metadata: Metadata = {
-  title: `Abre tu tienda online gratis en 5 minutos — ${BRAND_GEO.city}`,
+  // Brandon 2026-06-03 SEO: title 72→50 chars con sufijo (saco la ciudad del
+  // título — vive en la description y el LocalBusiness schema). Description
+  // 163→139 (≤155). Posiciona por "abrir tienda online", distinto de /negocios
+  // ("software para bodega"), sin canibalizar keywords.
+  title: "Abre tu tienda online gratis en 5 minutos",
   description:
-    `Crea tu tienda online y vendé hoy: catálogo, pagos Yape/Plin, delivery y reportes en una app. Gratis para empezar, sin tarjeta ni comisión, en ${BRAND_GEO.city}.`,
+    `Crea tu tienda online y vendé hoy: catálogo, pagos Yape/Plin, delivery y reportes. Gratis, sin tarjeta ni comisión, en ${BRAND_GEO.city}.`,
   keywords: [
     "abrir tienda online",
     "crear tienda online Perú",
@@ -76,7 +80,7 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: "/abrir-tienda",
-    languages: { "es-PE": "/abrir-tienda", "es": "/abrir-tienda" },
+    languages: { "es-PE": "/abrir-tienda", "x-default": "/abrir-tienda" },
   },
   openGraph: {
     title: "Abre tu tienda online gratis en 5 minutos",
@@ -703,14 +707,29 @@ function AbrirTiendaJsonLd() {
     description:
       "Plataforma todo-en-uno para abrir tu tienda online en 5 minutos: catálogo, POS, inventario, delivery, fiado digital, facturación SUNAT y pagos con Yape/Plin. Sin comisión.",
     applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
+    operatingSystem: "Web, Android, iOS",
     inLanguage: "es-PE",
-    offers: [
-      { "@type": "Offer", name: "Free", price: "0", priceCurrency: "PEN" },
-      { "@type": "Offer", name: "Starter", price: "89", priceCurrency: "PEN" },
-      { "@type": "Offer", name: "Pro", price: "179", priceCurrency: "PEN" },
-      { "@type": "Offer", name: "Business", price: "349", priceCurrency: "PEN" },
+    featureList: [
+      "Tienda online con catálogo, fotos y variantes",
+      "Pagos Yape, Plin, efectivo y tarjeta sin comisión",
+      "Delivery con zonas, tarifas y tracking en vivo",
+      "POS, inventario y fiado digital",
+      "Facturación electrónica SUNAT",
+      "Pedidos por WhatsApp con asistente IA",
     ],
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "PEN",
+      lowPrice: "0",
+      highPrice: "349",
+      offerCount: 4,
+      offers: [
+        { "@type": "Offer", name: "Free", price: "0", priceCurrency: "PEN" },
+        { "@type": "Offer", name: "Starter", price: "89", priceCurrency: "PEN" },
+        { "@type": "Offer", name: "Pro", price: "179", priceCurrency: "PEN" },
+        { "@type": "Offer", name: "Business", price: "349", priceCurrency: "PEN" },
+      ],
+    },
     publisher: { "@id": `${baseUrl}/#organization` },
   };
 
