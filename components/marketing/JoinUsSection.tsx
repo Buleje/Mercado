@@ -124,7 +124,7 @@ export function JoinUsSection() {
             const isFeatured = i === 0;
             return (
               <Link
-                key={c.href}
+                key={c.title}
                 href={c.href}
                 className={cn(
                   "group relative flex overflow-hidden border-2 transition-all",
