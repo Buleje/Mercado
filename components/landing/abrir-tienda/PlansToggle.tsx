@@ -12,9 +12,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { m, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import NumberFlow from "@number-flow/react";
-import { Check, Sparkles } from "@buleje/design-system/icons";
+import { Check, Sparkles, Target } from "@buleje/design-system/icons";
 import {
   PLANS,
   PLAN_ORDER,
@@ -130,50 +130,91 @@ function PlanCard({
   const savings = annualSavings(plan);
   const href = PLAN_HREF[plan.id];
   const cta = t(PLAN_CTA_KEYS[plan.id]);
+  // Respeta prefers-reduced-motion: sin pulsos ni bob para quien lo pidió.
+  const reduce = useReducedMotion();
 
   return (
-    <m.div
-      whileHover={{ y: -4 }}
-      transition={{ type: "spring", stiffness: 280, damping: 22 }}
-      className={`relative rounded-3xl p-6 flex flex-col ${
-        recommended
-          ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-2xl shadow-[var(--accent)]/25 ring-2 ring-[var(--accent)]"
-          : "bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]"
-      }`}
-    >
+    // Wrapper relative: aloja el aura que respira DETRÁS de la card recomendada.
+    // h-full + grid stretch hacen que todas las cards igualen alto.
+    <div className="relative h-full">
+      {/* Aura viva — halo de marca que respira (pulso lento infinito) detrás
+          del plan "Más elegido". El blur sale del borde de la card = glow. */}
       {recommended && (
-        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[var(--accent-600,var(--accent))] text-white text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
-          {t("plans.mostChosen")}
-        </span>
+        <m.div
+          aria-hidden
+          className="pointer-events-none absolute -inset-2 sm:-inset-3 rounded-[2.25rem] bg-[var(--accent)] blur-2xl"
+          style={reduce ? { opacity: 0.22 } : undefined}
+          animate={reduce ? undefined : { opacity: [0.16, 0.4, 0.16], scale: [0.97, 1.03, 0.97] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+        />
       )}
+      <m.div
+        whileHover={{ y: -4 }}
+        transition={{ type: "spring", stiffness: 280, damping: 22 }}
+        className={`relative h-full rounded-3xl p-6 flex flex-col ${
+          recommended
+            ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-2xl shadow-[var(--accent)]/30 ring-2 ring-[var(--accent)]"
+            : "bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]"
+        }`}
+      >
+        {recommended && (
+          // Badge flotante — bob suave (sube/baja 3.5px en loop). z-10 lo deja
+          // sobre el aura. x:-50% centra (reemplaza -translate-x-1/2, que framer
+          // pisaría al setear transform para animar y).
+          <m.span
+            className="absolute -top-3.5 left-1/2 z-10 inline-flex items-center gap-1 bg-[var(--accent-600,var(--accent))] text-white text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-lg shadow-[var(--accent)]/40 whitespace-nowrap"
+            style={{ x: "-50%" }}
+            animate={reduce ? undefined : { y: [0, -3.5, 0] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Sparkles className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+            {t("plans.mostChosen")}
+          </m.span>
+        )}
 
-      {/* Header */}
-      <div className="mb-4">
-        <h3
-          className={`text-xl font-black tracking-[var(--ls-tight)] ${
-            recommended ? "text-[var(--surface-canvas)]" : "text-[var(--text-primary)]"
-          }`}
-        >
-          {plan.label}
-        </h3>
-        <p
-          className={`mt-1 text-sm leading-snug ${
-            recommended ? "text-[var(--surface-canvas)]/75" : "text-[var(--text-tertiary)]"
-          }`}
-        >
-          {t(`plans.tagline.${plan.id}`)}
-        </p>
-      </div>
+        {/* Header */}
+        <div className="mb-4">
+          <h3
+            className={`text-xl font-black tracking-[var(--ls-tight)] ${
+              recommended ? "text-[var(--surface-canvas)]" : "text-[var(--text-primary)]"
+            }`}
+          >
+            {plan.label}
+          </h3>
+          {/* ¿Para quién es? — explica de un vistazo a qué negocio le sirve el
+              plan, no solo qué incluye. Eyebrow "Ideal para" + frase guía. */}
+          <div className="mt-2.5 flex items-start gap-2">
+            <Target
+              className="h-4 w-4 mt-[3px] shrink-0 text-[var(--accent)]"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+            <p
+              className={`text-sm font-semibold leading-snug ${
+                recommended ? "text-[var(--surface-canvas)]/85" : "text-[var(--text-secondary)]"
+              }`}
+            >
+              <span
+                className={`block text-[10px] font-black uppercase tracking-[0.14em] mb-0.5 ${
+                  recommended ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
+                }`}
+              >
+                {t("plans.idealFor")}
+              </span>
+              {t(`plans.tagline.${plan.id}`)}
+            </p>
+          </div>
+        </div>
 
       {/* Precio — con tachado del original cuando hay descuento.
           Brandon mayo 2026: pidió tachados + persuasión visible. */}
-      <div className={`mb-5 pb-5 border-b ${recommended ? "border-white/15" : "border-[var(--rule-soft)]"}`}>
+      <div className={`mb-5 pb-5 border-b ${recommended ? "border-[var(--surface-canvas)]/15" : "border-[var(--rule-soft)]"}`}>
         {/* Línea con precio anterior tachado + badge de descuento */}
         {showFirstMonthBanner && (
           <div className="flex items-center gap-2 mb-1">
             <span
               className={`text-base font-bold tabular-nums line-through decoration-2 ${
-                recommended ? "text-white/45" : "text-[var(--text-tertiary)]"
+                recommended ? "text-[var(--surface-canvas)]/45" : "text-[var(--text-tertiary)]"
               }`}
             >
               S/ {plan.monthlyPrice}
@@ -187,7 +228,7 @@ function PlanCard({
           <div className="flex items-center gap-2 mb-1">
             <span
               className={`text-base font-bold tabular-nums line-through decoration-2 ${
-                recommended ? "text-white/45" : "text-[var(--text-tertiary)]"
+                recommended ? "text-[var(--surface-canvas)]/45" : "text-[var(--text-tertiary)]"
               }`}
             >
               S/ {plan.monthlyPrice}
@@ -231,19 +272,19 @@ function PlanCard({
 
         {/* Sub-mensaje persuasivo */}
         {showFirstMonthBanner && plan.firstMonthDiscount < 100 && (
-          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
+          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-[var(--surface-canvas)]/70" : "text-[var(--text-secondary)]"}`}>
             {t("plans.afterMonthly").split("·")[0]?.trim()} <strong>S/ {plan.monthlyPrice}/{t("common.month")}</strong> ·{" "}
             {t("plans.afterMonthly").split("·")[1]?.trim()}
           </p>
         )}
         {plan.firstMonthDiscount === 100 && !isAnnual && (
-          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
+          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-[var(--surface-canvas)]/70" : "text-[var(--text-secondary)]"}`}>
             <strong>{t("common.noCard")}</strong> ·{" "}
             {t("plans.noCardAfter").split("·")[1]?.trim()} S/ {plan.monthlyPrice}/{t("common.month")}
           </p>
         )}
         {isAnnual && (
-          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-white/70" : "text-[var(--text-secondary)]"}`}>
+          <p className={`mt-2 text-[11px] leading-snug ${recommended ? "text-[var(--surface-canvas)]/70" : "text-[var(--text-secondary)]"}`}>
             {t("plans.savings")} <strong>S/ {savings}</strong> (≈ {Math.round(savings / plan.monthlyPrice)} {t("common.month")})
           </p>
         )}
@@ -279,6 +320,7 @@ function PlanCard({
       >
         {cta}
       </Link>
-    </m.div>
+      </m.div>
+    </div>
   );
 }

@@ -33,7 +33,12 @@ interface JoinCard {
 
 const JOIN_CARDS: JoinCard[] = [
   {
-    href: "/negocios",
+    // Brandon 2026-06-03: las cards de reclutamiento van DIRECTO al selector de
+    // planes (/abrir-tienda#planes) en vez de la landing larga /negocios. Quien
+    // clickea "Registrá tu tienda" ya decidió — elegir plan es un micro-compromiso
+    // que sube la conversión al form (el plan más barato es S/0, sin fricción).
+    // El cableado plan→/marketplace/registrar?plan= ya existe en PlansToggle.
+    href: "/abrir-tienda#planes",
     eyebrow: "Para tiendas",
     title: "Registrá tu tienda",
     desc: "Bodega, minimarket o tienda de barrio — online sin que te toque la tecnología.",
@@ -43,11 +48,11 @@ const JOIN_CARDS: JoinCard[] = [
       "Cobrás con Yape, Plin, tarjeta o efectivo",
       "Pedidos directos a tu WhatsApp",
     ],
-    cta: "Abrir mi tienda",
+    cta: "Elegir mi plan",
     Icon: Store,
   },
   {
-    href: "/negocios?tipo=comercio",
+    href: "/abrir-tienda#planes",
     eyebrow: "Para comercios",
     title: "Registrá tu comercio",
     desc: "Restaurante, farmacia o licorería — llegá a los vecinos que ya compran en Buleje.",

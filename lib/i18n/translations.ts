@@ -323,9 +323,10 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "plans.mostChosen": { es: "Más elegido", en: "Most chosen", shi: "Más" },
   "plans.firstMonthFree": { es: "1er mes gratis", en: "1st month free", shi: "1 killa mana paguy" },
   "plans.firstMonth": { es: "1er mes", en: "1st month", shi: "1 killa" },
+  "plans.idealFor": { es: "Ideal para", en: "Ideal for", shi: "Allinmi" },
   "plans.tagline.basico": {
-    es: "Prueba Buleje sin tarjeta · siempre gratis",
-    en: "Try Buleje without a card · always free",
+    es: "Probar sin riesgo antes de pagar nada · siempre gratis",
+    en: "Try risk-free before paying anything · always free",
     shi: "Buleje qhaway",
   },
   "plans.tagline.pro": {
