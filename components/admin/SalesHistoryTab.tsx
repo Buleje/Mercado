@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import {
   History, Search, Download, Filter, X, Loader2,
   Store, ShoppingCart, Globe, User, Phone, ChevronRight, RefreshCw,
+  Printer, Wallet, CreditCard, Banknote, Receipt, Calendar,
+  Package, CheckCircle2, Clock, AlertCircle,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import ProductImagePlaceholder from "@/components/store/ProductImagePlaceholder";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { escapeHtml } from "@/lib/safe-html";
@@ -14,6 +18,15 @@ import { escapeHtml } from "@/lib/safe-html";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Source = "pos" | "tienda" | "marketplace";
+
+interface SaleItemLine {
+  name: string;
+  quantity: number;
+  price: number;
+  unit: string;
+  /** URL de imagen del producto — opcional; el payload actual no la incluye. */
+  imageUrl?: string | null;
+}
 
 interface TransactionItem {
   id: string;
@@ -26,7 +39,7 @@ interface TransactionItem {
   status: string;
   itemCount: number;
   itemsPreview: string;
-  items: { name: string; quantity: number; price: number; unit: string }[];
+  items: SaleItemLine[];
 }
 
 interface TransactionsResponse {
@@ -78,9 +91,46 @@ const SOURCE_META: Record<Source, { label: string; icon: typeof Store; cls: stri
   marketplace: {
     label: "Marketplace",
     icon: Globe,
-    cls: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+    cls: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
   },
 };
+
+// Mapa método de pago → icono + label
+function paymentMeta(payment: string): { iconKey: "credit" | "wallet" | "cash" | "receipt"; label: string } {
+  const p = payment.toLowerCase();
+  if (p.includes("tarjeta") || p.includes("card") || p.includes("visa") || p.includes("mastercard"))
+    return { iconKey: "credit", label: payment };
+  if (p.includes("yape") || p.includes("plin") || p.includes("transferencia") || p.includes("billetera"))
+    return { iconKey: "wallet", label: payment };
+  if (p.includes("efectivo") || p.includes("cash") || p.includes("—") || p === "")
+    return { iconKey: "cash", label: payment || "Efectivo" };
+  return { iconKey: "receipt", label: payment };
+}
+
+/** Renderiza el icono correcto según la clave de pago. */
+function PaymentIcon({ iconKey, className }: { iconKey: "credit" | "wallet" | "cash" | "receipt"; className?: string }) {
+  if (iconKey === "credit") return <CreditCard className={className} />;
+  if (iconKey === "wallet") return <Wallet className={className} />;
+  if (iconKey === "cash") return <Banknote className={className} />;
+  return <Receipt className={className} />;
+}
+
+// Mapa de status → variante visual
+function statusVariant(status: string): "success" | "error" | "warning" | "default" {
+  const s = status.toLowerCase();
+  if (s === "completada" || s === "entregado") return "success";
+  if (s === "cancelado" || s === "cancelled") return "error";
+  if (s === "pendiente" || s === "pending") return "warning";
+  return "default";
+}
+
+/** Renderiza el icono correcto según el estado. */
+function StatusIcon({ variant, className }: { variant: "success" | "error" | "warning" | "default"; className?: string }) {
+  if (variant === "success") return <CheckCircle2 className={className} />;
+  if (variant === "error") return <AlertCircle className={className} />;
+  if (variant === "warning") return <Clock className={className} />;
+  return <Receipt className={className} />;
+}
 
 // Mapa de status → color (compatible con Order statuses + Sale "completada")
 function statusBadgeClass(status: string): string {
@@ -442,6 +492,39 @@ export default function SalesHistoryTab() {
                           )}
                         </Td>
                         <Td className="max-w-[220px]">
+                          {/* Mini-strip de thumbnails (hasta 3) */}
+                          {t.items.length > 0 && (
+                            <div className="flex items-center gap-1 mb-1">
+                              {t.items.slice(0, 3).map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className="relative h-7 w-7 rounded-md overflow-hidden shrink-0 border border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
+                                  title={item.name}
+                                >
+                                  {item.imageUrl ? (
+                                    <Image
+                                      src={item.imageUrl}
+                                      alt={item.name}
+                                      fill
+                                      sizes="28px"
+                                      className="object-cover"
+                                    />
+                                  ) : (
+                                    <ProductImagePlaceholder
+                                      size={14}
+                                      showLabel={false}
+                                      className="rounded-md"
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                              {t.items.length > 3 && (
+                                <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] leading-none ml-0.5">
+                                  +{t.items.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <p className="text-[var(--text-secondary)] truncate" title={t.itemsPreview}>{t.itemsPreview}</p>
                           <p className="text-xs text-[var(--text-tertiary)]">{t.itemCount} producto{t.itemCount === 1 ? "" : "s"}</p>
                         </Td>
@@ -574,9 +657,36 @@ function Td({ children, className }: { children?: React.ReactNode; className?: s
 
 // ─── Detalle ─────────────────────────────────────────────────────────────────
 
+/**
+ * ProductThumb — thumbnail 48×48 con fallback al placeholder del DS.
+ * Definido inline (no necesita archivo propio a esta escala).
+ */
+function ProductThumb({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+  const [imgError, setImgError] = useState(false);
+  const showPlaceholder = !imageUrl || imgError;
+  return (
+    <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0 border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+      {showPlaceholder ? (
+        <ProductImagePlaceholder size={20} showLabel={false} />
+      ) : (
+        <Image
+          src={imageUrl!}
+          alt={name}
+          fill
+          sizes="48px"
+          className="object-cover"
+          onError={() => setImgError(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 function DetailModal({ item, onClose }: { item: TransactionItem; onClose: () => void }) {
   const meta = SOURCE_META[item.source];
-  const Icon = meta.icon;
+  const ChannelIcon = meta.icon;
+  const { iconKey: payIconKey, label: payLabel } = paymentMeta(item.payment);
+  const statusVar = statusVariant(item.status);
 
   // Cerrar con Escape
   useEffect(() => {
@@ -638,96 +748,186 @@ function DetailModal({ item, onClose }: { item: TransactionItem; onClose: () => 
       className="modal-backdrop p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", meta.cls)}>
-              <Icon className="h-5 w-5" strokeWidth={2} />
-            </div>
-            <div className="min-w-0">
-              <CardTitle className="text-lg font-bold">Detalle de venta</CardTitle>
-              <p className="text-sm text-[var(--text-tertiary)] truncate">
-                {meta.label} · {formatDateTime(item.createdAt)}
+      <div className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-lg)] ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden">
+
+        {/* ── Header con hero total ──────────────────────────────────────── */}
+        <div className={cn(
+          "relative px-6 pt-5 pb-4 border-b border-[var(--rule-soft)]",
+          "bg-linear-to-br",
+          item.source === "pos"
+            ? "from-emerald-50/60 to-transparent dark:from-emerald-500/8 dark:to-transparent"
+            : item.source === "tienda"
+              ? "from-sky-50/60 to-transparent dark:from-sky-500/8 dark:to-transparent"
+              : "from-amber-50/60 to-transparent dark:from-amber-500/8 dark:to-transparent"
+        )}>
+          {/* Fila superior: canal badge + cerrar */}
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <span className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border",
+              item.source === "pos"
+                ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30"
+                : item.source === "tienda"
+                  ? "bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30"
+                  : "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30"
+            )}>
+              <ChannelIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+              {meta.label}
+            </span>
+            <button
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors shrink-0"
+            >
+              <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+            </button>
+          </div>
+
+          {/* Total hero */}
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-0.5">
+                Total cobrado
               </p>
-              <p className="text-xs text-[var(--text-tertiary)] font-mono truncate mt-0.5">{item.id}</p>
+              <p className="text-4xl font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
+                S/ {item.total.toFixed(2)}
+              </p>
+            </div>
+            <div className="text-right space-y-1 pb-0.5">
+              <div className={cn(
+                "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold",
+                statusBadgeClass(item.status)
+              )}>
+                <StatusIcon variant={statusVar} className="h-3.5 w-3.5" />
+                {item.status.replace(/_/g, " ")}
+              </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors shrink-0"
-          >
-            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-          </button>
+
+          {/* Meta-fila: fecha · pago · ID */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-[var(--text-tertiary)]">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" />
+              {formatDateTime(item.createdAt)}
+            </span>
+            <span className="flex items-center gap-1 capitalize">
+              <PaymentIcon iconKey={payIconKey} className="h-3.5 w-3.5" />
+              {payLabel}
+            </span>
+            <span className="flex items-center gap-1 font-mono">
+              <Receipt className="h-3.5 w-3.5" />
+              <span className="truncate max-w-[120px]" title={item.id}>{item.id}</span>
+            </span>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        {/* ── Body scrollable ────────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto divide-y divide-[var(--rule-soft)]">
+
           {/* Cliente */}
           {(item.customerName || item.customerPhone) && (
-            <div className="rounded-xl bg-[var(--surface-alt)] dark:bg-white/5 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)] mb-2">Cliente</p>
-              <div className="flex items-center gap-2 mb-1">
-                <User className="h-4 w-4 text-[var(--text-tertiary)]" />
-                <span className="text-base font-semibold text-[var(--text-primary)]">{item.customerName ?? "Sin nombre"}</span>
-              </div>
-              {item.customerPhone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-[var(--text-tertiary)]" />
-                  <span className="text-sm text-[var(--text-secondary)]">{item.customerPhone}</span>
+            <div className="px-6 py-4">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-tertiary)] mb-3">
+                Cliente
+              </p>
+              <div className="flex items-center gap-3">
+                {/* Avatar inicial */}
+                <div className="h-10 w-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 ring-2 ring-primary/20">
+                  <span className="text-base font-extrabold text-primary leading-none uppercase">
+                    {(item.customerName ?? "?")[0]}
+                  </span>
                 </div>
-              )}
+                <div>
+                  <p className="text-base font-bold text-[var(--text-primary)]">
+                    {item.customerName ?? "Sin nombre"}
+                  </p>
+                  {item.customerPhone && (
+                    <div className="flex items-center gap-1 text-sm text-[var(--text-secondary)]">
+                      <Phone className="h-3.5 w-3.5" />
+                      {item.customerPhone}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Items */}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)] mb-2">
-              Productos · {item.items.length}
-            </p>
-            <div className="rounded-xl border border-[var(--rule-base)] divide-y divide-[var(--rule-soft)] overflow-hidden">
-              {item.items.map((i, idx) => (
-                <div key={idx} className="px-3 py-2.5 flex items-center justify-between gap-3 bg-white dark:bg-white/[0.02]">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{i.name}</p>
-                    <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
-                      {i.quantity} × S/ {i.price.toFixed(2)} ({i.unit})
+          {/* Productos con thumbnail */}
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">
+                Productos
+              </p>
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] px-2 py-0.5 rounded-full">
+                {item.itemCount} unid.
+              </span>
+            </div>
+            <div className="space-y-2">
+              {item.items.map((lineItem, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3 p-2 rounded-xl bg-[var(--surface-canvas)] dark:bg-white/[0.03] border border-[var(--rule-soft)] hover:border-[var(--rule-base)] transition-colors"
+                >
+                  {/* Thumbnail 48×48 */}
+                  <ProductThumb imageUrl={lineItem.imageUrl} name={lineItem.name} />
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate leading-tight">
+                      {lineItem.name}
+                    </p>
+                    <p className="text-xs text-[var(--text-tertiary)] tabular-nums mt-0.5">
+                      {lineItem.quantity} {lineItem.unit} × S/{lineItem.price.toFixed(2)}
                     </p>
                   </div>
-                  <p className="text-base font-bold text-[var(--text-primary)] tabular-nums shrink-0">
-                    S/ {(i.price * i.quantity).toFixed(2)}
-                  </p>
+
+                  {/* Subtotal línea */}
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+                      S/{(lineItem.price * lineItem.quantity).toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Totales */}
-          <div className="rounded-xl bg-[var(--surface-alt)] dark:bg-white/5 p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--text-secondary)]">Subtotal</span>
-              <span className="font-semibold text-[var(--text-primary)] tabular-nums">S/ {subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--text-secondary)]">Pago</span>
-              <span className="font-semibold text-[var(--text-primary)] capitalize">{item.payment}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--text-secondary)]">Estado</span>
-              <span className={cn("px-2 py-0.5 rounded-md text-xs font-semibold capitalize", statusBadgeClass(item.status))}>
-                {item.status.replace(/_/g, " ")}
-              </span>
-            </div>
-            <div className="flex justify-between items-center pt-2 border-t border-[var(--rule-base)]">
-              <span className="text-sm font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Total</span>
-              <span className="text-2xl font-extrabold text-primary tabular-nums">S/ {item.total.toFixed(2)}</span>
+          {/* Resumen totales */}
+          <div className="px-6 py-4">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-tertiary)] mb-3">
+              Resumen
+            </p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--text-secondary)]">Subtotal</span>
+                <span className="font-semibold text-[var(--text-primary)] tabular-nums">S/ {subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm items-center">
+                <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                  <PaymentIcon iconKey={payIconKey} className="h-4 w-4" />
+                  Método de pago
+                </span>
+                <span className="font-semibold text-[var(--text-primary)] capitalize">{payLabel}</span>
+              </div>
+              <div className="flex justify-between text-sm items-center">
+                <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                  <Package className="h-4 w-4" />
+                  Productos distintos
+                </span>
+                <span className="font-semibold text-[var(--text-primary)]">{item.items.length}</span>
+              </div>
+              {/* Total final */}
+              <div className="flex justify-between items-center pt-3 mt-1 border-t-2 border-[var(--rule-base)]">
+                <span className="text-base font-bold text-[var(--text-primary)]">Total</span>
+                <span className="text-3xl font-extrabold text-primary tabular-nums leading-none">
+                  S/ {item.total.toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
+        {/* ── Footer ────────────────────────────────────────────────────── */}
+        <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 flex gap-3">
           <button
             onClick={onClose}
             className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
@@ -736,9 +936,9 @@ function DetailModal({ item, onClose }: { item: TransactionItem; onClose: () => 
           </button>
           <button
             onClick={printTicket}
-            className="flex-1 h-12 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+            className="flex-1 h-12 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
           >
-            <Download className="h-5 w-5" />
+            <Printer className="h-5 w-5" />
             Imprimir ticket
           </button>
         </div>
