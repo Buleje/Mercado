@@ -14,10 +14,8 @@ const NosotrosSection = dynamic(
   () => import("@/components/landing/sections/NosotrosSection"),
   { ssr: true, loading: () => <SectionSkeleton /> },
 );
-const FAQSection = dynamic(
-  () => import("@/components/landing/sections/FAQSection"),
-  { ssr: true, loading: () => <SectionSkeleton /> },
-);
+// FAQ removido de /negocios (Brandon 2026-06-03): la FAQ extensa vive SOLO en
+// /abrir-tienda (página de conversión). /negocios es top-funnel institucional.
 const StickyMobileCTA = dynamic(() => import("@/components/landing/StickyMobileCTA"));
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
@@ -116,12 +114,13 @@ export const metadata: Metadata = {
 };
 
 // ── JSON-LD structured data (B2B landing) ──
-// Brandon 2026-05-20 v11 audit Bloque C — 3 schemas para /negocios:
-// 1) SoftwareApplication (audit anterior P0: tipo correcto para landing B2B
-//    software, antes era "WebPage" genérico)
-// 2) BreadcrumbList (audit Bloque C P0: ausente)
-// 3) FAQPage (rich results accordion en SERP)
-// AggregateRating sintético eliminado (audit anterior: penalty risk Google).
+// Brandon 2026-06-03 — 3 schemas para /negocios (institucional, top-funnel):
+// 1) SoftwareApplication (tipo correcto para landing B2B software)
+// 2) BreadcrumbList
+// 3) HowTo (cómo abrir tu tienda en 5 min)
+// FAQPage REMOVIDO: la FAQ visible se movió a /abrir-tienda; mantener el schema
+// sin contenido visible viola la policy de Google (rich result sin match).
+// AggregateRating sintético eliminado (penalty risk Google).
 async function BulejeJsonLd() {
   const baseUrl = "https://www.buleje.pe";
 
@@ -151,80 +150,6 @@ async function BulejeJsonLd() {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Inicio", item: baseUrl },
       { "@type": "ListItem", position: 2, name: "Para tu negocio", item: `${baseUrl}/negocios` },
-    ],
-  };
-
-  const faqLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "¿Cuánto cuesta abrir tu tienda en Buleje?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Empezás GRATIS con el plan Free (hasta 20 productos, 30 pedidos/mes). Si necesitás más, los planes pagos arrancan en S/89/mes (Starter), con primer mes gratis y sin tarjeta.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Necesito tarjeta de crédito para registrarme?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "No. Te registrás sin tarjeta. Solo pedimos forma de pago si decidís pasar a un plan pago tras el primer mes de prueba gratis.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Funciona con SUNAT y facturación electrónica?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Sí. Los planes Pro y Business incluyen facturación electrónica SUNAT, boletas, cotizaciones y guías de remisión, todo integrado.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Qué soporte recibo cuando abro mi tienda?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Setup 1-a-1 por WhatsApp, capacitación de 90 días, sesión de fotos sin costo y acompañamiento personal para los primeros 10 negocios del Plan Fundador.",
-        },
-      },
-      // Brandon 2026-05-27 SEO profundo: 4 preguntas extra de alta intención
-      // (comisión, tiempo de setup, Yape, tipos de negocio) — cubren las queries
-      // que más hacen los dueños y las respuestas que citan las IAs.
-      {
-        "@type": "Question",
-        name: "¿Buleje cobra comisión por cada venta?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "No. Buleje cobra 0% de comisión por venta: el dinero llega directo a tu Yape, tu cuenta bancaria o tu caja. Solo pagás el plan mensual, sin sorpresas.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿En cuánto tiempo está lista mi tienda online?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "En unos 5 minutos: te registrás, cargás tus productos y compartís el link. Con el Plan Fundador hacemos el setup 1-a-1 contigo para dejarla lista la misma tarde.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Mis clientes pueden pagar con Yape y Plin?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Sí. Tus clientes pagan con Yape, Plin, efectivo y tarjeta. El cobro va directo a tu cuenta; Buleje no intermedia el dinero de tus ventas.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "¿Para qué tipo de negocios sirve Buleje?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Para bodegas, minimarkets, tiendas de abarrotes, restaurantes, pizzerías, panaderías, farmacias y ferreterías que quieran vender online con delivery, cobrar con Yape/Plin y emitir comprobantes SUNAT.",
-        },
-      },
     ],
   };
 
@@ -273,10 +198,6 @@ async function BulejeJsonLd() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
       <script
         type="application/ld+json"
@@ -598,255 +519,6 @@ function FeaturesGrid() {
   );
 }
 
-// ── Placeholder honesto para fase pre-launch ──
-// v2 (2026-05-10): rediseñado con peso editorial. Antes era CTA solo centrado
-// en océano vacío. Ahora 2 columnas con visual de cupos + checklist concreta
-// + social proof + urgencia (sin inventar números).
-function EarlyAdopterPlaceholder() {
-  // Cupos: total 10, tomados 3 (ajustable cuando entren onboardings reales).
-  const CUPOS_TOTAL = 10;
-  const CUPOS_TOMADOS = 3;
-  const cuposDisponibles = CUPOS_TOTAL - CUPOS_TOMADOS;
-  const progressPct = (CUPOS_TOMADOS / CUPOS_TOTAL) * 100;
-
-  const BENEFICIOS = [
-    "Setup 1-a-1 con tu tienda lista en una tarde",
-    "Acompañamiento WhatsApp directo · 90 días",
-    "Cero comisión por venta los primeros 90 días",
-    "Sesión de fotos de tus productos sin costo",
-    "Tu negocio en el mapa Buleje desde el día 1",
-  ];
-
-  return (
-    <section
-      aria-label="Únete a los primeros negocios"
-      className="relative overflow-hidden bg-[var(--surface-canvas)] py-20 sm:py-28 border-y border-[var(--rule-soft)]"
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 -right-20 h-[500px] w-[500px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-32 -left-20 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
-      />
-
-      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16 items-center">
-          {/* ── Columna izquierda: pitch + checklist + CTA ──────────────── */}
-          <div>
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
-              <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-              <span className="relative inline-flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
-              </span>
-              Pre-launch · Pucallpa
-            </p>
-            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
-              Sé de los primeros{" "}
-              <span className="text-[var(--accent)]">{CUPOS_TOTAL} negocios.</span>
-            </h2>
-            <p className="mt-5 text-lg sm:text-xl text-[var(--text-secondary)] leading-[1.45] max-w-xl">
-              Estamos arrancando con bodegas seleccionadas. Te contactamos personalmente,
-              configuramos tu tienda contigo y te acompañamos cada paso.
-            </p>
-
-            {/* Checklist de qué incluye */}
-            <ul className="mt-8 space-y-2.5 max-w-xl">
-              {BENEFICIOS.map((b) => (
-                <li key={b} className="flex items-start gap-3">
-                  <span
-                    aria-hidden
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)] shrink-0 mt-0.5"
-                  >
-                    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 8.5 6.5 12 13 4" />
-                    </svg>
-                  </span>
-                  <span className="text-base text-[var(--text-secondary)] leading-snug">
-                    {b}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-10 flex flex-wrap items-center gap-3">
-              <Link
-                href="/abrir-tienda"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
-              >
-                Reservar mi cupo gratis
-                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
-              </Link>
-              <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                Sin tarjeta · 5 minutos · Cancelas cuando quieras
-              </span>
-            </div>
-          </div>
-
-          {/* ── Columna derecha: visual de cupos ────────────────────────── */}
-          <aside className="relative">
-            <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-7 sm:p-9 shadow-[var(--shadow-lg)]">
-              <div className="flex items-center justify-between gap-3 mb-2">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Cupos del Plan Fundador
-                </p>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50)] text-[var(--data-warning-700)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
-                  Limitado
-                </span>
-              </div>
-              <p className="text-5xl sm:text-6xl font-extrabold tracking-[-0.04em] tabular-nums leading-none mt-2">
-                <span className="text-[var(--accent)]">{cuposDisponibles}</span>
-                <span className="text-[var(--text-tertiary)] text-2xl sm:text-3xl font-extrabold ml-2">
-                  / {CUPOS_TOTAL}
-                </span>
-              </p>
-              <p className="mt-1 text-base text-[var(--text-secondary)]">
-                cupos disponibles ahora mismo
-              </p>
-
-              {/* Progress bar */}
-              <div className="mt-6">
-                <div className="relative h-3 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-                  <span
-                    className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-[var(--accent)] to-[var(--accent-600,var(--accent))] transition-[width] duration-[var(--dur-slower)]"
-                    style={{ width: `${progressPct}%` }}
-                  />
-                </div>
-                <div className="mt-2 flex items-center justify-between text-[length:var(--ts-xs)]">
-                  <span className="font-bold text-[var(--accent)] tabular-nums">
-                    {CUPOS_TOMADOS} tomados
-                  </span>
-                  <span className="font-bold text-[var(--text-tertiary)] tabular-nums">
-                    {cuposDisponibles} libres
-                  </span>
-                </div>
-              </div>
-
-              {/* Avatares de fundadores */}
-              <div className="mt-7 pt-6 border-t border-[var(--rule-soft)]">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-                  Negocios que ya entraron
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-2">
-                    {[
-                      { l: "D", c: "var(--accent)" },
-                      { l: "P", c: "#722EAB" },
-                      { l: "L", c: "#f97316" },
-                    ].map(({ l, c }) => (
-                      <span
-                        key={l}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-extrabold text-sm ring-3 ring-[var(--surface-raised)]"
-                        style={{ background: c }}
-                        aria-hidden
-                      >
-                        {l}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-sm text-[var(--text-secondary)] leading-snug">
-                    <strong className="font-extrabold text-[var(--text-primary)]">Don Lucho, Pòlleria El Dorado</strong>{" "}
-                    y otros ya están vendiendo con Buleje.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-// ── Planes snapshot — fuente única plan-tiers.ts ──
-// Brandon mayo 2026 v2: 4 planes alineados con /abrir-tienda y superadmin.
-//   Free (S/0 siempre gratis con limites) · Starter (S/89 1er mes gratis) ·
-//   Pro (S/179 badge "Mas elegido") · Business (S/349).
-function AboutAndPricingSnapshot() {
-  return (
-    <section
-      id="planes"
-      aria-label="Planes"
-      className="relative overflow-hidden bg-[var(--surface-canvas)] py-20 sm:py-28 scroll-mt-20"
-    >
-      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12 sm:mb-16">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
-              <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-              <T k="landing.plans.kicker" fallback="Planes" />
-            </p>
-            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
-              <T k="landing.plans.title" fallback="Prueba un mes," />{" "}
-              <br />
-              <span className="italic font-serif text-[var(--accent)]">
-                <T k="landing.plans.titleAccent" fallback="pagá solo si te conviene." />
-              </span>
-            </h2>
-          </div>
-          <p className="lg:max-w-sm text-lg text-[var(--text-secondary)] leading-relaxed">
-            <T k="landing.plans.description" fallback="Cambiás de plan cuando quieras. Sin contratos, sin permanencia, sin sorpresas en la factura." />
-          </p>
-        </div>
-
-        {/* Teaser de precios (informativo). El selector interactivo + el
-            signup viven en /abrir-tienda — esta página solo informa. */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { name: "Free", price: "0", note: "Para empezar gratis" },
-            { name: "Starter", price: "89", note: "Primer mes gratis" },
-            { name: "Pro", price: "179", note: "El más elegido", highlight: true },
-            { name: "Business", price: "349", note: "Todo ilimitado" },
-          ].map((p) => (
-            <div
-              key={p.name}
-              className={[
-                "relative rounded-2xl border p-5 sm:p-6 bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 hover:shadow-md",
-                p.highlight
-                  ? "border-[var(--accent)]/50 shadow-md shadow-[var(--accent)]/10"
-                  : "border-[var(--rule-soft)]",
-              ].join(" ")}
-            >
-              {p.highlight && (
-                <span className="absolute -top-2.5 left-5 inline-flex items-center rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white">
-                  {p.note}
-                </span>
-              )}
-              <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
-                {p.name}
-              </p>
-              <p className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-[-0.03em] tabular-nums text-[var(--text-primary)] leading-none">
-                <span className="text-lg align-top text-[var(--text-tertiary)]">S/</span>
-                {p.price}
-                <span className="text-base font-bold text-[var(--text-tertiary)]">/mes</span>
-              </p>
-              {!p.highlight && (
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">{p.note}</p>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-10 text-center">
-          <Link
-            href="/abrir-tienda#planes"
-            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
-          >
-            Ver planes y activar mi tienda
-            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
-          </Link>
-          <p className="mt-3 text-sm text-[var(--text-tertiary)]">
-            Primer mes gratis · Sin tarjeta · Cancelás cuando quieras
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ── Formas de pago — chip horizontal compacto con colores de marca ──
 // Mayo 2026: antes era una sección gigante de 4 cards con iconos genéricos.
 // PaymentMethods v2 (2026-05-10) — sección rediseñada: 2 grupos (digital /
@@ -1007,8 +679,9 @@ function FinalCTA() {
         <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
           <T k="landing.finalCta.description" fallback="Activa tu tienda online en 5 minutos y empieza a recibir pedidos hoy mismo. Sin compromiso, cancelas cuando quieras." />
         </p>
-        {/* CTA único — antes había 2 botones idénticos hacia /abrir-tienda. */}
-        <div className="mt-12 flex justify-center">
+        {/* CTA principal (activar) + secundario (ver precios). Ambos llevan a
+            /abrir-tienda, la única página de conversión y de precios. */}
+        <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             href="/abrir-tienda"
             className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-10 py-5 text-lg font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
@@ -1018,6 +691,13 @@ function FinalCTA() {
               className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
               strokeWidth={2.5}
             />
+          </Link>
+          <Link
+            href="/abrir-tienda#planes"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-8 py-5 text-lg font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          >
+            Ver planes y precios
+            <ArrowUpRight className="h-5 w-5" strokeWidth={2.5} />
           </Link>
         </div>
         <p className="mt-6 text-sm text-[var(--text-tertiary)]">
@@ -1048,45 +728,34 @@ export default async function Home() {
         online en 5 minutos con POS, delivery, fiado, SUNAT y Yape.
       </h1>
 
-      {/* Flujo B2B: hero software → módulos → cómo funciona → planes →
-          plan fundador → pagos → nosotros → FAQ → CTA. */}
+      {/* Brandon 2026-06-03 — /negocios = top-funnel INSTITUCIONAL ("qué es
+          Buleje · por qué confiar"). Precios completos, Plan Fundador detallado
+          y FAQ larga se movieron a /abrir-tienda (página de conversión) para no
+          tener dos landings gemelas ni dos fuentes de precio que sincronizar.
+          Flujo: hero software → módulos → cómo funciona → pagos → nosotros → CTA. */}
       <B2BHero />
 
+      {/* Módulos del software — qué incluye, a alto nivel */}
       <Reveal>
         <FeaturesGrid />
       </Reveal>
 
-      {/* Cómo funciona — 4 pasos */}
+      {/* Cómo funciona — 4 pasos (único de /negocios) */}
       <Reveal>
         <ComoFuncionaSection />
       </Reveal>
 
-      {/* Planes (teaser informativo → /abrir-tienda para activar) */}
-      <Reveal>
-        <AboutAndPricingSnapshot />
-      </Reveal>
-
-      {/* Plan Fundador — primeros 10 negocios (antes era fallback de reviews) */}
-      <Reveal>
-        <EarlyAdopterPlaceholder />
-      </Reveal>
-
-      {/* Formas de pago de tus clientes */}
+      {/* Formas de pago de tus clientes — "cobrás como ya cobras" */}
       <Reveal>
         <PaymentMethods />
       </Reveal>
 
-      {/* Nosotros — historia + valores */}
+      {/* Nosotros — historia + valores (único de /negocios) */}
       <Reveal>
         <NosotrosSection />
       </Reveal>
 
-      {/* FAQ */}
-      <Reveal>
-        <FAQSection />
-      </Reveal>
-
-      {/* CTA final */}
+      {/* CTA final → /abrir-tienda (planes + plan fundador + FAQ viven allá) */}
       <Reveal>
         <FinalCTA />
       </Reveal>
