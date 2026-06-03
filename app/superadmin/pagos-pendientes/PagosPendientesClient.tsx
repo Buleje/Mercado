@@ -48,6 +48,7 @@ import {
   Download,
   Copy,
   AlertTriangle,
+  Gift,
 } from "@buleje/design-system/icons";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -860,14 +861,23 @@ function ProofCard({
       >
         {/* Image */}
         <div className="relative aspect-[4/3] overflow-hidden bg-[var(--surface-sunken)]">
-          <Image
-            src={proof.proofUrl}
-            alt={`Comprobante de ${proof.storeName}`}
-            fill
-            sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
-            className="object-cover transition-transform duration-[var(--dur-base)] group-hover:scale-[1.02]"
-            unoptimized
-          />
+          {proof.proofUrl ? (
+            <Image
+              src={proof.proofUrl}
+              alt={`Comprobante de ${proof.storeName}`}
+              fill
+              sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+              className="object-cover transition-transform duration-[var(--dur-base)] group-hover:scale-[1.02]"
+              unoptimized
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[var(--accent-soft)]/40 text-[var(--accent)]">
+              <Gift className="h-8 w-8" strokeWidth={1.75} aria-hidden />
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider">
+                Plan gratis · sin comprobante
+              </span>
+            </div>
+          )}
           <div
             aria-hidden
             className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/70 via-black/30 to-transparent"
@@ -896,7 +906,7 @@ function ProofCard({
                 {proof.billingCycle === "anual" ? "Anual" : "Mensual"}
               </p>
               <p className="font-display text-2xl font-extrabold leading-none tabular-nums">
-                {fmt(proof.amountPEN)}
+                {proof.amountPEN === 0 ? "Gratis" : fmt(proof.amountPEN)}
               </p>
             </div>
             <span className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[length:var(--ts-2xs)] font-bold backdrop-blur-sm transition group-hover:bg-white/25 shrink-0">
@@ -1037,23 +1047,39 @@ function ProofModal({
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-0 overflow-y-auto flex-1">
           {/* Image */}
           <div className="relative min-h-[280px] sm:min-h-0 aspect-square bg-[var(--surface-sunken)] sm:col-span-2 sm:aspect-auto">
-            <Image
-              src={proof.proofUrl}
-              alt={`Comprobante de ${proof.storeName}`}
-              fill
-              sizes="(min-width: 640px) 40vw, 100vw"
-              className="object-contain p-3"
-              unoptimized
-            />
-            <a
-              href={proof.proofUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-black/85"
-            >
-              <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-              Abrir original
-            </a>
+            {proof.proofUrl ? (
+              <>
+                <Image
+                  src={proof.proofUrl}
+                  alt={`Comprobante de ${proof.storeName}`}
+                  fill
+                  sizes="(min-width: 640px) 40vw, 100vw"
+                  className="object-contain p-3"
+                  unoptimized
+                />
+                <a
+                  href={proof.proofUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-black/85"
+                >
+                  <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  Abrir original
+                </a>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center bg-[var(--accent-soft)]/30">
+                <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)] text-white">
+                  <Gift className="h-8 w-8" strokeWidth={2} aria-hidden />
+                </span>
+                <div>
+                  <p className="text-base font-extrabold text-[var(--text-primary)]">Registro de plan gratis</p>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
+                    No hay comprobante: el primer mes es gratis (S/ 0). Aprobá para crear la tienda.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Info */}
@@ -1062,7 +1088,7 @@ function ProofModal({
               <Field
                 icon={Wallet}
                 label="Monto"
-                value={fmt(proof.amountPEN)}
+                value={proof.amountPEN === 0 ? "Gratis" : fmt(proof.amountPEN)}
                 accent
               />
               <Field
