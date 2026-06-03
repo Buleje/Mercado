@@ -205,6 +205,22 @@ export default function RepartidorPage() {
   const allValid =
     validations.step1 && validations.step2 && validations.step3 && validations.step4;
 
+  // Validez por campo (feedback ✓ en vivo) + progreso del formulario.
+  const fld = {
+    name: form.name.trim().length >= 2,
+    dni: /^\d{8}$/.test(form.dni),
+    birth: !!form.birthDate && new Date(form.birthDate) <= new Date(maxBirthDateIso()),
+    phone: form.phone.trim().length >= 6,
+    email: form.email.trim() !== "" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email),
+    licenseNumber: form.licenseNumber.trim().length >= 6,
+    plate: form.vehiclePlate.trim().length >= 5,
+    soatNumber: form.soatNumber.trim().length >= 4,
+    licenseExp: !!form.licenseExpiresAt && new Date(form.licenseExpiresAt) > new Date(),
+    soatExp: !!form.soatExpiresAt && new Date(form.soatExpiresAt) > new Date(),
+  };
+  const completedSteps = [validations.step1, validations.step2, validations.step3, validations.step4].filter(Boolean).length;
+  const progressPct = Math.round((completedSteps / 4) * 100);
+
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -378,6 +394,21 @@ export default function RepartidorPage() {
                 Gratis · 2 min
               </span>
             </div>
+
+            {/* Barra de progreso en vivo */}
+            <div className="mb-4">
+              <div className="mb-1.5 flex items-center justify-between text-xs font-bold">
+                <span className="text-[var(--text-tertiary)]">Tu progreso</span>
+                <span className="text-[var(--accent)] tabular-nums">{completedSteps} de 4 pasos · {progressPct}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100}>
+                <div
+                  className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500 ease-out"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+
             <Stepper currentStep={step} validations={validations} onStepClick={(n) => setStep(n)} />
 
         <form
@@ -400,7 +431,7 @@ export default function RepartidorPage() {
           {/* ── Paso 1 — Identidad ──────────────────── */}
           {step === 1 && (
             <div className="space-y-5">
-              <Field label="Nombre completo" htmlFor="rep-name">
+              <Field label="Nombre completo" htmlFor="rep-name" valid={fld.name}>
                 <input
                   id="rep-name"
                   type="text"
@@ -408,11 +439,11 @@ export default function RepartidorPage() {
                   value={form.name}
                   onChange={(e) => update("name", e.target.value)}
                   placeholder="Como aparece en tu DNI"
-                  className={inputCls}
+                  className={fld.name ? inputClsOk : inputCls}
                 />
               </Field>
               <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="DNI" htmlFor="rep-dni" hint="8 dígitos sin guiones">
+                <Field label="DNI" htmlFor="rep-dni" hint="8 dígitos sin guiones" valid={fld.dni}>
                   <input
                     id="rep-dni"
                     type="text"
@@ -423,13 +454,14 @@ export default function RepartidorPage() {
                     value={form.dni}
                     onChange={(e) => update("dni", e.target.value.replace(/\D/g, "").slice(0, 8))}
                     placeholder="12345678"
-                    className={inputCls}
+                    className={fld.dni ? inputClsOk : inputCls}
                   />
                 </Field>
                 <Field
                   label="Fecha de nacimiento"
                   htmlFor="rep-birth"
                   hint="Debes tener al menos 18 años"
+                  valid={fld.birth}
                 >
                   <input
                     id="rep-birth"
@@ -438,12 +470,12 @@ export default function RepartidorPage() {
                     max={maxBirthDateIso()}
                     value={form.birthDate}
                     onChange={(e) => update("birthDate", e.target.value)}
-                    className={inputCls}
+                    className={fld.birth ? inputClsOk : inputCls}
                   />
                 </Field>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="WhatsApp" htmlFor="rep-phone" hint="Recibirás aquí los pedidos">
+                <Field label="WhatsApp" htmlFor="rep-phone" hint="Recibirás aquí los pedidos" valid={fld.phone}>
                   <input
                     id="rep-phone"
                     type="tel"
@@ -451,17 +483,17 @@ export default function RepartidorPage() {
                     value={form.phone}
                     onChange={(e) => update("phone", e.target.value)}
                     placeholder="9XX XXX XXX"
-                    className={inputCls}
+                    className={fld.phone ? inputClsOk : inputCls}
                   />
                 </Field>
-                <Field label="Email (opcional)" htmlFor="rep-email">
+                <Field label="Email (opcional)" htmlFor="rep-email" valid={fld.email}>
                   <input
                     id="rep-email"
                     type="email"
                     value={form.email}
                     onChange={(e) => update("email", e.target.value)}
                     placeholder="tu@correo.com"
-                    className={inputCls}
+                    className={fld.email ? inputClsOk : inputCls}
                   />
                 </Field>
               </div>
@@ -659,7 +691,7 @@ export default function RepartidorPage() {
                       Licencia de conducir
                     </h3>
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <Field label="Número de licencia" htmlFor="rep-lic">
+                      <Field label="Número de licencia" htmlFor="rep-lic" valid={fld.licenseNumber}>
                         <input
                           id="rep-lic"
                           type="text"
@@ -668,17 +700,17 @@ export default function RepartidorPage() {
                             update("licenseNumber", e.target.value.toUpperCase().slice(0, 12))
                           }
                           placeholder="Q12345678"
-                          className={inputCls}
+                          className={fld.licenseNumber ? inputClsOk : inputCls}
                         />
                       </Field>
-                      <Field label="Vencimiento" htmlFor="rep-lic-exp">
+                      <Field label="Vencimiento" htmlFor="rep-lic-exp" valid={fld.licenseExp}>
                         <input
                           id="rep-lic-exp"
                           type="date"
                           min={todayIso()}
                           value={form.licenseExpiresAt}
                           onChange={(e) => update("licenseExpiresAt", e.target.value)}
-                          className={inputCls}
+                          className={fld.licenseExp ? inputClsOk : inputCls}
                         />
                       </Field>
                     </div>
@@ -718,7 +750,7 @@ export default function RepartidorPage() {
                       <ShieldBadge className="h-5 w-5 text-[var(--accent)]" />
                       Vehículo y SOAT
                     </h3>
-                    <Field label="Placa del vehículo" htmlFor="rep-plate" hint="Ej: A1B-234">
+                    <Field label="Placa del vehículo" htmlFor="rep-plate" hint="Ej: A1B-234" valid={fld.plate}>
                       <input
                         id="rep-plate"
                         type="text"
@@ -727,11 +759,11 @@ export default function RepartidorPage() {
                           update("vehiclePlate", e.target.value.toUpperCase().slice(0, 10))
                         }
                         placeholder="A1B-234"
-                        className={inputCls}
+                        className={fld.plate ? inputClsOk : inputCls}
                       />
                     </Field>
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <Field label="N° de SOAT" htmlFor="rep-soat">
+                      <Field label="N° de SOAT" htmlFor="rep-soat" valid={fld.soatNumber}>
                         <input
                           id="rep-soat"
                           type="text"
@@ -740,17 +772,17 @@ export default function RepartidorPage() {
                             update("soatNumber", e.target.value.toUpperCase().slice(0, 30))
                           }
                           placeholder="SOAT-2026-XXXX"
-                          className={inputCls}
+                          className={fld.soatNumber ? inputClsOk : inputCls}
                         />
                       </Field>
-                      <Field label="Vencimiento SOAT" htmlFor="rep-soat-exp">
+                      <Field label="Vencimiento SOAT" htmlFor="rep-soat-exp" valid={fld.soatExp}>
                         <input
                           id="rep-soat-exp"
                           type="date"
                           min={todayIso()}
                           value={form.soatExpiresAt}
                           onChange={(e) => update("soatExpiresAt", e.target.value)}
-                          className={inputCls}
+                          className={fld.soatExp ? inputClsOk : inputCls}
                         />
                       </Field>
                     </div>
@@ -1068,23 +1100,36 @@ function Stepper({
 
 const inputCls =
   "w-full h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] outline-none transition-colors";
+/** Variante del input cuando el valor es válido (borde + tinte verde sutil). */
+const inputClsOk =
+  inputCls + " border-[var(--data-success-500)] bg-[var(--data-success-50)] focus:border-[var(--data-success-500)]";
 
 function Field({
   label,
   htmlFor,
   hint,
+  valid,
   children,
 }: {
   label: string;
   htmlFor?: string;
   hint?: string;
+  /** Muestra un ✓ "Listo" en vivo cuando el campo es válido. */
+  valid?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1 block text-sm font-extrabold text-[var(--text-primary)]">
-        {label}
-      </label>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label htmlFor={htmlFor} className="text-sm font-extrabold text-[var(--text-primary)]">
+          {label}
+        </label>
+        {valid && (
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-success-600)]">
+            <Check className="h-3.5 w-3.5" /> Listo
+          </span>
+        )}
+      </div>
       {hint && <p className="mb-2 text-xs font-semibold text-[var(--text-tertiary)]">{hint}</p>}
       {children}
     </div>
