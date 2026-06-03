@@ -27,6 +27,7 @@ import {
   Check,
   Locate,
   Search,
+  ScanLine,
   Building2,
   TreePine,
   UtensilsCrossed,
@@ -98,6 +99,12 @@ export default function StoreRegistrationForm() {
   const [ownerPhone, setOwnerPhone] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
 
+  // DNI → autocompleta el nombre desde RENIEC (endpoint público /api/reniec/lookup).
+  const [dni, setDni] = useState("");
+  const [dniLoading, setDniLoading] = useState(false);
+  const [dniError, setDniError] = useState<string | null>(null);
+  const [dniFilled, setDniFilled] = useState(false);
+
   // Step 2: Store details
   const [storeNameInput, setStoreNameInput] = useState("");
   const [description, setDescription] = useState("");
@@ -152,6 +159,38 @@ export default function StoreRegistrationForm() {
       .then((d: { items: { code: string; nombre: string }[] }) => setDistritos(d.items ?? []))
       .catch((err) => console.warn("[registrar] distritos load failed", err));
   }, [departamento, provincia]);
+
+  // DNI → RENIEC: al tener 8 dígitos, consulta y autocompleta el nombre (debounce).
+  useEffect(() => {
+    setDniError(null);
+    setDniFilled(false);
+    if (dni.length !== 8) return;
+    let cancelled = false;
+    setDniLoading(true);
+    const t = setTimeout(() => {
+      fetch(`/api/reniec/lookup?dni=${dni}`)
+        .then(async (r) => {
+          const j = await r.json();
+          if (cancelled) return;
+          if (!r.ok || !j.nombreCompleto) {
+            setDniError(j.error ?? "No encontramos ese DNI. Escribe tu nombre manualmente.");
+          } else {
+            setOwnerName(j.nombreCompleto as string);
+            setDniFilled(true);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setDniError("No pudimos consultar el DNI. Escribe tu nombre manualmente.");
+        })
+        .finally(() => {
+          if (!cancelled) setDniLoading(false);
+        });
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [dni]);
 
   // Rellena los selects de ubigeo a partir de NOMBRES (departamento/provincia/
   // distrito) matcheando contra el padrón. Reusado por geolocalización Y por el
@@ -534,10 +573,48 @@ export default function StoreRegistrationForm() {
               {/* ── Step 1: Owner info ──────────────────────────── */}
               {step === "info" && (
                 <div className="space-y-5">
+                  {/* DNI → autocompleta el nombre desde RENIEC */}
+                  <div>
+                    <label htmlFor="reg-dni" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                      <ScanLine className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
+                      Tu DNI{" "}
+                      <span className="text-xs font-semibold text-[var(--text-tertiary)]">— autocompleta tu nombre</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="reg-dni"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        value={dni}
+                        onChange={(e) => setDni(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                        placeholder="Ej: 70123456"
+                        className={cn(INPUT_BASE, (dniLoading || dniFilled) && "pr-11")}
+                      />
+                      {dniLoading ? (
+                        <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-[var(--accent)]" />
+                      ) : dniFilled ? (
+                        <CheckCircle
+                          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--data-success-500)]"
+                          strokeWidth={2.25}
+                        />
+                      ) : null}
+                    </div>
+                    {dniError && (
+                      <p className="mt-1.5 text-xs font-semibold text-[var(--text-tertiary)]">{dniError}</p>
+                    )}
+                  </div>
+
                   <div>
                     <label htmlFor="reg-owner-name" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
                       <User className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
                       Tu nombre completo <span className="text-[var(--data-error-500)]">*</span>
+                      {dniFilled && (
+                        <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+                          <ScanLine className="h-3 w-3" strokeWidth={2.5} />
+                          Desde tu DNI
+                        </span>
+                      )}
                     </label>
                     <div className="relative">
                       <input
