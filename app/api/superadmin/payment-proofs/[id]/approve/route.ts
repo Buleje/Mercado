@@ -103,16 +103,21 @@ export async function POST(
   // El form de registro NO pide contraseña → la generamos acá y la entregamos
   // por WhatsApp (+ se la devolvemos al superadmin como respaldo). Username = el
   // teléfono del dueño (lo conoce de memoria).
-  let credentials: { username: string; password: string; loginUrl: string } | null = null;
+  // password = null cuando el dueño eligió su propia contraseña en el registro
+  // (no la conocemos, solo el hash) → no se muestra ni se reenvía en claro.
+  let credentials: { username: string; password: string | null; loginUrl: string; ownerChose: boolean } | null = null;
   try {
     if (!(await adminUserExists(tenantId))) {
       const username = proof.ownerPhone.replace(/\D/g, "") || `tienda-${proof.tenantSlug}`;
-      const password = genTempPassword();
+      const ownerChose = !!proof.passwordHash;
+      const tempPassword = ownerChose ? null : genTempPassword();
       await createAdminUser({
         tenantId,
         adminName: proof.ownerName,
         adminUsername: username,
-        adminPassword: password,
+        ...(ownerChose
+          ? { adminPasswordHash: proof.passwordHash! }
+          : { adminPassword: tempPassword! }),
         businessName: proof.storeName,
       });
       // URL del panel en el subdominio del tenant (el Host decide el tenant).
@@ -120,7 +125,8 @@ export async function POST(
       const apex = u.host.replace(/^www\./, "");
       credentials = {
         username,
-        password,
+        password: tempPassword,
+        ownerChose,
         loginUrl: `${u.protocol}//${proof.tenantSlug}.${apex}/admin/login`,
       };
     }
@@ -178,10 +184,13 @@ export async function POST(
         `📲 Entrá a tu panel y configurá todo:`,
         credentials.loginUrl,
         `👤 Usuario: ${credentials.username}`,
-        `🔑 Contraseña: ${credentials.password}`,
+        credentials.ownerChose
+          ? `🔑 Contraseña: la que elegiste al registrarte.`
+          : `🔑 Contraseña: ${credentials.password}`,
         "",
-        `🔒 Por seguridad, cambiá la contraseña apenas entres (en Configuración).`,
-        `Cualquier duda, respondé este WhatsApp y te ayudamos.`,
+        credentials.ownerChose
+          ? `Cualquier duda, respondé este WhatsApp y te ayudamos.`
+          : `🔒 Por seguridad, cambiá la contraseña apenas entres (en Configuración).\nCualquier duda, respondé este WhatsApp y te ayudamos.`,
       ].join("\n")
     : [
         `🎉 ¡Bienvenido a Buleje, ${proof.ownerName}!`,

@@ -228,11 +228,13 @@ export default function PagosPendientesClient() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   // Credenciales generadas al aprobar (respaldo si el WhatsApp falla).
+  // password = null cuando el dueño eligió su propia contraseña en el registro.
   const [newCreds, setNewCreds] = useState<{
     storeName: string;
     username: string;
-    password: string;
+    password: string | null;
     loginUrl: string;
+    ownerChose: boolean;
   } | null>(null);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -373,7 +375,12 @@ export default function PagosPendientesClient() {
       );
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
-        credentials?: { username: string; password: string; loginUrl: string } | null;
+        credentials?: {
+          username: string;
+          password: string | null;
+          loginUrl: string;
+          ownerChose: boolean;
+        } | null;
       };
       if (!res.ok) {
         pushToast(data.error ?? "Error al aprobar", "error");
@@ -550,13 +557,15 @@ export default function PagosPendientesClient() {
             </div>
             <div className="space-y-3 p-5">
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                Ya se enviaron por WhatsApp al dueño. Guardalas por si acaso — la contraseña no se
-                vuelve a mostrar. Tocá cada campo para copiar.
+                {newCreds.ownerChose
+                  ? "Ya avisamos al dueño por WhatsApp. La contraseña es la que él eligió al registrarse (no la guardamos en claro)."
+                  : "Ya se enviaron por WhatsApp al dueño. Guardalas por si acaso — la contraseña no se vuelve a mostrar."}{" "}
+                Tocá cada campo para copiar.
               </p>
               {[
                 { label: "Panel", value: newCreds.loginUrl },
                 { label: "Usuario", value: newCreds.username },
-                { label: "Contraseña", value: newCreds.password },
+                ...(newCreds.password ? [{ label: "Contraseña", value: newCreds.password }] : []),
               ].map((row) => (
                 <button
                   key={row.label}
@@ -578,6 +587,16 @@ export default function PagosPendientesClient() {
                   <Copy className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2.25} aria-hidden />
                 </button>
               ))}
+              {!newCreds.password && (
+                <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5">
+                  <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Contraseña
+                  </span>
+                  <span className="block text-sm font-semibold text-[var(--text-secondary)]">
+                    La que el dueño eligió al registrarse
+                  </span>
+                </div>
+              )}
             </div>
             <div className="px-5 pb-5">
               <button

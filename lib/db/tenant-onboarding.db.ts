@@ -35,7 +35,10 @@ export interface CreateAdminUserInput {
   tenantId: string;
   adminName: string;
   adminUsername: string;
-  adminPassword: string;
+  /** Contraseña en claro (se hashea acá). Mutuamente excluyente con adminPasswordHash. */
+  adminPassword?: string;
+  /** Hash bcrypt ya calculado (ej. la que el dueño eligió en el registro). */
+  adminPasswordHash?: string;
   businessName: string;
 }
 
@@ -145,9 +148,14 @@ export async function createTenant(input: CreateTenantInput): Promise<CreatedTen
  * @param input.tenantId  — ID canónico del tenant (CUID, NO el slug)
  */
 export async function createAdminUser(input: CreateAdminUserInput): Promise<void> {
-  const { tenantId, adminName, adminUsername, adminPassword, businessName } = input;
+  const { tenantId, adminName, adminUsername, businessName } = input;
 
-  const passwordHash = await hash(adminPassword, 12);
+  const passwordHash =
+    input.adminPasswordHash ??
+    (input.adminPassword ? await hash(input.adminPassword, 12) : null);
+  if (!passwordHash) {
+    throw new Error("createAdminUser: se requiere adminPassword o adminPasswordHash");
+  }
 
   await prisma.$transaction([
     prisma.adminUser.create({

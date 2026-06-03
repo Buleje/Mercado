@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { z } from "zod";
+import { hash } from "bcryptjs";
 import { randomBytes } from "crypto";
 import { PaymentProofsDB, type PaymentMethod, type BillingCycle } from "@/lib/db/payment-proofs.db";
 import { getSupabaseAdmin } from "@/lib/supabase";
@@ -40,6 +41,8 @@ const SchemaFields = z.object({
   amountPEN: z.coerce.number().min(0).max(100000),
   method: z.enum(["yape", "plin", "transfer"]),
   reference: z.string().optional().nullable(),
+  // Contraseña que el dueño elige en el registro. Se hashea y se usa al aprobar.
+  password: z.string().min(8).max(72).optional(),
 });
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -170,6 +173,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Hash de la contraseña elegida por el dueño (si la mandó). Nunca se guarda en claro.
+  const passwordHash = parsed.data.password ? await hash(parsed.data.password, 12) : null;
+
   try {
     const proof = await PaymentProofsDB.create({
       tenantSlug: parsed.data.tenantSlug,
@@ -188,6 +194,7 @@ export async function POST(req: NextRequest) {
       method: parsed.data.method as PaymentMethod,
       proofUrl: proofUrl,
       reference: parsed.data.reference ?? null,
+      passwordHash,
     });
     return NextResponse.json({ ok: true, id: proof.id });
   } catch (err) {

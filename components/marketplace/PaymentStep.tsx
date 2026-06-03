@@ -39,6 +39,8 @@ export interface RegistrationPayload {
   ownerName: string;
   ownerPhone: string;
   ownerEmail: string | null;
+  /** Contraseña elegida por el dueño en el registro (se hashea en el server). */
+  password: string;
   storeName: string;
   category: string;
   departamento: string | null;
@@ -334,6 +336,7 @@ function ManualPane({
       fd.append("ownerName", data.ownerName);
       fd.append("ownerPhone", data.ownerPhone);
       if (data.ownerEmail) fd.append("ownerEmail", data.ownerEmail);
+      if (data.password) fd.append("password", data.password);
       fd.append("storeName", data.storeName);
       fd.append("category", data.category);
       if (data.departamento) fd.append("departamento", data.departamento);
@@ -538,6 +541,7 @@ function FreePane({ data, onSuccess }: { data: RegistrationPayload; onSuccess: (
       fd.append("ownerName", data.ownerName);
       fd.append("ownerPhone", data.ownerPhone);
       if (data.ownerEmail) fd.append("ownerEmail", data.ownerEmail);
+      if (data.password) fd.append("password", data.password);
       fd.append("storeName", data.storeName);
       fd.append("category", data.category);
       if (data.departamento) fd.append("departamento", data.departamento);

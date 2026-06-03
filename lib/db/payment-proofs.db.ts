@@ -40,6 +40,8 @@ export interface PaymentProof {
   method: PaymentMethod;
   proofUrl: string;
   reference: string | null;
+  /** Hash bcrypt de la contraseña elegida por el dueño en el registro (o null). */
+  passwordHash: string | null;
   status: PaymentStatus;
   reviewedBy: string | null;
   reviewedAt: Date | null;
@@ -75,6 +77,7 @@ async function bootstrap(): Promise<void> {
         method          TEXT NOT NULL,
         "proofUrl"      TEXT NOT NULL,
         reference       TEXT,
+        "passwordHash"  TEXT,
         status          TEXT NOT NULL DEFAULT 'pending',
         "reviewedBy"    TEXT,
         "reviewedAt"    TIMESTAMP(3),
@@ -88,6 +91,7 @@ async function bootstrap(): Promise<void> {
         ON "PaymentProof"(status, "createdAt" DESC);
       CREATE INDEX IF NOT EXISTS "PaymentProof_tenantSlug_idx"
         ON "PaymentProof"("tenantSlug");
+      ALTER TABLE "PaymentProof" ADD COLUMN IF NOT EXISTS "passwordHash" TEXT;
     `);
     bootstrapDone = true;
   } catch (err) {
@@ -113,6 +117,7 @@ interface CreateInput {
   method: PaymentMethod;
   proofUrl: string;
   reference: string | null;
+  passwordHash: string | null;
 }
 
 export const PaymentProofsDB = {
@@ -126,8 +131,9 @@ export const PaymentProofsDB = {
       `INSERT INTO "PaymentProof" (
         id, "tenantSlug", "ownerName", "ownerPhone", "ownerEmail",
         "storeName", category, departamento, provincia, distrito, direccion,
-        "planTier", "billingCycle", "amountPEN", method, "proofUrl", reference
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+        "planTier", "billingCycle", "amountPEN", method, "proofUrl", reference,
+        "passwordHash"
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
       id,
       input.tenantSlug,
       input.ownerName,
@@ -145,6 +151,7 @@ export const PaymentProofsDB = {
       input.method,
       input.proofUrl,
       input.reference,
+      input.passwordHash,
     );
     const row = await this.getById(id);
     if (!row) throw new Error("PaymentProof creado pero no recuperable");
@@ -252,6 +259,7 @@ function rowToProof(r: Record<string, unknown>): PaymentProof {
     method: r.method as PaymentMethod,
     proofUrl: String(r.proofUrl),
     reference: r.reference == null ? null : String(r.reference),
+    passwordHash: r.passwordHash == null ? null : String(r.passwordHash),
     status: r.status as PaymentStatus,
     reviewedBy: r.reviewedBy == null ? null : String(r.reviewedBy),
     reviewedAt: r.reviewedAt == null ? null : new Date(r.reviewedAt as string | Date),

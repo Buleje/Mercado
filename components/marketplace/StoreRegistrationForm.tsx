@@ -28,6 +28,9 @@ import {
   Locate,
   Search,
   ScanLine,
+  Lock,
+  Eye,
+  EyeOff,
   Building2,
   TreePine,
   UtensilsCrossed,
@@ -98,6 +101,8 @@ export default function StoreRegistrationForm() {
   const [ownerName, setOwnerName] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
+  const [ownerPassword, setOwnerPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // DNI → autocompleta el nombre desde RENIEC (endpoint público /api/reniec/lookup).
   const [dni, setDni] = useState("");
@@ -356,6 +361,7 @@ export default function StoreRegistrationForm() {
       ownerName: ownerName.trim(),
       ownerPhone: ownerPhone.trim(),
       ownerEmail: ownerEmail.trim() || null,
+      password: ownerPassword,
       storeName: storeNameInput.trim(),
       category,
       departamento: departamentoName,
@@ -433,6 +439,7 @@ export default function StoreRegistrationForm() {
   // Validez por campo — para el check sutil de "campo listo".
   const nameOk = ownerName.trim().length >= 2;
   const phoneOk = ownerPhone.replace(/\D/g, "").length >= 6;
+  const passwordOk = ownerPassword.length >= 8;
   const storeOk = storeNameInput.trim().length >= 2;
 
   return (
@@ -491,7 +498,11 @@ export default function StoreRegistrationForm() {
                   n: 2,
                   label: "Tu tienda",
                   go: () => {
-                    if (ownerName.trim().length >= 2 && ownerPhone.replace(/\D/g, "").length >= 6) {
+                    if (
+                      ownerName.trim().length >= 2 &&
+                      ownerPhone.replace(/\D/g, "").length >= 6 &&
+                      ownerPassword.length >= 8
+                    ) {
                       setStep("details");
                     }
                   },
@@ -689,6 +700,41 @@ export default function StoreRegistrationForm() {
                     />
                   </div>
 
+                  <div>
+                    <label htmlFor="reg-owner-password" className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                      <Lock className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
+                      Tu contraseña <span className="text-[var(--data-error-500)]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="reg-owner-password"
+                        type={showPassword ? "text" : "password"}
+                        name="newPassword"
+                        autoComplete="new-password"
+                        value={ownerPassword}
+                        onChange={(e) => setOwnerPassword(e.target.value)}
+                        placeholder="Mínimo 8 caracteres"
+                        className={cn(INPUT_BASE, "pr-11")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((s) => !s)}
+                        aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)]"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" strokeWidth={2} />
+                        ) : (
+                          <Eye className="h-5 w-5" strokeWidth={2} />
+                        )}
+                      </button>
+                    </div>
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
+                      <Lock className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+                      Con esta contraseña entrarás a tu panel cuando aprobemos tu tienda.
+                    </p>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -699,6 +745,10 @@ export default function StoreRegistrationForm() {
                       }
                       if (ownerPhone.replace(/\D/g, "").length < 6) {
                         setError("Escribe tu número de WhatsApp");
+                        return;
+                      }
+                      if (ownerPassword.length < 8) {
+                        setError("Crea una contraseña de al menos 8 caracteres");
                         return;
                       }
                       setStep("details");
