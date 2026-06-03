@@ -4,9 +4,9 @@
  * PaymentStep — paso de pago al final del registro de tienda.
  *
  * 2 flujos:
- *   1. Stripe (tarjeta) — redirige al checkout existente.
+ *   1. Stripe (tarjeta) — próximamente.
  *   2. Yape / Plin / Transferencia — muestra QR/datos de Brandon,
- *      cliente sube la captura, llega a /superadmin/pagos-pendientes.
+ *      el dueño sube la captura → llega a /superadmin/pagos-pendientes.
  *
  * El plan + datos del registro vienen del paso anterior. Acá sólo
  * elegís cómo pagás.
@@ -14,9 +14,24 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Loader2, CheckCircle, CreditCard, Smartphone, Upload, Copy, Check } from "@buleje/design-system/icons";
+import {
+  Loader2,
+  CheckCircle,
+  CreditCard,
+  Smartphone,
+  Upload,
+  Copy,
+  Check,
+  ShieldCheck,
+  Banknote,
+  QrCode,
+  Clock,
+  AlertCircle,
+} from "@buleje/design-system/icons";
 import { PLANS, firstMonthPrice, type PlanTier } from "@/lib/billing/plan-tiers";
 import { PLATFORM_CONFIG_DEFAULTS, type PlatformConfig } from "@/lib/platform-config";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { cn } from "@/lib/utils";
 
 export interface RegistrationPayload {
   tenantSlug: string;
@@ -42,13 +57,19 @@ const fmt = (n: number) => `S/ ${Math.round(n)}`;
 
 type Tab = "stripe" | "yape" | "plin" | "transfer";
 
+const METHODS: { id: Tab; label: string; hint: string; icon: typeof Smartphone }[] = [
+  { id: "yape", label: "Yape", hint: "Escaneá o copiá", icon: Smartphone },
+  { id: "plin", label: "Plin", hint: "Escaneá o copiá", icon: Smartphone },
+  { id: "transfer", label: "Transferencia", hint: "Banco / CCI", icon: Banknote },
+  { id: "stripe", label: "Tarjeta", hint: "Próximamente", icon: CreditCard },
+];
+
 export default function PaymentStep({ data, onSuccess }: Props) {
   const plan = PLANS[data.planTier];
   const [tab, setTab] = useState<Tab>("yape");
 
-  // Brandon mayo 2026: los datos de Yape/Plin/banco se administran
-  // desde /superadmin/configuracion. Este endpoint público no requiere
-  // auth y trae el config global con cache 60s.
+  // Datos de Yape/Plin/banco se administran desde /superadmin/configuracion.
+  // Endpoint público sin auth, cache 60s.
   const [platformCfg, setPlatformCfg] = useState<PlatformConfig>(PLATFORM_CONFIG_DEFAULTS);
   useEffect(() => {
     let cancelled = false;
@@ -58,58 +79,81 @@ export default function PaymentStep({ data, onSuccess }: Props) {
         if (!cancelled && d?.config) setPlatformCfg(d.config);
       })
       .catch(() => {
-        // fallback silencioso: si la red falla, usamos los defaults.
-        // No hace falta loggear porque el usuario ve el error visual
-        // ("método no configurado") si llega a tocar la sección.
+        /* fallback silencioso a defaults */
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const totalToPay = data.billingCycle === "anual"
-    ? Math.round(plan.monthlyPrice * 12 * (1 - plan.annualDiscount / 100))
-    : firstMonthPrice(plan);
+  const totalToPay =
+    data.billingCycle === "anual"
+      ? Math.round(plan.monthlyPrice * 12 * (1 - plan.annualDiscount / 100))
+      : firstMonthPrice(plan);
   const showFirstMonthFree = data.billingCycle === "mensual" && plan.firstMonthDiscount === 100;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-      {/* Resumen del plan */}
-      <div className="rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] p-5 mb-6">
-        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-          Tu suscripción
+    <div className="mx-auto max-w-xl px-4 sm:px-6 py-10 space-y-5">
+      {/* ── Encabezado ── */}
+      <div>
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+          Último paso
         </p>
-        <div className="mt-1 flex items-baseline justify-between gap-3">
-          <h2 className="text-xl font-black">
-            Plan {plan.label} · {data.billingCycle === "anual" ? "anual" : "mensual"}
-          </h2>
-          <p className="text-2xl font-black tabular-nums text-[var(--accent)]">
-            {showFirstMonthFree ? "GRATIS" : fmt(totalToPay)}
-          </p>
+        <h2 className="mt-1 text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+          Confirmá tu suscripción
+        </h2>
+      </div>
+
+      {/* ── Resumen del plan ── */}
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-base font-extrabold text-[var(--text-primary)]">
+              Plan {plan.label}
+            </p>
+            <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
+              {data.billingCycle === "anual" ? "Facturación anual" : "Facturación mensual"} · {data.storeName}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-2xl font-black tabular-nums text-[var(--accent)] leading-none">
+              {showFirstMonthFree ? "GRATIS" : fmt(totalToPay)}
+            </p>
+            {!showFirstMonthFree && (
+              <p className="mt-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+                {data.billingCycle === "anual" ? "por 12 meses" : "primer mes"}
+              </p>
+            )}
+          </div>
         </div>
-        {showFirstMonthFree ? (
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            Tu primer mes es gratis. Después se renueva en {fmt(plan.monthlyPrice)}/mes (cancelás
-            cuando quieras antes).
-          </p>
-        ) : (
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            Pagás {fmt(totalToPay)}{" "}
-            {data.billingCycle === "anual" ? "ahora por 12 meses" : "ahora por el primer mes"} y
-            después {fmt(plan.monthlyPrice)}/mes.
-          </p>
-        )}
+        <div className="mt-3 flex items-start gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          <Clock className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2.25} />
+          {showFirstMonthFree ? (
+            <span>
+              Tu primer mes es <strong className="text-[var(--text-primary)]">gratis</strong>. Después se
+              renueva en {fmt(plan.monthlyPrice)}/mes — cancelás cuando quieras.
+            </span>
+          ) : (
+            <span>
+              Pagás {fmt(totalToPay)} ahora y luego {fmt(plan.monthlyPrice)}/mes. Cancelás cuando quieras.
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Selector de método */}
-      <div role="tablist" className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
-        <TabBtn id="yape" label="Yape" icon={<Smartphone className="h-4 w-4" />} active={tab === "yape"} onClick={() => setTab("yape")} />
-        <TabBtn id="plin" label="Plin" icon={<Smartphone className="h-4 w-4" />} active={tab === "plin"} onClick={() => setTab("plin")} />
-        <TabBtn id="transfer" label="Transferencia" icon={<Upload className="h-4 w-4" />} active={tab === "transfer"} onClick={() => setTab("transfer")} />
-        <TabBtn id="stripe" label="Tarjeta" icon={<CreditCard className="h-4 w-4" />} active={tab === "stripe"} onClick={() => setTab("stripe")} />
+      {/* ── Selector de método ── */}
+      <div>
+        <p className="mb-2 text-xs font-bold text-[var(--text-secondary)]">¿Cómo querés pagar?</p>
+        <div role="tablist" className="grid grid-cols-2 gap-2">
+          {METHODS.map((m) => (
+            <MethodCard key={m.id} {...m} active={tab === m.id} onClick={() => setTab(m.id)} />
+          ))}
+        </div>
       </div>
 
-      {/* Pane según método */}
+      {/* ── Pane según método ── */}
       {tab === "stripe" ? (
-        <StripePane data={data} amount={totalToPay} onSuccess={onSuccess} />
+        <StripePane amount={totalToPay} onSwitch={() => setTab("yape")} />
       ) : (
         <ManualPane
           method={tab}
@@ -119,20 +163,26 @@ export default function PaymentStep({ data, onSuccess }: Props) {
           platformCfg={platformCfg}
         />
       )}
+
+      {/* ── Sello de confianza ── */}
+      <p className="flex items-center justify-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+        <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.25} />
+        Pago verificado manualmente · aprobamos en menos de 1 hora
+      </p>
     </div>
   );
 }
 
-function TabBtn({
-  id,
+function MethodCard({
   label,
-  icon,
+  hint,
+  icon: Icon,
   active,
   onClick,
 }: {
-  id: string;
   label: string;
-  icon: React.ReactNode;
+  hint: string;
+  icon: typeof Smartphone;
   active: boolean;
   onClick: () => void;
 }) {
@@ -142,61 +192,58 @@ function TabBtn({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-1.5 h-12 rounded-xl border-2 text-xs font-extrabold uppercase tracking-wider transition-all ${
+      className={cn(
+        "flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-all",
         active
-          ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-md"
-          : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
-      }`}
-      data-method={id}
+          ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[var(--shadow-sm)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40",
+      )}
     >
-      {icon}
-      {label}
+      <span
+        className={cn(
+          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+          active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+        )}
+      >
+        <Icon className="h-4 w-4" strokeWidth={2.25} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-extrabold text-[var(--text-primary)] leading-tight">{label}</span>
+        <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-tight">{hint}</span>
+      </span>
     </button>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Stripe (tarjeta)
+// Stripe (tarjeta) — placeholder hasta habilitar checkout para signups
 // ─────────────────────────────────────────────────────────────────────
 
-function StripePane({
-  amount,
-}: {
-  data: RegistrationPayload;
-  amount: number;
-  onSuccess: () => void;
-}) {
-  // El endpoint signup-checkout no existe todavía (Stripe checkout
-  // requiere admin session, y acá el cliente aún NO tiene tenant).
-  // En vez de simular un click que falla con 403, mostramos un
-  // mensaje claro y guiamos a Yape/Plin que sí está activo.
+function StripePane({ amount, onSwitch }: { amount: number; onSwitch: () => void }) {
   return (
-    <div className="rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] p-6">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]">
       <div className="flex items-start gap-3">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
           <CreditCard className="h-5 w-5" strokeWidth={2} />
         </span>
-        <div className="flex-1">
-          <h3 className="text-base font-extrabold">Tarjeta de crédito o débito</h3>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Pago seguro vía Stripe — próximamente disponible al registrarte.
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Tarjeta de crédito o débito</h3>
+          <p className="mt-1 text-xs text-[var(--text-secondary)] leading-relaxed">
+            El pago con tarjeta vía Stripe se habilita apenas aprobamos tu tienda. Por ahora pagá con
+            Yape o Plin — y desde el panel cargás tu tarjeta para los meses siguientes.
           </p>
+          <button
+            type="button"
+            onClick={onSwitch}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-bold text-white transition-all hover:brightness-110"
+          >
+            <Smartphone className="h-3.5 w-3.5" strokeWidth={2.25} />
+            Pagar con Yape o Plin
+          </button>
         </div>
-        <span className="text-xl font-black tabular-nums text-[var(--text-primary)]">
+        <span className="text-base font-black tabular-nums text-[var(--text-primary)] shrink-0">
           {fmt(amount)}
         </span>
-      </div>
-
-      <div className="mt-5 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 py-3.5">
-        <p className="text-sm font-extrabold text-[var(--accent)] mb-1">
-          Por ahora pagá con Yape o Plin
-        </p>
-        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-          Stripe lo activamos esta semana para signups nuevos. Mientras tanto,
-          pagá con Yape o Plin (arriba) — aprobamos tu tienda en menos de 1 hora
-          y desde ahí ya podés cargar tu tarjeta para los meses siguientes
-          desde el panel del negocio.
-        </p>
       </div>
     </div>
   );
@@ -226,13 +273,14 @@ function ManualPane({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [qrBroken, setQrBroken] = useState(false);
 
   const handleFile = (f: File | null) => {
     setFile(f);
     if (f) setPreview(URL.createObjectURL(f));
   };
 
-  // Datos del destinatario según método — leídos del PlatformConfig.
+  // Datos del destinatario según método — del PlatformConfig.
   const yapeNum = platformCfg.payment.yapeNumber ?? "—";
   const plinNum = platformCfg.payment.plinNumber ?? "—";
   const bankSummary = platformCfg.payment.bankAccount
@@ -240,19 +288,19 @@ function ManualPane({
     : "—";
   const target = method === "yape" ? yapeNum : method === "plin" ? plinNum : bankSummary;
   const holder =
-    method === "yape" ? platformCfg.payment.yapeHolder
-    : method === "plin" ? platformCfg.payment.plinHolder
-    : platformCfg.payment.bankHolder;
+    method === "yape"
+      ? platformCfg.payment.yapeHolder
+      : method === "plin"
+        ? platformCfg.payment.plinHolder
+        : platformCfg.payment.bankHolder;
   const qrUrl =
-    method === "yape" ? platformCfg.payment.yapeQrUrl
-    : method === "plin" ? platformCfg.payment.plinQrUrl
-    : null;
-  const cciHint = method === "transfer" && platformCfg.payment.bankAccountCCI
-    ? platformCfg.payment.bankAccountCCI
-    : null;
-  const targetMissing = (method === "yape" && !platformCfg.payment.yapeNumber)
-    || (method === "plin" && !platformCfg.payment.plinNumber)
-    || (method === "transfer" && !platformCfg.payment.bankAccount);
+    method === "yape" ? platformCfg.payment.yapeQrUrl : method === "plin" ? platformCfg.payment.plinQrUrl : null;
+  const cciHint =
+    method === "transfer" && platformCfg.payment.bankAccountCCI ? platformCfg.payment.bankAccountCCI : null;
+  const targetMissing =
+    (method === "yape" && !platformCfg.payment.yapeNumber) ||
+    (method === "plin" && !platformCfg.payment.plinNumber) ||
+    (method === "transfer" && !platformCfg.payment.bankAccount);
 
   const copy = async () => {
     try {
@@ -290,20 +338,22 @@ function ManualPane({
       fd.append("method", method);
       if (reference) fd.append("reference", reference);
 
+      // CSRF: proxy.ts exige x-csrf-token en mutaciones o devuelve 403.
       const res = await fetch("/api/marketplace/payment-proof", {
         method: "POST",
         credentials: "include",
+        headers: csrfHeaders(),
         body: fd,
       });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error ?? "No pudimos guardar tu pago.");
+        setError(json.error ?? "No pudimos guardar tu pago. Intentá de nuevo.");
         return;
       }
       setSuccess(true);
       setTimeout(() => onSuccess(), 1200);
     } catch {
-      setError("Error de red.");
+      setError("Error de red. Revisá tu conexión e intentá de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -311,74 +361,91 @@ function ManualPane({
 
   if (success) {
     return (
-      <div className="rounded-3xl bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)] p-8 text-center">
+      <div className="rounded-2xl border border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-8 text-center">
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
           <CheckCircle className="h-9 w-9" strokeWidth={2.5} />
         </div>
-        <h3 className="mt-4 text-xl font-black">¡Comprobante recibido!</h3>
-        <p className="mt-2 text-sm text-[var(--text-secondary)] max-w-sm mx-auto">
-          Lo estamos revisando. En cuanto aprobemos el pago te avisamos por
-          WhatsApp con los datos para entrar a tu panel.
+        <h3 className="mt-4 text-xl font-black text-[var(--text-primary)]">¡Comprobante recibido!</h3>
+        <p className="mt-2 text-sm text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed">
+          Lo estamos revisando. En cuanto aprobemos el pago te avisamos por WhatsApp con los datos para
+          entrar a tu panel.
         </p>
       </div>
     );
   }
 
+  const methodLabel =
+    method === "yape" ? "Yapeá a este número" : method === "plin" ? "Plin a este número" : "Transferí a esta cuenta";
+
   return (
-    <div className="rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] p-6 space-y-5">
-      {/* Datos del destinatario */}
-      <div>
-        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-2">
-          {method === "yape" ? "Yapeá a este número" : method === "plin" ? "Plin a este número" : "Transferí a esta cuenta"}
-        </p>
-        {targetMissing ? (
-          <div className="rounded-2xl border-2 border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm font-semibold text-yellow-700 dark:text-yellow-300">
-            Este método de pago todavía no está configurado. Elegí Yape, Plin o
-            transferencia (la opción que sí esté activa).
-          </div>
-        ) : (
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-2xl font-black tabular-nums text-[var(--text-primary)] break-all">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)] space-y-4">
+      {/* Destinatario + QR */}
+      {targetMissing ? (
+        <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-4 py-3 text-sm font-semibold text-[var(--data-warning-700)]">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" strokeWidth={2.25} />
+          Este método aún no está configurado. Elegí Yape, Plin o transferencia (la opción que sí esté activa).
+        </div>
+      ) : (
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+          <div className="flex items-center gap-4">
+            {qrUrl && !qrBroken && (
+              <div className="shrink-0 rounded-xl border border-[var(--rule-soft)] bg-white p-2">
+                <Image
+                  src={qrUrl}
+                  alt={`QR ${method}`}
+                  width={104}
+                  height={104}
+                  className="rounded-md"
+                  unoptimized
+                  onError={() => setQrBroken(true)}
+                />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                {methodLabel}
+              </p>
+              <p className="mt-1 text-xl font-black tabular-nums text-[var(--text-primary)] break-all leading-tight">
                 {target}
               </p>
               {holder && (
                 <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-                  A nombre de <strong>{holder}</strong>
+                  A nombre de <strong className="font-bold">{holder}</strong>
                 </p>
               )}
               {cciHint && (
-                <p className="mt-0.5 text-xs text-[var(--text-tertiary)] font-mono">
-                  CCI: {cciHint}
-                </p>
+                <p className="mt-0.5 text-xs text-[var(--text-tertiary)] font-mono break-all">CCI: {cciHint}</p>
               )}
+              <button
+                type="button"
+                onClick={copy}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" strokeWidth={3} />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" strokeWidth={2.25} />
+                )}
+                {copied ? "Copiado" : "Copiar"}
+              </button>
             </div>
-            <button
-              onClick={copy}
-              className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider hover:border-[var(--accent)] hover:text-[var(--accent)]"
-            >
-              {copied ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" strokeWidth={3} /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Copiado" : "Copiar"}
-            </button>
           </div>
-        )}
-        <p className="mt-2 text-sm">
-          Monto a pagar:{" "}
-          <strong className="text-[var(--accent)] text-lg tabular-nums">{fmt(amount)}</strong>
-        </p>
-      </div>
 
-      {/* QR (Yape o Plin, si está configurado en el panel) */}
-      {qrUrl && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] p-3 inline-block">
-          <Image src={qrUrl} alt={`QR ${method}`} width={200} height={200} className="rounded-lg" unoptimized />
+          {/* Monto destacado */}
+          <div className="mt-3 flex items-center justify-between rounded-lg bg-[var(--accent-soft)] px-3 py-2">
+            <span className="text-xs font-bold text-[var(--text-secondary)]">Monto a pagar</span>
+            <span className="text-lg font-black tabular-nums text-[var(--accent)]">{fmt(amount)}</span>
+          </div>
         </div>
       )}
 
       {/* Referencia opcional */}
       <div>
-        <label htmlFor="payment-reference" className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-          N° de operación (opcional)
+        <label
+          htmlFor="payment-reference"
+          className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]"
+        >
+          N° de operación <span className="font-semibold text-[var(--text-tertiary)]">(opcional)</span>
         </label>
         <input
           id="payment-reference"
@@ -386,29 +453,32 @@ function ManualPane({
           value={reference}
           onChange={(e) => setReference(e.target.value)}
           placeholder={method === "transfer" ? "ej: 12345678" : "ej: 4521"}
-          className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 outline-none"
+          className="h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] outline-none transition-all focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15"
         />
       </div>
 
       {/* Captura */}
       <div>
-        <label htmlFor="payment-proof-file" className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-          Captura del pago *
+        <label
+          htmlFor="payment-proof-file"
+          className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]"
+        >
+          Captura del pago <span className="text-[var(--data-error-500)]">*</span>
         </label>
         <label
           htmlFor="payment-proof-file"
-          className="flex flex-col items-center justify-center gap-2 h-40 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] cursor-pointer hover:border-[var(--accent)] transition-colors overflow-hidden"
+          className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30"
         >
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="Vista previa del comprobante" className="h-full w-auto object-contain" />
           ) : (
             <>
-              <Upload className="h-7 w-7 text-[var(--text-tertiary)]" strokeWidth={1.75} />
-              <p className="text-sm font-bold text-[var(--text-secondary)]">
-                Tocá para subir la captura
-              </p>
-              <p className="text-[10px] text-[var(--text-tertiary)]">JPG / PNG · máx 5 MB</p>
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                <QrCode className="h-6 w-6" strokeWidth={1.75} />
+              </span>
+              <p className="text-sm font-bold text-[var(--text-secondary)]">Tocá para subir la captura</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">JPG / PNG · máx 5 MB</p>
             </>
           )}
         </label>
@@ -422,7 +492,8 @@ function ManualPane({
       </div>
 
       {error && (
-        <div className="rounded-xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-3 py-2.5 text-xs font-bold text-[var(--data-error-700)] dark:text-red-300">
+        <div className="flex items-start gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-3 py-2.5 text-xs font-bold text-[var(--data-error-700)]">
+          <AlertCircle className="h-4 w-4 mt-px shrink-0" strokeWidth={2.25} />
           {error}
         </div>
       )}
@@ -431,15 +502,11 @@ function ManualPane({
         type="button"
         onClick={submit}
         disabled={loading || !file}
-        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl disabled:opacity-50 transition-all"
+        className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-[var(--shadow-md)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" strokeWidth={2.5} />}
         Enviar comprobante
       </button>
-      <p className="text-[11px] text-center text-[var(--text-tertiary)]">
-        Lo revisamos en menos de 1 hora. Te avisamos por WhatsApp cuando
-        esté aprobado.
-      </p>
     </div>
   );
 }
