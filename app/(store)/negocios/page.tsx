@@ -23,8 +23,6 @@ import T from "@/components/T";
 import {
   Store,
   ArrowUpRight,
-  Banknote,
-  CreditCard,
   Smartphone,
   Package,
   Truck,
@@ -519,140 +517,6 @@ function FeaturesGrid() {
   );
 }
 
-// ── Formas de pago — chip horizontal compacto con colores de marca ──
-// Mayo 2026: antes era una sección gigante de 4 cards con iconos genéricos.
-// PaymentMethods v2 (2026-05-10) — sección rediseñada: 2 grupos (digital /
-// físico) con cards reales por método + callout "0% comisión" con valor
-// claro. Antes era un strip de chips delgados que se perdía visualmente entre
-// las secciones grandes vecinas (Planes y FinalCTA).
-function PaymentMethods() {
-  const METHODS = [
-    {
-      id: "yape",
-      name: "Yape",
-      tag: "El más usado en Pucallpa",
-      type: "digital" as const,
-      brandHex: "#722EAB",
-      mark: "Y",
-    },
-    {
-      id: "plin",
-      name: "Plin",
-      tag: "Multibanco — Interbank, BBVA, BCP",
-      type: "digital" as const,
-      brandHex: "#00BFB3",
-      mark: "P",
-    },
-    {
-      id: "efectivo",
-      name: "Efectivo",
-      tag: "El repartidor lleva vuelto",
-      type: "fisico" as const,
-      icon: Banknote,
-    },
-    {
-      id: "tarjeta",
-      name: "Tarjeta",
-      tag: "Crédito o débito · vía Stripe",
-      type: "fisico" as const,
-      icon: CreditCard,
-    },
-  ];
-
-  return (
-    <section
-      aria-label="Formas de pago"
-      className="relative overflow-hidden py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]"
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 -left-20 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
-      />
-      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-5">
-            <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-            <T k="landing.payment.kicker" fallback="Formas de pago" />
-          </p>
-          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
-            Tus clientes pagan{" "}
-            <span className="italic font-serif text-[var(--accent)]">como ya saben pagar</span>.
-          </h2>
-          <p className="mt-5 text-lg text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto">
-            Cuatro métodos cubiertos. Tu negocio cobra como siempre, sin curva de aprendizaje.
-          </p>
-        </div>
-
-        {/* Grid 4 métodos */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10 sm:mb-12">
-          {METHODS.map((m) => (
-            <article
-              key={m.id}
-              className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 transition-all duration-[var(--dur-base)] hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
-            >
-              <div className="flex items-center justify-between gap-3 mb-4">
-                {m.type === "digital" ? (
-                  <span
-                    aria-hidden
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-white font-extrabold text-lg shadow-sm"
-                    style={{ background: m.brandHex }}
-                  >
-                    {m.mark}
-                  </span>
-                ) : (
-                  <span
-                    aria-hidden
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
-                  >
-                    {m.icon ? <m.icon className="h-5 w-5" strokeWidth={2} /> : null}
-                  </span>
-                )}
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
-                    m.type === "digital"
-                      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-                  }`}
-                >
-                  {m.type === "digital" ? "Digital" : "Físico"}
-                </span>
-              </div>
-              <p className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-                {m.name}
-              </p>
-              <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-snug">
-                {m.tag}
-              </p>
-            </article>
-          ))}
-        </div>
-
-        {/* Callout 0% comisión + Cobras como ya cobras */}
-        <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6">
-          <div className="flex items-center gap-5 flex-1 min-w-0">
-            <p className="text-5xl sm:text-6xl font-extrabold tracking-[-0.04em] tabular-nums leading-none shrink-0">
-              <span className="text-[var(--accent)]">0</span>
-              <span className="text-[var(--text-secondary)]">%</span>
-            </p>
-            <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                Comisión por venta
-              </p>
-              <p className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-tight">
-                Cobras como ya cobras — el dinero llega directo a tu Yape, tu cuenta o tu caja.
-              </p>
-              <p className="mt-1 text-sm text-[var(--text-secondary)] leading-snug">
-                Buleje no toca tus ventas. Pagas solo el plan mensual, sin sorpresas.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ── Final CTA editorial ──
 function FinalCTA() {
   return (
@@ -724,15 +588,17 @@ export default async function Home() {
       {/* h1 SEO sr-only — jerarquía semántica para Googlebot. El B2BHero usa h2
           para mantener el flujo visual editorial. */}
       <h1 className="sr-only">
-        Software para bodega y tienda en Perú — Buleje. Abrí tu tienda
-        online en 5 minutos con POS, delivery, fiado, SUNAT y Yape.
+        Software de gestión para bodegas y minimarkets en Perú — Buleje.
+        POS, inventario, fiado digital, facturación SUNAT, delivery y pagos
+        Yape en un solo sistema, desde tu celular.
       </h1>
 
       {/* Brandon 2026-06-03 — /negocios = top-funnel INSTITUCIONAL ("qué es
           Buleje · por qué confiar"). Precios completos, Plan Fundador detallado
           y FAQ larga se movieron a /abrir-tienda (página de conversión) para no
           tener dos landings gemelas ni dos fuentes de precio que sincronizar.
-          Flujo: hero software → módulos → cómo funciona → pagos → nosotros → CTA. */}
+          Formas de pago se quitó (lo cubre /abrir-tienda con más detalle).
+          Flujo: hero software → módulos → cómo funciona → nosotros → CTA. */}
       <B2BHero />
 
       {/* Módulos del software — qué incluye, a alto nivel */}
@@ -743,11 +609,6 @@ export default async function Home() {
       {/* Cómo funciona — 4 pasos (único de /negocios) */}
       <Reveal>
         <ComoFuncionaSection />
-      </Reveal>
-
-      {/* Formas de pago de tus clientes — "cobrás como ya cobras" */}
-      <Reveal>
-        <PaymentMethods />
       </Reveal>
 
       {/* Nosotros — historia + valores (único de /negocios) */}

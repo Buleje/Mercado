@@ -268,10 +268,15 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
   // Mayo 2026: footer simplificado en landing pages — antes 5 columnas
   // (Marketplace / Mi Cuenta / Vendé en Buleje / Ayuda / Más) era aspiracional
   // para el tamaño actual del negocio y proyectaba desconfianza.
+  // Brandon 2026-06-03: /negocios agregado para paridad con /abrir-tienda —
+  // ambas son landings de marketing y deben caer SIEMPRE en el mismo modo de
+  // footer (antes /negocios caía en el mega-footer y /abrir-tienda en el slim,
+  // divergiendo cuando el nav no estaba en "tiendas-only").
   const isLandingMode =
     pathname === "/" ||
     pathname.startsWith("/repartidores") ||
     pathname.startsWith("/abrir-tienda") ||
+    pathname.startsWith("/negocios") ||
     pathname.startsWith("/vender");
 
   // Brandon mayo 2026: si el superadmin tiene activo el modo "Solo Tiendas"
