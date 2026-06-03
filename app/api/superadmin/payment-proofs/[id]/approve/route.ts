@@ -1,8 +1,14 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { randomBytes } from "crypto";
 import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
-import { findTenantBySlug, createTenant } from "@/lib/db/tenant-onboarding.db";
+import {
+  findTenantBySlug,
+  createTenant,
+  createAdminUser,
+  adminUserExists,
+} from "@/lib/db/tenant-onboarding.db";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -24,6 +30,15 @@ import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 const BodySchema = z.object({
   whatsappMessage: z.string().min(10).max(800).optional(),
 });
+
+/** Contraseña temporal legible (10 chars, sin 0/O/1/l/I ambiguos). */
+function genTempPassword(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = randomBytes(10);
+  let p = "";
+  for (let i = 0; i < 10; i++) p += alphabet[bytes[i] % alphabet.length];
+  return p;
+}
 
 export async function POST(
   req: NextRequest,
@@ -84,6 +99,41 @@ export async function POST(
     return NextResponse.json({ error: "No pudimos crear la tienda" }, { status: 500 });
   }
 
+  // 1b) Crear el AdminUser + Settings si el tenant aún no tiene cuenta.
+  // El form de registro NO pide contraseña → la generamos acá y la entregamos
+  // por WhatsApp (+ se la devolvemos al superadmin como respaldo). Username = el
+  // teléfono del dueño (lo conoce de memoria).
+  let credentials: { username: string; password: string; loginUrl: string } | null = null;
+  try {
+    if (!(await adminUserExists(tenantId))) {
+      const username = proof.ownerPhone.replace(/\D/g, "") || `tienda-${proof.tenantSlug}`;
+      const password = genTempPassword();
+      await createAdminUser({
+        tenantId,
+        adminName: proof.ownerName,
+        adminUsername: username,
+        adminPassword: password,
+        businessName: proof.storeName,
+      });
+      // URL del panel en el subdominio del tenant (el Host decide el tenant).
+      const u = new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe");
+      const apex = u.host.replace(/^www\./, "");
+      credentials = {
+        username,
+        password,
+        loginUrl: `${u.protocol}//${proof.tenantSlug}.${apex}/admin/login`,
+      };
+    }
+  } catch (err) {
+    // No bloqueamos la aprobación: el tenant ya existe. El superadmin puede
+    // crear la cuenta a mano si esto falla (raro: colisión de username).
+    logger.error("[payment-proof/approve] admin user creation failed", {
+      error: String(err),
+      tenantId,
+      proofId: id,
+    });
+  }
+
   // 2) Marcar como aprobado
   try {
     await PaymentProofsDB.approve(id, platformUser, tenantId);
@@ -111,7 +161,6 @@ export async function POST(
 
   // 3) WhatsApp de bienvenida — fire-and-forget
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
-  const adminUrl = `${baseUrl}/admin/login`;
   // Labels alineados con lib/billing/plan-tiers.ts (mayo 2026 v2)
   const PLAN_LABELS: Record<string, string> = {
     basico: "Free",
@@ -120,16 +169,30 @@ export async function POST(
     max: "Business",
   };
   const planLabel = PLAN_LABELS[proof.planTier] ?? proof.planTier;
-  const defaultMsg = [
-    `🎉 ¡Bienvenido a Buleje, ${proof.ownerName}!`,
-    "",
-    `Aprobamos tu pago y tu tienda *${proof.storeName}* ya está activa con el plan *${planLabel}*.`,
-    "",
-    `📲 Ingresá acá para configurar todo:`,
-    adminUrl,
-    "",
-    `Cualquier duda, respondé este WhatsApp y te ayudamos.`,
-  ].join("\n");
+  const defaultMsg = credentials
+    ? [
+        `🎉 ¡Bienvenido a Buleje, ${proof.ownerName}!`,
+        "",
+        `Tu tienda *${proof.storeName}* ya está activa con el plan *${planLabel}*.`,
+        "",
+        `📲 Entrá a tu panel y configurá todo:`,
+        credentials.loginUrl,
+        `👤 Usuario: ${credentials.username}`,
+        `🔑 Contraseña: ${credentials.password}`,
+        "",
+        `🔒 Por seguridad, cambiá la contraseña apenas entres (en Configuración).`,
+        `Cualquier duda, respondé este WhatsApp y te ayudamos.`,
+      ].join("\n")
+    : [
+        `🎉 ¡Bienvenido a Buleje, ${proof.ownerName}!`,
+        "",
+        `Aprobamos tu pago y tu tienda *${proof.storeName}* ya está activa con el plan *${planLabel}*.`,
+        "",
+        `📲 Ingresá acá para configurar todo:`,
+        `${baseUrl}/admin/login`,
+        "",
+        `Cualquier duda, respondé este WhatsApp y te ayudamos.`,
+      ].join("\n");
 
   sendWhatsAppQueued(proof.ownerPhone, customMsg ?? defaultMsg, {
     tenantId,
@@ -138,5 +201,5 @@ export async function POST(
     .then(() => PaymentProofsDB.markWhatsappSent(id))
     .catch((err) => logger.warn("[payment-proof/approve] whatsapp failed", { error: String(err), proofId: id }));
 
-  return NextResponse.json({ ok: true, tenantId });
+  return NextResponse.json({ ok: true, tenantId, credentials });
 }

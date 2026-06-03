@@ -73,6 +73,15 @@ export async function findTenantBySlug(slug: string): Promise<{ id: string } | n
 }
 
 /**
+ * ¿El tenant ya tiene al menos un AdminUser? Usado en la aprobación de pagos
+ * para no duplicar credenciales: solo se generan si el tenant aún no tiene cuenta.
+ */
+export async function adminUserExists(tenantId: string): Promise<boolean> {
+  const count = await prisma.adminUser.count({ where: { tenantId } });
+  return count > 0;
+}
+
+/**
  * Crea el Tenant y su Store vacío en una sola transacción.
  * Para type=supplier o delivery, la Store se omite — esos casos
  * tienen sus propios seeders en seedTenantDefaults.

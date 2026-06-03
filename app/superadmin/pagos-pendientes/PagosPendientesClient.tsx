@@ -227,6 +227,13 @@ export default function PagosPendientesClient() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  // Credenciales generadas al aprobar (respaldo si el WhatsApp falla).
+  const [newCreds, setNewCreds] = useState<{
+    storeName: string;
+    username: string;
+    password: string;
+    loginUrl: string;
+  } | null>(null);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(1);
@@ -366,13 +373,19 @@ export default function PagosPendientesClient() {
       );
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
+        credentials?: { username: string; password: string; loginUrl: string } | null;
       };
       if (!res.ok) {
         pushToast(data.error ?? "Error al aprobar", "error");
         return;
       }
+      const storeName = proofs.find((p) => p.id === id)?.storeName ?? active?.storeName ?? "la tienda";
       pushToast("Pago aprobado · tienda creada", "success");
       closeProof();
+      // Si se generaron credenciales, mostrarlas (respaldo del WhatsApp).
+      if (data.credentials) {
+        setNewCreds({ storeName, ...data.credentials });
+      }
       await load(true);
     } finally {
       setActioning(null);
@@ -515,6 +528,69 @@ export default function PagosPendientesClient() {
     <div className={SUPERADMIN_PAGE}>
       {/* ─── Toasts ─────────────────────────────────────────── */}
       <Toasts toasts={toasts} />
+
+      {/* ─── Credenciales generadas al aprobar ──────────────── */}
+      {newCreds && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-md"
+          onClick={() => setNewCreds(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Credenciales de la nueva tienda"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+          >
+            <div className="bg-[var(--accent)] px-5 py-4 text-white">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-85">
+                Tienda creada
+              </p>
+              <h3 className="text-lg font-extrabold leading-tight">Credenciales de {newCreds.storeName}</h3>
+            </div>
+            <div className="space-y-3 p-5">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                Ya se enviaron por WhatsApp al dueño. Guardalas por si acaso — la contraseña no se
+                vuelve a mostrar. Tocá cada campo para copiar.
+              </p>
+              {[
+                { label: "Panel", value: newCreds.loginUrl },
+                { label: "Usuario", value: newCreds.username },
+                { label: "Contraseña", value: newCreds.password },
+              ].map((row) => (
+                <button
+                  key={row.label}
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard
+                      ?.writeText(row.value)
+                      .then(() => pushToast(`${row.label} copiado`, "success"))
+                      .catch((err) => console.warn("[creds] copy failed", String(err)));
+                  }}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      {row.label}
+                    </span>
+                    <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{row.value}</span>
+                  </span>
+                  <Copy className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2.25} aria-hidden />
+                </button>
+              ))}
+            </div>
+            <div className="px-5 pb-5">
+              <button
+                type="button"
+                onClick={() => setNewCreds(null)}
+                className="h-11 w-full rounded-xl bg-[var(--text-primary)] text-sm font-bold text-[var(--surface-canvas)] transition hover:opacity-90"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── Hero canónico ──────────────────────────────────── */}
       <header className={SUPERADMIN_HERO}>
