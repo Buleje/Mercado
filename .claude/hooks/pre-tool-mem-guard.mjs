@@ -130,6 +130,28 @@ if (problems.length === 0) {
 // Intentar autokill si esta habilitado
 const killed = tryAutokill();
 
+// Auto-sanado (autorizado por Brandon 2026-06-02): si matamos huerfanos, esperar a
+// que el kernel reclame las paginas y RE-CHEQUEAR. Si ya no hay saturacion, DEJAR
+// PASAR — antes el guard mataba los huerfanos pero igual bloqueaba la MISMA llamada,
+// causa de los ~16 freezes/dia. No debilita el guardrail: los umbrales (MIN_FREE_MB,
+// MAX_TSC, MAX_ORPHAN_CHROMIUM, MAX_LOAD_1MIN) se vuelven a evaluar; solo evita el
+// bloqueo redundante cuando el autokill YA resolvio la saturacion.
+if (killed) {
+  try { execSync("sleep 0.5"); } catch {}
+  const mem2 = memInfo();
+  const stillBad =
+    (mem2 && mem2.avail < MIN_FREE_MB) ||
+    countProcs("tsc --noEmit") >= MAX_TSC ||
+    countOrphanChromium() >= MAX_ORPHAN_CHROMIUM ||
+    loadAvg().l1 > MAX_LOAD_1MIN;
+  if (!stillBad) {
+    if (process.env.BSM_HOOKS_DEBUG === "1") {
+      process.stderr.write(`[mem-guard] auto-sanado tras ${killed} — RAM ${mem2?.avail}MB libre, sigo\n`);
+    }
+    process.exit(0);
+  }
+}
+
 // Persistir el incidente
 const logPath = `${process.env.CLAUDE_PROJECT_DIR || process.cwd()}/.claude/.mem-guard.log`;
 try {
