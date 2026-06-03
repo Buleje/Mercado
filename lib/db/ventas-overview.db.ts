@@ -42,6 +42,12 @@ export type TopProduct = {
   revenue: number;
 };
 
+/** Totales del período inmediatamente anterior (misma longitud) — para tendencias. */
+export type PrevTotals = { revenue: number; orders: number };
+
+/** Distribución por hora del día (0–23) del rango actual — para detectar horas pico. */
+export type HourBucket = { hour: number; revenue: number; orders: number };
+
 export type VentasOverviewData = {
   range: VentasRange;
   channels: {
@@ -50,7 +56,9 @@ export type VentasOverviewData = {
     pos: ChannelStats;
   };
   totals: { revenue: number; orders: number };
+  previous: PrevTotals;
   series: SeriesDay[];
+  hourly: HourBucket[];
   payments: PaymentBuckets;
   cash: CashSummary;
   topProducts: TopProduct[];
@@ -68,6 +76,17 @@ function rangeStart(range: VentasRange): Date {
   const d = new Date(now);
   d.setDate(d.getDate() - days);
   d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Inicio del período ANTERIOR (misma longitud), para comparar tendencia. */
+function prevRangeStart(range: VentasRange, since: Date): Date {
+  const d = new Date(since);
+  if (range === "hoy") {
+    d.setDate(d.getDate() - 1); // ayer 00:00
+  } else {
+    d.setDate(d.getDate() - (range === "7d" ? 7 : 30));
+  }
   return d;
 }
 
@@ -116,17 +135,21 @@ export const VentasOverviewDB = {
     cacheTag(`ventas-overview-${tenantId}`);
 
     const since = rangeStart(range);
+    const prevSince = prevRangeStart(range, since); // inicio del período anterior
     const now = new Date();
 
     // ── Fetch paralelo de las 4 fuentes ─────────────────────────────────────
-    const [rawOrders, rawSales, openCash, topOrderItems, topSaleItems] =
+    // Orders/Sales se traen desde prevSince para calcular tendencia (período
+    // anterior, misma longitud) en una sola query; luego se parten en
+    // actual (createdAt >= since) vs anterior.
+    const [allOrders, allSales, openCash, topOrderItems, topSaleItems] =
       await Promise.all([
         // Orders: marketplace + tienda (direct|wholesale), soft-delete = null
         prisma.order.findMany({
           where: {
             tenantId,
             deletedAt: null,
-            createdAt: { gte: since },
+            createdAt: { gte: prevSince },
           },
           select: {
             total: true,
@@ -139,7 +162,7 @@ export const VentasOverviewDB = {
         // Sales POS: select explícito (no usar omit junto a select — Prisma los
         // rechaza; el select ya excluye idempotencyKey y demás campos).
         prisma.sale.findMany({
-          where: { tenantId, createdAt: { gte: since } },
+          where: { tenantId, createdAt: { gte: prevSince } },
           select: {
             total: true,
             payment: true,
@@ -196,6 +219,19 @@ export const VentasOverviewDB = {
           },
         }),
       ]);
+
+    // ── Partición actual vs período anterior ─────────────────────────────────
+    const rawOrders = allOrders.filter((o) => o.createdAt >= since);
+    const rawSales = allSales.filter((s) => s.createdAt >= since);
+    const prevOrders = allOrders.filter((o) => o.createdAt < since);
+    const prevSales = allSales.filter((s) => s.createdAt < since);
+
+    const previous: PrevTotals = {
+      revenue:
+        prevOrders.reduce((s, o) => s + toNumOrZero(o.total), 0) +
+        prevSales.reduce((s, x) => s + toNumOrZero(x.total), 0),
+      orders: prevOrders.length + prevSales.length,
+    };
 
     // ── Channels ─────────────────────────────────────────────────────────────
     const channels: VentasOverviewData["channels"] = {
@@ -255,6 +291,23 @@ export const VentasOverviewDB = {
     }
 
     const series = allDays.map((d) => seriesMap[d]);
+
+    // ── Hourly (horas pico) — distribución del rango actual por hora 0–23 ──────
+    const hourly: HourBucket[] = Array.from({ length: 24 }, (_, h) => ({
+      hour: h,
+      revenue: 0,
+      orders: 0,
+    }));
+    for (const o of rawOrders) {
+      const h = o.createdAt.getHours();
+      hourly[h].revenue += toNumOrZero(o.total);
+      hourly[h].orders += 1;
+    }
+    for (const s of rawSales) {
+      const h = s.createdAt.getHours();
+      hourly[h].revenue += toNumOrZero(s.total);
+      hourly[h].orders += 1;
+    }
 
     // ── Payments ──────────────────────────────────────────────────────────────
     const payments: PaymentBuckets = {
@@ -358,7 +411,9 @@ export const VentasOverviewDB = {
       range,
       channels,
       totals,
+      previous,
       series,
+      hourly,
       payments,
       cash,
       topProducts,
