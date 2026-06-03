@@ -61,15 +61,6 @@ type FormState = {
 const ZONES = ["Centro", "Norte", "Sur", "Este", "Oeste"];
 
 // ─── Contenido de venta (landing de reclutamiento) ────────────────────────
-const PERKS: { Icon: typeof MotoIcon; title: string; desc: string }[] = [
-  { Icon: ClockBadge, title: "Horario libre", desc: "Vos elegís cuándo y cuánto trabajás. Sin jefes ni turnos fijos." },
-  { Icon: CashIcon, title: "Cobrás por entrega", desc: "Tarifa base por cada pedido, al instante. Más pedidos, más ganás." },
-  { Icon: CheckBadge, title: "100% de tus propinas", desc: "Lo que el cliente te deja es tuyo. Sin descuentos." },
-  { Icon: MapBadge, title: "Repartí en tu zona", desc: "Tomá pedidos cerca de tu casa, en el barrio que conocés." },
-  { Icon: PackageIcon, title: "Pedidos seguidos", desc: "Cada vez más tiendas activas = más entregas para vos." },
-  { Icon: ShieldBadge, title: "Soporte 24/7", desc: "WhatsApp directo con el equipo cuando lo necesites." },
-];
-
 const HOW_STEPS: { n: string; title: string; desc: string }[] = [
   { n: "1", title: "Inscribite", desc: "Completá el formulario en 4 pasos. Toma 2 minutos." },
   { n: "2", title: "Validamos tus datos", desc: "Revisamos tu DNI y documentos. Te activamos en menos de 24 h." },
@@ -347,41 +338,31 @@ export default function RepartidorPage() {
           <div className="lg:sticky lg:top-24">
             <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3.5 py-1.5 text-sm font-bold text-[var(--accent)]">
               <LiveSignal className="h-2.5 w-2.5" active />
-              Buleje · Ciudad Constitución
+              Repartí con Buleje
             </span>
-            <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-[var(--text-primary)] sm:text-5xl">
-              Reparte en tu barrio,<br />
-              gana en tu tiempo.
+            <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-[-0.03em] text-[var(--text-primary)] sm:text-[2.75rem]">
+              Gana repartiendo en tu tiempo.
             </h1>
-            <p className="mt-4 max-w-md text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
-              Generá ingresos extra con tu moto, bici o auto, en los horarios que vos
-              elijas. Cobrás por cada entrega y te quedás con el{" "}
+            <p className="mt-4 max-w-sm text-lg leading-relaxed text-[var(--text-secondary)]">
+              Tu moto, tu horario, tu zona. Te quedás con el{" "}
               <strong className="text-[var(--text-primary)]">100% de tus propinas</strong>.
             </p>
-            <ul className="mt-7 grid gap-3.5 sm:max-w-sm">
-              {PERKS.slice(0, 4).map(({ Icon, title, desc }) => (
-                <li key={title} className="flex items-start gap-3">
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <ul className="mt-8 space-y-4">
+              {(
+                [
+                  { Icon: ClockBadge, label: "Horario libre, sin jefe" },
+                  { Icon: CashIcon, label: "Cobrás por entrega + propina" },
+                  { Icon: ShieldBadge, label: "Activación en menos de 24 h" },
+                ] as const
+              ).map(({ Icon, label }) => (
+                <li key={label} className="flex items-center gap-3 text-base font-semibold text-[var(--text-primary)]">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
                     <Icon className="h-5 w-5" />
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-base font-extrabold text-[var(--text-primary)]">{title}</span>
-                    <span className="block text-sm leading-snug text-[var(--text-secondary)]">{desc}</span>
-                  </span>
+                  {label}
                 </li>
               ))}
             </ul>
-            <div className="mt-7 flex flex-wrap gap-2">
-              {["Inscripción gratis", "Activación < 24 h", "Sin jefe ni horario fijo"].map((t) => (
-                <span
-                  key={t}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1.5 text-sm font-bold text-[var(--text-secondary)]"
-                >
-                  <Check className="h-4 w-4 text-[var(--accent)]" />
-                  {t}
-                </span>
-              ))}
-            </div>
           </div>
 
           {/* Formulario — derecha */}
