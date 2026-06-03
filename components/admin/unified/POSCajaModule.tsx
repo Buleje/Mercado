@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { m } from "@/components/admin/providers";
 import {
   ShoppingCart, Wallet, CreditCard, Scale, HandCoins,
-  Banknote, History, ArrowRight, Clock, Users,
+  Banknote, History, ArrowRight, Clock, Users, BarChart3,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -16,6 +16,7 @@ const MODULE_ID = "ventas-caja";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
+const VentasOverviewTab      = dynamic(() => import("@/components/admin/VentasOverviewTab"),      { loading: S });
 const POSView                = dynamic(() => import("@/components/admin/POSView"),                { loading: S });
 const SalesHistoryTab        = dynamic(() => import("@/components/admin/SalesHistoryTab"),        { loading: S });
 const CashRegisterTab        = dynamic(() => import("@/components/admin/CashRegisterTab"),        { loading: S });
@@ -30,6 +31,7 @@ import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
 
 // ── Tabs reordenados en flujo lógico del día ──────────────────────────────────
 const TABS = [
+  { id: "tablero"           as const, label: "Tablero",           shortLabel: "Tablero",   hint: "Resumen por canal",   icon: BarChart3,     desc: "Ventas e ingresos: marketplace, tienda y punto de venta" },
   { id: "pos"               as const, label: "Vender",            shortLabel: "POS",       hint: "Punto de venta",      icon: ShoppingCart,  desc: "Busca productos, cobra y genera comprobantes" },
   { id: "historial"         as const, label: "Historial",         shortLabel: "Historial", hint: "Todas las ventas",    icon: History,       desc: "POS + tienda + marketplace en un solo lugar" },
   { id: "turnos"            as const, label: "Turnos",            shortLabel: "Turnos",    hint: "Control de personal", icon: Clock,         desc: "Abre y cierra turnos de trabajo del equipo" },
@@ -45,7 +47,10 @@ const _SEPARATOR_AFTER_INDICES = [1, 3, 4]; // Después de Dashboard (idx 1), Tu
 type TabId = typeof TABS[number]["id"];
 
 function normalizeVentasCajaTab(savedTab: string | null): TabId {
-  if (savedTab === "resumen" || savedTab === "pedidos" || savedTab === "dashboard") {
+  if (savedTab === "resumen" || savedTab === "dashboard") {
+    return "tablero";
+  }
+  if (savedTab === "pedidos") {
     return "pos";
   }
 
@@ -355,6 +360,7 @@ export default function POSCajaModule() {
       </div>
 
       {/* ── CAMBIO 7: Renderizado de contenido por tab ───────────────── */}
+      {sub === "tablero"           && <VentasOverviewTab />}
       {sub === "pos"               && <POSView />}
       {sub === "historial"         && <SalesHistoryTab />}
       {sub === "turnos"            && <TurnosModule />}

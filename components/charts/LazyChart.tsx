@@ -33,7 +33,12 @@ import type {
   RadarChart as RadarChartType,
 } from "recharts";
 
-type RechartProps<T> = React.ComponentProps<React.ComponentType<T>>;
+// Extrae las props reales de un componente de recharts (ej. typeof BarChart).
+// Antes envolvía con ComponentType<T> → resolvía al tipo del componente, no a
+// sus props, y pasar data/children daba "No overload matches this call".
+// Usa un conditional con infer (sin constraint) para soportar también los charts
+// genéricos de recharts (RadialBar/Radar usan firma <DataPointType>).
+type RechartProps<T> = T extends React.JSXElementConstructor<infer P> ? P : Record<string, unknown>;
 
 // ── Factory para crear componentes lazy consistentes ──────────────────────────
 
