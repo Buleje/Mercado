@@ -21,6 +21,8 @@ import { conteoLockKey } from "@/app/api/inventory/conteo/route";
 import { getOrSet } from "@/lib/cache";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { CustomersDB } from "@/lib/db/customers.db";
+import { SettingsDB } from "@/lib/db/settings.db";
+import { extractIgv, igvRateFromSettings } from "@/lib/tax";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -529,8 +531,11 @@ async function salesHandler(
     try {
       const tenantId = auth.tenantId;
       const cotNumero = comprobanteNumero || `COT-${Date.now()}`;
-      const subtotal = finalTotal / 1.18;
-      const igv = finalTotal - subtotal;
+      // Lee la tasa de IGV real del tenant (settings.taxRate guarda %, ej. 18).
+      // Fallback a IGV_RATE (0.18). Soporta RUS/exonerados (taxRate=0).
+      const settingsForTax = await SettingsDB.get(tenantId).catch(() => null);
+      const igvRate = igvRateFromSettings(settingsForTax?.taxRate);
+      const { base: subtotal, igv } = extractIgv(finalTotal, igvRate);
       await prisma.cotizacion.create({
         data: {
           tenantId,

@@ -43,6 +43,7 @@ import { categories } from "@/data/products";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import dynamic from "next/dynamic";
 import { isThermalPrintSupported, printThermal } from "@/lib/thermal-printer";
+import { extractIgv } from "@/lib/tax";
 import type { Product as BaseProduct } from "@/types/erp";
 type Product = Omit<BaseProduct, "id"> & { id: number; stock?: number; stockMin?: number };
 
@@ -2225,8 +2226,13 @@ export default function POSView() {
               </div>
               {/* Mejora 4R2: Total en palabras */}
               <p className="text-xs text-[var(--text-tertiary)] italic capitalize text-right">{numeroAPalabras(cartTotal)}</p>
-              {/* Desglose IGV */}
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono text-right">Sub: S/{(cartTotal/1.18).toFixed(2)} · IGV: S/{(cartTotal - cartTotal/1.18).toFixed(2)}</p>
+              {/* Desglose IGV. TODO: leer rate de settings del tenant (taxRate) cuando el SettingsCtx lo exponga; por ahora usa IGV_RATE default. */}
+              {(() => {
+                const { base, igv } = extractIgv(cartTotal);
+                return (
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono text-right">Sub: S/{base.toFixed(2)} · IGV: S/{igv.toFixed(2)}</p>
+                );
+              })()}
 
               <div className="flex gap-2">
                 <button
