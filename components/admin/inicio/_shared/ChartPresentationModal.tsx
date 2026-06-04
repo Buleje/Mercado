@@ -201,19 +201,19 @@ export function ChartPresentationModal({
     >
       {/* Header barra — titulo + indicador + acciones */}
       <header
-        className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0"
+        className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] shrink-0"
         data-export-hide="true"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-gray-100 shrink-0">
-            <Maximize2 className="h-4 w-4 text-gray-700" />
+          <span className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-[var(--surface-sunken)] shrink-0">
+            <Maximize2 className="h-4 w-4 text-[var(--text-secondary)]" />
           </span>
           <div className="min-w-0">
-            <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-gray-500">
+            <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Presentación · {activeIdx + 1} de {items.length}
               {autoplay && <span className="ml-2 text-[var(--data-success-500)]">· Modo TV</span>}
             </p>
-            <h2 className="text-lg font-extrabold tracking-tight text-gray-900 leading-tight truncate">
+            <h2 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight truncate">
               {activeItem.title}
             </h2>
           </div>
@@ -228,7 +228,7 @@ export function ChartPresentationModal({
             title="Descargar este gráfico como imagen"
             className={cn(
               "inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
-              "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400",
+              "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-base)]",
               isExporting && "opacity-60 cursor-wait",
             )}
           >
@@ -249,7 +249,7 @@ export function ChartPresentationModal({
               "inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
               autoplay
                 ? "bg-[var(--data-success-500)] text-white border-[var(--data-success-500)]"
-                : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400",
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-base)]",
             )}
           >
             {autoplay ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -259,12 +259,12 @@ export function ChartPresentationModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-base)] transition-colors"
             aria-label="Cerrar presentación"
           >
             <X className="h-4 w-4" />
             <span className="hidden sm:inline">Cerrar</span>
-            <kbd className="hidden md:inline-block text-[length:var(--ts-2xs)] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">
+            <kbd className="hidden md:inline-block text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
               Esc
             </kbd>
           </button>
@@ -274,7 +274,7 @@ export function ChartPresentationModal({
       {/* Autoplay progress bar */}
       {autoplay && (
         <div
-          className="h-1 bg-gray-100 shrink-0 overflow-hidden"
+          className="h-1 bg-[var(--surface-sunken)] shrink-0 overflow-hidden"
           data-export-hide="true"
         >
           <div
@@ -300,8 +300,8 @@ export function ChartPresentationModal({
           className={cn(
             "absolute left-4 top-1/2 -translate-y-1/2 z-10",
             "inline-flex items-center justify-center h-12 w-12 rounded-full",
-            "bg-white dark:bg-[var(--color-card)] border border-gray-200 shadow-sm",
-            "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
+            "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)] shadow-sm",
+            "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
             "transition-all",
             !hasPrev && "opacity-30 cursor-not-allowed",
           )}
@@ -343,8 +343,8 @@ export function ChartPresentationModal({
           className={cn(
             "absolute right-4 top-1/2 -translate-y-1/2 z-10",
             "inline-flex items-center justify-center h-12 w-12 rounded-full",
-            "bg-white dark:bg-[var(--color-card)] border border-gray-200 shadow-sm",
-            "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
+            "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)] shadow-sm",
+            "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
             "transition-all",
             !hasNext && !autoplay && "opacity-30 cursor-not-allowed",
           )}
@@ -355,7 +355,7 @@ export function ChartPresentationModal({
 
       {/* Footer — thumbnail strip navigable */}
       <footer
-        className="border-t border-gray-200 px-6 py-3 bg-gray-50 shrink-0"
+        className="border-t border-[var(--rule-soft)] px-6 py-3 bg-[var(--surface-sunken)] shrink-0"
         data-export-hide="true"
       >
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-1">
@@ -369,8 +369,8 @@ export function ChartPresentationModal({
                 className={cn(
                   "shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors",
                   isActive
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white dark:bg-[var(--color-card)] text-gray-600 border-gray-300 hover:border-gray-400 hover:text-gray-900",
+                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
+                    : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
                 )}
               >
                 <span className="tabular-nums font-bold">{idx + 1}</span>
@@ -379,27 +379,27 @@ export function ChartPresentationModal({
             );
           })}
         </div>
-        <p className="mt-2 text-[length:var(--ts-xs)] text-gray-500 flex items-center gap-3 flex-wrap">
+        <p className="mt-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] flex items-center gap-3 flex-wrap">
           <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
               ← →
             </kbd>{" "}
             navegar
           </span>
           <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
               Shift+rueda
             </kbd>{" "}
             scroll lateral
           </span>
           <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
               Espacio
             </kbd>{" "}
             modo TV
           </span>
           <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
               Esc
             </kbd>{" "}
             cerrar
