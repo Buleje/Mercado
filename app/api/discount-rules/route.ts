@@ -13,12 +13,22 @@ import { applyRateLimit } from "@/lib/rate-limit";
 const DiscountRuleSchema = z.object({
   nombre:      z.string().min(1).max(200),
   tipo:        z.enum(["porcentaje", "2x1", "3x2", "combo", "monto_fijo"]),
-  valor:       z.number().min(0).default(0),
+  valor:       z.number().min(0).max(100000).default(0),
   categorias:  z.array(z.string()).default([]),
   condicion:   z.string().max(500).optional(),
   fechaInicio: z.string().min(1),
   fechaFin:    z.string().min(1),
   activa:      z.boolean().default(true),
+}).superRefine((d, ctx) => {
+  // ALTO Security (2026-06-04): sin tope, un descuento "porcentaje" podía
+  // crearse en 9999% OFF (abuso de dinero). Cap a 100% para porcentajes.
+  if (d.tipo === "porcentaje" && d.valor > 100) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["valor"],
+      message: "Un descuento porcentual no puede superar 100%.",
+    });
+  }
 });
 
 function mapRule(r: { id: string; nombre: string; tipo: string; valor: unknown; categorias: string; condicion: string | null; fechaInicio: Date; fechaFin: Date; activa: boolean; tenantId: string; createdAt: Date }) {
