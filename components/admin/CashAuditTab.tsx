@@ -223,6 +223,17 @@ function CashCounter({
 
       {open && (
         <div className="px-4 pb-4 space-y-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4">
+          {!registerId && (
+            <div
+              role="status"
+              className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/20 px-3 py-2"
+            >
+              <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0 mt-0.5" strokeWidth={1.75} aria-hidden />
+              <p className="text-sm font-semibold text-[var(--data-warning-500)]">
+                No hay una caja abierta. Abre una caja en Caja Registradora para registrar el conteo.
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Billetes */}
             <div>
@@ -388,6 +399,10 @@ type Props = { onNavigateToTurnos?: () => void };
 export default function CashAuditTab({ onNavigateToTurnos }: Props) {
   const [detail, setDetail] = useState<CashAudit | null>(null);
   const [audits, setAudits] = useState<CashAudit[]>([]);
+  // Mantenemos los registros crudos para identificar la caja ABIERTA (el status
+  // original se pierde al mapear a CashAudit). El arqueo manual debe escribir
+  // sobre la caja abierta, no sobre la más reciente (que puede estar cerrada).
+  const [rawRegisters, setRawRegisters] = useState<CashRegisterRaw[]>([]);
   const [loading, setLoading] = useState(true);
 
   const inflightRef = useRef<AbortController | null>(null);
@@ -402,6 +417,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         const mapped = registers.map(mapRegisterToAudit);
         mapped.sort((a, b) => b.id.localeCompare(a.id));
         startTransition(() => {
+          setRawRegisters(registers);
           setAudits(mapped);
           setLoading(false);
         });
@@ -427,6 +443,15 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
 
   // Conteo de integridad de cuadres — % conformes vs total
   const pctConformes = stats.totalAudits > 0 ? Math.round((stats.conformes / stats.totalAudits) * 100) : 0;
+
+  // Caja ABIERTA para el conteo manual. El "Esperado" sale de su expectedAmount
+  // (fallback a openingAmount si aún no se computó). Si no hay caja abierta, el
+  // CashCounter se deshabilita con un mensaje claro.
+  const openRegister = useMemo(
+    () => rawRegisters.find(r => r.status === "abierta") ?? null,
+    [rawRegisters],
+  );
+  const openExpectedAmount = openRegister?.expectedAmount ?? openRegister?.openingAmount ?? 0;
 
   return (
     <div className="space-y-4">
@@ -477,10 +502,10 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         })}
       </div>
 
-      {/* Cash Counter */}
+      {/* Cash Counter — siempre apunta a la caja ABIERTA (no a la más reciente) */}
       <CashCounter
-        expectedAmount={audits.length > 0 ? audits[0].expectedAmount : 0}
-        registerId={audits.length > 0 ? audits[0].id : null}
+        expectedAmount={openExpectedAmount}
+        registerId={openRegister?.id ?? null}
         onSaved={loadAudits}
       />
 

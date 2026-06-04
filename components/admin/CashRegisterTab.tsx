@@ -212,6 +212,7 @@ export default function CashRegisterTab() {
   const [arqueoAmount, setArqueoAmount] = useState("");
   const [arqueoDenoms, setArqueoDenoms] = useState<Record<string, number>>({});
   const [addingArqueo, setAddingArqueo] = useState(false);
+  const [arqueoError, setArqueoError] = useState<string | null>(null);
   // Arqueo Guiado
   const [showArqueoGuiado, setShowArqueoGuiado] = useState(false);
   const [guiadoBilletes, setGuiadoBilletes] = useState<Record<string, number>>({});
@@ -409,35 +410,45 @@ export default function CashRegisterTab() {
   const handleArqueoExpress = async () => {
     if (!currentRegister || addingArqueo || !arqueoAmount) return;
     setAddingArqueo(true);
+    setArqueoError(null);
     try {
       const counted = Number(arqueoAmount);
       const expected = stats?.expectedCash ?? 0;
       const diff = counted - expected;
-      const timestamp = new Date().toLocaleString("es-PE", { 
-        day: "2-digit", 
-        month: "short", 
-        hour: "2-digit", 
-        minute: "2-digit" 
+      const timestamp = new Date().toLocaleString("es-PE", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
       });
-      
-      await fetch("/api/cash-movements", {
-        method: "POST",
+
+      // El endpoint correcto es /api/cash-registers/[id] con action "arqueo"
+      // (mismo contrato que CashAuditTab). La ruta arma el prefijo y dispara la
+      // detección de anomalías; le pasamos el detalle como `notes`.
+      const res = await fetch(`/api/cash-registers/${currentRegister.id}`, {
+        method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          cashRegisterId: currentRegister.id,
-          type: "arqueo",
-          amount: counted,
-          method: "efectivo",
-          description: `Arqueo Express - ${timestamp} | Esperado: S/${expected.toFixed(2)} | Contado: S/${counted.toFixed(2)} | Diferencia: ${diff >= 0 ? "+" : ""}S/${diff.toFixed(2)}`,
+          action: "arqueo",
+          closingAmount: counted,
+          notes: `${timestamp} | Esperado: S/${expected.toFixed(2)} | Contado: S/${counted.toFixed(2)} | Diferencia: ${diff >= 0 ? "+" : ""}S/${diff.toFixed(2)}`,
         }),
       });
-      
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(body?.error ?? `HTTP ${res.status}`);
+      }
+
       setShowArqueo(false);
       setArqueoAmount("");
       setArqueoDenoms({});
       fetchData();
-    } catch { /* ignore */ }
-    setAddingArqueo(false);
+    } catch (err) {
+      setArqueoError(err instanceof Error ? err.message : "No se pudo registrar el arqueo. Intentá de nuevo.");
+    } finally {
+      setAddingArqueo(false);
+    }
   };
 
   // ── Arqueo Guiado ──────────────────────────────────────────────────────────
@@ -676,7 +687,7 @@ export default function CashRegisterTab() {
                   <ArrowDown className="h-4 w-4" /> Egreso
                 </button>
                 <button
-                  onClick={() => { setArqueoAmount(""); setArqueoDenoms({}); setShowArqueo(true); }}
+                  onClick={() => { setArqueoAmount(""); setArqueoDenoms({}); setArqueoError(null); setShowArqueo(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors"
                   title="Conteo físico del efectivo para verificar que cuadra con las ventas"
                 >
@@ -1682,7 +1693,7 @@ export default function CashRegisterTab() {
                     <p className="text-sm text-[var(--text-tertiary)]">Verificación rápida sin cerrar caja</p>
                   </div>
                 </div>
-                <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
+                <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); setArqueoError(null); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -1809,21 +1820,35 @@ export default function CashRegisterTab() {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
-                <button
-                  onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }}
-                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-alt)] transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleArqueoExpress}
-                  disabled={addingArqueo || !arqueoAmount}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90 disabled:opacity-50 transition-colors"
-                >
-                  {addingArqueo ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-                  Registrar arqueo
-                </button>
+              <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 space-y-3">
+                {arqueoError && (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="flex items-start gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 px-3 py-2"
+                  >
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+                    <p className="text-sm font-semibold text-[var(--data-error-500)]">
+                      No se pudo registrar el arqueo: {arqueoError}
+                    </p>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setShowArqueo(false); setArqueoDenoms({}); setArqueoError(null); }}
+                    className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-alt)] transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleArqueoExpress}
+                    disabled={addingArqueo || !arqueoAmount}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90 disabled:opacity-50 transition-colors"
+                  >
+                    {addingArqueo ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+                    Registrar arqueo
+                  </button>
+                </div>
               </div>
             </div>
           </div>
