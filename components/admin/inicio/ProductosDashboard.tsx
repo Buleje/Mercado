@@ -63,7 +63,7 @@ export interface ProductosData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toFixed(2)}`; }
+function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 
 const CAT_LABELS: Record<string, string> = { "frutas-verduras": "Frutas y Verduras", abarrotes: "Abarrotes", carnes: "Carnes", lacteos: "Lácteos", bebidas: "Bebidas", limpieza: "Limpieza" };
 const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#f59e0b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
