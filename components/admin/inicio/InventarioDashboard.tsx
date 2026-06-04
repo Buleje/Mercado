@@ -54,7 +54,10 @@ export interface InventarioData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toFixed(2)}`; }
+// Brandon 2026-06-04: valor headline con separador de miles es-PE, redondeado
+// al sol (sin centavos) para que el KPI no rompa en 2 líneas. Antes daba
+// "S/ 10984.80" (sin separador, partía feo) — ahora "S/ 10,985".
+function fmt(n: number) { return `S/ ${Math.round(n).toLocaleString("es-PE")}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
 
@@ -246,18 +249,58 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     );
   }
 
+  // Contexto para los sub-valores de los KPIs (Brandon 2026-06-04: las cards
+  // tenían mucho espacio vacío y cero contexto — ahora cada número dice algo).
+  const totalUnidades = data.stockPorCategoria.reduce((a, c) => a + c.cantidad, 0);
+  const categorias = data.stockPorCategoria.length;
+
   return (
     <div className="space-y-6">
       {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Valor Inventario" value={fmt(data.valorInventario)} icon={DollarSign} />
-        <StatCard label="Productos" value={String(data.totalProductos)} icon={Package} />
-        <StatCard label="Stock Crítico" value={String(data.stockCritico)} icon={AlertTriangle} emphasis={data.stockCritico > 0 ? "error" : "success"} />
-        <StatCard label="Agotados" value={String(data.agotados)} icon={Package} emphasis={data.agotados > 0 ? "error" : "success"} />
-        <StatCard label="Sin Movimiento" value={String(data.sinMovimiento)} icon={Timer} emphasis={data.sinMovimiento > 5 ? "warning" : "neutral"} />
-        <StatCard label="Rotación" value={Number(data.rotacionGeneral).toFixed(2)} icon={TrendingUp} delta={data.dValor} />
+        <StatCard
+          label="Valor Inventario"
+          value={fmt(data.valorInventario)}
+          subValue={`${totalUnidades.toLocaleString("es-PE")} uds · a costo`}
+          icon={DollarSign}
+        />
+        <StatCard
+          label="Productos"
+          value={String(data.totalProductos)}
+          subValue={`${categorias} ${categorias === 1 ? "categoría" : "categorías"}`}
+          icon={Package}
+        />
+        <StatCard
+          label="Stock Crítico"
+          value={String(data.stockCritico)}
+          subValue={data.stockCritico > 0 ? "bajo el mínimo" : "todo sobre el mínimo"}
+          icon={AlertTriangle}
+          emphasis={data.stockCritico > 0 ? "error" : "success"}
+        />
+        <StatCard
+          label="Agotados"
+          value={String(data.agotados)}
+          subValue={data.agotados > 0 ? "reponer ya" : "ninguno"}
+          icon={Package}
+          emphasis={data.agotados > 0 ? "error" : "success"}
+        />
+        <StatCard
+          label="Sin Movimiento"
+          value={String(data.sinMovimiento)}
+          subValue="sin ventas en el rango"
+          icon={Timer}
+          emphasis={data.sinMovimiento > 5 ? "warning" : "neutral"}
+        />
+        <StatCard
+          label="Rotación"
+          value={Number(data.rotacionGeneral).toFixed(2)}
+          subValue="veces en el periodo"
+          icon={TrendingUp}
+          delta={data.dValor}
+          deltaLabel="vs periodo previo"
+        />
       </div>
 
       {/* ── Alert bar (critical) ── */}

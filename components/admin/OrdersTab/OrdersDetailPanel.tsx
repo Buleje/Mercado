@@ -21,7 +21,7 @@
  *   - Tokens del DS — 0 hex hardcoded
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import {
   X, Printer, Check, Phone, MapPin as MapPinIcon, FileText, MessageCircle,
@@ -70,6 +70,48 @@ function digitsOnly(phone: string): string {
   return phone.replace(/\D+/g, "");
 }
 
+// Escapa para inyección segura en la ventana de impresión (datos internos del
+// pedido, pero escapamos igual — nunca interpolar sin escapar). Brandon 2026-06-04.
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === '"' ? "&quot;" : "&#39;",
+  );
+}
+
+// Imprime una COMANDA (ticket de cocina/armado) del pedido — distinto de la
+// boleta SUNAT. Antes "Imprimir" y "Generar boleta" abrían el MISMO endpoint
+// (/api/invoices) → botón duplicado. Ahora Imprimir = comanda para preparar,
+// Generar boleta = comprobante fiscal. Ventana nueva, todos los datos escapados.
+function printComanda(order: DbOrder): void {
+  const w = window.open("", "_blank", "width=360,height=640");
+  if (!w) return;
+  const rows = order.items
+    .map(
+      (i) =>
+        `<tr><td class="q">${i.quantity}×</td><td class="n">${escapeHtml(i.name)}${
+          i.note ? `<div class="note">${escapeHtml(i.note)}</div>` : ""
+        }</td></tr>`,
+    )
+    .join("");
+  const ref = order.customer.reference ? `<br><i>Ref: ${escapeHtml(order.customer.reference)}</i>` : "";
+  const when = escapeHtml(new Date(order.createdAt).toLocaleString("es-PE", { timeZone: "America/Lima" }));
+  w.document.write(
+    `<!doctype html><html><head><meta charset="utf-8"><title>Comanda #${escapeHtml(order.id.slice(-8))}</title>` +
+      `<style>*{font-family:ui-monospace,Menlo,monospace;margin:0}body{padding:12px;font-size:13px;color:#000}` +
+      `h1{font-size:16px;text-align:center;letter-spacing:2px}.meta{text-align:center;font-size:11px;color:#444;margin:2px 0 8px}` +
+      `hr{border:0;border-top:1px dashed #000;margin:8px 0}table{width:100%;border-collapse:collapse}` +
+      `td{padding:3px 0;vertical-align:top}.q{width:36px;font-weight:700}.note{font-size:11px;color:#444;font-style:italic}` +
+      `.cust{font-size:12px;line-height:1.5}.total{display:flex;justify-content:space-between;font-weight:800;font-size:16px;margin-top:6px}</style>` +
+      `</head><body><h1>COMANDA</h1><div class="meta">#${escapeHtml(order.id.slice(-8))} · ${when}</div><hr>` +
+      `<div class="cust"><b>${escapeHtml(order.customer.name)}</b><br>${escapeHtml(order.customer.phone ?? "")}<br>` +
+      `${escapeHtml(order.customer.location ?? "")}${ref}</div><hr><table>${rows}</table><hr>` +
+      `<div class="total"><span>TOTAL</span><span>S/ ${Number(order.total).toFixed(2)}</span></div></body></html>`,
+  );
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
 export function OrdersDetailPanel({
   order,
   adminNote,
@@ -109,6 +151,26 @@ export function OrdersDetailPanel({
 
   const [notesOpen, setNotesOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
+
+  // a11y/UX (Brandon 2026-06-04): foco entra al panel al abrir + Escape cierra
+  // (memoria del proyecto: todo modal necesita click-fuera + Escape; faltaba el
+  // Escape). No cierra si el sub-modal de entrega manual está encima.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { panelRef.current?.focus(); }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !manualOpen) {
+        // Frenar propagación: con el modal abierto, Escape cierra SOLO el modal —
+        // no debe disparar atajos globales del admin ni el onboarding tour
+        // (ambos escuchan keydown en window, que recibe el evento después de
+        // document en fase de burbujeo).
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose, manualOpen]);
 
   // ── Acción primaria contextual por estado ───────────────────────────────
   const actionBanner = (() => {
@@ -165,7 +227,9 @@ export function OrdersDetailPanel({
       aria-label={`Detalle del pedido de ${order.customer.name}`}
     >
       <div
-        className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden"
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ─── 1. HEADER — patrón estándar admin (CardTitle DS, sin italic) ── */}
@@ -622,11 +686,11 @@ export function OrdersDetailPanel({
           )}
           <button
             type="button"
-            onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
+            onClick={() => printComanda(order)}
             className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-surface hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
             <Printer className="h-4 w-4" />
-            Imprimir
+            Imprimir comanda
           </button>
           <button
             type="button"
