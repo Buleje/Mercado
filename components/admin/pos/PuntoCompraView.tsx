@@ -68,6 +68,8 @@ interface ActivePromo {
   fechaInicio: string;
   fechaFin: string;
   activa: boolean;
+  /** Condición de aplicación: "min_monto:50" / "min_cantidad:3" o JSON {minPurchase}. */
+  condicion?: string | null;
 }
 
 // ─── Helpers para promos 2×1 y 3×2 ──────────────────────────────────────────
@@ -85,6 +87,37 @@ function freeUnits(qty: number, tipo: string): number {
 function itemMatchesPromo(item: CartItem, promo: ActivePromo): boolean {
   if (!promo.categorias.length) return true;
   return promo.categorias.includes(item.product.category ?? "");
+}
+
+// Enforcement de `condicion` (audit Promociones): antes el POS NUNCA evaluaba el
+// mínimo → "min_monto:50" se aplicaba con S/10. Soporta los 2 formatos que
+// escriben las rutas: texto "min_monto:50" / "min_cantidad:3" y JSON {minPurchase}.
+export function parsePromoCondicion(condicion?: string | null): { minMonto: number; minCantidad: number } {
+  if (!condicion) return { minMonto: 0, minCantidad: 0 };
+  const s = condicion.trim();
+  if (s.startsWith("{")) {
+    try {
+      const o = JSON.parse(s) as Record<string, unknown>;
+      return {
+        minMonto: Number(o.minPurchase ?? o.minMonto ?? 0) || 0,
+        minCantidad: Number(o.minQty ?? o.minCantidad ?? 0) || 0,
+      };
+    } catch { /* cae al parser de texto */ }
+  }
+  const montoM = s.match(/min[_-]?monto\s*[:=]\s*(\d+(?:\.\d+)?)/i);
+  const cantM = s.match(/min[_-]?cantidad\s*[:=]\s*(\d+)/i);
+  return {
+    minMonto: montoM ? parseFloat(montoM[1]) : 0,
+    minCantidad: cantM ? parseInt(cantM[1], 10) : 0,
+  };
+}
+
+/** La promo solo surte efecto si el carrito cumple el mínimo de monto y/o cantidad. */
+function promoMeetsCondition(promo: ActivePromo, baseSubtotal: number, totalQty: number): boolean {
+  const { minMonto, minCantidad } = parsePromoCondicion(promo.condicion);
+  if (minMonto > 0 && baseSubtotal < minMonto) return false;
+  if (minCantidad > 0 && totalQty < minCantidad) return false;
+  return true;
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -535,21 +568,35 @@ export default function PuntoCompraView() {
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
 
+  // Carrito a precio pleno (sin promo) + cantidad total — base para evaluar la
+  // `condicion` de la promo (mínimos). La promo solo SURTE EFECTO si cumple.
+  const baseSubtotal = useMemo(
+    () => cart.reduce((s, i) => s + (i.product.costPrice ?? i.product.price) * i.quantity, 0),
+    [cart],
+  );
+  const promoQty = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
+  const promoActive = useMemo(
+    () => appliedPromo != null && promoMeetsCondition(appliedPromo, baseSubtotal, promoQty),
+    [appliedPromo, baseSubtotal, promoQty],
+  );
+
   const subtotal = useMemo(() => {
-    const isBundle = appliedPromo && (appliedPromo.tipo === "2x1" || appliedPromo.tipo === "3x2");
+    const isBundle = promoActive && appliedPromo && (appliedPromo.tipo === "2x1" || appliedPromo.tipo === "3x2");
     return cart.reduce((s, i) => {
       const price = i.product.costPrice ?? i.product.price;
       const applies = isBundle && itemMatchesPromo(i, appliedPromo!);
       const qtyPaid = applies ? computeEffectiveQty(i.quantity, appliedPromo!.tipo) : i.quantity;
       return s + price * qtyPaid;
     }, 0);
-  }, [cart, appliedPromo]);
+  }, [cart, appliedPromo, promoActive]);
 
   const discountAmount = useMemo(() => {
+    // Promo seleccionada pero el carrito NO cumple el mínimo → no descuenta.
+    if (appliedPromo && !promoActive) return 0;
     if (appliedPromo?.tipo === "monto_fijo") return Math.min(appliedPromo.valor, subtotal);
     if (appliedPromo?.tipo === "combo") return Math.max(0, subtotal - appliedPromo.valor);
     return subtotal * (discount / 100);
-  }, [subtotal, discount, appliedPromo]);
+  }, [subtotal, discount, appliedPromo, promoActive]);
 
   const total = useMemo(
     () => Math.max(0, subtotal - discountAmount),
@@ -1238,7 +1285,7 @@ export default function PuntoCompraView() {
               </button>
             ))}
           </div>
-          {appliedPromo && (
+          {appliedPromo && promoActive && (
             <p className="text-xs text-[var(--data-warning-500)] mt-1.5">
               ✓ Aplicando: <strong>{appliedPromo.nombre}</strong>
               {appliedPromo.tipo === "porcentaje" && ` — ${appliedPromo.valor}% de descuento en esta OC`}
@@ -1248,6 +1295,20 @@ export default function PuntoCompraView() {
               {appliedPromo.tipo === "combo" && ` — precio combo S/ ${appliedPromo.valor} (ahorro S/ ${Math.max(0, subtotal - appliedPromo.valor).toFixed(2)})`}
             </p>
           )}
+          {appliedPromo && !promoActive && (() => {
+            const { minMonto, minCantidad } = parsePromoCondicion(appliedPromo.condicion);
+            const faltaMonto = minMonto > 0 && baseSubtotal < minMonto ? minMonto - baseSubtotal : 0;
+            const faltaQty = minCantidad > 0 && promoQty < minCantidad ? minCantidad - promoQty : 0;
+            return (
+              <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
+                <strong>{appliedPromo.nombre}</strong> requiere{" "}
+                {faltaMonto > 0 && `S/ ${faltaMonto.toFixed(2)} más`}
+                {faltaMonto > 0 && faltaQty > 0 && " y "}
+                {faltaQty > 0 && `${faltaQty} unidad${faltaQty === 1 ? "" : "es"} más`}
+                {" "}para activarse — aún no descuenta.
+              </p>
+            );
+          })()}
         </div>
       )}
 
