@@ -7,6 +7,7 @@ import {
   DollarSign,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { inventoryValueAtCost, realUnitCost } from "@/lib/chart-helpers";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
@@ -35,6 +36,7 @@ interface Sale { id: string; total: number; createdAt: string; items: { productI
 export interface InventarioData {
   // KPIs
   valorInventario: number;
+  productosSinCosto: number;
   totalProductos: number;
   stockCritico: number;
   agotados: number;
@@ -97,8 +99,8 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     const prevOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= prevFrom && new Date(o.createdAt) <= prevTo);
     const prevSales = sales.filter(s => new Date(s.createdAt) >= prevFrom && new Date(s.createdAt) <= prevTo);
 
-    // KPIs
-    const valorInventario = active.reduce((a, p) => a + (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7), 0);
+    // KPIs — valor a COSTO REAL (helper único, sin fabricar price*0.7).
+    const { valor: valorInventario, sinCosto: productosSinCosto } = inventoryValueAtCost(active);
     const totalProductos = active.length;
     const stockCritico = active.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin && p.stock > 0).length;
     const agotados = active.filter(p => (p.stock ?? 0) === 0).length;
@@ -127,7 +129,8 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     active.forEach(p => {
       const cat = p.category;
       const e = catMap.get(cat) ?? { valor: 0, cantidad: 0 };
-      e.valor += (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7);
+      const cUnit = realUnitCost(p);
+      if (cUnit != null) e.valor += (p.stock ?? 0) * cUnit;
       e.cantidad += p.stock ?? 0;
       catMap.set(cat, e);
     });
@@ -216,7 +219,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     }));
 
     return {
-      valorInventario, totalProductos, stockCritico, agotados, sinMovimiento, rotacionGeneral, dValor,
+      valorInventario, productosSinCosto, totalProductos, stockCritico, agotados, sinMovimiento, rotacionGeneral, dValor,
       stockPorCategoria, proyeccionAgotamiento, productosCriticos, movimientoDiario,
       topSalidas, coberturaDias, distribucionStock,
     };
@@ -263,7 +266,11 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
         <StatCard
           label="Valor Inventario"
           value={fmt(data.valorInventario)}
-          subValue={`${totalUnidades.toLocaleString("es-PE")} uds · a costo`}
+          subValue={
+            data.productosSinCosto > 0
+              ? `${data.productosSinCosto} sin costo · valor parcial`
+              : `${totalUnidades.toLocaleString("es-PE")} uds · a costo real`
+          }
           icon={DollarSign}
         />
         <StatCard

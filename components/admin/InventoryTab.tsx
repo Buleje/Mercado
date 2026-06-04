@@ -931,10 +931,12 @@ export default function InventoryTab() {
   const activeProducts = products.filter(p => p.active).length;
   const lowStockCount = products.filter(isLowStock).length;
   const expiringSoonCount = products.filter(isExpiringSoon).length;
-  // Valuación a COSTO (no precio venta) — para SUNAT el inventario se valúa al
-  // costo de adquisición. Fallback price*0.7 igual que dashboard/analytics.
+  // Valuación a COSTO REAL (unificado 2026-06-04, fuente única lib/chart-helpers):
+  // solo productos con costPrice cargado — NUNCA fabricar price*0.7 (inflaba e
+  // inconsistía con el dashboard de Inicio, que ya usa costo real). Para SUNAT
+  // el inventario se valúa al costo de adquisición real.
   const totalStockValue = products.reduce(
-    (s, p) => s + (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7), 0
+    (s, p) => (p.costPrice != null ? s + (p.stock ?? 0) * p.costPrice : s), 0
   );
 
   // ── Mejora P-7: Detectar productos duplicados por similitud de nombre ────

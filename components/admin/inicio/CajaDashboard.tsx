@@ -7,6 +7,7 @@ import {
   AlertTriangle, Percent, ArrowDownToLine, ArrowUpFromLine, Wallet,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { buildCostLookup, aggregateMargin } from "@/lib/chart-helpers";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
@@ -91,7 +92,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     const { from, to } = dateRange;
     const now = new Date();
 
-    const costMap = new Map(products.map(p => [p.id, p.costPrice ?? p.price * 0.7]));
+    const cost = buildCostLookup(products);
 
     // Filter by date
     const pOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= from && new Date(o.createdAt) <= to);
@@ -110,9 +111,11 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     const ingresos = pOrders.reduce((a, o) => a + o.total, 0) + pSales.reduce((a, s) => a + s.total, 0);
     const egresos = pPurchases.reduce((a, p) => a + p.total, 0);
     const balance = ingresos - egresos;
-    let costo = 0;
-    pOrders.forEach(o => o.items.forEach(i => { costo += (costMap.get(i.id) ?? i.price * 0.7) * i.quantity; }));
-    pSales.forEach(s => s.items.forEach(i => { costo += (costMap.get(i.productId) ?? i.price * 0.7) * i.quantity; }));
+    // COGS a costo REAL (helper único, sin fabricar price*0.7).
+    const costo = aggregateMargin([
+      ...pOrders.flatMap(o => o.items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price }))),
+      ...pSales.flatMap(s => s.items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price }))),
+    ], cost).costo;
     const utilidadNeta = ingresos - costo - egresos;
     const margenNeto = ingresos > 0 ? (utilidadNeta / ingresos) * 100 : 0;
     const ticketsTotal = pOrders.length + pSales.length;

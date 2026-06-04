@@ -8,6 +8,7 @@ import {
   Percent, Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { buildCostLookup, aggregateMargin } from "@/lib/chart-helpers";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
@@ -45,6 +46,7 @@ export interface VentasData {
   ventasNetas: number;
   utilidadBruta: number;
   margen: number;
+  margenIncompleto: boolean;
   tickets: number;
   ticketPromedio: number;
   cancelados: number;
@@ -103,7 +105,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const prevMonthStart = new Date(monthStart.getTime() - rangeDays * 86400000);
     const prevMonthEnd = new Date(monthStart.getTime() - 1);
 
-    const costMap = new Map(products.map(p => [p.id, p.costPrice ?? p.price * 0.7]));
+    const cost = buildCostLookup(products);
 
     // Current month
     const mOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= monthStart && new Date(o.createdAt) <= monthEnd);
@@ -111,11 +113,16 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const cancelled = orders.filter(o => o.status === "cancelado" && new Date(o.createdAt) >= monthStart && new Date(o.createdAt) <= monthEnd);
 
     const ventasNetas = mOrders.reduce((a, o) => a + o.total, 0) + mSales.reduce((a, s) => a + s.total, 0);
-    let costo = 0;
-    mOrders.forEach(o => o.items.forEach(i => { costo += (costMap.get(i.id) ?? i.price * 0.7) * i.quantity; }));
-    mSales.forEach(s => s.items.forEach(i => { costo += (costMap.get(i.productId) ?? i.price * 0.7) * i.quantity; }));
-    const utilidadBruta = ventasNetas - costo;
-    const margen = ventasNetas > 0 ? (utilidadBruta / ventasNetas) * 100 : 0;
+    // Margen REAL (helper único): solo ítems con costPrice cargado cuentan a costo
+    // y margen; los sin costo no inflan (antes `price*0.7` daba ~30% ficticio).
+    const mMargin = aggregateMargin([
+      ...mOrders.flatMap(o => o.items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price }))),
+      ...mSales.flatMap(s => s.items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price }))),
+    ], cost);
+    const costo = mMargin.costo;
+    const utilidadBruta = mMargin.utilidadBruta;
+    const margen = mMargin.margenPct ?? 0;
+    const margenIncompleto = mMargin.incompleto;
     const tickets = mOrders.length + mSales.length;
     const ticketPromedio = tickets > 0 ? ventasNetas / tickets : 0;
 
@@ -124,11 +131,12 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const pSales = sales.filter(s => new Date(s.createdAt) >= prevMonthStart && new Date(s.createdAt) <= prevMonthEnd);
     const pCancelled = orders.filter(o => o.status === "cancelado" && new Date(o.createdAt) >= prevMonthStart && new Date(o.createdAt) <= prevMonthEnd);
     const prevVentas = pOrders.reduce((a, o) => a + o.total, 0) + pSales.reduce((a, s) => a + s.total, 0);
-    let prevCosto = 0;
-    pOrders.forEach(o => o.items.forEach(i => { prevCosto += (costMap.get(i.id) ?? i.price * 0.7) * i.quantity; }));
-    pSales.forEach(s => s.items.forEach(i => { prevCosto += (costMap.get(i.productId) ?? i.price * 0.7) * i.quantity; }));
-    const prevUtilidad = prevVentas - prevCosto;
-    const prevMargen = prevVentas > 0 ? (prevUtilidad / prevVentas) * 100 : 0;
+    const pMargin = aggregateMargin([
+      ...pOrders.flatMap(o => o.items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price }))),
+      ...pSales.flatMap(s => s.items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price }))),
+    ], cost);
+    const prevUtilidad = pMargin.utilidadBruta;
+    const prevMargen = pMargin.margenPct ?? 0;
     const prevTickets = pOrders.length + pSales.length;
     const prevTicketProm = prevTickets > 0 ? prevVentas / prevTickets : 0;
 
@@ -161,15 +169,15 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       const k = dateKey(t.date);
       dailyVentasMap.set(k, (dailyVentasMap.get(k) ?? 0) + t.total);
       dailyTicketsMap.set(k, (dailyTicketsMap.get(k) ?? 0) + 1);
-      let c = 0; t.items.forEach(i => { c += (costMap.get(i.id) ?? i.price * 0.7) * i.quantity; });
-      dailyProfitMap.set(k, (dailyProfitMap.get(k) ?? 0) + (t.total - c));
+      const dProfit = aggregateMargin(t.items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price })), cost).utilidadBruta;
+      dailyProfitMap.set(k, (dailyProfitMap.get(k) ?? 0) + dProfit);
     });
     sales.filter(s => new Date(s.createdAt) >= new Date(now.getTime() - 14 * 86400000)).forEach(s => {
       const k = dateKey(s.createdAt);
       dailyVentasMap.set(k, (dailyVentasMap.get(k) ?? 0) + s.total);
       dailyTicketsMap.set(k, (dailyTicketsMap.get(k) ?? 0) + 1);
-      let c = 0; s.items.forEach(i => { c += (costMap.get(i.productId) ?? i.price * 0.7) * i.quantity; });
-      dailyProfitMap.set(k, (dailyProfitMap.get(k) ?? 0) + (s.total - c));
+      const dProfit = aggregateMargin(s.items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price })), cost).utilidadBruta;
+      dailyProfitMap.set(k, (dailyProfitMap.get(k) ?? 0) + dProfit);
     });
     const sparkVentas = last7.map(k => dailyVentasMap.get(k) ?? 0);
     const sparkUtilidad = last7.map(k => dailyProfitMap.get(k) ?? 0);
@@ -297,7 +305,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     ];
 
     return {
-      ventasNetas, utilidadBruta, margen, tickets, ticketPromedio, cancelados: cancelled.length,
+      ventasNetas, utilidadBruta, margen, margenIncompleto, tickets, ticketPromedio, cancelados: cancelled.length,
       ventasHoy, ventasAyer,
       dVentas: pctD(ventasNetas, prevVentas), dUtilidad: pctD(utilidadBruta, prevUtilidad),
       dTickets: pctD(tickets, prevTickets), dMargen: pctD(margen, prevMargen),
@@ -340,7 +348,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Ventas Netas" value={fmt(data.ventasNetas)} icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas.length >= 2 ? { data: data.sparkVentas } : undefined} />
         <StatCard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} icon={TrendingUp} delta={data.dUtilidad} sparkline={data.sparkUtilidad.length >= 2 ? { data: data.sparkUtilidad } : undefined} />
-        <StatCard label="Margen" value={`${Number(data.margen).toFixed(1)}%`} icon={Percent} delta={data.dMargen} emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"} />
+        <StatCard label="Margen" value={`${Number(data.margen).toFixed(1)}%`} subValue={data.margenIncompleto ? "carga costos: dato parcial" : "a costo real"} icon={Percent} delta={data.dMargen} emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"} />
         <StatCard label="Tickets" value={String(data.tickets)} icon={Receipt} delta={data.dTickets} sparkline={data.sparkTickets.length >= 2 ? { data: data.sparkTickets } : undefined} />
         <StatCard label="Ticket Prom." value={fmt(data.ticketPromedio)} icon={ShoppingCart} delta={data.dTicketProm} />
         <StatCard label="Cancelados" value={String(data.cancelados)} icon={AlertTriangle} delta={data.dCancelados} emphasis={data.cancelados > 0 ? "error" : "neutral"} />

@@ -7,6 +7,7 @@ import {
   RefreshCw, Layers,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { buildCostLookup, inventoryValueAtCost } from "@/lib/chart-helpers";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
@@ -87,7 +88,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
     const rangeDays = Math.max(1, Math.round((monthEnd.getTime() - monthStart.getTime()) / 86400000));
     const prevMonthStart = new Date(monthStart.getTime() - rangeDays * 86400000);
     const prevMonthEnd = new Date(monthStart.getTime() - 1);
-    const costMap = new Map(products.map(p => [p.id, p.costPrice ?? p.price * 0.7]));
+    const cost = buildCostLookup(products);
 
     const mOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= monthStart && new Date(o.createdAt) <= monthEnd);
     const mSales = sales.filter(s => new Date(s.createdAt) >= monthStart && new Date(s.createdAt) <= monthEnd);
@@ -123,7 +124,7 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
     const agotados = activeProducts.filter(p => (p.stock ?? 0) === 0).length;
 
     // Inventory value
-    const valorInventario = activeProducts.reduce((a, p) => a + (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7), 0);
+    const valorInventario = inventoryValueAtCost(activeProducts).valor;
 
     // Average rotation (units sold / avg stock)
     const avgStock = activeProducts.reduce((a, p) => a + (p.stock ?? 0), 0) / Math.max(productosActivos, 1);
@@ -133,14 +134,18 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
     const prodMap = new Map<number, { nombre: string; ingresos: number; utilidad: number; unidades: number }>();
     mOrders.forEach(o => o.items.forEach(i => {
       const e = prodMap.get(i.id) ?? { nombre: i.name, ingresos: 0, utilidad: 0, unidades: 0 };
-      const c = costMap.get(i.id) ?? i.price * 0.7;
-      e.ingresos += i.price * i.quantity; e.utilidad += (i.price - c) * i.quantity; e.unidades += i.quantity;
+      const c = cost(i.id);
+      e.ingresos += i.price * i.quantity;
+      if (c != null) e.utilidad += (i.price - c) * i.quantity;
+      e.unidades += i.quantity;
       prodMap.set(i.id, e);
     }));
     mSales.forEach(s => s.items.forEach(i => {
       const e = prodMap.get(i.productId) ?? { nombre: i.name, ingresos: 0, utilidad: 0, unidades: 0 };
-      const c = costMap.get(i.productId) ?? i.price * 0.7;
-      e.ingresos += i.price * i.quantity; e.utilidad += (i.price - c) * i.quantity; e.unidades += i.quantity;
+      const c = cost(i.productId);
+      e.ingresos += i.price * i.quantity;
+      if (c != null) e.utilidad += (i.price - c) * i.quantity;
+      e.unidades += i.quantity;
       prodMap.set(i.productId, e);
     }));
     const topProductos = [...prodMap.values()].sort((a, b) => b.ingresos - a.ingresos).slice(0, 10);
