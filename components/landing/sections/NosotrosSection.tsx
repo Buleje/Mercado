@@ -163,14 +163,14 @@ export default function NosotrosSection() {
             href="/abrir-tienda"
             className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-8 py-4 text-base font-extrabold shadow-md shadow-[var(--accent)]/25 hover:gap-3 hover:shadow-lg transition-all"
           >
-            <T k="landing.how.cta" fallback="Prueba el primer mes sin pagar" />
+            Probar gratis 1 mes
             <ArrowUpRight
               className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
               strokeWidth={2.5}
             />
           </Link>
           <p className="mt-4 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-            Sin tarjeta · Cancelás cuando quieras · Setup en 5 minutos
+            Sin tarjeta · Cancelas cuando quieras · Setup en 5 minutos
           </p>
         </div>
       </div>

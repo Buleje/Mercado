@@ -6,6 +6,19 @@ import Link from "next/link";
 // bodeguero spotlight). Ahora es una landing de SOFTWARE clara y distinta de
 // /abrir-tienda: hero B2B propio + grid de MÓDULOS del software. Las secciones
 // de apoyo (cómo funciona, planes, plan fundador, FAQ) se conservan.
+// Brandon 2026-06-03 — dos secciones nuevas que refuerzan el concepto
+// institucional de /negocios ("qué es Buleje · por qué confiar"):
+//  · ParaQuienSection: un sistema, todos los rubros (verticales reales).
+//  · PorQueConfiarSection: credibilidad institucional (hecho en Perú, 0%
+//    comisión, soporte humano, datos protegidos por ley).
+const ParaQuienSection = dynamic(
+  () => import("@/components/landing/sections/ParaQuienSection"),
+  { loading: () => <SectionSkeleton /> },
+);
+const PorQueConfiarSection = dynamic(
+  () => import("@/components/landing/sections/PorQueConfiarSection"),
+  { loading: () => <SectionSkeleton /> },
+);
 const ComoFuncionaSection = dynamic(
   () => import("@/components/landing/sections/ComoFuncionaSection"),
   { loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
@@ -32,7 +45,11 @@ import {
   BarChart3,
   ShieldCheck,
   Sparkles,
+  Check,
+  MapPin,
 } from "@buleje/design-system/icons";
+import type { ComponentType } from "react";
+import { cn } from "@/lib/utils";
 // Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
 // Brandon 2026-05-27: /negocios es 100% informativa/SEO. El selector
 // interactivo de planes + signup vive SOLO en /abrir-tienda (página de
@@ -58,24 +75,11 @@ export const metadata: Metadata = {
   // "software para bodega" (intención B2B), nacional (SaaS), sin contenido stale.
   title: "Software para bodegas y minimarkets en Perú",
   description:
-    "El software todo-en-uno para tu bodega: POS, inventario, fiado digital, facturación SUNAT y delivery. Cobrá con Yape, sin comisión.",
-  // Brandon 2026-05-27 SEO profundo: keywords B2B de alta intención (long-tail
-  // local + categoría). Google ya no rankea por meta keywords, pero ayudan a
-  // buscadores secundarios, IAs y herramientas SEO. hreflang es-PE explícito.
-  keywords: [
-    "software para bodega",
-    "software para minimarket",
-    "POS para bodega Perú",
-    "punto de venta bodega",
-    "sistema para tienda de abarrotes",
-    "abrir tienda online Perú",
-    "vender con Yape",
-    "facturación electrónica SUNAT bodega",
-    "software bodega Pucallpa",
-    "ERP para minimarket",
-    "delivery para bodega",
-    "fiado digital",
-  ],
+    "El software todo-en-uno para tu bodega: POS, inventario, fiado digital, facturación SUNAT y delivery. Cobra con Yape, sin comisión.",
+  // Brandon 2026-06-04 SEO (auditoría): meta keywords eliminadas — Google/Bing
+  // las ignoran hace años (keyword-stuffing inerte, sin beneficio). Las keywords
+  // reales viven en title, description, el kicker del hero y el JSON-LD
+  // (featureList → rich understanding). hreflang es-PE explícito abajo.
   alternates: {
     canonical: "https://www.buleje.pe/negocios",
     languages: {
@@ -92,7 +96,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Software para bodegas y minimarkets en Perú",
     description:
-      "POS, inventario, fiado digital, SUNAT y delivery en una sola app. Cobrá con Yape, sin comisión.",
+      "POS, inventario, fiado digital, SUNAT y delivery en una sola app. Cobra con Yape, sin comisión.",
     url: "https://www.buleje.pe/negocios",
     type: "website",
     locale: "es_PE",
@@ -110,7 +114,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Software para bodegas y minimarkets en Perú",
     description:
-      "POS, inventario, fiado digital, SUNAT y delivery en una sola app. Cobrá con Yape, sin comisión.",
+      "POS, inventario, fiado digital, SUNAT y delivery en una sola app. Cobra con Yape, sin comisión.",
     images: ["/api/og/negocios"],
   },
 };
@@ -188,22 +192,22 @@ async function BulejeJsonLd() {
       {
         "@type": "HowToStep",
         position: 1,
-        name: "Registrate gratis",
-        text: "Creá tu cuenta en buleje.pe/abrir-tienda. No pedimos tarjeta de crédito.",
+        name: "Regístrate gratis",
+        text: "Crea tu cuenta en buleje.pe/abrir-tienda. No pedimos tarjeta de crédito.",
         url: `${baseUrl}/abrir-tienda`,
       },
       {
         "@type": "HowToStep",
         position: 2,
-        name: "Cargá tus productos y zonas de delivery",
-        text: "Subí tu catálogo con precios y stock, y definí las zonas a las que repartís. Si querés, hacemos el setup 1-a-1 contigo.",
+        name: "Carga tus productos y zonas de delivery",
+        text: "Sube tu catálogo con precios y stock, y define las zonas a las que repartes. Si quieres, hacemos el setup 1-a-1 contigo.",
         url: `${baseUrl}/abrir-tienda`,
       },
       {
         "@type": "HowToStep",
         position: 3,
-        name: "Compartí tu tienda y recibí pedidos",
-        text: "Compartí el link de tu tienda. Recibís los pedidos por WhatsApp y cobrás con Yape, Plin, efectivo o tarjeta, directo a tu cuenta.",
+        name: "Comparte tu tienda y recibe pedidos",
+        text: "Comparte el link de tu tienda. Recibes los pedidos por WhatsApp y cobras con Yape, Plin, efectivo o tarjeta, directo a tu cuenta.",
         url: `${baseUrl}/negocios`,
       },
     ],
@@ -246,12 +250,13 @@ function B2BHero() {
               <Store className="h-4 w-4" strokeWidth={2} />
               Software para tu negocio
             </p>
-            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+            <h1 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               Un solo sistema para{" "}
               <span className="italic font-serif text-[var(--accent)]">vender, cobrar y crecer.</span>
-            </h2>
+            </h1>
             <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed max-w-xl">
-              POS, inventario, delivery, fiado digital y boletas SUNAT — todo
+              La plataforma de comercio para los negocios del Perú: POS,
+              inventario, delivery, fiado digital y boletas SUNAT — todo
               integrado, desde tu celular. Sin sistemas caros ni técnicos.
             </p>
 
@@ -275,7 +280,7 @@ function B2BHero() {
               {[
                 { icon: ShieldCheck, label: "0% comisión por venta" },
                 { icon: Sparkles, label: "Listo en 5 minutos" },
-                { icon: Wallet, label: "Cobrás con Yape/Plin" },
+                { icon: Wallet, label: "Cobras con Yape/Plin" },
               ].map((c) => (
                 <span
                   key={c.label}
@@ -300,28 +305,34 @@ function B2BHero() {
               className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/15 blur-3xl"
             />
 
-            {/* Chips flotantes — refuerzan el pitch */}
-            <div className="absolute -left-2 top-12 z-20 hidden sm:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Wallet className="h-4 w-4" strokeWidth={2} />
-              </span>
-              <div className="leading-tight">
-                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Yape recibido</p>
-                <p className="text-xs font-extrabold text-[var(--text-primary)] tabular-nums">+ S/ 28.50</p>
+            {/* Wrapper al ANCHO EXACTO del teléfono — ancla los chips a sus
+                bordes (antes flotaban en el vacío del contenedor ancho). */}
+            <div className="relative w-[300px] sm:w-[340px]">
+              {/* Chip Yape — cuelga del borde IZQUIERDO, casi todo afuera (solo
+                  besa el borde), arriba. No tapa el monto. Solo lg: hay gutter. */}
+              <div className="absolute left-0 top-16 -translate-x-[94%] z-20 hidden lg:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <Wallet className="h-4 w-4" strokeWidth={2} />
+                </span>
+                <div className="leading-tight">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Yape recibido</p>
+                  <p className="text-xs font-extrabold text-[var(--text-primary)] tabular-nums">+ S/ 28.50</p>
+                </div>
               </div>
-            </div>
-            <div className="absolute -left-4 bottom-20 z-20 hidden sm:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--data-success-500)]/15 text-[var(--data-success-600,#059669)]">
-                <Truck className="h-4 w-4" strokeWidth={2} />
-              </span>
-              <div className="leading-tight">
-                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">En camino</p>
-                <p className="text-xs font-extrabold text-[var(--text-primary)]">Marco · 12 min</p>
+              {/* Chip Delivery — también cuelga del borde IZQUIERDO, abajo (el
+                  gutter derecho es chico y se recortaba en el viewport). */}
+              <div className="absolute left-0 bottom-24 -translate-x-[94%] z-20 hidden lg:flex items-center gap-1.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-lg)]">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--data-success-500)]/15 text-[var(--data-success-600,#059669)]">
+                  <Truck className="h-4 w-4" strokeWidth={2} />
+                </span>
+                <div className="leading-tight">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">En camino</p>
+                  <p className="text-xs font-extrabold text-[var(--text-primary)]">Marco · 12 min</p>
+                </div>
               </div>
-            </div>
 
-            {/* Frame del teléfono */}
-            <div className="relative w-[300px] sm:w-[340px] rounded-[3rem] bg-[var(--text-primary)] p-3 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/25 ring-1 ring-white/10">
+              {/* Frame del teléfono */}
+              <div className="relative w-full rounded-[3rem] bg-[var(--text-primary)] p-3 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/25 ring-1 ring-white/10">
               {/* Botones laterales del teléfono */}
               <span aria-hidden className="absolute -left-[3px] top-[118px] h-7 w-[3px] rounded-l-full bg-[var(--text-primary)]" />
               <span aria-hidden className="absolute -left-[3px] top-[160px] h-11 w-[3px] rounded-l-full bg-[var(--text-primary)]" />
@@ -445,6 +456,7 @@ function B2BHero() {
                 {/* Home indicator */}
                 <div aria-hidden className="mx-auto my-2.5 h-1 w-28 rounded-full bg-[var(--text-tertiary)]/30" />
               </div>
+              </div>
             </div>
           </div>
         </div>
@@ -470,16 +482,77 @@ function B2BHero() {
   );
 }
 
-// ── Módulos del software — la sección que define a /negocios como landing B2B.
-// Reemplaza a las "categorías populares de productos" (eso es B2C/marketplace).
-const MODULES = [
-  { icon: Smartphone, title: "Punto de venta", tags: ["Yape · Plin", "Ticket al toque", "Caja del día"] },
-  { icon: Package, title: "Inventario", tags: ["Stock en vivo", "Alertas de quiebre", "Control de mermas"] },
-  { icon: Truck, title: "Delivery", tags: ["Zonas y tarifas", "Tracking en vivo", "Tus repartidores"] },
-  { icon: Wallet, title: "Fiado digital", tags: ["Historial", "Recordatorios", "Semáforo de riesgo"] },
-  { icon: Receipt, title: "Facturación SUNAT", tags: ["Boletas", "Cotizaciones", "Guías de remisión"] },
-  { icon: MessageCircle, title: "WhatsApp + IA", tags: ["Pedidos automáticos", "Confirma pagos", "Asistente 24/7"] },
-];
+// ── Módulos del software — BENTO XL con mini-pantallas vivas ───────────────
+// Brandon 2026-06-04 (rediseño "más potente"): el bento ahora abre con un tile
+// POS grande que cuenta la CADENA — un cobro mueve stock + caja + boleta SUNAT
+// (el diferenciador real: "todo en una app"). Cada tile lleva su categoría
+// (Vender/Controlar/Cobrar/Crecer) y debajo se revela el sistema completo:
+// 25 módulos REALES agrupados por lo que resuelven. Concreto, denso, honesto.
+
+// Catálogo completo de módulos, agrupado por lo que resuelve cada uno. Nombres
+// REALES del producto (POS, Fiado, SUNAT, ADRs 077 gift-cards / 117 adelantos /
+// 119 documentos, schema Prisma: PurchaseOrder, Turno, Cotizacion, Treasury…).
+const MODULE_CATEGORIES = [
+  { label: "Vender", icon: Smartphone, modules: ["POS", "Marketplace", "Pedidos WhatsApp", "Promociones", "Cupones", "Gift cards", "Reservas"] },
+  { label: "Controlar", icon: Package, modules: ["Inventario", "Lotes y vencimientos", "Compras", "Proveedores", "Caja y arqueo", "Turnos"] },
+  { label: "Cobrar", icon: Wallet, modules: ["Fiado digital", "Yape y Plin", "Tarjeta", "Boletas SUNAT", "Tesorería", "Adelantos"] },
+  { label: "Crecer", icon: Sparkles, modules: ["Delivery", "WhatsApp + IA", "Reportes", "Lealtad", "Reseñas", "Documentos"] },
+] as const;
+
+// Shell común de cada tile del bento (icono + título + blurb + categoría + visual).
+function BentoCard({
+  className = "",
+  icon: Icon,
+  title,
+  blurb,
+  category,
+  children,
+}: {
+  className?: string;
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  title: string;
+  blurb: string;
+  /** Categoría (Vender / Controlar / Cobrar / Crecer) — pill sutil arriba a la derecha. */
+  category?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <article
+      className={cn(
+        "group relative flex h-full flex-col overflow-hidden rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6 transition-all hover:border-[var(--accent)]/50 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5",
+        className,
+      )}
+    >
+      {/* Glow de marca al hover — profundidad sin coste de render. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[var(--accent)]/10 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
+      />
+      <div className="relative flex items-start gap-3">
+        <span
+          aria-hidden
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+        >
+          <Icon className="h-5 w-5" strokeWidth={1.75} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-extrabold tracking-[-0.01em] text-[var(--text-primary)] leading-none">
+            {title}
+          </h3>
+          <p className="mt-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] leading-tight">
+            {blurb}
+          </p>
+        </div>
+        {category && (
+          <span className="shrink-0 inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+            {category}
+          </span>
+        )}
+      </div>
+      <div className="relative mt-5 flex flex-1 flex-col justify-end">{children}</div>
+    </article>
+  );
+}
 
 function FeaturesGrid() {
   return (
@@ -572,7 +645,7 @@ function FinalCTA() {
             href="/abrir-tienda"
             className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-10 py-5 text-lg font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
           >
-            Abrir mi tienda gratis
+            Probar gratis 1 mes
             <ArrowUpRight
               className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
               strokeWidth={2.5}
@@ -587,7 +660,7 @@ function FinalCTA() {
           </Link>
         </div>
         <p className="mt-6 text-sm text-[var(--text-tertiary)]">
-          Sin tarjeta · Setup en 5 minutos · Cancelás cuando quieras
+          Sin tarjeta · Setup en 5 minutos · Cancelas cuando quieras
         </p>
       </div>
     </section>
@@ -607,20 +680,20 @@ export default async function Home() {
   return (
     <main id="main-content">
       <BulejeJsonLd />
-      {/* h1 SEO sr-only — jerarquía semántica para Googlebot. El B2BHero usa h2
-          para mantener el flujo visual editorial. */}
-      <h1 className="sr-only">
-        Software de gestión para bodegas y minimarkets en Perú — Buleje.
-        POS, inventario, fiado digital, facturación SUNAT, delivery y pagos
-        Yape en un solo sistema, desde tu celular.
-      </h1>
+      {/* Brandon 2026-06-04 SEO (auditoría): el h1 ahora es el TITULAR VISIBLE
+          del hero ("Un solo sistema para vender, cobrar y crecer") — humano, no
+          robótico. Se eliminó el h1 sr-only con keyword-stuffing (anti-patrón
+          que Google penaliza). Las keywords ("software para bodega/minimarket")
+          viven en title, description, el kicker del hero y el JSON-LD. */}
 
       {/* Brandon 2026-06-03 — /negocios = top-funnel INSTITUCIONAL ("qué es
           Buleje · por qué confiar"). Precios completos, Plan Fundador detallado
           y FAQ larga se movieron a /abrir-tienda (página de conversión) para no
           tener dos landings gemelas ni dos fuentes de precio que sincronizar.
           Formas de pago se quitó (lo cubre /abrir-tienda con más detalle).
-          Flujo: hero software → módulos → cómo funciona → nosotros → CTA. */}
+          Flujo (2026-06-04, auditoría): hero (qué es) → módulos (qué incluye) →
+          cómo funciona (¿cómo empiezo?) → para quién (todos los rubros) → por
+          qué confiar (credibilidad) → nosotros (quiénes somos) → CTA. */}
       <B2BHero />
 
       {/* Módulos del software — qué incluye, a alto nivel */}
@@ -628,9 +701,21 @@ export default async function Home() {
         <FeaturesGrid />
       </Reveal>
 
-      {/* Cómo funciona — 4 pasos (único de /negocios) */}
+      {/* Cómo funciona — 4 pasos. Brandon 2026-06-04: subido aquí (justo tras
+          módulos) — responde "¿y cómo empiezo?" mientras el interés está alto,
+          antes de segmentar por rubro (auditoría). Compartido con el home. */}
       <Reveal>
         <ComoFuncionaSection />
+      </Reveal>
+
+      {/* Para quién es — un sistema, todos los rubros (verticales reales) */}
+      <Reveal>
+        <ParaQuienSection />
+      </Reveal>
+
+      {/* Por qué confiar — credibilidad institucional (único de /negocios) */}
+      <Reveal>
+        <PorQueConfiarSection />
       </Reveal>
 
       {/* Nosotros — historia + valores (único de /negocios) */}
