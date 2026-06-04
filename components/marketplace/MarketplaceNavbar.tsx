@@ -232,11 +232,27 @@ function useActiveLivePoll(): boolean {
       if (document.visibilityState === "visible") { fetchActive(); start(); }
       else stop();
     };
-    fetchActive();
-    if (typeof document === "undefined" || document.visibilityState === "visible") start();
+    // Brandon 2026-06-04 (auditoría /negocios): diferir el PRIMER fetch a idle —
+    // el live dot no es crítico para el primer paint y no debe competir con el
+    // render/hidratación inicial (en landings de marketing es latencia pura para
+    // un visitante nuevo). El poll de 60s arranca recién tras el primer kickoff.
+    let idleId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const kickoff = () => {
+      if (cancelled) return;
+      fetchActive();
+      if (typeof document === "undefined" || document.visibilityState === "visible") start();
+    };
+    if (typeof requestIdleCallback === "function") {
+      idleId = requestIdleCallback(kickoff, { timeout: 3000 });
+    } else {
+      timeoutId = setTimeout(kickoff, 1200);
+    }
     document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelled = true;
+      if (idleId != null && typeof cancelIdleCallback === "function") cancelIdleCallback(idleId);
+      if (timeoutId != null) clearTimeout(timeoutId);
       stop();
       document.removeEventListener("visibilitychange", onVis);
     };
@@ -387,7 +403,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const { count: wishlistCount } = useWishlist();
-  const { customer, clear } = useCustomer();
+  const { customer, hydrated: authHydrated, clear } = useCustomer();
   // Carrito — usado en mobile para mostrar conteo encima del icono.
   const { itemCount: cartItemCount } = useMarketplaceCart();
   const { resolved: themeResolved, toggle: toggleTheme } = useTheme();
@@ -694,8 +710,16 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 aria-hidden="true"
               />
 
-              {/* Auth — Avatar circular con iniciales o Ingresar */}
-              {customer ? (
+              {/* Auth — Avatar circular con iniciales o Ingresar.
+                  Brandon 2026-06-04 (auditoría): skeleton estable hasta que el
+                  customer-context termine de hidratar — evita el flicker
+                  "Ingresar → avatar" para usuarios ya logueados. */}
+              {!authHydrated ? (
+                <div
+                  aria-hidden="true"
+                  className="h-10 w-[104px] rounded-full bg-[var(--surface-sunken)] animate-pulse"
+                />
+              ) : customer ? (
                 <div className="relative" ref={userMenuRef} data-tour="user-menu">
                   <button
                     onClick={() => setUserMenuOpen((o) => !o)}
@@ -939,8 +963,14 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 </div>
               </form>
 
-              {/* User — iniciales o ícono. Compactado a h-10. */}
-              {customer ? (
+              {/* User — iniciales o ícono. Compactado a h-10.
+                  Skeleton estable hasta hidratar auth (anti-flicker, auditoría). */}
+              {!authHydrated ? (
+                <div
+                  aria-hidden="true"
+                  className="shrink-0 h-9 w-9 rounded-full bg-[var(--surface-sunken)] animate-pulse"
+                />
+              ) : customer ? (
                 <Link
                   href="/marketplace/mi-cuenta"
                   aria-label={`Cuenta de ${customer.name ?? "usuario"}`}

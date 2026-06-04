@@ -71,10 +71,10 @@ const cuentaLinks = [
   { href: "/cuenta/notificaciones", label: "Notificaciones" },
 ];
 
-// ── Columna 3: Vendé en Buleje ──────────────────────────────────────────
+// ── Columna 3: Vende en Buleje ──────────────────────────────────────────
 const businessLinks = [
-  { href: "/vender", label: "Vendé en Buleje" },
-  { href: "/vender/registro", label: "Registrá tu tienda" },
+  { href: "/vender", label: "Vende en Buleje" },
+  { href: "/vender/registro", label: "Registra tu tienda" },
   { href: "/planes", label: "Planes y precios" },
   { href: "/vender/mi-tienda", label: "Seller Central" },
   { href: "/negocios", label: "Software para bodegas" },
@@ -266,7 +266,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
 
   const isStoreMode = isStoreModePath(pathname);
   // Mayo 2026: footer simplificado en landing pages — antes 5 columnas
-  // (Marketplace / Mi Cuenta / Vendé en Buleje / Ayuda / Más) era aspiracional
+  // (Marketplace / Mi Cuenta / Vende en Buleje / Ayuda / Más) era aspiracional
   // para el tamaño actual del negocio y proyectaba desconfianza.
   // Brandon 2026-06-03: /negocios agregado para paridad con /abrir-tienda —
   // ambas son landings de marketing y deben caer SIEMPRE en el mismo modo de
@@ -537,13 +537,13 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                     className="group inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl bg-emerald-500 px-5 text-sm font-extrabold text-white transition-all hover:bg-emerald-400 shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)] w-full lg:w-auto"
                   >
                     <WhatsAppIcon className="h-5 w-5" />
-                    Pedí por WhatsApp
+                    Pide por WhatsApp
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} aria-hidden />
                   </a>
                 );
               })()}
               <div className="flex items-center gap-2.5 justify-center lg:justify-end">
-                <span className="text-sm font-semibold text-white/50">O seguinos</span>
+                <span className="text-sm font-semibold text-white/50">O síguenos</span>
                 <a href={fbUrl || hp.footerFacebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors">
                   <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
@@ -627,13 +627,13 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                     className="group inline-flex items-center justify-center gap-3 h-14 px-6 w-full lg:w-auto rounded-2xl bg-emerald-500 text-white text-base font-extrabold hover:bg-emerald-400 transition-all shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)] hover:shadow-[0_8px_40px_-4px_rgba(16,185,129,0.6)]"
                   >
                     <WhatsAppIcon className="h-6 w-6" />
-                    Hacé tu pedido por WhatsApp
+                    Haz tu pedido por WhatsApp
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} aria-hidden />
                   </a>
                 );
               })()}
               <div className="flex items-center gap-2.5 justify-center lg:justify-end">
-                <span className="text-sm font-semibold text-white/55">O seguinos</span>
+                <span className="text-sm font-semibold text-white/55">O síguenos</span>
                 <a
                   href={fbUrl || hp.footerFacebook}
                   target="_blank"

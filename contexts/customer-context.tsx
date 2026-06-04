@@ -55,6 +55,10 @@ export function isCustomerProfileComplete(c: Customer | null): boolean {
 
 type CustomerCtx = {
   customer: Customer | null;
+  /** false hasta que terminó la hidratación de auth (localStorage o cookie /me).
+   *  El navbar muestra un skeleton mientras sea false, para no parpadear
+   *  "Ingresar" → avatar en usuarios ya logueados. */
+  hydrated: boolean;
   /** Lista de todas las cuentas guardadas en este dispositivo (multi-account). */
   accounts: Customer[];
   showModal: boolean;
@@ -128,6 +132,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const [openMode, setOpenMode] = useState<"order" | "profile">("order");
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [orderStatusModalOpen, setOrderStatusModalOpen] = useState(false);
+  // Brandon 2026-06-04 (auditoría /negocios): true cuando terminó la hidratación
+  // de auth (localStorage o /api/auth/customer/me). El navbar lo usa para mostrar
+  // un skeleton estable en vez de parpadear "Ingresar" → avatar.
+  const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from localStorage after mount — null during SSR to avoid mismatch.
   // Si no hay localStorage (primera visita en este dispositivo) pero SÍ existe
@@ -163,6 +171,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         } catch {}
       } catch {
         /* fire-and-forget — si falla, queda null */
+      } finally {
+        if (!cancelled) setHydrated(true);
       }
     };
 
@@ -184,6 +194,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.name) {
           startTransition(() => setCustomer(parsed));
+          setHydrated(true);
           return; // localStorage suficiente
         }
       }
@@ -312,7 +323,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   return (
     <CustomerContext.Provider
       value={{
-        customer, accounts, showModal, openMode, accountModalOpen, orderStatusModalOpen,
+        customer, hydrated, accounts, showModal, openMode, accountModalOpen, orderStatusModalOpen,
         register, switchAccount, removeAccount,
         openModal, closeModal, openAccountModal, closeAccountModal,
         openOrderStatusModal, closeOrderStatusModal, clear, findByPhone,

@@ -83,6 +83,9 @@ vi.mock("framer-motion", () => {
 vi.mock("@/contexts/customer-context", () => ({
   useCustomer: () => ({
     customer: null,
+    // Brandon 2026-06-04: el navbar muestra skeleton hasta hydrated=true.
+    // En el test simulamos auth ya hidratada para ver el estado real (Ingresar).
+    hydrated: true,
     isLoggedIn: false,
     clear: vi.fn(),
     refresh: vi.fn(),

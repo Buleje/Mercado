@@ -98,14 +98,36 @@ export default function LiveChatWidget() {
   useEffect(() => {
     if (!phone) return;
     let mounted = true;
-    (async () => { if (mounted) await fetchMessages(); })();
     // Perf 2026-06-01: 15s con el chat ABIERTO (conversación en vivo), 30s
     // CERRADO (solo refrescar el badge de no-leídos). Antes 15s fijo en TODA
     // página para todo cliente logueado → el doble de invocaciones Vercel +
     // batería. Al abrir, el effect re-corre y refresca al instante.
     const everyMs = open ? 15000 : 30000;
-    intervalRef.current = setInterval(fetchMessages, everyMs);
-    return () => { mounted = false; if (intervalRef.current) clearInterval(intervalRef.current); };
+    // Brandon 2026-06-04 (auditoría chrome global): con el chat CERRADO, diferir
+    // el primer fetch + arranque del poll a idle — no debe competir con el primer
+    // paint/hidratación de cada navegación (el badge de no-leídos aparece un tick
+    // después, imperceptible). Si el usuario YA abrió el chat (interacción),
+    // refrescamos de inmediato.
+    let idleId: number | null = null;
+    let kickoffTimeout: ReturnType<typeof setTimeout> | null = null;
+    const kickoff = () => {
+      if (!mounted) return;
+      void fetchMessages();
+      intervalRef.current = setInterval(fetchMessages, everyMs);
+    };
+    if (open) {
+      kickoff();
+    } else if (typeof requestIdleCallback === "function") {
+      idleId = requestIdleCallback(kickoff, { timeout: 4000 });
+    } else {
+      kickoffTimeout = setTimeout(kickoff, 1500);
+    }
+    return () => {
+      mounted = false;
+      if (idleId != null && typeof cancelIdleCallback === "function") cancelIdleCallback(idleId);
+      if (kickoffTimeout != null) clearTimeout(kickoffTimeout);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [phone, fetchMessages, open]);
 
   useEffect(() => {
