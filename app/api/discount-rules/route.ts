@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logAudit } from "@/lib/audit-logger";
 
 // P0 Security (2026-06-04): antes `const TENANT="main"` hardcodeado permitía que
 // un admin de otro tenant leyera/creara promos del tenant "main" (fuga + escritura
@@ -75,6 +76,17 @@ export async function POST(req: NextRequest) {
       fechaInicio: new Date(d.fechaInicio),
       fechaFin: new Date(d.fechaFin),
       activa: d.activa,
+    });
+
+    // Ley 29733 art. 23-25: registrar creación de promos (rastro de quién/cuándo).
+    logAudit({
+      req,
+      action: "CREATE",
+      entity: "Promotion",
+      entityId: rule.id,
+      detail: `Regla de descuento "${d.nombre}" (${d.tipo} ${d.valor}) creada`,
+      user: auth.username,
+      tenantId: auth.tenantId,
     });
 
     return NextResponse.json(mapRule(rule), { status: 201 });

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logAudit } from "@/lib/audit-logger";
 
 // Round 21 P0 (Security): const TENANT="main" hardcoded permitía que un admin
 // de tenant B operara sobre rules del tenant "main". Reemplazado por
@@ -36,6 +37,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
     if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    // Ley 29733 art. 23-25: registrar modificación de promo (quién/cuándo).
+    logAudit({
+      req,
+      action: "UPDATE",
+      entity: "Promotion",
+      entityId: id,
+      detail: `Regla de descuento "${updated.nombre}" actualizada (activa=${updated.activa})`,
+      user: auth.username,
+      tenantId: auth.tenantId,
+    });
+
     return NextResponse.json({
       ...updated,
       categorias:  (() => { try { return JSON.parse(updated.categorias); } catch { return []; } })(),
@@ -55,12 +67,29 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
+    // Leer nombre antes de borrar para un detail de auditoría legible.
+    const existing = await prisma.discountRule.findFirst({
+      where: { id, tenantId: auth.tenantId },
+      select: { nombre: true },
+    });
     const result = await prisma.discountRule.deleteMany({
       where: { id, tenantId: auth.tenantId },
     });
     if (result.count === 0) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+
+    // Ley 29733 art. 23-25: registrar eliminación de promo (quién/cuándo).
+    logAudit({
+      req,
+      action: "DELETE",
+      entity: "Promotion",
+      entityId: id,
+      detail: `Regla de descuento "${existing?.nombre ?? id}" eliminada`,
+      user: auth.username,
+      tenantId: auth.tenantId,
+    });
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[discount-rules] DELETE error", { err: e instanceof Error ? e.message : String(e) });
