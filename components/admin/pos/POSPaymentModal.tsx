@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import Image from "next/image";
+import QRCode from "qrcode";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   X,
@@ -389,6 +389,16 @@ export default function POSPaymentModal({
   const [plinNumber, setPlinNumber] = useState(() => {
     try { return localStorage.getItem("plin-number") || ""; } catch { return ""; }
   });
+
+  // QR generado localmente (chart.googleapis.com está muerto desde 2019).
+  // Se recalcula cuando cambia el método activo o el número guardado.
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const num = currentMethod === "yape" ? yapeNumber : plinNumber;
+    if (!showQR || !/^\+?\d{6,15}$/.test(num)) { setQrDataUrl(null); return; }
+    QRCode.toDataURL(num, { width: 256, margin: 1, color: { dark: "#1a3d2e", light: "#ffffff" } })
+      .then(setQrDataUrl).catch(() => setQrDataUrl(null));
+  }, [showQR, currentMethod, yapeNumber, plinNumber]);
 
   // Estado para nuevo cliente inline
   const [showNewCustomer, setShowNewCustomer] = useState(false);
@@ -817,7 +827,7 @@ export default function POSPaymentModal({
                     const h2 = doc.createElement("h2");
                     h2.textContent = `Paga con ${isYape ? "Yape" : "Plin"}`;
                     const img = doc.createElement("img");
-                    img.src = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(savedNumber)}&choe=UTF-8`;
+                    if (qrDataUrl) img.src = qrDataUrl;
                     img.width = 250;
                     img.height = 250;
                     img.alt = "QR";
@@ -878,15 +888,16 @@ export default function POSPaymentModal({
                         )}
                       </div>
 
-                      {/* QR basado en el número guardado */}
-                      {savedNumber ? (
+                      {/* QR basado en el número guardado (generado localmente) */}
+                      {savedNumber && qrDataUrl ? (
                         <div className="text-center">
-                          <Image
-                            src={`https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=${encodeURIComponent(savedNumber)}&choe=UTF-8`}
+                          {/* eslint-disable-next-line @next/next/no-img-element -- data URL local, next/image no aplica */}
+                          <img
+                            src={qrDataUrl}
                             alt={`QR ${currentMethod}`}
                             width={180}
                             height={180}
-                            className="mx-auto rounded-lg"
+                            className="mx-auto rounded-lg bg-white p-1"
                           />
                           <p className="text-xs text-[var(--text-tertiary)] mt-1">Muestrale este QR al cliente</p>
                         </div>

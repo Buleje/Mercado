@@ -1,8 +1,9 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
+import QRCode from "qrcode";
 import { X, Printer, MessageCircle, Banknote, Smartphone, CreditCard } from "@buleje/design-system/icons";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -123,9 +124,14 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
     setTimeout(() => setSending(false), 1000);
   };
 
-  const qrUrl = business.yapePhone
-    ? `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(business.yapePhone)}&choe=UTF-8`
-    : null;
+  // QR de Yape generado localmente (chart.googleapis.com está muerto desde 2019).
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const phone = business.yapePhone?.trim();
+    if (!phone) { setQrUrl(null); return; }
+    QRCode.toDataURL(phone, { width: 150, margin: 1, color: { dark: "#000000", light: "#ffffff" } })
+      .then(setQrUrl).catch(() => setQrUrl(null));
+  }, [business.yapePhone]);
 
   return (
     <>
@@ -359,7 +365,8 @@ export default function TicketPreview({ ticket, business, onClose }: Props) {
                 <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
                   Paga con Yape
                 </p>
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element -- data URL local, next/image no aplica */}
+                <img
                   src={qrUrl}
                   alt="QR Yape"
                   className="mx-auto"

@@ -256,7 +256,9 @@ export default function KardexTab() {
     const inTotal = allLines.reduce((sum, line) => sum + line.qtyIn, 0);
     const outTotal = allLines.reduce((sum, line) => sum + line.qtyOut, 0);
     const costTotal = allLines.filter((line) => line.type === "compra").reduce((sum, line) => sum + line.totalCost, 0);
-    const lastBalance = allLines[allLines.length - 1]?.balance ?? product?.stock ?? 0;
+    // getByProduct ordena createdAt desc (más nuevo primero) → el saldo actual
+    // es allLines[0], NO el último (que es el movimiento más viejo).
+    const lastBalance = allLines[0]?.balance ?? product?.stock ?? 0;
     return { inTotal, outTotal, lastBalance, costTotal };
   }, [allLines, product]);
 

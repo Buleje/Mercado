@@ -19,6 +19,7 @@ import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import Image from "next/image";
+import QRCode from "qrcode";
 import { cn, exportToCSV } from "@/lib/utils";
 import { detectCategoryFromName } from "@/lib/category-detector";
 import { exportToExcel } from "@/lib/export-excel";
@@ -377,6 +378,14 @@ export default function InventoryTab() {
 
   // Mejora 6 nueva: QR modal
   const [showQRProduct, setShowQRProduct] = useState<DbProduct | null>(null);
+  // QR generado localmente (chart.googleapis.com está muerto desde 2019).
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!showQRProduct) { setQrDataUrl(null); return; }
+    const payload = `PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`;
+    QRCode.toDataURL(payload, { width: 300, margin: 2, color: { dark: "#1a3d2e", light: "#ffffff" } })
+      .then(setQrDataUrl).catch(() => setQrDataUrl(null));
+  }, [showQRProduct]);
 
   // Mejora visual: Toggle de columnas extendidas
   const [showExtendedCols, setShowExtendedCols] = useState(() => {
@@ -922,8 +931,10 @@ export default function InventoryTab() {
   const activeProducts = products.filter(p => p.active).length;
   const lowStockCount = products.filter(isLowStock).length;
   const expiringSoonCount = products.filter(isExpiringSoon).length;
+  // Valuación a COSTO (no precio venta) — para SUNAT el inventario se valúa al
+  // costo de adquisición. Fallback price*0.7 igual que dashboard/analytics.
   const totalStockValue = products.reduce(
-    (s, p) => s + (p.stock ?? 0) * p.price, 0
+    (s, p) => s + (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7), 0
   );
 
   // ── Mejora P-7: Detectar productos duplicados por similitud de nombre ────
@@ -1305,9 +1316,9 @@ export default function InventoryTab() {
           <div className={cn("h-1 rounded-full mt-2", expiringSoonCount > 0 ? "bg-[var(--data-warning-500)]" : "bg-[var(--rule-soft)] dark:bg-zinc-700")} />
         </div>
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
-          <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Valor total</p>
+          <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">Valor inventario (costo)</p>
           <p className="text-2xl font-mono font-bold text-primary mt-1">{fmt(totalStockValue)}</p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">En inventario</p>
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500 mt-1">Valuado a costo</p>
           <div className="h-1 rounded-full mt-2 bg-[var(--accent-soft)]" />
         </div>
       </div>
@@ -2902,22 +2913,28 @@ export default function InventoryTab() {
                   <X className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>
-              <Image
-                src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}`}
-                alt={`QR ${showQRProduct.name}`}
-                className="mx-auto"
-                width={200}
-                height={200}
-              />
+              {qrDataUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element -- data URL local, next/image no aplica */
+                <img
+                  src={qrDataUrl}
+                  alt={`QR ${showQRProduct.name}`}
+                  className="mx-auto bg-white p-2 rounded-lg"
+                  width={200}
+                  height={200}
+                />
+              ) : (
+                <div className="mx-auto h-[200px] w-[200px] animate-pulse rounded-lg bg-[var(--surface-sunken)]" />
+              )}
               <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{showQRProduct.name}</p>
               <p className="text-lg font-extrabold text-primary">S/{Number(showQRProduct.price).toFixed(2)}</p>
               {showQRProduct.barcode && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">SKU: {showQRProduct.barcode}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={() => {
+                    if (!qrDataUrl) return;
                     const w = window.open("", "_blank");
                     if (w) {
-                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:var(--color-primary)">S/${Number(showQRProduct.price).toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
+                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto;width:300px;height:300px}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="${qrDataUrl}" alt="QR" /><p style="font-size:24px;font-weight:bold;color:var(--color-primary)">S/${Number(showQRProduct.price).toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
                       w.document.close();
                     }
                   }}
@@ -2926,9 +2943,13 @@ export default function InventoryTab() {
                   Imprimir
                 </button>
                 <a
-                  href={`https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}`}
+                  href={qrDataUrl ?? "#"}
                   download={`qr-${showQRProduct.name.replace(/\s+/g, "-")}.png`}
-                  className="flex-1 py-2 rounded-lg bg-primary text-white font-bold text-xs hover:bg-primary-dark transition-colors flex items-center justify-center gap-1.5"
+                  aria-disabled={!qrDataUrl}
+                  className={cn(
+                    "flex-1 py-2 rounded-lg bg-primary text-white font-bold text-xs hover:bg-primary-dark transition-colors flex items-center justify-center gap-1.5",
+                    !qrDataUrl && "pointer-events-none opacity-50"
+                  )}
                 >
                   Descargar
                 </a>
