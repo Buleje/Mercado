@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export interface CouponItem {
   id: string;
@@ -59,7 +60,7 @@ export function useMarketplaceCoupons() {
     try {
       const res = await fetch("/api/marketplace/coupons", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           code: form.code,
           description: form.description,
@@ -82,7 +83,7 @@ export function useMarketplaceCoupons() {
   const toggleActive = async (id: string, active: boolean) => {
     await fetch(`/api/marketplace/coupons/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ active: !active }),
     });
     fetchCoupons();
@@ -90,7 +91,10 @@ export function useMarketplaceCoupons() {
 
   const deleteCoupon = async (id: string) => {
     if (!confirm("¿Eliminar este cupón?")) return;
-    await fetch(`/api/marketplace/coupons/${id}`, { method: "DELETE" });
+    await fetch(`/api/marketplace/coupons/${id}`, {
+      method: "DELETE",
+      headers: csrfHeaders(),
+    });
     fetchCoupons();
   };
 

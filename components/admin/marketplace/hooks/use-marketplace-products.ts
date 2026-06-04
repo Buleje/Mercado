@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export interface MarketplaceProductBoost {
   id: string;
@@ -65,7 +66,10 @@ export function useMarketplaceProducts() {
     setSyncResult(null);
     setError(null);
     try {
-      const res = await fetch("/api/marketplace/stores/my/sync", { method: "POST" });
+      const res = await fetch("/api/marketplace/stores/my/sync", {
+        method: "POST",
+        headers: csrfHeaders(),
+      });
       if (!res.ok) throw new Error("Error al sincronizar");
       const data = await res.json();
       const d = data.data;
@@ -84,7 +88,7 @@ export function useMarketplaceProducts() {
     try {
       const res = await fetch(`/api/marketplace/stores/my/products/${product.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ isActive: !product.isActive }),
       });
       if (!res.ok) throw new Error();
@@ -106,7 +110,7 @@ export function useMarketplaceProducts() {
     try {
       const res = await fetch("/api/marketplace/stores/my/products/bulk", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids, isActive }),
       });
       if (!res.ok) throw new Error();
@@ -134,7 +138,7 @@ export function useMarketplaceProducts() {
     try {
       const res = await fetch(`/api/marketplace/stores/my/products/${productId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(patch),
       });
       if (!res.ok) throw new Error();
@@ -175,7 +179,7 @@ export function useMarketplaceProducts() {
       const end = new Date(now.getTime() + payload.days * 24 * 60 * 60 * 1000);
       const res = await fetch("/api/marketplace/sponsored", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           storeId,
           productId,
@@ -203,6 +207,7 @@ export function useMarketplaceProducts() {
     try {
       const res = await fetch(`/api/marketplace/sponsored/${boostId}`, {
         method: "DELETE",
+        headers: csrfHeaders(),
       });
       if (!res.ok) throw new Error();
       load();
