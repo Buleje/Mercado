@@ -8,9 +8,8 @@
  *
  * Retorna el PaymentApproval (captura del Yape/Plin/Transfer) asociado
  * a la Order. Usado por:
- *   - components/admin/OrdersTab/OrdersDetailPanel.tsx
- *   - components/admin/unified/marketplace/OrderDetailDrawer.tsx
- *   - components/superadmin/orders/...
+ *   - components/admin/OrdersTab/OrdersDetailPanel.tsx (vía PaymentProofViewer)
+ *   - app/superadmin/orders/OrdersClient.tsx (vía PaymentProofViewer)
  *
  * El admin que consulte debe pertenecer al mismo tenant que la Order
  * (excepto superadmin que puede ver cualquiera).

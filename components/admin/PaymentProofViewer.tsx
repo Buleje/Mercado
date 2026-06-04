@@ -8,8 +8,7 @@
  *
  * Usado por:
  *   - components/admin/OrdersTab/OrdersDetailPanel.tsx (tab=pedidos)
- *   - components/admin/unified/marketplace/OrderDetailDrawer.tsx (tab=marketplace)
- *   - components/superadmin/orders/... (modal superadmin)
+ *   - app/superadmin/orders/OrdersClient.tsx (modal superadmin)
  *
  * UX:
  *   - Loader mientras hace fetch
