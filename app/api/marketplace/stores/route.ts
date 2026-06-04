@@ -735,7 +735,9 @@ const StoreBodySchema = z.object({
   logoUrl:        z.string().max(500).optional(),
   category:       z.string().max(100).optional(),
   zone:           z.string().max(100).optional(),
-  commissionRate:  z.number().min(0).max(30).optional(),
+  // P0 Security (2026-06-04): commissionRate REMOVIDO del schema — un admin-tenant
+  // (vendor) podía PUT {commissionRate:0} por curl y dejar de pagar comisión. La
+  // comisión la gestiona SOLO superadmin por su tooling. Acá se ignora siempre.
   isActive:        z.boolean().optional(),
   vacationMode:    z.boolean().optional(),
   vacationMessage: z.string().max(500).optional(),
@@ -828,7 +830,7 @@ export async function POST(req: NextRequest) {
         logo:        parsed.data.logoUrl ?? null,
         category:    parsed.data.category ?? "bodega",
         zone:        parsed.data.zone ?? null,
-        commission:  parsed.data.commissionRate ?? 5.0,
+        commission:  5.0,
         isPublished:     parsed.data.isActive ?? false,
         vacationMode:    parsed.data.vacationMode ?? false,
         vacationMessage: parsed.data.vacationMessage ?? null,
@@ -931,7 +933,7 @@ export async function PUT(req: NextRequest) {
         logo:            parsed.data.logoUrl ?? existing.logo,
         category:        parsed.data.category ?? existing.category,
         zone:            parsed.data.zone ?? existing.zone,
-        commission:      parsed.data.commissionRate ?? existing.commission,
+        commission:      existing.commission,
         isPublished:     parsed.data.isActive ?? existing.isPublished,
         vacationMode:    parsed.data.vacationMode ?? existing.vacationMode,
         vacationMessage: parsed.data.vacationMessage ?? existing.vacationMessage,

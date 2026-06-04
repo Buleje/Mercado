@@ -28,6 +28,9 @@ const SaleItemSchema = z.object({
   quantity: z.number().positive(),
   name: z.string().max(200),
   unit: z.string().max(50).default(""),
+  // P0 fix (2026-06-04): descuento por ítem (% 0-100). El server lo valida y capea
+  // por rol; el precio base SIEMPRE viene de DB (este campo solo modifica el %).
+  discount: z.number().min(0).max(100).optional().default(0),
 });
 
 const SaleSchema = z.object({
@@ -196,29 +199,55 @@ async function salesHandler(
       });
     }
   }
+  // P0 fix (2026-06-04): cap de descuento por ítem alineado con el cap global —
+  // cajero ≤15%, admin/owner hasta 100%. El % viene del cliente pero el precio
+  // BASE siempre es el de DB (el cliente no puede inflar el precio).
+  const isPrivilegedRole = auth.role === "admin" || auth.role === "owner";
+  const MAX_ITEM_DISCOUNT_CAJERO = 15; // % máximo para cajero por ítem
+
   // Reescribir items con precio de DB (rechaza items con productId desconocido).
   const itemsWithCost = data.items
     .filter(i => priceCostMap.has(i.productId))
     .map(i => {
       const dbPrice = priceCostMap.get(i.productId)!;
+      // Capear el descuento por ítem según rol (misma lógica que el descuento global).
+      const rawDiscount = i.discount ?? 0;
+      const clampedDiscount = isPrivilegedRole
+        ? Math.min(rawDiscount, 100)
+        : Math.min(rawDiscount, MAX_ITEM_DISCOUNT_CAJERO);
+      // Precio neto por unidad = precio DB × (1 − descuento%). Es lo que se cobra
+      // y lo que se persiste en SaleItem.price (sin columna nueva ni migración).
+      const netUnit = dbPrice.price * (1 - clampedDiscount / 100);
       return {
         ...i,
-        price: dbPrice.price, // ⚠ override: NO confiar en cliente
+        price: netUnit, // ⚠ neto sobre precio DB (NO se confía en el precio del cliente)
         costPrice: dbPrice.costPrice,
       };
     });
   if (itemsWithCost.length === 0) {
     return NextResponse.json({ error: "Ningún producto válido" }, { status: 400 });
   }
+
+  // Rechazo explícito si un cajero intenta superar el cap de descuento por ítem.
+  if (!isPrivilegedRole) {
+    const violating = data.items.find(
+      i => priceCostMap.has(i.productId) && (i.discount ?? 0) > MAX_ITEM_DISCOUNT_CAJERO,
+    );
+    if (violating) {
+      return NextResponse.json(
+        { error: `Descuento por ítem excede ${MAX_ITEM_DISCOUNT_CAJERO}% — requiere autorización del admin` },
+        { status: 403 },
+      );
+    }
+  }
   const total = itemsWithCost.reduce((s, i) => s + i.price * i.quantity, 0);
   const totalCogs = itemsWithCost.reduce((s, i) => s + (i.costPrice ?? i.price * 0.7) * i.quantity, 0);
 
-  // SECURITY 2026-05-05 (audit POS #3): tope de descuento server-side.
-  // Antes el cajero podía aplicar `descuentoMonto = total` y vender a S/0
-  // (gratis). Ahora el cajero solo puede descontar hasta 15% del subtotal;
-  // descuentos mayores requieren rol admin/owner.
+  // SECURITY 2026-05-05 (audit POS #3): tope de descuento GLOBAL server-side.
+  // El descuento global se aplica SOBRE el subtotal ya reducido por ítem — sin
+  // doble conteo (el ítem reduce price, el global reduce el total resultante).
+  // `isPrivilegedRole` ya está declarado arriba (cap de descuento por ítem).
   const requestedDiscount = data.descuentoMonto ?? 0;
-  const isPrivilegedRole = auth.role === "admin" || auth.role === "owner";
   const maxCashierDiscount = total * 0.15;
   const discountAmount = isPrivilegedRole
     ? Math.min(requestedDiscount, total) // admin: hasta 100%

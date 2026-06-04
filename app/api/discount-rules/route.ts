@@ -6,7 +6,9 @@ import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-const TENANT = "main";
+// P0 Security (2026-06-04): antes `const TENANT="main"` hardcodeado permitía que
+// un admin de otro tenant leyera/creara promos del tenant "main" (fuga + escritura
+// cross-tenant). Ahora cada handler usa auth.tenantId — mismo fix que [id]/route.ts.
 
 const DiscountRuleSchema = z.object({
   nombre:      z.string().min(1).max(200),
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req, ["admin", "cajero"]);
     if (auth instanceof NextResponse) return auth;
 
-    const rules = await DiscountRulesDB.list(TENANT);
+    const rules = await DiscountRulesDB.list(auth.tenantId);
     return NextResponse.json(rules.map(mapRule));
   } catch (e) {
     logger.error("[discount-rules] GET error", { err: e instanceof Error ? e.message : String(e) });
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
 
     const d = parsed.data;
-    const rule = await DiscountRulesDB.create(TENANT, {
+    const rule = await DiscountRulesDB.create(auth.tenantId, {
       nombre: d.nombre,
       tipo: d.tipo,
       valor: d.valor,
