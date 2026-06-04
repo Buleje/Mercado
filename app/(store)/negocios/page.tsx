@@ -568,6 +568,10 @@ function FeaturesGrid() {
               Todo tu negocio,{" "}
               <span className="italic font-serif text-[var(--accent)]">en una sola app.</span>
             </h2>
+            <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
+              No te lo contamos con viñetas — te lo mostramos. Así se ve cada
+              módulo trabajando dentro de tu negocio.
+            </p>
           </div>
           <Link
             href="/abrir-tienda"
@@ -578,34 +582,282 @@ function FeaturesGrid() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {MODULES.map((m) => (
-            <article
-              key={m.title}
-              className="group rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 transition-all hover:border-[var(--accent)]/40 hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <span
-                aria-hidden
-                className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4 transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
-              >
-                <m.icon className="h-6 w-6" strokeWidth={1.75} />
-              </span>
-              <h3 className="text-[1.35rem] font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
-                {m.title}
-              </h3>
-              <ul className="mt-3 flex flex-wrap gap-1.5">
-                {m.tags.map((t) => (
-                  <li
-                    key={t}
-                    className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]"
-                  >
-                    <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--accent)]" />
-                    {t}
-                  </li>
+        {/* Bento asimétrico: POS grande (2×2), inventario ancho, fiado+delivery
+            chicos, SUNAT y WhatsApp anchos abajo. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:grid-rows-[repeat(3,minmax(12rem,1fr))] gap-4 sm:gap-5">
+          {/* ── POS — tile grande con mini-pantalla de cobro ── */}
+          <BentoCard
+            icon={Smartphone}
+            title="Punto de venta"
+            blurb="Cobra y todo tu negocio se actualiza solo"
+            category="Vender"
+            className="lg:col-span-2 lg:row-span-2 bg-gradient-to-br from-[var(--accent-soft)]/50 to-[var(--surface-raised)]"
+          >
+            <div className="space-y-3">
+              {/* Mini-estado del día — el POS no solo cobra, es tu caja en vivo. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1">
+                  <span aria-hidden className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-75 animate-ping" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
+                  </span>
+                  <span className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--text-secondary)]">Hoy S/ 2,840</span>
+                  <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-600,#059669)]">+18%</span>
+                </span>
+                <span className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+                  42 pedidos
+                </span>
+              </div>
+
+              {/* Cobro POS con carrito real. */}
+              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4 shadow-[var(--shadow-sm)]">
+                <div className="flex items-center justify-between">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Cobrando · 3 productos</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">09:41</p>
+                </div>
+                <ul className="mt-2.5 space-y-1.5">
+                  {[
+                    { n: "Arroz Costeño 5 kg", v: "18.50" },
+                    { n: "Aceite Primor 1 L", v: "8.50" },
+                    { n: "Gaseosa 1.5 L", v: "1.50" },
+                  ].map((it) => (
+                    <li key={it.n} className="flex items-center justify-between gap-2 text-[length:var(--ts-xs)]">
+                      <span className="truncate text-[var(--text-secondary)]">{it.n}</span>
+                      <span className="shrink-0 font-bold tabular-nums text-[var(--text-primary)]">S/ {it.v}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2.5 flex items-end justify-between border-t border-[var(--rule-soft)] pt-2.5">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</span>
+                  <span className="text-[2rem] font-extrabold tabular-nums tracking-[-0.04em] leading-none text-[var(--text-primary)]">S/ 28.50</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {["Yape", "Plin", "Efectivo", "Tarjeta"].map((m, i) => (
+                    <span
+                      key={m}
+                      className={cn(
+                        "rounded-lg px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold",
+                        i === 0 ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                      )}
+                    >
+                      {m}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-[var(--data-success-500)]/12 px-3 py-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--data-success-600,#059669)] text-white">
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  </span>
+                  <p className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-600,#059669)]">Yape confirmado · S/ 28.50</p>
+                </div>
+              </div>
+
+              {/* La CADENA — un cobro mueve todo el sistema. Este es el diferenciador. */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="mr-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                  Con 1 cobro
+                </span>
+                {["Venta registrada", "Stock −3", "Boleta SUNAT"].map((step) => (
+                  <span key={step} className="inline-flex items-center gap-1 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+                    <Check className="h-3 w-3 text-[var(--data-success-600,#059669)]" strokeWidth={3} />
+                    {step}
+                  </span>
                 ))}
-              </ul>
-            </article>
-          ))}
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* ── Inventario — barras de stock en vivo ── */}
+          <BentoCard
+            icon={Package}
+            title="Inventario"
+            blurb="Stock en vivo + alertas de quiebre"
+            category="Controlar"
+            className="lg:col-span-2"
+          >
+            <ul className="space-y-2.5">
+              {[
+                { n: "Arroz 5kg", pct: 82, tone: "ok" },
+                { n: "Aceite 1L", pct: 44, tone: "warn" },
+                { n: "Balón de gas", pct: 12, tone: "low" },
+              ].map((p) => (
+                <li key={p.n} className="flex items-center gap-3">
+                  <span className="w-24 shrink-0 truncate text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
+                    {p.n}
+                  </span>
+                  <span className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                    <span
+                      className={cn(
+                        "absolute inset-y-0 left-0 rounded-full",
+                        p.tone === "ok" && "bg-[var(--data-success-500)]",
+                        p.tone === "warn" && "bg-[var(--data-warning-500,#f59e0b)]",
+                        p.tone === "low" && "bg-[var(--data-error-500,#ef4444)]",
+                      )}
+                      style={{ width: `${p.pct}%` }}
+                    />
+                  </span>
+                  <span
+                    className={cn(
+                      "w-9 shrink-0 text-right text-[length:var(--ts-2xs)] font-extrabold tabular-nums",
+                      p.tone === "low" ? "text-[var(--data-error-600,#dc2626)]" : "text-[var(--text-tertiary)]",
+                    )}
+                  >
+                    {p.pct}%
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-600,#dc2626)]">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500,#ef4444)] animate-pulse" />
+              1 producto por agotarse
+            </p>
+          </BentoCard>
+
+          {/* ── Fiado digital — semáforo de riesgo ── */}
+          <BentoCard icon={Wallet} title="Fiado digital" blurb="Semáforo de riesgo" category="Cobrar">
+            <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3.5">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
+                  M
+                </span>
+                <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)]">Doña Marta</span>
+                <span className="ml-auto text-[length:var(--ts-xs)] font-extrabold tabular-nums text-[var(--text-primary)]">
+                  S/ 45
+                </span>
+              </div>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500,#f59e0b)] ring-2 ring-[var(--data-warning-500,#f59e0b)]/30" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--surface-sunken)]" />
+                <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700,#b45309)]">
+                  Recordar pago
+                </span>
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* ── Delivery — mini ruta con tracking ── */}
+          <BentoCard icon={Truck} title="Delivery" blurb="Tracking en vivo" category="Crecer">
+            <div className="relative rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3.5">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={2.25} />
+                <span
+                  aria-hidden
+                  className="h-[2px] flex-1 bg-[repeating-linear-gradient(to_right,var(--accent)_0,var(--accent)_4px,transparent_4px,transparent_8px)]"
+                />
+                <span className="relative inline-flex h-4 w-4 items-center justify-center">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500)] opacity-60 animate-ping" />
+                  <span className="relative h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" />
+                </span>
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)]">Marco</span>
+                <span className="rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-600,#059669)]">
+                  12 min
+                </span>
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* ── Facturación SUNAT — mini boleta electrónica ── */}
+          <BentoCard
+            icon={Receipt}
+            title="Facturación SUNAT"
+            blurb="Boletas, guías y notas en regla"
+            category="Controlar"
+            className="lg:col-span-2"
+          >
+            <div className="flex items-center gap-4 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
+              <div className="flex-1 space-y-1.5">
+                <span aria-hidden className="block h-2 w-2/3 rounded-full bg-[var(--surface-sunken)]" />
+                <span aria-hidden className="block h-2 w-full rounded-full bg-[var(--surface-sunken)]" />
+                <span aria-hidden className="block h-2 w-4/5 rounded-full bg-[var(--surface-sunken)]" />
+                <div className="flex items-center justify-between pt-1.5">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Total IGV inc.
+                  </span>
+                  <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">S/ 28.50</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-1.5 border-l border-[var(--rule-soft)] pl-4 text-center">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-600,#059669)]">
+                  <Check className="h-5 w-5" strokeWidth={3} />
+                </span>
+                <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-600,#059669)] leading-tight">
+                  Enviada a<br />SUNAT
+                </span>
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* ── WhatsApp + IA — mini chat con respuesta automática ── */}
+          <BentoCard
+            icon={MessageCircle}
+            title="WhatsApp + IA"
+            blurb="El asistente que vende por ti 24/7"
+            category="Vender"
+            className="lg:col-span-2"
+          >
+            <div className="space-y-2">
+              <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-[var(--surface-sunken)] px-3.5 py-2">
+                <p className="text-[length:var(--ts-xs)] text-[var(--text-primary)]">Hola, ¿tienen balón de gas?</p>
+              </div>
+              <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-[var(--accent)] px-3.5 py-2">
+                <p className="text-[length:var(--ts-xs)] font-medium text-white">
+                  ¡Sí! Balón a S/ 52. ¿Te lo llevo a tu casa?
+                </p>
+              </div>
+              <p className="ml-auto inline-flex w-full items-center justify-end gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                <Sparkles className="h-3 w-3 text-[var(--accent)]" strokeWidth={2.25} />
+                Respondido por la IA en 2 seg
+              </p>
+            </div>
+          </BentoCard>
+        </div>
+
+        {/* ── El sistema completo: 25 módulos agrupados por lo que resuelven ──
+            Las 6 mini-pantallas de arriba son la punta del iceberg. Acá se ve
+            que "todo lo que incluye" es literal — sin cobrar extra por cada uno. */}
+        <div className="mt-4 sm:mt-5 rounded-3xl border border-[var(--rule-soft)] bg-gradient-to-br from-[var(--surface-raised)] to-[var(--accent-soft)]/30 p-6 sm:p-8">
+          <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+                El sistema completo
+              </p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+                Y mucho más —{" "}
+                <span className="italic font-serif text-[var(--accent)]">25+ módulos</span>{" "}
+                en el mismo plan.
+              </h3>
+            </div>
+            <span className="shrink-0 inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 py-2 text-sm font-extrabold text-[var(--text-secondary)]">
+              <Check className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.5} />
+              Sin pagar extra por cada uno
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-7">
+            {MODULE_CATEGORIES.map((cat) => (
+              <div key={cat.label}>
+                <p className="mb-3.5 flex items-center gap-2 text-sm font-extrabold text-[var(--text-primary)]">
+                  <span aria-hidden className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <cat.icon className="h-4 w-4" strokeWidth={2} />
+                  </span>
+                  {cat.label}
+                </p>
+                <ul className="flex flex-wrap gap-1.5">
+                  {cat.modules.map((m) => (
+                    <li
+                      key={m}
+                      className="inline-flex items-center rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/40 hover:text-[var(--text-primary)]"
+                    >
+                      {m}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
