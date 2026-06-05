@@ -59,8 +59,17 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ error: "invalid_id" }, { status: 400 });
     }
     // SECURITY 2026-05-06: si hay sesión admin, JWT prioriza sobre header.
+    // Marketplace cross-tenant (2026-06-05): el modal del marketplace corre bajo
+    // el Host del marketplace (→ x-tenant-id "main" por middleware), pero el
+    // producto pertenece a OTRA tienda. `?storeSlug=` permite leer (público,
+    // read-only) los adicionales de esa tienda sin depender del header reescrito.
     const session = await tryAdmin(req);
-    const tenantId = session ? session.tenantId : await resolveTenantFromHeaders(req);
+    const storeSlugParam = new URL(req.url).searchParams.get("storeSlug");
+    const tenantId = session
+      ? session.tenantId
+      : storeSlugParam
+        ? await resolveTenantSlugToId(storeSlugParam)
+        : await resolveTenantFromHeaders(req);
 
     const groups = await prisma.productModifierGroup.findMany({
       where: { productId, tenantId, isActive: true },

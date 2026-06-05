@@ -151,7 +151,9 @@ export default function FeaturedStoresNearby({ userCoords, radiusKm }: Props) {
               Destacadas cerca tuyo
             </p>
             <h2 id="featured-near-title" className="text-xl sm:text-2xl font-extrabold leading-tight">
-              Las mejores 6 tiendas a tu alrededor
+              {stores && stores.length > 0
+                ? `Las mejores ${stores.length} ${stores.length === 1 ? "tienda" : "tiendas"} a tu alrededor`
+                : "Las mejores tiendas a tu alrededor"}
             </h2>
           </div>
         </div>

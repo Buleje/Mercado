@@ -22,6 +22,8 @@ export type Deal = {
   unit: string;
   storeName: string;
   storeSlug: string;
+  /** Logo de la tienda — avatar en el card. */
+  storeLogo?: string | null;
   /** ISO timestamp cuando termina la oferta */
   endsAt: string;
   isFlash: boolean;

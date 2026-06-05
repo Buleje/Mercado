@@ -180,10 +180,8 @@ const MisPedidosFavoritosStrip = dynamic(
   () => import("@/components/marketplace/MisPedidosFavoritosStrip"),
   { ssr: false, loading: () => null },
 );
-const FeaturedStoresNearby = dynamic(
-  () => import("@/components/marketplace/FeaturedStoresNearby"),
-  { ssr: false, loading: () => null },
-);
+// FeaturedStoresNearby ("tiendas destacadas cerca / mejores 3") REMOVIDO
+// (Brandon 2026-06-05). El dynamic import se eliminó con su sección.
 // Brandon 2026-05-20 v8: MarketplaceStoresView ESTÁTICO (revertido).
 // Antes era `dynamic({ssr:false})` pero el chunk quedaba colgado tras
 // back-nav (skeleton perpetuo, no resolvía el dynamic loader). Trade-off
@@ -1017,15 +1015,8 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           {/* Pedidos favoritos del cliente (localStorage) */}
           <MisPedidosFavoritosStrip />
 
-          {/* Tiendas destacadas cerca de ti (personalizado por GPS).
-              Top 6 dentro del radio (default 50 km — radio actúa como
-              filtro automático multi-ciudad CC ↔ Pucallpa). Hover →
-              drawer lateral con productos destacados + comprar rápido.
-              Wrap con max-w-[1760px] para alinear con el resto de
-              secciones del directorio. */}
-          <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
-            <FeaturedStoresNearby userCoords={userCoords} />
-          </section>
+          {/* "Tiendas destacadas cerca de ti / las mejores 3 de tu alrededor"
+              (FeaturedStoresNearby) REMOVIDO por pedido de Brandon 2026-06-05. */}
         </div>
       )}
 

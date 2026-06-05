@@ -14,13 +14,16 @@ import {
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import SponsoredBadge from "@/components/marketplace/SponsoredBadge";
-import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
+import { useCatalogFilter } from "@/components/marketplace/catalog-filter-context";
 // Grid del catálogo: 1 COLUMNA en mobile (card horizontal full-width estilo
 // PedidosYa — imagen 176px + nombre/precio/CTA visibles, nada cortado), grid
 // vertical multi-columna desde sm. No reusa MARKETPLACE_GRID (que arranca en
 // 2-col) porque el card list horizontal necesita el ancho completo en mobile.
+// Catálogo en la COLUMNA CENTRAL. Brandon pidió 4 por fila en desktop ancho:
+// 2 cols base → 3 en xl → 4 en pantallas anchas. Densidad sin perder
+// legibilidad (las 5-6 cols originales eran diminutas).
 const CATALOG_GRID =
-  "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4";
+  "grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -47,27 +50,6 @@ interface CatalogProduct {
 
 type SortOption = "popular" | "price_asc" | "price_desc" | "newest" | "rating";
 
-const SORT_OPTIONS: { id: SortOption; label: string; icon: React.ReactNode }[] = [
-  { id: "popular", label: "Populares", icon: <Flame className="h-3.5 w-3.5" /> },
-  { id: "price_asc", label: "Menor precio", icon: <TrendingUp className="h-3.5 w-3.5 rotate-180" /> },
-  { id: "price_desc", label: "Mayor precio", icon: <TrendingUp className="h-3.5 w-3.5" /> },
-  { id: "newest", label: "Nuevos", icon: <Sparkles className="h-3.5 w-3.5" /> },
-  { id: "rating", label: "Mejor valorados", icon: <Star className="h-3.5 w-3.5" /> },
-];
-
-const PRODUCT_CATEGORIES = [
-  { id: "todos", label: "Todo" },
-  { id: "abarrotes", label: "Abarrotes" },
-  { id: "bebidas", label: "Bebidas" },
-  { id: "lácteos", label: "Lácteos" },
-  { id: "carnes", label: "Carnes" },
-  { id: "frutas", label: "Frutas" },
-  { id: "verduras", label: "Verduras" },
-  { id: "limpieza", label: "Limpieza" },
-  { id: "snacks", label: "Snacks" },
-  { id: "panadería", label: "Panadería" },
-];
-
 /* ── Adapter: CatalogProduct → UnifiedProductCard shape ───────────────────── */
 
 function toCatalogCardProduct(product: CatalogProduct) {
@@ -81,6 +63,7 @@ function toCatalogCardProduct(product: CatalogProduct) {
     storeId: product.storeId,
     storeProductId: product.storeProductId,
     storeRating: product.storeRating,
+    storeLogo: product.storeLogo,
     unit: product.unit,
     category: product.category ?? undefined,
     stock: product.stock,
@@ -102,8 +85,13 @@ export default function CatalogView({
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortOption>("popular");
-  const [productCategory, setProductCategory] = useState("todos");
+  // Categoría + orden vienen del rail IZQUIERDO (layout 3-col del marketplace)
+  // vía contexto. Sin provider → estado local (otros usos / standalone).
+  const filterCtx = useCatalogFilter();
+  const [localSort, setLocalSort] = useState<SortOption>("popular");
+  const [localCategory, setLocalCategory] = useState("todos");
+  const sort = (filterCtx?.sort ?? localSort) as SortOption;
+  const productCategory = filterCtx?.category ?? localCategory;
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [hasMore, setHasMore] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -203,55 +191,8 @@ export default function CatalogView({
 
   return (
     <div className="space-y-4">
-      {/* Sort pills — grandes, accent token, estilo Holded (sin sombras) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        <span className="hidden sm:inline-flex items-center text-[length:var(--ts-xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mr-2 shrink-0">
-          Ordenar por
-        </span>
-        {SORT_OPTIONS.map((opt) => (
-          <button
-            key={opt.id}
-            onClick={() => setSort(opt.id)}
-            aria-pressed={sort === opt.id}
-            className={cn(
-              "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-semibold whitespace-nowrap border transition-colors shrink-0",
-              sort === opt.id
-                ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
-            )}
-          >
-            <span className="[&>svg]:h-4 [&>svg]:w-4">{opt.icon}</span>
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Category filter pills — grandes y consistentes con sort pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        <span className="hidden sm:inline-flex items-center text-[length:var(--ts-xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mr-2 shrink-0">
-          Categoria
-        </span>
-        {PRODUCT_CATEGORIES.map((cat) => {
-          const isActive = productCategory === cat.id;
-          const CatIcon = getProductCategoryIcon(cat.id);
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setProductCategory(cat.id)}
-              aria-pressed={isActive}
-              className={cn(
-                "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-semibold whitespace-nowrap border transition-colors shrink-0",
-                isActive
-                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              <CatIcon className="h-4 w-4" strokeWidth={1.75} />
-              {cat.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Categorías y orden viven en el rail IZQUIERDO (layout 3-col). Acá
+          solo el grid de productos. */}
 
       {/* Result count */}
       {!loading && (

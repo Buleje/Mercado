@@ -32,7 +32,7 @@ interface TopProduct {
   avgRating: number;
   soldUnits?: number;
   badges: string[];
-  store: { slug: string; name: string; rating: number };
+  store: { slug: string; name: string; rating: number; logo: string | null };
 }
 
 function normalize(raw: Record<string, unknown>): TopProduct {
@@ -47,9 +47,14 @@ function normalize(raw: Record<string, unknown>): TopProduct {
     soldUnits: raw.soldUnits != null ? Number(raw.soldUnits) : undefined,
     badges: Array.isArray(raw.badges) ? (raw.badges as string[]) : [],
     store: {
-      slug: String((raw.store as { slug?: string })?.slug ?? ""),
-      name: String((raw.store as { name?: string })?.name ?? ""),
+      slug: String((raw.store as { slug?: string })?.slug ?? raw.storeSlug ?? ""),
+      name: String((raw.store as { name?: string })?.name ?? raw.storeName ?? ""),
       rating: Number((raw.store as { rating?: number })?.rating ?? 0),
+      // top-today → store.logo (objeto); catalog fallback → storeLogo (plano).
+      logo:
+        ((raw.store as { logo?: string | null })?.logo ??
+          (raw.storeLogo as string | null) ??
+          null),
     },
   };
 }
@@ -175,6 +180,7 @@ export default function MarketplaceTopToday() {
                     unit: p.unit,
                     storeName: p.store.name,
                     storeSlug: p.store.slug,
+                    storeLogo: p.store.logo,
                     storeProductId: p.storeProductId,
                     description:
                       p.soldUnits != null && p.soldUnits > 0

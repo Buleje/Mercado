@@ -16,16 +16,18 @@
  * selección, sticky footer prominente.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import Link from "next/link";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
   X, Check, Minus, Plus, ShoppingCart, Sparkles, Star, AlertCircle,
+  Store as StoreIcon, ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbStoreProductModifierGroup } from "@/lib/db/marketplace.db";
-import { useMarketplaceCart, type SelectedModifier } from "@/hooks/use-marketplace-cart";
+import { useMarketplaceCart, modifierHashOf, type SelectedModifier } from "@/hooks/use-marketplace-cart";
 
 /** Producto sugerido para "Combiná con tu pedido" (misma tienda). */
 interface SuggestionItem {
@@ -53,6 +55,7 @@ interface ProductModifierModalProps {
     storeName: string;
     storeSlug: string;
     storeProductId: string;
+    storeLogo?: string | null;
     description?: string | null;
   };
   groups: DbStoreProductModifierGroup[];
@@ -91,19 +94,52 @@ export default function ProductModifierModal({
   // ── "Combiná con tu pedido" — cross-sell de la MISMA tienda ──────────────
   // Brandon 2026-05-27: rellena el modal (sobre todo cuando no hay adicionales)
   // sugiriendo otros productos de la tienda para complementar (ej. una bebida).
-  const { addItem } = useMarketplaceCart();
+  // El CARRITO es la fuente de verdad de las cantidades — así el stepper y el
+  // resumen siempre reflejan lo real (incluye lo ya agregado en sesión previa).
+  const { addItem, updateQuantity, items: cartItems } = useMarketplaceCart();
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
-  const [addedSuggestionIds, setAddedSuggestionIds] = useState<Set<string>>(new Set());
 
+  // ── Adicionales (extras: "con crema", "ají extra"…) ──────────────────────
+  // En el marketplace los cards del catálogo NO traen modifierGroups (el API
+  // cross-store no los incluye). Si el padre no los pasó, los buscamos al abrir
+  // por el endpoint público, scopeado a la tienda dueña vía x-tenant-id=slug.
+  // Así el modal del marketplace muestra los MISMOS adicionales que el storefront.
+  const [lazyGroups, setLazyGroups] = useState<DbStoreProductModifierGroup[] | null>(null);
+  const effectiveGroups = groups.length > 0 ? groups : (lazyGroups ?? []);
+
+  // Reset SOLO en la transición cerrado→abierto. Antes dependía de `groups`,
+  // que es un array nuevo en cada render del padre (`product.modifierGroups ?? []`)
+  // → cualquier re-render (ej. agregar al carrito) re-disparaba el reset y borraba
+  // cantidad/selección. El ref ancla el reset a la apertura real.
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpen.current) {
       setSelection(initialSelection ?? defaultSelectionFor(groups));
       setQuantity(1);
       setNote("");
       setShowNoteField(false);
-      setAddedSuggestionIds(new Set());
+      setLazyGroups(null);
     }
+    wasOpen.current = open;
   }, [open, groups, initialSelection]);
+
+  // Lazy-load de adicionales cuando el padre no los proveyó (marketplace).
+  useEffect(() => {
+    if (!open || groups.length > 0 || !product.id || !product.storeSlug) return;
+    const ctrl = new AbortController();
+    fetch(
+      `/api/products/${product.id}/modifiers?storeSlug=${encodeURIComponent(product.storeSlug)}`,
+      { signal: ctrl.signal },
+    )
+      .then((r) => (r.ok ? r.json() : { groups: [] }))
+      .then((j) => {
+        const gs = (j.groups ?? []) as DbStoreProductModifierGroup[];
+        setLazyGroups(gs);
+        if (gs.length > 0) setSelection(defaultSelectionFor(gs));
+      })
+      .catch(() => setLazyGroups([]));
+    return () => ctrl.abort();
+  }, [open, groups.length, product.id, product.storeSlug]);
 
   // Fetch de sugerencias de la misma tienda al abrir. Excluye el producto
   // actual y los agotados. Prioriza otra categoría distinta a la del producto
@@ -149,7 +185,16 @@ export default function ProductModifierModal({
     return () => ctrl.abort();
   }, [open, product.storeSlug, product.id, product.category]);
 
-  const handleAddSuggestion = (sug: SuggestionItem) => {
+  // Cantidad ACTUAL de un extra en el carrito (línea sin modifiers → hash "").
+  const extraQtyOf = (sug: SuggestionItem) =>
+    cartItems.find(
+      (i) =>
+        i.storeId === product.storeId &&
+        i.productId === sug.productId &&
+        (i.modifierHash ?? "") === "",
+    )?.quantity ?? 0;
+
+  const addExtra = (sug: SuggestionItem) => {
     addItem({
       storeId: product.storeId,
       storeName: product.storeName,
@@ -163,10 +208,23 @@ export default function ProductModifierModal({
       unit: sug.unit,
       category: sug.category ?? undefined,
       stock: sug.stock,
+      modifiers: [],
+      modifierHash: modifierHashOf([]),
       quantity: 1,
     });
-    setAddedSuggestionIds((prev) => new Set(prev).add(sug.storeProductId));
   };
+
+  const decExtra = (sug: SuggestionItem) => {
+    const next = extraQtyOf(sug) - 1;
+    updateQuantity(product.storeId, sug.productId, next, modifierHashOf([]));
+  };
+
+  // Extras ya agregados (para el resumen "con la descripción de lo agregado").
+  const addedExtras = suggestions
+    .map((s) => ({ sug: s, qty: extraQtyOf(s) }))
+    .filter((e) => e.qty > 0);
+  const addedExtrasCount = addedExtras.reduce((n, e) => n + e.qty, 0);
+  const addedExtrasTotal = addedExtras.reduce((sum, e) => sum + e.sug.price * e.qty, 0);
 
   useEffect(() => {
     if (!open) return;
@@ -177,7 +235,7 @@ export default function ProductModifierModal({
 
   const flatSelected: SelectedModifier[] = useMemo(() => {
     const out: SelectedModifier[] = [];
-    for (const g of groups) {
+    for (const g of effectiveGroups) {
       const selectedIds = selection[g.id] ?? [];
       for (const id of selectedIds) {
         const opt = g.options.find((o) => o.id === id);
@@ -190,7 +248,7 @@ export default function ProductModifierModal({
       }
     }
     return out;
-  }, [selection, groups]);
+  }, [selection, effectiveGroups]);
 
   const priceDeltaTotal = flatSelected.reduce((sum, m) => sum + m.priceDelta, 0);
   const unitPrice = product.price + priceDeltaTotal;
@@ -198,7 +256,7 @@ export default function ProductModifierModal({
 
   const validation = useMemo(() => {
     const errors: Array<{ groupId: string; message: string }> = [];
-    for (const g of groups) {
+    for (const g of effectiveGroups) {
       const count = (selection[g.id] ?? []).length;
       if (g.required && count === 0) {
         errors.push({ groupId: g.id, message: `Elegí ${g.name.toLowerCase()}` });
@@ -211,7 +269,7 @@ export default function ProductModifierModal({
       }
     }
     return errors;
-  }, [selection, groups]);
+  }, [selection, effectiveGroups]);
 
   const isValid = validation.length === 0;
   const totalSelectedCount = flatSelected.length;
@@ -278,30 +336,52 @@ export default function ProductModifierModal({
               "lg:max-w-5xl lg:max-h-[88vh] lg:flex-row lg:items-stretch",
             )}
           >
+            {/* Cerrar — SIEMPRE en el lateral derecho del modal (consistente
+                en todos los modales de "agregar pedido"). En desktop cae sobre
+                la columna de opciones (derecha); en mobile, esquina sup. der. */}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="absolute top-3 right-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur border border-[var(--rule-base)] text-[var(--text-secondary)] shadow-lg transition-all hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] hover:scale-105 active:scale-95"
+            >
+              <X className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+            </button>
+
             {/* ═══ COLUMNA IZQUIERDA — hero + meta + qty + CTA ═══════════════
                 Mobile: hero compacto con título overlay (forma actual).
                 Desktop: hero más alto + bloque meta debajo + spacer + qty/CTA
                 anclado al fondo. Sticky por flex-col interno. */}
             <div className="shrink-0 lg:flex lg:flex-col lg:w-[420px] lg:border-r lg:border-[var(--rule-soft)] lg:overflow-y-auto">
-              {/* Hero image — Brandon 2026-05-18 v4: imagen MÁS GRANDE en mobile
-                  (h-44 sm:h-52 vs h-32/36 anterior) para que el cliente vea
-                  bien el producto. Gradient sutil solo en la base (no oscurece
-                  el centro de la imagen). */}
+              {/* Hero image — Brandon 2026-06-05: el producto se ve ENTERO
+                  (object-contain, sin recorte) sobre un fondo difuminado de la
+                  misma foto → relleno elegante que no deja bandas vacías. Más
+                  alto para darle presencia. */}
               <div className="relative shrink-0">
                 {product.image ? (
-                  <div className="relative h-44 sm:h-52 lg:h-auto lg:aspect-[4/3] w-full overflow-hidden">
+                  <div className="relative h-56 sm:h-64 lg:h-auto lg:aspect-square w-full overflow-hidden bg-[var(--surface-sunken)]">
+                    {/* Fondo difuminado de la propia foto — rellena los lados sin
+                        recortar el producto. */}
+                    <Image
+                      src={product.image}
+                      alt=""
+                      aria-hidden
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 420px"
+                      className="object-cover scale-110 blur-2xl opacity-40"
+                    />
+                    {/* Producto COMPLETO — contain, con sombra para destacarlo. */}
                     <Image
                       src={product.image}
                       alt={product.name}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 512px, 420px"
-                      className="object-cover"
+                      className="object-contain p-3 sm:p-4 drop-shadow-xl"
                       priority
                     />
                     {/* Gradient base — solo donde va el título (bottom 1/3),
-                        deja el centro de la imagen limpio para que el producto
-                        se vea bien. */}
-                    <div className="absolute inset-x-0 bottom-0 h-2/5 bg-linear-to-t from-black/85 via-black/50 to-transparent lg:hidden" />
+                        para legibilidad del overlay en mobile. */}
+                    <div className="absolute inset-x-0 bottom-0 h-2/5 bg-linear-to-t from-black/80 via-black/40 to-transparent lg:hidden" />
                   </div>
                 ) : (
                   <div className="h-32 sm:h-40 lg:h-56 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success-500)] flex items-center justify-center">
@@ -311,16 +391,6 @@ export default function ProductModifierModal({
 
                 {/* Drag handle solo mobile */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-white/50 sm:hidden" aria-hidden />
-
-                {/* Close button — siempre visible */}
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Cerrar"
-                  className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/65 hover:bg-black text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-10"
-                >
-                  <X className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-                </button>
 
                 {/* Title overlay — SOLO mobile/tablet. Brandon 2026-05-18 v4:
                     diseño más limpio, eyebrow accent en lugar de "Armá tu
@@ -443,8 +513,48 @@ export default function ProductModifierModal({
 
             {/* ═══ COLUMNA DERECHA — grupos + notas (scroll interno desktop) ═══ */}
             <div className="flex-1 overflow-y-auto px-4 sm:px-5 lg:px-6 py-5 lg:py-6 space-y-6 lg:max-h-[88vh]">
+              {/* ── Banner de tienda — logo + nombre + "Ir a la tienda" ──────
+                   Brandon 2026-06-05: el cliente ve de qué tienda es el producto
+                   y puede ir a verla completa sin perder el contexto del modal. */}
+              {product.storeName && (
+                <Link
+                  href={product.storeSlug ? `/marketplace/${product.storeSlug}` : "/marketplace"}
+                  onClick={onClose}
+                  className="group/store flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5 pr-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                  aria-label={`Ir a la tienda ${product.storeName}`}
+                >
+                  <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+                    {product.storeLogo ? (
+                      <Image
+                        src={product.storeLogo}
+                        alt={product.storeName}
+                        fill
+                        sizes="44px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span className="absolute inset-0 flex items-center justify-center text-[var(--accent)]">
+                        <StoreIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                      </span>
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Vendido por
+                    </span>
+                    <span className="block truncate text-sm font-extrabold text-[var(--text-primary)] group-hover/store:text-[var(--accent)]">
+                      {product.storeName}
+                    </span>
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors group-hover/store:bg-[var(--accent)] group-hover/store:text-white">
+                    Ir a la tienda
+                    <ArrowRight className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+                  </span>
+                </Link>
+              )}
+
               {/* Indicador de progreso */}
-              {groups.length > 0 && (
+              {effectiveGroups.length > 0 && (
                 <div className="flex items-center gap-2 text-[length:var(--ts-xs)]">
                   <span className="font-bold text-[var(--text-tertiary)]">
                     {totalSelectedCount > 0
@@ -460,7 +570,7 @@ export default function ProductModifierModal({
                 </div>
               )}
 
-              {groups.length === 0 ? (
+              {effectiveGroups.length === 0 ? (
                 <div className="text-center py-5">
                   <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-2.5">
                     <ShoppingCart className="h-6 w-6" strokeWidth={2} aria-hidden />
@@ -473,7 +583,7 @@ export default function ProductModifierModal({
                   </p>
                 </div>
               ) : (
-                groups.map((g) => {
+                effectiveGroups.map((g) => {
                   const selected = selection[g.id] ?? [];
                   const count = selected.length;
                   const isMulti = g.maxSelect > 1;
@@ -558,7 +668,7 @@ export default function ProductModifierModal({
               )}
 
               {/* Notas — colapsable para no abrumar */}
-              {groups.length > 0 && (
+              {effectiveGroups.length > 0 && (
                 <div className="pt-2">
                   {showNoteField ? (
                     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
@@ -607,25 +717,97 @@ export default function ProductModifierModal({
                    Rellena el modal (sobre todo cuando no hay adicionales) y
                    sube el ticket promedio sugiriendo complementos. */}
               {suggestions.length > 0 && (
-                <div className={cn("pt-1", groups.length > 0 && "border-t border-[var(--rule-soft)] pt-5")}>
+                <div className={cn("pt-1", effectiveGroups.length > 0 && "border-t border-[var(--rule-soft)] pt-5")}>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
                       <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                     </span>
-                    <div className="leading-tight">
+                    <div className="min-w-0 flex-1 leading-tight">
                       <p className="text-sm font-black text-[var(--text-primary)]">Combiná con tu pedido</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium truncate">
                         Otros de {product.storeName} para acompañar
                       </p>
                     </div>
+                    {/* Refleja cuántos extras se agregaron al carrito desde acá */}
+                    <AnimatePresence>
+                      {addedExtrasCount > 0 && (
+                        <motion.span
+                          key={addedExtrasCount}
+                          initial={{ scale: 0.6, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.6, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-black text-white shadow-sm"
+                        >
+                          <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+                          {addedExtrasCount} agregado{addedExtrasCount === 1 ? "" : "s"}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </div>
+
+                  {/* ── Resumen de lo agregado — "con la descripción de lo agregado".
+                       Aparece dentro del MISMO modal apenas sumás un extra. ── */}
+                  <AnimatePresence initial={false}>
+                    {addedExtras.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="mb-3 overflow-hidden"
+                      >
+                        <div className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/50 p-3">
+                          <p className="mb-2 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
+                            <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+                            Sumaste a tu pedido
+                          </p>
+                          <ul className="space-y-1.5">
+                            {addedExtras.map(({ sug, qty }) => (
+                              <li key={sug.storeProductId} className="flex items-center gap-2 text-[length:var(--ts-sm)]">
+                                <span className="inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black text-white tabular-nums">
+                                  {qty}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">
+                                  {sug.name}
+                                </span>
+                                <span className="shrink-0 font-black tabular-nums text-[var(--text-primary)]">
+                                  {fmt(sug.price * qty)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => updateQuantity(product.storeId, sug.productId, 0, modifierHashOf([]))}
+                                  aria-label={`Quitar ${sug.name}`}
+                                  className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
+                                >
+                                  <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="mt-2 flex items-center justify-between border-t border-[var(--accent)]/20 pt-2 text-[length:var(--ts-xs)]">
+                            <span className="font-bold text-[var(--text-secondary)]">Subtotal extras</span>
+                            <span className="font-black tabular-nums text-[var(--text-primary)]">{fmt(addedExtrasTotal)}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div className="flex gap-3 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden pb-1 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
                     {suggestions.map((sug) => {
-                      const added = addedSuggestionIds.has(sug.storeProductId);
+                      const qty = extraQtyOf(sug);
+                      const added = qty > 0;
+                      const atStockCap = sug.stock != null && sug.stock > 0 && qty >= sug.stock;
                       return (
                         <div
                           key={sug.storeProductId}
-                          className="shrink-0 w-32 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
+                          className={cn(
+                            "shrink-0 w-32 rounded-2xl border-2 bg-[var(--surface-raised)] overflow-hidden transition-colors",
+                            added
+                              ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/20"
+                              : "border-[var(--rule-base)]",
+                          )}
                         >
                           <div className="relative h-24 w-full bg-[var(--surface-sunken)]">
                             {sug.image ? (
@@ -633,6 +815,13 @@ export default function ProductModifierModal({
                             ) : (
                               <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-center px-1">
                                 {sug.category ?? "Producto"}
+                              </span>
+                            )}
+                            {/* Ribbon con la cantidad — refleja que ya entró al pedido */}
+                            {added && (
+                              <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black text-white shadow-sm">
+                                <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />
+                                {qty} en pedido
                               </span>
                             )}
                           </div>
@@ -644,19 +833,40 @@ export default function ProductModifierModal({
                               <span className="text-sm font-black text-[var(--text-primary)] tabular-nums">
                                 {fmt(sug.price)}
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => handleAddSuggestion(sug)}
-                                aria-label={added ? `${sug.name} agregado` : `Agregar ${sug.name}`}
-                                className={cn(
-                                  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all active:scale-90",
-                                  added
-                                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                                    : "bg-[var(--accent)] text-white hover:brightness-110",
-                                )}
-                              >
-                                {added ? <Check className="h-4 w-4" strokeWidth={2.75} /> : <Plus className="h-4 w-4" strokeWidth={2.75} />}
-                              </button>
+                              {added ? (
+                                /* Stepper — agregar MÁS o quitar */
+                                <div className="inline-flex items-center rounded-full border-2 border-[var(--accent)] bg-[var(--surface-canvas)] overflow-hidden">
+                                  <button
+                                    type="button"
+                                    onClick={() => decExtra(sug)}
+                                    aria-label={`Quitar uno de ${sug.name}`}
+                                    className="inline-flex h-7 w-7 items-center justify-center text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)] active:scale-90"
+                                  >
+                                    <Minus className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+                                  </button>
+                                  <span className="min-w-[1.25rem] text-center text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-primary)]">
+                                    {qty}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => addExtra(sug)}
+                                    disabled={atStockCap}
+                                    aria-label={`Agregar otro ${sug.name}`}
+                                    className="inline-flex h-7 w-7 items-center justify-center text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)] active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    <Plus className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => addExtra(sug)}
+                                  aria-label={`Agregar ${sug.name}`}
+                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white transition-all hover:brightness-110 active:scale-90"
+                                >
+                                  <Plus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>

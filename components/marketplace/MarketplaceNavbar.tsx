@@ -36,6 +36,7 @@ import {
   Package,
   Wallet,
   ShoppingCart,
+  ShoppingBag,
   MapPin,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -136,6 +137,17 @@ const PRIMARY_LINKS: readonly NavLink[] = [
     labelKey: "nav.shopDirectory",
     icon: Store,
     matchPrefix: "/tiendas",
+  },
+  {
+    // Brandon 2026-06-05: acceso directo al MARKETPLACE (feed editorial) desde
+    // el nav "Solo Tiendas". Distinto de "Tiendas" (/tiendas = directorio) y de
+    // "Bodegas" (/marketplace, oculto en este modo). Solo en tiendas-only — en
+    // modo completo "Bodegas" ya cubre /marketplace, no duplicar.
+    id: "mercado",
+    href: "/marketplace",
+    labelKey: "nav.market",
+    icon: ShoppingBag,
+    matchEquals: "/marketplace",
   },
   {
     id: "recetas",
@@ -447,6 +459,8 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   const visibleLinks = PRIMARY_LINKS.filter((l) => {
     // Ofertas — solo visible si hay ofertas activas (independiente de superadmin).
     if (l.id === "ofertas" && hasActiveOffers !== true) return false;
+    // "Mercado" es exclusivo del modo Solo Tiendas (en completo lo cubre "Bodegas").
+    if (l.id === "mercado") return false;
     return navVisibility[l.id] !== false;
   });
   // Brandon 2026-05-30: el modo "Solo Tiendas" es un nav mínimo intencional —
@@ -454,7 +468,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   // Cómo pagar, Negocios y Abre tu tienda (utilitarios/B2B que distraen del
   // foco "elegí tu tienda"). El modo manda sobre los toggles individuales:
   // ponés "Solo Tiendas" en superadmin → el público ve solo Inicio + Tiendas.
-  const TIENDAS_ONLY_LINKS = new Set(["inicio", "tiendas"]);
+  const TIENDAS_ONLY_LINKS = new Set(["inicio", "tiendas", "mercado"]);
   const renderedLinks = isTiendasOnly
     ? PRIMARY_LINKS.filter((l) => TIENDAS_ONLY_LINKS.has(l.id))
     : visibleLinks;

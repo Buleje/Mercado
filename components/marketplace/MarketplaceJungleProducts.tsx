@@ -13,7 +13,7 @@ interface JungleProduct {
   price: number;
   image: string | null;
   unit: string | null;
-  store: { slug: string; name: string };
+  store: { slug: string; name: string; logo: string | null };
 }
 
 const JUNGLE_KEYWORDS = ["aguaje", "camu", "acai", "açaí", "ungurahui", "tacacho", "juane", "cocona", "pijuayo", "huito", "castañas"];
@@ -26,7 +26,7 @@ const FALLBACK_ITEMS: JungleProduct[] = [
     price: 8,
     image: null,
     unit: "kg",
-    store: { slug: "", name: "Productor local" },
+    store: { slug: "", name: "Productor local", logo: null },
   },
   {
     storeProductId: "fallback-2",
@@ -35,7 +35,7 @@ const FALLBACK_ITEMS: JungleProduct[] = [
     price: 15,
     image: null,
     unit: "200g",
-    store: { slug: "", name: "Productor local" },
+    store: { slug: "", name: "Productor local", logo: null },
   },
   {
     storeProductId: "fallback-3",
@@ -44,7 +44,7 @@ const FALLBACK_ITEMS: JungleProduct[] = [
     price: 12,
     image: null,
     unit: "kg",
-    store: { slug: "", name: "Productor local" },
+    store: { slug: "", name: "Productor local", logo: null },
   },
   {
     storeProductId: "fallback-4",
@@ -53,7 +53,7 @@ const FALLBACK_ITEMS: JungleProduct[] = [
     price: 22,
     image: null,
     unit: "500g",
-    store: { slug: "", name: "Productor local" },
+    store: { slug: "", name: "Productor local", logo: null },
   },
 ];
 
@@ -97,8 +97,12 @@ export default function MarketplaceJungleProducts() {
               image: (x.image as string) ?? null,
               unit: (x.unit as string) ?? null,
               store: {
-                slug: String((x.store as { slug?: string })?.slug ?? ""),
-                name: String((x.store as { name?: string })?.name ?? ""),
+                slug: String((x.store as { slug?: string })?.slug ?? x.storeSlug ?? ""),
+                name: String((x.store as { name?: string })?.name ?? x.storeName ?? ""),
+                logo:
+                  ((x.store as { logo?: string | null })?.logo ??
+                    (x.storeLogo as string | null) ??
+                    null),
               },
             });
           }
@@ -153,6 +157,7 @@ export default function MarketplaceJungleProducts() {
                 unit: p.unit,
                 storeName: p.store.name,
                 storeSlug: p.store.slug,
+                storeLogo: p.store.logo,
                 storeProductId: p.storeProductId,
                 description: "Del arbol al mercado — cosechado por productores de Ucayali.",
                 isPeruvian: true,

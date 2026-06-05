@@ -60,6 +60,7 @@ function toCardProduct(p: SectionProduct) {
     storeId: p.storeId,
     storeProductId: p.storeProductId,
     storeRating: p.storeRating,
+    storeLogo: p.storeLogo,
     unit: p.unit,
     category: p.category ?? undefined,
     stock: p.stock,

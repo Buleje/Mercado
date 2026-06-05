@@ -30,6 +30,7 @@ interface FeaturedProduct {
   storeId: string;
   storeName: string;
   storeSlug: string;
+  storeLogo: string | null;
   storeRating: number;
   discountPercent?: number;
 }
@@ -74,6 +75,7 @@ function toCardProduct(p: FeaturedProduct) {
     storeId: p.storeId,
     storeProductId: p.storeProductId,
     storeRating: p.storeRating,
+    storeLogo: p.storeLogo,
     unit: p.unit,
     category: p.category ?? undefined,
     stock: p.stock,

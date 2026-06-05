@@ -80,7 +80,11 @@ export async function GET(req: NextRequest) {
   const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
   const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
   if (!session?.customerId) {
-    return NextResponse.json({ authorized: false }, { status: 401 });
+    // 200 (no 401): este card se consulta en una página PÚBLICA (/marketplace)
+    // incluso sin sesión de cliente. Un 401 ensucia la consola del navegador
+    // en cada carga para visitantes anónimos (que son la mayoría). El cliente
+    // (MyFidelidadCard) ya distingue por `authorized:false` y se auto-oculta.
+    return NextResponse.json({ authorized: false });
   }
 
   const phone = session.customerId;

@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
       storeId: it.store.id,
       storeName: it.store.name,
       storeSlug: it.store.slug,
+      storeLogo: it.store.logo,
       image: it.image,
       price: it.price,
       originalPrice: it.originalPrice,

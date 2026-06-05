@@ -28,6 +28,7 @@ interface BestsellerProduct {
   storeId: string;
   storeName: string;
   storeSlug: string;
+  storeLogo: string | null;
   image: string | null;
   price: number;
   originalPrice: number | null;
@@ -107,6 +108,7 @@ export default function MarketplaceBestsellersStrip(
               image: item.image,
               storeName: item.storeName,
               storeSlug: item.storeSlug,
+              storeLogo: item.storeLogo,
               storeId: item.storeId,
               storeProductId: item.storeProductId,
               unit: item.unit,

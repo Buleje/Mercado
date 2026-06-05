@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import MarketplaceContent from "@/components/marketplace/MarketplaceContent";
 import MarketplaceHomeHeader from "@/components/marketplace/home/MarketplaceHomeHeader";
-
-// banners v2 F4 multi-slot: el carrusel pro (hero + grid + tracking) en la home
-// del marketplace, slot "explorar". Client island en página server.
-const PromoHeroSlot = dynamic(() => import("@/components/marketplace/TiendasHeroAds"));
 import JsonLd from "@/components/JsonLd";
 import ItemListJsonLd from "@/components/seo/ItemListJsonLd";
 import { BRAND_GEO } from "@/lib/geo";
@@ -46,8 +41,8 @@ export async function generateMetadata(props: {
     ? `Marketplace en ${zona.charAt(0).toUpperCase() + zona.slice(1)} — Bodegas y Tiendas`
     : `Marketplace — Bodegas y Tiendas en ${BRAND_GEO.city}`;
   const description = zona
-    ? `Bodegas, minimarkets, restaurantes y farmacias en ${zona}. Pedí online con delivery rápido y pago con Yape, Plin o efectivo.`
-    : `Bodegas, minimarkets, restaurantes y farmacias en ${BRAND_GEO.cityRegion} en un solo lugar. Pedí online con delivery rápido y pago con Yape, Plin o efectivo.`;
+    ? `Bodegas, minimarkets, restaurantes y farmacias en ${zona}. Pedí online con delivery rápido a domicilio y pagá con Yape, Plin o efectivo — sin app.`
+    : `Bodegas, minimarkets, restaurantes y farmacias de ${BRAND_GEO.cityRegion} en un solo lugar. Delivery rápido a domicilio, pagá con Yape, Plin o efectivo.`;
 
   return {
     title,
@@ -57,17 +52,31 @@ export async function generateMetadata(props: {
       "bodegas online",
       "minimarkets delivery",
       "comprar abarrotes online",
-      "delivery Ciudad Constitución",
+      "delivery a domicilio",
+      `delivery ${BRAND_GEO.city}`,
+      `bodegas ${BRAND_GEO.city}`,
+      "restaurantes delivery",
+      "farmacia delivery",
       "tiendas cerca de mí",
+      "pedir comida online",
       "pagar con Yape",
-      ...(zona ? [`bodegas ${zona}`, `delivery ${zona}`] : []),
+      "pagar con Plin",
+      ...(zona ? [`bodegas ${zona}`, `delivery ${zona}`, `tiendas ${zona}`] : []),
     ],
+    category: "Shopping",
+    // SEO: NO redefinir `robots` ni `alternates` parcialmente — Next REEMPLAZA
+    // el objeto entero, no hace merge profundo. Antes `robots:{index,follow}`
+    // pisaba el root (perdía max-image-preview:large + el guard noindex de
+    // preview) y `alternates:{canonical}` pisaba el hreflang del root. Acá
+    // re-declaramos AMBOS completos (canonical dinámico por zona + hreflang) y
+    // dejamos que `robots` se herede del root (rich + env-aware).
     alternates: {
       canonical: canonicalUrl,
-    },
-    robots: {
-      index: true,
-      follow: true,
+      languages: {
+        "es-PE": canonicalUrl,
+        es: canonicalUrl,
+        "x-default": canonicalUrl,
+      },
     },
     openGraph: {
       title,
@@ -76,7 +85,14 @@ export async function generateMetadata(props: {
       siteName: "Buleje",
       locale: "es_PE",
       type: "website",
-      images: [{ url: "/api/og", width: 1200, height: 630, alt: "Buleje — marketplace de bodegas y tiendas del Perú" }],
+      images: [
+        {
+          url: "/api/og",
+          width: 1200,
+          height: 630,
+          alt: `Buleje — bodegas y tiendas con delivery en ${BRAND_GEO.cityRegion}`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -125,11 +141,21 @@ const breadcrumbSchema = {
 const collectionSchema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  "name": "Marketplace Buleje",
-  "description":
-    "Catálogo de bodegas, minimarkets y tiendas del Perú con delivery y pago online vía Yape, tarjeta o efectivo.",
+  "name": "Marketplace Buleje — Bodegas y Tiendas",
+  "description": `Catálogo de bodegas, minimarkets, restaurantes y farmacias de ${BRAND_GEO.cityRegion} con delivery a domicilio y pago con Yape, Plin, tarjeta o efectivo.`,
   "url": `${BASE_URL}/marketplace`,
   "inLanguage": "es-PE",
+  "keywords":
+    "bodegas online, minimarkets delivery, restaurantes, farmacia, abarrotes, Yape, Plin, delivery a domicilio",
+  "about": {
+    "@type": "Thing",
+    "name": "Marketplace de bodegas y tiendas del Perú con delivery",
+  },
+  "provider": {
+    "@type": "Organization",
+    "name": "Buleje",
+    "url": BASE_URL,
+  },
   "isPartOf": {
     "@type": "WebSite",
     "name": "Buleje",
@@ -166,6 +192,7 @@ export default async function MarketplacePage(props: {
     storeId: it.store.id,
     storeName: it.store.name,
     storeSlug: it.store.slug,
+    storeLogo: it.store.logo,
     image: it.image,
     price: it.price,
     originalPrice: it.originalPrice,
@@ -230,11 +257,12 @@ export default async function MarketplacePage(props: {
         />
       )}
 
-      {/* Header SSR — <h1> + propuesta de valor + trust strip (crawlable). */}
+      {/* H1 SEO sr-only (el header editorial visible se removió — Brandon 2026-06-05). */}
       <MarketplaceHomeHeader storeCount={storeCount} />
 
-      {/* Banners v2 — slot "explorar" (hero + grid de ofertas + tracking). */}
-      <PromoHeroSlot slot="explorar" moreLabel="Ofertas destacadas" />
+      {/* Banner movido a la columna DERECHA (publicidad) del layout 3-col tipo
+          Facebook — ver MarketplaceRightRail dentro de MarketplaceContent
+          (Brandon 2026-06-05). */}
 
       <MarketplaceContent
         initialStores={featuredStores}

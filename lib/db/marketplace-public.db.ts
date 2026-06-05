@@ -704,7 +704,7 @@ export const MarketplacePublicDB = {
       stock: number;
       soldUnits: number;
       trendPct: number | null;
-      store: { id: string; slug: string; name: string; rating: number };
+      store: { id: string; slug: string; name: string; rating: number; logo: string | null };
     }>;
     window: "24h" | "7d";
     updatedAt: string;
@@ -793,7 +793,7 @@ export const MarketplacePublicDB = {
           retailPrice: true,
           productId: true,
           product: { select: { id: true, name: true, image: true, unit: true, stock: true, price: true, category: true } },
-          store: { select: { id: true, slug: true, name: true, rating: true } },
+          store: { select: { id: true, slug: true, name: true, rating: true, logo: true } },
         },
       });
 
@@ -835,6 +835,7 @@ export const MarketplacePublicDB = {
               slug: sp.store.slug,
               name: sp.store.name,
               rating: Number(sp.store.rating ?? 0),
+              logo: sp.store.logo ?? null,
             },
           };
         })

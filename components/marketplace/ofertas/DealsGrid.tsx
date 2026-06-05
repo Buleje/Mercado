@@ -28,6 +28,7 @@ function dealToCard(d: Deal): UnifiedProductCardProduct {
     image: d.image ?? null,
     storeName: d.storeName,
     storeSlug: d.storeSlug,
+    storeLogo: d.storeLogo,
     storeProductId: d.storeProductId,
     unit: d.unit,
     category: d.category,

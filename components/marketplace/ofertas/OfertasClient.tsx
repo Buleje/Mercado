@@ -76,6 +76,7 @@ function adapt(d: ApiDeal): Deal {
     unit: d.unit,
     storeName: d.store.name,
     storeSlug: d.store.slug,
+    storeLogo: d.store.logo,
     // Visual QA P0-7 fix 2026-04-30: el API actualmente NO devuelve endsAt
     // real — se usa fallback de 7 días para evitar urgencia falsa de "23h 59m"
     // que mostraba el placeholder de 24h. Cuando el endpoint /api/marketplace/deals

@@ -105,6 +105,7 @@ function ProductImageFallback({ name, category }: { name?: string | null; catego
   );
 }
 import { cn } from "@/lib/utils";
+import { celebrate } from "@/lib/celebrate";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import { useCompare } from "@/contexts/compare-context";
@@ -126,6 +127,8 @@ export interface UnifiedProductCardProduct {
   storeId?: string;
   storeProductId?: string;
   storeRating?: number;
+  /** Logo de la tienda — se muestra como avatar al costado del nombre. */
+  storeLogo?: string | null;
   unit?: string | null;
   category?: string;
   stock?: number;
@@ -320,6 +323,7 @@ export default function UnifiedProductCard({
         modifierHash: modifierHashOf([]),
         quantity: Math.max(1, quantity),
       });
+      celebrate({ intensity: "sm" }); // 🎉 agregado al carrito
     },
     [addItem, product],
   );
@@ -560,13 +564,32 @@ export default function UnifiedProductCard({
           </p>
         )}
 
-        {/* Tienda — sm+ only (en /marketplace/[slug] mobile el contexto es
-            obvio y el card horizontal no tiene espacio para el storeName). */}
+        {/* Tienda — logo (avatar) + nombre, CLICKEABLE → /marketplace/[slug].
+            Brandon 2026-06-05: el cliente identifica la tienda de un vistazo
+            (ej. "Pollería El Dorado" con su logo) y puede ir directo a verla.
+            Visible también en mobile (antes era sm+) porque el logo es señal
+            clave de confianza/marca. En storefront propio (hideStore) se omite. */}
         {product.storeName && !hideStore && (
-          <div className="hidden sm:flex mt-2 items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
-            <StoreIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className="truncate">{product.storeName}</span>
-          </div>
+          <Link
+            href={product.storeSlug ? `/marketplace/${product.storeSlug}` : productHref}
+            className="mt-2 flex w-fit max-w-full items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+            aria-label={`Ver tienda ${product.storeName}`}
+          >
+            {product.storeLogo ? (
+              <span className="relative h-5 w-5 sm:h-6 sm:w-6 shrink-0 overflow-hidden rounded-full border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+                <Image
+                  src={product.storeLogo}
+                  alt={product.storeName}
+                  fill
+                  sizes="24px"
+                  className="object-cover"
+                />
+              </span>
+            ) : (
+              <StoreIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className="truncate hover:underline">{product.storeName}</span>
+          </Link>
         )}
 
         {/* Precio + CTA circular — precio RESALTADO + ahorro visible.
@@ -763,6 +786,7 @@ export default function UnifiedProductCard({
             storeName: product.storeName ?? "",
             storeSlug: product.storeSlug ?? "",
             storeProductId: product.storeProductId ?? String(product.id),
+            storeLogo: product.storeLogo ?? null,
             description: product.description ?? null,
           }}
           groups={product.modifierGroups ?? []}
@@ -789,6 +813,7 @@ export default function UnifiedProductCard({
             });
             setModifierModalOpen(false);
             setJustAdded(true);
+            celebrate({ intensity: "sm" }); // 🎉 agregado al carrito
             setTimeout(() => setJustAdded(false), 1200);
           }}
         />

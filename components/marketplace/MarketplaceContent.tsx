@@ -9,12 +9,13 @@ import Link from "next/link";
 import { m } from "framer-motion";
 import { deserializeCart } from "@/lib/marketplace/cart-sharing";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
-import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
 import MyFidelidadCard from "@/components/marketplace/MyFidelidadCard";
 import MarketplaceQuickReorder from "@/components/marketplace/MarketplaceQuickReorder";
 import SaludoHorario from "@/components/marketplace/home/SaludoHorario";
+import { CatalogFilterProvider, useCatalogFilter } from "@/components/marketplace/catalog-filter-context";
+import MarketplaceLeftRail from "@/components/marketplace/MarketplaceLeftRail";
 // SEO/SSR (2026-05-24): estas 2 secciones de mayor valor comercial se importan
 // ESTÁTICAMENTE (no dynamic ssr:false) y reciben datos del servidor por props,
 // para que su contenido (tiendas, productos, precios) salga en el HTML inicial
@@ -70,6 +71,45 @@ const AsistenteHomeBanner = dynamic(
 );
 const LiveOrderCounter = dynamic(
   () => import("@/components/marketplace/LiveOrderCounter"),
+  { ssr: false },
+);
+// Rail DERECHO (publicidad) — client-only, fetch de banners. Below-fold-ish.
+const MarketplaceRightRail = dynamic(
+  () => import("@/components/marketplace/MarketplaceRightRail"),
+  { ssr: false },
+);
+// Widget "Tienda de la semana" (votación) — zona del saludo. Client-only.
+const TiendaSemanaWidget = dynamic(
+  () => import("@/components/marketplace/TiendaSemanaWidget"),
+  { ssr: false },
+);
+// Descubrimiento + conversión (alto impacto, código existente cableado al feed):
+//   · PersonalizedRecommendations → "Para ti" IA (gated en historial del customer)
+// NearbyStoresFeedSection ("Cerca de ti" GPS) REMOVIDO por pedido de Brandon
+// (2026-06-05), junto con TiendasDestacadas.
+const PersonalizedRecommendations = dynamic(
+  () => import("@/components/marketplace/PersonalizedRecommendations"),
+  { ssr: false },
+);
+// Ronda "adictivo + navegable" (2026-06-05): engagement loops + navegación.
+//   · CelebrationLayer          → confetti global en acciones reales
+//   · RachaDiariaWidget         → racha de visitas (hábito) + cupón al hito
+//   · MarketplaceSectionNav     → scrollspy sticky de secciones
+//   · MarketplaceCommandLauncher→ buscador universal ⌘K (tiendas/cat/secciones)
+const CelebrationLayer = dynamic(
+  () => import("@/components/marketplace/CelebrationLayer"),
+  { ssr: false },
+);
+const RachaDiariaWidget = dynamic(
+  () => import("@/components/marketplace/RachaDiariaWidget"),
+  { ssr: false },
+);
+const MarketplaceSectionNav = dynamic(
+  () => import("@/components/marketplace/MarketplaceSectionNav"),
+  { ssr: false },
+);
+const MarketplaceCommandLauncher = dynamic(
+  () => import("@/components/marketplace/MarketplaceCommandLauncher"),
   { ssr: false },
 );
 
@@ -163,6 +203,8 @@ export default function MarketplaceContent({
   return (
     <FlyToCartProvider>
     <div className="relative">
+      {/* Capa global de confetti — escucha buleje:celebrate (acciones reales) */}
+      <CelebrationLayer />
       {/* Toast: carrito compartido importado */}
       {sharedCartToast && (
         <m.div
@@ -185,80 +227,43 @@ export default function MarketplaceContent({
             CategoriasQuickAccess y OfertasEditorial MOVIDOS a /explorar
             para armar el layout tipo Mercado Libre pedido. */}
 
-      {/* Saludo dinámico por horario (desayuno/almuerzo/cena) */}
-      <div className="mx-auto max-w-[1760px] px-3 sm:px-4 lg:px-6 pt-3">
-        <SaludoHorario />
-      </div>
-
-      {/* Banner promocional rotativo (slot="bodegas" editable desde superadmin) */}
-      <PromoBannerCarousel slot="bodegas" />
-
-      {/* Panel de fidelidad — solo visible para clientes con sesión. */}
-      <div className="mx-auto max-w-[1760px] px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
-        <div className="w-full lg:max-w-sm">
-          <MyFidelidadCard />
-        </div>
-      </div>
-
-      {/* Volvé a pedir — re-orden del último pedido (auto-oculta si no hay) */}
-      <div className="mx-auto max-w-[1760px] px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
-        <MarketplaceQuickReorder />
-      </div>
-
       {/* ══════════════════════════════════════════════════════════════════
-          SECCIONES — TODAS PEGAN A DATA REAL DEL PROYECTO.
-          Si la DB esta vacia (sin productos / sin ofertas / sin recetas),
-          la seccion se oculta sola (cada componente hace early-return null).
-          NO hay categorias/marcas/productos inventados.
+          LAYOUT 3-COLUMNAS TIPO FACEBOOK (solo /marketplace, 2026-06-05):
+            · IZQUIERDA (sticky, lg+): categorías + filtros + atajos.
+            · CENTRO: feed — saludo, fidelidad, secciones y catálogo.
+            · DERECHA (sticky, xl+): publicidad (banners).
+          Las secciones quedan alineadas entre sí y con el catálogo (misma
+          columna). Rails ocultos en mobile (modo computadora).
           ══════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[var(--surface-sunken)] py-4 sm:py-6">
-        <div className="mx-auto max-w-[1760px] space-y-4 sm:space-y-6 px-3 sm:px-4 lg:px-6">
-          {/* ── Above-fold (montaje inmediato) ── */}
-          {/* Tiendas reales publicadas — SSR con data del servidor (SEO) */}
-          <BodegasSectionBox><TiendasDestacadas initialStores={initialStores} /></BodegasSectionBox>
+      <CatalogFilterProvider>
+        <div className="bg-[var(--surface-sunken)] py-4 sm:py-6 min-h-[60vh]">
+          <div className="mx-auto grid max-w-[1800px] grid-cols-1 items-start gap-5 px-3 sm:px-4 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-5 lg:px-6 xl:grid-cols-[220px_minmax(0,1fr)_290px]">
 
-          {/* Top mas vendidos — SSR con data del servidor (SEO) */}
-          <BodegasSectionBox><MarketplaceBestsellersStrip initialItems={initialBestsellers} /></BodegasSectionBox>
+            {/* ── IZQUIERDA: categorías + filtros — FIJA (FB-style): el aside
+                 mismo es sticky (con items-start del grid queda corto y se
+                 pega); scroll interno si supera el viewport. Solo el centro
+                 navega. ── */}
+            <aside className="hidden lg:block lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filtros y categorías">
+              <MarketplaceLeftRail />
+            </aside>
 
-          {/* ── Below-fold (montaje diferido al acercar el scroll) ── */}
-          {/* Ofertas del dia — desde Promotion DB */}
-          <BodegasSectionBox defer><OfertasDelDiaHero /></BodegasSectionBox>
+            {/* ── CENTRO: feed (secciones + catálogo). Componente aparte para
+                 poder LEER el filtro de categoría (contexto) y entrar en "modo
+                 filtro" — oculta las secciones promo y deja solo el catálogo. ── */}
+            <MarketplaceCenterFeed
+              initialStores={initialStores}
+              initialBestsellers={initialBestsellers}
+              search={search || ""}
+            />
 
-          {/* Ofertas flash — desde Promotion con tiempo limitado */}
-          <BodegasSectionBox defer><OfertasFlashSection /></BodegasSectionBox>
+            {/* ── DERECHA: publicidad (banners) — FIJA (FB-style). ── */}
+            <aside className="hidden xl:block xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Publicidad">
+              <MarketplaceRightRail zone={null} />
+            </aside>
 
-          {/* Catalogo cross-store — productos reales */}
-          <BodegasSectionBox defer>
-            <MarketplaceCatalogViewSection searchQuery={search || undefined} />
-          </BodegasSectionBox>
-
-          {/* Recetas publicas con ingredientes resueltos cross-marketplace */}
-          <BodegasSectionBox defer><MarketplaceRecipesWidget /></BodegasSectionBox>
-
-          {/* Productos comparados — desde localStorage del cliente */}
-          {isVisible("comparar-productos") && (
-            <BodegasSectionBox defer><ComparedProductsSection /></BodegasSectionBox>
-          )}
-
-          {/* Suscripcion Bodega al Mes — feature real */}
-          {isVisible("bodega-al-mes") && (
-            <BodegasSectionBox defer><SubscribeAndSaveSection /></BodegasSectionBox>
-          )}
-
-          {/* Gift cards — feature real */}
-          {isVisible("gift-cards") && (
-            <BodegasSectionBox defer><GiftCardsBanner /></BodegasSectionBox>
-          )}
-
-          {/* Asistente IA — feature real */}
-          {isVisible("asistente-ia") && (
-            <BodegasSectionBox defer><AsistenteHomeBanner /></BodegasSectionBox>
-          )}
-
-          {/* Vistos recientemente — desde localStorage del cliente */}
-          <BodegasSectionBox defer><MarketplaceRecentViewed /></BodegasSectionBox>
+          </div>
         </div>
-      </div>
+      </CatalogFilterProvider>
 
       {/* CTA hacia /marketplace/explorar — solo si querés ver todo */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
@@ -336,6 +341,137 @@ export default function MarketplaceContent({
 // MarketplaceEditorialHero eliminado (2026-04-20) — el banner rotativo
 // de arriba ya cumple el rol de "sobre qué trata esta página".
 
+/** "pollo-brasa" → "Pollo brasa" */
+function prettyCategoryLabel(id: string): string {
+  const s = id.replace(/[-_]+/g, " ").trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * MarketplaceCenterFeed — columna CENTRAL. Lee el filtro de categoría
+ * (CatalogFilterContext) para alternar entre:
+ *   · Feed normal (sin filtro): todas las secciones + catálogo.
+ *   · Modo filtro (categoría != "todos"): oculta las secciones promo (Cerca
+ *     tuyo, Más vendidos, etc.) y deja SOLO el catálogo filtrado, con una
+ *     barra de "filtros aplicados" debajo de la zona de fidelidad.
+ */
+function MarketplaceCenterFeed({
+  initialStores,
+  initialBestsellers,
+  search,
+}: {
+  initialStores?: MarketplaceContentProps["initialStores"];
+  initialBestsellers?: MarketplaceContentProps["initialBestsellers"];
+  search: string;
+}) {
+  const filter = useCatalogFilter();
+  const sectionVisibility = useNavVisibility("marketplace-sections");
+  const isVisible = (id: string) => sectionVisibility[id] !== false;
+  const activeCategory = filter?.category ?? "todos";
+  const isFiltered = activeCategory !== "todos";
+
+  // Anclas de secciones para el scrollspy + el buscador ⌘K. Solo las que se
+  // renderizan (cerca-de-ti es gated). Los ids coinciden con anchorId abajo.
+  const feedSections = [
+    { id: "mp-vendidos", label: "Más vendidos" },
+    { id: "mp-ofertas", label: "Ofertas" },
+    { id: "mp-catalogo", label: "Catálogo" },
+    { id: "mp-recetas", label: "Recetas" },
+  ];
+
+  return (
+    <div id="mp-feed" className="min-w-0 space-y-4 scroll-mt-20 sm:space-y-5">
+      {/* Saludo + racha diaria (hábito) + participación + fidelidad + re-orden.
+          Participación y fidelidad van LADO A LADO en desktop (compacto, ahorra
+          ~50% de alto). Si una no renderiza (sin sesión / <2 tiendas), la otra
+          ocupa todo el ancho gracias al flex (los null no dejan hueco). */}
+      <SaludoHorario />
+      <RachaDiariaWidget />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
+        <TiendaSemanaWidget initialStores={initialStores} className="lg:flex-1 lg:min-w-0" />
+        <MyFidelidadCard compact className="lg:flex-1 lg:min-w-0" />
+      </div>
+      <MarketplaceQuickReorder />
+
+      {/* Buscador universal ⌘K — montado SIEMPRE (atajo global, también en modo
+          filtro). Renderiza la barra-lanzador + el modal palette. */}
+      <MarketplaceCommandLauncher stores={initialStores} sections={feedSections} />
+
+      {isFiltered ? (
+        <>
+          {/* Barra de filtros aplicados — debajo de la zona de fidelidad */}
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+            <span className="text-sm font-bold text-[var(--text-primary)]">Filtrando por</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] py-1 pl-3 pr-1.5 text-sm font-bold text-[var(--accent)]">
+              {prettyCategoryLabel(activeCategory)}
+              <button
+                type="button"
+                onClick={() => filter?.setCategory("todos")}
+                aria-label="Quitar filtro"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/25"
+              >
+                <span aria-hidden className="-mt-px text-base leading-none">×</span>
+              </button>
+            </span>
+            <button
+              type="button"
+              onClick={() => filter?.setCategory("todos")}
+              className="ml-auto text-sm font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent)]"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+
+          {/* SOLO el catálogo filtrado (las secciones promo se ocultan) */}
+          <BodegasSectionBox defer>
+            <MarketplaceCatalogViewSection searchQuery={search || undefined} />
+          </BodegasSectionBox>
+        </>
+      ) : (
+        <>
+          {/* Scrollspy sticky de secciones — navegable (solo modo no-filtro) */}
+          <MarketplaceSectionNav sections={feedSections} />
+          {/* "Bodegas que no puedes perderte / Cerca tuyo / mejores 3 tiendas"
+              (TiendasDestacadas) REMOVIDO por pedido de Brandon 2026-06-05.
+              El import se conserva por el tipo de `initialStores` en props. */}
+          {/* "Cerca de ti" (GPS opt-in) REMOVIDO por pedido de Brandon 2026-06-05. */}
+          {/* Top más vendidos — SSR (SEO) */}
+          <BodegasSectionBox anchorId="mp-vendidos"><MarketplaceBestsellersStrip initialItems={initialBestsellers} /></BodegasSectionBox>
+          {/* Para ti — recomendaciones IA personalizadas (se auto-oculta sin historial) */}
+          {isVisible("para-ti") && (
+            <BodegasSectionBox defer flush><PersonalizedRecommendations /></BodegasSectionBox>
+          )}
+          {/* NB: MarketplaceTopToday ("Lo más pedido hoy") se evaluó y descartó del
+              feed — es redundante con "Más vendidos" (MarketplaceBestsellersStrip,
+              ya arriba) y su grid de 6 cols queda apretado en la columna central.
+              El social-proof de ranking ya lo cubre Bestsellers. */}
+          {/* Ofertas del día / flash */}
+          <BodegasSectionBox anchorId="mp-ofertas" defer><OfertasDelDiaHero /></BodegasSectionBox>
+          <BodegasSectionBox defer><OfertasFlashSection /></BodegasSectionBox>
+          {/* Catálogo cross-store (filtrable desde el rail izquierdo) */}
+          <BodegasSectionBox anchorId="mp-catalogo" defer>
+            <MarketplaceCatalogViewSection searchQuery={search || undefined} />
+          </BodegasSectionBox>
+          <BodegasSectionBox anchorId="mp-recetas" defer><MarketplaceRecipesWidget /></BodegasSectionBox>
+          {isVisible("comparar-productos") && (
+            <BodegasSectionBox defer><ComparedProductsSection /></BodegasSectionBox>
+          )}
+          {isVisible("bodega-al-mes") && (
+            <BodegasSectionBox defer><SubscribeAndSaveSection /></BodegasSectionBox>
+          )}
+          {isVisible("gift-cards") && (
+            <BodegasSectionBox defer><GiftCardsBanner /></BodegasSectionBox>
+          )}
+          {isVisible("asistente-ia") && (
+            <BodegasSectionBox defer><AsistenteHomeBanner /></BodegasSectionBox>
+          )}
+          <BodegasSectionBox defer><MarketplaceRecentViewed /></BodegasSectionBox>
+        </>
+      )}
+    </div>
+  );
+}
+
 /**
  * BodegasSectionBox — wrapper compartido para que cada strip del home de
  * bodegas se vea como una tarjeta (igual que Mercado Libre): borde, bg
@@ -349,12 +485,19 @@ export default function MarketplaceContent({
 function BodegasSectionBox({
   children,
   defer = false,
+  flush = false,
+  anchorId,
 }: {
   children: React.ReactNode;
   /** Difiere el montaje hasta acercarse al viewport (perf below-fold). */
   defer?: boolean;
+  /** Sin card con `overflow-hidden` — necesario para sidebars `position:sticky`
+   *  (un ancestro overflow-hidden rompe el sticky). Lo usa el catálogo. */
+  flush?: boolean;
+  /** id de ancla para el scrollspy + buscador ⌘K. scroll-mt compensa el nav. */
+  anchorId?: string;
 }) {
-  return (
+  const inner = (
     <RevealOnScroll
       defer={defer}
       // Pre-monta ~500px antes de entrar (el fetch arranca antes de verse).
@@ -362,15 +505,29 @@ function BodegasSectionBox({
       // Reserva alto mientras no montó → sin layout shift al aparecer.
       minHeightClass={defer ? "min-h-[260px]" : undefined}
     >
-      <div
-        className={[
-          "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
-          "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
-          "sm:[&_section]:!px-6 [&_section]:!py-5 sm:[&_section]:!py-6",
-        ].join(" ")}
-      >
-        {children}
-      </div>
+      {flush ? (
+        children
+      ) : (
+        <div
+          className={[
+            "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+            "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
+            "sm:[&_section]:!px-6 [&_section]:!py-5 sm:[&_section]:!py-6",
+          ].join(" ")}
+        >
+          {children}
+        </div>
+      )}
     </RevealOnScroll>
+  );
+
+  // Con ancla: envoltura con id + scroll-mt para que el scrollspy/⌘K aterricen
+  // debajo del nav sticky sin tapar el encabezado de la sección.
+  return anchorId ? (
+    <div id={anchorId} className="scroll-mt-[7rem]">
+      {inner}
+    </div>
+  ) : (
+    inner
   );
 }

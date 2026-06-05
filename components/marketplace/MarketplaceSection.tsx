@@ -81,9 +81,10 @@ const TONE_STYLES: Record<
 > = {
   default: {
     section: "",
-    // Round 11: gray-400 (#9ca3af) sobre blanco = 2.85:1 → FAIL WCAG AA 4.5:1.
-    // gray-500 (#6b7280) sobre blanco = 4.83:1 → PASS para texto small.
-    kicker: "text-gray-500 dark:text-gray-400",
+    // Brandon 2026-06-05: kicker con color accent (teal) — mejor contraste y
+    // marca, consistente con los headings del rail. El accent #00B4A6 sobre
+    // blanco da contraste alto para texto uppercase pequeño.
+    kicker: "text-[var(--accent)]",
     title: "text-gray-900 dark:text-white",
     border: "border-gray-200 dark:border-gray-800",
   },
@@ -209,7 +210,7 @@ export default function MarketplaceSection({
               {title}
             </h2>
             {subtitle && (
-              <p className="text-xs sm:text-base text-[var(--text-tertiary)] mt-1 sm:mt-2 max-w-xl leading-relaxed">
+              <p className="text-sm sm:text-base font-medium text-[var(--text-secondary)] mt-1.5 max-w-xl leading-relaxed">
                 {subtitle}
               </p>
             )}
