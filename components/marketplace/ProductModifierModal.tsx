@@ -27,19 +27,8 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbStoreProductModifierGroup } from "@/lib/db/marketplace.db";
-import { useMarketplaceCart, modifierHashOf, type SelectedModifier } from "@/hooks/use-marketplace-cart";
-
-/** Producto sugerido para "Combiná con tu pedido" (misma tienda). */
-interface SuggestionItem {
-  productId: number;
-  storeProductId: string;
-  name: string;
-  price: number;
-  image: string | null;
-  unit: string | null;
-  category: string | null;
-  stock: number | null;
-}
+import type { SelectedModifier } from "@/hooks/use-marketplace-cart";
+import ProductCommentsSection from "@/components/marketplace/ProductCommentsSection";
 
 interface ProductModifierModalProps {
   open: boolean;
@@ -91,14 +80,6 @@ export default function ProductModifierModal({
   const [note, setNote] = useState("");
   const [showNoteField, setShowNoteField] = useState(false);
 
-  // ── "Combiná con tu pedido" — cross-sell de la MISMA tienda ──────────────
-  // Brandon 2026-05-27: rellena el modal (sobre todo cuando no hay adicionales)
-  // sugiriendo otros productos de la tienda para complementar (ej. una bebida).
-  // El CARRITO es la fuente de verdad de las cantidades — así el stepper y el
-  // resumen siempre reflejan lo real (incluye lo ya agregado en sesión previa).
-  const { addItem, updateQuantity, items: cartItems } = useMarketplaceCart();
-  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
-
   // ── Adicionales (extras: "con crema", "ají extra"…) ──────────────────────
   // En el marketplace los cards del catálogo NO traen modifierGroups (el API
   // cross-store no los incluye). Si el padre no los pasó, los buscamos al abrir
@@ -140,91 +121,6 @@ export default function ProductModifierModal({
       .catch(() => setLazyGroups([]));
     return () => ctrl.abort();
   }, [open, groups.length, product.id, product.storeSlug]);
-
-  // Fetch de sugerencias de la misma tienda al abrir. Excluye el producto
-  // actual y los agotados. Prioriza otra categoría distinta a la del producto
-  // (ej. si pedís comida, primero te muestra bebidas/postres).
-  useEffect(() => {
-    if (!open || !product.storeSlug) return;
-    const ctrl = new AbortController();
-    fetch(
-      `/api/marketplace/catalog?storeSlug=${encodeURIComponent(product.storeSlug)}&sort=popular&limit=12`,
-      { signal: ctrl.signal },
-    )
-      .then((r) => (r.ok ? r.json() : { data: [] }))
-      .then((j) => {
-        const list = (j.data ?? []) as Array<Record<string, unknown>>;
-        const mapped: SuggestionItem[] = list
-          .filter(
-            (p) =>
-              String(p.productId) !== String(product.id) &&
-              (p.stock == null || (p.stock as number) > 0),
-          )
-          .map((p) => ({
-            productId: p.productId as number,
-            storeProductId: String(p.storeProductId),
-            name: String(p.name),
-            price: Number(p.price) || 0,
-            image: (p.image as string | null) ?? null,
-            unit: (p.unit as string | null) ?? null,
-            category: (p.category as string | null) ?? null,
-            stock: (p.stock as number | null) ?? null,
-          }));
-        // Ordena las de OTRA categoría primero (complemento real).
-        const curCat = (product.category ?? "").toLowerCase();
-        mapped.sort((a, b) => {
-          const aOther = (a.category ?? "").toLowerCase() !== curCat ? 0 : 1;
-          const bOther = (b.category ?? "").toLowerCase() !== curCat ? 0 : 1;
-          return aOther - bOther;
-        });
-        setSuggestions(mapped.slice(0, 6));
-      })
-      .catch(() => {
-        /* no crítico */
-      });
-    return () => ctrl.abort();
-  }, [open, product.storeSlug, product.id, product.category]);
-
-  // Cantidad ACTUAL de un extra en el carrito (línea sin modifiers → hash "").
-  const extraQtyOf = (sug: SuggestionItem) =>
-    cartItems.find(
-      (i) =>
-        i.storeId === product.storeId &&
-        i.productId === sug.productId &&
-        (i.modifierHash ?? "") === "",
-    )?.quantity ?? 0;
-
-  const addExtra = (sug: SuggestionItem) => {
-    addItem({
-      storeId: product.storeId,
-      storeName: product.storeName,
-      storeSlug: product.storeSlug,
-      storeProductId: sug.storeProductId,
-      productId: sug.productId,
-      name: sug.name,
-      price: sug.price,
-      basePrice: sug.price,
-      image: sug.image,
-      unit: sug.unit,
-      category: sug.category ?? undefined,
-      stock: sug.stock,
-      modifiers: [],
-      modifierHash: modifierHashOf([]),
-      quantity: 1,
-    });
-  };
-
-  const decExtra = (sug: SuggestionItem) => {
-    const next = extraQtyOf(sug) - 1;
-    updateQuantity(product.storeId, sug.productId, next, modifierHashOf([]));
-  };
-
-  // Extras ya agregados (para el resumen "con la descripción de lo agregado").
-  const addedExtras = suggestions
-    .map((s) => ({ sug: s, qty: extraQtyOf(s) }))
-    .filter((e) => e.qty > 0);
-  const addedExtrasCount = addedExtras.reduce((n, e) => n + e.qty, 0);
-  const addedExtrasTotal = addedExtras.reduce((sum, e) => sum + e.sug.price * e.qty, 0);
 
   useEffect(() => {
     if (!open) return;
@@ -353,23 +249,13 @@ export default function ProductModifierModal({
                 Desktop: hero más alto + bloque meta debajo + spacer + qty/CTA
                 anclado al fondo. Sticky por flex-col interno. */}
             <div className="shrink-0 lg:flex lg:flex-col lg:w-[420px] lg:border-r lg:border-[var(--rule-soft)] lg:overflow-y-auto">
-              {/* Hero image — Brandon 2026-06-05: el producto se ve ENTERO
-                  (object-contain, sin recorte) sobre un fondo difuminado de la
-                  misma foto → relleno elegante que no deja bandas vacías. Más
-                  alto para darle presencia. */}
+              {/* Hero image — Brandon 2026-06-06: el producto se ve ENTERO
+                  (object-contain, sin recorte) sobre fondo LIMPIO. Antes había
+                  un blur de la propia foto que teñía el fondo (se veía mostaza
+                  con fotos cálidas) — fuera, lo quiere sin fondo. */}
               <div className="relative shrink-0">
                 {product.image ? (
-                  <div className="relative h-56 sm:h-64 lg:h-auto lg:aspect-square w-full overflow-hidden bg-[var(--surface-sunken)]">
-                    {/* Fondo difuminado de la propia foto — rellena los lados sin
-                        recortar el producto. */}
-                    <Image
-                      src={product.image}
-                      alt=""
-                      aria-hidden
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 420px"
-                      className="object-cover scale-110 blur-2xl opacity-40"
-                    />
+                  <div className="relative h-44 sm:h-56 lg:h-auto lg:aspect-square w-full overflow-hidden bg-[var(--surface-canvas)]">
                     {/* Producto COMPLETO — contain, con sombra para destacarlo. */}
                     <Image
                       src={product.image}
@@ -379,9 +265,6 @@ export default function ProductModifierModal({
                       className="object-contain p-3 sm:p-4 drop-shadow-xl"
                       priority
                     />
-                    {/* Gradient base — solo donde va el título (bottom 1/3),
-                        para legibilidad del overlay en mobile. */}
-                    <div className="absolute inset-x-0 bottom-0 h-2/5 bg-linear-to-t from-black/80 via-black/40 to-transparent lg:hidden" />
                   </div>
                 ) : (
                   <div className="h-32 sm:h-40 lg:h-56 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success-500)] flex items-center justify-center">
@@ -390,21 +273,21 @@ export default function ProductModifierModal({
                 )}
 
                 {/* Drag handle solo mobile */}
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-white/50 sm:hidden" aria-hidden />
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-black/15 sm:hidden" aria-hidden />
+              </div>
 
-                {/* Title overlay — SOLO mobile/tablet. Brandon 2026-05-18 v4:
-                    diseño más limpio, eyebrow accent en lugar de "Armá tu
-                    pedido" genérico (queda el eyebrow del progreso abajo).
-                    Pricing más prominente. */}
-                <div className="absolute bottom-3 left-4 right-16 lg:hidden">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white drop-shadow-lg leading-[1.15] line-clamp-2">
-                    {product.name}
-                  </h2>
-                  <p className="mt-1.5 text-sm font-extrabold text-white tabular-nums">
-                    Desde {fmt(product.price)}
-                    {product.unit && <span className="font-medium text-white/75"> / {product.unit}</span>}
-                  </p>
-                </div>
+              {/* Title block — SOLO mobile/tablet. Brandon 2026-06-06: antes era
+                  overlay blanco con gradiente negro sobre la foto; con el fondo
+                  limpio (sin blur) el gradiente manchaba — ahora es un bloque
+                  estático debajo de la imagen, mismo patrón que desktop. */}
+              <div className="px-4 pb-3 pt-1 lg:hidden">
+                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-[1.15] line-clamp-2">
+                  {product.name}
+                </h2>
+                <p className="mt-1 text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+                  Desde {fmt(product.price)}
+                  {product.unit && <span className="font-medium text-[var(--text-tertiary)]"> / {product.unit}</span>}
+                </p>
               </div>
 
               {/* Desktop meta block — bloque de info debajo de la imagen */}
@@ -570,19 +453,10 @@ export default function ProductModifierModal({
                 </div>
               )}
 
-              {effectiveGroups.length === 0 ? (
-                <div className="text-center py-5">
-                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-2.5">
-                    <ShoppingCart className="h-6 w-6" strokeWidth={2} aria-hidden />
-                  </span>
-                  <p className="text-sm font-extrabold text-[var(--text-primary)]">
-                    Listo para agregar
-                  </p>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                    Elegí la cantidad{suggestions.length > 0 ? " — y mirá qué le combina abajo." : " y agregá al carrito."}
-                  </p>
-                </div>
-              ) : (
+              {/* Brandon 2026-06-06: el empty-state "Listo para agregar" se
+                  quitó (no cumplía ninguna acción). Sin adicionales, el modal
+                  pasa directo del banner de tienda a los comentarios. */}
+              {effectiveGroups.length > 0 &&
                 effectiveGroups.map((g) => {
                   const selected = selection[g.id] ?? [];
                   const count = selected.length;
@@ -664,8 +538,7 @@ export default function ProductModifierModal({
                       )}
                     </section>
                   );
-                })
-              )}
+                })}
 
               {/* Notas — colapsable para no abrumar */}
               {effectiveGroups.length > 0 && (
@@ -713,168 +586,16 @@ export default function ProductModifierModal({
                 </div>
               )}
 
-              {/* ── "Combiná con tu pedido" — cross-sell misma tienda ──────
-                   Rellena el modal (sobre todo cuando no hay adicionales) y
-                   sube el ticket promedio sugiriendo complementos. */}
-              {suggestions.length > 0 && (
-                <div className={cn("pt-1", effectiveGroups.length > 0 && "border-t border-[var(--rule-soft)] pt-5")}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-                      <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                    </span>
-                    <div className="min-w-0 flex-1 leading-tight">
-                      <p className="text-sm font-black text-[var(--text-primary)]">Combiná con tu pedido</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium truncate">
-                        Otros de {product.storeName} para acompañar
-                      </p>
-                    </div>
-                    {/* Refleja cuántos extras se agregaron al carrito desde acá */}
-                    <AnimatePresence>
-                      {addedExtrasCount > 0 && (
-                        <motion.span
-                          key={addedExtrasCount}
-                          initial={{ scale: 0.6, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.6, opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-black text-white shadow-sm"
-                        >
-                          <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
-                          {addedExtrasCount} agregado{addedExtrasCount === 1 ? "" : "s"}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* ── Resumen de lo agregado — "con la descripción de lo agregado".
-                       Aparece dentro del MISMO modal apenas sumás un extra. ── */}
-                  <AnimatePresence initial={false}>
-                    {addedExtras.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="mb-3 overflow-hidden"
-                      >
-                        <div className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/50 p-3">
-                          <p className="mb-2 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
-                            <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
-                            Sumaste a tu pedido
-                          </p>
-                          <ul className="space-y-1.5">
-                            {addedExtras.map(({ sug, qty }) => (
-                              <li key={sug.storeProductId} className="flex items-center gap-2 text-[length:var(--ts-sm)]">
-                                <span className="inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black text-white tabular-nums">
-                                  {qty}
-                                </span>
-                                <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">
-                                  {sug.name}
-                                </span>
-                                <span className="shrink-0 font-black tabular-nums text-[var(--text-primary)]">
-                                  {fmt(sug.price * qty)}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => updateQuantity(product.storeId, sug.productId, 0, modifierHashOf([]))}
-                                  aria-label={`Quitar ${sug.name}`}
-                                  className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
-                                >
-                                  <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                          <div className="mt-2 flex items-center justify-between border-t border-[var(--accent)]/20 pt-2 text-[length:var(--ts-xs)]">
-                            <span className="font-bold text-[var(--text-secondary)]">Subtotal extras</span>
-                            <span className="font-black tabular-nums text-[var(--text-primary)]">{fmt(addedExtrasTotal)}</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <div className="flex gap-3 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden pb-1 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
-                    {suggestions.map((sug) => {
-                      const qty = extraQtyOf(sug);
-                      const added = qty > 0;
-                      const atStockCap = sug.stock != null && sug.stock > 0 && qty >= sug.stock;
-                      return (
-                        <div
-                          key={sug.storeProductId}
-                          className={cn(
-                            "shrink-0 w-32 rounded-2xl border-2 bg-[var(--surface-raised)] overflow-hidden transition-colors",
-                            added
-                              ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/20"
-                              : "border-[var(--rule-base)]",
-                          )}
-                        >
-                          <div className="relative h-24 w-full bg-[var(--surface-sunken)]">
-                            {sug.image ? (
-                              <Image src={sug.image} alt="" fill sizes="128px" className="object-cover" unoptimized />
-                            ) : (
-                              <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-center px-1">
-                                {sug.category ?? "Producto"}
-                              </span>
-                            )}
-                            {/* Ribbon con la cantidad — refleja que ya entró al pedido */}
-                            {added && (
-                              <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black text-white shadow-sm">
-                                <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />
-                                {qty} en pedido
-                              </span>
-                            )}
-                          </div>
-                          <div className="p-2">
-                            <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight line-clamp-2 min-h-[2rem]">
-                              {sug.name}
-                            </p>
-                            <div className="mt-1.5 flex items-center justify-between gap-1">
-                              <span className="text-sm font-black text-[var(--text-primary)] tabular-nums">
-                                {fmt(sug.price)}
-                              </span>
-                              {added ? (
-                                /* Stepper — agregar MÁS o quitar */
-                                <div className="inline-flex items-center rounded-full border-2 border-[var(--accent)] bg-[var(--surface-canvas)] overflow-hidden">
-                                  <button
-                                    type="button"
-                                    onClick={() => decExtra(sug)}
-                                    aria-label={`Quitar uno de ${sug.name}`}
-                                    className="inline-flex h-7 w-7 items-center justify-center text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)] active:scale-90"
-                                  >
-                                    <Minus className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
-                                  </button>
-                                  <span className="min-w-[1.25rem] text-center text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-primary)]">
-                                    {qty}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => addExtra(sug)}
-                                    disabled={atStockCap}
-                                    aria-label={`Agregar otro ${sug.name}`}
-                                    className="inline-flex h-7 w-7 items-center justify-center text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)] active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                                  >
-                                    <Plus className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => addExtra(sug)}
-                                  aria-label={`Agregar ${sug.name}`}
-                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white transition-all hover:brightness-110 active:scale-90"
-                                >
-                                  <Plus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* ── Comentarios públicos del producto (estilo Instagram) ────
+                   Brandon 2026-06-06: reemplaza al cross-sell "Combiná con tu
+                   pedido" (era tedioso). El usuario comenta, se publica al
+                   instante y queda visible para todos los demás. */}
+              <ProductCommentsSection
+                open={open}
+                productId={product.id}
+                storeSlug={product.storeSlug}
+                className={cn(effectiveGroups.length > 0 && "border-t border-[var(--rule-soft)] pt-5")}
+              />
             </div>
 
             {/* ── Footer mobile/tablet — sticky con price breakdown ──────

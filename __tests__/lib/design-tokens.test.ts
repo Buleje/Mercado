@@ -10,8 +10,8 @@ import { tokens, chartColors } from "../../lib/design-tokens";
 
 describe("design-tokens — sanity checks", () => {
   describe("color.primary", () => {
-    it("DEFAULT es el Alegra Teal #00B4A6", () => {
-      expect(tokens.color.primary.DEFAULT).toBe("#00B4A6");
+    it("DEFAULT es el Turquesa oficial #00A0A0 (paleta B 2026-06-05)", () => {
+      expect(tokens.color.primary.DEFAULT).toBe("#00A0A0");
     });
 
     it("dark es #009690 (hover/active)", () => {
@@ -22,8 +22,8 @@ describe("design-tokens — sanity checks", () => {
       expect(tokens.color.primary.light).toBe("#33C4B8");
     });
 
-    it("bright es #00D4C8 (accent interactivo)", () => {
-      expect(tokens.color.primary.bright).toBe("#00D4C8");
+    it("bright es #00D4D4 (accent interactivo)", () => {
+      expect(tokens.color.primary.bright).toBe("#00D4D4");
     });
   });
 

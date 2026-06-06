@@ -363,7 +363,9 @@ describe("GET /api/chat/public — listado", () => {
     expect(msg.tenantId).toBeUndefined();
     expect(msg.metadataJson).toBeUndefined();
     expect(msg.readByBuyerAt).toBeUndefined();
-    expect(msg.readBySellerAt).toBeUndefined();
+    // readBySellerAt SÍ se expone desde 2026-06-06 — habilita los ✓✓
+    // estilo WhatsApp (el buyer ve si la tienda leyó su mensaje).
+    expect("readBySellerAt" in msg).toBe(true);
     // Headers privacy-by-design
     expect(res.headers.get("Cache-Control")).toContain("no-store");
     expect(res.headers.get("X-Robots-Tag")).toContain("noindex");

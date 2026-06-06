@@ -497,12 +497,13 @@ export const MarketplacePublicDB = {
         variantMap: new Map<number, number>(),
         ratingMap: new Map<number, number>(),
         bestSellerIds: new Set<number>(),
+        commentCountMap: new Map<number, number>(),
       };
     }
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const [primaryImages, variantCounts, ratingsAgg, topSellers] = await Promise.all([
+    const [primaryImages, variantCounts, ratingsAgg, topSellers, commentCounts] = await Promise.all([
       prisma.productImage.findMany({
         where: { productId: { in: productIds }, tenantId, isPrimary: true },
         select: { productId: true, url: true },
@@ -532,6 +533,20 @@ export const MarketplacePublicDB = {
         orderBy: { _sum: { quantity: "desc" } },
         take: Math.ceil(productIds.length * 0.1) || 1,
       }),
+      // Comentarios públicos estilo IG (status='comment', Brandon 2026-06-06)
+      // — el card muestra el conteo con icono de globo.
+      // @cross-tenant intentional (ADR-082): los comentarios viven en el
+      // tenant de la TIENDA dueña, no en el tenant que sirve el catálogo
+      // cross-store. Product.id es global → el scope por productId alcanza.
+      prisma.review.groupBy({
+        by: ["productId"],
+        where: {
+          productId: { in: productIds },
+          status: "comment",
+          deletedAt: null,
+        },
+        _count: { id: true },
+      }),
     ]);
 
     return {
@@ -539,6 +554,7 @@ export const MarketplacePublicDB = {
       variantMap: new Map(variantCounts.map((v) => [v.productId, v._count.id])),
       ratingMap: new Map(ratingsAgg.map((r) => [r.productId, r._avg.rating ?? 0])),
       bestSellerIds: new Set(topSellers.map((s) => s.productId)),
+      commentCountMap: new Map(commentCounts.map((c) => [c.productId, c._count.id])),
     };
   },
 

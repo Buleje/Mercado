@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
     const productIds = items.map((r) => r.product.id);
-    const { primaryImageMap, variantMap, ratingMap, bestSellerIds } =
+    const { primaryImageMap, variantMap, ratingMap, bestSellerIds, commentCountMap } =
       await MarketplacePublicDB.batchCatalogEnrichment(productIds, tenantId);
 
     // ID threshold para badge "new": los IDs más altos son los más recientes
@@ -120,6 +120,7 @@ export async function GET(req: NextRequest) {
         stock,
         hasVariants: (variantMap.get(pid) ?? 0) > 0,
         avgRating: Math.round((ratingMap.get(pid) ?? 0) * 10) / 10,
+        commentCount: commentCountMap.get(pid) ?? 0,
         badges,
         storeId: r.store.id,
         storeName: r.store.name,

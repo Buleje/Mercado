@@ -15,6 +15,7 @@ import {
   GitCompareArrows,
   Check,
   Heart,
+  MessageCircle,
   Timer,
   // Brandon 2026-05-18 v5: Minus + Plus removidos — el stepper mobile inferior
   // se quitó porque ahora el CTA mobile = círculo icon-only (igual que desktop).
@@ -137,6 +138,8 @@ export interface UnifiedProductCardProduct {
   isPeruvian?: boolean;
   /** Grupos de modificadores configurados — si presente, abre selector pre-add. */
   modifierGroups?: DbStoreProductModifierGroup[];
+  /** Comentarios públicos del producto (estilo IG) — chip con globo + count. */
+  commentCount?: number;
 }
 
 export type UnifiedProductCardVariant = "default" | "flash" | "top" | "liquidation";
@@ -590,6 +593,21 @@ export default function UnifiedProductCard({
             )}
             <span className="truncate hover:underline">{product.storeName}</span>
           </Link>
+        )}
+
+        {/* Comentarios — chip social proof (Brandon 2026-06-06): globo + count.
+            Click → abre el modal del producto donde viven los comentarios. */}
+        {(product.commentCount ?? 0) > 0 && (
+          <button
+            type="button"
+            onClick={handleAdd}
+            aria-label={`Ver ${product.commentCount} comentario${product.commentCount === 1 ? "" : "s"} de ${product.name}`}
+            className="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
+          >
+            <MessageCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
+            <span className="tabular-nums">{product.commentCount}</span>
+            <span className="hidden sm:inline">comentario{product.commentCount === 1 ? "" : "s"}</span>
+          </button>
         )}
 
         {/* Precio + CTA circular — precio RESALTADO + ahorro visible.

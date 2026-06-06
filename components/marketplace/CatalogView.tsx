@@ -43,6 +43,8 @@ interface CatalogProduct {
   storeZone: string | null;
   storeRating: number;
   storeCategory: string | null;
+  /** Comentarios públicos (estilo IG) del producto — Brandon 2026-06-06 */
+  commentCount?: number;
   // C5 — Sponsored
   isSponsored?: boolean;
   sponsoredBoostId?: string | null;
@@ -67,6 +69,7 @@ function toCatalogCardProduct(product: CatalogProduct) {
     unit: product.unit,
     category: product.category ?? undefined,
     stock: product.stock,
+    commentCount: product.commentCount,
   };
 }
 

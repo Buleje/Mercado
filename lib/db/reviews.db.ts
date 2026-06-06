@@ -409,6 +409,98 @@ export const ReviewsMarketplaceDB = {
   },
 
   /**
+   * Comentarios PÚBLICOS de producto (estilo Instagram) — Brandon 2026-06-06.
+   *
+   * Reusan el modelo Review con la convención `status = "comment"`:
+   *  - NO contaminan getAggregate ni listByStore/listByProduct (filtran 'approved')
+   *  - NO requieren orderId ni rating (rating = 0 marca "sin calificación")
+   *  - Se publican al instante (sin moderación previa); el admin puede
+   *    ocultarlos después vía moderate(status='hidden').
+   */
+  async createComment(params: {
+    tenantId: string;
+    storeId?: string | null;
+    productId: number;
+    name: string;
+    text: string;
+  }): Promise<{ id: string; name: string; text: string; date: string }> {
+    // SECURITY: mismo strip HTML + control chars que createVerified.
+    const stripHtml = (s: string) =>
+      String(s ?? "")
+        .replace(/<[^>]*>/g, "")
+
+        .replace(/[\u0000-\u001F\u007F]/g, "")
+        .trim();
+    const name = stripHtml(params.name).slice(0, 60);
+    const text = stripHtml(params.text).slice(0, 300);
+    if (!name || !text) throw new Error("Nombre y comentario son obligatorios");
+
+    const id = crypto.randomUUID();
+    const now = new Date();
+
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Review"
+         ("id","tenantId","storeId","productId","name","text","rating",
+          "status","verified","helpfulUpvotes","helpfulDownvotes","date","location")
+       VALUES ($1,$2,$3,$4,$5,$6,0,'comment',false,0,0,$7,'')`,
+      id,
+      params.tenantId,
+      params.storeId ?? null,
+      params.productId,
+      name,
+      text,
+      now,
+    );
+
+    invalidateByPrefix(`reviews:${params.tenantId}:comments`);
+
+    logger.info("[Reviews] comment created", {
+      tenantId: params.tenantId,
+      reviewId: id,
+      productId: params.productId,
+    });
+
+    return { id, name, text, date: now.toISOString() };
+  },
+
+  /**
+   * Lista comentarios públicos de un producto, más recientes primero.
+   * Cache 30s — el modal los consulta en cada apertura.
+   */
+  async listComments(
+    tenantId: string,
+    productId: number,
+    opts: { limit?: number } = {},
+  ): Promise<Array<{ id: string; name: string; text: string; date: string }>> {
+    const limit = Math.min(Math.max(1, opts.limit ?? 30), 100);
+    const cacheKey = `reviews:${tenantId}:comments:product:${productId}:${limit}`;
+
+    return getOrSet(cacheKey, 30, async () => {
+      const rows = await prisma.$queryRawUnsafe<
+        Array<{ id: string; name: string; text: string; date: Date }>
+      >(
+        `SELECT "id","name","text","date"
+           FROM "Review"
+          WHERE "tenantId" = $1
+            AND "productId" = $2
+            AND "status" = 'comment'
+            AND "deletedAt" IS NULL
+          ORDER BY "date" DESC
+          LIMIT $3`,
+        tenantId,
+        productId,
+        limit,
+      );
+      return rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        text: r.text,
+        date: r.date.toISOString(),
+      }));
+    });
+  },
+
+  /**
    * Moderación del admin — cambiar status.
    * Valores válidos: pending | approved | rejected | hidden
    */
