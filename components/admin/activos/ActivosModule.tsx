@@ -94,11 +94,13 @@ export default function ActivosModule() {
     { income: 0, expense: 0, profit: 0, pending: 0 },
   );
   const alerts = assets.reduce((n, a) => n + a.maintenanceDue + (a.fuelAlert ? 1 : 0), 0);
+  // Categorías = defaults + las que ya usan las máquinas del tenant (custom persisten).
+  const knownTypes = Array.from(new Set([...TYPES.map(t => t.v), ...assets.map(a => a.type)]));
 
   const exportReport = () => {
     if (assets.length === 0) { toast.error("No hay máquinas para exportar"); return; }
     const rows = assets.map(a => ({
-      Maquina: a.name, Tipo: TYPES.find(t => t.v === a.type)?.label ?? a.type, Placa: a.plate ?? "",
+      Maquina: a.name, Tipo: typeLabel(a.type), Placa: a.plate ?? "",
       Estado: STATUS_META[a.status]?.label ?? a.status,
       Ingresos: a.totalIncome.toFixed(2), Gastos: a.totalExpense.toFixed(2), Ganancia: a.profit.toFixed(2),
       "Por cobrar": a.pendingAmount.toFixed(2),
@@ -175,7 +177,7 @@ export default function ActivosModule() {
         <CalendarView assets={assets} />
       )}
 
-      {showForm && <AssetFormModal asset={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); void load(); }} />}
+      {showForm && <AssetFormModal asset={editing} knownTypes={knownTypes} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); void load(); }} />}
       {moveFor && <MovementModal asset={moveFor.asset} kind={moveFor.kind} onClose={() => setMoveFor(null)} onSaved={() => { setMoveFor(null); void load(); }} />}
       {detailFor && <AssetDetailDrawer asset={detailFor} onClose={() => setDetailFor(null)} onContract={() => { setContractFor(detailFor); }} onChanged={load} />}
       {contractFor && <ContractModal asset={contractFor} onClose={() => setContractFor(null)} />}
@@ -212,6 +214,16 @@ function KpiCard({ label, value, sub, tone = "neutral", bar = "muted", highlight
 }
 
 function typeIcon(type: string) { return type === "camion" ? Truck : Construction; }
+function typeLabel(type: string) { return TYPES.find(t => t.v === type)?.label ?? (type ? type.charAt(0).toUpperCase() + type.slice(1) : type); }
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <p className="border-b border-[var(--rule-soft)] pb-1.5 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">{title}</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
+    </div>
+  );
+}
 
 function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onChecklist }: {
   asset: AssetStats; onRent: () => void; onExpense: () => void; onEdit: () => void; onDetail: () => void; onContract: () => void; onChecklist: () => void;
@@ -226,7 +238,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
         <button type="button" onClick={onDetail} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
         <div className="min-w-0 flex-1">
           <button type="button" onClick={onDetail} className="block truncate text-base font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)]">{asset.name}</button>
-          <p className="text-xs font-medium text-[var(--text-tertiary)]">{TYPES.find(t => t.v === asset.type)?.label ?? asset.type}{asset.plate ? ` · ${asset.plate}` : ""}</p>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">{typeLabel(asset.type)}{asset.plate ? ` · ${asset.plate}` : ""}</p>
         </div>
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase", st.chip)}>{st.label}</span>
       </div>
@@ -291,9 +303,13 @@ function Chip({ icon: Icon, tone, children }: { icon: React.ComponentType<{ clas
 }
 
 // ── Modal crear / editar activo ─────────────────────────────────────────────
-function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null; onClose: () => void; onSaved: () => void }) {
+function AssetFormModal({ asset, knownTypes, onClose, onSaved }: { asset: AssetStats | null; knownTypes: string[]; onClose: () => void; onSaved: () => void }) {
+  const typeKnown = asset == null || knownTypes.includes(asset.type);
   const [form, setForm] = useState({
-    name: asset?.name ?? "", type: asset?.type ?? "cargador", plate: asset?.plate ?? "",
+    name: asset?.name ?? "",
+    type: asset ? (typeKnown ? asset.type : "__new__") : "cargador",
+    newType: asset && !typeKnown ? typeLabel(asset.type) : "",
+    plate: asset?.plate ?? "",
     purchaseValue: asset?.purchaseValue != null ? String(asset.purchaseValue) : "",
     status: asset?.status ?? "operativo", hourlyRate: asset?.hourlyRate != null ? String(asset.hourlyRate) : "",
     rateUnit: asset?.rateUnit ?? "hora", capacityPerDay: asset?.capacityPerDay != null ? String(asset.capacityPerDay) : "8",
@@ -302,12 +318,16 @@ function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null;
     notes: asset?.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
+  const Preview = typeIcon(form.type === "__new__" ? "otro" : form.type);
+
   const save = async () => {
     if (!form.name.trim()) { toast.error("Ponle un nombre a la máquina"); return; }
+    const resolvedType = form.type === "__new__" ? form.newType.trim().toLowerCase() : form.type;
+    if (!resolvedType) { toast.error("Elige o crea una categoría"); return; }
     setSaving(true);
     try {
       const payload = {
-        name: form.name.trim(), type: form.type, plate: form.plate.trim() || null,
+        name: form.name.trim(), type: resolvedType, plate: form.plate.trim() || null,
         purchaseValue: form.purchaseValue ? Number(form.purchaseValue) : null,
         status: form.status, hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : null,
         rateUnit: form.rateUnit, capacityPerDay: form.capacityPerDay ? Number(form.capacityPerDay) : null,
@@ -322,20 +342,45 @@ function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null;
       toast.success(asset ? "Máquina actualizada" : "Máquina agregada"); onSaved();
     } catch { toast.error("Sin conexión"); } finally { setSaving(false); }
   };
+
   return (
-    <ModalShell title={asset ? "Editar máquina" : "Nueva máquina"} subtitle="Datos del activo, tarifa, horómetro y meta de combustible" onClose={onClose}>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="sm:col-span-2"><label className={LABEL}>Nombre *</label><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} /></div>
-        <div><label className={LABEL}>Tipo</label><select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={FIELD}>{TYPES.map(t => <option key={t.v} value={t.v}>{t.label}</option>)}</select></div>
-        <div><label className={LABEL}>Placa / serie</label><input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} placeholder="ABC-123" className={FIELD} /></div>
-        <div><label className={LABEL}>Estado</label><select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={FIELD}>{Object.entries(STATUS_META).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}</select></div>
-        <div><label className={LABEL}>Valor de compra (S/)</label><input type="number" min="0" value={form.purchaseValue} onChange={e => setForm(f => ({ ...f, purchaseValue: e.target.value }))} placeholder="250000" className={FIELD} /></div>
-        <div><label className={LABEL}>Tarifa de alquiler (S/)</label><input type="number" min="0" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="180" className={FIELD} /></div>
-        <div><label className={LABEL}>Cobro por</label><select value={form.rateUnit} onChange={e => setForm(f => ({ ...f, rateUnit: e.target.value }))} className={FIELD}>{RATE_UNITS.map(u => <option key={u.v} value={u.v}>{u.label}</option>)}</select></div>
-        <div><label className={LABEL} title="Horas/unidades disponibles por día — base de la utilización">Capacidad por día</label><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></div>
-        <div><label className={LABEL} title="Lectura actual del horómetro (horas de motor)">Horómetro actual</label><input type="number" min="0" value={form.currentHours} onChange={e => setForm(f => ({ ...f, currentHours: e.target.value }))} placeholder="0" className={FIELD} /></div>
-        <div><label className={LABEL} title="Galones esperados por unidad — si consume más, salta la alerta">Meta combustible (gal/{unitNoun(form.rateUnit).replace(/s$/, "")})</label><input type="number" min="0" step="0.01" value={form.fuelTargetPerUnit} onChange={e => setForm(f => ({ ...f, fuelTargetPerUnit: e.target.value }))} placeholder="ej. 3.5" className={FIELD} /></div>
-        <div className="sm:col-span-2"><label className={LABEL}>Notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} /></div>
+    <ModalShell title={asset ? "Editar máquina" : "Nueva máquina"} subtitle="Identificación, tarifa de alquiler y control del equipo" onClose={onClose}>
+      <div className="space-y-5">
+        {/* Resumen vivo */}
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Preview className="h-6 w-6" strokeWidth={2} /></span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{form.name.trim() || "Nueva máquina"}</p>
+            <p className="text-xs font-medium text-[var(--text-tertiary)]">{(form.type === "__new__" ? (form.newType.trim() || "Categoría nueva") : typeLabel(form.type))}{form.hourlyRate ? ` · ${fmt(Number(form.hourlyRate))}/${unitNoun(form.rateUnit).replace(/s$/, "")}` : ""}</p>
+          </div>
+        </div>
+
+        <FormSection title="Identificación">
+          <div className="sm:col-span-2"><label className={LABEL}>Nombre *</label><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} autoFocus /></div>
+          <div className="sm:col-span-2">
+            <label className={LABEL}>Categoría</label>
+            <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={FIELD}>
+              {knownTypes.map(v => <option key={v} value={v}>{typeLabel(v)}</option>)}
+              <option value="__new__">+ Nueva categoría…</option>
+            </select>
+            {form.type === "__new__" && <input value={form.newType} onChange={e => setForm(f => ({ ...f, newType: e.target.value }))} placeholder="Nombre de la categoría (ej. Motoniveladora)" className={cn(FIELD, "mt-2")} autoFocus />}
+          </div>
+          <div><label className={LABEL}>Placa / serie</label><input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} placeholder="ABC-123" className={FIELD} /></div>
+          <div><label className={LABEL}>Estado</label><select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={FIELD}>{Object.entries(STATUS_META).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}</select></div>
+        </FormSection>
+
+        <FormSection title="Tarifa de alquiler">
+          <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="180" className={FIELD} /></div>
+          <div><label className={LABEL}>Cobro por</label><select value={form.rateUnit} onChange={e => setForm(f => ({ ...f, rateUnit: e.target.value }))} className={FIELD}>{RATE_UNITS.map(u => <option key={u.v} value={u.v}>{u.label}</option>)}</select></div>
+          <div><label className={LABEL} title="Horas/unidades disponibles por día — base de la utilización">Capacidad por día</label><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></div>
+          <div><label className={LABEL}>Valor de compra (S/)</label><input type="number" min="0" value={form.purchaseValue} onChange={e => setForm(f => ({ ...f, purchaseValue: e.target.value }))} placeholder="250000" className={FIELD} /></div>
+        </FormSection>
+
+        <FormSection title="Control del equipo">
+          <div><label className={LABEL} title="Lectura actual del horómetro (horas de motor)">Horómetro actual</label><input type="number" min="0" value={form.currentHours} onChange={e => setForm(f => ({ ...f, currentHours: e.target.value }))} placeholder="0" className={FIELD} /></div>
+          <div><label className={LABEL} title="Galones esperados por unidad — si consume más, salta la alerta">Meta combustible (gal/{unitNoun(form.rateUnit).replace(/s$/, "")})</label><input type="number" min="0" step="0.01" value={form.fuelTargetPerUnit} onChange={e => setForm(f => ({ ...f, fuelTargetPerUnit: e.target.value }))} placeholder="ej. 3.5" className={FIELD} /></div>
+          <div className="sm:col-span-2"><label className={LABEL}>Notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Año, marca, observaciones…" /></div>
+        </FormSection>
       </div>
       <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel={asset ? "Guardar cambios" : "Agregar máquina"} />
     </ModalShell>
