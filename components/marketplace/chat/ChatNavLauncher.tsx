@@ -101,7 +101,27 @@ export default function ChatNavLauncher({
   const [active, setActive] = useState<ChatConversation | null>(null);
   const [allStores, setAllStores] = useState<StoreLite[] | null>(null);
   const [toast, setToast] = useState<ChatIncomingDetail | null>(null);
+  // ── Chat heads estilo Facebook (Brandon 2026-06-06 v3) ──────────────
+  // Burbuja con el logo del negocio cuando ESTE te escribe; click → ventana
+  // de chat FLOTANTE anclada abajo-derecha (desktop). En mobile abre el
+  // bottom-sheet (las ventanas flotantes no caben).
+  const [floating, setFloating] = useState<ChatConversation | null>(null);
+  const [dismissedHeads, setDismissedHeads] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = sessionStorage.getItem("bsm-chat-heads-dismissed");
+      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch { return new Set(); }
+  });
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
+
+  const dismissHead = (threadId: string) => {
+    setDismissedHeads((prev) => {
+      const next = new Set(prev).add(threadId);
+      try { sessionStorage.setItem("bsm-chat-heads-dismissed", JSON.stringify([...next])); } catch { /* noop */ }
+      return next;
+    });
+  };
 
   const { customer, conversations, unreadTotal, loading, refresh, markRead } =
     useMarketplaceChats(open);
@@ -204,6 +224,33 @@ export default function ChatNavLauncher({
     if (conv.threadId && conv.unreadCount > 0) markRead(conv.threadId);
   };
 
+  /** Abre un chat como ventana FLOTANTE (desktop) o panel (mobile). */
+  const openFloating = (conv: ChatConversation) => {
+    if (conv.threadId && conv.unreadCount > 0) markRead(conv.threadId);
+    if (typeof window !== "undefined" && window.innerWidth < 640) {
+      setActive(conv);
+      setOpen(true);
+      return;
+    }
+    setOpen(false);
+    setFloating(conv);
+  };
+
+  // Heads visibles: el negocio te escribió (unread > 0), no descartada, el
+  // panel está cerrado y no es la ventana flotante ya abierta. Máx 3.
+  const heads =
+    variant === "default" && customer && !open
+      ? conversations
+          .filter(
+            (c) =>
+              c.threadId &&
+              c.unreadCount > 0 &&
+              !dismissedHeads.has(c.threadId) &&
+              floating?.threadId !== c.threadId,
+          )
+          .slice(0, 3)
+      : [];
+
   // Tiendas sin conversación aún (para "Iniciar chat").
   const knownIds = new Set(conversations.map((c) => c.storeId));
   const newChatStores = (allStores ?? []).filter((s) => !knownIds.has(s.id)).slice(0, 8);
@@ -247,8 +294,9 @@ export default function ChatNavLauncher({
               const conv = conversations.find((c) => c.threadId === toast.threadId);
               setToast(null);
               if (!customer) return;
-              setOpen(true);
-              if (conv) openConversation(conv);
+              // Desktop: ventana flotante estilo FB; mobile: panel.
+              if (conv) openFloating(conv);
+              else setOpen(true);
             }}
             aria-label={`Mensaje nuevo de ${toast.storeName} — abrir chat`}
             className="fixed bottom-6 right-4 z-[95] flex w-[320px] max-w-[calc(100vw-2rem)] items-center gap-3 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--surface-raised)] p-3 text-left shadow-2xl shadow-black/20 transition-all hover:border-[var(--accent)] hover:-translate-y-0.5 motion-safe:animate-[slideUp_0.25s_ease-out]"
@@ -472,6 +520,78 @@ export default function ChatNavLauncher({
                 </>
               )}
             </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* ── Chat heads estilo Facebook — burbujas con el logo del negocio ──
+           Aparecen cuando una tienda te escribe; click abre la ventana
+           flotante. X al hover para descartar (vuelve si llega otro msj). */}
+      {heads.length > 0 && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed bottom-44 right-4 z-[85] flex flex-col items-end gap-2.5"
+            aria-label="Chats pendientes"
+          >
+            {heads.map((c) => (
+              <div key={c.threadId} className="group relative motion-safe:animate-[slideUp_0.3s_ease-out]">
+                <button
+                  type="button"
+                  onClick={() => openFloating(c)}
+                  aria-label={`Mensaje nuevo de ${c.storeName} — abrir chat`}
+                  title={`${c.storeName}: ${c.lastMessage}`}
+                  className="relative block h-14 w-14 overflow-hidden rounded-full border-2 border-[var(--surface-canvas)] bg-[var(--surface-sunken)] shadow-xl shadow-black/25 transition-transform hover:scale-110 active:scale-95"
+                >
+                  {c.storeLogo ? (
+                    <Image src={c.storeLogo} alt="" fill sizes="56px" className="object-cover" />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center text-[var(--accent)]">
+                      <StoreIcon className="h-6 w-6" strokeWidth={2} aria-hidden />
+                    </span>
+                  )}
+                </button>
+                {/* Badge count */}
+                <span className="pointer-events-none absolute -top-1 -right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-[var(--surface-canvas)]">
+                  {c.unreadCount > 9 ? "9+" : c.unreadCount}
+                </span>
+                {/* Descartar (hover, como FB) */}
+                <button
+                  type="button"
+                  onClick={() => c.threadId && dismissHead(c.threadId)}
+                  aria-label={`Descartar burbuja de ${c.storeName}`}
+                  className="absolute -top-1.5 -left-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] opacity-0 shadow transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                >
+                  <X className="h-3 w-3" strokeWidth={3} aria-hidden />
+                </button>
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
+
+      {/* ── Ventana de chat FLOTANTE (desktop, estilo Facebook) ── */}
+      {floating && customer?.phone && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-label={`Chat con ${floating.storeName}`}
+            className="fixed bottom-4 right-4 z-[88] hidden h-[460px] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-2xl shadow-black/30 sm:flex motion-safe:animate-[slideUp_0.25s_cubic-bezier(0.32,0.72,0,1)]"
+          >
+            <ChatConversationView
+              threadId={floating.threadId}
+              storeId={floating.storeId}
+              storeName={floating.storeName}
+              storeSlug={floating.storeSlug}
+              storeLogo={floating.storeLogo}
+              customerPhone={customer.phone}
+              customerName={customer.name ?? "Cliente"}
+              onBack={() => { setFloating(null); void refresh(); }}
+              onActivity={() => { if (floating.threadId) markRead(floating.threadId); }}
+              onThreadCreated={(tid) => {
+                setFloating((prev) => (prev ? { ...prev, threadId: tid } : prev));
+                void refresh();
+              }}
+            />
           </div>,
           document.body,
         )}

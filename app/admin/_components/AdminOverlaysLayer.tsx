@@ -32,6 +32,13 @@ const OnboardingWizard = dynamic(
   { ssr: false },
 );
 
+// Burbuja flotante de chat con clientes (estilo FB) — lazy, solo aparece
+// cuando hay mensajes sin leer (unreadForSeller > 0).
+const AdminChatHead = dynamic(
+  () => import("@/components/admin/AdminChatHead"),
+  { ssr: false },
+);
+
 type FilteredTabs = ComponentProps<typeof AdminMobileBottomBar>["filteredTabs"];
 type OnboardingApi = ReturnType<typeof useOnboarding>;
 
@@ -99,6 +106,9 @@ export function AdminOverlaysLayer({
 
       <AIStatusBanner />
       <SSEListener />
+      {/* Burbuja flotante de chat (Brandon 2026-06-06): cliente escribe →
+          avatar + badge abajo-derecha; responde sin salir del tab actual. */}
+      <AdminChatHead />
 
       {showOnboarding && (
         <OnboardingWizard
