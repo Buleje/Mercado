@@ -19,6 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 interface AssetStats {
   id: string; name: string; type: string; plate: string | null; imageUrl: string | null;
@@ -50,9 +51,9 @@ const RATE_UNITS = [
   { v: "viaje", label: "Por viaje" },
 ];
 const STATUS_META: Record<string, { label: string; chip: string }> = {
-  operativo:     { label: "Operativo",     chip: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
-  mantenimiento: { label: "Mantenimiento", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
-  parado:        { label: "Parado",        chip: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
+  operativo:     { label: "Operativo",     chip: "bg-[var(--accent-soft)] text-[var(--accent)]" },
+  mantenimiento: { label: "Mantenimiento", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" },
+  parado:        { label: "Parado",        chip: "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" },
 };
 const EXPENSE_CATS = [
   { v: "combustible", label: "Combustible" },
@@ -89,32 +90,28 @@ export default function ActivosModule() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-            <Construction className="h-6 w-6" strokeWidth={2.1} />
-          </span>
-          <div>
-            <h1 className="text-xl font-black tracking-tight text-[var(--text-primary)]">Activos & Maquinaria</h1>
-            <p className="text-sm text-[var(--text-secondary)]">Alquila tus equipos y mide la ganancia de cada máquina</p>
-          </div>
-        </div>
+      {/* Header estándar del panel (mismo patrón que todos los módulos) */}
+      <AdminModuleHeader
+        eyebrow="Finanzas · Maquinaria"
+        title="Activos & Maquinaria"
+        description="Alquila tus equipos y mira la ganancia real de cada máquina."
+        icon={Construction}
+      >
         <button
           type="button"
           onClick={() => { setEditing(null); setShowForm(true); }}
-          className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-black text-white shadow-[var(--shadow-md)] transition-all hover:-translate-y-0.5 active:translate-y-0"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 min-h-[44px]"
         >
-          <Plus className="h-4 w-4" strokeWidth={2.75} /> Nuevo activo
+          <Plus className="h-4 w-4" strokeWidth={2.5} /> Nuevo activo
         </button>
-      </div>
+      </AdminModuleHeader>
 
-      {/* KPIs */}
+      {/* KPIs — mismo estilo que Inventario (font-mono, barra fina, sin saturar) */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Máquinas" value={String(assets.length)} sub={`${assets.filter(a => a.status === "operativo").length} operativas`} />
-        <KpiCard label="Ingresos" value={fmt(totals.income)} sub="por alquileres" accent="success" />
-        <KpiCard label="Gastos" value={fmt(totals.expense)} sub="combustible + mantto." accent="error" />
-        <KpiCard label="Ganancia neta" value={fmt(totals.profit)} sub="ingresos − gastos" accent={totals.profit >= 0 ? "success" : "error"} big />
+        <KpiCard label="Máquinas" value={String(assets.length)} sub={`${assets.filter(a => a.status === "operativo").length} operativas`} bar="primary" />
+        <KpiCard label="Ingresos" value={fmt(totals.income)} sub="por alquileres" tone="primary" bar="primary" />
+        <KpiCard label="Gastos" value={fmt(totals.expense)} sub="combustible + mantto." bar="muted" />
+        <KpiCard label="Ganancia neta" value={fmt(totals.profit)} sub="ingresos − gastos" tone={totals.profit >= 0 ? "primary" : "error"} bar={totals.profit >= 0 ? "primary" : "error"} highlight />
       </div>
 
       {/* Grilla de activos */}
@@ -161,13 +158,20 @@ export default function ActivosModule() {
   );
 }
 
-function KpiCard({ label, value, sub, accent, big }: { label: string; value: string; sub: string; accent?: "success" | "error"; big?: boolean }) {
-  const color = accent === "success" ? "text-[var(--data-success-500)]" : accent === "error" ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]";
+function KpiCard({ label, value, sub, tone = "neutral", bar = "muted", highlight }: {
+  label: string; value: string; sub: string;
+  tone?: "neutral" | "primary" | "error";
+  bar?: "primary" | "muted" | "error";
+  highlight?: boolean;
+}) {
+  const valueColor = tone === "primary" ? "text-primary" : tone === "error" ? "text-[var(--data-error-600)]" : "text-[var(--text-primary)]";
+  const barColor = bar === "primary" ? "bg-primary" : bar === "error" ? "bg-[var(--data-error-500)]/50" : "bg-[var(--rule-soft)]";
   return (
-    <div className={cn("rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4", big && "ring-2 ring-[var(--accent)]/20")}>
-      <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-      <p className={cn("mt-1 font-black tabular-nums leading-none", big ? "text-2xl" : "text-xl", color)}>{value}</p>
-      <p className="mt-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{sub}</p>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5", highlight && "ring-1 ring-[var(--accent)]/25")}>
+      <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">{label}</p>
+      <p className={cn("mt-1 font-mono text-2xl font-bold tabular-nums", valueColor)}>{value}</p>
+      <p className="mt-1 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">{sub}</p>
+      <div className={cn("mt-2 h-1 rounded-full", barColor)} />
     </div>
   );
 }
@@ -199,21 +203,21 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail }: {
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase", st.chip)}>{st.label}</span>
       </div>
 
-      {/* Rentabilidad */}
+      {/* Rentabilidad — turquesa para ingreso, neutro para gasto (sin saturar) */}
       <div className="mt-3 rounded-xl bg-[var(--surface-sunken)] p-3">
         <div className="flex items-baseline justify-between">
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Ganancia</span>
-          <span className={cn("text-lg font-black tabular-nums", asset.profit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
+          <span className={cn("font-mono text-lg font-bold tabular-nums", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>
             {fmt(asset.profit)}
           </span>
         </div>
         <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[var(--surface-raised)]">
-          <span className="bg-[var(--data-success-500)]" style={{ width: `${incPct}%` }} />
-          <span className="bg-[var(--data-error-500)]" style={{ width: `${100 - incPct}%` }} />
+          <span className="bg-primary" style={{ width: `${incPct}%` }} />
+          <span className="bg-[var(--rule-base)]" style={{ width: `${100 - incPct}%` }} />
         </div>
         <div className="mt-1.5 flex justify-between text-[length:var(--ts-2xs)] font-bold tabular-nums">
-          <span className="text-[var(--data-success-500)]">↑ {fmt(asset.totalIncome)}</span>
-          <span className="text-[var(--data-error-500)]">↓ {fmt(asset.totalExpense)}</span>
+          <span className="text-primary">↑ {fmt(asset.totalIncome)}</span>
+          <span className="text-[var(--text-tertiary)]">↓ {fmt(asset.totalExpense)}</span>
         </div>
       </div>
 
@@ -221,7 +225,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail }: {
       <div className="mt-2.5 grid grid-cols-2 gap-2">
         <div className="rounded-xl border border-[var(--rule-base)] p-2.5">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Costo / {asset.rateUnit}</p>
-          <p className="mt-0.5 text-sm font-black tabular-nums text-[var(--data-error-500)]">
+          <p className="mt-0.5 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
             {asset.costPerUnit != null ? fmt(asset.costPerUnit) : "—"}
           </p>
           {asset.marginPerUnit != null && (
@@ -238,8 +242,8 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail }: {
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
             <span
               className={cn("block h-full rounded-full",
-                (asset.utilizationPct ?? 0) >= 60 ? "bg-[var(--data-success-500)]" :
-                (asset.utilizationPct ?? 0) >= 30 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]",
+                (asset.utilizationPct ?? 0) >= 60 ? "bg-primary" :
+                (asset.utilizationPct ?? 0) >= 30 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/60",
               )}
               style={{ width: `${asset.utilizationPct ?? 0}%` }}
             />
@@ -252,7 +256,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail }: {
 
       {/* Acciones */}
       <div className="mt-3 flex items-center gap-2">
-        <button type="button" onClick={onRent} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-black text-white transition-colors hover:brightness-110">
+        <button type="button" onClick={onRent} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary/90">
           <TrendingUp className="h-3.5 w-3.5" /> Alquiler
         </button>
         <button type="button" onClick={onExpense} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-2 text-xs font-black text-[var(--text-secondary)] transition-colors hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-500)]">
@@ -380,7 +384,7 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
       {/* Resumen */}
       <div className={cn("mt-3 flex items-center justify-between rounded-xl px-4 py-3", isIncome ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-100)] dark:bg-amber-950/20")}>
         <span className="text-sm font-bold text-[var(--text-secondary)]">{isIncome ? "Ingreso a registrar" : "Gasto a registrar"}</span>
-        <span className={cn("text-xl font-black tabular-nums", isIncome ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")}>{fmt(effectiveAmount)}</span>
+        <span className={cn("font-mono text-xl font-bold tabular-nums", isIncome ? "text-primary" : "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]")}>{fmt(effectiveAmount)}</span>
       </div>
       <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel={isIncome ? "Registrar alquiler" : "Registrar gasto"} />
     </ModalShell>
@@ -410,7 +414,7 @@ function AssetDetailDrawer({ asset, onClose }: { asset: AssetStats; onClose: () 
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{asset.name}</p>
-            <p className="text-xs font-bold text-[var(--text-tertiary)]">Ganancia: <span className={asset.profit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}>{fmt(asset.profit)}</span></p>
+            <p className="text-xs font-bold text-[var(--text-tertiary)]">Ganancia: <span className={cn("font-mono", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span></p>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-4.5 w-4.5" strokeWidth={2.5} /></button>
         </div>
@@ -425,7 +429,7 @@ function AssetDetailDrawer({ asset, onClose }: { asset: AssetStats; onClose: () 
                 const inc = m.kind === "income";
                 return (
                   <li key={m.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-                    <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/20")}>
+                    <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]")}>
                       {inc ? <TrendingUp className="h-4 w-4" /> : (m as ExpenseMov).category === "combustible" ? <Fuel className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
                     </span>
                     <div className="min-w-0 flex-1 leading-tight">
@@ -437,7 +441,7 @@ function AssetDetailDrawer({ asset, onClose }: { asset: AssetStats; onClose: () 
                         {m.notes ? ` · ${m.notes}` : ""}
                       </p>
                     </div>
-                    <span className={cn("shrink-0 text-sm font-black tabular-nums", inc ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
+                    <span className={cn("shrink-0 font-mono text-sm font-bold tabular-nums", inc ? "text-primary" : "text-[var(--text-secondary)]")}>
                       {inc ? "+" : "−"}{fmt(m.amount)}
                     </span>
                   </li>
