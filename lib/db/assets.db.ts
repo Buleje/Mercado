@@ -74,6 +74,41 @@ export type DbAssetExpense = {
 const num = (d: unknown): number => (d == null ? 0 : Number(d));
 const numOrNull = (d: unknown): number | null => (d == null ? null : Number(d));
 
+const DEFAULT_CAPACITY_PER_DAY = 8;
+
+export type AssetFinStats = {
+  costPerUnit: number | null;   // gasto total / unidades trabajadas (costo REAL por hora)
+  incomePerUnit: number | null; // ingreso total / unidades trabajadas
+  marginPerUnit: number | null; // ingreso/u − costo/u
+  utilizationPct: number | null; // units30d / (capacidad/día × 30), tope 100%
+};
+
+/**
+ * Cálculo puro de rentabilidad fina por máquina (costo/hora + utilización).
+ * Extraído de listWithStats para poder testearlo sin DB ni Next (Brandon 2026-06-06).
+ *
+ * - costo/hora = gasto / horas trabajadas (solo si hubo horas).
+ * - utilización = horas de los últimos 30 días / capacidad mensual (cap/día × 30),
+ *   acotada a 100% (si trabajó más que su capacidad teórica, igual muestra 100%).
+ */
+export function computeAssetFinStats(input: {
+  incomeSum: number;
+  expenseSum: number;
+  unitsWorked: number;
+  units30d: number;
+  capacityPerDay: number | null;
+}): AssetFinStats {
+  const capPerDay = input.capacityPerDay ?? DEFAULT_CAPACITY_PER_DAY;
+  const costPerUnit = input.unitsWorked > 0 ? input.expenseSum / input.unitsWorked : null;
+  const incomePerUnit = input.unitsWorked > 0 ? input.incomeSum / input.unitsWorked : null;
+  const marginPerUnit =
+    costPerUnit != null && incomePerUnit != null ? incomePerUnit - costPerUnit : null;
+  const capacity30d = capPerDay * 30;
+  const utilizationPct =
+    capacity30d > 0 ? Math.min((input.units30d / capacity30d) * 100, 100) : null;
+  return { costPerUnit, incomePerUnit, marginPerUnit, utilizationPct };
+}
+
 export const AssetsDB = {
   /**
    * Lista los activos del tenant con sus stats de rentabilidad (income,
@@ -116,14 +151,13 @@ export const AssetsDB = {
       const inc = incMap.get(a.id) ?? { sum: 0, units: 0, count: 0 };
       const exp = expMap.get(a.id) ?? { sum: 0, count: 0 };
       const units30d = u30Map.get(a.id) ?? 0;
-      const capPerDay = a.capacityPerDay ?? 8;
-      // Costo/ingreso/margen por unidad (hora) — solo si hubo unidades trabajadas.
-      const costPerUnit = inc.units > 0 ? exp.sum / inc.units : null;
-      const incomePerUnit = inc.units > 0 ? inc.sum / inc.units : null;
-      const marginPerUnit = costPerUnit != null && incomePerUnit != null ? incomePerUnit - costPerUnit : null;
-      // Utilización 30d: trabajadas / capacidad (capPerDay × 30), cap 100%.
-      const capacity30d = capPerDay * 30;
-      const utilizationPct = capacity30d > 0 ? Math.min((units30d / capacity30d) * 100, 100) : null;
+      const fin = computeAssetFinStats({
+        incomeSum: inc.sum,
+        expenseSum: exp.sum,
+        unitsWorked: inc.units,
+        units30d,
+        capacityPerDay: a.capacityPerDay,
+      });
       return {
         id: a.id,
         tenantId: a.tenantId,
@@ -147,10 +181,10 @@ export const AssetsDB = {
         expenseCount: exp.count,
         unitsWorked: inc.units,
         units30d,
-        costPerUnit,
-        incomePerUnit,
-        marginPerUnit,
-        utilizationPct,
+        costPerUnit: fin.costPerUnit,
+        incomePerUnit: fin.incomePerUnit,
+        marginPerUnit: fin.marginPerUnit,
+        utilizationPct: fin.utilizationPct,
       };
     });
   },
