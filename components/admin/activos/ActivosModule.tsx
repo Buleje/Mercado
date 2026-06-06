@@ -18,6 +18,7 @@ import {
   Construction, Plus, X, Loader2, TrendingUp, Fuel,
   Wrench, Truck, Pencil, Receipt, AlertTriangle, Download, FileText,
   ClipboardCheck, CheckCircle, Calendar, CreditCard, Clock,
+  Upload, BarChart3, Trophy,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/utils";
@@ -68,7 +69,7 @@ const CHECKLIST_DEFAULT = ["Niveles de aceite", "Combustible", "Llantas / orugas
 const FIELD = "w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--surface-raised)]";
 const LABEL = "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
 
-type View = "flota" | "cobrar" | "calendario";
+type View = "flota" | "cobrar" | "calendario" | "ranking";
 
 export default function ActivosModule() {
   const [assets, setAssets] = useState<AssetStats[]>([]);
@@ -80,6 +81,7 @@ export default function ActivosModule() {
   const [detailFor, setDetailFor] = useState<AssetStats | null>(null);
   const [contractFor, setContractFor] = useState<AssetStats | null>(null);
   const [checklistFor, setChecklistFor] = useState<AssetStats | null>(null);
+  const [showImport, setShowImport] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -121,6 +123,9 @@ export default function ActivosModule() {
         description="Alquila tus equipos y mira la ganancia real de cada máquina."
         icon={Construction}
       >
+        <button type="button" onClick={() => setShowImport(true)} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
+          <Upload className="h-4 w-4" /> Importar
+        </button>
         <button type="button" onClick={exportReport} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -142,7 +147,7 @@ export default function ActivosModule() {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
-        {([["flota", "Flota", Construction], ["cobrar", "Por cobrar", CreditCard], ["calendario", "Calendario", Calendar]] as const).map(([v, label, Icon]) => (
+        {([["flota", "Flota", Construction], ["cobrar", "Por cobrar", CreditCard], ["calendario", "Calendario", Calendar], ["ranking", "Ranking", BarChart3]] as const).map(([v, label, Icon]) => (
           <button key={v} type="button" onClick={() => setView(v)}
             className={cn("inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors sm:flex-none sm:px-4",
               view === v ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
@@ -173,6 +178,8 @@ export default function ActivosModule() {
         )
       ) : view === "cobrar" ? (
         <ReceivablesView onChanged={load} />
+      ) : view === "ranking" ? (
+        <RankingView assets={assets} />
       ) : (
         <CalendarView assets={assets} />
       )}
@@ -182,6 +189,7 @@ export default function ActivosModule() {
       {detailFor && <AssetDetailDrawer asset={detailFor} onClose={() => setDetailFor(null)} onContract={() => { setContractFor(detailFor); }} onChanged={load} />}
       {contractFor && <ContractModal asset={contractFor} onClose={() => setContractFor(null)} />}
       {checklistFor && <ChecklistModal asset={checklistFor} onClose={() => setChecklistFor(null)} onSaved={() => setChecklistFor(null)} />}
+      {showImport && <ImportModal knownTypes={knownTypes} onClose={() => setShowImport(false)} onDone={() => { setShowImport(false); void load(); }} />}
     </div>
   );
 }
@@ -675,6 +683,135 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
         );
       })}
     </ul>
+  );
+}
+
+// ── Ranking / comparador de flota ───────────────────────────────────────────
+function RankingView({ assets }: { assets: AssetStats[] }) {
+  const [metric, setMetric] = useState<"profit" | "roi" | "util" | "cost">("profit");
+  if (assets.length === 0) return (
+    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><BarChart3 className="h-6 w-6" /></span>
+      <p className="text-base font-extrabold text-[var(--text-primary)]">Sin máquinas para comparar</p>
+      <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega máquinas y registra alquileres para ver cuál rinde más.</p>
+    </div>
+  );
+  const roi = (a: AssetStats) => (a.purchaseValue && a.purchaseValue > 0 ? (a.profit / a.purchaseValue) * 100 : null);
+  const metricVal = (a: AssetStats) => metric === "profit" ? a.profit : metric === "roi" ? (roi(a) ?? -Infinity) : metric === "util" ? (a.utilizationPct ?? 0) : (a.costPerUnit ?? Infinity);
+  const lowerBetter = metric === "cost";
+  const ranked = [...assets].sort((a, b) => lowerBetter ? metricVal(a) - metricVal(b) : metricVal(b) - metricVal(a));
+  const fmtMetric = (a: AssetStats) => metric === "profit" ? fmt(a.profit) : metric === "roi" ? (roi(a) != null ? `${Math.round(roi(a)!)}%` : "—") : metric === "util" ? (a.utilizationPct != null ? `${Math.round(a.utilizationPct)}%` : "—") : (a.costPerUnit != null ? `${fmt(a.costPerUnit)}/${a.rateUnit}` : "—");
+  const vals = ranked.map(a => { const v = metricVal(a); return Number.isFinite(v) ? Math.abs(v) : 0; });
+  const max = Math.max(...vals, 1);
+  const METRICS = [["profit", "Ganancia"], ["roi", "ROI %"], ["util", "Utilización"], ["cost", "Costo/hora"]] as const;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+        {METRICS.map(([v, l]) => (
+          <button key={v} type="button" onClick={() => setMetric(v)} className={cn("flex-1 rounded-lg px-2 py-2 text-xs font-bold transition-colors", metric === v ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>{l}</button>
+        ))}
+      </div>
+      <p className="px-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{lowerBetter ? "Menor es mejor — la máquina más barata de operar arriba." : "Mayor es mejor — la máquina que más rinde arriba."}</p>
+      <ul className="space-y-2">
+        {ranked.map((a, i) => {
+          const v = metricVal(a);
+          const pct = Number.isFinite(v) ? (Math.abs(v) / max) * 100 : 0;
+          const medal = i === 0 ? "text-[var(--accent)]" : i === 1 ? "text-[var(--text-secondary)]" : i === 2 ? "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]";
+          return (
+            <li key={a.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+              <span className={cn("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] font-mono text-sm font-black tabular-nums", medal)}>{i < 3 ? <Trophy className="h-4 w-4" /> : i + 1}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-[var(--text-primary)]">{a.name}</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]"><span className={cn("block h-full rounded-full", i === 0 ? "bg-primary" : "bg-[var(--accent)]/50")} style={{ width: `${pct}%` }} /></div>
+              </div>
+              <span className={cn("shrink-0 font-mono text-sm font-bold tabular-nums", metric === "cost" ? "text-[var(--text-primary)]" : "text-primary")}>{fmtMetric(a)}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+// ── Importar flota (CSV/Excel) ──────────────────────────────────────────────
+const UNIT_ALIASES: Record<string, string> = { hora: "hora", horas: "hora", dia: "dia", día: "dia", dias: "dia", días: "dia", m3: "m3", "m³": "m3", viaje: "viaje", viajes: "viaje" };
+function ImportModal({ knownTypes, onClose, onDone }: { knownTypes: string[]; onClose: () => void; onDone: () => void }) {
+  const [text, setText] = useState("");
+  const [rows, setRows] = useState<{ name: string; type: string; plate: string | null; hourlyRate: number | null; rateUnit: string; capacityPerDay: number | null }[] | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<{ ok: number; fail: number } | null>(null);
+
+  const parse = (raw: string) => {
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) { setRows([]); return; }
+    if (/nombre/i.test(lines[0]) && /tarifa|categor|placa|cobro/i.test(lines[0])) lines.shift(); // header
+    const parsed = lines.map(l => {
+      const c = l.split(/[,;\t]/).map(x => x.trim());
+      const unitRaw = (c[4] ?? "").toLowerCase();
+      return {
+        name: c[0] ?? "", type: (c[1] || "otro").toLowerCase(), plate: c[2] || null,
+        hourlyRate: c[3] ? Number(c[3].replace(/[^\d.]/g, "")) || null : null,
+        rateUnit: UNIT_ALIASES[unitRaw] ?? "hora",
+        capacityPerDay: c[5] ? Number(c[5]) || null : null,
+      };
+    }).filter(r => r.name);
+    setRows(parsed);
+  };
+
+  const onFile = (f: File | undefined) => { if (!f) return; const r = new FileReader(); r.onload = () => { const t = String(r.result ?? ""); setText(t); parse(t); }; r.readAsText(f); };
+
+  const run = async () => {
+    if (!rows || rows.length === 0) return;
+    setImporting(true);
+    let ok = 0, fail = 0;
+    for (const r of rows) {
+      try {
+        const res = await fetch("/api/admin/assets", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(r) });
+        if (res.ok) ok++; else fail++;
+      } catch { fail++; }
+    }
+    setResult({ ok, fail }); setImporting(false);
+    if (ok > 0) toast.success(`${ok} máquina${ok > 1 ? "s" : ""} importada${ok > 1 ? "s" : ""}`);
+    if (fail > 0) toast.error(`${fail} fila${fail > 1 ? "s" : ""} con error`);
+  };
+
+  return (
+    <ModalShell title="Importar flota" subtitle="Pega o sube un Excel/CSV y crea varias máquinas de una" onClose={onClose} icon={Upload}>
+      {result ? (
+        <div className="py-6 text-center">
+          <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CheckCircle className="h-7 w-7" /></span>
+          <p className="text-base font-extrabold text-[var(--text-primary)]">{result.ok} importadas{result.fail > 0 ? ` · ${result.fail} con error` : ""}</p>
+          <button type="button" onClick={onDone} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90">Listo</button>
+        </div>
+      ) : (<>
+        <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
+          Columnas (en este orden, separadas por coma): <span className="font-bold text-[var(--text-secondary)]">Nombre, Categoría, Placa, Tarifa, Cobro (hora/día/m³/viaje), Capacidad/día</span>. Una máquina por línea.
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+            <FileText className="h-4 w-4" /> Subir archivo
+            <input type="file" accept=".csv,.tsv,.txt,text/csv" className="hidden" onChange={e => onFile(e.target.files?.[0])} />
+          </label>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">o pega abajo ↓</span>
+        </div>
+        <textarea value={text} onChange={e => { setText(e.target.value); parse(e.target.value); }} rows={6} className={cn(FIELD, "mt-2 font-mono")} placeholder={"Oruga D6, oruga, PUC-123, 180, hora, 8\nCamión Volquete, camion, ABC-456, 90, viaje, 6"} />
+        {rows && rows.length > 0 && (
+          <div className="mt-3 max-h-48 overflow-y-auto rounded-xl border border-[var(--rule-base)]">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><tr><th className="px-2 py-1.5 text-left font-bold">Nombre</th><th className="px-2 py-1.5 text-left font-bold">Categoría</th><th className="px-2 py-1.5 text-right font-bold">Tarifa</th></tr></thead>
+              <tbody>{rows.map((r, i) => <tr key={i} className="border-t border-[var(--rule-soft)]"><td className="px-2 py-1.5 font-bold text-[var(--text-primary)]">{r.name}</td><td className="px-2 py-1.5 text-[var(--text-secondary)]">{typeLabel(r.type)}</td><td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.hourlyRate != null ? fmt(r.hourlyRate) : "—"}</td></tr>)}</tbody>
+            </table>
+          </div>
+        )}
+        <div className="mt-6 flex items-center gap-3">
+          <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="button" onClick={run} disabled={importing || !rows || rows.length === 0} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-extrabold text-white hover:bg-primary/90 disabled:opacity-50">
+            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {importing ? "Importando…" : rows && rows.length > 0 ? `Importar ${rows.length}` : "Importar"}
+          </button>
+        </div>
+      </>)}
+    </ModalShell>
   );
 }
 
