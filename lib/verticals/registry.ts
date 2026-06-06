@@ -73,6 +73,7 @@ const CORE_BASE: ModuleId[] = [
   "compras",
   "plata",
   "adelantos",
+  "activos",
   "clientes",
   "config",
   "pedidos",

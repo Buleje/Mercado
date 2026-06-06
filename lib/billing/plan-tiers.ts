@@ -145,6 +145,9 @@ export const PLAN_BASICO: PlanDefinition = {
     // En basico para que sea visible/usable desde el free; re-gatear a plan
     // pago si la estrategia comercial lo requiere.
     "adelantos",
+    // Activos & Maquinaria — alquiler de equipos (forestal: cargador, oruga,
+    // camión). En basico para que sea visible/usable desde el free.
+    "activos",
     // Config (siempre)
     "config",
     "plan",
