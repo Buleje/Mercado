@@ -481,6 +481,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Fire-and-forget: publicar el pedido en el chat cliente↔tienda
+    // (Messenger del nav, Brandon 2026-06-06). El detalle completo del
+    // pedido aparece como conversación con la tienda + primera respuesta
+    // automática invitando a coordinar. Nunca rompe el checkout.
+    void (async () => {
+      try {
+        const { postOrderToStoreChat } = await import("@/lib/marketplace-chat");
+        await postOrderToStoreChat({
+          storeId: targetStore.id,
+          storeName: targetStore.name,
+          tenantId: order.sellerTenantId,
+          orderId: order.id,
+          customerPhone: order.customerPhone ?? customerPhone,
+          customerName: order.customerName ?? customerName,
+          customerAddress: customerAddress,
+          paymentMethod,
+          notes,
+          total: order.total,
+          items: items.map((it) => ({ name: it.name, quantity: it.quantity })),
+          scheduledFor: resolvedScheduledFor,
+        });
+      } catch (err) {
+        logger.warn("[marketplace/orders] postOrderToStoreChat failed", {
+          error: String(err),
+          orderId: order.id,
+        });
+      }
+    })();
+
     // Fire-and-forget: dispara la primera DeliveryOffer al repartidor más cercano
     // (geocoding + matchmaking). Si falla o no hay partners, el cron
     // `delivery-offer-cascade` actúa como red de seguridad cada 30s.

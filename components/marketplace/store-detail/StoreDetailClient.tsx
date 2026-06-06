@@ -432,6 +432,9 @@ export default function StoreDetailClient({
         scheduleLabel="Lun a Dom · 7am – 11pm"
         isOpen={isOpen}
         paymentMethods={paymentMethods}
+        storeId={store.id}
+        storeSlug={store.slug}
+        storeLogo={store.logo ?? null}
       />
 
       {/* ── Estado de la tienda (abierto/cerrado + tiempo de entrega) ── */}

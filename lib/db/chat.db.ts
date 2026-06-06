@@ -201,6 +201,95 @@ export const ChatThreadsDB = {
   },
 
   /**
+   * Bandeja del BUYER (Messenger del nav, Brandon 2026-06-06): todos los
+   * hilos abiertos de un customer, cross-tenant a propósito — el comprador
+   * habla con tiendas de distintos tenants y ve TODO en una sola bandeja.
+   * Enriquecido con logo/slug/nombre de la tienda. Cache 10s (se pollea).
+   *
+   * @cross-tenant intentional (ADR-082): scope = customerPhone del JWT del
+   * buyer (ownership lo valida el endpoint con requireCustomer).
+   */
+  async listByCustomerPhone(
+    customerPhone: string,
+    opts: { limit?: number } = {},
+  ): Promise<
+    Array<
+      DbConversationThread & {
+        storeName: string;
+        storeSlug: string | null;
+        storeLogo: string | null;
+      }
+    >
+  > {
+    const limit = Math.min(Math.max(1, opts.limit ?? 30), 100);
+    const cacheKey = `chat:threads:buyer:${customerPhone}:${limit}`;
+
+    return getOrSet(cacheKey, 10, async () => {
+      const rows = await prisma.$queryRawUnsafe<
+        Array<{
+          id: string;
+          tenantId: string;
+          storeId: string;
+          orderId: string | null;
+          customerPhone: string;
+          customerName: string;
+          subject: string | null;
+          status: string;
+          unreadForBuyer: number;
+          unreadForSeller: number;
+          lastMessageAt: Date | null;
+          lastMessageText: string | null;
+          lastSenderType: string | null;
+          closedAt: Date | null;
+          closedReason: string | null;
+          createdAt: Date;
+          updatedAt: Date;
+          storeName: string;
+          storeSlug: string | null;
+          storeLogo: string | null;
+        }>
+      >(
+        `SELECT t."id",t."tenantId",t."storeId",t."orderId",t."customerPhone",t."customerName",
+                t."subject",t."status",t."unreadForBuyer",t."unreadForSeller",t."lastMessageAt",
+                t."lastMessageText",t."lastSenderType",t."closedAt",t."closedReason",
+                t."createdAt",t."updatedAt",
+                s."name" AS "storeName", s."slug" AS "storeSlug", s."logo" AS "storeLogo"
+           FROM "ConversationThread" t
+           JOIN "Store" s ON s."id" = t."storeId"
+          WHERE t."customerPhone" = $1
+            AND t."status" = 'open'
+          ORDER BY COALESCE(t."lastMessageAt", t."createdAt") DESC
+          LIMIT $2`,
+        customerPhone,
+        limit,
+      );
+
+      return rows.map((t) => ({
+        id:              t.id,
+        tenantId:        t.tenantId,
+        storeId:         t.storeId,
+        orderId:         t.orderId,
+        customerPhone:   t.customerPhone,
+        customerName:    t.customerName,
+        subject:         t.subject,
+        status:          t.status as ThreadStatus,
+        unreadForBuyer:  t.unreadForBuyer,
+        unreadForSeller: t.unreadForSeller,
+        lastMessageAt:   toISO(t.lastMessageAt),
+        lastMessageText: t.lastMessageText,
+        lastSenderType:  t.lastSenderType as SenderType | null,
+        closedAt:        toISO(t.closedAt),
+        closedReason:    t.closedReason,
+        createdAt:       t.createdAt.toISOString(),
+        updatedAt:       t.updatedAt.toISOString(),
+        storeName:       t.storeName,
+        storeSlug:       t.storeSlug,
+        storeLogo:       t.storeLogo,
+      }));
+    });
+  },
+
+  /**
    * Lista los hilos de un tenant ordenados por actividad reciente.
    * Soporta filtros opcionales por status y storeId. Cache 20s.
    */
@@ -428,6 +517,8 @@ export const ChatMessagesDB = {
 
     invalidateByPrefix(`chat:messages:${params.tenantId}:${params.threadId}`);
     invalidateByPrefix(`chat:threads:${params.tenantId}`);
+    // Bandeja buyer (Messenger del nav) — prefijo por phone, no por tenant.
+    invalidateByPrefix(`chat:threads:buyer:`);
 
     logger.info("[ChatMessages] sent", {
       tenantId: params.tenantId,
@@ -580,6 +671,8 @@ export const ChatMessagesDB = {
 
     invalidateByPrefix(`chat:messages:${tenantId}:${threadId}`);
     invalidateByPrefix(`chat:threads:${tenantId}`);
+    // Bandeja buyer (Messenger del nav) — prefijo por phone, no por tenant.
+    invalidateByPrefix(`chat:threads:buyer:`);
 
     logger.info("[ChatMessages] marked as read", { tenantId, threadId, side });
   },

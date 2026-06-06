@@ -56,6 +56,12 @@ const NotificationsMenu = dynamic(
   () => import("@/components/marketplace/NotificationsMenu"),
   {},
 );
+// Chat con tiendas estilo Messenger (Brandon 2026-06-06) — lazy: el panel
+// solo se monta al interactuar; el botón es liviano pero el chat no.
+const ChatNavLauncher = dynamic(
+  () => import("@/components/marketplace/chat/ChatNavLauncher"),
+  { ssr: false },
+);
 // Brandon 2026-05-27 (audit perf bundle): estos 3 viven en el navbar que está
 // en TODAS las páginas del storefront, pero solo aparecen al interactuar
 // (lupa / hamburguesa / mega-menú). Lazy → fuera del bundle del primer paint.
@@ -713,6 +719,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               {/* Notif bell dropdown */}
               <NotificationsMenu />
 
+              {/* Chat con tiendas — Messenger del marketplace (Brandon 2026-06-06) */}
+              <ChatNavLauncher />
+
               {/* Cart */}
               <span data-tour="cart" className="inline-flex">
                 <CartBadge onClick={handleOpenCart} />
@@ -1001,6 +1010,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                   <UserCircle className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
                 </button>
               )}
+
+              {/* Chat con tiendas — Messenger (Brandon 2026-06-06), versión bare mobile */}
+              <ChatNavLauncher variant="bare" />
 
               {/* Cart — compactado. Badge sigue siendo prominente con ring. */}
               <button

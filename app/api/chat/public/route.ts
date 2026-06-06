@@ -284,15 +284,18 @@ export async function GET(req: NextRequest) {
       100,
     );
 
-    // Solo exponer campos seguros al buyer
+    // Solo exponer campos seguros al buyer.
+    // readBySellerAt (Brandon 2026-06-06): habilita los ✓✓ estilo WhatsApp —
+    // el buyer ve si la tienda ya leyó SU mensaje. No expone nada interno.
     const safeMessages = messages.map((m) => ({
-      id:            m.id,
-      senderType:    m.senderType,
-      senderName:    m.senderName,
-      body:          m.body,
-      messageType:   m.messageType,
-      attachmentUrl: m.attachmentUrl,
-      createdAt:     m.createdAt,
+      id:             m.id,
+      senderType:     m.senderType,
+      senderName:     m.senderName,
+      body:           m.body,
+      messageType:    m.messageType,
+      attachmentUrl:  m.attachmentUrl,
+      readBySellerAt: m.readBySellerAt,
+      createdAt:      m.createdAt,
     }));
 
     // Marcar como leídos por el buyer (fire-and-forget)

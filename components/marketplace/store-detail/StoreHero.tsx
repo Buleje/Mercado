@@ -20,6 +20,7 @@ import {
   Truck,
   Phone,
   Heart,
+  MessageCircle,
   ShieldCheck,
   Sparkles,
   ArrowRight,
@@ -48,6 +49,10 @@ interface StoreHeroProps {
   /** Delivery gratis */
   freeDelivery?: boolean;
   whatsappNumber?: string | null;
+  /** Identidad para el chat Messenger (botón "Mensaje" → buleje:open-chat) */
+  storeId?: string | null;
+  storeSlug?: string | null;
+  storeLogo?: string | null;
 }
 
 export default function StoreHero({
@@ -65,6 +70,9 @@ export default function StoreHero({
   isOpen = true,
   freeDelivery = true,
   whatsappNumber,
+  storeId,
+  storeSlug,
+  storeLogo,
 }: StoreHeroProps) {
   const ratingLabel = rating > 0 ? rating.toFixed(1) : null;
   const locationLabel = zone ?? distanceLabel;
@@ -123,6 +131,27 @@ export default function StoreHero({
               Ver catálogo
               <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </button>
+            {/* Mensaje — abre el chat Messenger del nav directo en esta
+                tienda (Brandon 2026-06-06). El ChatNavLauncher escucha el
+                evento global; sin sesión, él mismo abre el AuthModal. */}
+            {storeId && (
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("buleje:open-chat", {
+                      detail: { storeId, storeName: name, storeSlug: storeSlug ?? null, storeLogo: storeLogo ?? null },
+                    }),
+                  );
+                }}
+                aria-label={`Enviar mensaje a ${name}`}
+                title="Chatea con la tienda"
+                className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 text-sm font-black text-[var(--accent)] transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-[0.98]"
+              >
+                <MessageCircle className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                Mensaje
+              </button>
+            )}
             {whatsappNumber && (
               <a
                 href={`https://wa.me/51${whatsappNumber.replace(/\D/g, "")}`}
