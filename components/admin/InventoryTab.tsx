@@ -79,23 +79,29 @@ const STOCK_META: Record<StockState, { label: string; bar: string; text: string;
 function StockLevelBar({
   stock, stockMin, stockMax, unit, variant = "cell",
 }: {
-  stock: number | undefined;
+  stock: number | null | undefined;
   stockMin?: number | null;
   stockMax?: number | null;
   unit?: string | null;
   variant?: "cell" | "full";
 }) {
+  if (stock === undefined || stock === null) {
+    // Stock ilimitado / no controla inventario (comida al pedido, servicio).
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold text-[var(--text-tertiary)]" title="Stock ilimitado — se prepara o repone al pedido">
+        <RefreshCw className="h-3 w-3" />
+        Ilimitado
+      </span>
+    );
+  }
+
   const min = stockMin ?? 5;
   // Escala de la barra: el máximo configurado o, si no hay, el doble del mínimo.
-  const scaleMax = Math.max(stockMax ?? 0, min * 2, stock ?? 0, 1);
+  const scaleMax = Math.max(stockMax ?? 0, min * 2, stock, 1);
   const state = stockStateOf(stock, min, stockMax ?? 0);
   const meta = STOCK_META[state];
-  const pct = stock === undefined ? 0 : Math.min((stock / scaleMax) * 100, 100);
+  const pct = Math.min((stock / scaleMax) * 100, 100);
   const minPct = Math.min((min / scaleMax) * 100, 100);
-
-  if (stock === undefined) {
-    return <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>;
-  }
 
   if (variant === "full") {
     return (
@@ -134,6 +140,42 @@ function StockLevelBar({
         <span className={cn("absolute inset-y-0 left-0 rounded-full", meta.bar)} style={{ width: `${pct}%` }} />
         <span className="absolute inset-y-0 w-px bg-[var(--text-primary)]/35" style={{ left: `${minPct}%` }} aria-hidden />
       </span>
+    </div>
+  );
+}
+
+// ── StockTrackToggle — controlar inventario vs stock ilimitado ──────────────
+// Brandon 2026-06-06: comidas que se preparan al pedido (no se sabe cuándo
+// "salen") o productos de stock infinito no deberían obligar a poner números.
+function StockTrackToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
+      <div className="grid grid-cols-2 gap-1">
+        {([
+          [true, "Controlar stock", "Lleva la cuenta de unidades"],
+          [false, "Ilimitado", "Se prepara o repone al pedido"],
+        ] as const).map(([val, label, hint]) => (
+          <button
+            key={String(val)}
+            type="button"
+            onClick={() => onChange(val)}
+            className={cn(
+              "rounded-lg px-3 py-2 text-left transition-colors",
+              value === val
+                ? "bg-[var(--accent)] text-white shadow-sm"
+                : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
+            )}
+          >
+            <span className="flex items-center gap-1.5 text-sm font-bold">
+              {val ? <Package className="h-3.5 w-3.5" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {label}
+            </span>
+            <span className={cn("mt-0.5 block text-[length:var(--ts-2xs)] font-medium leading-tight", value === val ? "text-white/80" : "text-[var(--text-tertiary)]")}>
+              {hint}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -400,13 +442,16 @@ export default function InventoryTab() {
 
   // Product CRUD state
   const [editModalProduct, setEditModalProduct] = useState<DbProduct | null>(null);
-  const [editForm, setEditForm] = useState<Partial<DbProduct & { expiryDate?: string; isVariant?: boolean; variantOf?: string; variantAttr?: string }>>({});
+  const [editForm, setEditForm] = useState<Partial<DbProduct & { expiryDate?: string; isVariant?: boolean; variantOf?: string; variantAttr?: string; trackStock?: boolean }>>({});
   const [saving, setSaving] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerCat, setPickerCat] = useState("todos");
-  const EMPTY_ADD = { name: "", category: "", price: "", unit: "und", badge: "", image: "", barcode: "", costPrice: "", stock: "", stockMin: "", stockMax: "", expiryDate: "", isVariant: false, variantOf: "", variantAttr: "", type: "product", description: "", brand: "", sku: "", taxType: "gravado", weightKg: "", dimensions: "", durationLabel: "", pricingUnit: "fijo", notes: "" };
+  // trackStock: Brandon 2026-06-06 — cuando false, el producto es de stock
+  // ILIMITADO (comidas que se preparan al pedido, servicios, etc.) → no se
+  // controla inventario. Al guardar, stock/min/max van como null.
+  const EMPTY_ADD = { name: "", category: "", price: "", unit: "und", badge: "", image: "", barcode: "", costPrice: "", trackStock: true, stock: "", stockMin: "", stockMax: "", expiryDate: "", isVariant: false, variantOf: "", variantAttr: "", type: "product", description: "", brand: "", sku: "", taxType: "gravado", weightKg: "", dimensions: "", durationLabel: "", pricingUnit: "fijo", notes: "" };
   const [addForm, setAddForm] = useState(EMPTY_ADD);
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
@@ -631,6 +676,8 @@ export default function InventoryTab() {
       name: p.name, price: p.price, category: p.category, unit: p.unit,
       badge: p.badge ?? "", active: p.active, image: p.image ?? "",
       barcode: p.barcode ?? "", costPrice: p.costPrice,
+      // trackStock: si el producto no tenía stock definido, es ilimitado.
+      trackStock: p.stock !== undefined && p.stock !== null,
       stock: p.stock, stockMin: p.stockMin, stockMax: p.stockMax,
       expiryDate: (p as DbProduct & { expiryDate?: string }).expiryDate ?? "",
       isVariant: false, variantOf: "", variantAttr: "",
@@ -661,6 +708,15 @@ export default function InventoryTab() {
       for (const k of allowedKeys) {
         const v = (editForm as Record<string, unknown>)[k];
         if (v !== undefined && v !== "") body[k] = v;
+      }
+      // Stock ilimitado (trackStock=false) → null explícito en los 3 campos
+      // para que el backend los limpie ("stock" in body deja pasar el null).
+      const tracks = (editForm as { trackStock?: boolean }).trackStock !== false
+        && (editForm as { type?: string }).type !== "service";
+      if (!tracks) {
+        body.stock = null;
+        body.stockMin = null;
+        body.stockMax = null;
       }
 
       const res = await fetch(`/api/products/${editModalProduct.id}`, {
@@ -791,9 +847,10 @@ export default function InventoryTab() {
           costPrice: addForm.costPrice ? Number(addForm.costPrice) : undefined,
           badge: addForm.badge || undefined,
           barcode: addForm.barcode || undefined,
-          stock: addForm.stock !== "" ? Number(addForm.stock) : undefined,
-          stockMin: addForm.stockMin !== "" ? Number(addForm.stockMin) : undefined,
-          stockMax: addForm.stockMax !== "" ? Number(addForm.stockMax) : undefined,
+          // Stock ilimitado (trackStock=false o servicio) → null en los 3.
+          stock: !addForm.trackStock || addForm.type === "service" ? null : (addForm.stock !== "" ? Number(addForm.stock) : undefined),
+          stockMin: !addForm.trackStock || addForm.type === "service" ? null : (addForm.stockMin !== "" ? Number(addForm.stockMin) : undefined),
+          stockMax: !addForm.trackStock || addForm.type === "service" ? null : (addForm.stockMax !== "" ? Number(addForm.stockMax) : undefined),
           expiryDate: addForm.expiryDate || undefined,
           // ── Producto/servicio completo ──
           type: addForm.type || "product",
@@ -929,7 +986,7 @@ export default function InventoryTab() {
 
   const lowStockProducts = products.filter(p => {
     const minStock = p.stockMin ?? 5;
-    return p.stock !== undefined && p.stock <= minStock && p.active;
+    return p.stock != null && p.stock <= minStock && p.active;
   });
 
   const generateOC = async (product: DbProduct) => {
@@ -1043,7 +1100,7 @@ export default function InventoryTab() {
   // → el KPI mostraba "Stock saludable" aunque hubiera productos agotados.
   // Excluye stock no gestionado (undefined) y productos inactivos.
   const isLowStock = (p: DbProduct) =>
-    Boolean(p.active) && p.stock !== undefined && p.stock <= (p.stockMin ?? 5);
+    Boolean(p.active) && p.stock != null && p.stock <= (p.stockMin ?? 5);
 
   const isExpiringSoon = (p: DbProduct) => {
     const expiry = (p as DbProduct & { expiryDate?: string }).expiryDate;
@@ -1923,7 +1980,7 @@ export default function InventoryTab() {
                               // (undefined → restaurante que no controla inventario)
                               // de "agotado" (stock 0). Antes `?? 0` pintaba ambos
                               // como agotado.
-                              if (p.stock === undefined) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--rule-base)] inline-block shrink-0" title="Sin control de stock" />;
+                              if (p.stock === undefined || p.stock === null) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--rule-base)] inline-block shrink-0" title="Sin control de stock" />;
                               const stock = p.stock;
                               if (stock === 0) return <span className="w-2.5 h-2.5 rounded-full bg-black inline-block shrink-0" title="Agotado" />;
                               if (stock <= stockMin) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error-500)] inline-block shrink-0" title="Critico" />;
@@ -2370,6 +2427,16 @@ export default function InventoryTab() {
                   <span className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Inventario y control</span>
                   <span aria-hidden className="h-px flex-1 bg-[var(--rule-soft)]" />
                 </div>
+                {/* Toggle: controlar stock vs ilimitado (Brandon 2026-06-06) —
+                    para comidas que se preparan al pedido (no se sabe cuándo
+                    "sale") o productos de stock infinito. */}
+                <div className="sm:col-span-2">
+                  <StockTrackToggle
+                    value={addForm.trackStock}
+                    onChange={(v) => setAddForm(f => ({ ...f, trackStock: v }))}
+                  />
+                </div>
+                {addForm.trackStock && (<>
                 <div>
                   <label className={FIELD_LABEL}>Stock actual</label>
                   <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className={FIELD_INPUT} />
@@ -2394,6 +2461,7 @@ export default function InventoryTab() {
                     />
                   </div>
                 )}
+                </>)}
                 <div>
                   <label className={FIELD_LABEL}>Fecha de vencimiento</label>
                   <input type="date" value={addForm.expiryDate} onChange={(e) => setAddForm(f => ({ ...f, expiryDate: e.target.value }))} className={FIELD_INPUT} />
@@ -2701,6 +2769,14 @@ export default function InventoryTab() {
                   </select>
                 </div>
                 {editForm.type !== "service" && (<>
+                {/* Toggle controlar stock vs ilimitado (Brandon 2026-06-06) */}
+                <div className="sm:col-span-2">
+                  <StockTrackToggle
+                    value={(editForm as { trackStock?: boolean }).trackStock !== false}
+                    onChange={(v) => setEditForm(f => ({ ...f, trackStock: v }))}
+                  />
+                </div>
+                {(editForm as { trackStock?: boolean }).trackStock !== false && (<>
                 <div>
                   <label className={FIELD_LABEL}>Stock actual</label>
                   <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className={FIELD_INPUT} />
@@ -2714,7 +2790,7 @@ export default function InventoryTab() {
                   <input type="number" min="0" value={editForm.stockMax ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMax: e.target.value !== "" ? Number(e.target.value) : undefined }))} className={FIELD_INPUT} />
                 </div>
                 {/* Preview en vivo del nivel de stock (Brandon 2026-06-06) */}
-                {editForm.stock !== undefined && (
+                {editForm.stock !== undefined && editForm.stock !== null && (
                   <div className="sm:col-span-2">
                     <StockLevelBar
                       variant="full"
@@ -2725,6 +2801,7 @@ export default function InventoryTab() {
                     />
                   </div>
                 )}
+                </>)}
                 <div>
                   <label className={FIELD_LABEL}>Fecha de vencimiento</label>
                   <input type="date" value={editForm.expiryDate ?? ""} onChange={(e) => setEditForm(f => ({ ...f, expiryDate: e.target.value || undefined }))} className={FIELD_INPUT} />

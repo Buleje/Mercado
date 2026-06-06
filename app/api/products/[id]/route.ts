@@ -33,6 +33,18 @@ const ProductUpdateSchema = z.object({
   description: z.string().max(2000).optional().nullable(),
   // F2: razón requerida cuando el admin ajusta stock manualmente
   adjustReason: z.string().max(500).optional(),
+  // ── Producto/servicio completo (2026-06) — fluyen via ...body al upsert.
+  // Sin .nullable() para mantener compatibilidad de tipos con DbProduct
+  // (campos string|undefined). Para "limpiar" se envía "" desde la UI. ──
+  type:          z.enum(["product", "service"]).optional(),
+  brand:         z.string().max(100).optional(),
+  sku:           z.string().max(60).optional(),
+  taxType:       z.enum(["gravado", "exonerado", "inafecto"]).optional(),
+  weightKg:      z.number().min(0).optional(),
+  dimensions:    z.string().max(60).optional(),
+  durationLabel: z.string().max(60).optional(),
+  pricingUnit:   z.enum(["fijo", "hora", "m3", "unidad", "dia"]).optional(),
+  notes:         z.string().max(2000).optional(),
 });
 
 type RouteCtx = { params: Promise<{ id: string }> };
@@ -79,9 +91,12 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       costPrice: body.costPrice ?? existing.costPrice,
       badge: body.badge ?? existing.badge,
       barcode: body.barcode ?? existing.barcode,
-      stock: body.stock ?? existing.stock,
-      stockMin: body.stockMin ?? existing.stockMin,
-      stockMax: body.stockMax ?? existing.stockMax,
+      // Brandon 2026-06-06: distinguir null (stock ILIMITADO — el admin lo
+      // apagó) de undefined (no enviado → conservar). Con `??` un null nunca
+      // limpiaba el stock. `"stock" in body` deja pasar el null explícito.
+      stock: "stock" in body ? body.stock : existing.stock,
+      stockMin: "stockMin" in body ? body.stockMin : existing.stockMin,
+      stockMax: "stockMax" in body ? body.stockMax : existing.stockMax,
       description: body.description ?? existing.description,
     });
 

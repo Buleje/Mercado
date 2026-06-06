@@ -43,7 +43,7 @@ export interface StockStats {
 
 export function useStockMin(products: DbProduct[], movements: DbInventoryMovement[]): StockStats {
   const isLowStock = (p: DbProduct) =>
-    p.stockMin !== undefined && p.stock !== undefined && p.stock <= p.stockMin;
+    p.stockMin != null && p.stock != null && p.stock <= p.stockMin;
 
   const isExpiringSoon = (p: DbProduct) => {
     const expiry = (p as DbProduct & { expiryDate?: string }).expiryDate;

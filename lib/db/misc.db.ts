@@ -62,11 +62,26 @@ export type DbProduct = {
   unit: string;
   badge?: string;
   barcode?: string;
-  stock?: number;
-  stockMin?: number;
-  stockMax?: number;
+  // null = stock ilimitado / no controla inventario (Prisma Int? nullable).
+  stock?: number | null;
+  stockMin?: number | null;
+  stockMax?: number | null;
   active: boolean;
   tenantId: string;
+  /** "product" (default) | "service". Servicio = sin stock/barcode/vencimiento. */
+  type?: string;
+  // ── Producto completo ──
+  brand?: string;
+  sku?: string;
+  /** gravado | exonerado | inafecto (IGV). */
+  taxType?: string;
+  weightKg?: number;
+  dimensions?: string;
+  // ── Servicio ──
+  durationLabel?: string;
+  /** fijo | hora | m3 | unidad | dia. */
+  pricingUnit?: string;
+  notes?: string;
 };
 
 export type DbOrderItem = {
@@ -124,6 +139,23 @@ export type StoreMode = "whatsapp" | "checkout";
 
 export type NavLinkItem = { id: string; visible: boolean };
 
+/** Categoría del catálogo configurada por el comerciante (editor de categorías). */
+export type CategoryConfigItem = {
+  id: string;
+  label: string;
+  emoji?: string;
+  visible: boolean;
+  order: number;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    keywords?: string[];
+    ogImage?: string;
+    canonical?: string;
+    slug?: string;
+  };
+};
+
 export type DbSettings = {
   mode: StoreMode;
   businessName?: string;
@@ -151,6 +183,10 @@ export type DbSettings = {
   adminBypassLogin?: boolean;
   homepageContent?: Record<string, unknown>;
   comboTemplates?: Array<{ id: string; name: string; description: string; emoji: string; categories: string[]; size: number; discount: number }>;
+  /** Categorías del catálogo definidas por el comerciante (editor de categorías).
+   *  Vacío/undefined para negocios nuevos — NO se siembran categorías demo.
+   *  Persiste en la columna TEXT `categoryOrderJson` (patrón raw como coverUrl). */
+  categoryOrder?: CategoryConfigItem[];
 
   // ── Datos del negocio ──
   razonSocial?: string;

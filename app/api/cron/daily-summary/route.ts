@@ -160,7 +160,8 @@ export async function GET(req: NextRequest) {
             totalPedidos,
             ticketPromedio,
             top5Productos,
-            productosStockBajo,
+            // stock puede ser null (ilimitado) — el insight espera number|undefined
+            productosStockBajo: productosStockBajo.map((p) => ({ ...p, stock: p.stock ?? undefined })),
             diferenciaCaja,
             tenantName: tenant.name,
             fechaTexto,

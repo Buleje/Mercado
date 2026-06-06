@@ -26,7 +26,7 @@ export function useReorderAlerts(products: DbProduct[], onDone: () => void) {
 
   const lowStockProducts = products.filter(p => {
     const minStock = p.stockMin ?? 5;
-    return p.stock !== undefined && p.stock <= minStock && p.active;
+    return p.stock != null && p.stock <= minStock && p.active;
   });
 
   const generateOC = useCallback(async (product: DbProduct) => {
