@@ -13,7 +13,7 @@ import ProductModifiersEditor from "@/components/admin/inventario/ProductModifie
 import ProductVariantsInline from "@/components/admin/inventario/ProductVariantsInline";
 import ImageBankPicker from "@/components/admin/inventario/ImageBankPicker";
 import { toast } from "sonner";
-import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
+import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -385,7 +385,7 @@ function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplic
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function InventoryTab() {
+export default function InventoryTab({ headerActions = [] }: { headerActions?: ModuleActionItem[] } = {}) {
   const { confirm } = useConfirm();
   const { showUndo } = useUndoToast();
   const [products, setProducts] = useState<DbProduct[]>([]);
@@ -1362,12 +1362,15 @@ export default function InventoryTab() {
 
         <ModuleActionMenu
           items={[
+            // Acciones del módulo padre (Conteo físico, Generar declaración…)
+            ...headerActions,
             {
               label: scanLoading ? "Buscando..." : "Escanear código de barras",
               icon: ScanBarcode,
               onClick: () => setShowScanner(true),
               disabled: scanLoading,
               description: "Añadir producto con lector de barras",
+              dividerBefore: headerActions.length > 0,
             },
             {
               label: loading ? "Actualizando..." : "Actualizar",
@@ -1375,7 +1378,6 @@ export default function InventoryTab() {
               onClick: load,
               disabled: loading,
               description: "Recargar datos del servidor",
-              dividerBefore: true,
             },
           ]}
         />
@@ -2211,19 +2213,26 @@ export default function InventoryTab() {
           return true;
         });
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowPicker(false)}>
-            <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
-              <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escoger producto</CardTitle>
-                <div className="flex items-center gap-2">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowPicker(false)}>
+            <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl overflow-hidden max-h-[92dvh] flex flex-col border border-[var(--rule-base)] shadow-2xl">
+              <div className="flex items-start gap-3 px-5 sm:px-6 py-5 border-b-2 border-[var(--rule-soft)] sticky top-0 bg-[var(--surface-raised)] z-10">
+                <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <PackagePlus className="h-6 w-6" strokeWidth={2.1} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Inventario</p>
+                  <h2 className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">Agregar al catálogo</h2>
+                  <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-snug">Tocá un producto para editarlo, o creá uno nuevo.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => { setShowPicker(false); setShowAdd(true); }}
-                    className="text-xs font-bold text-primary hover:underline"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-sm font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
                   >
-                    + Crear nuevo
+                    <Plus className="h-4 w-4" strokeWidth={2.4} /> <span className="hidden sm:inline">Crear nuevo</span><span className="sm:hidden">Nuevo</span>
                   </button>
-                  <button onClick={() => setShowPicker(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
-                    <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
+                  <button onClick={() => setShowPicker(false)} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
               </div>
@@ -2251,11 +2260,25 @@ export default function InventoryTab() {
               </div>
               <div className="flex-1 overflow-y-auto p-5">
                 {pickerProducts.length === 0 ? (
-                  <EmptyState
-                    icon={Package}
-                    title="Sin resultados"
-                    description="No se encontraron productos con esos filtros."
-                  />
+                  <div className="flex flex-col items-center justify-center text-center py-10">
+                    <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-3">
+                      <PackagePlus className="h-7 w-7" strokeWidth={1.9} />
+                    </span>
+                    <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+                      {products.length === 0 ? "Tu catálogo está vacío" : "Sin resultados"}
+                    </h3>
+                    <p className="mt-1 max-w-xs text-sm text-[var(--text-secondary)]">
+                      {products.length === 0
+                        ? "Todavía no cargaste productos. Creá el primero para empezar a vender."
+                        : "No se encontraron productos con esos filtros."}
+                    </p>
+                    <button
+                      onClick={() => { setShowPicker(false); setShowAdd(true); }}
+                      className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
+                    >
+                      <Plus className="h-4 w-4" strokeWidth={2.4} /> Crear producto
+                    </button>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {pickerProducts.map(p => (

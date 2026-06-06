@@ -119,7 +119,7 @@ function CategoryTreemapView() {
   }
 
   const COLORS: Record<string, string> = {
-    abarrotes: "var(--color-primary)", bebidas: "#3B82F6", limpieza: "#2dd4bf",
+    abarrotes: "var(--color-primary)", bebidas: "#3B82F6", limpieza: "#14C2C2",
     lacteos: "#457b9d", carnes: "#e63946", "frutas-verduras": "#95d5b2",
     snacks: "#f97316", otros: "#6b705c", congelados: "#264653",
     cuidado_personal: "#9b5de5",
@@ -215,7 +215,7 @@ function CategoryTreemapView() {
 
 // ── Analytics Dashboard (tab Análisis) ──────────────────────────────────────
 
-const ANALYTICS_COLORS = ["var(--color-primary)", "#f97316", "#457b9d", "#e63946", "#9b5de5", "#2dd4bf", "#6b705c", "#264653"];
+const ANALYTICS_COLORS = ["var(--color-primary)", "#f97316", "#457b9d", "#e63946", "#9b5de5", "#14C2C2", "#6b705c", "#264653"];
 
 
 
@@ -734,25 +734,26 @@ export default function InventarioAlmacenesModule() {
         moduleId="inventario"
       >
 
-      {/* Tab 1: Existencias + acciones rápidas */}
+      {/* Tab 1: Existencias — Conteo físico y Declaración viven dentro del
+          menú "Más acciones" de InventoryTab (se pasan como headerActions). */}
       {sub === "stock" && (
         <div key={refreshKey} className="space-y-6">
-          {/* Acciones rápidas: Conteo Físico + Declaración */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setShowConteoModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
-            >
-              <ListChecks className="h-3.5 w-3.5" /> Conteo físico
-            </button>
-            <button
-              onClick={() => setShowDeclaracionModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-indigo-950/20 transition-colors"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" /> Generar declaración
-            </button>
-          </div>
-          <InventoryTab />
+          <InventoryTab
+            headerActions={[
+              {
+                label: "Conteo físico",
+                icon: ListChecks,
+                onClick: () => setShowConteoModal(true),
+                description: "Contar y conciliar el stock real",
+              },
+              {
+                label: "Generar declaración",
+                icon: LayoutDashboard,
+                onClick: () => setShowDeclaracionModal(true),
+                description: "Declaración jurada de inventario",
+              },
+            ]}
+          />
         </div>
       )}
 
