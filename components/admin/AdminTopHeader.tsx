@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import { Menu, Search, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
 import Link from "next/link";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import AdminChatNavButton from "@/components/admin/AdminChatNavButton";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
@@ -231,6 +232,8 @@ export function AdminTopHeader({
 
       {/* Right: actions */}
       <div className="flex items-center gap-1 shrink-0">
+        {/* Chat con clientes — bandeja Messenger (Brandon 2026-06-06) */}
+        <AdminChatNavButton />
         <div className="hidden sm:block">
           <NotificationBell />
         </div>

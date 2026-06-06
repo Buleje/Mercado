@@ -106,6 +106,10 @@ export default function ChatNavLauncher({
   // de chat FLOTANTE anclada abajo-derecha (desktop). En mobile abre el
   // bottom-sheet (las ventanas flotantes no caben).
   const [floating, setFloating] = useState<ChatConversation | null>(null);
+  // Conversaciones MINIMIZADAS (Brandon 2026-06-06 v4): cerrar la ventana
+  // flotante NO la mata — vuelve a globo aunque no tenga no-leídos. Solo la
+  // X del hover lo quita de verdad.
+  const [minimized, setMinimized] = useState<ChatConversation[]>([]);
   const [dismissedHeads, setDismissedHeads] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -121,6 +125,26 @@ export default function ChatNavLauncher({
       try { sessionStorage.setItem("bsm-chat-heads-dismissed", JSON.stringify([...next])); } catch { /* noop */ }
       return next;
     });
+    setMinimized((prev) => prev.filter((c) => c.threadId !== threadId));
+  };
+
+  /** Cerrar la ventana flotante = minimizar al globo (estilo FB). */
+  const minimizeFloating = () => {
+    if (floating?.threadId) {
+      const conv = floating;
+      setMinimized((prev) =>
+        prev.some((c) => c.threadId === conv.threadId) ? prev : [conv, ...prev].slice(0, 4),
+      );
+      // Si estaba descartado antes, revivirlo (el usuario lo re-abrió a propósito)
+      setDismissedHeads((prev) => {
+        if (!conv.threadId || !prev.has(conv.threadId)) return prev;
+        const next = new Set(prev);
+        next.delete(conv.threadId);
+        try { sessionStorage.setItem("bsm-chat-heads-dismissed", JSON.stringify([...next])); } catch { /* noop */ }
+        return next;
+      });
+    }
+    setFloating(null);
   };
 
   const { customer, conversations, unreadTotal, loading, refresh, markRead } =
@@ -171,24 +195,23 @@ export default function ChatNavLauncher({
         return;
       }
       const existing = conversations.find((c) => c.storeId === d.storeId);
-      setActive(
-        existing ?? {
-          threadId: null,
-          storeId: d.storeId,
-          storeName: d.storeName,
-          storeSlug: d.storeSlug,
-          storeLogo: d.storeLogo ?? null,
-          lastMessage: "",
-          lastSenderType: "customer",
-          lastAt: new Date().toISOString(),
-          unreadCount: 0,
-        },
-      );
-      setOpen(true);
-      if (existing?.threadId && existing.unreadCount > 0) markRead(existing.threadId);
+      const conv: ChatConversation = existing ?? {
+        threadId: null,
+        storeId: d.storeId,
+        storeName: d.storeName,
+        storeSlug: d.storeSlug,
+        storeLogo: d.storeLogo ?? null,
+        lastMessage: "",
+        lastSenderType: "customer",
+        lastAt: new Date().toISOString(),
+        unreadCount: 0,
+      };
+      // Desktop: ventana flotante estilo FB · mobile: bottom-sheet
+      openFloating(conv);
     };
     window.addEventListener("buleje:open-chat", handler);
     return () => window.removeEventListener("buleje:open-chat", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variant, customer, conversations, markRead, openAuthModal]);
 
   // ── Toast de mensaje entrante (estilo FB) — solo si el panel está cerrado ──
@@ -227,6 +250,8 @@ export default function ChatNavLauncher({
   /** Abre un chat como ventana FLOTANTE (desktop) o panel (mobile). */
   const openFloating = (conv: ChatConversation) => {
     if (conv.threadId && conv.unreadCount > 0) markRead(conv.threadId);
+    // El globo deja de estar minimizado mientras la ventana está abierta.
+    setMinimized((prev) => prev.filter((c) => c.threadId !== conv.threadId));
     if (typeof window !== "undefined" && window.innerWidth < 640) {
       setActive(conv);
       setOpen(true);
@@ -236,20 +261,32 @@ export default function ChatNavLauncher({
     setFloating(conv);
   };
 
-  // Heads visibles: el negocio te escribió (unread > 0), no descartada, el
-  // panel está cerrado y no es la ventana flotante ya abierta. Máx 3.
-  const heads =
+  // Heads visibles: AUTO (el negocio te escribió, unread > 0) ∪ MINIMIZADAS
+  // (cerraste la ventana → el globo queda). Dedupe por thread, máx 4.
+  const autoHeads =
     variant === "default" && customer && !open
-      ? conversations
-          .filter(
-            (c) =>
-              c.threadId &&
-              c.unreadCount > 0 &&
-              !dismissedHeads.has(c.threadId) &&
-              floating?.threadId !== c.threadId,
-          )
-          .slice(0, 3)
+      ? conversations.filter(
+          (c) =>
+            c.threadId &&
+            c.unreadCount > 0 &&
+            !dismissedHeads.has(c.threadId) &&
+            floating?.threadId !== c.threadId,
+        )
       : [];
+  const minimizedHeads =
+    variant === "default" && customer && !open
+      ? minimized
+          .filter(
+            (m) =>
+              m.threadId &&
+              !dismissedHeads.has(m.threadId) &&
+              floating?.threadId !== m.threadId &&
+              !autoHeads.some((a) => a.threadId === m.threadId),
+          )
+          // Refresca datos (unread/último msj) desde la bandeja si existe
+          .map((m) => conversations.find((c) => c.threadId === m.threadId) ?? m)
+      : [];
+  const heads = [...autoHeads, ...minimizedHeads].slice(0, 4);
 
   // Tiendas sin conversación aún (para "Iniciar chat").
   const knownIds = new Set(conversations.map((c) => c.storeId));
@@ -550,10 +587,13 @@ export default function ChatNavLauncher({
                     </span>
                   )}
                 </button>
-                {/* Badge count */}
-                <span className="pointer-events-none absolute -top-1 -right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-[var(--surface-canvas)]">
-                  {c.unreadCount > 9 ? "9+" : c.unreadCount}
-                </span>
+                {/* Badge count — solo si hay no-leídos (los minimizados sin
+                    novedades quedan limpios) */}
+                {c.unreadCount > 0 && (
+                  <span className="pointer-events-none absolute -top-1 -right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-[var(--surface-canvas)]">
+                    {c.unreadCount > 9 ? "9+" : c.unreadCount}
+                  </span>
+                )}
                 {/* Descartar (hover, como FB) */}
                 <button
                   type="button"
@@ -585,7 +625,7 @@ export default function ChatNavLauncher({
               storeLogo={floating.storeLogo}
               customerPhone={customer.phone}
               customerName={customer.name ?? "Cliente"}
-              onBack={() => { setFloating(null); void refresh(); }}
+              onBack={() => { minimizeFloating(); void refresh(); }}
               onActivity={() => { if (floating.threadId) markRead(floating.threadId); }}
               onThreadCreated={(tid) => {
                 setFloating((prev) => (prev ? { ...prev, threadId: tid } : prev));
