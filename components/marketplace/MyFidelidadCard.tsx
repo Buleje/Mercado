@@ -241,6 +241,40 @@ export default function MyFidelidadCard({
     );
   }
 
+  // Empty state — versión mini para el strip compacto (Brandon 2026-06-06)
+  if (status === "empty" && compact) {
+    return (
+      <Link
+        href="/marketplace"
+        aria-label="Mi Fidelidad — tu primera compra te da 100 puntos de bienvenida"
+        className={cn(
+          "group flex h-16 items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+          className,
+        )}
+      >
+        <span
+          aria-hidden
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+        >
+          <Trophy className="h-[18px] w-[18px]" strokeWidth={2} />
+        </span>
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="block truncate text-sm font-extrabold text-[var(--text-primary)]">
+            Mi Fidelidad
+          </span>
+          <span className="block truncate text-xs font-medium text-[var(--text-secondary)]">
+            Tu 1ª compra te da <strong className="text-[var(--accent)]">100 pts</strong> de regalo
+          </span>
+        </span>
+        <ChevronRight
+          className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent)]"
+          strokeWidth={2.75}
+          aria-hidden
+        />
+      </Link>
+    );
+  }
+
   // Empty state
   if (status === "empty") {
     return (
@@ -277,6 +311,55 @@ export default function MyFidelidadCard({
   }
 
   if (!data) return null;
+
+  // ── Compact: mini-card h-16 (Brandon 2026-06-06) — una fila, toda
+  // clickeable → panel de fidelidad. Uniforme con Racha y Tienda de la
+  // semana en el strip del inicio del marketplace. ─────────────────────────
+  if (compact) {
+    return (
+      <Link
+        href="/marketplace/mi-cuenta/fidelidad"
+        aria-label={`Mi Fidelidad — ${data.points.toLocaleString("es-PE")} puntos (S/${data.soleEquivalent.toFixed(2)}). Ver panel completo`}
+        className={cn(
+          "group flex h-16 items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+          className,
+        )}
+      >
+        <span
+          aria-hidden
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+        >
+          <Trophy className="h-[18px] w-[18px]" strokeWidth={2} />
+        </span>
+
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+              {data.points.toLocaleString("es-PE")} pts
+            </span>
+            <TierBadge label={data.tierLabel} variant="loyalty" />
+          </span>
+          <span className="mt-0.5 flex items-center gap-2">
+            <span className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+              <span
+                className="block h-full rounded-full bg-[var(--accent)] transition-[width] duration-500"
+                style={{ width: `${data.progressPct}%` }}
+              />
+            </span>
+            <span className="truncate text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
+              S/{data.soleEquivalent.toFixed(2)} para canjear
+            </span>
+          </span>
+        </span>
+
+        <ChevronRight
+          className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent)]"
+          strokeWidth={2.75}
+          aria-hidden
+        />
+      </Link>
+    );
+  }
 
   // ── Full card ────────────────────────────────────────────────────────────────
   return (

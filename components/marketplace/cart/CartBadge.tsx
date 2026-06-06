@@ -18,13 +18,10 @@ import { cn } from "@/lib/utils";
 
 export function CartBadge({
   onClick,
-  compact = false,
 }: {
   onClick: () => void;
-  /** Modo compacto: solo cantidad, sin precio inline. */
-  compact?: boolean;
 }) {
-  const { itemCount, grandTotal } = useMarketplaceCart();
+  const { itemCount } = useMarketplaceCart();
   const [pulse, setPulse] = React.useState(false);
   const [floater, setFloater] = React.useState<{ id: number; delta: number } | null>(null);
   const prevCountRef = React.useRef(itemCount);
@@ -52,47 +49,32 @@ export function CartBadge({
     prevCountRef.current = itemCount;
   }, [itemCount]);
 
-  const fmtPrice = (n: number) =>
-    new Intl.NumberFormat("es-PE", {
-      style: "currency",
-      currency: "PEN",
-      maximumFractionDigits: 0,
-    }).format(n);
-
   const hasItems = itemCount > 0;
 
+  // Brandon 2026-06-06 (rediseño minimalista): botón circular BLANCO
+  // (surface-raised) con icono oscuro y badge count chico arriba a la
+  // derecha — sin pill verde gradiente, sin total inline, sin animación
+  // infinita. El total vive en el drawer del carrito. Se mantiene el
+  // pulse breve + floater "+N" al agregar (feedback útil).
   return (
     <div className="relative">
       <motion.button
         onClick={onClick}
         animate={
           pulse
-            ? {
-                scale: [1, 1.22, 0.94, 1.12, 1],
-                rotate: [0, -10, 10, -5, 0],
-              }
-            : hasItems
-              ? {
-                  scale: [1, 1.045, 1],
-                  rotate: [0, 0, 0],
-                }
-              : { scale: 1, rotate: 0 }
+            ? { scale: [1, 1.18, 0.95, 1.08, 1] }
+            : { scale: 1 }
         }
         transition={
           pulse
-            ? { duration: 0.9, ease: [0.16, 1, 0.3, 1] }
-            : hasItems
-              ? { duration: 3.6, ease: "easeInOut", repeat: Infinity, repeatType: "loop" }
-              : { duration: 0.2 }
+            ? { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
+            : { duration: 0.2 }
         }
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
         aria-label={`Carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
         className={cn(
-          "relative inline-flex items-center gap-2.5 h-11 rounded-full transition-colors shadow-sm focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
-          hasItems
-            ? "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white hover:brightness-110 pl-3.5 pr-4 text-sm font-bold shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--accent)_55%,transparent)]"
-            : "w-11 justify-center border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+          "relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
           pulse && "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]",
         )}
       >
@@ -145,31 +127,18 @@ export function CartBadge({
             )}
           </AnimatePresence>
         </span>
-        {/* Contador + total INLINE cuando hay items — no tapa el icono */}
-        <AnimatePresence mode="wait">
+        {/* Badge count — chico, arriba a la derecha (minimalista) */}
+        <AnimatePresence>
           {hasItems && (
             <motion.span
-              key={`meta-${itemCount}-${Math.round(grandTotal)}`}
-              initial={{ opacity: 0, x: -6, width: 0 }}
-              animate={{ opacity: 1, x: 0, width: "auto" }}
-              exit={{ opacity: 0, x: -6, width: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-2 whitespace-nowrap overflow-hidden"
+              key={`count-${itemCount}`}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 24 }}
+              className="absolute -top-1 -right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-[var(--surface-canvas)]"
             >
-              <span className="inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-xs)] font-black tabular-nums text-white">
-                {itemCount > 99 ? "99+" : itemCount}
-              </span>
-              {!compact && (
-                <>
-                  <span
-                    aria-hidden
-                    className="h-4 w-px bg-current opacity-25"
-                  />
-                  <span className="tabular-nums font-black text-sm">
-                    {fmtPrice(grandTotal)}
-                  </span>
-                </>
-              )}
+              {itemCount > 99 ? "99+" : itemCount}
             </motion.span>
           )}
         </AnimatePresence>

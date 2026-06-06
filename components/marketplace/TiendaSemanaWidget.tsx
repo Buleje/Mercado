@@ -31,7 +31,9 @@ export default function TiendaSemanaWidget({
   initialStores?: readonly StoreLike[];
   className?: string;
 }) {
-  const stores = (initialStores ?? []).filter((s) => s?.slug && s?.name).slice(0, 4);
+  // Máx 3 candidatas en el formato compacto — con 4 avatares + % el título
+  // quedaba truncado ("Tiend…") en la mini-card del strip.
+  const stores = (initialStores ?? []).filter((s) => s?.slug && s?.name).slice(0, 3);
   const [votes, setVotes] = useState<Record<string, number>>({});
   const [week, setWeek] = useState<string>("");
   const [voted, setVoted] = useState<string | null>(null);
@@ -88,103 +90,81 @@ export default function TiendaSemanaWidget({
     }
   }
 
+  // Brandon 2026-06-06 (rediseño compacto): mini-card h-16 — el voto es un
+  // TAP directo sobre el avatar de la tienda (tooltip con el nombre). Tras
+  // votar, cada avatar muestra su % debajo y el elegido lleva ring + check.
   return (
     <section
       aria-label="Tienda de la semana"
       className={cn(
-        "@container rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5",
+        "flex h-16 items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3",
         className,
       )}
     >
-      <div className="mb-2.5 flex items-center gap-2">
-        <span
-          aria-hidden
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]"
-        >
-          <Trophy className="h-[18px] w-[18px]" strokeWidth={2} />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-sm font-extrabold leading-tight text-[var(--text-primary)]">
-            Tienda de la semana
-          </h2>
-          <p className="text-xs font-medium leading-tight text-[var(--text-secondary)]">
-            {hasVoted ? "¡Gracias por votar!" : "Vota por tu favorita"}
-          </p>
-        </div>
+      {/* Sin icono-caja: los avatares ya comunican — el espacio se lo lleva
+          el título (antes quedaba "TI…" truncado con 4 tiendas + %). */}
+      <div className="min-w-0 flex-1">
+        <h2 className="flex items-center gap-1.5 text-sm font-extrabold leading-tight text-[var(--text-primary)]">
+          <Trophy className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
+          <span className="truncate">Tienda de la semana</span>
+        </h2>
+        <p className="truncate text-xs font-medium leading-tight text-[var(--text-secondary)]">
+          {hasVoted
+            ? `${total} ${total === 1 ? "voto" : "votos"} esta semana`
+            : "Tocá tu favorita para votar"}
+        </p>
       </div>
 
-      <ul className="grid grid-cols-1 gap-1.5 @[440px]:grid-cols-2">
+      {/* Avatares votables — un tap = un voto */}
+      <ul className="flex shrink-0 items-center gap-1.5" role="list">
         {stores.map((store) => {
           const count = votes[store.slug] ?? 0;
           const pct = total > 0 ? Math.round((count / total) * 100) : 0;
           const isVotedStore = voted === store.slug;
-          const showResults = hasVoted;
 
           return (
-            <li key={store.slug}>
+            <li key={store.slug} className="flex flex-col items-center gap-0.5">
               <button
                 type="button"
                 disabled={hasVoted || voting !== null}
                 onClick={() => vote(store.slug)}
+                title={store.name}
                 aria-label={hasVoted ? `${store.name}: ${pct}%` : `Votar por ${store.name}`}
                 className={cn(
-                  "group relative flex w-full items-center gap-2.5 overflow-hidden rounded-lg border px-2.5 py-1.5 text-left transition-colors",
+                  "relative inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold text-[var(--text-tertiary)] transition-all",
                   isVotedStore
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    ? "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface-raised)]"
                     : hasVoted
-                      ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
-                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                      ? "opacity-55 ring-1 ring-[var(--rule-base)]"
+                      : "ring-1 ring-[var(--rule-base)] hover:scale-110 hover:ring-2 hover:ring-[var(--accent)] active:scale-95",
+                  voting === store.slug && "animate-pulse",
                 )}
               >
-                {/* Barra de progreso de fondo (solo tras votar) */}
-                {showResults && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-y-0 left-0 bg-[var(--accent)]/12 transition-[width] duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                )}
-
-                {/* Logo */}
-                <span className="relative z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold text-[var(--text-tertiary)] ring-1 ring-[var(--rule-base)]">
-                  {store.logo ? (
-                    <Image src={store.logo} alt="" fill sizes="28px" className="object-cover" />
-                  ) : (
-                    store.name.charAt(0).toUpperCase()
-                  )}
-                </span>
-
-                {/* Nombre */}
-                <span className="relative z-10 min-w-0 flex-1 truncate text-sm font-bold text-[var(--text-primary)]">
-                  {store.name}
-                </span>
-
-                {/* Estado: % (votado) o CTA Votar */}
-                {showResults ? (
-                  <span className="relative z-10 flex shrink-0 items-center gap-1.5">
-                    {isVotedStore && (
-                      <Check className="h-4 w-4 text-[var(--accent)]" strokeWidth={3} aria-hidden />
-                    )}
-                    <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
-                      {pct}%
-                    </span>
-                  </span>
+                {store.logo ? (
+                  <Image src={store.logo} alt="" fill sizes="36px" className="object-cover" />
                 ) : (
-                  <span className="relative z-10 shrink-0 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-extrabold text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white">
-                    {voting === store.slug ? "…" : "Votar"}
+                  store.name.charAt(0).toUpperCase()
+                )}
+                {isVotedStore && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-[var(--accent)]/55">
+                    <Check className="h-4 w-4 text-white" strokeWidth={3.5} aria-hidden />
                   </span>
                 )}
               </button>
+              {hasVoted && (
+                <span
+                  className={cn(
+                    "text-[length:var(--ts-2xs)] font-black tabular-nums leading-none",
+                    isVotedStore ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]",
+                  )}
+                >
+                  {pct}%
+                </span>
+              )}
             </li>
           );
         })}
       </ul>
-
-      {total > 0 && (
-        <p className="mt-3 text-center text-xs font-medium text-[var(--text-tertiary)]">
-          {total} {total === 1 ? "voto" : "votos"} esta semana
-        </p>
-      )}
     </section>
   );
 }

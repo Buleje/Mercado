@@ -381,13 +381,13 @@ function MarketplaceCenterFeed({
 
   return (
     <div id="mp-feed" className="min-w-0 space-y-4 scroll-mt-20 sm:space-y-5">
-      {/* Saludo + racha diaria (hábito) + participación + fidelidad + re-orden.
-          Participación y fidelidad van LADO A LADO en desktop (compacto, ahorra
-          ~50% de alto). Si una no renderiza (sin sesión / <2 tiendas), la otra
-          ocupa todo el ancho gracias al flex (los null no dejan hueco). */}
+      {/* Saludo + "pulse strip" (Brandon 2026-06-06): racha + tienda de la
+          semana + fidelidad en UNA fila de mini-cards uniformes (h-16) —
+          ocupan ~1/3 del alto que antes. Si alguna no renderiza (sin sesión /
+          <2 tiendas), las otras se estiran (flex, los null no dejan hueco). */}
       <SaludoHorario />
-      <RachaDiariaWidget />
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-stretch">
+        <RachaDiariaWidget className="lg:flex-1 lg:min-w-0" />
         <TiendaSemanaWidget initialStores={initialStores} className="lg:flex-1 lg:min-w-0" />
         <MyFidelidadCard compact className="lg:flex-1 lg:min-w-0" />
       </div>

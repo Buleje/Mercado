@@ -88,10 +88,12 @@ export default function RachaDiariaWidget({ className }: { className?: string })
   const pct = Math.min(100, Math.round((streak / MILESTONE) * 100));
   const faltan = Math.max(0, MILESTONE - streak);
 
+  // Brandon 2026-06-06 (rediseño compacto): mini-card h-16 uniforme con
+  // Tienda de la semana y Mi Fidelidad — una sola fila en el inicio.
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-gradient-to-r from-[var(--accent-soft)] to-[var(--surface-raised)] px-3.5 py-2.5",
+        "flex h-16 items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-gradient-to-r from-[var(--accent-soft)] to-[var(--surface-raised)] px-3",
         className,
       )}
       aria-label={`Racha de ${streak} ${streak === 1 ? "día" : "días"} seguidos`}
@@ -100,40 +102,38 @@ export default function RachaDiariaWidget({ className }: { className?: string })
       <span
         aria-hidden
         className={cn(
-          "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white shadow-sm",
+          "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white shadow-sm",
           justGrew && "animate-bounce",
         )}
       >
-        <Flame className="h-5 w-5" strokeWidth={2.25} fill="currentColor" />
-        <span className="absolute -bottom-1 -right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)] px-1 text-[length:var(--ts-2xs,0.6875rem)] font-black tabular-nums text-[var(--surface-canvas)] ring-2 ring-[var(--surface-raised)]">
+        <Flame className="h-4.5 w-4.5" strokeWidth={2.25} fill="currentColor" />
+        <span className="absolute -bottom-1 -right-1 inline-flex h-4.5 min-w-[1.125rem] items-center justify-center rounded-full bg-[var(--text-primary)] px-1 text-[length:var(--ts-2xs,0.6875rem)] font-black tabular-nums text-[var(--surface-canvas)] ring-2 ring-[var(--surface-raised)]">
           {streak}
         </span>
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-extrabold leading-tight text-[var(--text-primary)]">
-          {streak === 1
-            ? "¡Empezaste tu racha!"
-            : `${streak} días seguidos`}
+        <p className="truncate text-sm font-extrabold leading-tight text-[var(--text-primary)]">
+          {streak === 1 ? "¡Empezaste tu racha!" : `${streak} días seguidos`}
         </p>
 
         {reached ? (
           <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">
-            <Gift className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-            ¡Premio desbloqueado!
+            <Gift className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
+            <span className="truncate">¡Premio desbloqueado!</span>
           </p>
         ) : (
-          <>
-            <p className="mt-0.5 text-xs font-medium text-[var(--text-secondary)]">
-              {faltan} {faltan === 1 ? "día" : "días"} para tu cupón de regalo
-            </p>
-            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+          <div className="mt-1 flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
               <div
                 className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-700"
                 style={{ width: `${pct}%` }}
               />
             </div>
-          </>
+            <span className="shrink-0 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
+              {faltan === 1 ? "1 día p/ cupón" : `${faltan} días p/ cupón`}
+            </span>
+          </div>
         )}
       </div>
 
@@ -142,7 +142,7 @@ export default function RachaDiariaWidget({ className }: { className?: string })
         <button
           type="button"
           onClick={copyCoupon}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-extrabold text-white transition-transform hover:scale-[1.03] active:scale-95"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent)] px-2.5 py-1.5 text-xs font-extrabold text-white transition-transform hover:scale-[1.03] active:scale-95"
           aria-label={`Copiar cupón ${COUPON}`}
         >
           {copied ? (
