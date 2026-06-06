@@ -40,10 +40,15 @@
 
 /* ── Variables de marca (aliases para uso futuro en componentes) ─────────── */
 :root {
-  --brand-primary: #00B4A6;
-  --brand-primary-light: #33C4B8;
-  --brand-primary-bg: rgba(0, 180, 166, 0.05);
-  --brand-secondary: #f97316;
+  /* Brandon 2026-06-05 (paleta B "Turquesa + Coral"): primary = turquesa REAL
+     del logo (#00A0A0, sampleado de buleje-logo-mark.png). El teal-700 #0F766E
+     anterior se veía opaco/sin vida y NO matcheaba la marca.
+     Regla de contraste: #00A0A0 para FILLS/CTAs/íconos (AA UI 3.2:1);
+     para TEXTO sobre fondo claro usar --color-primary-dark #007F7F (AA 4.8:1). */
+  --brand-primary: #00A0A0;
+  --brand-primary-light: #00BDBD;
+  --brand-primary-bg: rgba(0, 160, 160, 0.04);
+  --brand-secondary: #FF6B5B; /* coral — ofertas/CTAs calientes (paleta B) */
   --brand-danger: #ef4444;
   --brand-info: #0ea5e9;
   --brand-purple: #8b5cf6;
@@ -52,12 +57,12 @@
 @theme inline {
   --color-background: #ffffff;
   --color-foreground: #111827;
-  --color-primary: #00B4A6;        /* Alegra Teal - Brand Primary */
-  --color-primary-dark: #009690;   /* Darker teal for hover/active */
-  --color-primary-light: #33C4B8;  /* Lighter teal variant */
-  --color-secondary: #f97316;      /* Orange 500 - Brand Secondary */
-  --color-secondary-dark: #ea580c; /* Orange 600 */
-  --color-accent: #00D4C8;         /* Bright teal - Interactive */
+  --color-primary: #00A0A0;        /* Turquesa del logo — fills/CTAs (paleta B) */
+  --color-primary-dark: #007F7F;   /* Hover/active + texto sobre claro (AA 4.8:1) */
+  --color-primary-light: #00BDBD;  /* Lighter turquoise variant */
+  --color-secondary: #FF6B5B;      /* Coral - Brand Secondary (ofertas/hot) */
+  --color-secondary-dark: #E8503F; /* Coral oscuro - hover */
+  --color-accent: #00D4D4;         /* Bright aqua - Interactive */
   --color-danger: #ef4444;          /* Red 500 - Errors & alerts */
   --color-success: #10b981;         /* Emerald 500 - Confirmations */
   --color-warning: #f59e0b;         /* Amber 500 - Warnings */
@@ -71,7 +76,7 @@
   --color-popover-foreground: #111827;
   --color-border: #e5e7eb;
   --color-input: #e5e7eb;
-  --color-ring: #00B4A6;
+  --color-ring: #00A0A0;
   --color-destructive: #ef4444;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
@@ -179,7 +184,7 @@
        secondary #b8c0cc ≈  9:1 (AAA)
        tertiary  #8590a3 ≈ 5.7:1 (AA body) — antes #525252 fallaba AA
    • Bordes visibles pero discretos (rule-soft #1f2530, base #2e3645, strong #4c5566)
-   • Accent teal-400 (#34d4be) brilla sobre fondo oscuro — ratio ~9.8:1
+   • Accent turquesa logo (#14C2C2) brilla sobre fondo oscuro — ratio ~8.5:1
    • Sin colores deslumbrantes (#fafafa solo en surface-inverse).
    ═════════════════════════════════════════════════════════════════════════ */
 .dark {
@@ -188,26 +193,26 @@
   /* Legacy --color-* tokens (paleta unificada con --surface-*) */
   --color-background: #0d1117;
   --color-foreground: #f0f3f7;
-  --color-primary: #34d4be;        /* teal-400 — bright sobre dark */
-  --color-primary-dark: #14b8a6;   /* teal-500 */
-  --color-primary-light: #5eead4;  /* teal-300 */
-  --color-secondary: #fb923c;      /* orange-400 */
-  --color-secondary-dark: #f97316; /* orange-500 */
+  --color-primary: #14C2C2;        /* turquesa logo aclarado para dark (~8.5:1) */
+  --color-primary-dark: #0FAFAF;   /* hover/active */
+  --color-primary-light: #5EE0DB;  /* aqua claro */
+  --color-secondary: #FF7E6F;      /* coral aclarado para dark */
+  --color-secondary-dark: #FF6B5B; /* coral base */
   --color-surface: #161b22;
   --color-muted: #8590a3;
   --color-muted-foreground: #8590a3;
   --color-card: #1c2230;
   --color-card-foreground: #f0f3f7;
   --color-card-border: #2e3645;
-  --color-accent: #34d4be;
+  --color-accent: #14C2C2;
   --color-danger: #f87171;
-  --color-success: #34d4be;
+  --color-success: #14C2C2;
   --color-warning: #fbbf24;
   --color-popover: #1c2230;
   --color-popover-foreground: #f0f3f7;
   --color-border: #2e3645;
   --color-input: #2e3645;
-  --color-ring: #34d4be;
+  --color-ring: #14C2C2;
   --color-destructive: #f87171;
 }
 
@@ -249,11 +254,11 @@ html.dark body {
 }
 
 ::selection {
-  background-color: rgba(0, 180, 166, 0.30);
+  background-color: rgba(0, 160, 160, 0.30);
   color: var(--text-primary);
 }
 .dark ::selection {
-  background-color: rgba(52, 212, 190, 0.35);
+  background-color: rgba(20, 194, 194, 0.35);
   color: #f0f3f7;
 }
 
@@ -416,6 +421,12 @@ body {
   to { transform: translateY(0); }
 }
 
+/* ── Side-panel desde la derecha (RecentlyViewedDrawer desktop) ── */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 /* ── Slide from top (banners) ── */
 @keyframes slideDown {
   from { transform: translateY(-100%); opacity: 0; }
@@ -454,6 +465,24 @@ body {
   0% { transform: translate(0, 0) rotate(0) scale(0); opacity: 1; }
   20% { opacity: 1; transform: scale(1); }
   100% { transform: translate(0, 600px) rotate(720deg) scale(0.5); opacity: 0; }
+}
+
+/* ── Onboarding wizard (/onboarding) — antes inline en <style>, movidos aquí
+   porque React 19 no ejecuta <style> dentro del árbol de componentes ── */
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+@keyframes ob-float-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(26px, -30px) scale(1.06); }
+}
+@keyframes ob-float-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-32px, 24px) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-orb { animation: none !important; }
 }
 
 /* ── Wave animation for emoji ── */
@@ -588,8 +617,8 @@ body {
 }
 
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.12); }
-  50%       { box-shadow: 0 0 24px 6px rgba(15, 118, 110, 0.06); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 160, 160, 0.12); }
+  50%       { box-shadow: 0 0 24px 6px rgba(0, 160, 160, 0.06); }
 }
 
 /* Animated gradient text — apply to a gradient-clipped span */
@@ -822,7 +851,7 @@ body {
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  background: conic-gradient(from 0deg, #0f766e, #0d9488, #f97316, #0f766e);
+  background: conic-gradient(from 0deg, #00A0A0, #00BDBD, #FF6B5B, #00A0A0);
   z-index: -1;
   animation: rotateBorder 3s linear infinite;
   opacity: 0;
@@ -835,42 +864,42 @@ body {
 /* ── Explicit opacity variants — Tailwind v4 /N step safety net ── */
 /* Ensures bg-primary/N, border-primary/N classes always render     */
 /* Placed outside @layer so they win over any generated utilities   */
-/* ── Primary (Forest Green #0f766e = 45, 106, 79) opacity helpers ─────── */
-.bg-primary\/5  { background-color: rgba(15, 118, 110, 0.05); }
-.bg-primary\/8  { background-color: rgba(15, 118, 110, 0.08); }
-.bg-primary\/10 { background-color: rgba(15, 118, 110, 0.10); }
-.bg-primary\/12 { background-color: rgba(15, 118, 110, 0.12); }
-.bg-primary\/15 { background-color: rgba(15, 118, 110, 0.15); }
-.bg-primary\/20 { background-color: rgba(15, 118, 110, 0.20); }
-.bg-primary\/25 { background-color: rgba(15, 118, 110, 0.25); }
-/* ── Secondary (Warm Orange #f97316 = 244, 162, 97) opacity helpers ───── */
-.bg-secondary\/10 { background-color: rgba(249, 115, 22, 0.10); }
-.bg-secondary\/15 { background-color: rgba(249, 115, 22, 0.15); }
-.bg-secondary\/20 { background-color: rgba(249, 115, 22, 0.20); }
-.bg-secondary\/25 { background-color: rgba(249, 115, 22, 0.25); }
+/* ── Primary (Turquesa logo #00A0A0 = 0, 160, 160) opacity helpers ────── */
+.bg-primary\/5  { background-color: rgba(0, 160, 160, 0.05); }
+.bg-primary\/8  { background-color: rgba(0, 160, 160, 0.08); }
+.bg-primary\/10 { background-color: rgba(0, 160, 160, 0.10); }
+.bg-primary\/12 { background-color: rgba(0, 160, 160, 0.12); }
+.bg-primary\/15 { background-color: rgba(0, 160, 160, 0.15); }
+.bg-primary\/20 { background-color: rgba(0, 160, 160, 0.20); }
+.bg-primary\/25 { background-color: rgba(0, 160, 160, 0.25); }
+/* ── Secondary (Coral #FF6B5B = 255, 107, 91) opacity helpers ─────────── */
+.bg-secondary\/10 { background-color: rgba(255, 107, 91, 0.10); }
+.bg-secondary\/15 { background-color: rgba(255, 107, 91, 0.15); }
+.bg-secondary\/20 { background-color: rgba(255, 107, 91, 0.20); }
+.bg-secondary\/25 { background-color: rgba(255, 107, 91, 0.25); }
 /* ── Border helpers ──────────────────────────────────────────────────── */
-.border-primary\/10 { border-color: rgba(15, 118, 110, 0.10); }
-.border-primary\/15 { border-color: rgba(15, 118, 110, 0.15); }
-.border-primary\/20 { border-color: rgba(15, 118, 110, 0.20); }
-.border-primary\/25 { border-color: rgba(15, 118, 110, 0.25); }
-.border-primary\/30 { border-color: rgba(15, 118, 110, 0.30); }
+.border-primary\/10 { border-color: rgba(0, 160, 160, 0.10); }
+.border-primary\/15 { border-color: rgba(0, 160, 160, 0.15); }
+.border-primary\/20 { border-color: rgba(0, 160, 160, 0.20); }
+.border-primary\/25 { border-color: rgba(0, 160, 160, 0.25); }
+.border-primary\/30 { border-color: rgba(0, 160, 160, 0.30); }
 /* ── Hover helpers ───────────────────────────────────────────────────── */
-.hover\:bg-primary\/8:hover  { background-color: rgba(15, 118, 110, 0.08); }
-.hover\:bg-primary\/10:hover { background-color: rgba(15, 118, 110, 0.10); }
-.hover\:bg-primary\/15:hover { background-color: rgba(15, 118, 110, 0.15); }
-.hover\:bg-primary\/20:hover { background-color: rgba(15, 118, 110, 0.20); }
-.hover\:bg-secondary\/20:hover { background-color: rgba(249, 115, 22, 0.20); }
-.group-hover\:border-primary\/30:is(:where(.group):hover *) { border-color: rgba(15, 118, 110, 0.30); }
+.hover\:bg-primary\/8:hover  { background-color: rgba(0, 160, 160, 0.08); }
+.hover\:bg-primary\/10:hover { background-color: rgba(0, 160, 160, 0.10); }
+.hover\:bg-primary\/15:hover { background-color: rgba(0, 160, 160, 0.15); }
+.hover\:bg-primary\/20:hover { background-color: rgba(0, 160, 160, 0.20); }
+.hover\:bg-secondary\/20:hover { background-color: rgba(255, 107, 91, 0.20); }
+.group-hover\:border-primary\/30:is(:where(.group):hover *) { border-color: rgba(0, 160, 160, 0.30); }
 /* ── Extra opacity variants used across components ───────────────────── */
-.bg-primary\/3  { background-color: rgba(15, 118, 110, 0.03); }
-.bg-primary\/40 { background-color: rgba(15, 118, 110, 0.40); }
-.bg-primary\/60 { background-color: rgba(15, 118, 110, 0.60); }
-.hover\:bg-primary\/5:hover  { background-color: rgba(15, 118, 110, 0.05); }
-.hover\:bg-primary\/25:hover { background-color: rgba(15, 118, 110, 0.25); }
-.text-primary\/60 { color: rgba(15, 118, 110, 0.60); }
-.border-primary\/8  { border-color: rgba(15, 118, 110, 0.08); }
-.border-primary\/18 { border-color: rgba(15, 118, 110, 0.18); }
-.group-hover\:bg-primary\/15:is(:where(.group):hover *) { background-color: rgba(15, 118, 110, 0.15); }
+.bg-primary\/3  { background-color: rgba(0, 160, 160, 0.03); }
+.bg-primary\/40 { background-color: rgba(0, 160, 160, 0.40); }
+.bg-primary\/60 { background-color: rgba(0, 160, 160, 0.60); }
+.hover\:bg-primary\/5:hover  { background-color: rgba(0, 160, 160, 0.05); }
+.hover\:bg-primary\/25:hover { background-color: rgba(0, 160, 160, 0.25); }
+.text-primary\/60 { color: rgba(0, 160, 160, 0.60); }
+.border-primary\/8  { border-color: rgba(0, 160, 160, 0.08); }
+.border-primary\/18 { border-color: rgba(0, 160, 160, 0.18); }
+.group-hover\:bg-primary\/15:is(:where(.group):hover *) { background-color: rgba(0, 160, 160, 0.15); }
 
 /* ── Accessibility utilities ────────────────────────────────────────────  */
 /* Visually hidden but accessible to screen readers */
@@ -961,11 +990,11 @@ body {
     visibility: visible !important;
     text-align: center;
     padding: 1rem 0;
-    border-bottom: 2px solid #0f766e;
+    border-bottom: 2px solid #007F7F;
     margin-bottom: 1rem;
     font-family: system-ui, sans-serif;
   }
-  .print-header h1 { font-size: 18px; font-weight: 800; color: #0f766e; margin: 0; }
+  .print-header h1 { font-size: 18px; font-weight: 800; color: #007F7F; margin: 0; }
   .print-header p { font-size: 11px; color: #666; margin: 4px 0 0; }
   .print-footer {
     display: block !important;
@@ -1338,7 +1367,7 @@ body {
 
 /* ── Mejora 17: Standard button styles ────────────────────────────────────── */
 [data-admin-shell] .btn-primary {
-  @apply bg-[#0f766e] text-white rounded-xl px-4 py-2.5 text-sm font-medium
+  @apply bg-[#00A0A0] text-white rounded-xl px-4 py-2.5 text-sm font-medium
          hover:bg-[#0d5f58] active:scale-[0.98] transition-all;
 }
 [data-admin-shell] .btn-secondary {
@@ -1386,14 +1415,14 @@ body {
 [data-admin-shell] input:focus-visible,
 [data-admin-shell] select:focus-visible,
 [data-admin-shell] textarea:focus-visible {
-  @apply outline-none ring-2 ring-[#0f766e] ring-offset-2;
+  @apply outline-none ring-2 ring-[#00A0A0] ring-offset-2;
 }
 .dark [data-admin-shell] button:focus-visible,
 .dark [data-admin-shell] a:focus-visible,
 .dark [data-admin-shell] input:focus-visible,
 .dark [data-admin-shell] select:focus-visible,
 .dark [data-admin-shell] textarea:focus-visible {
-  @apply ring-[#14b8a6] ring-offset-gray-900;
+  @apply ring-[#14C2C2] ring-offset-gray-900;
 }
 
 /* ── Mejora 17 (R3): Hover uniforme en filas de tabla admin ─────────────── */
@@ -1444,14 +1473,14 @@ input[type="range"].roi-slider::-webkit-slider-thumb {
   height: 20px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2px solid #0f766e;
-  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.35), 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: 2px solid #00A0A0;
+  box-shadow: 0 2px 8px rgba(0, 160, 160, 0.35), 0 1px 3px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 input[type="range"].roi-slider::-webkit-slider-thumb:hover,
 input[type="range"].roi-slider:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 5px rgba(15, 118, 110, 0.18), 0 2px 8px rgba(15, 118, 110, 0.35);
+  box-shadow: 0 0 0 5px rgba(0, 160, 160, 0.18), 0 2px 8px rgba(0, 160, 160, 0.35);
   transform: scale(1.1);
 }
 /* Firefox */
@@ -1460,35 +1489,35 @@ input[type="range"].roi-slider::-moz-range-thumb {
   height: 20px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2px solid #0f766e;
-  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.35), 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: 2px solid #00A0A0;
+  box-shadow: 0 2px 8px rgba(0, 160, 160, 0.35), 0 1px 3px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 input[type="range"].roi-slider::-moz-range-thumb:hover {
-  box-shadow: 0 0 0 5px rgba(15, 118, 110, 0.18), 0 2px 8px rgba(15, 118, 110, 0.35);
+  box-shadow: 0 0 0 5px rgba(0, 160, 160, 0.18), 0 2px 8px rgba(0, 160, 160, 0.35);
 }
 /* Track base (Firefox necesita esto explícito) */
 input[type="range"].roi-slider::-moz-range-track {
   height: 8px;
   border-radius: 9999px;
-  background: rgba(15, 118, 110, 0.18);
+  background: rgba(0, 160, 160, 0.18);
 }
 /* Parte izquierda del track en Firefox */
 input[type="range"].roi-slider::-moz-range-progress {
   height: 8px;
   border-radius: 9999px;
-  background: #0f766e;
+  background: #00A0A0;
 }
 /* Dark mode: thumb con fondo dark */
 .dark input[type="range"].roi-slider::-webkit-slider-thumb {
   background: #1a2e20;
-  border-color: #14b8a6;
+  border-color: #14C2C2;
   box-shadow: 0 2px 8px rgba(20, 184, 166, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 .dark input[type="range"].roi-slider::-moz-range-thumb {
   background: #1a2e20;
-  border-color: #14b8a6;
+  border-color: #14C2C2;
 }
 @media (prefers-reduced-motion: reduce) {
   input[type="range"].roi-slider::-webkit-slider-thumb {
@@ -1546,7 +1575,7 @@ textarea:focus-visible,
   background: linear-gradient(
     90deg,
     var(--color-primary) 0%,
-    #00D4C8 40%,
+    #00D4D4 40%,
     var(--color-secondary) 80%,
     var(--color-primary) 100%
   );
@@ -1846,17 +1875,26 @@ button,
   --rule-base: #e5e5e5;
   --rule-strong: #171717;
 
-  /* Accent editorial (teal Buleje) */
-  --accent: #00B4A6;
-  --accent-soft: rgba(0, 180, 166, 0.08);
-  --accent-muted: rgba(0, 180, 166, 0.16);
+  /* Accent editorial (turquesa Buleje) — Brandon 2026-06-05 paleta B:
+     turquesa REAL del logo #00A0A0. Texto sobre claro → usar --accent-600/dark.
+     Soft/muted/glow con menos alpha → presencia más sutil en toda la UI. */
+  --accent: #00A0A0;
+  --accent-soft: rgba(0, 160, 160, 0.06);
+  --accent-muted: rgba(0, 160, 160, 0.13);
+  /* Escala hover/pressed/glow — antes UNDEFINED → causaba bug "hover blanco"
+     (hover:bg-[var(--accent-dark)] resolvía a transparent y mostraba el card
+     blanco bajo el texto blanco). Usado en 70+ archivos. -600=hover, -dark=
+     pressed/énfasis (AA sobre blanco), -glow=sombra de realce. */
+  --accent-600: #008787;
+  --accent-dark: #007575;
+  --accent-glow: rgba(0, 160, 160, 0.28);
 
   /* Data viz monochrome + 1 accent */
   --data-1: #0a0a0a;
   --data-2: #525252;
   --data-3: #a3a3a3;
   --data-4: #d4d4d4;
-  --data-5: #00B4A6;
+  --data-5: #00A0A0;
   --data-6: #0ea5e9;
   --data-7: #d97706;
   --data-8: #8b5cf6;
@@ -1869,7 +1907,7 @@ button,
   /* Success (teal brand Buleje) */
   --data-success-50: #e6f8f6;      /* bg-soft (alerts, chips) */
   --data-success-100: #cdf1ed;     /* bg-soft-hover */
-  --data-success-500: #00B4A6;     /* default (icons, text, borders) */
+  --data-success-500: #00A0A0;     /* default (icons, text, borders) */
   --data-success-600: #00998d;     /* hover */
   --data-success-700: #007f74;     /* pressed */
 
@@ -1918,7 +1956,7 @@ button,
   /* ─── Brand System v4 (Ola 1) — signature + heros ─── */
   --brand-ink: #060a0d;
   --brand-cream: #FAFAF7;
-  --brand-accent: #00B4A6;
+  --brand-accent: #00A0A0;
 
   /* ─── Elevation v4 — 4 niveles editoriales ─── */
   --elev-1: 0 1px 2px rgba(9, 9, 11, 0.04);
@@ -2043,13 +2081,20 @@ button,
   --rule-base: #2e3645;          /* Default border — claramente visible */
   --rule-strong: #4c5566;        /* Hover/focus border — sin deslumbrar */
 
-  /* ── Accent (teal-400 — bright en dark, ~9.8:1) ── */
-  --accent: #34d4be;
-  --accent-soft: rgba(52, 212, 190, 0.13);
-  --accent-muted: rgba(52, 212, 190, 0.24);
+  /* ── Accent (teal-400 azulado — bright en dark, AA holgado) ──
+     Brandon 2026-06-05 paleta B: turquesa logo aclarado #14C2C2 + glow/soft con
+     menos alpha para una presencia más sutil, alineado con el light mode. */
+  --accent: #14C2C2;
+  --accent-soft: rgba(20, 194, 194, 0.10);
+  --accent-muted: rgba(20, 194, 194, 0.20);
+  /* Escala hover/pressed/glow en dark (ver nota en :root). Más profundos que
+     --accent para dar feedback de hover sin perder contraste sobre canvas. */
+  --accent-600: #0FAFAF;
+  --accent-dark: #0C9C9C;
+  --accent-glow: rgba(20, 194, 194, 0.24);
 
   /* ── Brand bridge (mantiene cohesión con --color-* tokens del bloque legacy) ── */
-  --brand-accent: #34d4be;
+  --brand-accent: #14C2C2;
 
   /* ── Dark mode contrast lift para brand colors muteados ─────────────
      Algunos tenants eligen marcas desaturadas (ej. mi-pollo #5f7777). En
@@ -2058,14 +2103,14 @@ button,
      como reemplazo cuando el ratio falla — siempre legible.
      `!important` necesario porque ThemeInjector inyecta `:root{}` con
      mayor orden en cascada (mismas reglas no-important ganarían). */
-  --color-primary-dark: var(--color-primary-light, var(--color-primary, #34d4be)) !important;
+  --color-primary-dark: var(--color-primary-light, var(--color-primary, #14C2C2)) !important;
 
   /* ── Data viz monochromatic + accent ── */
   --data-1: #f0f3f7;
   --data-2: #b8c0cc;
   --data-3: #8590a3;
   --data-4: #4c5566;
-  --data-5: #34d4be;
+  --data-5: #14C2C2;
   --data-6: #38bdf8;
   --data-7: #fbbf24;
   --data-8: #c4b5fd;
@@ -2076,11 +2121,11 @@ button,
      color-mix (transparente sobre canvas dark). */
 
   /* Success dark (teal-400) */
-  --data-success-50: rgba(45, 212, 191, 0.12);
-  --data-success-100: rgba(45, 212, 191, 0.20);
-  --data-success-500: #2dd4bf;
-  --data-success-600: #14b8a6;
-  --data-success-700: #0d9488;
+  --data-success-50: rgba(20, 194, 194, 0.12);
+  --data-success-100: rgba(20, 194, 194, 0.20);
+  --data-success-500: #14C2C2;
+  --data-success-600: #0FAFAF;
+  --data-success-700: #0C9C9C;
 
   /* Warning dark (amber-400) */
   --data-warning-50: rgba(251, 191, 36, 0.12);
@@ -2114,8 +2159,8 @@ button,
   --badge-discount-text: #fca5a5;       /* red-300 — ~7:1 sobre canvas */
   --badge-new-bg: rgba(96, 165, 250, 0.16);
   --badge-new-text: #93c5fd;            /* blue-300 — ~8:1 */
-  --badge-shipping-bg: rgba(52, 212, 190, 0.16);
-  --badge-shipping-text: #5eead4;       /* teal-300 — ~10:1 */
+  --badge-shipping-bg: rgba(20, 194, 194, 0.16);
+  --badge-shipping-text: #5EE0DB;       /* teal-300 — ~10:1 */
   --badge-urgency-bg: rgba(251, 191, 36, 0.16);
   --badge-urgency-text: #fcd34d;        /* amber-300 — ~10:1 */
   --badge-trending-bg: rgba(244, 114, 182, 0.16);

@@ -230,21 +230,10 @@ export default function MarketplaceCommandLauncher({ stores = [], sections = [] 
 
   return (
     <>
-      {/* ── Lanzador (barra) ─────────────────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="group flex w-full items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--accent)]/50"
-        aria-label="Abrir buscador universal"
-      >
-        <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] group-hover:text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
-        <span className="flex-1 truncate text-sm font-medium text-[var(--text-tertiary)]">
-          Ir a una tienda, categoría o sección…
-        </span>
-        <kbd className="hidden shrink-0 items-center gap-0.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,0.6875rem)] font-bold text-[var(--text-tertiary)] sm:inline-flex">
-          ⌘K
-        </kbd>
-      </button>
+      {/* Brandon 2026-06-06: la barra-lanzador visible se quitó — era
+          redundante con el buscador del navbar (siempre visible arriba).
+          El palette sigue vivo vía ⌘K / Ctrl+K y el evento
+          `buleje:open-command` (lo puede disparar cualquier botón). */}
 
       {/* ── Modal palette ────────────────────────────────────────────────── */}
       {open && (

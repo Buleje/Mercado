@@ -1,19 +1,23 @@
 "use client";
 
 /**
- * FloatingDockController — Orquesta los widgets floating de la Ronda 4:
- *   - QuickActionsDock: dock vertical (scroll-top, historial, ayuda)
- *   - RecentlyViewedDrawer: drawer con productos vistos recientemente
- *   - ShortcutHelpModal: modal "?" con atajos de teclado
+ * FloatingDockController — botón flotante "Recientes" + drawer de historial.
+ *
+ * Brandon 2026-06-06 (rediseño): antes era un QuickActionsDock genérico
+ * (círculo con reloj + badge). Ahora es un pill rico estilo dock de iOS:
+ *   - Stack de mini-thumbnails de los últimos productos vistos (solapadas)
+ *   - Label "Seguí viendo" + count
+ *   - Aparece tras scrollear (no invade el primer viewport)
+ *   - Abre el RecentlyViewedDrawer (rediseñado como side-panel)
  *
  * Vive dentro de MarketplaceFloatingWidgets (post-FCP).
- * Los 3 son state-locales acá para que el dock pueda abrirlos.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Clock } from "@buleje/design-system/icons";
-import QuickActionsDock from "@/components/ui-system/QuickActionsDock";
+import { Clock, ChevronRight } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 import RecentlyViewedDrawer from "@/components/ui-system/RecentlyViewedDrawer";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 
@@ -24,14 +28,21 @@ const HIDE_ON = [
   "/marketplace/onboarding",
 ];
 
-/**
- * FloatingDockController — Sólo deja la acción "Productos recientes"
- * cuando hay historial Y el usuario está en flujo de compra.
- */
+const SCROLL_THRESHOLD = 400;
+
 export default function FloatingDockController() {
   const pathname = usePathname() ?? "";
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [visible, setVisible] = useState(false);
   const { items } = useRecentlyViewed();
+
+  // Aparece recién después de scrollear — no invade el primer viewport.
+  useEffect(() => {
+    const handler = () => setVisible(window.scrollY > SCROLL_THRESHOLD);
+    handler();
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
 
   // Skip en rutas de inscripción/onboarding (no son shopping).
   if (HIDE_ON.some((p) => pathname.startsWith(p))) return null;
@@ -40,21 +51,66 @@ export default function FloatingDockController() {
   // para el chat flotante y el sticky cart bar).
   if (items.length === 0) return null;
 
+  const thumbs = items.slice(0, 3);
+
   return (
     <>
-      <QuickActionsDock
-        position="right"
-        scrollThreshold={400}
-        actions={[
-          {
-            id: "history",
-            icon: <Clock className="h-4 w-4" strokeWidth={2} aria-hidden />,
-            label: "Productos recientes",
-            onClick: () => setHistoryOpen(true),
-            badge: items.length,
-          },
-        ]}
-      />
+      {(visible || historyOpen) && (
+        <button
+          type="button"
+          onClick={() => setHistoryOpen(true)}
+          aria-label={`Ver productos recientes (${items.length})`}
+          className={cn(
+            // Mobile: bottom-32 — por ENCIMA de la bottom-nav fija (~80px) y
+            // del sticky cart bar. En sm+ no hay bottom-nav → bottom-20.
+            "group fixed bottom-32 sm:bottom-20 right-4 z-40 flex items-center gap-2.5",
+            "rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur",
+            "py-1.5 pl-2 pr-3 shadow-lg shadow-black/10",
+            "transition-all hover:border-[var(--accent)] hover:shadow-xl hover:shadow-[var(--accent)]/15 hover:-translate-y-0.5 active:scale-95",
+            "motion-safe:animate-[slideUp_0.3s_ease-out]",
+          )}
+        >
+          {/* Stack de thumbnails solapadas — la cara del botón */}
+          <span className="flex items-center -space-x-3" aria-hidden>
+            {thumbs.map((it, i) => (
+              <span
+                key={`${it.id}-${i}`}
+                className="relative inline-flex h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-[var(--surface-raised)] bg-[var(--surface-sunken)] shadow-sm"
+                style={{ zIndex: 3 - i }}
+              >
+                {it.image ? (
+                  <Image src={it.image} alt="" fill sizes="36px" className="object-cover" />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
+                    <Clock className="h-4 w-4" strokeWidth={2} />
+                  </span>
+                )}
+              </span>
+            ))}
+            {items.length > 3 && (
+              <span className="relative z-0 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[var(--surface-raised)] bg-[var(--accent)] text-[length:var(--ts-2xs)] font-black text-white shadow-sm">
+                +{Math.min(items.length - 3, 99)}
+              </span>
+            )}
+          </span>
+
+          {/* Label — visible en sm+; en mobile el stack solo ya comunica */}
+          <span className="hidden sm:flex min-w-0 flex-col items-start leading-none">
+            <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-[var(--accent)]">
+              Seguí viendo
+            </span>
+            <span className="mt-0.5 text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+              {items.length} reciente{items.length === 1 ? "" : "s"}
+            </span>
+          </span>
+
+          <ChevronRight
+            className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent)]"
+            strokeWidth={2.75}
+            aria-hidden
+          />
+        </button>
+      )}
 
       <RecentlyViewedDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} />
     </>
