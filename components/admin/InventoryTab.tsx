@@ -83,7 +83,7 @@ function StockLevelBar({
   stockMin?: number | null;
   stockMax?: number | null;
   unit?: string | null;
-  variant?: "cell" | "full";
+  variant?: "cell" | "full" | "compact";
 }) {
   if (stock === undefined || stock === null) {
     // Stock ilimitado / no controla inventario (comida al pedido, servicio).
@@ -122,6 +122,34 @@ function StockLevelBar({
           <span className="absolute top-0 bottom-0 w-px bg-[var(--text-primary)]/40" style={{ left: `${minPct}%` }} aria-hidden />
         </div>
         <div className="mt-1.5 flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
+          <span>Mín {min}</span>
+          {stockMax != null && stockMax > 0 && <span>Máx {stockMax}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  // variant "compact" — para la card: ligero (sin caja pesada), número
+  // moderado, etiqueta "Stock" para que el NOMBRE del producto siga mandando.
+  if (variant === "compact") {
+    return (
+      <div>
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Stock</span>
+          <span className="flex items-baseline gap-1.5">
+            <span className={cn("text-base font-black tabular-nums leading-none", meta.text)}>{stock}</span>
+            {unit && <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">{unit}</span>}
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider", meta.chip)}>
+              {(state === "out" || state === "critical" || state === "low") && <AlertTriangle className="h-3 w-3" />}
+              {meta.label}
+            </span>
+          </span>
+        </div>
+        <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]">
+          <div className={cn("h-full rounded-full transition-[width] duration-300", meta.bar)} style={{ width: `${pct}%` }} />
+          <span className="absolute top-0 bottom-0 w-px bg-[var(--text-primary)]/40" style={{ left: `${minPct}%` }} aria-hidden />
+        </div>
+        <div className="mt-1 flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
           <span>Mín {min}</span>
           {stockMax != null && stockMax > 0 && <span>Máx {stockMax}</span>}
         </div>
@@ -1822,30 +1850,41 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <div
                   key={p.id}
                   className={cn(
-                    "bg-[var(--surface-raised)] border rounded-xl p-4  transition-all relative",
-                    !p.active && "opacity-60 bg-[var(--surface-canvas)]",
-                    lowStock ? "border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                    "group relative flex flex-col rounded-2xl border bg-[var(--surface-raised)] p-4 transition-all hover:shadow-[var(--shadow-sm)]",
+                    !p.active && "opacity-70 bg-[var(--surface-canvas)]",
+                    lowStock ? "border-[var(--data-warning-500)]/60" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                   )}
                 >
-                  {!p.active && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <StatusBadge variant="neutral" label="Inactivo" icon={EyeOff} />
-                    </div>
-                  )}
-                  <div className="flex flex-wrap items-start gap-3">
+                  {/* Estado — pill clickeable arriba a la derecha (uno solo para activo/inactivo) */}
+                  <button
+                    onClick={() => toggleActive(p)}
+                    title={p.active ? "Activo — tocá para desactivar" : "Inactivo — tocá para activar"}
+                    className={cn(
+                      "absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition-colors",
+                      p.active
+                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:brightness-95"
+                        : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
+                    )}
+                  >
+                    <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]")} />
+                    {p.active ? "Activo" : "Inactivo"}
+                  </button>
+
+                  {/* Cabecera: imagen + nombre (protagonista) + precio */}
+                  <div className="flex items-start gap-3 pr-20">
                     {p.image ? (
                       <span className="relative inline-block shrink-0">
-                        <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="rounded-xl object-cover border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface" />
+                        <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="h-14 w-14 rounded-xl object-cover border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface" />
                         <ImageWarningBadge image={p.image} size="md" />
                       </span>
                     ) : (
-                      <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 shrink-0">
                         <Package className="h-6 w-6 text-primary/40" />
                       </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm leading-tight">{p.name}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="font-bold text-sm leading-tight text-[var(--text-primary)] dark:text-[var(--text-primary)] line-clamp-2">{p.name}</p>
                         {p.type === "service" && (
                           <span className="rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--accent)]">Servicio</span>
                         )}
@@ -1853,56 +1892,49 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
                         )}
                       </div>
-                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{cat?.label ?? p.category} · {p.unit}</p>
-                      <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="font-extrabold text-primary text-base">S/{Number(p.price).toFixed(2)}</span>
+                      <p className="mt-0.5 truncate text-xs text-[var(--text-tertiary)] dark:text-muted">{cat?.label ?? p.category} · {p.unit}</p>
+                      <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span className="text-base font-extrabold text-primary">S/{Number(p.price).toFixed(2)}</span>
                         {p.costPrice && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">costo S/{Number(p.costPrice).toFixed(2)}</span>}
-                        {p.badge && <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">{p.badge}</span>}
+                        {p.badge && <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{p.badge}</span>}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                      <button onClick={() => openEditModal(p)} className="p-2 rounded-lg bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-[var(--rule-soft)] dark:border-[var(--rule-base)]" title="Editar">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-lg bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors border border-[var(--rule-soft)] dark:border-[var(--rule-base)]" title="Eliminar">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--accent-soft)] hover:text-[var(--data-success-500)] transition-colors border border-[var(--rule-soft)] dark:border-[var(--rule-base)]" title="Ver Kardex">
-                        <BookOpen className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} className="p-2 rounded-lg bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors border border-[var(--rule-soft)] dark:border-[var(--rule-base)]" title="Modificadores (cremas, adicionales, talla)">
-                        <Sliders className="h-4 w-4" />
-                      </button>
-                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                    <button
-                      onClick={() => toggleActive(p)}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors",
-                        p.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
-                      )}
-                    >
-                      <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-[var(--accent-soft)]" : "bg-gray-400")} />
-                      {p.active ? "Activo" : "Inactivo"}
-                    </button>
+
+                  {/* Stock — compacto, deja respirar */}
+                  <div className="mt-3">
                     {p.stock !== undefined ? (
-                      /* Brandon 2026-06-06: barra visual de nivel también en la
-                         vista Cards (antes era un pill plano "Stock: X"). */
-                      <div className="w-full">
-                        <StockLevelBar
-                          variant="full"
-                          stock={p.stock}
-                          stockMin={p.stockMin}
-                          stockMax={p.stockMax}
-                          unit={p.unit}
-                        />
-                      </div>
+                      <StockLevelBar
+                        variant="compact"
+                        stock={p.stock}
+                        stockMin={p.stockMin}
+                        stockMax={p.stockMax}
+                        unit={p.unit}
+                      />
                     ) : (
-                      <span className="text-xs text-[var(--text-tertiary)] dark:text-muted italic" title="Este producto no gestiona inventario">No controla stock</span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted" title="Este producto no gestiona inventario">
+                        <RefreshCw className="h-3 w-3" /> No controla stock
+                      </span>
                     )}
-                    {p.barcode && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono ml-auto">#{p.barcode}</span>}
                   </div>
+
+                  {/* Acciones — fila horizontal ordenada (Editar protagonista + secundarias) */}
+                  <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-3">
+                    <button onClick={() => openEditModal(p)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface px-3 py-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary" title="Editar producto">
+                      <Pencil className="h-3.5 w-3.5" /> Editar
+                    </button>
+                    <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} title="Ver Kardex (movimientos)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--data-success-500)]">
+                      <BookOpen className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} title="Modificadores (cremas, adicionales, talla)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]">
+                      <Sliders className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => deleteProduct(p.id)} title="Eliminar producto" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)]">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {p.barcode && <p className="mt-2 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">#{p.barcode}</p>}
                 </div>
               );
             })}
