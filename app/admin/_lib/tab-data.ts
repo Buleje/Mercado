@@ -24,6 +24,7 @@ import {
   BarChart3,
   Banknote,
   Coins,
+  Construction,
   Zap,
   ClipboardList,
   ShoppingBag,
@@ -78,6 +79,7 @@ export const ALL_TABS = [
   // — FINANZAS EXTRA —
   { id: "prestamos" as Tab,           label: "Préstamos",           icon: Banknote },
   { id: "adelantos" as Tab,           label: "Adelantos",           icon: Coins },
+  { id: "activos" as Tab,             label: "Activos & Maquinaria", icon: Construction },
   { id: "plan" as Tab,                label: "Plan & Límites",      icon: Zap },
 
   // — FACTURACIÓN SUNAT —

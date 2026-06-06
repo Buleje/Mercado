@@ -377,6 +377,7 @@ export const BASIC_MODULES: TabCategory[] = [
       "fiados",
       "prestamos",
       "adelantos",
+      "activos",
     ],
   },
 

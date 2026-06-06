@@ -54,6 +54,7 @@ const FiadosModule              = dynamic(() => import("@/components/admin/Fiado
 const TurnosModule              = dynamic(() => import("@/components/admin/TurnosModule"),              { loading: TabSpinner });
 const PrestamosModule           = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: TabSpinner });
 const AdelantosModule           = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: TabSpinner });
+const ActivosModule             = dynamic(() => import("@/components/admin/activos/ActivosModule"), { loading: TabSpinner });
 const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
 // ADR-124 — Especialización forestal CTP
 const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/forestal/CTPLibroOperaciones"), { loading: TabSpinner });
@@ -237,6 +238,7 @@ export function TabRouter({
   if (tab === "turnos")    return <TurnosModule />;
   if (tab === "prestamos") return <PrestamosModule />;
   if (tab === "adelantos") return <AdelantosModule />;
+  if (tab === "activos") return <ActivosModule />;
   if (tab === "recetas")   return <RecetasModule />;
   // ADR-124 — Especializaciones por tenant. El endpoint /api/admin/forestal/*
   // protege el acceso (ensureSpecializationOrDeny → 403 si no habilitada).

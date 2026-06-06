@@ -112,6 +112,21 @@ model Product {
   expiresAt     DateTime? // nearest expiry date of available stock
   shelfLifeDays Int? // default shelf-life in days for auto-calc
 
+  // ── Tipo de catálogo: producto físico vs servicio (ADR pendiente) ──
+  // "product" (default) = ítem con stock/barcode/vencimiento.
+  // "service" = sin stock; usa durationLabel/pricingUnit/notes.
+  type          String   @default("product")
+  // ── Producto completo ──
+  brand         String? // marca / fabricante
+  sku           String? // código interno del negocio (distinto del barcode)
+  taxType       String?  @default("gravado") // gravado | exonerado | inafecto (IGV)
+  weightKg      Float? // peso para delivery/logística
+  dimensions    String? // medidas libres, ej "30x20x10 cm" o "2m³"
+  // ── Servicio ──
+  durationLabel String? // duración estimada, ej "2 horas", "1 día"
+  pricingUnit   String? // unidad de cobro: fijo | hora | m3 | unidad | dia
+  notes         String? // requisitos / notas para el cliente
+
   orderItems          OrderItem[]
   purchaseItems       PurchaseItem[]
   saleItems           SaleItem[]
@@ -5127,4 +5142,69 @@ model Reclamo {
   @@index([estado])
   @@index([email])
   @@index([tenantId])
+}
+
+// ── Activos & Maquinaria (MVP — Brandon 2026-06-06) ──────────────────────────
+// Para negocios que ALQUILAN equipos (forestal: cargador, oruga, camión,
+// excavadora). Cada activo genera renta (AssetIncome) y acumula costos
+// (AssetExpense: combustible, mantenimiento). La rentabilidad por máquina =
+// SUM(incomes) - SUM(expenses), calculada en la DB class. Sin FK a Tenant
+// (solo tenantId + índice) — mismo patrón que ProviderComplaint.
+model Asset {
+  id            String         @id @default(cuid())
+  tenantId      String
+  name          String // "Cargador frontal CAT 938"
+  type          String // cargador|oruga|camion|excavadora|tractor|otro
+  plate         String? // placa o número de serie
+  imageUrl      String?
+  purchaseValue Decimal?       @db.Decimal(14, 2)
+  status        String         @default("operativo") // operativo|mantenimiento|parado
+  hourlyRate    Decimal?       @db.Decimal(12, 2) // tarifa de alquiler
+  rateUnit      String         @default("hora") // hora|dia|m3|viaje
+  notes         String?
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  incomes       AssetIncome[]
+  expenses      AssetExpense[]
+
+  @@index([tenantId, active])
+  @@index([tenantId, status])
+}
+
+model AssetIncome {
+  id        String   @id @default(cuid())
+  tenantId  String
+  assetId   String
+  date      DateTime @default(now())
+  client    String? // cliente que alquiló
+  quantity  Decimal? @db.Decimal(10, 2) // horas/días/m³/viajes
+  unit      String   @default("hora")
+  rate      Decimal  @db.Decimal(12, 2) // tarifa aplicada
+  amount    Decimal  @db.Decimal(14, 2) // total
+  hourStart Decimal? @db.Decimal(12, 1) // horómetro inicial
+  hourEnd   Decimal? @db.Decimal(12, 1) // horómetro final
+  notes     String?
+  createdAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, date])
+  @@index([assetId])
+}
+
+model AssetExpense {
+  id        String   @id @default(cuid())
+  tenantId  String
+  assetId   String
+  date      DateTime @default(now())
+  category  String   @default("combustible") // combustible|mantenimiento|repuesto|operador|peaje|otro
+  gallons   Decimal? @db.Decimal(10, 2) // si es combustible
+  unitPrice Decimal? @db.Decimal(10, 2) // precio por galón
+  amount    Decimal  @db.Decimal(14, 2) // total del gasto
+  notes     String?
+  createdAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, date])
+  @@index([assetId, category])
 }

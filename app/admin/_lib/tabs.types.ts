@@ -21,6 +21,7 @@ export type Tab =
   | "recetas"
   | "prestamos"
   | "adelantos"
+  | "activos"
   // Módulos de documentos
   | "documentos"
   | "cotizaciones"
@@ -91,6 +92,7 @@ export const VALID_TABS: readonly Tab[] = [
   "turnos",
   "prestamos",
   "adelantos",
+  "activos",
   "documentos",
   "cotizaciones",
   "guias-remision",

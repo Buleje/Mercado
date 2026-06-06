@@ -40,7 +40,9 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   conciliacion: "plata", "centro-cobros": "plata", "cuentas-cobrar": "plata",
   "e-facturacion": "facturacion", impuestos: "plata", cuentas: "plata",
   gastos: "plata", "centros-costo": "plata", seguros: "plata",
-  activos: "plata", "gastos-activos": "plata",
+  "gastos-activos": "plata",
+  // 'activos' YA NO migra a 'plata' — ahora es el módulo Activos & Maquinaria
+  // (Brandon 2026-06-06). Era un alias legacy de un sub-tab de finanzas.
   reportes: "plata", "reportes-auto": "plata", "importar-exportar": "plata",
   "reportes-documentos": "plata",
   "analytics-bi": "plata", bi: "plata", "mapa-calor": "plata", "abc-analysis": "plata",
