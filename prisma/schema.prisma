@@ -5161,6 +5161,9 @@ model Asset {
   status        String         @default("operativo") // operativo|mantenimiento|parado
   hourlyRate    Decimal?       @db.Decimal(12, 2) // tarifa de alquiler
   rateUnit      String         @default("hora") // hora|dia|m3|viaje
+  // Capacidad operativa por día (horas/unidades disponibles) — denominador de
+  // la UTILIZACIÓN. Default 8 (jornada típica). Brandon 2026-06-06.
+  capacityPerDay Int?          @default(8)
   notes         String?
   active        Boolean        @default(true)
   createdAt     DateTime       @default(now())

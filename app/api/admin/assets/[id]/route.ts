@@ -19,6 +19,7 @@ const UpdateBody = z.object({
   status:        z.enum(["operativo", "mantenimiento", "parado"]).optional(),
   hourlyRate:    z.number().min(0).max(999999).optional().nullable(),
   rateUnit:      z.enum(["hora", "dia", "m3", "viaje"]).optional(),
+  capacityPerDay: z.number().int().min(1).max(24).optional().nullable(),
   notes:         z.string().max(1000).optional().nullable(),
   active:        z.boolean().optional(),
 });

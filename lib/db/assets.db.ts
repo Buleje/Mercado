@@ -24,6 +24,7 @@ export type DbAsset = {
   status: string;
   hourlyRate: number | null;
   rateUnit: string;
+  capacityPerDay: number | null;
   notes: string | null;
   active: boolean;
   createdAt: string;
@@ -36,6 +37,13 @@ export type DbAssetWithStats = DbAsset & {
   profit: number;
   incomeCount: number;
   expenseCount: number;
+  // Operación / rentabilidad fina (Brandon 2026-06-06)
+  unitsWorked: number;       // SUM(quantity) histórico — horas/días/m³ trabajados
+  units30d: number;          // unidades trabajadas últimos 30 días
+  costPerUnit: number | null;   // gasto total / unidades trabajadas (costo real por hora)
+  incomePerUnit: number | null; // ingreso / unidad
+  marginPerUnit: number | null; // ingreso/u − costo/u
+  utilizationPct: number | null; // units30d / (capacidad/día × 30) — % de uso
 };
 
 export type DbAssetIncome = {
@@ -80,11 +88,12 @@ export const AssetsDB = {
     if (assets.length === 0) return [];
 
     const ids = assets.map((a) => a.id);
-    const [incomes, expenses] = await Promise.all([
+    const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [incomes, expenses, incomes30d] = await Promise.all([
       prisma.assetIncome.groupBy({
         by: ["assetId"],
         where: { tenantId, assetId: { in: ids } },
-        _sum: { amount: true },
+        _sum: { amount: true, quantity: true },
         _count: { id: true },
       }),
       prisma.assetExpense.groupBy({
@@ -93,13 +102,28 @@ export const AssetsDB = {
         _sum: { amount: true },
         _count: { id: true },
       }),
+      prisma.assetIncome.groupBy({
+        by: ["assetId"],
+        where: { tenantId, assetId: { in: ids }, date: { gte: since30d } },
+        _sum: { quantity: true },
+      }),
     ]);
-    const incMap = new Map(incomes.map((i) => [i.assetId, { sum: num(i._sum.amount), count: i._count.id }]));
+    const incMap = new Map(incomes.map((i) => [i.assetId, { sum: num(i._sum.amount), units: num(i._sum.quantity), count: i._count.id }]));
     const expMap = new Map(expenses.map((e) => [e.assetId, { sum: num(e._sum.amount), count: e._count.id }]));
+    const u30Map = new Map(incomes30d.map((i) => [i.assetId, num(i._sum.quantity)]));
 
     return assets.map((a) => {
-      const inc = incMap.get(a.id) ?? { sum: 0, count: 0 };
+      const inc = incMap.get(a.id) ?? { sum: 0, units: 0, count: 0 };
       const exp = expMap.get(a.id) ?? { sum: 0, count: 0 };
+      const units30d = u30Map.get(a.id) ?? 0;
+      const capPerDay = a.capacityPerDay ?? 8;
+      // Costo/ingreso/margen por unidad (hora) — solo si hubo unidades trabajadas.
+      const costPerUnit = inc.units > 0 ? exp.sum / inc.units : null;
+      const incomePerUnit = inc.units > 0 ? inc.sum / inc.units : null;
+      const marginPerUnit = costPerUnit != null && incomePerUnit != null ? incomePerUnit - costPerUnit : null;
+      // Utilización 30d: trabajadas / capacidad (capPerDay × 30), cap 100%.
+      const capacity30d = capPerDay * 30;
+      const utilizationPct = capacity30d > 0 ? Math.min((units30d / capacity30d) * 100, 100) : null;
       return {
         id: a.id,
         tenantId: a.tenantId,
@@ -111,6 +135,7 @@ export const AssetsDB = {
         status: a.status,
         hourlyRate: numOrNull(a.hourlyRate),
         rateUnit: a.rateUnit,
+        capacityPerDay: a.capacityPerDay ?? null,
         notes: a.notes,
         active: a.active,
         createdAt: a.createdAt.toISOString(),
@@ -120,6 +145,12 @@ export const AssetsDB = {
         profit: inc.sum - exp.sum,
         incomeCount: inc.count,
         expenseCount: exp.count,
+        unitsWorked: inc.units,
+        units30d,
+        costPerUnit,
+        incomePerUnit,
+        marginPerUnit,
+        utilizationPct,
       };
     });
   },
@@ -127,7 +158,7 @@ export const AssetsDB = {
   async create(tenantId: string, data: {
     name: string; type: string; plate?: string | null; imageUrl?: string | null;
     purchaseValue?: number | null; status?: string; hourlyRate?: number | null;
-    rateUnit?: string; notes?: string | null;
+    rateUnit?: string; capacityPerDay?: number | null; notes?: string | null;
   }): Promise<DbAsset> {
     const row = await prisma.asset.create({
       data: {
@@ -140,6 +171,7 @@ export const AssetsDB = {
         status: data.status ?? "operativo",
         hourlyRate: data.hourlyRate ?? null,
         rateUnit: data.rateUnit ?? "hora",
+        capacityPerDay: data.capacityPerDay ?? 8,
         notes: data.notes ?? null,
       },
     });
@@ -150,7 +182,7 @@ export const AssetsDB = {
   async update(tenantId: string, id: string, data: Partial<{
     name: string; type: string; plate: string | null; imageUrl: string | null;
     purchaseValue: number | null; status: string; hourlyRate: number | null;
-    rateUnit: string; notes: string | null; active: boolean;
+    rateUnit: string; capacityPerDay: number | null; notes: string | null; active: boolean;
   }>): Promise<DbAsset | null> {
     // Ownership: solo actualiza si pertenece al tenant.
     const result = await prisma.asset.updateMany({ where: { id, tenantId }, data });
@@ -227,13 +259,13 @@ export const AssetsDB = {
   mapAsset(a: {
     id: string; tenantId: string; name: string; type: string; plate: string | null;
     imageUrl: string | null; purchaseValue: unknown; status: string; hourlyRate: unknown;
-    rateUnit: string; notes: string | null; active: boolean; createdAt: Date; updatedAt: Date;
+    rateUnit: string; capacityPerDay: number | null; notes: string | null; active: boolean; createdAt: Date; updatedAt: Date;
   }): DbAsset {
     return {
       id: a.id, tenantId: a.tenantId, name: a.name, type: a.type, plate: a.plate,
       imageUrl: a.imageUrl, purchaseValue: numOrNull(a.purchaseValue), status: a.status,
-      hourlyRate: numOrNull(a.hourlyRate), rateUnit: a.rateUnit, notes: a.notes,
-      active: a.active, createdAt: a.createdAt.toISOString(), updatedAt: a.updatedAt.toISOString(),
+      hourlyRate: numOrNull(a.hourlyRate), rateUnit: a.rateUnit, capacityPerDay: a.capacityPerDay ?? null,
+      notes: a.notes, active: a.active, createdAt: a.createdAt.toISOString(), updatedAt: a.updatedAt.toISOString(),
     };
   },
 };

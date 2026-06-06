@@ -23,8 +23,11 @@ import { csrfHeaders } from "@/lib/csrf-client";
 interface AssetStats {
   id: string; name: string; type: string; plate: string | null; imageUrl: string | null;
   purchaseValue: number | null; status: string; hourlyRate: number | null; rateUnit: string;
-  notes: string | null; active: boolean;
+  capacityPerDay: number | null; notes: string | null; active: boolean;
   totalIncome: number; totalExpense: number; profit: number; incomeCount: number; expenseCount: number;
+  unitsWorked: number; units30d: number;
+  costPerUnit: number | null; incomePerUnit: number | null; marginPerUnit: number | null;
+  utilizationPct: number | null;
 }
 interface Movement { id: string; date: string; amount: number; notes: string | null }
 interface IncomeMov extends Movement { client: string | null; quantity: number | null; unit: string; rate: number }
@@ -214,6 +217,39 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail }: {
         </div>
       </div>
 
+      {/* Operación: costo/ingreso real por unidad + utilización (Brandon 2026-06-06) */}
+      <div className="mt-2.5 grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-[var(--rule-base)] p-2.5">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Costo / {asset.rateUnit}</p>
+          <p className="mt-0.5 text-sm font-black tabular-nums text-[var(--data-error-500)]">
+            {asset.costPerUnit != null ? fmt(asset.costPerUnit) : "—"}
+          </p>
+          {asset.marginPerUnit != null && (
+            <p className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+              margen {fmt(asset.marginPerUnit)}
+            </p>
+          )}
+        </div>
+        <div className="rounded-xl border border-[var(--rule-base)] p-2.5">
+          <p className="flex items-center justify-between text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <span>Uso 30d</span>
+            <span className="tabular-nums text-[var(--text-secondary)]">{asset.utilizationPct != null ? `${Math.round(asset.utilizationPct)}%` : "—"}</span>
+          </p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+            <span
+              className={cn("block h-full rounded-full",
+                (asset.utilizationPct ?? 0) >= 60 ? "bg-[var(--data-success-500)]" :
+                (asset.utilizationPct ?? 0) >= 30 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]",
+              )}
+              style={{ width: `${asset.utilizationPct ?? 0}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+            {asset.units30d} / {(asset.capacityPerDay ?? 8) * 30} {asset.rateUnit}
+          </p>
+        </div>
+      </div>
+
       {/* Acciones */}
       <div className="mt-3 flex items-center gap-2">
         <button type="button" onClick={onRent} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-black text-white transition-colors hover:brightness-110">
@@ -236,7 +272,8 @@ function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null;
     name: asset?.name ?? "", type: asset?.type ?? "cargador", plate: asset?.plate ?? "",
     purchaseValue: asset?.purchaseValue != null ? String(asset.purchaseValue) : "",
     status: asset?.status ?? "operativo", hourlyRate: asset?.hourlyRate != null ? String(asset.hourlyRate) : "",
-    rateUnit: asset?.rateUnit ?? "hora", notes: asset?.notes ?? "",
+    rateUnit: asset?.rateUnit ?? "hora", capacityPerDay: asset?.capacityPerDay != null ? String(asset.capacityPerDay) : "8",
+    notes: asset?.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -248,7 +285,8 @@ function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null;
         name: form.name.trim(), type: form.type, plate: form.plate.trim() || null,
         purchaseValue: form.purchaseValue ? Number(form.purchaseValue) : null,
         status: form.status, hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : null,
-        rateUnit: form.rateUnit, notes: form.notes.trim() || null,
+        rateUnit: form.rateUnit, capacityPerDay: form.capacityPerDay ? Number(form.capacityPerDay) : null,
+        notes: form.notes.trim() || null,
       };
       const res = await fetch(asset ? `/api/admin/assets/${asset.id}` : "/api/admin/assets", {
         method: asset ? "PATCH" : "POST",
@@ -272,6 +310,7 @@ function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null;
         <div><label className={LABEL}>Valor de compra (S/)</label><input type="number" min="0" value={form.purchaseValue} onChange={e => setForm(f => ({ ...f, purchaseValue: e.target.value }))} placeholder="250000" className={FIELD} /></div>
         <div><label className={LABEL}>Tarifa de alquiler (S/)</label><input type="number" min="0" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="180" className={FIELD} /></div>
         <div><label className={LABEL}>Cobro por</label><select value={form.rateUnit} onChange={e => setForm(f => ({ ...f, rateUnit: e.target.value }))} className={FIELD}>{RATE_UNITS.map(u => <option key={u.v} value={u.v}>{u.label}</option>)}</select></div>
+        <div><label className={LABEL} title="Horas/unidades disponibles por día — base para calcular la utilización">Capacidad por día</label><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></div>
         <div className="sm:col-span-2"><label className={LABEL}>Notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} /></div>
       </div>
       <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel={asset ? "Guardar cambios" : "Agregar máquina"} />
