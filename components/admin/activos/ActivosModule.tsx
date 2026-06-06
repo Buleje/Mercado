@@ -1,79 +1,85 @@
 "use client";
 
 /**
- * ActivosModule — Activos & Maquinaria (MVP, Brandon 2026-06-06).
+ * ActivosModule — Activos & Maquinaria (Brandon 2026-06-06).
  *
  * Para negocios que ALQUILAN equipos (forestal: cargador, oruga, camión).
- * Cada máquina es una ficha que genera renta y acumula gastos (combustible,
- * mantenimiento). El KPI estrella es la GANANCIA NETA por máquina.
+ * Cada máquina es una ficha que genera renta y acumula gastos. KPI estrella:
+ * la GANANCIA NETA por máquina.
  *
- * Flujo: ver flota → registrar alquiler (ingreso) → cargar combustible/gasto
- * → ver rentabilidad de cada equipo de un vistazo.
+ * Features reforzadas: horómetro, alerta de combustible, cuentas por cobrar,
+ * mantenimiento preventivo, checklist de inspección, contrato/cotización PDF,
+ * reporte Excel/CSV y calendario (agenda) de alquileres.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  Construction, Plus, X, Loader2, TrendingUp, TrendingDown, Fuel,
-  Wrench, Truck, Pencil, Trash2, Receipt,
+  Construction, Plus, X, Loader2, TrendingUp, Fuel,
+  Wrench, Truck, Pencil, Receipt, AlertTriangle, Download, FileText,
+  ClipboardCheck, CheckCircle, Calendar, CreditCard, Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { generateContractPDF } from "@/lib/assets-contract";
 
 interface AssetStats {
   id: string; name: string; type: string; plate: string | null; imageUrl: string | null;
   purchaseValue: number | null; status: string; hourlyRate: number | null; rateUnit: string;
-  capacityPerDay: number | null; notes: string | null; active: boolean;
+  capacityPerDay: number | null; currentHours: number | null; fuelTargetPerUnit: number | null;
+  notes: string | null; active: boolean;
   totalIncome: number; totalExpense: number; profit: number; incomeCount: number; expenseCount: number;
   unitsWorked: number; units30d: number;
   costPerUnit: number | null; incomePerUnit: number | null; marginPerUnit: number | null;
   utilizationPct: number | null;
+  pendingAmount: number; fuelPerUnit: number | null; fuelAlert: boolean;
+  maintenanceDue: number; maintenanceSoon: number;
 }
-interface Movement { id: string; date: string; amount: number; notes: string | null }
-interface IncomeMov extends Movement { client: string | null; quantity: number | null; unit: string; rate: number }
-interface ExpenseMov extends Movement { category: string; gallons: number | null; unitPrice: number | null }
+interface IncomeMov { id: string; assetId: string; date: string; client: string | null; quantity: number | null; unit: string; rate: number; amount: number; hourStart: number | null; hourEnd: number | null; paid: boolean; dueDate: string | null; startDate: string | null; endDate: string | null; notes: string | null }
+interface ExpenseMov { id: string; date: string; amount: number; notes: string | null; category: string; gallons: number | null; unitPrice: number | null }
+interface Maintenance { id: string; assetId: string; title: string; intervalHours: number | null; intervalDays: number | null; lastDoneHours: number | null; lastDoneAt: string | null; notes: string | null; active: boolean; state: "ok" | "soon" | "due"; detail: string }
+interface Receivable extends IncomeMov { assetName: string }
 
 const fmt = (n: number) => new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
+const dStr = (s: string) => new Date(s).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" });
 
 const TYPES = [
-  { v: "cargador", label: "Cargador" },
-  { v: "oruga", label: "Oruga" },
-  { v: "camion", label: "Camión" },
-  { v: "excavadora", label: "Excavadora" },
-  { v: "tractor", label: "Tractor" },
-  { v: "otro", label: "Otro" },
+  { v: "cargador", label: "Cargador" }, { v: "oruga", label: "Oruga" }, { v: "camion", label: "Camión" },
+  { v: "excavadora", label: "Excavadora" }, { v: "tractor", label: "Tractor" }, { v: "otro", label: "Otro" },
 ];
 const RATE_UNITS = [
-  { v: "hora", label: "Por hora" },
-  { v: "dia", label: "Por día" },
-  { v: "m3", label: "Por m³" },
-  { v: "viaje", label: "Por viaje" },
+  { v: "hora", label: "Por hora", noun: "horas" }, { v: "dia", label: "Por día", noun: "días" },
+  { v: "m3", label: "Por m³", noun: "m³" }, { v: "viaje", label: "Por viaje", noun: "viajes" },
 ];
+const unitNoun = (u: string) => RATE_UNITS.find(r => r.v === u)?.noun ?? u;
 const STATUS_META: Record<string, { label: string; chip: string }> = {
   operativo:     { label: "Operativo",     chip: "bg-[var(--accent-soft)] text-[var(--accent)]" },
   mantenimiento: { label: "Mantenimiento", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" },
   parado:        { label: "Parado",        chip: "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" },
 };
 const EXPENSE_CATS = [
-  { v: "combustible", label: "Combustible" },
-  { v: "mantenimiento", label: "Mantenimiento" },
-  { v: "repuesto", label: "Repuesto" },
-  { v: "operador", label: "Operador" },
-  { v: "peaje", label: "Peaje" },
-  { v: "otro", label: "Otro" },
+  { v: "combustible", label: "Combustible" }, { v: "mantenimiento", label: "Mantenimiento" }, { v: "repuesto", label: "Repuesto" },
+  { v: "operador", label: "Operador" }, { v: "peaje", label: "Peaje" }, { v: "otro", label: "Otro" },
 ];
+const CHECKLIST_DEFAULT = ["Niveles de aceite", "Combustible", "Llantas / orugas", "Frenos", "Luces", "Fugas visibles", "Horómetro anotado", "Limpieza general"];
 
 const FIELD = "w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--surface-raised)]";
 const LABEL = "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
 
+type View = "flota" | "cobrar" | "calendario";
+
 export default function ActivosModule() {
   const [assets, setAssets] = useState<AssetStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<View>("flota");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<AssetStats | null>(null);
   const [moveFor, setMoveFor] = useState<{ asset: AssetStats; kind: "income" | "expense" } | null>(null);
   const [detailFor, setDetailFor] = useState<AssetStats | null>(null);
+  const [contractFor, setContractFor] = useState<AssetStats | null>(null);
+  const [checklistFor, setChecklistFor] = useState<AssetStats | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -84,88 +90,117 @@ export default function ActivosModule() {
   useEffect(() => { void load(); }, [load]);
 
   const totals = assets.reduce(
-    (acc, a) => ({ income: acc.income + a.totalIncome, expense: acc.expense + a.totalExpense, profit: acc.profit + a.profit }),
-    { income: 0, expense: 0, profit: 0 },
+    (acc, a) => ({ income: acc.income + a.totalIncome, expense: acc.expense + a.totalExpense, profit: acc.profit + a.profit, pending: acc.pending + a.pendingAmount }),
+    { income: 0, expense: 0, profit: 0, pending: 0 },
   );
+  const alerts = assets.reduce((n, a) => n + a.maintenanceDue + (a.fuelAlert ? 1 : 0), 0);
+
+  const exportReport = () => {
+    if (assets.length === 0) { toast.error("No hay máquinas para exportar"); return; }
+    const rows = assets.map(a => ({
+      Maquina: a.name, Tipo: TYPES.find(t => t.v === a.type)?.label ?? a.type, Placa: a.plate ?? "",
+      Estado: STATUS_META[a.status]?.label ?? a.status,
+      Ingresos: a.totalIncome.toFixed(2), Gastos: a.totalExpense.toFixed(2), Ganancia: a.profit.toFixed(2),
+      "Por cobrar": a.pendingAmount.toFixed(2),
+      [`Costo/${a.rateUnit}`]: a.costPerUnit != null ? a.costPerUnit.toFixed(2) : "",
+      [`Ingreso/${a.rateUnit}`]: a.incomePerUnit != null ? a.incomePerUnit.toFixed(2) : "",
+      "Utilizacion%": a.utilizationPct != null ? Math.round(a.utilizationPct) : "",
+      Horometro: a.currentHours ?? "",
+    }));
+    exportToCSV(rows, `rentabilidad-flota-${assets.length}-maquinas`);
+    toast.success("Reporte exportado (CSV/Excel)");
+  };
 
   return (
     <div className="space-y-5">
-      {/* Header estándar del panel (mismo patrón que todos los módulos) */}
       <AdminModuleHeader
         eyebrow="Finanzas · Maquinaria"
         title="Activos & Maquinaria"
         description="Alquila tus equipos y mira la ganancia real de cada máquina."
         icon={Construction}
       >
-        <button
-          type="button"
-          onClick={() => { setEditing(null); setShowForm(true); }}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 min-h-[44px]"
-        >
+        <button type="button" onClick={exportReport} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
+          <Download className="h-4 w-4" /> Exportar
+        </button>
+        <button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 min-h-[44px]">
           <Plus className="h-4 w-4" strokeWidth={2.5} /> Nuevo activo
         </button>
       </AdminModuleHeader>
 
-      {/* KPIs — mismo estilo que Inventario (font-mono, barra fina, sin saturar) */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <KpiCard label="Máquinas" value={String(assets.length)} sub={`${assets.filter(a => a.status === "operativo").length} operativas`} bar="primary" />
         <KpiCard label="Ingresos" value={fmt(totals.income)} sub="por alquileres" tone="primary" bar="primary" />
         <KpiCard label="Gastos" value={fmt(totals.expense)} sub="combustible + mantto." bar="muted" />
         <KpiCard label="Ganancia neta" value={fmt(totals.profit)} sub="ingresos − gastos" tone={totals.profit >= 0 ? "primary" : "error"} bar={totals.profit >= 0 ? "primary" : "error"} highlight />
+        <button type="button" onClick={() => setView("cobrar")} className="text-left">
+          <KpiCard label="Por cobrar" value={fmt(totals.pending)} sub={totals.pending > 0 ? "ver pendientes →" : "todo cobrado"} tone={totals.pending > 0 ? "warning" : "neutral"} bar={totals.pending > 0 ? "warning" : "muted"} />
+        </button>
       </div>
 
-      {/* Grilla de activos */}
-      {loading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-sm font-bold text-[var(--text-tertiary)]">
-          <Loader2 className="h-5 w-5 animate-spin" /> Cargando flota…
-        </div>
-      ) : assets.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 text-center">
-          <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
-            <Construction className="h-7 w-7" strokeWidth={2} />
-          </span>
-          <p className="text-base font-extrabold text-[var(--text-primary)]">Aún no tienes máquinas</p>
-          <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega tu cargador, oruga o camión y empieza a registrar alquileres.</p>
-          <button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-black text-white">
-            <Plus className="h-4 w-4" strokeWidth={2.75} /> Agregar primera máquina
+      {/* Tabs */}
+      <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+        {([["flota", "Flota", Construction], ["cobrar", "Por cobrar", CreditCard], ["calendario", "Calendario", Calendar]] as const).map(([v, label, Icon]) => (
+          <button key={v} type="button" onClick={() => setView(v)}
+            className={cn("inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors sm:flex-none sm:px-4",
+              view === v ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
+            <Icon className="h-3.5 w-3.5" /> {label}
+            {v === "cobrar" && totals.pending > 0 && <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--data-warning-500)] px-1 text-[length:var(--ts-2xs)] font-black text-white">!</span>}
+            {v === "flota" && alerts > 0 && <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-black text-white">{alerts}</span>}
           </button>
-        </div>
+        ))}
+      </div>
+
+      {/* Vistas */}
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-sm font-bold text-[var(--text-tertiary)]"><Loader2 className="h-5 w-5 animate-spin" /> Cargando flota…</div>
+      ) : view === "flota" ? (
+        assets.length === 0 ? <EmptyFleet onAdd={() => { setEditing(null); setShowForm(true); }} /> : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {assets.map((a) => (
+              <AssetCard key={a.id} asset={a}
+                onRent={() => setMoveFor({ asset: a, kind: "income" })}
+                onExpense={() => setMoveFor({ asset: a, kind: "expense" })}
+                onEdit={() => { setEditing(a); setShowForm(true); }}
+                onDetail={() => setDetailFor(a)}
+                onContract={() => setContractFor(a)}
+                onChecklist={() => setChecklistFor(a)}
+              />
+            ))}
+          </div>
+        )
+      ) : view === "cobrar" ? (
+        <ReceivablesView onChanged={load} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {assets.map((a) => (
-            <AssetCard
-              key={a.id}
-              asset={a}
-              onRent={() => setMoveFor({ asset: a, kind: "income" })}
-              onExpense={() => setMoveFor({ asset: a, kind: "expense" })}
-              onEdit={() => { setEditing(a); setShowForm(true); }}
-              onDetail={() => setDetailFor(a)}
-            />
-          ))}
-        </div>
+        <CalendarView assets={assets} />
       )}
 
-      {showForm && (
-        <AssetFormModal asset={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); void load(); }} />
-      )}
-      {moveFor && (
-        <MovementModal asset={moveFor.asset} kind={moveFor.kind} onClose={() => setMoveFor(null)} onSaved={() => { setMoveFor(null); void load(); }} />
-      )}
-      {detailFor && (
-        <AssetDetailDrawer asset={detailFor} onClose={() => setDetailFor(null)} />
-      )}
+      {showForm && <AssetFormModal asset={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); void load(); }} />}
+      {moveFor && <MovementModal asset={moveFor.asset} kind={moveFor.kind} onClose={() => setMoveFor(null)} onSaved={() => { setMoveFor(null); void load(); }} />}
+      {detailFor && <AssetDetailDrawer asset={detailFor} onClose={() => setDetailFor(null)} onContract={() => { setContractFor(detailFor); }} onChanged={load} />}
+      {contractFor && <ContractModal asset={contractFor} onClose={() => setContractFor(null)} />}
+      {checklistFor && <ChecklistModal asset={checklistFor} onClose={() => setChecklistFor(null)} onSaved={() => setChecklistFor(null)} />}
+    </div>
+  );
+}
+
+function EmptyFleet({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 text-center">
+      <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Construction className="h-7 w-7" strokeWidth={2} /></span>
+      <p className="text-base font-extrabold text-[var(--text-primary)]">Aún no tienes máquinas</p>
+      <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega tu cargador, oruga o camión y empieza a registrar alquileres.</p>
+      <button type="button" onClick={onAdd} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Agregar primera máquina</button>
     </div>
   );
 }
 
 function KpiCard({ label, value, sub, tone = "neutral", bar = "muted", highlight }: {
   label: string; value: string; sub: string;
-  tone?: "neutral" | "primary" | "error";
-  bar?: "primary" | "muted" | "error";
-  highlight?: boolean;
+  tone?: "neutral" | "primary" | "error" | "warning"; bar?: "primary" | "muted" | "error" | "warning"; highlight?: boolean;
 }) {
-  const valueColor = tone === "primary" ? "text-primary" : tone === "error" ? "text-[var(--data-error-600)]" : "text-[var(--text-primary)]";
-  const barColor = bar === "primary" ? "bg-primary" : bar === "error" ? "bg-[var(--data-error-500)]/50" : "bg-[var(--rule-soft)]";
+  const valueColor = tone === "primary" ? "text-primary" : tone === "error" ? "text-[var(--data-error-600)]" : tone === "warning" ? "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-primary)]";
+  const barColor = bar === "primary" ? "bg-primary" : bar === "error" ? "bg-[var(--data-error-500)]/50" : bar === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--rule-soft)]";
   return (
     <div className={cn("rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5", highlight && "ring-1 ring-[var(--accent)]/25")}>
       <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">{label}</p>
@@ -176,13 +211,10 @@ function KpiCard({ label, value, sub, tone = "neutral", bar = "muted", highlight
   );
 }
 
-function typeIcon(type: string) {
-  if (type === "camion") return Truck;
-  return Construction;
-}
+function typeIcon(type: string) { return type === "camion" ? Truck : Construction; }
 
-function AssetCard({ asset, onRent, onExpense, onEdit, onDetail }: {
-  asset: AssetStats; onRent: () => void; onExpense: () => void; onEdit: () => void; onDetail: () => void;
+function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onChecklist }: {
+  asset: AssetStats; onRent: () => void; onExpense: () => void; onEdit: () => void; onDetail: () => void; onContract: () => void; onChecklist: () => void;
 }) {
   const Icon = typeIcon(asset.type);
   const st = STATUS_META[asset.status] ?? STATUS_META.operativo;
@@ -191,25 +223,29 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail }: {
   return (
     <div className="flex flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]">
       <div className="flex items-start gap-3">
-        <button type="button" onClick={onDetail} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-          <Icon className="h-6 w-6" strokeWidth={2} />
-        </button>
+        <button type="button" onClick={onDetail} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
         <div className="min-w-0 flex-1">
           <button type="button" onClick={onDetail} className="block truncate text-base font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)]">{asset.name}</button>
-          <p className="text-xs font-medium text-[var(--text-tertiary)]">
-            {TYPES.find(t => t.v === asset.type)?.label ?? asset.type}{asset.plate ? ` · ${asset.plate}` : ""}
-          </p>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">{TYPES.find(t => t.v === asset.type)?.label ?? asset.type}{asset.plate ? ` · ${asset.plate}` : ""}</p>
         </div>
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase", st.chip)}>{st.label}</span>
       </div>
 
-      {/* Rentabilidad — turquesa para ingreso, neutro para gasto (sin saturar) */}
+      {/* Alertas (mantenimiento / combustible / cobranza) */}
+      {(asset.maintenanceDue > 0 || asset.maintenanceSoon > 0 || asset.fuelAlert || asset.pendingAmount > 0) && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {asset.maintenanceDue > 0 && <Chip icon={Wrench} tone="error">{asset.maintenanceDue} mantto. vencido</Chip>}
+          {asset.maintenanceDue === 0 && asset.maintenanceSoon > 0 && <Chip icon={Wrench} tone="warning">{asset.maintenanceSoon} mantto. pronto</Chip>}
+          {asset.fuelAlert && <Chip icon={Fuel} tone="warning">consume de más</Chip>}
+          {asset.pendingAmount > 0 && <Chip icon={CreditCard} tone="warning">por cobrar {fmt(asset.pendingAmount)}</Chip>}
+        </div>
+      )}
+
+      {/* Rentabilidad */}
       <div className="mt-3 rounded-xl bg-[var(--surface-sunken)] p-3">
         <div className="flex items-baseline justify-between">
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Ganancia</span>
-          <span className={cn("font-mono text-lg font-bold tabular-nums", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>
-            {fmt(asset.profit)}
-          </span>
+          <span className={cn("font-mono text-lg font-bold tabular-nums", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span>
         </div>
         <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[var(--surface-raised)]">
           <span className="bg-primary" style={{ width: `${incPct}%` }} />
@@ -221,53 +257,37 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail }: {
         </div>
       </div>
 
-      {/* Operación: costo/ingreso real por unidad + utilización (Brandon 2026-06-06) */}
+      {/* Costo/unidad + utilización */}
       <div className="mt-2.5 grid grid-cols-2 gap-2">
         <div className="rounded-xl border border-[var(--rule-base)] p-2.5">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Costo / {asset.rateUnit}</p>
-          <p className="mt-0.5 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-            {asset.costPerUnit != null ? fmt(asset.costPerUnit) : "—"}
-          </p>
-          {asset.marginPerUnit != null && (
-            <p className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
-              margen {fmt(asset.marginPerUnit)}
-            </p>
-          )}
+          <p className="mt-0.5 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{asset.costPerUnit != null ? fmt(asset.costPerUnit) : "—"}</p>
+          {asset.marginPerUnit != null && <p className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">margen {fmt(asset.marginPerUnit)}</p>}
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] p-2.5">
-          <p className="flex items-center justify-between text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            <span>Uso 30d</span>
-            <span className="tabular-nums text-[var(--text-secondary)]">{asset.utilizationPct != null ? `${Math.round(asset.utilizationPct)}%` : "—"}</span>
-          </p>
+          <p className="flex items-center justify-between text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"><span>Uso 30d</span><span className="tabular-nums text-[var(--text-secondary)]">{asset.utilizationPct != null ? `${Math.round(asset.utilizationPct)}%` : "—"}</span></p>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-            <span
-              className={cn("block h-full rounded-full",
-                (asset.utilizationPct ?? 0) >= 60 ? "bg-primary" :
-                (asset.utilizationPct ?? 0) >= 30 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/60",
-              )}
-              style={{ width: `${asset.utilizationPct ?? 0}%` }}
-            />
+            <span className={cn("block h-full rounded-full", (asset.utilizationPct ?? 0) >= 60 ? "bg-primary" : (asset.utilizationPct ?? 0) >= 30 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/60")} style={{ width: `${asset.utilizationPct ?? 0}%` }} />
           </div>
-          <p className="mt-1 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
-            {asset.units30d} / {(asset.capacityPerDay ?? 8) * 30} {asset.rateUnit}
-          </p>
+          <p className="mt-1 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">{asset.units30d} / {(asset.capacityPerDay ?? 8) * 30} {asset.rateUnit}</p>
         </div>
       </div>
 
       {/* Acciones */}
-      <div className="mt-3 flex items-center gap-2">
-        <button type="button" onClick={onRent} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary/90">
-          <TrendingUp className="h-3.5 w-3.5" /> Alquiler
-        </button>
-        <button type="button" onClick={onExpense} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-2 text-xs font-black text-[var(--text-secondary)] transition-colors hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-500)]">
-          <Fuel className="h-3.5 w-3.5" /> Gasto
-        </button>
-        <button type="button" onClick={onEdit} aria-label="Editar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
+      <div className="mt-3 flex items-center gap-1.5">
+        <button type="button" onClick={onRent} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary/90"><TrendingUp className="h-3.5 w-3.5" /> Alquiler</button>
+        <button type="button" onClick={onExpense} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-600)]"><Fuel className="h-3.5 w-3.5" /> Gasto</button>
+        <button type="button" onClick={onChecklist} aria-label="Checklist" title="Checklist pre-alquiler" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><ClipboardCheck className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={onContract} aria-label="Contrato" title="Contrato / cotización PDF" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><FileText className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={onEdit} aria-label="Editar" title="Editar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><Pencil className="h-3.5 w-3.5" /></button>
       </div>
     </div>
   );
+}
+
+function Chip({ icon: Icon, tone, children }: { icon: React.ComponentType<{ className?: string }>; tone: "warning" | "error"; children: React.ReactNode }) {
+  const cls = tone === "error" ? "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]";
+  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", cls)}><Icon className="h-3 w-3" /> {children}</span>;
 }
 
 // ── Modal crear / editar activo ─────────────────────────────────────────────
@@ -277,10 +297,11 @@ function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null;
     purchaseValue: asset?.purchaseValue != null ? String(asset.purchaseValue) : "",
     status: asset?.status ?? "operativo", hourlyRate: asset?.hourlyRate != null ? String(asset.hourlyRate) : "",
     rateUnit: asset?.rateUnit ?? "hora", capacityPerDay: asset?.capacityPerDay != null ? String(asset.capacityPerDay) : "8",
+    currentHours: asset?.currentHours != null ? String(asset.currentHours) : "",
+    fuelTargetPerUnit: asset?.fuelTargetPerUnit != null ? String(asset.fuelTargetPerUnit) : "",
     notes: asset?.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
-
   const save = async () => {
     if (!form.name.trim()) { toast.error("Ponle un nombre a la máquina"); return; }
     setSaving(true);
@@ -290,22 +311,19 @@ function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null;
         purchaseValue: form.purchaseValue ? Number(form.purchaseValue) : null,
         status: form.status, hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : null,
         rateUnit: form.rateUnit, capacityPerDay: form.capacityPerDay ? Number(form.capacityPerDay) : null,
+        currentHours: form.currentHours ? Number(form.currentHours) : null,
+        fuelTargetPerUnit: form.fuelTargetPerUnit ? Number(form.fuelTargetPerUnit) : null,
         notes: form.notes.trim() || null,
       };
       const res = await fetch(asset ? `/api/admin/assets/${asset.id}` : "/api/admin/assets", {
-        method: asset ? "PATCH" : "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify(payload),
+        method: asset ? "PATCH" : "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); toast.error(e?.error ?? "No se pudo guardar"); return; }
-      toast.success(asset ? "Máquina actualizada" : "Máquina agregada");
-      onSaved();
+      toast.success(asset ? "Máquina actualizada" : "Máquina agregada"); onSaved();
     } catch { toast.error("Sin conexión"); } finally { setSaving(false); }
   };
-
   return (
-    <ModalShell title={asset ? "Editar máquina" : "Nueva máquina"} subtitle="Datos del activo y su tarifa de alquiler" onClose={onClose}>
+    <ModalShell title={asset ? "Editar máquina" : "Nueva máquina"} subtitle="Datos del activo, tarifa, horómetro y meta de combustible" onClose={onClose}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2"><label className={LABEL}>Nombre *</label><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} /></div>
         <div><label className={LABEL}>Tipo</label><select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={FIELD}>{TYPES.map(t => <option key={t.v} value={t.v}>{t.label}</option>)}</select></div>
@@ -314,7 +332,9 @@ function AssetFormModal({ asset, onClose, onSaved }: { asset: AssetStats | null;
         <div><label className={LABEL}>Valor de compra (S/)</label><input type="number" min="0" value={form.purchaseValue} onChange={e => setForm(f => ({ ...f, purchaseValue: e.target.value }))} placeholder="250000" className={FIELD} /></div>
         <div><label className={LABEL}>Tarifa de alquiler (S/)</label><input type="number" min="0" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="180" className={FIELD} /></div>
         <div><label className={LABEL}>Cobro por</label><select value={form.rateUnit} onChange={e => setForm(f => ({ ...f, rateUnit: e.target.value }))} className={FIELD}>{RATE_UNITS.map(u => <option key={u.v} value={u.v}>{u.label}</option>)}</select></div>
-        <div><label className={LABEL} title="Horas/unidades disponibles por día — base para calcular la utilización">Capacidad por día</label><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></div>
+        <div><label className={LABEL} title="Horas/unidades disponibles por día — base de la utilización">Capacidad por día</label><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></div>
+        <div><label className={LABEL} title="Lectura actual del horómetro (horas de motor)">Horómetro actual</label><input type="number" min="0" value={form.currentHours} onChange={e => setForm(f => ({ ...f, currentHours: e.target.value }))} placeholder="0" className={FIELD} /></div>
+        <div><label className={LABEL} title="Galones esperados por unidad — si consume más, salta la alerta">Meta combustible (gal/{unitNoun(form.rateUnit).replace(/s$/, "")})</label><input type="number" min="0" step="0.01" value={form.fuelTargetPerUnit} onChange={e => setForm(f => ({ ...f, fuelTargetPerUnit: e.target.value }))} placeholder="ej. 3.5" className={FIELD} /></div>
         <div className="sm:col-span-2"><label className={LABEL}>Notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} /></div>
       </div>
       <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel={asset ? "Guardar cambios" : "Agregar máquina"} />
@@ -328,12 +348,16 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
   const [form, setForm] = useState({
     client: "", quantity: "", unit: asset.rateUnit, rate: asset.hourlyRate != null ? String(asset.hourlyRate) : "",
     amount: "", category: "combustible", gallons: "", unitPrice: "", notes: "",
+    hourStart: asset.currentHours != null ? String(asset.currentHours) : "", hourEnd: "",
+    paid: true, dueDate: "", startDate: "", endDate: "",
   });
   const [saving, setSaving] = useState(false);
 
-  // Auto-cálculo del monto: alquiler = cantidad × tarifa; combustible = galones × precio.
+  // Cantidad auto: por horómetro (fin−inicio) o manual.
+  const hoursQty = form.hourStart !== "" && form.hourEnd !== "" && Number(form.hourEnd) > Number(form.hourStart) ? Number(form.hourEnd) - Number(form.hourStart) : 0;
+  const effectiveQty = form.quantity !== "" ? Number(form.quantity) : hoursQty;
   const autoAmount = isIncome
-    ? (Number(form.quantity) || 0) * (Number(form.rate) || 0)
+    ? effectiveQty * (Number(form.rate) || 0)
     : form.category === "combustible" ? (Number(form.gallons) || 0) * (Number(form.unitPrice) || 0) : 0;
   const effectiveAmount = form.amount !== "" ? Number(form.amount) : autoAmount;
 
@@ -342,31 +366,27 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
     setSaving(true);
     try {
       const payload = isIncome
-        ? { client: form.client.trim() || null, quantity: form.quantity ? Number(form.quantity) : null, unit: form.unit, rate: Number(form.rate) || 0, amount: effectiveAmount, notes: form.notes.trim() || null }
+        ? { client: form.client.trim() || null, quantity: form.quantity ? Number(form.quantity) : (hoursQty || null), unit: form.unit, rate: Number(form.rate) || 0, amount: effectiveAmount,
+            hourStart: form.hourStart ? Number(form.hourStart) : null, hourEnd: form.hourEnd ? Number(form.hourEnd) : null,
+            paid: form.paid, dueDate: !form.paid && form.dueDate ? form.dueDate : null,
+            startDate: form.startDate || null, endDate: form.endDate || null, notes: form.notes.trim() || null }
         : { category: form.category, gallons: form.gallons ? Number(form.gallons) : null, unitPrice: form.unitPrice ? Number(form.unitPrice) : null, amount: effectiveAmount, notes: form.notes.trim() || null };
-      const res = await fetch(`/api/admin/assets/${asset.id}/movements?kind=${kind}`, {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(`/api/admin/assets/${asset.id}/movements?kind=${kind}`, { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
       if (!res.ok) { const e = await res.json().catch(() => ({})); toast.error(e?.error ?? "No se pudo guardar"); return; }
-      toast.success(isIncome ? "Alquiler registrado" : "Gasto registrado");
-      onSaved();
+      toast.success(isIncome ? "Alquiler registrado" : "Gasto registrado"); onSaved();
     } catch { toast.error("Sin conexión"); } finally { setSaving(false); }
   };
 
   return (
-    <ModalShell
-      title={isIncome ? `Alquiler — ${asset.name}` : `Gasto — ${asset.name}`}
-      subtitle={isIncome ? "Renta generada por la máquina" : "Combustible, mantenimiento u otro costo"}
-      onClose={onClose}
-      icon={isIncome ? TrendingUp : Fuel}
-    >
+    <ModalShell title={isIncome ? `Alquiler — ${asset.name}` : `Gasto — ${asset.name}`} subtitle={isIncome ? "Renta generada por la máquina" : "Combustible, mantenimiento u otro costo"} onClose={onClose} icon={isIncome ? TrendingUp : Fuel}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {isIncome ? (<>
           <div className="sm:col-span-2"><label className={LABEL}>Cliente</label><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur" className={FIELD} /></div>
-          <div><label className={LABEL}>Cantidad ({RATE_UNITS.find(u => u.v === form.unit)?.label ?? form.unit})</label><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder="8" className={FIELD} /></div>
+          <div><label className={LABEL}>Inicio (periodo)</label><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></div>
+          <div><label className={LABEL}>Fin (periodo)</label><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></div>
+          <div><label className={LABEL}>Horómetro inicio</label><input type="number" min="0" value={form.hourStart} onChange={e => setForm(f => ({ ...f, hourStart: e.target.value }))} placeholder={asset.currentHours != null ? String(asset.currentHours) : "0"} className={FIELD} /></div>
+          <div><label className={LABEL}>Horómetro fin</label><input type="number" min="0" value={form.hourEnd} onChange={e => setForm(f => ({ ...f, hourEnd: e.target.value }))} placeholder="—" className={FIELD} /></div>
+          <div><label className={LABEL}>Cantidad ({unitNoun(form.unit)}) {hoursQty > 0 && form.quantity === "" && <span className="text-[var(--accent)] normal-case">· auto {hoursQty}</span>}</label><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder={hoursQty > 0 ? String(hoursQty) : "8"} className={FIELD} /></div>
           <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></div>
         </>) : (<>
           <div><label className={LABEL}>Categoría</label><select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={FIELD}>{EXPENSE_CATS.map(c => <option key={c.v} value={c.v}>{c.label}</option>)}</select></div>
@@ -379,11 +399,20 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
           <label className={LABEL}>Monto total (S/) {autoAmount > 0 && form.amount === "" && <span className="text-[var(--accent)] normal-case">· auto {fmt(autoAmount)}</span>}</label>
           <input type="number" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder={autoAmount > 0 ? String(autoAmount) : "0.00"} className={cn(FIELD, "text-lg font-black")} />
         </div>
+        {isIncome && (
+          <div className="sm:col-span-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+            <div className="flex gap-1 rounded-lg bg-[var(--surface-raised)] p-1">
+              {([[true, "Pagado"], [false, "Pendiente de cobro"]] as const).map(([v, l]) => (
+                <button key={String(v)} type="button" onClick={() => setForm(f => ({ ...f, paid: v }))} className={cn("flex-1 rounded-md px-3 py-2 text-sm font-bold transition-colors", form.paid === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>
+              ))}
+            </div>
+            {!form.paid && <div className="mt-2"><label className={LABEL}>Vence el</label><input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={FIELD} /></div>}
+          </div>
+        )}
         <div className="sm:col-span-2"><label className={LABEL}>Notas</label><input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={FIELD} /></div>
       </div>
-      {/* Resumen */}
       <div className={cn("mt-3 flex items-center justify-between rounded-xl px-4 py-3", isIncome ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-100)] dark:bg-amber-950/20")}>
-        <span className="text-sm font-bold text-[var(--text-secondary)]">{isIncome ? "Ingreso a registrar" : "Gasto a registrar"}</span>
+        <span className="text-sm font-bold text-[var(--text-secondary)]">{isIncome ? (form.paid ? "Ingreso a registrar" : "Por cobrar a registrar") : "Gasto a registrar"}</span>
         <span className={cn("font-mono text-xl font-bold tabular-nums", isIncome ? "text-primary" : "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]")}>{fmt(effectiveAmount)}</span>
       </div>
       <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel={isIncome ? "Registrar alquiler" : "Registrar gasto"} />
@@ -391,20 +420,15 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
   );
 }
 
-// ── Drawer de detalle / movimientos ─────────────────────────────────────────
-function AssetDetailDrawer({ asset, onClose }: { asset: AssetStats; onClose: () => void }) {
+// ── Drawer de detalle (movimientos + mantenimiento) ─────────────────────────
+function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: AssetStats; onClose: () => void; onContract: () => void; onChanged: () => void }) {
+  const [tab, setTab] = useState<"movimientos" | "mantenimiento">("movimientos");
   const [mov, setMov] = useState<{ incomes: IncomeMov[]; expenses: ExpenseMov[] } | null>(null);
   useEffect(() => {
     fetch(`/api/admin/assets/${asset.id}/movements`, { credentials: "include" })
-      .then(r => r.ok ? r.json() : { data: { incomes: [], expenses: [] } })
-      .then(j => setMov(j.data))
-      .catch(() => setMov({ incomes: [], expenses: [] }));
+      .then(r => r.ok ? r.json() : { data: { incomes: [], expenses: [] } }).then(j => setMov(j.data)).catch(() => setMov({ incomes: [], expenses: [] }));
   }, [asset.id]);
-
-  const all = mov
-    ? [...mov.incomes.map(i => ({ ...i, kind: "income" as const })), ...mov.expenses.map(e => ({ ...e, kind: "expense" as const }))]
-        .sort((a, b) => (a.date < b.date ? 1 : -1))
-    : [];
+  const all = mov ? [...mov.incomes.map(i => ({ ...i, t: "income" as const })), ...mov.expenses.map(e => ({ ...e, t: "expense" as const }))].sort((a, b) => (a.date < b.date ? 1 : -1)) : [];
 
   return (
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex justify-end">
@@ -414,44 +438,276 @@ function AssetDetailDrawer({ asset, onClose }: { asset: AssetStats; onClose: () 
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{asset.name}</p>
-            <p className="text-xs font-bold text-[var(--text-tertiary)]">Ganancia: <span className={cn("font-mono", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span></p>
+            <p className="text-xs font-bold text-[var(--text-tertiary)]">Ganancia: <span className={cn("font-mono", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span>{asset.currentHours != null && <span> · {asset.currentHours} h</span>}</p>
           </div>
+          <button type="button" onClick={onContract} aria-label="Contrato" title="Contrato / cotización" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><FileText className="h-4.5 w-4.5" /></button>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-4.5 w-4.5" strokeWidth={2.5} /></button>
         </div>
+        <div className="flex gap-1 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 pt-2">
+          {([["movimientos", "Movimientos"], ["mantenimiento", "Mantenimiento"]] as const).map(([v, l]) => (
+            <button key={v} type="button" onClick={() => setTab(v)} className={cn("rounded-t-lg px-3 py-2 text-sm font-bold transition-colors", tab === v ? "border-b-2 border-[var(--accent)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{l}</button>
+          ))}
+        </div>
         <div className="flex-1 overflow-y-auto p-4">
-          {!mov ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-sm font-bold text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
-          ) : all.length === 0 ? (
-            <p className="py-10 text-center text-sm font-medium text-[var(--text-tertiary)]">Aún no hay movimientos. Registra un alquiler o gasto.</p>
-          ) : (
-            <ul className="space-y-2">
-              {all.map((m) => {
-                const inc = m.kind === "income";
+          {tab === "movimientos" ? (
+            !mov ? <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>
+            : all.length === 0 ? <p className="py-10 text-center text-sm font-medium text-[var(--text-tertiary)]">Aún no hay movimientos. Registra un alquiler o gasto.</p>
+            : <ul className="space-y-2">{all.map((m) => {
+                const inc = m.t === "income";
                 return (
                   <li key={m.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-                    <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]")}>
-                      {inc ? <TrendingUp className="h-4 w-4" /> : (m as ExpenseMov).category === "combustible" ? <Fuel className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
-                    </span>
+                    <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]")}>{inc ? <TrendingUp className="h-4 w-4" /> : (m as ExpenseMov).category === "combustible" ? <Fuel className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}</span>
                     <div className="min-w-0 flex-1 leading-tight">
-                      <p className="truncate text-sm font-bold text-[var(--text-primary)]">
-                        {inc ? ((m as IncomeMov).client ?? "Alquiler") : EXPENSE_CATS.find(c => c.v === (m as ExpenseMov).category)?.label}
-                      </p>
-                      <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
-                        {new Date(m.date).toLocaleDateString("es-PE", { day: "numeric", month: "short" })}
-                        {m.notes ? ` · ${m.notes}` : ""}
-                      </p>
+                      <p className="truncate text-sm font-bold text-[var(--text-primary)]">{inc ? ((m as IncomeMov).client ?? "Alquiler") : EXPENSE_CATS.find(c => c.v === (m as ExpenseMov).category)?.label}{inc && !(m as IncomeMov).paid && <span className="ml-1 rounded bg-[var(--data-warning-100)] px-1 text-[length:var(--ts-2xs)] font-black text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">PENDIENTE</span>}</p>
+                      <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{dStr(m.date)}{m.notes ? ` · ${m.notes}` : ""}</p>
                     </div>
-                    <span className={cn("shrink-0 font-mono text-sm font-bold tabular-nums", inc ? "text-primary" : "text-[var(--text-secondary)]")}>
-                      {inc ? "+" : "−"}{fmt(m.amount)}
-                    </span>
+                    <span className={cn("shrink-0 font-mono text-sm font-bold tabular-nums", inc ? "text-primary" : "text-[var(--text-secondary)]")}>{inc ? "+" : "−"}{fmt(m.amount)}</span>
                   </li>
                 );
-              })}
-            </ul>
+              })}</ul>
+          ) : (
+            <MaintenanceSection asset={asset} onChanged={onChanged} />
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+function Center({ children }: { children: React.ReactNode }) {
+  return <div className="flex items-center justify-center gap-2 py-10 text-sm font-bold text-[var(--text-tertiary)]">{children}</div>;
+}
+
+// ── Mantenimiento (dentro del drawer) ───────────────────────────────────────
+function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged: () => void }) {
+  const [items, setItems] = useState<Maintenance[] | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ title: "", mode: "hours" as "hours" | "days", interval: "", lastDoneHours: asset.currentHours != null ? String(asset.currentHours) : "" });
+
+  const load = useCallback(() => {
+    fetch(`/api/admin/assets/${asset.id}/maintenance`, { credentials: "include" }).then(r => r.ok ? r.json() : { data: [] }).then(j => setItems(j.data)).catch(() => setItems([]));
+  }, [asset.id]);
+  useEffect(() => { load(); }, [load]);
+
+  const add = async () => {
+    if (!form.title.trim() || !form.interval) { toast.error("Pon título e intervalo"); return; }
+    const payload = { title: form.title.trim(), ...(form.mode === "hours" ? { intervalHours: Number(form.interval), lastDoneHours: form.lastDoneHours ? Number(form.lastDoneHours) : null } : { intervalDays: Number(form.interval), lastDoneAt: new Date().toISOString() }) };
+    const res = await fetch(`/api/admin/assets/${asset.id}/maintenance`, { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
+    if (!res.ok) { toast.error("No se pudo agregar"); return; }
+    toast.success("Mantenimiento programado"); setForm({ title: "", mode: "hours", interval: "", lastDoneHours: asset.currentHours != null ? String(asset.currentHours) : "" }); setAdding(false); load(); onChanged();
+  };
+  const complete = async (m: Maintenance) => {
+    const res = await fetch(`/api/admin/assets/${asset.id}/maintenance/${m.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify({ action: "complete", atHours: asset.currentHours ?? null }) });
+    if (res.ok) { toast.success("Marcado como hecho"); load(); onChanged(); } else toast.error("No se pudo");
+  };
+  const del = async (m: Maintenance) => {
+    const res = await fetch(`/api/admin/assets/${asset.id}/maintenance/${m.id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
+    if (res.ok) { load(); onChanged(); }
+  };
+
+  const stChip = (s: Maintenance["state"]) => s === "due" ? "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : s === "soon" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--accent)]";
+
+  return (
+    <div className="space-y-2">
+      {asset.currentHours == null && <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">Tip: registra el horómetro de la máquina (en Editar) para alertas por horas.</p>}
+      {items == null ? <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>
+       : items.length === 0 && !adding ? <p className="py-6 text-center text-sm font-medium text-[var(--text-tertiary)]">Sin mantenimientos programados.</p>
+       : <ul className="space-y-2">{items.map(m => (
+            <li key={m.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]"><Wrench className="h-4 w-4" /></span>
+                <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-[var(--text-primary)]">{m.title}</p><p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{m.intervalHours ? `cada ${m.intervalHours} h` : `cada ${m.intervalDays} d`}</p></div>
+                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", stChip(m.state))}>{m.detail}</span>
+              </div>
+              <div className="mt-2 flex gap-1.5">
+                <button type="button" onClick={() => complete(m)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-[var(--accent-soft)] px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95"><CheckCircle className="h-3.5 w-3.5" /> Marcar hecho</button>
+                <button type="button" onClick={() => del(m)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-600)]"><X className="h-3.5 w-3.5" /></button>
+              </div>
+            </li>
+          ))}</ul>}
+
+      {adding ? (
+        <div className="rounded-xl border-2 border-[var(--accent)]/30 bg-[var(--surface-raised)] p-3 space-y-2">
+          <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Cambio de aceite" className={FIELD} autoFocus />
+          <div className="flex gap-1 rounded-lg bg-[var(--surface-sunken)] p-1">
+            {([["hours", "Por horas"], ["days", "Por días"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-md px-2 py-1.5 text-xs font-bold", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
+          </div>
+          <input type="number" min="1" value={form.interval} onChange={e => setForm(f => ({ ...f, interval: e.target.value }))} placeholder={form.mode === "hours" ? "cada cuántas horas (ej. 250)" : "cada cuántos días (ej. 30)"} className={FIELD} />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setAdding(false)} className="flex-1 rounded-lg border-2 border-[var(--rule-base)] py-2 text-xs font-bold text-[var(--text-secondary)]">Cancelar</button>
+            <button type="button" onClick={add} className="flex-1 rounded-lg bg-primary py-2 text-xs font-bold text-white">Programar</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setAdding(true)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"><Plus className="h-4 w-4" /> Programar mantenimiento</button>
+      )}
+    </div>
+  );
+}
+
+// ── Cuentas por cobrar ──────────────────────────────────────────────────────
+function ReceivablesView({ onChanged }: { onChanged: () => void }) {
+  const [rows, setRows] = useState<Receivable[] | null>(null);
+  const load = useCallback(() => {
+    fetch("/api/admin/assets/receivables", { credentials: "include" }).then(r => r.ok ? r.json() : { data: [] }).then(j => setRows(j.data)).catch(() => setRows([]));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const markPaid = async (r: Receivable) => {
+    const res = await fetch("/api/admin/assets/receivables", { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify({ incomeId: r.id, paid: true }) });
+    if (res.ok) { toast.success("Marcado como cobrado"); load(); onChanged(); } else toast.error("No se pudo");
+  };
+  const remind = (r: Receivable) => {
+    const msg = `Hola${r.client ? ` ${r.client}` : ""}, te recuerdo el pago pendiente del alquiler de *${r.assetName}* por ${fmt(r.amount)}${r.dueDate ? ` (vence ${dStr(r.dueDate)})` : ""}. ¡Gracias!`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  if (rows == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>;
+  if (rows.length === 0) return (
+    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
+      <p className="text-base font-extrabold text-[var(--text-primary)]">Todo cobrado</p>
+      <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tienes alquileres pendientes de pago.</p>
+    </div>
+  );
+  const total = rows.reduce((s, r) => s + r.amount, 0);
+  const overdue = (r: Receivable) => r.dueDate && new Date(r.dueDate).getTime() < Date.now();
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between rounded-xl bg-[var(--data-warning-100)] px-4 py-2.5 dark:bg-amber-950/20"><span className="text-sm font-bold text-[var(--text-secondary)]">Total por cobrar ({rows.length})</span><span className="font-mono text-lg font-bold tabular-nums text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">{fmt(total)}</span></div>
+      {rows.map(r => (
+        <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-[var(--text-primary)]">{r.client ?? "Cliente"} · <span className="font-medium text-[var(--text-secondary)]">{r.assetName}</span></p>
+            <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{dStr(r.date)}{r.dueDate && <span className={cn("ml-1 font-bold", overdue(r) ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>· vence {dStr(r.dueDate)}{overdue(r) ? " (vencido)" : ""}</span>}</p>
+          </div>
+          <span className="font-mono text-base font-bold tabular-nums text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">{fmt(r.amount)}</span>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={() => remind(r)} title="Recordar por WhatsApp" className="inline-flex h-9 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><Clock className="h-3.5 w-3.5" /> Recordar</button>
+            <button type="button" onClick={() => markPaid(r)} className="inline-flex h-9 items-center gap-1 rounded-lg bg-primary px-2.5 text-xs font-bold text-white hover:bg-primary/90"><CheckCircle className="h-3.5 w-3.5" /> Cobrado</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Calendario (agenda de alquileres) ───────────────────────────────────────
+function CalendarView({ assets }: { assets: AssetStats[] }) {
+  const [items, setItems] = useState<(IncomeMov & { assetName: string })[] | null>(null);
+  useEffect(() => {
+    if (assets.length === 0) { setItems([]); return; }
+    Promise.all(assets.map(a => fetch(`/api/admin/assets/${a.id}/movements`, { credentials: "include" }).then(r => r.ok ? r.json() : { data: { incomes: [] } }).then(j => (j.data.incomes as IncomeMov[]).map(i => ({ ...i, assetName: a.name }))).catch(() => [])))
+      .then(arr => setItems(arr.flat().sort((a, b) => ((a.startDate ?? a.date) < (b.startDate ?? b.date) ? 1 : -1))));
+  }, [assets]);
+
+  if (items == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando agenda…</Center>;
+  if (items.length === 0) return (
+    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Calendar className="h-6 w-6" /></span>
+      <p className="text-base font-extrabold text-[var(--text-primary)]">Sin alquileres aún</p>
+      <p className="mt-1 text-sm text-[var(--text-tertiary)]">Registra alquileres con fecha de inicio/fin y aparecerán acá en orden.</p>
+    </div>
+  );
+  const now = Date.now();
+  return (
+    <ul className="space-y-2">
+      {items.map(i => {
+        const start = i.startDate ?? i.date;
+        const active = i.startDate && i.endDate && new Date(i.startDate).getTime() <= now && new Date(i.endDate).getTime() >= now;
+        return (
+          <li key={i.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+            <span className={cn("inline-flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg", active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
+              <span className="text-sm font-black leading-none tabular-nums">{new Date(start).getDate()}</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase leading-none">{new Date(start).toLocaleDateString("es-PE", { month: "short" })}</span>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-[var(--text-primary)]">{i.assetName} {active && <span className="rounded bg-[var(--accent-soft)] px-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">EN USO</span>}</p>
+              <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{i.client ?? "Alquiler"}{i.startDate && i.endDate ? ` · ${dStr(i.startDate)} → ${dStr(i.endDate)}` : ` · ${dStr(i.date)}`}{!i.paid && " · pendiente"}</p>
+            </div>
+            <span className="font-mono text-sm font-bold tabular-nums text-primary">{fmt(i.amount)}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// ── Contrato / cotización PDF ───────────────────────────────────────────────
+function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => void }) {
+  const [form, setForm] = useState({ mode: "contrato" as "contrato" | "cotizacion", client: "", quantity: "", rate: asset.hourlyRate != null ? String(asset.hourlyRate) : "", startDate: "", endDate: "", notes: "" });
+  const amount = (Number(form.quantity) || 0) * (Number(form.rate) || 0);
+  const gen = () => {
+    if (!form.client.trim()) { toast.error("Pon el cliente"); return; }
+    if (amount <= 0) { toast.error("Pon cantidad y tarifa"); return; }
+    generateContractPDF({
+      mode: form.mode, asset: { name: asset.name, type: asset.type, plate: asset.plate },
+      client: form.client.trim(), quantity: form.quantity ? Number(form.quantity) : null, unitLabel: unitNoun(asset.rateUnit),
+      rate: Number(form.rate) || 0, amount, startDate: form.startDate ? dStr(form.startDate) : null, endDate: form.endDate ? dStr(form.endDate) : null,
+      notes: form.notes.trim() || null, dateStr: new Date().toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" }),
+    });
+    toast.success("PDF generado"); onClose();
+  };
+  return (
+    <ModalShell title="Contrato / cotización" subtitle={`Genera el PDF de alquiler de ${asset.name}`} onClose={onClose} icon={FileText}>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2 flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+          {([["contrato", "Contrato"], ["cotizacion", "Cotización"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-bold transition-colors", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
+        </div>
+        <div className="sm:col-span-2"><label className={LABEL}>Cliente *</label><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur S.A.C." className={FIELD} /></div>
+        <div><label className={LABEL}>Inicio</label><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></div>
+        <div><label className={LABEL}>Fin</label><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></div>
+        <div><label className={LABEL}>Cantidad ({unitNoun(asset.rateUnit)})</label><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder="8" className={FIELD} /></div>
+        <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></div>
+        <div className="sm:col-span-2"><label className={LABEL}>Condiciones / notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Incluye operador. Combustible por cuenta del cliente." /></div>
+      </div>
+      <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--accent-soft)] px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-primary">{fmt(amount)}</span></div>
+      <div className="mt-6 flex items-center gap-3">
+        <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button type="button" onClick={gen} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-extrabold text-white hover:bg-primary/90"><Download className="h-4 w-4" /> Generar PDF</button>
+      </div>
+    </ModalShell>
+  );
+}
+
+// ── Checklist pre-alquiler ──────────────────────────────────────────────────
+function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClose: () => void; onSaved: () => void }) {
+  const [kind, setKind] = useState<"salida" | "retorno">("salida");
+  const [client, setClient] = useState("");
+  const [hours, setHours] = useState(asset.currentHours != null ? String(asset.currentHours) : "");
+  const [checks, setChecks] = useState<Record<string, boolean>>(() => Object.fromEntries(CHECKLIST_DEFAULT.map(l => [l, true])));
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    setSaving(true);
+    try {
+      const items = CHECKLIST_DEFAULT.map(l => ({ label: l, ok: checks[l] }));
+      const res = await fetch(`/api/admin/assets/${asset.id}/inspections`, { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify({ kind, client: client.trim() || null, hours: hours ? Number(hours) : null, items, notes: notes.trim() || null }) });
+      if (!res.ok) { toast.error("No se pudo guardar"); return; }
+      toast.success("Checklist guardado"); onSaved();
+    } catch { toast.error("Sin conexión"); } finally { setSaving(false); }
+  };
+  return (
+    <ModalShell title={`Checklist — ${asset.name}`} subtitle="Inspección antes de entregar o al recibir la máquina" onClose={onClose} icon={ClipboardCheck}>
+      <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+        {([["salida", "Salida (entrega)"], ["retorno", "Retorno (recibo)"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setKind(v)} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-bold transition-colors", kind === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <div><label className={LABEL}>Cliente</label><input value={client} onChange={e => setClient(e.target.value)} className={FIELD} /></div>
+        <div><label className={LABEL}>Horómetro</label><input type="number" min="0" value={hours} onChange={e => setHours(e.target.value)} className={FIELD} /></div>
+      </div>
+      <div className="mt-3 space-y-1.5">
+        {CHECKLIST_DEFAULT.map(l => (
+          <button key={l} type="button" onClick={() => setChecks(c => ({ ...c, [l]: !c[l] }))} className="flex w-full items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-left transition-colors hover:bg-[var(--surface-sunken)]">
+            <span className={cn("inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors", checks[l] ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-base)] text-transparent")}><CheckCircle className="h-4 w-4" /></span>
+            <span className="flex-1 text-sm font-bold text-[var(--text-primary)]">{l}</span>
+            <span className={cn("text-[length:var(--ts-2xs)] font-black uppercase", checks[l] ? "text-[var(--accent)]" : "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]")}>{checks[l] ? "OK" : "Falla"}</span>
+          </button>
+        ))}
+      </div>
+      <div className="mt-3"><label className={LABEL}>Observaciones</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={cn(FIELD, "resize-none")} placeholder="Rayón en la puerta, falta 1/4 de combustible…" /></div>
+      <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel="Guardar checklist" />
+    </ModalShell>
   );
 }
 
@@ -479,7 +735,7 @@ function ModalFooter({ onClose, onSave, saving, saveLabel }: { onClose: () => vo
   return (
     <div className="mt-6 flex items-center gap-3">
       <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">Cancelar</button>
-      <button type="button" onClick={onSave} disabled={saving} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-[var(--accent)] text-sm font-extrabold text-white shadow-[var(--shadow-md)] transition-all hover:-translate-y-0.5 disabled:opacity-50">
+      <button type="button" onClick={onSave} disabled={saving} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-extrabold text-white transition-all hover:bg-primary/90 disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
         {saving ? "Guardando…" : saveLabel}
       </button>

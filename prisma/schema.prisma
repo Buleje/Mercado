@@ -5164,12 +5164,18 @@ model Asset {
   // Capacidad operativa por día (horas/unidades disponibles) — denominador de
   // la UTILIZACIÓN. Default 8 (jornada típica). Brandon 2026-06-06.
   capacityPerDay Int?          @default(8)
+  // Horómetro actual del equipo (lectura más reciente) — utilización exacta.
+  currentHours  Decimal?       @db.Decimal(12, 1)
+  // Meta de consumo de combustible (galones por unidad) — base de la alerta.
+  fuelTargetPerUnit Decimal?   @db.Decimal(12, 3)
   notes         String?
   active        Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   incomes       AssetIncome[]
   expenses      AssetExpense[]
+  maintenances  AssetMaintenance[]
+  inspections   AssetInspection[]
 
   @@index([tenantId, active])
   @@index([tenantId, status])
@@ -5187,11 +5193,19 @@ model AssetIncome {
   amount    Decimal  @db.Decimal(14, 2) // total
   hourStart Decimal? @db.Decimal(12, 1) // horómetro inicial
   hourEnd   Decimal? @db.Decimal(12, 1) // horómetro final
+  // Cobranza (cuentas por cobrar) — pagado/pendiente + vencimiento.
+  paid      Boolean  @default(true)
+  paidAt    DateTime?
+  dueDate   DateTime?
+  // Rango del alquiler (calendario de disponibilidad). Si null, usa `date`.
+  startDate DateTime?
+  endDate   DateTime?
   notes     String?
   createdAt DateTime @default(now())
   asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, date])
+  @@index([tenantId, paid])
   @@index([assetId])
 }
 
@@ -5210,4 +5224,41 @@ model AssetExpense {
 
   @@index([tenantId, date])
   @@index([assetId, category])
+}
+
+// Mantenimiento preventivo programado por máquina (por horas o por fecha).
+// Brandon 2026-06-06 — feature reforzada Activos.
+model AssetMaintenance {
+  id            String    @id @default(cuid())
+  tenantId      String
+  assetId       String
+  title         String // "Cambio de aceite", "Engrase", "Filtros"
+  intervalHours Int? // cada N horas de horómetro
+  intervalDays  Int? // o cada N días
+  lastDoneHours Decimal?  @db.Decimal(12, 1) // horómetro del último servicio
+  lastDoneAt    DateTime? // fecha del último servicio
+  notes         String?
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  asset         Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, assetId])
+}
+
+// Checklist de inspección pre/post alquiler (salida|retorno). itemsJson guarda
+// los ítems marcados. Brandon 2026-06-06.
+model AssetInspection {
+  id        String   @id @default(cuid())
+  tenantId  String
+  assetId   String
+  kind      String   @default("salida") // salida|retorno
+  client    String?
+  hours     Decimal? @db.Decimal(12, 1) // horómetro al momento de la inspección
+  itemsJson String? // JSON: [{ label, ok }]
+  notes     String?
+  createdAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, assetId])
 }

@@ -21,6 +21,8 @@ const CreateBody = z.object({
   hourlyRate:    z.number().min(0).max(999999).optional().nullable(),
   rateUnit:      z.enum(["hora", "dia", "m3", "viaje"]).optional(),
   capacityPerDay: z.number().int().min(1).max(24).optional().nullable(),
+  currentHours:  z.number().min(0).max(9999999).optional().nullable(),
+  fuelTargetPerUnit: z.number().min(0).max(99999).optional().nullable(),
   notes:         z.string().max(1000).optional().nullable(),
 });
 

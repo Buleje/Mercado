@@ -18,6 +18,10 @@ const IncomeBody = z.object({
   amount:    z.number().min(0).max(99999999),
   hourStart: z.number().min(0).max(9999999).optional().nullable(),
   hourEnd:   z.number().min(0).max(9999999).optional().nullable(),
+  paid:      z.boolean().optional(),
+  dueDate:   z.string().max(40).optional().nullable(),
+  startDate: z.string().max(40).optional().nullable(),
+  endDate:   z.string().max(40).optional().nullable(),
   notes:     z.string().max(1000).optional().nullable(),
 });
 
