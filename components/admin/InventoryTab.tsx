@@ -1828,13 +1828,16 @@ export default function InventoryTab() {
                       {p.active ? "Activo" : "Inactivo"}
                     </button>
                     {p.stock !== undefined ? (
-                      <div className={cn(
-                        "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold",
-                        lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
-                      )}>
-                        {lowStock && <AlertTriangle className="h-3 w-3" />}
-                        Stock: {p.stock}
-                        {p.stockMin !== undefined && <span className="opacity-70"> / mín {p.stockMin}</span>}
+                      /* Brandon 2026-06-06: barra visual de nivel también en la
+                         vista Cards (antes era un pill plano "Stock: X"). */
+                      <div className="w-full">
+                        <StockLevelBar
+                          variant="full"
+                          stock={p.stock}
+                          stockMin={p.stockMin}
+                          stockMax={p.stockMax}
+                          unit={p.unit}
+                        />
                       </div>
                     ) : (
                       <span className="text-xs text-[var(--text-tertiary)] dark:text-muted italic" title="Este producto no gestiona inventario">No controla stock</span>
