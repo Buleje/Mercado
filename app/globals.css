@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 
 /* ── Reduced motion escape hatch (designer audit P1 a11y) ─────────────
    Disable global animations and transitions when the user has
@@ -14,10 +14,13 @@
   }
 }
 
-/* Scope explícito: solo escanear código de la app.
-   Tailwind v4 default escanea todo — esto lo restringe a los directorios
-   reales de componentes/rutas/libs de UI y excluye docs/reports/scripts/tests
-   que contienen sintaxis tipo `var(--dur-*)` que genera CSS inválido. */
+/* Scope explícito: SOLO escanear código de la app.
+   `source(none)` en el @import de arriba DESACTIVA el auto-detect de Tailwind v4
+   (que por defecto escanea todo el repo). Sin él, oxide escaneaba archivos
+   sueltos fuera de estos globs y uno desbordaba el scanner → CSS corrupto
+   (`Invalid dangling combinator`, clases con bytes basura) → build roto.
+   Estos @source son AHORA la única fuente de clases; cubren todo el UI real.
+   Los `@source not` quedan como defensa redundante. */
 @source "../app/**/*.{ts,tsx,js,jsx}";
 @source "../components/**/*.{ts,tsx,js,jsx}";
 @source "../contexts/**/*.{ts,tsx,js,jsx}";
