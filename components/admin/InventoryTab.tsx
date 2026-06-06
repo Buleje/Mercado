@@ -49,6 +49,95 @@ function fmt(n: number) { return `S/${n.toFixed(2)}`; }
 
 const realCategories = categories.filter(c => c.id !== "todos");
 
+// ── Estilos compartidos de los modales de producto (diseño profesional) ──
+const FIELD_INPUT =
+  "w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] outline-none transition-all duration-150 hover:border-[var(--accent)]/40 focus:border-[var(--accent)] focus:bg-[var(--surface-raised)] focus:ring-4 focus:ring-[var(--accent-soft)]";
+const FIELD_LABEL =
+  "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
+
+// ── StockLevelBar — barra visual de stock (Brandon 2026-06-06) ──────────────
+// Reemplaza el número plano de la columna Stock por una barra de nivel con
+// color por estado + marcador del mínimo, y se reusa como preview en vivo en
+// los modales de agregar/editar. Un vistazo y sabés cuánto queda y si urge.
+type StockState = "none" | "out" | "critical" | "low" | "ok" | "over";
+function stockStateOf(stock: number | undefined, min: number, max: number): StockState {
+  if (stock === undefined) return "none";
+  if (stock === 0) return "out";
+  if (stock <= min) return "critical";
+  if (stock <= min * 2) return "low";
+  if (max > 0 && stock > max) return "over";
+  return "ok";
+}
+const STOCK_META: Record<StockState, { label: string; bar: string; text: string; chip: string }> = {
+  none:     { label: "Sin control",  bar: "bg-[var(--rule-base)]",        text: "text-[var(--text-tertiary)]", chip: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" },
+  out:      { label: "Agotado",      bar: "bg-[var(--data-error-500)]",   text: "text-[var(--data-error-500)]", chip: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30" },
+  critical: { label: "Crítico",      bar: "bg-[var(--data-error-500)]",   text: "text-[var(--data-error-500)]", chip: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30" },
+  low:      { label: "Bajo",         bar: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30" },
+  ok:       { label: "Saludable",    bar: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-500)]", chip: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)]" },
+  over:     { label: "Exceso",       bar: "bg-[var(--accent)]",           text: "text-[var(--accent)]",        chip: "bg-[var(--accent-soft)] text-[var(--accent)]" },
+};
+function StockLevelBar({
+  stock, stockMin, stockMax, unit, variant = "cell",
+}: {
+  stock: number | undefined;
+  stockMin?: number | null;
+  stockMax?: number | null;
+  unit?: string | null;
+  variant?: "cell" | "full";
+}) {
+  const min = stockMin ?? 5;
+  // Escala de la barra: el máximo configurado o, si no hay, el doble del mínimo.
+  const scaleMax = Math.max(stockMax ?? 0, min * 2, stock ?? 0, 1);
+  const state = stockStateOf(stock, min, stockMax ?? 0);
+  const meta = STOCK_META[state];
+  const pct = stock === undefined ? 0 : Math.min((stock / scaleMax) * 100, 100);
+  const minPct = Math.min((min / scaleMax) * 100, 100);
+
+  if (stock === undefined) {
+    return <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>;
+  }
+
+  if (variant === "full") {
+    return (
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="flex items-baseline gap-1">
+            <span className={cn("text-2xl font-black tabular-nums leading-none", meta.text)}>{stock}</span>
+            {unit && <span className="text-xs font-semibold text-[var(--text-tertiary)]">{unit}</span>}
+          </span>
+          <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider", meta.chip)}>
+            {(state === "out" || state === "critical" || state === "low") && <AlertTriangle className="h-3 w-3" />}
+            {meta.label}
+          </span>
+        </div>
+        <div className="relative mt-2 h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-raised)] ring-1 ring-[var(--rule-soft)]">
+          <div className={cn("h-full rounded-full transition-[width] duration-300", meta.bar)} style={{ width: `${pct}%` }} />
+          {/* Marcador del mínimo */}
+          <span className="absolute top-0 bottom-0 w-px bg-[var(--text-primary)]/40" style={{ left: `${minPct}%` }} aria-hidden />
+        </div>
+        <div className="mt-1.5 flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
+          <span>Mín {min}</span>
+          {stockMax != null && stockMax > 0 && <span>Máx {stockMax}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  // variant "cell" — compacto para la tabla
+  return (
+    <div className="flex w-[112px] max-w-full items-center gap-2" title={`${meta.label} · stock ${stock} (mín ${min}${stockMax ? ` · máx ${stockMax}` : ""})`}>
+      <span className={cn("inline-flex min-w-[2.25rem] justify-center rounded-md px-1.5 py-0.5 text-xs font-black tabular-nums", meta.chip)}>
+        {(state === "out" || state === "critical") && <AlertTriangle className="mr-0.5 h-3 w-3" />}
+        {stock}
+      </span>
+      <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+        <span className={cn("absolute inset-y-0 left-0 rounded-full", meta.bar)} style={{ width: `${pct}%` }} />
+        <span className="absolute inset-y-0 w-px bg-[var(--text-primary)]/35" style={{ left: `${minPct}%` }} aria-hidden />
+      </span>
+    </div>
+  );
+}
+
 // Mejora 6: Rotation badge config
 type RotationLevel = "rápido" | "normal" | "lento" | "muerto";
 function getRotationInfo(salesPerWeek: number, stock: number): { level: RotationLevel; label: string; className: string } | null {
@@ -274,6 +363,24 @@ export default function InventoryTab() {
     return () => clearInterval(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [catFilter, setCatFilter] = useState("todos");
+  // Categorías que el comerciante creó en Promociones → Categorías
+  // (settings.categoryOrder). El form de productos las usa en vez del
+  // catálogo demo estático. Vacío para negocios sin categorías propias.
+  const [savedCategories, setSavedCategories] = useState<{ id: string; label: string }[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (cancelled || !s) return;
+        const order = (s.categoryOrder ?? []) as Array<{ id: string; label: string; visible?: boolean }>;
+        setSavedCategories(order.filter((c) => c.visible !== false).map((c) => ({ id: c.id, label: c.label })));
+      })
+      .catch(() => {
+        /* settings opcional — si falla, se usan las categorías por defecto del catálogo */
+      });
+    return () => { cancelled = true; };
+  }, []);
   const [lowOnly, setLowOnly] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
   // Mejora 8R2: Filtro sin imagen
@@ -299,7 +406,7 @@ export default function InventoryTab() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerCat, setPickerCat] = useState("todos");
-  const EMPTY_ADD = { name: "", category: "abarrotes", price: "", unit: "und", badge: "", image: "", barcode: "", costPrice: "", stock: "", stockMin: "", stockMax: "", expiryDate: "", isVariant: false, variantOf: "", variantAttr: "" };
+  const EMPTY_ADD = { name: "", category: "", price: "", unit: "und", badge: "", image: "", barcode: "", costPrice: "", stock: "", stockMin: "", stockMax: "", expiryDate: "", isVariant: false, variantOf: "", variantAttr: "", type: "product", description: "", brand: "", sku: "", taxType: "gravado", weightKg: "", dimensions: "", durationLabel: "", pricingUnit: "fijo", notes: "" };
   const [addForm, setAddForm] = useState(EMPTY_ADD);
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
@@ -527,6 +634,9 @@ export default function InventoryTab() {
       stock: p.stock, stockMin: p.stockMin, stockMax: p.stockMax,
       expiryDate: (p as DbProduct & { expiryDate?: string }).expiryDate ?? "",
       isVariant: false, variantOf: "", variantAttr: "",
+      type: p.type ?? "product", brand: p.brand ?? "", sku: p.sku ?? "",
+      taxType: p.taxType ?? "gravado", weightKg: p.weightKg, dimensions: p.dimensions ?? "",
+      durationLabel: p.durationLabel ?? "", pricingUnit: p.pricingUnit ?? "fijo", notes: p.notes ?? "",
     });
   };
   const closeEditModal = () => { setEditModalProduct(null); setEditForm({}); setImgInfo(null); setImgError(null); };
@@ -544,6 +654,9 @@ export default function InventoryTab() {
         "name", "category", "price", "costPrice", "image", "unit",
         "badge", "barcode", "stock", "stockMin", "stockMax", "active",
         "expiryDate", "description",
+        // ── Producto/servicio completo ──
+        "type", "brand", "sku", "taxType", "weightKg", "dimensions",
+        "durationLabel", "pricingUnit", "notes",
       ] as const;
       for (const k of allowedKeys) {
         const v = (editForm as Record<string, unknown>)[k];
@@ -664,6 +777,8 @@ export default function InventoryTab() {
     // BUG-FIX (audit 2026-05-05): guard contra doble-submit + chequeo res.ok
     if (saving) return;
     if (!addForm.name || !addForm.price) return;
+    // Guard anti-categoría-vacía (las categorías cargan async).
+    const category = addForm.category || formCategories[0]?.id || "general";
     setSaving(true);
     try {
       const res = await fetch("/api/products", {
@@ -671,6 +786,7 @@ export default function InventoryTab() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           ...addForm,
+          category,
           price: Number(addForm.price),
           costPrice: addForm.costPrice ? Number(addForm.costPrice) : undefined,
           badge: addForm.badge || undefined,
@@ -679,6 +795,17 @@ export default function InventoryTab() {
           stockMin: addForm.stockMin !== "" ? Number(addForm.stockMin) : undefined,
           stockMax: addForm.stockMax !== "" ? Number(addForm.stockMax) : undefined,
           expiryDate: addForm.expiryDate || undefined,
+          // ── Producto/servicio completo ──
+          type: addForm.type || "product",
+          description: addForm.description || undefined,
+          brand: addForm.brand || undefined,
+          sku: addForm.sku || undefined,
+          taxType: addForm.taxType || undefined,
+          weightKg: addForm.weightKg !== "" ? Number(addForm.weightKg) : undefined,
+          dimensions: addForm.dimensions || undefined,
+          durationLabel: addForm.durationLabel || undefined,
+          pricingUnit: addForm.pricingUnit || undefined,
+          notes: addForm.notes || undefined,
         }),
       });
       if (!res.ok) {
@@ -1006,7 +1133,10 @@ export default function InventoryTab() {
       total++;
     });
     const humanize = (id: string) => {
-      // Busca primero en el catálogo conocido (data/products.ts) por label oficial
+      // 1) Categoría creada por el comerciante (settings.categoryOrder)
+      const saved = savedCategories.find(sc => sc.id === id);
+      if (saved) return saved.label;
+      // 2) Catálogo conocido (data/products.ts) por label oficial
       const known = realCategories.find(rc => rc.id === id);
       if (known) return known.label;
       // Fallback: id-con-guiones → "Id Con Guiones"
@@ -1023,7 +1153,39 @@ export default function InventoryTab() {
       { id: "todos", label: "Todos", count: total },
       ...real,
     ];
-  }, [products, showInactive]);
+  }, [products, showInactive, savedCategories]);
+
+  // Categorías ASIGNABLES en el form de productos: las que el comerciante creó
+  // (categoryOrder) + las que ya usan sus productos. NADA del catálogo demo
+  // estático. Si no tiene ninguna → "General" para no bloquear el alta.
+  const formCategories = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of savedCategories) map.set(c.id, c.label);
+    for (const c of dynamicCategories) {
+      if (c.id !== "todos" && !map.has(c.id)) map.set(c.id, c.label);
+    }
+    const arr = Array.from(map, ([id, label]) => ({ id, label }));
+    return arr.length ? arr : [{ id: "general", label: "General" }];
+  }, [savedCategories, dynamicCategories]);
+
+  // Label legible de una categoría: 1) la del comerciante (categoryOrder),
+  // 2) catálogo estático conocido, 3) id humanizado.
+  const catLabelOf = useCallback((id: string): string => {
+    if (!id) return "Sin categoría";
+    const saved = savedCategories.find(c => c.id === id);
+    if (saved) return saved.label;
+    const known = realCategories.find(c => c.id === id);
+    if (known) return known.label;
+    return id.split(/[-_\s]+/).filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ") || id;
+  }, [savedCategories]);
+
+  // Default de categoría al abrir el alta: primera categoría real del comercio.
+  // EMPTY_ADD nace con category="" (las categorías cargan async).
+  useEffect(() => {
+    if (showAdd && (!addForm.category || !formCategories.some(c => c.id === addForm.category))) {
+      setAddForm(f => ({ ...f, category: formCategories[0]?.id ?? "general" }));
+    }
+  }, [showAdd, formCategories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Si el filtro activo ya no existe en el inventario (p.ej. eliminaron
   // todos los productos de esa categoría), reseteamos a "todos".
@@ -1625,6 +1787,9 @@ export default function InventoryTab() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm leading-tight">{p.name}</p>
+                        {p.type === "service" && (
+                          <span className="rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--accent)]">Servicio</span>
+                        )}
                         {topRentables.includes(p.id) && (
                           <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
                         )}
@@ -1773,7 +1938,7 @@ export default function InventoryTab() {
                           </div>
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">
-                          {categories.find(c => c.id === p.category)?.label ?? p.category}
+                          {catLabelOf(p.category)}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-primary">S/{Number(p.price).toFixed(2)}</td>
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
@@ -1783,25 +1948,15 @@ export default function InventoryTab() {
                           {p.badge ? <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">{p.badge}</span> : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
-                          {p.stock !== undefined ? (
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
-                                (p.stock ?? 0) === 0 ? "bg-[var(--data-error-500)]" :
-                                lowStock ? "bg-[var(--data-warning-500)]" :
-                                (p.stock ?? 0) > (p.stockMax ?? 999) ? "bg-[var(--accent-soft)]" :
-                                "bg-[var(--accent-soft)]"
-                              )} />
-                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
-                                (p.stock ?? 0) === 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
-                                lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]" :
-                                "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
-                              )}>
-                                {(p.stock ?? 0) === 0 && <AlertTriangle className="h-3 w-3" />}
-                                {lowStock && (p.stock ?? 0) > 0 && <AlertTriangle className="h-3 w-3" />}
-                                {p.stock}
-                              </span>
-                            </div>
-                          ) : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>}
+                          {/* Brandon 2026-06-06: barra visual de nivel de stock
+                              (estado por color + marcador del mínimo) en vez del
+                              número plano. Ver StockLevelBar. */}
+                          <StockLevelBar
+                            stock={p.stock}
+                            stockMin={p.stockMin}
+                            stockMax={p.stockMax}
+                            unit={p.unit}
+                          />
                         </td>
                         {/* Mejora 6R2: Costo promedio ponderado */}
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
@@ -1854,6 +2009,16 @@ export default function InventoryTab() {
                             <button
                               onClick={() => {
                                 setAddForm({
+                                  ...EMPTY_ADD,
+                                  type: p.type ?? "product",
+                                  brand: p.brand ?? "",
+                                  taxType: p.taxType ?? "gravado",
+                                  weightKg: p.weightKg != null ? String(p.weightKg) : "",
+                                  dimensions: p.dimensions ?? "",
+                                  durationLabel: p.durationLabel ?? "",
+                                  pricingUnit: p.pricingUnit ?? "fijo",
+                                  notes: p.notes ?? "",
+                                  description: p.description ?? "",
                                   name: `${p.name} (Copia)`,
                                   category: p.category,
                                   price: String(p.price),
@@ -1952,9 +2117,12 @@ export default function InventoryTab() {
                       ) : items.map(p => (
                         <div key={p.id} className="bg-[var(--surface-raised)] rounded-lg p-2.5  border border-[var(--rule-soft)] dark:border-border cursor-pointer hover:shadow-[var(--shadow-sm)] transition-shadow"
                           onClick={() => { setEditModalProduct(p); }}>
-                          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</p>
+                          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
+                            {p.type === "service" && <span className="mr-1 rounded bg-[var(--accent-soft)] px-1 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--accent)]">Serv</span>}
+                            {p.name}
+                          </p>
                           <div className="flex items-center justify-between mt-1">
-                            <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{p.category}</span>
+                            <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{catLabelOf(p.category)}</span>
                             <span className="text-xs font-bold">{p.stock ?? 0} uds</span>
                           </div>
                         </div>
@@ -2016,7 +2184,7 @@ export default function InventoryTab() {
                   className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none"
                 >
                   <option value="todos">Todos</option>
-                  {realCategories.map(c => (
+                  {formCategories.map(c => (
                     <option key={c.id} value={c.id}>{c.label}</option>
                   ))}
                 </select>
@@ -2071,16 +2239,47 @@ export default function InventoryTab() {
 
       {/* ── Add product modal ── */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
-            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Agregar producto</CardTitle>
-              <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
-                <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+              <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <PackagePlus className="h-6 w-6" strokeWidth={2.1} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Inventario</p>
+                <h2 className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">Agregar al catálogo</h2>
+                <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-snug">Producto físico o servicio — completa los datos para venderlo.</p>
+              </div>
+              <button onClick={() => setShowAdd(false)} aria-label="Cerrar" className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={addProduct} className="p-5 space-y-5">
-              {/* National product DB search */}
+            <form onSubmit={addProduct} className="p-6 space-y-6">
+              {/* Tipo: producto físico vs servicio */}
+              <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
+                {([
+                  ["product", "Producto", "Con stock, código de barras y vencimiento"],
+                  ["service", "Servicio", "Sin stock — duración, notas y precio por unidad/hora"],
+                ] as const).map(([val, label, hint]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setAddForm(f => ({ ...f, type: val }))}
+                    title={hint}
+                    className={cn(
+                      "flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors",
+                      addForm.type === val
+                        ? "bg-[var(--accent)] text-white shadow-sm"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* National product DB search — solo productos físicos */}
+              {addForm.type !== "service" && (
               <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
                 <p className="text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1.5">
                   <Search className="h-3.5 w-3.5" /> Buscar en base nacional de productos
@@ -2123,15 +2322,16 @@ export default function InventoryTab() {
                   </div>
                 )}
               </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Nombre *</label>
-                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Arroz costeño 1kg" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Nombre *</label>
+                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Arroz costeño 1kg" className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Categoría *</label>
-                  <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
-                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  <label className={FIELD_LABEL}>Categoría *</label>
+                  <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
+                    {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                   {/* Sugerencia automática: si el nombre del producto contiene
                       una palabra clave que mapea a otra categoría distinta a
@@ -2143,52 +2343,139 @@ export default function InventoryTab() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Precio de venta (S/) *</label>
-                  <input required type="number" step="0.01" min="0" value={addForm.price} onChange={(e) => setAddForm(f => ({ ...f, price: e.target.value }))} placeholder="5.50" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Precio de venta (S/) *</label>
+                  <input required type="number" step="0.01" min="0" value={addForm.price} onChange={(e) => setAddForm(f => ({ ...f, price: e.target.value }))} placeholder="5.50" className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Precio de costo (S/)</label>
-                  <input type="number" step="0.01" min="0" value={addForm.costPrice} onChange={(e) => setAddForm(f => ({ ...f, costPrice: e.target.value }))} placeholder="3.50" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Precio de costo (S/)</label>
+                  <input type="number" step="0.01" min="0" value={addForm.costPrice} onChange={(e) => setAddForm(f => ({ ...f, costPrice: e.target.value }))} placeholder="3.50" className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Unidad</label>
-                  <input value={addForm.unit} onChange={(e) => setAddForm(f => ({ ...f, unit: e.target.value }))} placeholder="kg, und, bolsa…" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Unidad</label>
+                  <input value={addForm.unit} onChange={(e) => setAddForm(f => ({ ...f, unit: e.target.value }))} placeholder="kg, und, bolsa…" className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Badge</label>
-                  <select value={addForm.badge} onChange={(e) => setAddForm(f => ({ ...f, badge: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
+                  <label className={FIELD_LABEL}>Badge</label>
+                  <select value={addForm.badge} onChange={(e) => setAddForm(f => ({ ...f, badge: e.target.value }))} className={FIELD_INPUT}>
                     <option value="">Sin badge</option>
                     {["Oferta", "Popular", "Fresco", "Premium"].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Stock actual</label>
-                  <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                {/* Stock / vencimiento / código de barras — solo productos físicos */}
+                {addForm.type !== "service" && (<>
+                <div className="sm:col-span-2 mt-1 flex items-center gap-2">
+                  <span className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Inventario y control</span>
+                  <span aria-hidden className="h-px flex-1 bg-[var(--rule-soft)]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1" title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
-                  <input type="number" min="0" value={addForm.stockMin} onChange={(e) => setAddForm(f => ({ ...f, stockMin: e.target.value }))} placeholder="5" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Stock actual</label>
+                  <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Stock máximo</label>
-                  <input type="number" min="0" value={addForm.stockMax} onChange={(e) => setAddForm(f => ({ ...f, stockMax: e.target.value }))} placeholder="100" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL} title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
+                  <input type="number" min="0" value={addForm.stockMin} onChange={(e) => setAddForm(f => ({ ...f, stockMin: e.target.value }))} placeholder="5" className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Fecha de vencimiento</label>
-                  <input type="date" value={addForm.expiryDate} onChange={(e) => setAddForm(f => ({ ...f, expiryDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Stock máximo</label>
+                  <input type="number" min="0" value={addForm.stockMax} onChange={(e) => setAddForm(f => ({ ...f, stockMax: e.target.value }))} placeholder="100" className={FIELD_INPUT} />
+                </div>
+                {/* Preview en vivo del nivel de stock (Brandon 2026-06-06) */}
+                {addForm.stock !== "" && (
+                  <div className="sm:col-span-2">
+                    <StockLevelBar
+                      variant="full"
+                      stock={Number(addForm.stock) || 0}
+                      stockMin={addForm.stockMin !== "" ? Number(addForm.stockMin) : undefined}
+                      stockMax={addForm.stockMax !== "" ? Number(addForm.stockMax) : undefined}
+                      unit={addForm.unit}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={FIELD_LABEL}>Fecha de vencimiento</label>
+                  <input type="date" value={addForm.expiryDate} onChange={(e) => setAddForm(f => ({ ...f, expiryDate: e.target.value }))} className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Código de barras</label>
+                  <label className={FIELD_LABEL}>Código de barras</label>
                   <div className="flex flex-wrap gap-2">
-                    <input value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
+                    <input value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className={cn(FIELD_INPUT, "flex-1 font-mono")} />
                     <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors">
                       <ScanBarcode className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
+                {/* Producto completo */}
+                <div className="sm:col-span-2 mt-1 flex items-center gap-2">
+                  <span className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Detalles del producto</span>
+                  <span aria-hidden className="h-px flex-1 bg-[var(--rule-soft)]" />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Marca / fabricante</label>
+                  <input value={addForm.brand} onChange={(e) => setAddForm(f => ({ ...f, brand: e.target.value }))} placeholder="Ej: Costeño, Gloria" className={FIELD_INPUT} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL} title="Código interno del negocio, distinto del código de barras">SKU / código interno</label>
+                  <input value={addForm.sku} onChange={(e) => setAddForm(f => ({ ...f, sku: e.target.value }))} placeholder="Ej: ABR-001" className={cn(FIELD_INPUT, "font-mono")} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Peso (kg)</label>
+                  <input type="number" step="0.001" min="0" value={addForm.weightKg} onChange={(e) => setAddForm(f => ({ ...f, weightKg: e.target.value }))} placeholder="0.5" className={FIELD_INPUT} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Medidas</label>
+                  <input value={addForm.dimensions} onChange={(e) => setAddForm(f => ({ ...f, dimensions: e.target.value }))} placeholder="30x20x10 cm o 2 m³" className={FIELD_INPUT} />
+                </div>
+                </>)}
+
+                {/* Servicio — campos propios */}
+                {addForm.type === "service" && (<>
+                <div className="sm:col-span-2 mt-1 flex items-center gap-2">
+                  <span className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Detalles del servicio</span>
+                  <span aria-hidden className="h-px flex-1 bg-[var(--rule-soft)]" />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Duración estimada</label>
+                  <input value={addForm.durationLabel} onChange={(e) => setAddForm(f => ({ ...f, durationLabel: e.target.value }))} placeholder="Ej: 2 horas, 1 día, 3 días" className={FIELD_INPUT} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Cobro por</label>
+                  <select value={addForm.pricingUnit} onChange={(e) => setAddForm(f => ({ ...f, pricingUnit: e.target.value }))} className={FIELD_INPUT}>
+                    <option value="fijo">Precio fijo</option>
+                    <option value="hora">Por hora</option>
+                    <option value="m3">Por m³</option>
+                    <option value="unidad">Por unidad</option>
+                    <option value="dia">Por día</option>
+                  </select>
+                </div>
+                </>)}
+
+                {/* Afecto a IGV — productos y servicios */}
+                <div>
+                  <label className={FIELD_LABEL} title="Determina el IGV en la boleta/factura">Afecto a IGV</label>
+                  <select value={addForm.taxType} onChange={(e) => setAddForm(f => ({ ...f, taxType: e.target.value }))} className={FIELD_INPUT}>
+                    <option value="gravado">Gravado (IGV 18%)</option>
+                    <option value="exonerado">Exonerado</option>
+                    <option value="inafecto">Inafecto</option>
+                  </select>
+                </div>
+
+                {/* Descripción — ambos */}
+                <div className="sm:col-span-2">
+                  <label className={FIELD_LABEL}>Descripción</label>
+                  <textarea value={addForm.description} onChange={(e) => setAddForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder={addForm.type === "service" ? "Qué incluye el servicio…" : "Detalle del producto…"} className={cn(FIELD_INPUT, "resize-none")} />
+                </div>
+
+                {/* Notas / requisitos — solo servicios */}
+                {addForm.type === "service" && (
+                <div className="sm:col-span-2">
+                  <label className={FIELD_LABEL}>Notas / requisitos para el cliente</label>
+                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Ej: el cliente debe traer la madera; trabajamos de lunes a sábado…" className={cn(FIELD_INPUT, "resize-none")} />
+                </div>
+                )}
               </div>
 
-              {/* IMPROVEMENT 3: Variant Management */}
+              {/* IMPROVEMENT 3: Variant Management — solo productos físicos */}
+              {addForm.type !== "service" && (
               <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
@@ -2213,7 +2500,7 @@ export default function InventoryTab() {
                       <select
                         value={addForm.variantOf}
                         onChange={(e) => setAddForm(f => ({ ...f, variantOf: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
+                        className={FIELD_INPUT}
                       >
                         <option value="">Ninguno (es producto padre)</option>
                         {products.filter(p => p.active).map(p => (
@@ -2227,16 +2514,17 @@ export default function InventoryTab() {
                         value={addForm.variantAttr}
                         onChange={(e) => setAddForm(f => ({ ...f, variantAttr: e.target.value }))}
                         placeholder="Ej: 500ml, 1L, pack 6 unid"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
+                        className={FIELD_INPUT}
                       />
                     </div>
                   </div>
                 )}
               </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div className="sm:col-span-2 space-y-3">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Imagen del producto</label>
+                  <label className={FIELD_LABEL}>Imagen del producto</label>
                   <ImageUploadHints />
                   {(() => {
                     const validation = validateImageUrl(addForm.image);
@@ -2271,7 +2559,7 @@ export default function InventoryTab() {
                         value={addForm.image}
                         onChange={(e) => setAddForm(f => ({ ...f, image: e.target.value }))}
                         placeholder="o pegar URL de imagen (PNG con fondo transparente)"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm"
+                        className={FIELD_INPUT}
                       />
                       <input
                         ref={addImgRef}
@@ -2317,10 +2605,16 @@ export default function InventoryTab() {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3 pt-1">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
-                  {saving ? "Guardando…" : "Agregar producto"}
+              <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center gap-3 border-t-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-4">
+                <button type="button" onClick={() => setShowAdd(false)} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-extrabold text-white shadow-[var(--shadow-lg)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-xl)] active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
+                  style={{ backgroundImage: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)" }}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
+                  {saving ? "Guardando…" : (addForm.type === "service" ? "Agregar servicio" : "Agregar producto")}
                 </button>
               </div>
             </form>
@@ -2330,24 +2624,51 @@ export default function InventoryTab() {
 
       {/* ── Edit product modal ── */}
       {editModalProduct && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && closeEditModal()}>
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-2xl sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
-            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate pr-2">Editar: {editModalProduct.name}</CardTitle>
-              <button onClick={closeEditModal} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors shrink-0">
-                <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && closeEditModal()}>
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+              <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <Pencil className="h-5 w-5" strokeWidth={2.1} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Editar {(editForm.type ?? "product") === "service" ? "servicio" : "producto"}</p>
+                <h2 className="text-xl font-extrabold text-[var(--text-primary)] leading-tight truncate">{editModalProduct.name}</h2>
+              </div>
+              <button onClick={closeEditModal} aria-label="Cerrar" className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="p-5 space-y-5">
+            <div className="p-6 space-y-6">
+              {/* Tipo: producto físico vs servicio */}
+              <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
+                {([
+                  ["product", "Producto"],
+                  ["service", "Servicio"],
+                ] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setEditForm(f => ({ ...f, type: val }))}
+                    className={cn(
+                      "flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors",
+                      (editForm.type ?? "product") === val
+                        ? "bg-[var(--accent)] text-white shadow-sm"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Nombre *</label>
-                  <input required value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Nombre *</label>
+                  <input required value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Categoría</label>
-                  <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
-                    {realCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  <label className={FIELD_LABEL}>Categoría</label>
+                  <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
+                    {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                   {/* Sugerencia heurística para edición — mismo flujo que en
                       el form de creación. */}
@@ -2358,43 +2679,101 @@ export default function InventoryTab() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Precio de venta (S/)</label>
-                  <input type="number" step="0.01" min="0" value={editForm.price ?? ""} onChange={(e) => setEditForm(f => ({ ...f, price: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Precio de venta (S/)</label>
+                  <input type="number" step="0.01" min="0" value={editForm.price ?? ""} onChange={(e) => setEditForm(f => ({ ...f, price: Number(e.target.value) }))} className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Precio de costo (S/)</label>
-                  <input type="number" step="0.01" min="0" value={editForm.costPrice ?? ""} onChange={(e) => setEditForm(f => ({ ...f, costPrice: Number(e.target.value) || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Precio de costo (S/)</label>
+                  <input type="number" step="0.01" min="0" value={editForm.costPrice ?? ""} onChange={(e) => setEditForm(f => ({ ...f, costPrice: Number(e.target.value) || undefined }))} className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Unidad</label>
-                  <input value={editForm.unit ?? ""} onChange={(e) => setEditForm(f => ({ ...f, unit: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Unidad</label>
+                  <input value={editForm.unit ?? ""} onChange={(e) => setEditForm(f => ({ ...f, unit: e.target.value }))} className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Badge</label>
-                  <select value={editForm.badge ?? ""} onChange={(e) => setEditForm(f => ({ ...f, badge: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
+                  <label className={FIELD_LABEL}>Badge</label>
+                  <select value={editForm.badge ?? ""} onChange={(e) => setEditForm(f => ({ ...f, badge: e.target.value || undefined }))} className={FIELD_INPUT}>
                     <option value="">Sin badge</option>
                     {["Oferta", "Popular", "Fresco", "Premium"].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
+                {editForm.type !== "service" && (<>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Stock actual</label>
-                  <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Stock actual</label>
+                  <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1" title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
-                  <input type="number" min="0" value={editForm.stockMin ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMin: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL} title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
+                  <input type="number" min="0" value={editForm.stockMin ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMin: e.target.value !== "" ? Number(e.target.value) : undefined }))} className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Stock máximo</label>
-                  <input type="number" min="0" value={editForm.stockMax ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMax: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Stock máximo</label>
+                  <input type="number" min="0" value={editForm.stockMax ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMax: e.target.value !== "" ? Number(e.target.value) : undefined }))} className={FIELD_INPUT} />
+                </div>
+                {/* Preview en vivo del nivel de stock (Brandon 2026-06-06) */}
+                {editForm.stock !== undefined && (
+                  <div className="sm:col-span-2">
+                    <StockLevelBar
+                      variant="full"
+                      stock={editForm.stock}
+                      stockMin={editForm.stockMin}
+                      stockMax={editForm.stockMax}
+                      unit={editForm.unit}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={FIELD_LABEL}>Fecha de vencimiento</label>
+                  <input type="date" value={editForm.expiryDate ?? ""} onChange={(e) => setEditForm(f => ({ ...f, expiryDate: e.target.value || undefined }))} className={FIELD_INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Fecha de vencimiento</label>
-                  <input type="date" value={editForm.expiryDate ?? ""} onChange={(e) => setEditForm(f => ({ ...f, expiryDate: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                  <label className={FIELD_LABEL}>Código de barras</label>
+                  <input value={editForm.barcode ?? ""} onChange={(e) => setEditForm(f => ({ ...f, barcode: e.target.value || undefined }))} className={cn(FIELD_INPUT, "font-mono")} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Código de barras</label>
-                  <input value={editForm.barcode ?? ""} onChange={(e) => setEditForm(f => ({ ...f, barcode: e.target.value || undefined }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
+                  <label className={FIELD_LABEL}>Marca / fabricante</label>
+                  <input value={editForm.brand ?? ""} onChange={(e) => setEditForm(f => ({ ...f, brand: e.target.value }))} placeholder="Ej: Costeño, Gloria" className={FIELD_INPUT} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>SKU / código interno</label>
+                  <input value={editForm.sku ?? ""} onChange={(e) => setEditForm(f => ({ ...f, sku: e.target.value }))} placeholder="Ej: ABR-001" className={cn(FIELD_INPUT, "font-mono")} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Peso (kg)</label>
+                  <input type="number" step="0.001" min="0" value={editForm.weightKg ?? ""} onChange={(e) => setEditForm(f => ({ ...f, weightKg: e.target.value !== "" ? Number(e.target.value) : undefined }))} placeholder="0.5" className={FIELD_INPUT} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Medidas</label>
+                  <input value={editForm.dimensions ?? ""} onChange={(e) => setEditForm(f => ({ ...f, dimensions: e.target.value }))} placeholder="30x20x10 cm o 2 m³" className={FIELD_INPUT} />
+                </div>
+                </>)}
+                {editForm.type === "service" && (<>
+                <div>
+                  <label className={FIELD_LABEL}>Duración estimada</label>
+                  <input value={editForm.durationLabel ?? ""} onChange={(e) => setEditForm(f => ({ ...f, durationLabel: e.target.value }))} placeholder="Ej: 2 horas, 1 día" className={FIELD_INPUT} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Cobro por</label>
+                  <select value={editForm.pricingUnit ?? "fijo"} onChange={(e) => setEditForm(f => ({ ...f, pricingUnit: e.target.value }))} className={FIELD_INPUT}>
+                    <option value="fijo">Precio fijo</option>
+                    <option value="hora">Por hora</option>
+                    <option value="m3">Por m³</option>
+                    <option value="unidad">Por unidad</option>
+                    <option value="dia">Por día</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={FIELD_LABEL}>Notas / requisitos para el cliente</label>
+                  <textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD_INPUT, "resize-none")} />
+                </div>
+                </>)}
+                <div>
+                  <label className={FIELD_LABEL}>Afecto a IGV</label>
+                  <select value={editForm.taxType ?? "gravado"} onChange={(e) => setEditForm(f => ({ ...f, taxType: e.target.value }))} className={FIELD_INPUT}>
+                    <option value="gravado">Gravado (IGV 18%)</option>
+                    <option value="exonerado">Exonerado</option>
+                    <option value="inafecto">Inafecto</option>
+                  </select>
                 </div>
                 <div className="sm:col-span-2">
                   <div className="flex items-center justify-between mb-1">
@@ -2419,7 +2798,7 @@ export default function InventoryTab() {
                     value={editForm.description ?? ""}
                     onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value || undefined }))}
                     placeholder="Ej: Aceite de girasol puro, ideal para frituras ligeras. Botella de 1 litro."
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm resize-none"
+                    className={cn(FIELD_INPUT, "resize-none")}
                   />
                   {aiDescError && (
                     <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] mt-1 flex items-center gap-1">
@@ -2472,7 +2851,7 @@ export default function InventoryTab() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Imagen del producto</label>
+                  <label className={FIELD_LABEL}>Imagen del producto</label>
                   {/* Drag-and-drop zone — arrastrá o click para subir */}
                   <div
                     onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("ring-2", "ring-primary", "bg-primary/5"); }}
@@ -2541,7 +2920,7 @@ export default function InventoryTab() {
                         value={editForm.image ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, image: e.target.value }))}
                         placeholder="o pegar URL de imagen"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm"
+                        className={FIELD_INPUT}
                       />
                       <input
                         ref={editImgRef}
@@ -2608,9 +2987,16 @@ export default function InventoryTab() {
                   <span className={cn("inline-block h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow transition-transform", editForm.active ? "translate-x-5" : "translate-x-0")} />
                 </button>
               </div>
-              <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={closeEditModal} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+              <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center gap-3 border-t-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-4">
+                <button type="button" onClick={closeEditModal} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+                <button
+                  type="button"
+                  onClick={saveEdit}
+                  disabled={saving}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-extrabold text-white shadow-[var(--shadow-lg)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-xl)] active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
+                  style={{ backgroundImage: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)" }}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" strokeWidth={2.5} />}
                   {saving ? "Guardando…" : "Guardar cambios"}
                 </button>
               </div>
@@ -3028,6 +3414,16 @@ export default function InventoryTab() {
           onView={(p) => { setKardexProduct({ id: p.id, name: p.name }); setCtxMenu(null); }}
           onDuplicate={(p) => {
             setAddForm({
+              ...EMPTY_ADD,
+              type: p.type ?? "product",
+              brand: p.brand ?? "",
+              taxType: p.taxType ?? "gravado",
+              weightKg: p.weightKg != null ? String(p.weightKg) : "",
+              dimensions: p.dimensions ?? "",
+              durationLabel: p.durationLabel ?? "",
+              pricingUnit: p.pricingUnit ?? "fijo",
+              notes: p.notes ?? "",
+              description: p.description ?? "",
               name: `${p.name} (Copia)`,
               category: p.category,
               price: String(p.price),
