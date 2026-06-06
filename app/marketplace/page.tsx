@@ -98,7 +98,7 @@ export async function generateMetadata(props: {
       card: "summary_large_image",
       title,
       description,
-      images: ["/api/og"],
+      images: [{ url: "/api/og", alt: title }],
     },
   };
 }

@@ -6,6 +6,39 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+
+/** Normaliza phone PE: "51XXXXXXXXX" o "9XXXXXXXX" → "9XXXXXXXX". */
+function normalizePhone(phone: string): string {
+  const cleaned = String(phone ?? "").replace(/\D/g, "");
+  if (cleaned.startsWith("51") && cleaned.length === 11) return cleaned.slice(2);
+  return cleaned;
+}
+
+/**
+ * Guarda anti-suplantación (Brandon 2026-06-06): si el request trae una
+ * customer-session válida, el customerPhone del body DEBE coincidir con el
+ * de la sesión firmada (JWT). Sin sesión → se permite (flujo legacy del
+ * storefront sin login, detrás del feature flag). Cierra el vector P2 de
+ * abrir/escribir hilos a nombre de cualquier teléfono cuando hay login.
+ * Devuelve null si OK, o un NextResponse 403 si hay mismatch.
+ */
+async function enforceSessionPhone(
+  req: NextRequest,
+  bodyPhone: string,
+): Promise<NextResponse | null> {
+  const token = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+  if (!token) return null; // sin sesión → flujo legacy permitido
+  const session = await getCustomerPayload(token);
+  if (!session?.customerId) return null;
+  if (normalizePhone(session.customerId) !== normalizePhone(bodyPhone)) {
+    return NextResponse.json(
+      { error: "El teléfono no coincide con tu sesión" },
+      { status: 403 },
+    );
+  }
+  return null;
+}
 
 /**
  * Endpoints PÚBLICOS para que el comprador (buyer) envíe/reciba mensajes
@@ -75,6 +108,13 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Anti-suplantación: si hay sesión, el phone del body debe ser el suyo.
+  const bodyPhone = (body as { customerPhone?: unknown })?.customerPhone;
+  if (typeof bodyPhone === "string") {
+    const denied = await enforceSessionPhone(req, bodyPhone);
+    if (denied) return denied;
   }
 
   if (action === "open") {

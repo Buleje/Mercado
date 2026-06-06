@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import TiendasClient from "../TiendasClient";
 import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -88,11 +89,11 @@ export default async function TiendasZonaPage(props: PageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(localBusinessLd) }}
       />
       <TiendasClient initialZone={z.id as ZoneSlug} />
     </>

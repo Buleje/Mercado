@@ -5,6 +5,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import TiendasClient from "../../TiendasClient";
 import { CATEGORIAS } from "@/lib/constants/marketplace-categories";
 import { BRAND_GEO } from "@/lib/geo";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -102,8 +103,8 @@ export default async function TiendasCategoriaPage(props: PageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(collectionLd) }} />
 
       {/* ── Header SEO server-rendered: H1 único + intro + cross-links ──
            Contenido único por categoría (Google lo lee) + enlaces internos a
