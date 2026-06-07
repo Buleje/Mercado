@@ -15,9 +15,6 @@ import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
-import TiendaSections from "@/components/TiendaSections";
-import TiendaHero from "@/components/store/TiendaHero";
-import TrustBar from "@/components/store/TrustBar";
 import Breadcrumbs from "@/components/store/Breadcrumbs";
 
 /**
@@ -158,13 +155,12 @@ async function getTiendaSectionConfig(): Promise<{
 }
 
 export default async function TiendaPage() {
-  const { visible, order } = await getTiendaSectionConfig();
+  const { visible } = await getTiendaSectionConfig();
   const show = (key: TiendaSectionKey) => visible.has(key);
 
   // Server-side product prefetch — #42: uses cached function for 5min revalidation
   let initialProducts: Array<Record<string, unknown>> = [];
   let tenantSlug = "main";
-  let storeName = "Tienda";
   let isTenantStoreRoute = false;
   try {
     // resolveStoreContext + getCachedProducts comparten cache per-request
@@ -172,7 +168,6 @@ export default async function TiendaPage() {
     const ctx = await resolveStoreContext();
     tenantSlug = ctx.tenantId;
     isTenantStoreRoute = ctx.isTenant;
-    storeName = ctx.name;
     initialProducts = await getCachedProducts(tenantSlug) as unknown as Array<Record<string, unknown>>;
   } catch {
     // Fallback to empty — client will retry via useCachedData
@@ -227,36 +222,10 @@ export default async function TiendaPage() {
         ]}
       />
       <main id="main-content">
-        {/* Hero 2-column con ilustracion autentica Pucallpa (DoniaElena) +
-            CTAs + identidad local. `storeName` se obtiene dinámicamente
-            de settings.businessName para evitar hardcodeo del marketplace. */}
-        <TiendaHero
-          slug={tenantSlug}
-          storeName={storeName}
-          productCount={initialProducts.length}
-        />
-
-        {/* 4 chips de confianza editorial (25 min, pago en casa, fresco, whatsapp). */}
-        <TrustBar />
-
-        {/* Secciones dinámicas orquestadas desde admin "Mi Tienda Personal".
-            Reglas para la tienda pública:
-              - `showEmptyPlaceholders=false`: las secciones que no tienen
-                productos asignados se OCULTAN (no muestran placeholder).
-                Las siguientes con contenido toman su lugar visualmente.
-              - `strictAdminOnly=true`: ninguna sección pickea productos al
-                azar del catálogo si el admin no asignó nada.
-            Esto asegura que la página individual sea exactamente la
-            configurada en el panel admin → Mi Tienda Personal → Secciones. */}
-        <TiendaSections
-          serverProducts={initialProducts as any}
-          visibleSections={visible}
-          sectionOrder={order}
-          showEmptyPlaceholders={false}
-          strictAdminOnly={true}
-        />
-
-        {/* Always visible — main product catalog */}
+        {/* Brandon 2026-06-07: la tienda individual muestra SOLO el catálogo.
+            Quitados TiendaHero ("Tu bodega en {ciudad}"), TrustBar ("¿Por qué
+            comprarme?") y TiendaSections (franja "Ofertas que no te podés perder")
+            → página limpia, sin marketing del marketplace. */}
         <Suspense fallback={<CatalogLoadingSkeleton />}>
           <ProductCatalog initialProducts={initialProducts as any} />
         </Suspense>

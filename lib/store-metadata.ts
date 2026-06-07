@@ -34,7 +34,13 @@ export const resolveStoreContext = cache(async (): Promise<{ name: string; tenan
   try {
     const hdrs = await headers();
     const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    const isTenant = hdrs.get("x-tenant-store-route") === "1";
+    // "Tienda individual" del comerciante: o bien una ruta /t/<slug>/* marcada
+    // por el middleware (x-tenant-store-route), o bien un subdominio/customDomain
+    // de tenant (x-tenant-id ≠ "main"). El dominio principal = "main" = marketplace.
+    // Brandon 2026-06-07: el subdominio NO setea x-tenant-store-route, así que
+    // antes la tienda por subdominio caía en el chrome del marketplace.
+    const isTenant =
+      hdrs.get("x-tenant-store-route") === "1" || tenantId !== "main";
     const settings = await getCachedSettings(tenantId);
     const themeName = (settings?.storeTheme as Record<string, unknown> | undefined)?.["storeName"];
     const name =

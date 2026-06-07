@@ -39,7 +39,11 @@ import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
 import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
 import ConditionalShoppingChrome from "@/components/marketplace/ConditionalShoppingChrome";
 import MarketplaceSideRailShell from "@/components/marketplace/MarketplaceSideRailShell";
+// Chrome propio de la TIENDA INDIVIDUAL (aislado del marketplace). Brandon 2026-06-07.
+import StorefrontNavbar from "@/components/store/StorefrontNavbar";
+import StorefrontFooter from "@/components/store/StorefrontFooter";
 import { SettingsDB } from "@/lib/db/settings.db";
+import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 import { tenantExists } from "@/lib/tenant-check";
 import { headers } from "next/headers";
 import {
@@ -133,20 +137,21 @@ async function StoreLayoutContent({
     if (!exists) notFound();
   }
 
-  // Check maintenance mode para el tenant activo. Usamos getCachedSettings
-  // para deduplar la lectura con generateMetadata + tienda/page.tsx — todos
-  // comparten la misma promesa per-request via React.cache().
-  let maintenanceMode = false;
-  let maintenanceMessage: string | undefined;
-  try {
-    const { getCachedSettings } = await import("@/lib/store-metadata");
-    const settings = await getCachedSettings(tenantId);
-    maintenanceMode = !!settings?.maintenanceMode;
-    maintenanceMessage = settings?.maintenanceMessage;
-  } catch {
-    /* continue normally */
+  // Settings del tenant (cacheado per-request, compartido con metadata/páginas).
+  const settings = await getCachedSettings(tenantId).catch(() => null);
+  if (settings?.maintenanceMode) {
+    return <MaintenancePage message={settings.maintenanceMessage} />;
   }
-  if (maintenanceMode) return <MaintenancePage message={maintenanceMessage} />;
+
+  // ¿Tienda INDIVIDUAL del comerciante? (subdominio/customDomain o /t/<slug>).
+  // resolveStoreContext().isTenant = (x-tenant-store-route===1) || (tenantId≠main).
+  // Si lo es, montamos chrome propio (StorefrontNavbar/Footer/BottomNav) AISLADO
+  // del marketplace. Si no, el chrome del marketplace queda intacto. Brandon 2026-06-07.
+  const ctx = await resolveStoreContext();
+  const isTenant = ctx.isTenant;
+  const storeName = ctx.name;
+  const storeLogo =
+    (settings as { logoUrl?: string | null } | null)?.logoUrl ?? null;
 
   return (
     <StoreProviders tenantSlug={tenantId}>
@@ -158,48 +163,62 @@ async function StoreLayoutContent({
             /negocios tengan la misma UX que /tiendas. */}
         <QuickAddProvider>
           <AddedToCartDrawerProvider>
-            {/* ── Chrome unificado (Brandon 2026-05-20 v5) ──
-                Mismos navbar/bottomnav/footer que /tiendas y /marketplace
-                para evitar el "3 navs distintos = cliente confundido"
-                que reportó el usuario. ConditionalPromoBar y
-                ConditionalSecondaryNav internamente deciden si renderizar
-                según la ruta (no muestran en checkout, etc). */}
-            <ConditionalPromoBar />
-            <Suspense fallback={null}>
-              <MarketplaceNavbar />
-            </Suspense>
-            <Suspense fallback={null}>
-              <ConditionalSecondaryNav />
-            </Suspense>
-            {/* Rail de navegación lateral (estilo YouTube) — en la superficie
-                marketplace queda AL LADO del contenido; passthrough en el resto
-                de rutas. Brandon 2026-06-07. */}
-            <MarketplaceSideRailShell>{children}</MarketplaceSideRailShell>
-            <Footer />
-            <Suspense fallback={null}>
-              <QuickAddDrawer />
-            </Suspense>
-            {/* BottomNav gateado (Brandon 2026-06-07): se oculta en los flujos
-                de inscripción del marketplace (/marketplace/repartidor|aplicar|
-                onboarding|vender) — antes lo hacía el layout de marketplace.
-                En home y resto de (store) se muestra normal. */}
-            <ConditionalShoppingChrome>
-              <BottomNav />
-            </ConditionalShoppingChrome>
-            <NavModeToast />
-            {/* Widgets legacy de single-tenant — mantenidos por compat con
-                rutas de tienda específica (/cuenta, /mis-pedidos, etc). */}
-            <StoreClientShell />
-            <StoreFloatingWidgets />
-            {/* Widgets del marketplace (compare, dock, recently-viewed, tour) —
-                se auto-gatean a /marketplace + /tiendas (null en home). */}
-            <MarketplaceFloatingWidgets />
-            <QuickAddModal />
-            {/* Modal de éxito post-pedido — se mantiene tras navegaciones.
-                Renderiza null hasta que LastOrderProvider tenga un pedido. */}
-            <Suspense fallback={null}>
-              <OrderSuccessModal />
-            </Suspense>
+            {isTenant ? (
+              /* ── Chrome AISLADO de la TIENDA INDIVIDUAL (Brandon 2026-06-07) ──
+                  Sin navbar/sub-nav/footer/bottom-nav del marketplace ni sus
+                  floating widgets. Solo el mundo de la tienda. El carrito y los
+                  modales de pedido se mantienen (mismo flujo de checkout). */
+              <>
+                <StorefrontNavbar name={storeName} logo={storeLogo} />
+                {children}
+                <StorefrontFooter name={storeName} />
+                <Suspense fallback={null}>
+                  <QuickAddDrawer />
+                </Suspense>
+                {/* El bottom-nav mobile lo aporta el MobileBottomNav legacy de
+                    las páginas single-tenant (TiendaClientShell etc.), que usa el
+                    cart legacy correcto. No montamos uno extra acá para no duplicar. */}
+                <StoreClientShell />
+                <StoreFloatingWidgets />
+                <QuickAddModal />
+                <Suspense fallback={null}>
+                  <OrderSuccessModal />
+                </Suspense>
+              </>
+            ) : (
+              /* ── Chrome unificado del MARKETPLACE (Brandon 2026-05-20 v5) ──
+                  Mismos navbar/bottomnav/footer que /tiendas y /marketplace. */
+              <>
+                <ConditionalPromoBar />
+                <Suspense fallback={null}>
+                  <MarketplaceNavbar />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <ConditionalSecondaryNav />
+                </Suspense>
+                {/* Rail de navegación lateral (estilo YouTube) — al lado del
+                    contenido en marketplace; passthrough en el resto. */}
+                <MarketplaceSideRailShell>{children}</MarketplaceSideRailShell>
+                <Footer />
+                <Suspense fallback={null}>
+                  <QuickAddDrawer />
+                </Suspense>
+                {/* BottomNav gateado: oculto en flujos de inscripción del marketplace. */}
+                <ConditionalShoppingChrome>
+                  <BottomNav />
+                </ConditionalShoppingChrome>
+                <NavModeToast />
+                <StoreClientShell />
+                <StoreFloatingWidgets />
+                {/* Widgets del marketplace (compare, dock, recently-viewed). */}
+                <MarketplaceFloatingWidgets />
+                <QuickAddModal />
+                {/* Modal de éxito post-pedido (null hasta que haya pedido). */}
+                <Suspense fallback={null}>
+                  <OrderSuccessModal />
+                </Suspense>
+              </>
+            )}
           </AddedToCartDrawerProvider>
         </QuickAddProvider>
       </MotionProvider>
