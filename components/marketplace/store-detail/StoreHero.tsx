@@ -25,11 +25,18 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
+  Wallet,
 } from "@buleje/design-system/icons";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
-import StoreInfoPanel from "./StoreInfoPanel";
+
+// Mapa real (OSM) — client-only. Sin onPick = solo lectura (marker fijo).
+const LeafletMap = dynamic(() => import("@/components/LeafletMap"), {
+  ssr: false,
+  loading: () => <div className="h-[248px] w-full animate-pulse bg-[var(--surface-sunken)]" />,
+});
 
 interface StoreHeroProps {
   name: string;
@@ -57,6 +64,9 @@ interface StoreHeroProps {
   storeId?: string | null;
   storeSlug?: string | null;
   storeLogo?: string | null;
+  /** Coordenadas para el mapa (null → centro de Ciudad Constitución). */
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export default function StoreHero({
@@ -77,9 +87,21 @@ export default function StoreHero({
   storeId,
   storeSlug,
   storeLogo,
+  lat,
+  lng,
 }: StoreHeroProps) {
   const ratingLabel = rating > 0 ? rating.toFixed(1) : null;
   const locationLabel = zone ?? distanceLabel;
+
+  // Mapa: coords de la tienda o centro de Ciudad Constitución como fallback.
+  const mapLat = lat ?? -9.8549;
+  const mapLng = lng ?? -75.0213;
+  const hasCoords = lat != null && lng != null;
+  const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent(
+    hasCoords ? `${lat},${lng}` : `${name} ${zone ?? "Ciudad Constitución"}`,
+  )}`;
+  const waLink = whatsappNumber ? `https://wa.me/51${whatsappNumber.replace(/\D/g, "")}` : null;
+  const payLabel = paymentMethods.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" · ");
 
   // Retroceder + Guardar integrados en la sección de la tienda (Brandon 2026-06-06).
   const router = useRouter();
@@ -306,63 +328,58 @@ export default function StoreHero({
           </div>
         </div>
 
-        {/* ── Trust chips strip — payment methods + sello marca ───────
-            Mobile: oculto junto al stats strip (Brandon, mayo 14 2026). */}
-        <div className="hidden md:flex flex-wrap items-center gap-2 p-4 sm:px-7 sm:py-4 lg:px-8 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-3xl">
-          <span
-            className="inline-flex items-center justify-center rounded-full border-2 border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 p-1.5 text-[var(--data-success-500)]"
-            title="Tienda verificada"
-            aria-label="Tienda verificada"
-          >
-            <ShieldCheck className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-          </span>
-          {paymentMethods.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]">
-              Pagás con{" "}
-              <strong className="text-[var(--text-primary)]">
-                {paymentMethods
-                  .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-                  .join(" · ")}
-              </strong>
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]">
-            Atención por WhatsApp
-          </span>
-          {description && (
-            <details className="ml-auto group">
-              <summary className="cursor-pointer list-none inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors">
-                <span className="group-open:hidden">Más datos</span>
-                <span className="hidden group-open:inline">Ocultar</span>
-                <ArrowRight
-                  className="h-3 w-3 transition-transform group-open:rotate-90"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-              </summary>
-              <div className="mt-3 lg:max-w-md">
-                <StoreInfoPanel
-                  name={name}
-                  zone={zone}
-                  address={address ?? null}
-                  scheduleLabel={
-                    scheduleLabel === "Abierto"
-                      ? "Lun a Dom · 6am – 11pm"
-                      : scheduleLabel
-                  }
-                  isOpen={isOpen}
-                  rating={rating}
-                  reviewCount={reviewCount}
-                  deliveryMin={deliveryMin}
-                  freeDelivery={freeDelivery}
-                  whatsappNumber={whatsappNumber ?? null}
-                  paymentMethods={paymentMethods}
-                />
-              </div>
-            </details>
-          )}
+        {/* ── Datos del negocio — full width, TODO visible (sin toggle) + mapa ──
+             Brandon 2026-06-06: ejecutivo y compacto. Mapa real a la izquierda,
+             datos en grilla a la derecha. Solo desktop (en mobile, modal de info). */}
+        <div className="grid grid-cols-1 border-t-2 border-[var(--rule-base)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          {/* Mapa real */}
+          <div className="relative min-h-[248px] border-b-2 border-[var(--rule-base)] lg:border-b-0 lg:border-r-2 [&_.leaflet-container]:!rounded-none">
+            <LeafletMap lat={mapLat} lon={mapLng} zoom={15} height={248} />
+            <a
+              href={mapsHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-3 right-3 z-[500] inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] shadow-md transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              <MapPin className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden /> Cómo llegar
+            </a>
+          </div>
+
+          {/* Datos */}
+          <div className="bg-[var(--surface-sunken)] p-5 sm:p-6 lg:rounded-br-3xl">
+            <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+              <InfoRow icon={MapPin} label="Ubicación" value={zone ?? "Ciudad Constitución"} />
+              <InfoRow icon={Clock} label="Horario" value={scheduleLabel === "Abierto" ? "Lun a Dom · 6am – 11pm" : scheduleLabel} valueClass={isOpen ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)]"} />
+              <InfoRow icon={Truck} label="Delivery" value={`${deliveryMin} min${freeDelivery ? " · gratis" : ""}`} />
+              {payLabel && <InfoRow icon={Wallet} label="Pagos" value={payLabel} />}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--rule-base)] pt-4">
+              {waLink && (
+                <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                  <MessageCircle className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden /> WhatsApp
+                </a>
+              )}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 px-3 py-1.5 text-xs font-bold text-[var(--data-success-500)]">
+                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden /> Verificada por Buleje
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function InfoRow({ icon: Icon, label, value, valueClass }: { icon: typeof MapPin; label: string; value: string; valueClass?: string }) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+        <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">{label}</p>
+        <p className={cn("text-sm font-bold leading-snug text-[var(--text-primary)]", valueClass)}>{value}</p>
+      </div>
+    </div>
   );
 }

@@ -428,6 +428,9 @@ export default function StoreDetailClient({
         storeId={store.id}
         storeSlug={store.slug}
         storeLogo={store.logo ?? null}
+        lat={(store as { lat?: number | null }).lat ?? null}
+        lng={(store as { lng?: number | null }).lng ?? null}
+        whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
       />
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
