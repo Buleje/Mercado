@@ -553,7 +553,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full font-bold border transition-colors",
             triggerCompact
-              ? "h-9 px-3 text-xs rounded-none"
+              ? "h-9 px-3 text-xs rounded-md"
               : "min-h-10 px-4 py-2 text-sm rounded-xl",
             activeCount > 0
               ? "bg-primary/10 border-primary/30 text-primary"

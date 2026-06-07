@@ -27,7 +27,6 @@ import {
   Heart,
   UserCircle,
   Home as HomeIcon,
-  Store as StoreIcon,
   Package,
   Tag,
   ArrowRight,
@@ -216,8 +215,8 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
       title: "Explorar Buleje",
       links: [
         { href: "/", label: "Inicio", Icon: HomeIcon },
-        { href: "/tiendas", label: "Tiendas", Icon: StoreIcon },
-        // Brandon 2026-06-07: Descubrí + En Vivo movidos del nav de encabezado
+        // Brandon 2026-06-07: "Tiendas" quitado del drawer — ya vive como
+        // "Mercado" en el bottom-nav. Descubrí + En Vivo movidos del nav de encabezado
         // al drawer lateral. Solo en modo completo (no en tiendas-only).
         ...(!tiendasOnly
           ? [
@@ -237,7 +236,8 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
       links: [
         { href: "/marketplace/mi-cuenta/pedidos", label: "Mis pedidos", desc: "Historial y tracking", Icon: Package },
         { href: "/marketplace/mi-cuenta/favoritos", label: "Favoritos", desc: "Tiendas y productos guardados", Icon: Heart },
-        { href: "/marketplace/mi-cuenta", label: "Perfil", desc: "Datos, direcciones, cupones", Icon: UserCircle },
+        // Brandon 2026-06-07: "Perfil" quitado — ya está como "Cuenta" en el
+        // bottom-nav (y el header del drawer ya enlaza a la cuenta).
       ],
     },
     // "Para tu negocio" (B2B) solo fuera de modo tienda.

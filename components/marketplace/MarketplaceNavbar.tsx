@@ -960,44 +960,17 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 <Menu className="h-5 w-5" aria-hidden="true" strokeWidth={2.25} />
               </button>
 
-              {/* Search pill compacto: logo + placeholder + lupa */}
+              {/* Search pill minimalista (Brandon 2026-06-07): SIN logo dentro,
+                  redondeado (rounded-full) + borde fino. Lupa a la izquierda;
+                  input readOnly que abre el overlay full-screen al tocar. */}
               <form
                 onSubmit={openMobileSearch}
                 role="search"
                 aria-label={t("nav.search")}
                 className="flex-1 min-w-0"
               >
-                <div className="relative flex items-center h-9 rounded-none border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] focus-within:border-[var(--text-primary)] transition-colors pl-1.5 pr-1 gap-1">
-                  <Link
-                    href={storefront.logo ? "/tiendas" : "/"}
-                    aria-label={storefront.logo ? `${storefront.name ?? "Tienda"} — Ver directorio` : "Buleje — Inicio"}
-                    className="shrink-0 inline-flex items-center"
-                    onClick={(e) => {
-                      e.currentTarget.blur();
-                    }}
-                  >
-                    {/* Brandon 2026-05-20 v7: logo dinámico — en storefront
-                        (/marketplace/[slug]) muestra el logo del negocio;
-                        en cualquier otra ruta el mark de Buleje. Avatar
-                        circular para que se vea como "estás en esta tienda". */}
-                    {storefront.logo ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- avatar simple, sin next/image overhead
-                      <img
-                        src={storefront.logo}
-                        alt=""
-                        width={24}
-                        height={24}
-                        className="h-6 w-6 rounded-full object-cover"
-                        loading="eager"
-                      />
-                    ) : (
-                      <BulejeWordmark size={24} showText={false} />
-                    )}
-                  </Link>
-                  {/* Brandon 2026-05-24: el input mobile ahora ABRE el overlay
-                      de búsqueda full-screen (sugerencias + recientes +
-                      categorías) en vez de tipear inline sin panel. readOnly +
-                      onFocus/onClick → setMobileSearchOpen(true). */}
+                <div className="relative flex items-center h-9 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:border-[var(--text-primary)] transition-colors px-3 gap-2">
+                  <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" strokeWidth={2.25} />
                   <input
                     type="text"
                     readOnly
@@ -1011,46 +984,16 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     aria-haspopup="dialog"
                     className="flex-1 min-w-0 bg-transparent outline-none text-[13px] font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-medium cursor-pointer"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setMobileSearchOpen(true)}
-                    aria-label="Buscar"
-                    className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-none bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
-                  >
-                    <Search className="h-3 w-3" aria-hidden="true" strokeWidth={2.5} />
-                  </button>
                 </div>
               </form>
 
-              {/* User — iniciales o ícono. Compactado a h-10.
-                  Skeleton estable hasta hidratar auth (anti-flicker, auditoría). */}
-              {!authHydrated ? (
-                <div
-                  aria-hidden="true"
-                  className="shrink-0 h-9 w-9 rounded-full bg-[var(--surface-sunken)] animate-pulse"
-                />
-              ) : customer ? (
-                <Link
-                  href="/marketplace/mi-cuenta"
-                  aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
-                  className="shrink-0 inline-flex h-9 items-center justify-center gap-1.5 rounded-none bg-[var(--text-primary)] px-2.5 text-[12px] font-black text-[var(--surface-raised)] active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                >
-                  <span aria-hidden className="inline-flex h-6 w-6 items-center justify-center rounded-none bg-[var(--surface-raised)]/15 text-[11px]">
-                    {getInitials(customer.name)}
-                  </span>
-                  <span className="max-w-[4.5rem] truncate">{customer.name?.split(" ")[0] ?? ""}</span>
-                </Link>
-              ) : (
-                <button
-                  onClick={openAuthModal}
-                  aria-label={t("nav.login")}
-                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                >
-                  <UserCircle className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
-                </button>
-              )}
+              {/* Perfil/cuenta REMOVIDO del top-nav en celular (Brandon 2026-06-07):
+                  ya vive en el bottom-nav (tab "Cuenta"). El nav mobile queda con
+                  3 elementos: ☰ · buscador · carrito. */}
 
-              {/* Chat con tiendas — Messenger (Brandon 2026-06-06), versión bare mobile */}
+              {/* Chat con tiendas — Messenger (Brandon 2026-06-06), versión bare
+                  mobile. Botón oculto en celular (max-sm:hidden, el chat vive en el
+                  bottom-nav); se mantiene montado para abrir el panel desde abajo. */}
               <ChatNavLauncher variant="bare" />
 
               {/* Cart — compactado. Badge sigue siendo prominente con ring. */}

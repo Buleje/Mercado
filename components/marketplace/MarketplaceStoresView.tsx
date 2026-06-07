@@ -345,9 +345,23 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </div>
       )}
 
-      {/* Línea meta: categoría · zona · delivery time (1 línea, truncate) */}
-      <div className="flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate">
-        <MapPin className="h-3 w-3 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+      {/* Línea meta: categoría · zona · delivery time (1 línea, truncate).
+          Brandon 2026-06-07: en celular el LOGO del negocio va acá (dentro de la
+          descripción), no sobre la portada. Desktop conserva el pin + logo en cover. */}
+      <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate">
+        <span
+          className="md:hidden h-6 w-6 shrink-0 overflow-hidden rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] inline-flex items-center justify-center"
+          aria-hidden="true"
+        >
+          {store.logo ? (
+            <Image src={store.logo} alt="" width={24} height={24} sizes="24px" quality={70} loading="lazy" className="object-cover w-full h-full" />
+          ) : (
+            <span className="text-[10px] font-black text-[var(--text-secondary)] bg-[var(--surface-sunken)] h-full w-full flex items-center justify-center">
+              {store.name.trim().charAt(0).toUpperCase()}
+            </span>
+          )}
+        </span>
+        <MapPin className="hidden md:block h-3 w-3 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
         <span className="truncate font-semibold text-[var(--text-secondary)]">
           {metaParts.join(" · ")}
         </span>
@@ -357,8 +371,10 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       {(store.freeDelivery ||
         (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
         <div className="flex items-center gap-1.5">
+          {/* Brandon 2026-06-07: en celular sin neón → texto negro + fondo
+              neutro (contrasta mejor, menos "neón" en la card). */}
           {store.freeDelivery && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-primary)]">
               <Bike className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
               Envío gratis
             </span>
@@ -371,8 +387,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </div>
       )}
 
-      {/* Acción: ver tienda — refuerzo visual del CTA al pie de la descripción */}
-      <span className="mt-0.5 inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] group-hover:gap-1.5 transition-all">
+      {/* Acción: ver tienda — en celular negro (sin neón). Brandon 2026-06-07. */}
+      <span className="mt-0.5 inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] max-md:text-[var(--text-primary)] group-hover:gap-1.5 transition-all">
         Ver tienda
         <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
       </span>
@@ -430,7 +446,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         coverOverlay={coverOverlay}
         coverBottomLeft={
           <div
-            className="h-9 w-9 sm:h-11 sm:w-11 rounded-full overflow-hidden bg-[var(--surface-raised)] border-2 border-white dark:border-gray-900 shadow-md flex items-center justify-center"
+            className="h-9 w-9 sm:h-11 sm:w-11 rounded-full overflow-hidden bg-[var(--surface-raised)] border-2 border-white dark:border-gray-900 shadow-md hidden md:flex items-center justify-center"
             aria-hidden="true"
           >
             {store.logo ? (
