@@ -227,7 +227,7 @@
       "imageUrl": null,
       "ctaHref": "/marketplace/ofertas",
       "ctaLabel": "Usar cupón",
-      "bgFrom": "#00B4A6",
+      "bgFrom": "#00A0A0",
       "bgTo": "#00998d",
       "active": true,
       "order": 2,
@@ -282,7 +282,7 @@
       "ctaHref": "/marketplace/como-pagar",
       "ctaLabel": "Cómo pagar",
       "bgFrom": "#0d9488",
-      "bgTo": "#0f766e",
+      "bgTo": "#00A0A0",
       "active": true,
       "order": 2,
       "type": "classic"

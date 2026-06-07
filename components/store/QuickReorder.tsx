@@ -111,7 +111,7 @@ export default function QuickReorder() {
       >
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-xl bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 flex items-center justify-center flex-shrink-0">
-            <RotateCcw className="h-5 w-5 text-[var(--accent)] dark:text-[#2dd4bf]" />
+            <RotateCcw className="h-5 w-5 text-[var(--accent)] dark:text-[#14C2C2]" />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -133,7 +133,7 @@ export default function QuickReorder() {
             <div className="flex items-center gap-3 mt-3">
               <button
                 onClick={handleReorder}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white text-sm font-bold transition-all shadow-lg shadow-[var(--accent)]/20 active:scale-[0.98]"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white text-sm font-bold transition-all shadow-lg active:scale-[0.98]"
               >
                 <ShoppingCart className="h-5 w-5" />
                 Repetir pedido · S/ {Number(lastOrder.total).toFixed(2)}

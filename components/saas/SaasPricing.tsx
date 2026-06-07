@@ -149,7 +149,7 @@ function PillSwitch({
       className="inline-flex items-center gap-0 mt-6 rounded-full p-1 relative"
       style={{
         background: "linear-gradient(135deg, #f0fdf4 0%, #ccfbf1 100%)",
-        boxShadow: "inset 0 1px 3px rgba(15,118,110,0.12)",
+        boxShadow: "inset 0 1px 3px rgba(0, 160, 160,0.12)",
       }}
     >
       {/* Track indicator (sliding pill) */}
@@ -166,8 +166,8 @@ function PillSwitch({
               layoutId="pill-bg"
               className="absolute inset-0 rounded-full"
               style={{
-                background: "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 50%, #2dd4bf 100%)",
-                boxShadow: "0 2px 12px rgba(15,118,110,0.35)",
+                background: "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 50%, #14C2C2 100%)",
+                boxShadow: "0 2px 12px rgba(0, 160, 160,0.35)",
               }}
               transition={{ type: "spring", stiffness: 400, damping: 35 }}
             />
@@ -187,8 +187,8 @@ function PillSwitch({
               layoutId="pill-bg"
               className="absolute inset-0 rounded-full"
               style={{
-                background: "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 50%, #2dd4bf 100%)",
-                boxShadow: "0 2px 12px rgba(15,118,110,0.35)",
+                background: "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 50%, #14C2C2 100%)",
+                boxShadow: "0 2px 12px rgba(0, 160, 160,0.35)",
               }}
               transition={{ type: "spring", stiffness: 400, damping: 35 }}
             />
@@ -197,7 +197,7 @@ function PillSwitch({
           <span
             className="relative text-xs font-bold px-2 py-0.5 rounded-full"
             style={{
-              background: isAnnual ? "rgba(255,255,255,0.22)" : "rgba(15,118,110,0.12)",
+              background: isAnnual ? "rgba(255,255,255,0.22)" : "rgba(0, 160, 160,0.12)",
               color: isAnnual ? "#fff" : "var(--accent)",
             }}
           >
@@ -279,17 +279,17 @@ function RoiCard({
       className="flex flex-col rounded-2xl p-5 flex-1 min-w-0"
       style={{
         background: highlight
-          ? "linear-gradient(135deg, rgba(15,118,110,0.18) 0%, rgba(13,148,136,0.12) 100%)"
-          : "rgba(15,118,110,0.07)",
+          ? "linear-gradient(135deg, rgba(0, 160, 160,0.18) 0%, rgba(13,148,136,0.12) 100%)"
+          : "rgba(0, 160, 160,0.07)",
         border: highlight
-          ? "1.5px solid rgba(15,118,110,0.45)"
-          : "1px solid rgba(15,118,110,0.18)",
-        boxShadow: highlight ? "0 4px 24px -6px rgba(15,118,110,0.25)" : "none",
+          ? "1.5px solid rgba(0, 160, 160,0.45)"
+          : "1px solid rgba(0, 160, 160,0.18)",
+        boxShadow: highlight ? "0 4px 24px -6px rgba(0, 160, 160,0.25)" : "none",
       }}
     >
       <p
         className="text-xs font-semibold uppercase tracking-widest mb-2"
-        style={{ color: "rgba(15,118,110,0.85)", letterSpacing: "0.08em" }}
+        style={{ color: "rgba(0, 160, 160,0.85)", letterSpacing: "0.08em" }}
       >
         {label}
       </p>
@@ -363,8 +363,8 @@ function RoiCalculator({
       <div
         className="rounded-3xl p-6 sm:p-8"
         style={{
-          background: "rgba(15,118,110,0.05)",
-          border: "1px solid rgba(15,118,110,0.18)",
+          background: "rgba(0, 160, 160,0.05)",
+          border: "1px solid rgba(0, 160, 160,0.18)",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
         }}
@@ -396,7 +396,7 @@ function RoiCalculator({
               <span
                 className="text-sm font-bold px-2.5 py-0.5 rounded-full"
                 style={{
-                  background: "rgba(15,118,110,0.12)",
+                  background: "rgba(0, 160, 160,0.12)",
                   color: "var(--accent)",
                 }}
               >
@@ -414,7 +414,7 @@ function RoiCalculator({
                 onChange={(e) => setVentas(Number(e.target.value))}
                 className="roi-slider w-full h-2 rounded-full appearance-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]"
                 style={{
-                  background: `linear-gradient(to right, var(--accent) ${((ventas - 5000) / 95000) * 100}%, rgba(15,118,110,0.18) ${((ventas - 5000) / 95000) * 100}%)`,
+                  background: `linear-gradient(to right, var(--accent) ${((ventas - 5000) / 95000) * 100}%, rgba(0, 160, 160,0.18) ${((ventas - 5000) / 95000) * 100}%)`,
                   // thumb styles via global CSS
                 }}
                 aria-label="Ventas mensuales en soles"
@@ -438,7 +438,7 @@ function RoiCalculator({
               <span
                 className="text-sm font-bold px-2.5 py-0.5 rounded-full"
                 style={{
-                  background: "rgba(15,118,110,0.12)",
+                  background: "rgba(0, 160, 160,0.12)",
                   color: "var(--accent)",
                 }}
               >
@@ -456,7 +456,7 @@ function RoiCalculator({
                 onChange={(e) => setClientesFiado(Number(e.target.value))}
                 className="roi-slider w-full h-2 rounded-full appearance-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]"
                 style={{
-                  background: `linear-gradient(to right, var(--accent) ${(clientesFiado / 50) * 100}%, rgba(15,118,110,0.18) ${(clientesFiado / 50) * 100}%)`,
+                  background: `linear-gradient(to right, var(--accent) ${(clientesFiado / 50) * 100}%, rgba(0, 160, 160,0.18) ${(clientesFiado / 50) * 100}%)`,
                 }}
                 aria-label="Número de clientes que compran fiado"
               />
@@ -486,14 +486,14 @@ function RoiCalculator({
             className="flex flex-col rounded-2xl p-5 flex-1 min-w-0"
             style={{
               background:
-                "linear-gradient(135deg, rgba(15,118,110,0.22) 0%, rgba(13,148,136,0.15) 100%)",
-              border: "1.5px solid rgba(15,118,110,0.5)",
-              boxShadow: "0 4px 24px -6px rgba(15,118,110,0.3)",
+                "linear-gradient(135deg, rgba(0, 160, 160,0.22) 0%, rgba(13,148,136,0.15) 100%)",
+              border: "1.5px solid rgba(0, 160, 160,0.5)",
+              boxShadow: "0 4px 24px -6px rgba(0, 160, 160,0.3)",
             }}
           >
             <p
               className="text-xs font-semibold uppercase tracking-widest mb-2"
-              style={{ color: "rgba(15,118,110,0.9)", letterSpacing: "0.08em" }}
+              style={{ color: "rgba(0, 160, 160,0.9)", letterSpacing: "0.08em" }}
             >
               Plan recomendado
             </p>
@@ -525,15 +525,15 @@ function RoiCalculator({
       <div className="relative flex items-center justify-center mt-10 mb-0">
         <div
           className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px"
-          style={{ background: "rgba(15,118,110,0.18)" }}
+          style={{ background: "rgba(0, 160, 160,0.18)" }}
           aria-hidden="true"
         />
         <span
           className="relative px-5 py-1.5 text-sm font-bold rounded-full z-10"
           style={{
-            background: "rgba(15,118,110,0.1)",
+            background: "rgba(0, 160, 160,0.1)",
             color: "var(--accent)",
-            border: "1px solid rgba(15,118,110,0.25)",
+            border: "1px solid rgba(0, 160, 160,0.25)",
           }}
         >
           Elige tu plan
@@ -544,7 +544,7 @@ function RoiCalculator({
           animate={{ y: [0, 6, 0] }}
           transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
         >
-          <ChevronDown className="w-5 h-5" style={{ color: "rgba(15,118,110,0.55)" }} />
+          <ChevronDown className="w-5 h-5" style={{ color: "rgba(0, 160, 160,0.55)" }} />
         </motion.div>
       </div>
     </motion.div>
@@ -574,7 +574,7 @@ export default function SaasPricing() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(15,118,110,0.08) 0%, transparent 70%)",
+            "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0, 160, 160,0.08) 0%, transparent 70%)",
         }}
       />
 
@@ -628,9 +628,9 @@ export default function SaasPricing() {
                   isRecommended && card.id !== "pro"
                     ? {
                         boxShadow: [
-                          "0 0 0 1.5px rgba(15,118,110,0.35)",
-                          "0 0 0 3px rgba(15,118,110,0.55)",
-                          "0 0 0 1.5px rgba(15,118,110,0.35)",
+                          "0 0 0 1.5px rgba(0, 160, 160,0.35)",
+                          "0 0 0 3px rgba(0, 160, 160,0.55)",
+                          "0 0 0 1.5px rgba(0, 160, 160,0.35)",
                         ],
                       }
                     : undefined
@@ -642,7 +642,7 @@ export default function SaasPricing() {
                 }
                 whileHover={
                   isPro
-                    ? { y: -4, boxShadow: "0 24px 64px -8px rgba(15,118,110,0.35), 0 0 0 1px rgba(15,118,110,0.4)" }
+                    ? { y: -4, boxShadow: "0 24px 64px -8px rgba(0, 160, 160,0.35), 0 0 0 1px rgba(0, 160, 160,0.4)" }
                     : { y: -4, boxShadow: "0 12px 32px -8px rgba(0,0,0,0.12)" }
                 }
                 style={{
@@ -654,7 +654,7 @@ export default function SaasPricing() {
                         backgroundClip: "padding-box",
                         backgroundImage: "none",
                         boxShadow:
-                          "0 20px 60px -10px rgba(15,118,110,0.2), 0 0 40px rgba(15,118,110,0.2), 0 0 0 1.5px rgba(15,118,110,0.35)",
+                          "0 20px 60px -10px rgba(0, 160, 160,0.2), 0 0 40px rgba(0, 160, 160,0.2), 0 0 0 1.5px rgba(0, 160, 160,0.35)",
                       }
                     : undefined),
                 }}
@@ -671,7 +671,7 @@ export default function SaasPricing() {
                     className="absolute inset-0 rounded-2xl pointer-events-none"
                     style={{
                       padding: "1.5px",
-                      background: "linear-gradient(135deg, var(--accent), #2dd4bf, color-mix(in oklab, var(--accent) 70%, white))",
+                      background: "linear-gradient(135deg, var(--accent), #14C2C2, color-mix(in oklab, var(--accent) 70%, white))",
                       WebkitMask:
                         "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
                       WebkitMaskComposite: "xor",
@@ -689,7 +689,7 @@ export default function SaasPricing() {
                       transition={{ delay: 0.3, type: "spring", stiffness: 300, damping: 20 }}
                       className="relative inline-flex items-center text-white text-xs font-bold px-3 py-1 rounded-full overflow-hidden shadow-lg"
                       style={{
-                        background: "linear-gradient(90deg, var(--accent), #2dd4bf, var(--accent))",
+                        background: "linear-gradient(90deg, var(--accent), #14C2C2, var(--accent))",
                         backgroundSize: "200% 100%",
                       }}
                     >
@@ -792,7 +792,7 @@ export default function SaasPricing() {
                       ? {
                           background:
                             "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 100%)",
-                          boxShadow: "0 4px 16px -4px rgba(15,118,110,0.4)",
+                          boxShadow: "0 4px 16px -4px rgba(0, 160, 160,0.4)",
                         }
                       : undefined
                   }

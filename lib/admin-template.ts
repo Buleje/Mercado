@@ -326,8 +326,31 @@ let _templateInFlight: Promise<AdminTemplate> | null = null;
 let _templateCache: { at: number; tpl: AdminTemplate } | null = null;
 const _TEMPLATE_TTL = 5000;
 
-export async function fetchAdminTemplate(): Promise<AdminTemplate> {
+/**
+ * @param opts.raw — true: plantilla global PURA (sin merge per-tenant). La usa
+ *   el editor del superadmin (/superadmin/plantilla) para no editar sobre una
+ *   plantilla mergeada con el override de un tenant. Bypasea el cache
+ *   in-memory y NO escribe localStorage (no contaminar el cache del admin).
+ */
+export async function fetchAdminTemplate(opts?: { raw?: boolean }): Promise<AdminTemplate> {
   if (typeof window === "undefined") return EMPTY_TEMPLATE;
+
+  if (opts?.raw) {
+    try {
+      const res = await fetch(`${API_ENDPOINT}?raw=1`, { cache: "no-store", credentials: "same-origin" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { template?: Partial<AdminTemplate> };
+      return {
+        overrides: data.template?.overrides ?? {},
+        order: data.template?.order ?? [],
+        defaultSidebarStyle: data.template?.defaultSidebarStyle ?? "buleje",
+        version: data.template?.version ?? SCHEMA_VERSION,
+      };
+    } catch {
+      return readAdminTemplate();
+    }
+  }
+
   if (_templateCache && Date.now() - _templateCache.at < _TEMPLATE_TTL) return _templateCache.tpl;
   if (_templateInFlight) return _templateInFlight;
 

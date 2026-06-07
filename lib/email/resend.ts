@@ -94,7 +94,7 @@ export async function sendWelcomeTenant(to: string, tenant: { name: string; slug
         </ol>
 
         <div style="margin: 32px 0; text-align: center;">
-          <a href="${adminUrl}" style="display: inline-block; background: #00B4A6; color: white; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; margin-right: 8px;">
+          <a href="${adminUrl}" style="display: inline-block; background: #00A0A0; color: white; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; margin-right: 8px;">
             Entrar al panel
           </a>
           <a href="${storeUrl}" style="display: inline-block; background: #f3f4f6; color: #111; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold;">
@@ -104,7 +104,7 @@ export async function sendWelcomeTenant(to: string, tenant: { name: string; slug
 
         <p style="font-size: 14px; color: #666; line-height: 1.5; margin: 24px 0 0;">
           <strong>Recordá:</strong> tenés 15 días de prueba completa. Después podés
-          elegir un plan en <a href="${baseUrl}/planes" style="color: #00B4A6;">${baseUrl}/planes</a>.
+          elegir un plan en <a href="${baseUrl}/planes" style="color: #00A0A0;">${baseUrl}/planes</a>.
         </p>
 
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />

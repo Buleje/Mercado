@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Building2, Search, ChevronDown, RefreshCw,
-  CheckCircle2, XCircle, LayoutGrid, List, Bomb,
-  Activity, TrendingUp, AlertCircle, DollarSign, Sparkles, Bell,
+  CheckCircle2, XCircle, LayoutGrid, List, Bomb, Grid3x3,
+  DollarSign, Sparkles, Bell,
   Clock, AlertTriangle, Check, Square, CheckSquare, Download, Mail, X,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -15,6 +15,8 @@ import { AdminTabShell } from "../_components/_shared";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
 
 import { TenantCard } from "@/components/superadmin/tenants/TenantCard";
+import { TenantCardCompact } from "@/components/superadmin/tenants/TenantCardCompact";
+import { TenantModulesModal } from "@/components/superadmin/tenants/TenantModulesModal";
 import { TenantTable } from "@/components/superadmin/tenants/TenantTable";
 import dynamic from "next/dynamic";
 
@@ -63,7 +65,19 @@ export default function TenantsPage() {
   const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("all");
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  // Vista persistida — Brandon 2026-06-05: agrega modo "compact" (mini-cards
+  // densas para ver muchas tiendas en poco espacio) y recuerda la elección.
+  // localStorage se lee post-mount (no en el initializer) para no generar
+  // hydration mismatch entre HTML del server y estado del cliente.
+  const [viewMode, setViewModeState] = useState<ViewMode>("cards");
+  useEffect(() => {
+    const saved = window.localStorage.getItem("sa-tenants-view");
+    if (saved === "table" || saved === "compact") setViewModeState(saved);
+  }, []);
+  const setViewMode = useCallback((v: ViewMode) => {
+    setViewModeState(v);
+    try { window.localStorage.setItem("sa-tenants-view", v); } catch { /* private mode */ }
+  }, []);
   const [pageTab, setPageTab] = useState<"tiendas" | "crecimiento">("tiendas");
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [inviteTarget, setInviteTarget] = useState<{ slug: string; name: string } | null>(null);
@@ -71,6 +85,9 @@ export default function TenantsPage() {
   const [productsTarget, setProductsTarget] = useState<{ slug: string; name: string } | null>(null);
   const [addProductTarget, setAddProductTarget] = useState<{ slug: string; name: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ slug: string; name: string } | null>(null);
+  // Módulos a medida (override per-tenant de la plantilla) — Brandon 2026-06-05
+  const [modulesTarget, setModulesTarget] = useState<TenantRow | null>(null);
+  const [moduleOverrideCounts, setModuleOverrideCounts] = useState<Record<string, number>>({});
   const [nuclearResetOpen, setNuclearResetOpen] = useState(false);
   const [nuclearResetLoading, setNuclearResetLoading] = useState(false);
   const [growthData, setGrowthData] = useState<GrowthEntry[]>([]);
@@ -130,6 +147,18 @@ export default function TenantsPage() {
   }, []);
 
   useEffect(() => { void loadTenants(); }, [loadTenants]);
+
+  // Counts de módulos forzados por tenant — pinta la columna "Módulos" de la
+  // vista lista (1 request bulk, no N por fila).
+  const loadModuleOverrideCounts = useCallback(async () => {
+    try {
+      const res = await fetchSuperadmin("/api/superadmin/tenants/module-overrides");
+      if (!res.ok) return;
+      const data = (await res.json()) as { counts: Record<string, number> };
+      setModuleOverrideCounts(data.counts ?? {});
+    } catch { /* silencioso — columna muestra "Plantilla" */ }
+  }, []);
+  useEffect(() => { void loadModuleOverrideCounts(); }, [loadModuleOverrideCounts]);
 
   const loadGrowth = useCallback(async () => {
     setGrowthLoading(true);
@@ -521,15 +550,22 @@ export default function TenantsPage() {
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
             </div>
 
-            {/* View toggle */}
+            {/* View toggle — tabla · tarjetas · compacta (densidad alta) */}
             <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1 shrink-0">
               <button type="button" onClick={() => setViewMode("table")} title="Vista tabla"
+                aria-pressed={viewMode === "table"}
                 className={`p-1.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
                 <List className="w-4 h-4" />
               </button>
               <button type="button" onClick={() => setViewMode("cards")} title="Vista tarjetas"
+                aria-pressed={viewMode === "cards"}
                 className={`p-1.5 rounded-lg transition-colors ${viewMode === "cards" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
                 <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={() => setViewMode("compact")} title="Vista compacta — más tiendas en menos espacio"
+                aria-pressed={viewMode === "compact"}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === "compact" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+                <Grid3x3 className="w-4 h-4" />
               </button>
             </div>
 
@@ -593,99 +629,114 @@ export default function TenantsPage() {
             </div>
           )}
 
-          {!loading && viewMode === "cards" && (
-            sortedFinal.length === 0 ? (
-              <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] py-16 px-6 text-center">
-                <Building2 className="w-12 h-12 mx-auto mb-3 text-[var(--text-tertiary)] opacity-50" />
-                <p className="text-base font-bold text-[var(--text-primary)]">
-                  {tenants.length === 0 ? "Sin tenants registrados" : "Sin coincidencias con los filtros"}
-                </p>
-                <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                  {tenants.length === 0
-                    ? "Aún no hay ningún tenant en la plataforma."
-                    : "Probá ajustar la búsqueda, plan o estado."}
-                </p>
-                {tenants.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => { setSearch(""); applyQuickFilter("all"); }}
-                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline"
-                  >
-                    Limpiar filtros
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                {sortedFinal.map((tenant) => {
-                  const health = getHealth(tenant);
-                  const isSelected = selectedIds.has(tenant.id);
-                  return (
-                    <div key={tenant.id} className="relative">
-                      {/* Health dot — esquina superior derecha, semántico */}
-                      <span
-                        className={`absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm ring-1 ${
-                          health === "healthy"
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30"
-                            : health === "warning"
-                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-500/30"
-                              : "bg-rose-500/15 text-rose-700 dark:text-rose-300 ring-rose-500/30"
+          {/* Empty state compartido por cards + compacta */}
+          {!loading && viewMode !== "table" && sortedFinal.length === 0 && (
+            <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] py-16 px-6 text-center">
+              <Building2 className="w-12 h-12 mx-auto mb-3 text-[var(--text-tertiary)] opacity-50" />
+              <p className="text-base font-bold text-[var(--text-primary)]">
+                {tenants.length === 0 ? "Sin tenants registrados" : "Sin coincidencias con los filtros"}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
+                {tenants.length === 0
+                  ? "Aún no hay ningún tenant en la plataforma."
+                  : "Probá ajustar la búsqueda, plan o estado."}
+              </p>
+              {tenants.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setSearch(""); applyQuickFilter("all"); }}
+                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Vista tarjetas — health integrado en el kicker de la card
+              (Brandon 2026-06-05: antes era un badge absoluto que se
+              superponía con los badges propios de la card). */}
+          {!loading && viewMode === "cards" && sortedFinal.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              {sortedFinal.map((tenant) => {
+                const isSelected = selectedIds.has(tenant.id);
+                return (
+                  <div key={tenant.id} className="relative">
+                    {/* Checkbox flotante cuando bulk mode activo */}
+                    {bulkMode && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSelected(tenant.id)}
+                        className={`absolute top-3 left-3 z-20 inline-flex h-7 w-7 items-center justify-center rounded-lg border-2 transition-colors ${
+                          isSelected
+                            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-[var(--accent)]"
                         }`}
-                        title={
-                          health === "healthy"
-                            ? "Tenant saludable — activo, sin pendientes excesivos"
-                            : health === "warning"
-                              ? "Atención — alguna métrica está baja"
-                              : "Crítico — suspendido o múltiples problemas"
-                        }
+                        aria-label={isSelected ? "Deseleccionar" : "Seleccionar"}
+                        aria-pressed={isSelected}
                       >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            health === "healthy" ? "bg-emerald-500 animate-pulse" : health === "warning" ? "bg-amber-500" : "bg-rose-500"
-                          }`}
-                          aria-hidden
-                        />
-                        {health === "healthy" ? "OK" : health === "warning" ? "Aviso" : "Crítico"}
-                      </span>
+                        {isSelected ? <Check className="h-4 w-4" /> : null}
+                      </button>
+                    )}
 
-                      {/* Checkbox flotante cuando bulk mode activo */}
-                      {bulkMode && (
-                        <button
-                          type="button"
-                          onClick={() => toggleSelected(tenant.id)}
-                          className={`absolute top-3 left-3 z-20 inline-flex h-7 w-7 items-center justify-center rounded-lg border-2 transition-colors ${
-                            isSelected
-                              ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-[var(--accent)]"
-                          }`}
-                          aria-label={isSelected ? "Deseleccionar" : "Seleccionar"}
-                          aria-pressed={isSelected}
-                        >
-                          {isSelected ? <Check className="h-4 w-4" /> : null}
-                        </button>
-                      )}
-
-                      <div className={isSelected ? "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)] rounded-2xl" : ""}>
-                        <TenantCard
-                          tenant={tenant}
-                          onDetail={(t) => setDetailTarget(t)}
-                          onInvite={(slug, name) => setInviteTarget({ slug, name })}
-                          onToggleActive={(slug, active) => void handleToggleActive(slug, active)}
-                          actionLoading={actionLoading}
-                          onImpersonate={(slug) => void handleImpersonate(slug)}
-                          onToggleMarketplace={(t) => void handleToggleMarketplace(t)}
-                          onLoginAs={(t) => handleLoginAs(t)}
-                          onViewProducts={(t) => setProductsTarget({ slug: t.slug, name: t.name })}
-                          onAddProduct={(t) => setAddProductTarget({ slug: t.slug, name: t.name })}
-                          onDelete={(slug, name) => setDeleteTarget({ slug, name })}
-                          onPurge={(slug, name) => void handlePurgeTenant(slug, name)}
-                        />
-                      </div>
+                    <div className={isSelected ? "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)] rounded-2xl" : ""}>
+                      <TenantCard
+                        tenant={tenant}
+                        health={getHealth(tenant)}
+                        onDetail={(t) => setDetailTarget(t)}
+                        onInvite={(slug, name) => setInviteTarget({ slug, name })}
+                        onToggleActive={(slug, active) => void handleToggleActive(slug, active)}
+                        actionLoading={actionLoading}
+                        onImpersonate={(slug) => void handleImpersonate(slug)}
+                        onToggleMarketplace={(t) => void handleToggleMarketplace(t)}
+                        onLoginAs={(t) => handleLoginAs(t)}
+                        onViewProducts={(t) => setProductsTarget({ slug: t.slug, name: t.name })}
+                        onAddProduct={(t) => setAddProductTarget({ slug: t.slug, name: t.name })}
+                        onDelete={(slug, name) => setDeleteTarget({ slug, name })}
+                        onPurge={(slug, name) => void handlePurgeTenant(slug, name)}
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            )
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Vista compacta — mini-cards densas: identidad + pendientes +
+              ventas + trial. Click → detalle; flecha → panel admin. */}
+          {!loading && viewMode === "compact" && sortedFinal.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+              {sortedFinal.map((tenant) => {
+                const isSelected = selectedIds.has(tenant.id);
+                return (
+                  <div key={tenant.id} className="relative">
+                    {bulkMode && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSelected(tenant.id)}
+                        className={`absolute -top-2 -left-2 z-20 inline-flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors ${
+                          isSelected
+                            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-[var(--accent)]"
+                        }`}
+                        aria-label={isSelected ? "Deseleccionar" : "Seleccionar"}
+                        aria-pressed={isSelected}
+                      >
+                        {isSelected ? <Check className="h-3.5 w-3.5" /> : null}
+                      </button>
+                    )}
+                    <div className={isSelected ? "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface-canvas)] rounded-xl" : ""}>
+                      <TenantCardCompact
+                        tenant={tenant}
+                        health={getHealth(tenant)}
+                        onDetail={(t) => setDetailTarget(t)}
+                        onImpersonate={(slug) => void handleImpersonate(slug)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {viewMode === "table" && (
@@ -698,6 +749,8 @@ export default function TenantsPage() {
               onPurge={(slug, name) => void handlePurgeTenant(slug, name)}
               onDelete={(slug, name) => setDeleteTarget({ slug, name })}
               onPlanChange={(slug, plan) => void handlePlanChange(slug, plan)}
+              onModules={(t) => setModulesTarget(t)}
+              moduleOverrideCounts={moduleOverrideCounts}
             />
           )}
         </>
@@ -721,6 +774,20 @@ export default function TenantsPage() {
       )}
 
       {inviteTarget && <InviteModal tenantSlug={inviteTarget.slug} tenantName={inviteTarget.name} onClose={() => setInviteTarget(null)} />}
+      {modulesTarget && (
+        <TenantModulesModal
+          tenant={modulesTarget}
+          onClose={() => setModulesTarget(null)}
+          onSaved={(count) => {
+            setModuleOverrideCounts((prev) => {
+              const next = { ...prev };
+              if (count > 0) next[modulesTarget.id] = count;
+              else delete next[modulesTarget.id];
+              return next;
+            });
+          }}
+        />
+      )}
       {detailTarget && <TenantDetailModal tenant={detailTarget} onClose={() => setDetailTarget(null)} />}
       {productsTarget && (
         <TenantProductsModal

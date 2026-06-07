@@ -60,42 +60,24 @@ export default function CategoriesEditorTab() {
     return () => { cancelled = true; };
   }, []);
 
+  // Las categorías salen SOLO de lo que el comerciante creó (settings.categoryOrder).
+  // Un negocio nuevo arranca SIN categorías (nada de catálogo demo pre-hecho):
+  // el comerciante crea las suyas con "Nueva categoría". Antes se sembraban las
+  // categorías estáticas de @/data/products (Abarrotes, Bebidas…) aunque el
+  // negocio fuera nuevo — eso es lo que se eliminó.
   useEffect(() => {
-    Promise.all([
-      fetch("/api/settings").then((r) => (r.ok ? r.json() : null)),
-      import("@/data/products").then((m) => m.categories),
-    ]).then(([settings, staticCats]) => {
-      const saved = (settings?.categoryOrder as CategoryConfig[]) || [];
-      // Merge static categories with saved config
-      const merged: CategoryConfig[] = staticCats
-        .filter((c: { id: string }) => c.id !== "todos")
-        .map((c: { id: string; label: string; emoji: string }, i: number) => {
-          const found = saved.find((s) => s.id === c.id);
-          return (
-            found || {
-              id: c.id,
-              label: c.label,
-              // Limpia emojis decorativos del catálogo del marketplace.
-              // Las categorías ahora son texto puro — más enterprise, más
-              // accesibles, mejor SEO.
-              emoji: "",
-              visible: true,
-              order: i,
-              seo: {
-                metaTitle: `${c.label} | Compra online con delivery`,
-                metaDescription: `Compra ${c.label.toLowerCase()} frescos y de calidad. Entrega rápida en tu zona. Paga con Yape o efectivo.`,
-                keywords: [c.label.toLowerCase(), "delivery", "pucallpa", "compra online"],
-                slug: c.id,
-              },
-            }
-          );
-        });
-      // Sort by saved order
-      merged.sort((a, b) => a.order - b.order);
-      setCats(merged);
-      setOriginalJson(JSON.stringify(merged));
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((settings) => {
+        const saved = (settings?.categoryOrder as CategoryConfig[]) || [];
+        const sorted = [...saved]
+          .sort((a, b) => a.order - b.order)
+          .map((c, i) => ({ ...c, order: i, emoji: c.emoji ?? "" }));
+        setCats(sorted);
+        setOriginalJson(JSON.stringify(sorted));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const hasChanges = JSON.stringify(cats) !== originalJson;
@@ -438,7 +420,32 @@ export default function CategoriesEditorTab() {
         </div>
       )}
 
-      {/* Category list */}
+      {/* Empty state — negocio nuevo sin categorías creadas */}
+      {cats.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
+          <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <Layers className="h-7 w-7" strokeWidth={2} />
+          </span>
+          <div className="space-y-1">
+            <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+              Todavía no tienes categorías
+            </h3>
+            <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">
+              Tu catálogo arranca limpio. Crea las categorías que usa tu negocio
+              (Ej: Bebidas, Limpieza, Snacks) y aparecerán en el POS, el formulario
+              de productos y tu tienda online.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowNewForm(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-extrabold text-white transition-opacity hover:opacity-90 min-h-[44px]"
+          >
+            <Plus className="h-4 w-4" />
+            Crear primera categoría
+          </button>
+        </div>
+      ) : (
+      /* Category list */
       <div className="space-y-2">
         {cats.map((cat, i) => {
           const seoScore = getSeoScore(cat);
@@ -690,11 +697,14 @@ export default function CategoriesEditorTab() {
           );
         })}
       </div>
+      )}
 
-      {/* Info */}
-      <p className="text-xs text-muted">
-        Los cambios en el orden y visibilidad se aplican al catálogo de la tienda después de guardar.
-      </p>
+      {/* Info — solo cuando ya hay categorías */}
+      {cats.length > 0 && (
+        <p className="text-xs text-muted">
+          Los cambios en el orden y visibilidad se aplican al catálogo de la tienda después de guardar.
+        </p>
+      )}
     </div>
   );
 }

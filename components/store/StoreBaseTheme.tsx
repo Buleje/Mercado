@@ -56,7 +56,7 @@ const STORE_BASE_CSS = `
       .store-card,
       main article,
       main .product-card {
-        --shadow-tint: var(--color-primary, #00B4A6);
+        --shadow-tint: var(--color-primary, #00A0A0);
       }
 
       /* ─── 4. ESCALA DE BORDER RADIUS COHESIVA ───────────────────── */
@@ -98,14 +98,14 @@ const STORE_BASE_CSS = `
 
       /* ─── 8. FOCUS RING CONSISTENTE ──────────────────────────────── */
       main *:focus-visible {
-        outline: 2px solid var(--color-primary, #00B4A6);
+        outline: 2px solid var(--color-primary, #00A0A0);
         outline-offset: 2px;
         border-radius: 4px;
       }
 
       /* ─── 9. SELECTION ───────────────────────────────────────────── */
       main ::selection {
-        background-color: color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent);
+        background-color: color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent);
         color: inherit;
       }
 
@@ -118,11 +118,11 @@ const STORE_BASE_CSS = `
         background: transparent;
       }
       main *::-webkit-scrollbar-thumb {
-        background: color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent);
+        background: color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent);
         border-radius: 9999px;
       }
       main *::-webkit-scrollbar-thumb:hover {
-        background: color-mix(in oklch, var(--color-primary, #00B4A6) 45%, transparent);
+        background: color-mix(in oklch, var(--color-primary, #00A0A0) 45%, transparent);
       }
 
       /* ─── 11. PRECIO — PROMINENCIA Y TABULAR ─────────────────────── */
@@ -136,9 +136,9 @@ const STORE_BASE_CSS = `
       main img[loading="lazy"] {
         background: linear-gradient(
           110deg,
-          color-mix(in oklch, var(--color-primary, #00B4A6) 5%, transparent) 8%,
-          color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent) 18%,
-          color-mix(in oklch, var(--color-primary, #00B4A6) 5%, transparent) 33%
+          color-mix(in oklch, var(--color-primary, #00A0A0) 5%, transparent) 8%,
+          color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent) 18%,
+          color-mix(in oklch, var(--color-primary, #00A0A0) 5%, transparent) 33%
         );
         background-size: 200% 100%;
       }
@@ -146,17 +146,17 @@ const STORE_BASE_CSS = `
       /* ─── 13. BOTONES PRIMARIOS DE LA TIENDA ─────────────────────── */
       main .btn-primary,
       main button.btn-primary {
-        background: var(--color-primary, #00B4A6);
+        background: var(--color-primary, #00A0A0);
         color: var(--on-primary, #ffffff);
         font-weight: 800;
         letter-spacing: 0.005em;
         box-shadow:
-          0 4px 12px color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent),
+          0 4px 12px color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent),
           0 1px 3px rgba(0, 0, 0, 0.06);
       }
       main .btn-primary:hover {
         box-shadow:
-          0 8px 20px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent),
+          0 8px 20px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent),
           0 2px 6px rgba(0, 0, 0, 0.08);
         transform: translateY(-1px);
       }
@@ -171,7 +171,7 @@ const STORE_BASE_CSS = `
         display: inline-block;
         width: 4px;
         height: 1em;
-        background: var(--color-primary, #00B4A6);
+        background: var(--color-primary, #00A0A0);
         margin-right: 0.6em;
         vertical-align: -0.06em;
         border-radius: 2px;

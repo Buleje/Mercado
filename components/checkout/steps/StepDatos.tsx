@@ -54,7 +54,7 @@ function BrandHair() {
       aria-hidden="true"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
       }}
     />
   );
@@ -79,7 +79,7 @@ function SectionHeader({
         className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
         style={{
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
         }}
       >
         <Icon
@@ -185,7 +185,7 @@ export function StepDatos({
               style={{
                 color: "var(--color-primary-dark, #009690)",
                 border:
-                  "1px dashed color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                  "1px dashed color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
               }}
             >
               ← Usar otra cuenta
@@ -387,7 +387,7 @@ export function StepDatos({
             className="flex h-14 w-14 items-center justify-center rounded-2xl transition-all shrink-0"
             style={{
               border:
-                "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+                "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)",
               color: "var(--color-primary-dark, #009690)",
             }}
             aria-label="Volver"
@@ -400,9 +400,9 @@ export function StepDatos({
             className="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl font-extrabold text-base text-white transition-all active:scale-[0.98]"
             style={{
               background:
-                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
               boxShadow:
-                "0 12px 28px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent), 0 2px 6px rgba(0,0,0,0.06)",
+                "0 12px 28px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent), 0 2px 6px rgba(0,0,0,0.06)",
             }}
           >
             <span className="tracking-wide">Continuar al pago</span>

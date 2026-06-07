@@ -42,6 +42,22 @@ const ProductPostSchema = z.object({
   description: z.string().max(2000).optional(),
   stock:       z.number().min(0).optional(),
   stockMin:    z.number().min(0).optional(),
+  // FIX 2026-06: el create antes DESCARTABA estos campos (sólo persistía
+  // name/category/price/image/unit/badge). El producto nacía incompleto y
+  // había que editarlo para agregar costo/código/stockMax. Ahora se persisten.
+  costPrice:   z.number().min(0).optional(),
+  barcode:     z.string().max(100).optional(),
+  stockMax:    z.number().min(0).optional(),
+  // ── Producto/servicio completo ──
+  type:          z.enum(["product", "service"]).optional(),
+  brand:         z.string().max(100).optional(),
+  sku:           z.string().max(60).optional(),
+  taxType:       z.enum(["gravado", "exonerado", "inafecto"]).optional(),
+  weightKg:      z.number().min(0).optional(),
+  dimensions:    z.string().max(60).optional(),
+  durationLabel: z.string().max(60).optional(),
+  pricingUnit:   z.enum(["fijo", "hora", "m3", "unidad", "dia"]).optional(),
+  notes:         z.string().max(2000).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -157,18 +173,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const all = await ProductsDB.getAll(auth.tenantId);
-    const newId = all.length > 0 ? Math.max(...all.map((p) => p.id)) + 1 : 1;
-    const product = await ProductsDB.upsert({
-      id:       newId,
-      name:     body.name,
-      category: body.category,
-      price:    body.price,
-      image:    body.image ?? "",
-      unit:     body.unit ?? "und",
-      badge:    body.badge || undefined,
-      active:   true,
-      tenantId: auth.tenantId,
+    // FIX 2026-06: usar create() (id autoincrement de la DB) en lugar de
+    // upsert({id: max(tenant)+1}). Product.id es GLOBAL, no per-tenant: para
+    // el 1er producto de un tenant nuevo newId=1 colisionaba con el id=1 de
+    // otro tenant → "cross-tenant access denied". Ver [[feedback_prisma_upsert_id_zero]].
+    const isService = body.type === "service";
+    const product = await ProductsDB.create({
+      name:        body.name,
+      category:    body.category,
+      price:       body.price,
+      image:       body.image ?? "",
+      unit:        body.unit ?? "und",
+      badge:       body.badge || undefined,
+      description: body.description || undefined,
+      active:      true,
+      tenantId:    auth.tenantId,
+      // Producto completo (antes se perdían). Servicios NO llevan stock/barcode.
+      costPrice:   body.costPrice ?? undefined,
+      barcode:     isService ? undefined : (body.barcode || undefined),
+      stock:       isService ? undefined : (body.stock ?? undefined),
+      stockMin:    isService ? undefined : (body.stockMin ?? undefined),
+      stockMax:    isService ? undefined : (body.stockMax ?? undefined),
+      type:        body.type ?? "product",
+      brand:       body.brand || undefined,
+      sku:         body.sku || undefined,
+      taxType:     body.taxType ?? "gravado",
+      weightKg:    isService ? undefined : (body.weightKg ?? undefined),
+      dimensions:  isService ? undefined : (body.dimensions || undefined),
+      durationLabel: isService ? (body.durationLabel || undefined) : undefined,
+      pricingUnit:   isService ? (body.pricingUnit || undefined) : undefined,
+      notes:         body.notes || undefined,
     });
     const requestId = req.headers.get("x-request-id") ?? undefined;
     logActivity(
@@ -193,7 +227,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(product, {
       headers: { "X-Api-Version": "v1" },
     });
-  } catch {
+  } catch (e) {
+    logger.error("[v1/products POST] create failed", { err: e instanceof Error ? (e.stack ?? e.message) : String(e) });
     return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
 }

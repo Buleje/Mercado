@@ -264,7 +264,7 @@ export default function CustomerGeoMap({ className }: Props) {
           gradient: {
             0.2: "var(--accent)",
             0.4: "color-mix(in oklab, var(--accent) 70%, white)",
-            0.6: "#2dd4bf",
+            0.6: "#14C2C2",
             0.8: "#f97316",
             1.0: "#e63946",
           },
@@ -502,7 +502,7 @@ export default function CustomerGeoMap({ className }: Props) {
             <div className="flex h-3 w-32 overflow-hidden rounded-full">
               <div className="flex-1 bg-primary" />
               <div className="flex-1 bg-primary-light" />
-              <div className="flex-1 bg-[#2dd4bf]" />
+              <div className="flex-1 bg-[#14C2C2]" />
               <div className="flex-1 bg-secondary" />
               <div className="flex-1 bg-[var(--data-error-500)]" />
             </div>

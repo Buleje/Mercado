@@ -14,7 +14,7 @@ import OnboardingStep3Client from './OnboardingStep3Client';
 import OnboardingStep4POSDemo from './OnboardingStep4POSDemo';
 import OnboardingStep5Finish from './OnboardingStep5Finish';
 
-const CONFETTI_COLORS = ['var(--accent)', '#f97316', '#e76f51', '#264653', '#2a9d8f', '#e9c46a', '#f72585', '#4361ee'];
+const CONFETTI_COLORS = ['var(--accent)', '#f97316', '#e76f51', '#264653', '#00BDBD', '#e9c46a', '#f72585', '#4361ee'];
 
 function generatePieces() {
   return Array.from({ length: 30 }, (_, i) => ({
@@ -33,12 +33,6 @@ function ConfettiEffect() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[60] overflow-hidden">
-      <style>{`
-        @keyframes confetti-fall {
-          0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-      `}</style>
       {pieces.map(p => (
         <div
           key={p.id}
@@ -88,43 +82,65 @@ export default function OnboardingWizard() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 overflow-y-auto"
       style={{
         background:
-          "radial-gradient(120% 80% at 0% 0%, var(--accent-soft) 0%, transparent 55%), radial-gradient(120% 80% at 100% 100%, var(--accent-muted) 0%, transparent 55%), var(--surface-canvas)",
+          "radial-gradient(130% 90% at 6% -10%, var(--accent-soft) 0%, transparent 48%), radial-gradient(130% 90% at 100% 110%, var(--accent-muted) 0%, transparent 50%), var(--surface-canvas)",
       }}
     >
-      {showConfetti && <ConfettiEffect />}
+      {/* Orbs decorativos flotantes (clipeados al viewport, no generan scroll).
+          Keyframes ob-float-a/b + confetti-fall viven en globals.css (React 19
+          no ejecuta <style> inline dentro del árbol de componentes). */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="ob-orb absolute -top-24 -left-16 h-72 w-72 rounded-full opacity-60 blur-3xl"
+          style={{ background: "var(--accent-muted)", animation: "ob-float-a 15s ease-in-out infinite" }}
+        />
+        <div
+          className="ob-orb absolute -bottom-28 -right-16 h-80 w-80 rounded-full opacity-50 blur-3xl"
+          style={{ background: "var(--accent-soft)", animation: "ob-float-b 19s ease-in-out infinite" }}
+        />
+      </div>
 
-      {/* Card compacto: 480px hardcoded para escapar del override de
-          --container-lg (1200px) que tiene este proyecto en Tailwind v4.
-          Animación de entrada suave (sin opacity stuck). */}
-      <motion.div
-        initial={{ opacity: 0, y: 12, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-[480px] mx-auto bg-[var(--surface-raised)] rounded-3xl border border-[var(--rule-base)] overflow-hidden"
-        style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,0.18), 0 8px 16px -8px rgba(0,0,0,0.08)" }}
-      >
-        {/* Header con progress + back button */}
-        <div className="px-6 pt-6 pb-5 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40">
-          {currentStep > 1 && (
-            <button
-              onClick={goPrev}
-              aria-label="Volver al paso anterior"
-              className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-1 -ml-1"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              Atrás
-            </button>
-          )}
-          <OnboardingProgressBar currentStep={currentStep} />
-        </div>
+      <div className="relative flex min-h-full items-center justify-center p-4">
+        {showConfetti && <ConfettiEffect />}
 
-        {/* Body con steps */}
-        <div className="px-6 py-7 sm:px-8 sm:py-8">
+        {/* Card compacto: 460px hardcoded para escapar del override de
+            --container-lg (1200px) que tiene este proyecto en Tailwind v4.
+            Glass + entrada suave (sin opacity stuck). */}
+        <motion.div
+          initial={{ opacity: 0, y: 14, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mx-auto w-full max-w-[460px] overflow-hidden rounded-[26px] border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur-xl"
+          style={{ boxShadow: "0 30px 70px -16px rgba(0,0,0,0.28), 0 8px 20px -10px rgba(0,0,0,0.12)" }}
+        >
+          {/* Barra superior con gradiente accent */}
+          <div
+            aria-hidden
+            className="h-1 w-full"
+            style={{ background: "linear-gradient(90deg, var(--accent) 0%, var(--accent-dark) 100%)" }}
+          />
+
+          {/* Header con progress + back button */}
+          <div className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 px-6 pb-5 pt-5">
+            {currentStep > 1 && (
+              <button
+                onClick={goPrev}
+                aria-label="Volver al paso anterior"
+                className="mb-3 -ml-1 inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-xs font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Atrás
+              </button>
+            )}
+            <OnboardingProgressBar currentStep={currentStep} />
+          </div>
+
+          {/* Body con steps */}
+          <div className="px-6 py-7 sm:px-8 sm:py-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -171,21 +187,22 @@ export default function OnboardingWizard() {
                   isCompleting={isCompleting}
                 />
               )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-        {/* Footer skip */}
-        <div className="px-6 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40 text-center">
-          <button
-            onClick={handleSkipAll}
-            disabled={isCompleting}
-            className="text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-2 py-1"
-          >
-            Saltar configuración →
-          </button>
-        </div>
-      </motion.div>
+          {/* Footer skip */}
+          <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 px-6 py-3 text-center">
+            <button
+              onClick={handleSkipAll}
+              disabled={isCompleting}
+              className="rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+            >
+              Saltar configuración →
+            </button>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }

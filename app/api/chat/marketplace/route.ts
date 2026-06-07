@@ -39,7 +39,9 @@ function normalizePhone(phone: string): string {
 // ?storeId=xxx&customerPhone=9xxxxxxxx&limit=50
 
 export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
-  const limited = applyRateLimit(req, "MODERATE", "chat-mkt-get");
+  // GENEROUS: la conversación abierta POLLEA cada 5s (chat "en vivo") —
+  // MODERATE (20/5min) cortaba el chat a los ~100 segundos (Brandon 2026-06-06).
+  const limited = applyRateLimit(req, "GENEROUS", "chat-mkt-get");
   if (limited) return limited;
 
   // P0 #5 — requiere sesión de cliente autenticado

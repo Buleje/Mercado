@@ -97,7 +97,7 @@ export function generateOrderConfirmationHTML(order: OrderEmailData, branding?: 
   <div style="max-width:560px;margin:24px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
     <!-- Header -->
-    <div style="background:#00B4A6;padding:28px 28px 20px;">
+    <div style="background:#00A0A0;padding:28px 28px 20px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="background:rgba(255,255,255,0.15);width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;text-align:center;line-height:48px;">
           ${b.storeName.charAt(0).toUpperCase()}
@@ -125,21 +125,21 @@ export function generateOrderConfirmationHTML(order: OrderEmailData, branding?: 
 
     <!-- Detalle items -->
     <div style="padding:20px 28px 0;">
-      <h2 style="margin:0 0 12px;font-size:15px;color:#00B4A6;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+      <h2 style="margin:0 0 12px;font-size:15px;color:#00A0A0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
         Detalle del pedido
       </h2>
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:#f0fdf4;">
-            <th style="padding:10px 12px;text-align:left;font-size:12px;color:#00B4A6;text-transform:uppercase;letter-spacing:0.5px;">Producto</th>
-            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#00B4A6;text-transform:uppercase;letter-spacing:0.5px;">Subtotal</th>
+            <th style="padding:10px 12px;text-align:left;font-size:12px;color:#00A0A0;text-transform:uppercase;letter-spacing:0.5px;">Producto</th>
+            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#00A0A0;text-transform:uppercase;letter-spacing:0.5px;">Subtotal</th>
           </tr>
         </thead>
         <tbody>${itemsHtml}</tbody>
         <tfoot>
           <tr style="background:#f0fdf4;">
             <td style="padding:12px;font-weight:700;font-size:15px;color:#111;">Total</td>
-            <td style="padding:12px;text-align:right;font-weight:700;font-size:17px;color:#00B4A6;">${fmt(order.total)}</td>
+            <td style="padding:12px;text-align:right;font-weight:700;font-size:17px;color:#00A0A0;">${fmt(order.total)}</td>
           </tr>
         </tfoot>
       </table>
@@ -160,7 +160,7 @@ export function generateOrderConfirmationHTML(order: OrderEmailData, branding?: 
     <!-- Boton tracking -->
     ${order.trackingUrl ? `
     <div style="padding:8px 28px 20px;text-align:center;">
-      <a href="${order.trackingUrl}" style="display:inline-block;background:#00B4A6;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;">
+      <a href="${order.trackingUrl}" style="display:inline-block;background:#00A0A0;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;">
         Ver estado de mi pedido
       </a>
     </div>` : ""}
@@ -194,7 +194,7 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData, branding
   <div style="max-width:560px;margin:24px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
     <!-- Header -->
-    <div style="background:#00B4A6;padding:28px 28px 20px;">
+    <div style="background:#00A0A0;padding:28px 28px 20px;">
       <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">${b.storeName}</h1>
       <p style="margin:4px 0 0;color:#a8d5ba;font-size:13px;">${b.location}</p>
     </div>
@@ -225,7 +225,7 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData, branding
           </tr>
           <tr>
             <td style="padding:4px 0;color:#555;">Total pagado</td>
-            <td style="padding:4px 0;text-align:right;font-weight:700;color:#00B4A6;">${fmt(order.total)}</td>
+            <td style="padding:4px 0;text-align:right;font-weight:700;color:#00A0A0;">${fmt(order.total)}</td>
           </tr>
           <tr>
             <td style="padding:4px 0;color:#555;">Productos</td>
@@ -286,7 +286,7 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
               <td style="width:80px;padding-right:12px;vertical-align:top;">
                 ${p.imageUrl
           ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;display:block;">`
-          : `<div style="width:72px;height:72px;background:#f0fdf4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;text-align:center;line-height:72px;color:#00B4A6;font-weight:700;">${p.name.charAt(0)}</div>`
+          : `<div style="width:72px;height:72px;background:#f0fdf4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;text-align:center;line-height:72px;color:#00A0A0;font-weight:700;">${p.name.charAt(0)}</div>`
         }
               </td>
               <td style="vertical-align:middle;">
@@ -294,7 +294,7 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
                 <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#222;">${p.name}</p>
                 <p style="margin:0 0 6px;font-size:12px;color:#888;">${p.unit}${p.category ? ` &bull; ${p.category}` : ""}</p>
                 <div>
-                  <span style="font-size:16px;font-weight:700;color:#00B4A6;">${fmt(p.price)}</span>
+                  <span style="font-size:16px;font-weight:700;color:#00A0A0;">${fmt(p.price)}</span>
                   ${hasDiscount ? `<span style="font-size:13px;color:#aaa;text-decoration:line-through;margin-left:6px;">${fmt(p.originalPrice!)}</span>` : ""}
                 </div>
               </td>
@@ -316,7 +316,7 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
   <div style="max-width:560px;margin:24px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
     <!-- Header -->
-    <div style="background:#00B4A6;padding:28px 28px 20px;">
+    <div style="background:#00A0A0;padding:28px 28px 20px;">
       <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">${b.storeName}</h1>
       <p style="margin:4px 0 0;color:#a8d5ba;font-size:13px;">${b.location}</p>
     </div>
@@ -345,7 +345,7 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
     <!-- CTA -->
     <div style="padding:20px 28px 24px;text-align:center;">
       <p style="margin:0 0 14px;font-size:13px;color:#777;">Haz tu pedido por WhatsApp o visita nuestra tienda.</p>
-      <div style="display:inline-block;background:#00B4A6;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;">
+      <div style="display:inline-block;background:#00A0A0;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;">
         Ver todas las ofertas
       </div>
     </div>

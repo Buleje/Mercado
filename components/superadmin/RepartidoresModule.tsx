@@ -399,7 +399,7 @@ export default function RepartidoresModule() {
           label="En línea ahora"
           value={stats.online}
           icon={<MotoIcon className="h-4 w-4" />}
-          iconBg="rgba(0, 180, 166, 0.1)"
+          iconBg="rgba(0, 160, 160, 0.1)"
           iconColor="var(--accent)"
         />
         <Kpi
@@ -1395,7 +1395,7 @@ function ImpersonateModal({
       title="Acceder a la cuenta del repartidor"
       subtitle="Abrirás la app del repartidor con su sesión activa en una nueva pestaña."
       icon={<ExternalLink className="h-5 w-5" />}
-      iconBg="rgba(0, 180, 166, 0.1)"
+      iconBg="rgba(0, 160, 160, 0.1)"
       iconColor="var(--accent)"
       onClose={onCancel}
     >

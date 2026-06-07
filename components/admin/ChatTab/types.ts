@@ -52,7 +52,7 @@ export const STATUS_LABELS: Record<ThreadStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<ThreadStatus, string> = {
-  open: "bg-[#00B4A6]",
+  open: "bg-[#00A0A0]",
   closed: "bg-slate-500",
   archived: "bg-slate-400",
   blocked: "bg-[var(--data-error-500)]",

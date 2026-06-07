@@ -303,7 +303,7 @@ function HeatMap({ txs }: { txs: LoyaltyTransaction[] }) {
                     background:
                       count === 0
                         ? "var(--color-card-border)"
-                        : `color-mix(in oklch, var(--color-primary, #00B4A6) ${Math.round(intensity * 80) + 20}%, transparent)`,
+                        : `color-mix(in oklch, var(--color-primary, #00A0A0) ${Math.round(intensity * 80) + 20}%, transparent)`,
                   }}
                   title={`${count} movimiento${count === 1 ? "" : "s"}`}
                 />
@@ -320,7 +320,7 @@ function HeatMap({ txs }: { txs: LoyaltyTransaction[] }) {
               key={i}
               className="w-3 h-3 rounded-sm"
               style={{
-                background: `color-mix(in oklch, var(--color-primary, #00B4A6) ${Math.round(i * 80) + 20}%, transparent)`,
+                background: `color-mix(in oklch, var(--color-primary, #00A0A0) ${Math.round(i * 80) + 20}%, transparent)`,
               }}
             />
           ))}
@@ -339,16 +339,16 @@ function HowToEarn() {
       className="rounded-2xl p-4 relative overflow-hidden"
       style={{
         background:
-          "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00B4A6) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
+          "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00A0A0) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
         border:
-          "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 28%, transparent)",
+          "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 28%, transparent)",
       }}
     >
       <div
         className="absolute -top-6 -right-6 w-20 h-20 rounded-full pointer-events-none"
         style={{
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
         }}
       />
       <div className="relative">
@@ -415,10 +415,10 @@ function RewardCard({
       style={{
         background: "var(--color-card)",
         border: canRedeem
-          ? "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)"
+          ? "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)"
           : "1px solid var(--color-card-border)",
         boxShadow: canRedeem
-          ? "0 8px 20px -8px color-mix(in oklch, var(--color-primary, #00B4A6) 30%, transparent)"
+          ? "0 8px 20px -8px color-mix(in oklch, var(--color-primary, #00A0A0) 30%, transparent)"
           : undefined,
         opacity: canRedeem ? 1 : 0.85,
       }}
@@ -428,7 +428,7 @@ function RewardCard({
           className="absolute top-0 left-0 right-0 h-1"
           style={{
             background:
-              "linear-gradient(90deg, var(--color-primary, #00B4A6) 0%, var(--accent) 100%)",
+              "linear-gradient(90deg, var(--color-primary, #00A0A0) 0%, var(--accent) 100%)",
           }}
         />
       )}
@@ -437,14 +437,14 @@ function RewardCard({
           className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
           style={{
             background: canRedeem
-              ? "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)"
-              : "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+              ? "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)"
+              : "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
           }}
         >
           <Gift
             className="h-5 w-5"
             style={{
-              color: canRedeem ? "white" : "var(--color-primary, #00B4A6)",
+              color: canRedeem ? "white" : "var(--color-primary, #00A0A0)",
             }}
             strokeWidth={2.5}
           />
@@ -453,7 +453,7 @@ function RewardCard({
           className="text-right shrink-0 px-3 py-1 rounded-full text-xs font-extrabold tabular-nums"
           style={{
             background: canRedeem
-              ? "color-mix(in oklch, var(--color-primary, #00B4A6) 16%, transparent)"
+              ? "color-mix(in oklch, var(--color-primary, #00A0A0) 16%, transparent)"
               : "var(--color-card-border)",
             color: canRedeem ? "var(--color-primary-dark, #009690)" : "var(--color-muted)",
           }}
@@ -476,7 +476,7 @@ function RewardCard({
               style={{
                 width: `${progress}%`,
                 background:
-                  "linear-gradient(90deg, var(--color-primary, #00B4A6) 0%, var(--accent) 100%)",
+                  "linear-gradient(90deg, var(--color-primary, #00A0A0) 0%, var(--accent) 100%)",
               }}
             />
           </div>
@@ -500,9 +500,9 @@ function RewardCard({
           canRedeem
             ? {
                 background:
-                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                 boxShadow:
-                  "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                  "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
               }
             : {
                 background: "var(--color-card-border)",
@@ -731,7 +731,7 @@ export default function PuntosPage() {
         className="min-h-screen dark:bg-background"
         style={{
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-canvas, #f9fafb))",
         }}
       >
         <main className="max-w-md mx-auto px-4 sm:px-6 pt-32 pb-28">
@@ -777,7 +777,7 @@ export default function PuntosPage() {
       className="min-h-screen dark:bg-background"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-canvas, #f9fafb))",
       }}
     >
       <BreadcrumbSchema
@@ -793,7 +793,7 @@ export default function PuntosPage() {
         className="relative overflow-hidden pt-28 sm:pt-32 pb-8"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
         }}
       >
         <div
@@ -999,10 +999,10 @@ export default function PuntosPage() {
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-extrabold transition-all hover:-translate-y-0.5"
                 style={{
                   background:
-                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   color: "white",
                   boxShadow:
-                    "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                    "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
                 }}
               >
                 <ShoppingCart className="h-4 w-4" strokeWidth={2.5} />
@@ -1018,16 +1018,16 @@ export default function PuntosPage() {
                   className="rounded-3xl p-6 relative overflow-hidden"
                   style={{
                     background:
-                      "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00B4A6) 14%, var(--color-card)) 0%, var(--color-card) 100%)",
+                      "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00A0A0) 14%, var(--color-card)) 0%, var(--color-card) 100%)",
                     border:
-                      "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+                      "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)",
                   }}
                 >
                   <div
                     className="absolute -top-16 -right-16 w-40 h-40 rounded-full pointer-events-none"
                     style={{
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
                     }}
                   />
                   <div className="relative">
@@ -1065,7 +1065,7 @@ export default function PuntosPage() {
                         style={{
                           width: `${Math.min(100, (totalSpent / nextTier.minSpent) * 100)}%`,
                           background:
-                            "linear-gradient(90deg, var(--color-primary, #00B4A6) 0%, var(--accent) 100%)",
+                            "linear-gradient(90deg, var(--color-primary, #00A0A0) 0%, var(--accent) 100%)",
                         }}
                       />
                     </div>

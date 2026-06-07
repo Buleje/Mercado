@@ -2,6 +2,7 @@
 
 import { useState, useRef, type ChangeEvent } from 'react';
 import Image from "next/image";
+import { OnboardingPrimaryButton, OB_INPUT, OB_LABEL } from './onboarding-ui';
 
 interface BrandData {
   nombre: string;
@@ -43,11 +44,11 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-2">
-        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+      <div className="mb-2 text-center">
+        <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
           Bienvenido a tu bodega digital
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <p className="mt-2 text-[var(--text-secondary)]">
           Configura los datos de tu negocio para empezar
         </p>
       </div>
@@ -57,16 +58,16 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="relative w-24 h-24 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden hover:border-[var(--accent)] transition-colors cursor-pointer group"
+          className="group relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] transition-all duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
         >
           {logoPreview ? (
             <Image src={logoPreview} alt="Logo" fill className="object-cover" sizes="96px" unoptimized />
           ) : (
             <div className="text-center">
-              <svg className="w-8 h-8 mx-auto text-gray-400 group-hover:text-[var(--accent)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="mx-auto h-8 w-8 text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-[length:var(--ts-2xs)] text-gray-400 mt-1">Logo</span>
+              <span className="mt-1 block text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]">Logo</span>
             </div>
           )}
         </button>
@@ -77,13 +78,13 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
           onChange={handleLogoChange}
           className="hidden"
         />
-        <p className="text-xs text-gray-400 mt-2">JPG o PNG (opcional)</p>
+        <p className="mt-2 text-xs text-[var(--text-tertiary)]">JPG o PNG (opcional)</p>
       </div>
 
       {/* Form fields */}
       <div className="space-y-4">
         <div>
-          <label htmlFor="ob-brand-nombre" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="ob-brand-nombre" className={OB_LABEL}>
             Nombre del negocio *
           </label>
           <input
@@ -92,12 +93,12 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
             value={data.nombre}
             onChange={e => onChange({ ...data, nombre: e.target.value })}
             placeholder="Ej: Buleje"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+            className={OB_INPUT}
           />
         </div>
 
         <div>
-          <label htmlFor="ob-brand-direccion" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="ob-brand-direccion" className={OB_LABEL}>
             Dirección
           </label>
           <input
@@ -106,12 +107,12 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
             value={data.direccion}
             onChange={e => onChange({ ...data, direccion: e.target.value })}
             placeholder="Ej: Jr. Ucayali 123, Pucallpa"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+            className={OB_INPUT}
           />
         </div>
 
         <div>
-          <label htmlFor="ob-brand-telefono" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="ob-brand-telefono" className={OB_LABEL}>
             Teléfono WhatsApp
           </label>
           <input
@@ -120,18 +121,14 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
             value={data.telefono}
             onChange={e => onChange({ ...data, telefono: e.target.value })}
             placeholder="Ej: 961234567"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+            className={OB_INPUT}
           />
         </div>
       </div>
 
-      <button
-        onClick={onNext}
-        disabled={!isValid}
-        className="w-full py-3 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Empecemos &rarr;
-      </button>
+      <OnboardingPrimaryButton onClick={onNext} disabled={!isValid} withArrow>
+        Empecemos
+      </OnboardingPrimaryButton>
     </div>
   );
 }

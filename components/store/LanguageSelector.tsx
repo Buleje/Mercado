@@ -137,7 +137,7 @@ export default function LanguageSelector({ className, compact = false }: Languag
         onClick={() => setLang(lang === "es" ? "qu" : "es")}
         className={cn(
           "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors",
-          "border-[var(--accent)] text-[var(--accent)] dark:text-[#2dd4bf] dark:border-[#2dd4bf]",
+          "border-[var(--accent)] text-[var(--accent)] dark:text-[#14C2C2] dark:border-[#14C2C2]",
           "hover:bg-[var(--accent)]/10",
           className
         )}

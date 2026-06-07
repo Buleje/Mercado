@@ -87,7 +87,7 @@ const COLOR: Record<
 > = {
   teal: {
     bg: "var(--accent)",
-    border: "linear-gradient(135deg, var(--accent), #2dd4bf)",
+    border: "linear-gradient(135deg, var(--accent), #14C2C2)",
     text: "rgba(20,184,166,0.15)",
     metricText: "color-mix(in oklab, var(--accent) 70%, white)",
   },
@@ -409,7 +409,7 @@ export default function SaasTestimonials() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 50% 110%, rgba(15,118,110,0.09) 0%, transparent 70%)",
+            "radial-gradient(ellipse 60% 40% at 50% 110%, rgba(0, 160, 160,0.09) 0%, transparent 70%)",
         }}
       />
 
@@ -505,7 +505,7 @@ export default function SaasTestimonials() {
                 background:
                   i === index
                     ? "var(--accent)"
-                    : "rgba(15,118,110,0.28)",
+                    : "rgba(0, 160, 160,0.28)",
               }}
             />
           ))}

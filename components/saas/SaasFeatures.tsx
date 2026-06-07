@@ -24,10 +24,10 @@ interface MiniFeature {
 }
 
 const C_BORDER: Record<Cat, string> = { Ventas: "var(--accent)", IA: "#2563eb", Stock: "#d97706" };
-const C_BG:     Record<Cat, string> = { Ventas: "rgba(15,118,110,0.12)", IA: "rgba(37,99,235,0.12)", Stock: "rgba(217,119,6,0.12)" };
-const C_TEXT:   Record<Cat, string> = { Ventas: "#2dd4bf", IA: "#60a5fa", Stock: "#fbbf24" };
+const C_BG:     Record<Cat, string> = { Ventas: "rgba(0, 160, 160,0.12)", IA: "rgba(37,99,235,0.12)", Stock: "rgba(217,119,6,0.12)" };
+const C_TEXT:   Record<Cat, string> = { Ventas: "#14C2C2", IA: "#60a5fa", Stock: "#fbbf24" };
 const C_ICON:   Record<Cat, string> = {
-  Ventas: "linear-gradient(135deg,var(--accent),#2dd4bf)",
+  Ventas: "linear-gradient(135deg,var(--accent),#14C2C2)",
   IA:     "linear-gradient(135deg,#1d4ed8,#3b82f6)",
   Stock:  "linear-gradient(135deg,#b45309,#f59e0b)",
 };
@@ -260,8 +260,8 @@ export default function SaasFeatures() {
                 aria-pressed={active}
                 className="shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] whitespace-nowrap min-h-[44px]"
                 style={active
-                  ? { background: "linear-gradient(135deg,var(--accent),#2dd4bf)", color: "#fff", boxShadow: "0 4px 14px -4px rgba(15,118,110,0.45)" }
-                  : { background: "transparent", color: "inherit", border: "1px solid rgba(15,118,110,0.22)" }
+                  ? { background: "linear-gradient(135deg,var(--accent),#14C2C2)", color: "#fff", boxShadow: "0 4px 14px -4px rgba(0, 160, 160,0.45)" }
+                  : { background: "transparent", color: "inherit", border: "1px solid rgba(0, 160, 160,0.22)" }
                 }
               >
                 {label}

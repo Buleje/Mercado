@@ -253,10 +253,10 @@ export default function LiveChatWidget() {
           )}
           style={{
             background:
-              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
             color: "white",
             boxShadow:
-              "0 12px 28px -6px color-mix(in oklch, var(--color-primary, #00B4A6) 45%, transparent)",
+              "0 12px 28px -6px color-mix(in oklch, var(--color-primary, #00A0A0) 45%, transparent)",
           }}
           aria-label="Abrir chat con el negocio"
         >
@@ -281,9 +281,9 @@ export default function LiveChatWidget() {
           style={{
             background: "var(--color-card)",
             border:
-              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+              "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
             boxShadow:
-              "0 32px 64px -16px color-mix(in oklch, var(--color-primary, #00B4A6) 30%, transparent), 0 8px 16px rgba(0,0,0,0.10)",
+              "0 32px 64px -16px color-mix(in oklch, var(--color-primary, #00A0A0) 30%, transparent), 0 8px 16px rgba(0,0,0,0.10)",
           }}
         >
           {/* Header brand */}
@@ -291,7 +291,7 @@ export default function LiveChatWidget() {
             className="relative shrink-0 overflow-hidden"
             style={{
               background:
-                "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+                "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
             }}
           >
             <div
@@ -351,9 +351,9 @@ export default function LiveChatWidget() {
                   className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto"
                   style={{
                     background:
-                      "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                     boxShadow:
-                      "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                      "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
                   }}
                 >
                   <Bot className="h-8 w-8 text-white" strokeWidth={2} />
@@ -387,11 +387,11 @@ export default function LiveChatWidget() {
                       m.sender === "bot"
                         ? {
                             background:
-                              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                              "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                           }
                         : {
                             background:
-                              "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                              "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                           }
                     }
                   >
@@ -414,7 +414,7 @@ export default function LiveChatWidget() {
                     m.sender === "customer"
                       ? {
                           background:
-                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                           color: "white",
                           borderBottomRightRadius: "0.5rem",
                         }
@@ -424,15 +424,15 @@ export default function LiveChatWidget() {
                             color: "var(--color-foreground)",
                             borderBottomLeftRadius: "0.5rem",
                             border:
-                              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                              "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
                           }
                         : {
                             background:
-                              "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card))",
+                              "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, var(--color-card))",
                             color: "var(--color-foreground)",
                             borderBottomLeftRadius: "0.5rem",
                             border:
-                              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                              "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
                           }
                   }
                 >
@@ -466,7 +466,7 @@ export default function LiveChatWidget() {
                     className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
                     style={{
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
                     }}
                   >
                     <User
@@ -486,7 +486,7 @@ export default function LiveChatWidget() {
                   className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
                   style={{
                     background:
-                      "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   }}
                 >
                   <Bot className="h-4 w-4 text-white" strokeWidth={2.25} />
@@ -496,7 +496,7 @@ export default function LiveChatWidget() {
                   style={{
                     background: "var(--surface-sunken)",
                     border:
-                      "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                      "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
                     borderBottomLeftRadius: "0.5rem",
                   }}
                 >
@@ -505,21 +505,21 @@ export default function LiveChatWidget() {
                       className="w-2 h-2 rounded-full animate-bounce [animation-delay:0ms]"
                       style={{
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
                       }}
                     />
                     <span
                       className="w-2 h-2 rounded-full animate-bounce [animation-delay:150ms]"
                       style={{
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
                       }}
                     />
                     <span
                       className="w-2 h-2 rounded-full animate-bounce [animation-delay:300ms]"
                       style={{
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
                       }}
                     />
                   </div>
@@ -536,7 +536,7 @@ export default function LiveChatWidget() {
               className="px-4 pb-3 pt-3"
               style={{
                 borderTop:
-                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                  "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
               }}
             >
               <p
@@ -552,9 +552,9 @@ export default function LiveChatWidget() {
                     className="col-span-2 flex items-center gap-2 px-3 h-11 rounded-xl text-sm font-bold text-[var(--text-primary)] transition-colors text-left"
                     style={{
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, transparent)",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, transparent)",
                       border:
-                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                        "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
                     }}
                   >
                     <MapPin
@@ -575,7 +575,7 @@ export default function LiveChatWidget() {
                     style={{
                       background: "var(--color-card)",
                       border:
-                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                        "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
                     }}
                   >
                     <q.icon
@@ -596,7 +596,7 @@ export default function LiveChatWidget() {
               className="px-4 pb-2 flex flex-wrap gap-1.5 pt-3"
               style={{
                 borderTop:
-                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                  "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
               }}
             >
               {QUICK_QUESTIONS.slice(0, 3).map(q => (
@@ -606,10 +606,10 @@ export default function LiveChatWidget() {
                   className="text-xs font-extrabold px-3 h-8 rounded-full transition-colors inline-flex items-center"
                   style={{
                     background:
-                      "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, transparent)",
+                      "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, transparent)",
                     color: "var(--color-primary-dark, #009690)",
                     border:
-                      "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                      "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
                   }}
                 >
                   {q.text}
@@ -628,7 +628,7 @@ export default function LiveChatWidget() {
             style={{
               background: "var(--color-card)",
               borderTop:
-                "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
             }}
           >
             <input
@@ -642,15 +642,15 @@ export default function LiveChatWidget() {
               style={{
                 background: "var(--surface-sunken)",
                 border:
-                  "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                  "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
               }}
               onFocus={e =>
                 (e.currentTarget.style.borderColor =
-                  "var(--color-primary, #00B4A6)")
+                  "var(--color-primary, #00A0A0)")
               }
               onBlur={e =>
                 (e.currentTarget.style.borderColor =
-                  "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)")
+                  "color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)")
               }
             />
             <button
@@ -661,10 +661,10 @@ export default function LiveChatWidget() {
                 input.trim()
                   ? {
                       background:
-                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                       color: "white",
                       boxShadow:
-                        "0 6px 16px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                        "0 6px 16px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
                     }
                   : {
                       background: "var(--surface-sunken)",

@@ -56,7 +56,7 @@ function ToggleSwitch({
       )}
       style={{
         background: checked
-          ? "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)"
+          ? "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)"
           : "var(--color-card-border)",
       }}
     >
@@ -96,12 +96,12 @@ function ToggleRow({
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
           style={{
-            background: `color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00B4A6)"} 12%, transparent)`,
+            background: `color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00A0A0)"} 12%, transparent)`,
           }}
         >
           <Icon
             className="h-5 w-5"
-            style={{ color: iconColor ?? "var(--color-primary, #00B4A6)" }}
+            style={{ color: iconColor ?? "var(--color-primary, #00A0A0)" }}
             strokeWidth={2.25}
           />
         </div>
@@ -144,7 +144,7 @@ function SelectPills<T extends string>({
           className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
           style={{
             background:
-              "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+              "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
           }}
         >
           <Icon
@@ -175,10 +175,10 @@ function SelectPills<T extends string>({
                 active
                   ? {
                       background:
-                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                       color: "white",
                       boxShadow:
-                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                     }
                   : {
                       background: "var(--color-card)",
@@ -230,7 +230,7 @@ function LinkRow({
         style={{
           background: danger
             ? "color-mix(in oklch, var(--data-error-500) 12%, transparent)"
-            : "color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+            : "color-mix(in oklch, var(--color-primary, #00A0A0) 10%, transparent)",
         }}
       >
         <Icon
@@ -238,7 +238,7 @@ function LinkRow({
           style={{
             color: danger
               ? "var(--data-error-500)"
-              : "var(--color-primary, #00B4A6)",
+              : "var(--color-primary, #00A0A0)",
           }}
           strokeWidth={2.25}
         />
@@ -317,7 +317,7 @@ function SectionCard({
             : "var(--color-card-border)",
           background: danger
             ? "linear-gradient(135deg, color-mix(in oklch, var(--data-error-500) 8%, var(--color-card)) 0%, var(--color-card) 100%)"
-            : `linear-gradient(135deg, color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00B4A6)"} 12%, var(--color-card)) 0%, var(--color-card) 100%)`,
+            : `linear-gradient(135deg, color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00A0A0)"} 12%, var(--color-card)) 0%, var(--color-card) 100%)`,
         }}
       >
         <div className="flex items-center gap-3">
@@ -326,10 +326,10 @@ function SectionCard({
             style={{
               background: danger
                 ? "linear-gradient(135deg, var(--data-error-500) 0%, var(--data-error-600) 100%)"
-                : `linear-gradient(135deg, ${iconColor ?? "var(--color-primary, #00B4A6)"} 0%, var(--color-primary-dark, #009690) 100%)`,
+                : `linear-gradient(135deg, ${iconColor ?? "var(--color-primary, #00A0A0)"} 0%, var(--color-primary-dark, #009690) 100%)`,
               boxShadow: danger
                 ? "0 4px 10px -2px color-mix(in oklch, var(--data-error-500) 35%, transparent)"
-                : `0 4px 10px -2px color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00B4A6)"} 35%, transparent)`,
+                : `0 4px 10px -2px color-mix(in oklch, ${iconColor ?? "var(--color-primary, #00A0A0)"} 35%, transparent)`,
             }}
           >
             <Icon className="h-5 w-5 text-white" strokeWidth={2.5} />
@@ -389,7 +389,7 @@ export default function PreferenciasPage() {
       className="min-h-screen dark:bg-background"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-canvas, #f9fafb))",
       }}
     >
       <BreadcrumbSchema
@@ -408,7 +408,7 @@ export default function PreferenciasPage() {
         className="relative overflow-hidden pt-28 sm:pt-32 pb-8"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
         }}
       >
         <div
@@ -550,16 +550,16 @@ export default function PreferenciasPage() {
               className="rounded-2xl p-4 relative overflow-hidden"
               style={{
                 background:
-                  "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00B4A6) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
+                  "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00A0A0) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
                 border:
-                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 28%, transparent)",
+                  "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 28%, transparent)",
               }}
             >
               <div
                 className="absolute -top-6 -right-6 w-20 h-20 rounded-full pointer-events-none"
                 style={{
                   background:
-                    "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                    "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                 }}
               />
               <div className="relative">
@@ -597,11 +597,11 @@ export default function PreferenciasPage() {
               style={{
                 background: saved
                   ? "linear-gradient(135deg, var(--data-success-500) 0%, var(--accent-dark) 100%)"
-                  : "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  : "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                 color: "white",
                 boxShadow: saved
                   ? "0 6px 14px -4px color-mix(in oklch, var(--data-success-500) 40%, transparent)"
-                  : "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                  : "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
               }}
             >
               {saved ? (

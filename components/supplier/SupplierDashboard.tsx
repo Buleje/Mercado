@@ -59,8 +59,8 @@ function KpiCard({
     <div
       className="rounded-2xl p-5 transition-shadow hover:shadow-lg"
       style={{
-        background: "rgba(15,118,110,0.06)",
-        border: "1px solid rgba(15,118,110,0.15)",
+        background: "rgba(0, 160, 160,0.06)",
+        border: "1px solid rgba(0, 160, 160,0.15)",
       }}
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -253,7 +253,7 @@ export default function SupplierDashboard({
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <header
         className="sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800"
-        style={{ background: "rgba(15,118,110,0.97)", backdropFilter: "blur(8px)" }}
+        style={{ background: "rgba(0, 160, 160,0.97)", backdropFilter: "blur(8px)" }}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
@@ -319,7 +319,7 @@ export default function SupplierDashboard({
         {/* ── TABS ───────────────────────────────────────────────── */}
         <div
           className="mb-6 flex gap-1 rounded-xl p-1"
-          style={{ background: "rgba(15,118,110,0.08)", border: "1px solid rgba(15,118,110,0.12)" }}
+          style={{ background: "rgba(0, 160, 160,0.08)", border: "1px solid rgba(0, 160, 160,0.12)" }}
           role="tablist"
           aria-label="Secciones del portal"
         >
@@ -529,7 +529,7 @@ export default function SupplierDashboard({
                 [...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)
               ) : (
                 <>
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(15,118,110,0.06)", border: "1px solid rgba(15,118,110,0.15)" }}>
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(0, 160, 160,0.06)", border: "1px solid rgba(0, 160, 160,0.15)" }}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total ganado</p>
                     <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{fmt(totalEarned)}</p>
                   </div>
@@ -537,7 +537,7 @@ export default function SupplierDashboard({
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Comisión plataforma</p>
                     <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{fmt(platformFee)}</p>
                   </div>
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(15,118,110,0.10)", border: "1px solid rgba(15,118,110,0.20)" }}>
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(0, 160, 160,0.10)", border: "1px solid rgba(0, 160, 160,0.20)" }}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Neto a cobrar</p>
                     <p className="mt-1 text-2xl font-bold text-[var(--accent-dark)] dark:text-teal-400">{fmt(netAmount)}</p>
                   </div>

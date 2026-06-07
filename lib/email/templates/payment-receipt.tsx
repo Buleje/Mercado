@@ -27,7 +27,7 @@ export interface PaymentReceiptProps {
   voucherUrl?: string;
 }
 
-const PRIMARY = "#00B4A6";
+const PRIMARY = "#00A0A0";
 const TEXT = "#111827";
 const MUTED = "#6b7280";
 const BG_LIGHT = "#f9fafb";

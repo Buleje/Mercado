@@ -1,11 +1,20 @@
 export default function OnboardingLoading() {
   return (
-    <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900 z-50 flex items-center justify-center">
-      <div className="w-full max-w-lg mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        background:
+          "radial-gradient(130% 90% at 6% -10%, var(--accent-soft) 0%, transparent 48%), radial-gradient(130% 90% at 100% 110%, var(--accent-muted) 0%, transparent 50%), var(--surface-canvas)",
+      }}
+    >
+      <div
+        className="mx-auto w-full max-w-[460px] overflow-hidden rounded-[26px] border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-10 backdrop-blur-xl"
+        style={{ boxShadow: "0 30px 70px -16px rgba(0,0,0,0.28)" }}
+      >
         <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
-          <p className="text-sm text-gray-500 animate-pulse">
-            Preparando configuracion inicial...
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[var(--accent-soft)] border-t-[var(--accent)]" />
+          <p className="animate-pulse text-sm text-[var(--text-tertiary)]">
+            Preparando configuración inicial…
           </p>
         </div>
       </div>

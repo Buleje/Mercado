@@ -59,7 +59,7 @@ export function RevenueAreaChart({
   description = "Histórico de revenue",
 }: Props) {
   const tokens = useChartTokens();
-  const teal = "var(--brand-primary, #00B4A6)";
+  const teal = "var(--brand-primary, #00A0A0)";
 
   return (
     <ChartWrapper title={title} description={description}>

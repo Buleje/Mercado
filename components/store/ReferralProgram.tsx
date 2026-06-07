@@ -153,7 +153,7 @@ export default function ReferralProgram() {
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 mb-4">
         <p className="text-xs text-[var(--text-tertiary)] mb-1.5 font-medium">Tu codigo de referido</p>
         <div className="flex items-center gap-3">
-          <span className="text-2xl font-extrabold text-[var(--accent)] dark:text-[#2dd4bf] tracking-wider flex-1">
+          <span className="text-2xl font-extrabold text-[var(--accent)] dark:text-[#14C2C2] tracking-wider flex-1">
             {data.code}
           </span>
           <button

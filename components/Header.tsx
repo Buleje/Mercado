@@ -1268,7 +1268,7 @@ export default function Header() {
                         className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
                         style={{
                           background:
-                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                         }}
                       >
                         Tienda
@@ -1402,7 +1402,7 @@ export default function Header() {
                     style={{
                       background: "var(--color-card)",
                       border:
-                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, var(--color-card-border))",
+                        "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, var(--color-card-border))",
                     }}
                     role="dialog"
                     aria-label="Notificaciones"
@@ -1412,7 +1412,7 @@ export default function Header() {
                       className="relative px-5 py-4 overflow-hidden"
                       style={{
                         background:
-                          "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                          "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                       }}
                     >
                       <div
@@ -1470,7 +1470,7 @@ export default function Header() {
                           className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
                           style={{
                             background:
-                              "color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+                              "color-mix(in oklch, var(--color-primary, #00A0A0) 10%, transparent)",
                           }}
                         >
                           <Sparkles className="h-8 w-8 text-primary/60" strokeWidth={1.75} />
@@ -1495,7 +1495,7 @@ export default function Header() {
                                   ? "var(--data-warning-500)"
                                   : n.type === "tienda"
                                     ? "var(--text-secondary)"
-                                    : "var(--color-primary, #00B4A6)";
+                                    : "var(--color-primary, #00A0A0)";
                             const TypeIcon =
                               n.type === "pedido"
                                 ? Package
@@ -1594,7 +1594,7 @@ export default function Header() {
                       style={{
                         borderColor: "var(--color-card-border)",
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, transparent)",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, transparent)",
                       }}
                     >
                       <Link
@@ -1603,10 +1603,10 @@ export default function Header() {
                         className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-sm font-extrabold transition-all hover:-translate-y-0.5"
                         style={{
                           background:
-                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                           color: "white",
                           boxShadow:
-                            "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                            "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                         }}
                       >
                         Ver todas

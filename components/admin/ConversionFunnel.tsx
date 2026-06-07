@@ -68,14 +68,14 @@ async function fetchFunnelData(): Promise<FunnelStage[]> {
 const STAGE_COLORS = [
   "bg-primary",
   "bg-[color-mix(in oklab, var(--accent) 70%, white)]",
-  "bg-[#2dd4bf]",
+  "bg-[#14C2C2]",
   "bg-[#74c69d]",
 ];
 
 const STAGE_TEXT = [
   "text-primary dark:text-[#74c69d]",
   "text-[color-mix(in oklab, var(--accent) 70%, white)] dark:text-primary",
-  "text-[#2dd4bf]",
+  "text-[#14C2C2]",
   "text-[#74c69d]",
 ];
 

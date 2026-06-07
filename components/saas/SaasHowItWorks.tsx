@@ -188,7 +188,7 @@ export default function SaasHowItWorks() {
               }}>
               <div className="absolute inset-y-0 w-[2px] bg-white dark:bg-[#f0f4f1] shadow-lg" />
               <div className="relative z-20 w-10 h-10 rounded-full bg-white dark:bg-[#121f17] border-2 border-[var(--accent)] dark:border-teal-400 flex items-center justify-center"
-                style={{ boxShadow: "0 4px 16px rgba(15,118,110,0.35)" }}>
+                style={{ boxShadow: "0 4px 16px rgba(0, 160, 160,0.35)" }}>
                 <ArrowLeftRight className="w-4 h-4 text-[var(--accent-dark)] dark:text-teal-300" aria-hidden="true" />
               </div>
             </div>
@@ -218,13 +218,13 @@ export default function SaasHowItWorks() {
           viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.2 }}>
           <div className="relative flex items-start justify-between gap-2">
             <div className="hidden sm:block absolute top-5 left-[calc(16.5%+1rem)] right-[calc(16.5%+1rem)] h-[2px] pointer-events-none"
-              style={{ background: "linear-gradient(90deg, rgba(45,106,79,0.15), rgba(15,118,110,0.4), rgba(45,106,79,0.15))" }}
+              style={{ background: "linear-gradient(90deg, rgba(45,106,79,0.15), rgba(0, 160, 160,0.4), rgba(45,106,79,0.15))" }}
               aria-hidden="true" />
             {steps.map(({ num, Icon, label, sub }, i) => (
               <motion.div key={num} custom={i} variants={vLeft} initial="hidden" whileInView="visible"
                 viewport={{ once: true }} className="relative flex flex-col items-center text-center flex-1">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 z-10"
-                  style={{ background: "linear-gradient(135deg,var(--accent),var(--accent-dark))", boxShadow: "0 4px 14px -2px rgba(15,118,110,0.4)" }}>
+                  style={{ background: "linear-gradient(135deg,var(--accent),var(--accent-dark))", boxShadow: "0 4px 14px -2px rgba(0, 160, 160,0.4)" }}>
                   <Icon className="w-4 h-4 text-white" aria-hidden="true" />
                 </div>
                 <span className="text-xs font-bold text-gray-900 dark:text-[#f0f4f1] leading-tight">{label}</span>

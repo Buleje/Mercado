@@ -95,8 +95,8 @@ const TabDashboard = memo(function TabDashboard() {
   const kpi = KPI_CYCLES[cy];
   const ventas = VENTAS_CYCLES[vcy];
   const kpiItems = [
-    { label: "Ventas hoy", valor: kpi.ventas, color: "#2dd4bf", bg: "rgba(15,118,110,0.12)", border: "rgba(15,118,110,0.3)" },
-    { label: "Pedidos", valor: kpi.pedidos, color: "color-mix(in oklab, var(--accent) 60%, white)", bg: "rgba(15,118,110,0.08)", border: "rgba(15,118,110,0.2)" },
+    { label: "Ventas hoy", valor: kpi.ventas, color: "#14C2C2", bg: "rgba(0, 160, 160,0.12)", border: "rgba(0, 160, 160,0.3)" },
+    { label: "Pedidos", valor: kpi.pedidos, color: "color-mix(in oklab, var(--accent) 60%, white)", bg: "rgba(0, 160, 160,0.08)", border: "rgba(0, 160, 160,0.2)" },
     { label: "Stock bajo", valor: kpi.stock, color: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.2)" },
     { label: "Margen", valor: kpi.margen, color: "#fb923c", bg: "rgba(251,146,60,0.08)", border: "rgba(251,146,60,0.2)" },
   ];
@@ -120,8 +120,8 @@ const TabDashboard = memo(function TabDashboard() {
           {CHART_BARS.map((bar) => (
             <div key={bar.label} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full relative rounded-t" style={{ height: `${bar.h}%` }}>
-                <div className="w-full h-full rounded-t" style={{ background: bar.today ? "linear-gradient(to top, var(--accent), #2dd4bf)" : "rgba(15,118,110,0.35)" }} />
-                {bar.today && <div className="absolute inset-0 rounded-t animate-pulse" style={{ background: "linear-gradient(to top, rgba(15,118,110,0.3), rgba(45,212,191,0.3))" }} />}
+                <div className="w-full h-full rounded-t" style={{ background: bar.today ? "linear-gradient(to top, var(--accent), #14C2C2)" : "rgba(0, 160, 160,0.35)" }} />
+                {bar.today && <div className="absolute inset-0 rounded-t animate-pulse" style={{ background: "linear-gradient(to top, rgba(0, 160, 160,0.3), rgba(20, 194, 194,0.3))" }} />}
               </div>
               <span className="text-gray-600 dark:text-gray-500" style={{ fontSize: "0.6rem" }}>{bar.label}</span>
             </div>
@@ -135,7 +135,7 @@ const TabDashboard = memo(function TabDashboard() {
             {ventas.map((v, i) => (
               <motion.div key={`${vcy}-${i}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} transition={{ duration: 0.25, delay: i * 0.06 }} className="flex items-center justify-between text-xs rounded-lg px-2.5 py-1.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <span className="text-gray-300 font-medium">{v.n}</span>
-                <span style={{ color: "#2dd4bf" }} className="font-mono font-semibold">{v.m}</span>
+                <span style={{ color: "#14C2C2" }} className="font-mono font-semibold">{v.m}</span>
                 <span className="text-gray-500">{v.t}</span>
               </motion.div>
             ))}
@@ -161,9 +161,9 @@ const TabPOS = memo(function TabPOS() {
         <p className="text-xs text-gray-500 mb-2">Productos</p>
         <div className="grid grid-cols-2 gap-1.5">
           {PRODUCTOS.map((p) => (
-            <button key={p.nombre} type="button" onClick={() => agregar(p)} className="text-left rounded-xl p-2 border transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" style={{ background: "rgba(15,118,110,0.08)", borderColor: "rgba(15,118,110,0.2)", minHeight: "44px" }}>
+            <button key={p.nombre} type="button" onClick={() => agregar(p)} className="text-left rounded-xl p-2 border transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" style={{ background: "rgba(0, 160, 160,0.08)", borderColor: "rgba(0, 160, 160,0.2)", minHeight: "44px" }}>
               <p className="text-xs font-semibold text-gray-200 leading-tight">{p.nombre}</p>
-              <p className="text-xs font-mono" style={{ color: "#2dd4bf" }}>S/ {Number(p.precio).toFixed(2)}</p>
+              <p className="text-xs font-mono" style={{ color: "#14C2C2" }}>S/ {Number(p.precio).toFixed(2)}</p>
             </button>
           ))}
         </div>
@@ -182,7 +182,7 @@ const TabPOS = memo(function TabPOS() {
         </div>
         {carrito.length > 0 && (
           <div>
-            <p className="text-xs text-gray-400 mb-1">Total: <span className="font-mono font-bold" style={{ color: "#2dd4bf" }}>S/ {total.toFixed(2)}</span></p>
+            <p className="text-xs text-gray-400 mb-1">Total: <span className="font-mono font-bold" style={{ color: "#14C2C2" }}>S/ {total.toFixed(2)}</span></p>
             <AnimatePresence mode="wait">
               {cobrado
                 ? <motion.div key="ok" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-xs font-bold text-center py-1.5 rounded-xl" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.3)" }}>Venta lista</motion.div>
@@ -206,7 +206,7 @@ const TabWhatsApp = memo(function TabWhatsApp({ active }: { active: boolean }) {
   }, [active]);
   return (
     <div className="p-3" style={{ minHeight: "220px" }}>
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-3" style={{ background: "rgba(15,118,110,0.15)", border: "1px solid rgba(15,118,110,0.25)" }}>
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-3" style={{ background: "rgba(0, 160, 160,0.15)", border: "1px solid rgba(0, 160, 160,0.25)" }}>
         <div className="h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: "var(--accent)" }} aria-hidden="true">WA</div>
         <div><p className="text-xs font-semibold text-gray-200">Bot Bodega</p><p className="text-gray-400" style={{ fontSize: "0.65rem" }}>En linea</p></div>
         <div className="ml-auto h-2 w-2 rounded-full bg-green-400 animate-pulse" aria-hidden="true" />
@@ -215,7 +215,7 @@ const TabWhatsApp = memo(function TabWhatsApp({ active }: { active: boolean }) {
         <AnimatePresence>
           {CHAT.slice(0, vis).map((msg, i) => (
             <motion.div key={i} variants={bubbleV} initial="initial" animate="animate" exit="exit" className={`flex ${msg.tipo === "bot" ? "justify-start" : "justify-end"}`}>
-              <div className="max-w-[85%] text-xs px-2.5 py-1.5 rounded-2xl leading-relaxed" style={msg.tipo === "bot" ? { background: "rgba(15,118,110,0.25)", color: "#e2e8f0", borderBottomLeftRadius: "4px" } : { background: "rgba(255,255,255,0.1)", color: "#d1d5db", borderBottomRightRadius: "4px" }}>
+              <div className="max-w-[85%] text-xs px-2.5 py-1.5 rounded-2xl leading-relaxed" style={msg.tipo === "bot" ? { background: "rgba(0, 160, 160,0.25)", color: "#e2e8f0", borderBottomLeftRadius: "4px" } : { background: "rgba(255,255,255,0.1)", color: "#d1d5db", borderBottomRightRadius: "4px" }}>
                 {msg.texto}
               </div>
             </motion.div>
@@ -223,8 +223,8 @@ const TabWhatsApp = memo(function TabWhatsApp({ active }: { active: boolean }) {
         </AnimatePresence>
         {vis > 0 && vis < CHAT.length && CHAT[vis]?.tipo === "bot" && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-1 px-3 py-2 rounded-2xl" style={{ background: "rgba(15,118,110,0.2)", borderBottomLeftRadius: "4px" }} aria-label="Escribiendo...">
-              {[0, 1, 2].map((d) => <span key={d} className="h-1.5 w-1.5 rounded-full animate-bounce" style={{ background: "#2dd4bf", animationDelay: `${d * 150}ms` }} aria-hidden="true" />)}
+            <div className="flex items-center gap-1 px-3 py-2 rounded-2xl" style={{ background: "rgba(0, 160, 160,0.2)", borderBottomLeftRadius: "4px" }} aria-label="Escribiendo...">
+              {[0, 1, 2].map((d) => <span key={d} className="h-1.5 w-1.5 rounded-full animate-bounce" style={{ background: "#14C2C2", animationDelay: `${d * 150}ms` }} aria-hidden="true" />)}
             </div>
           </div>
         )}
@@ -243,8 +243,8 @@ const StatCounter = memo(function StatCounter({ target, suffix, label, delay }: 
   );
 });
 
-const DotBg = <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ backgroundImage: "radial-gradient(circle, #00B4A610 1px, transparent 1px)", backgroundSize: "24px 24px" }} />;
-const GlowBg = <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ background: "radial-gradient(ellipse 70% 50% at 50% -10%, rgba(15,118,110,0.12) 0%, transparent 70%)" }} />;
+const DotBg = <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ backgroundImage: "radial-gradient(circle, #00A0A010 1px, transparent 1px)", backgroundSize: "24px 24px" }} />;
+const GlowBg = <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ background: "radial-gradient(ellipse 70% 50% at 50% -10%, rgba(0, 160, 160,0.12) 0%, transparent 70%)" }} />;
 const SUBTITLE = "Gestiona ventas, inventario, clientes y fiados desde tu celular. Con inteligencia artificial, WhatsApp integrado y modo offline. Gratis para empezar.";
 const TABS = ["Dashboard", "Punto de Venta", "WhatsApp"] as const;
 type Tab = (typeof TABS)[number];
@@ -316,7 +316,7 @@ export default function SaasHero() {
 
       {/* Cursor glow desktop */}
       <div ref={glowRef} className="absolute pointer-events-none opacity-0 transition-opacity duration-300 hidden lg:block" aria-hidden="true"
-        style={{ width: "400px", height: "400px", top: 0, left: 0, background: "radial-gradient(circle, rgba(15,118,110,0.15) 0%, transparent 70%)", borderRadius: "50%", willChange: "transform" }} />
+        style={{ width: "400px", height: "400px", top: 0, left: 0, background: "radial-gradient(circle, rgba(0, 160, 160,0.15) 0%, transparent 70%)", borderRadius: "50%", willChange: "transform" }} />
 
       <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -324,7 +324,7 @@ export default function SaasHero() {
           {/* Columna izquierda */}
           <motion.div variants={stagger} initial="initial" animate="animate" className="flex flex-col items-start">
             <motion.div variants={reduced ? {} : fadeUp} className="mb-5 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-white shadow-lg"
-              style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)", boxShadow: "0 4px 20px -4px rgba(15,118,110,0.5)" }}>
+              style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)", boxShadow: "0 4px 20px -4px rgba(0, 160, 160,0.5)" }}>
               <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white/70" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
@@ -344,7 +344,7 @@ export default function SaasHero() {
 
             <motion.div variants={reduced ? {} : fadeUp} className="flex flex-col sm:flex-row gap-3 mb-3 w-full sm:w-auto">
               <Link href="/registro" className="inline-flex items-center justify-center px-8 py-4 rounded-2xl text-lg font-bold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] min-h-[44px]"
-                style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)", boxShadow: "0 8px 32px -4px rgba(15,118,110,0.5), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
+                style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)", boxShadow: "0 8px 32px -4px rgba(0, 160, 160,0.5), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
                 Empezar gratis →
               </Link>
               <button
@@ -387,11 +387,11 @@ export default function SaasHero() {
 
           {/* Columna derecha — demo interactivo */}
           <motion.div initial={reduced ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: SPRING }} className="relative w-full">
-            <div className="absolute -inset-8 rounded-3xl pointer-events-none" aria-hidden="true" style={{ boxShadow: "0 0 120px 40px rgba(15,118,110,0.15)" }} />
-            <div className="absolute -inset-8 rounded-3xl pointer-events-none" aria-hidden="true" style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(15,118,110,0.12) 0%, transparent 70%)", filter: "blur(24px)" }} />
+            <div className="absolute -inset-8 rounded-3xl pointer-events-none" aria-hidden="true" style={{ boxShadow: "0 0 120px 40px rgba(0, 160, 160,0.15)" }} />
+            <div className="absolute -inset-8 rounded-3xl pointer-events-none" aria-hidden="true" style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(0, 160, 160,0.12) 0%, transparent 70%)", filter: "blur(24px)" }} />
 
             <div ref={mockupRef} className="relative rounded-2xl overflow-hidden border shadow-2xl"
-              style={{ background: "#111827", borderColor: "rgba(15,118,110,0.35)", boxShadow: "0 32px 64px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(15,118,110,0.15)", transition: "transform 0.15s ease-out", willChange: "transform" }}>
+              style={{ background: "#111827", borderColor: "rgba(0, 160, 160,0.35)", boxShadow: "0 32px 64px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(0, 160, 160,0.15)", transition: "transform 0.15s ease-out", willChange: "transform" }}>
 
               {/* Barra de titulo */}
               <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ background: "#1f2937", borderColor: "rgba(255,255,255,0.08)" }} aria-hidden="true">

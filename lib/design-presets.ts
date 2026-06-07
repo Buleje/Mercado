@@ -157,7 +157,7 @@ const BULEJE_DEFAULT: DesignTokens = {
     sm:     "0 1px 2px rgba(0,0,0,0.04)",
     md:     "0 4px 12px rgba(0,0,0,0.08)",
     lg:     "0 10px 30px rgba(0,0,0,0.12)",
-    accent: "0 4px 14px rgba(0,180,166,0.35)",
+    accent: "0 4px 14px rgba(0, 160, 160,0.35)",
   },
   motion: {
     durFast: "120ms",

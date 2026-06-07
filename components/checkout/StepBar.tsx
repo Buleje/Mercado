@@ -27,7 +27,7 @@ export function StepBar({ current }: { current: Step }) {
   const currentIdx = stepIds.indexOf(current);
 
   return (
-    <div className="flex items-center gap-2 sm:gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-gradient-to-b from-[color-mix(in_oklch,var(--color-primary,#00B4A6)_4%,transparent)] to-transparent shrink-0">
+    <div className="flex items-center gap-2 sm:gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-gradient-to-b from-[color-mix(in_oklch,var(--color-primary,#00A0A0)_4%,transparent)] to-transparent shrink-0">
       {STEPS.map(({ id, label, num }, idx) => {
         const isActive = current === id;
         const isDone = currentIdx > idx;
@@ -39,7 +39,7 @@ export function StepBar({ current }: { current: Step }) {
                 className={cn(
                   "flex-1 h-1 rounded-full transition-all duration-300",
                   isDone
-                    ? "bg-[var(--color-primary,#00B4A6)]"
+                    ? "bg-[var(--color-primary,#00A0A0)]"
                     : "bg-[var(--rule-base)]"
                 )}
               />
@@ -48,9 +48,9 @@ export function StepBar({ current }: { current: Step }) {
               className={cn(
                 "flex items-center gap-2 transition-colors",
                 isActive
-                  ? "text-[var(--color-primary,#00B4A6)]"
+                  ? "text-[var(--color-primary,#00A0A0)]"
                   : isDone
-                    ? "text-[var(--color-primary,#00B4A6)]/70"
+                    ? "text-[var(--color-primary,#00A0A0)]/70"
                     : "text-muted"
               )}
             >
@@ -58,9 +58,9 @@ export function StepBar({ current }: { current: Step }) {
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-full text-sm font-extrabold transition-all duration-300",
                   isActive
-                    ? "bg-[var(--color-primary,#00B4A6)] text-white shadow-lg shadow-[var(--color-primary,#00B4A6)]/35 scale-110 ring-4 ring-[var(--color-primary,#00B4A6)]/15"
+                    ? "bg-[var(--color-primary,#00A0A0)] text-white shadow-lg shadow-[var(--color-primary,#00A0A0)]/35 scale-110 ring-4 ring-[var(--color-primary,#00A0A0)]/15"
                     : isDone
-                      ? "bg-[var(--color-primary,#00B4A6)]/15 text-[var(--color-primary,#00B4A6)]"
+                      ? "bg-[var(--color-primary,#00A0A0)]/15 text-[var(--color-primary,#00A0A0)]"
                       : "bg-[var(--surface-sunken)] text-muted border-2 border-[var(--rule-soft)]"
                 )}
               >

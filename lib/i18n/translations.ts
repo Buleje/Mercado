@@ -44,6 +44,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "nav.home": { es: "Inicio", en: "Home", shi: "Nete" },
   "nav.stores": { es: "Bodegas", en: "Stores", shi: "Xobo" },
   "nav.shopDirectory": { es: "Tiendas", en: "Shops", shi: "Xobo" },
+  "nav.market": { es: "Mercado", en: "Market", shi: "Mercado" },
   "nav.explore": { es: "Explorar", en: "Explore", shi: "Benakoi" },
   "nav.discover": { es: "Descubrí", en: "Discover", shi: "Ikai" },
   "nav.more": { es: "Más", en: "More", shi: "Bewa" },

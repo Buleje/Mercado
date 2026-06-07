@@ -107,7 +107,7 @@ interface OverviewData {
 // ── Paleta de marca resuelta en runtime ───────────────────────────────────────
 // recharts NO resuelve var(--token) dentro del SVG, así que leemos los valores
 // reales con getComputedStyle y los re-leemos si cambia el tema (light/dark) o el
-// tenant (ThemeInjector). Marca: primary teal #00B4A6 · secondary naranja #f97316.
+// tenant (ThemeInjector). Marca: primary teal #00A0A0 · secondary naranja #f97316.
 
 interface Palette {
   marketplace: string;
@@ -123,16 +123,16 @@ interface Palette {
 }
 
 const FALLBACK_PALETTE: Palette = {
-  marketplace: "#00B4A6",
+  marketplace: "#00A0A0",
   tienda: "#f97316",
   pos: "#6366f1",
   grid: "#e5e7eb",
   axis: "#94a3b8",
-  success: "#00B4A6",
+  success: "#00A0A0",
   warning: "#f59e0b",
   error: "#ef4444",
   info: "#0ea5e9",
-  payments: ["#00B4A6", "#8b5cf6", "#0ea5e9", "#f59e0b", "#f97316"],
+  payments: ["#00A0A0", "#8b5cf6", "#0ea5e9", "#f59e0b", "#f97316"],
 };
 
 function useBrandPalette(): Palette {

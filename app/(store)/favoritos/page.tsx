@@ -269,7 +269,7 @@ export default function FavoritosPage() {
       className="min-h-screen dark:bg-background"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-bg, #f9fafb))",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-bg, #f9fafb))",
       }}
     >
       <BreadcrumbSchema
@@ -285,7 +285,7 @@ export default function FavoritosPage() {
         className="relative overflow-hidden pt-36 sm:pt-44 pb-10 sm:pb-14"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
         }}
       >
         <div
@@ -527,7 +527,7 @@ export default function FavoritosPage() {
                 border:
                   "1px solid var(--color-card-border)",
                 boxShadow:
-                  "0 1px 2px color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+                  "0 1px 2px color-mix(in oklch, var(--color-primary, #00A0A0) 10%, transparent)",
               }}
             >
               <EmptyState
@@ -541,9 +541,9 @@ export default function FavoritosPage() {
                     className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl text-sm font-extrabold text-white active:scale-[0.98] transition-transform"
                     style={{
                       background:
-                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                       boxShadow:
-                        "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                        "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                     }}
                   >
                     <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />

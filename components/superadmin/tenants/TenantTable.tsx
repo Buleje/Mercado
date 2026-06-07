@@ -2,7 +2,7 @@
 
 import {
   Building2, Loader2, ExternalLink, XCircle, CheckCircle2,
-  Users, Eraser,
+  Users, Eraser, Layers,
 } from "@buleje/design-system/icons";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
@@ -24,6 +24,10 @@ interface TenantTableProps {
   onPurge: (slug: string, name: string) => void;
   onDelete: (slug: string, name: string) => void;
   onPlanChange: (slug: string, plan: PlanId) => void;
+  /** Abre el editor de módulos a medida del tenant (override de la plantilla). */
+  onModules: (t: TenantRow) => void;
+  /** tenantId → cantidad de módulos forzados (bulk de /tenants/module-overrides). */
+  moduleOverrideCounts: Record<string, number>;
 }
 
 function fmtDate(d: string | null) {
@@ -53,6 +57,8 @@ export function TenantTable({
   onPurge,
   onDelete,
   onPlanChange,
+  onModules,
+  moduleOverrideCounts,
 }: TenantTableProps) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden shadow-sm dark:shadow-none">
@@ -77,6 +83,7 @@ export function TenantTable({
                   Plan <SortIcon field="plan" sortField={sortField} sortDir={sortDir} />
                 </th>
                 <th className="text-left px-4 py-3">Estado</th>
+                <th className="text-left px-4 py-3">Módulos</th>
                 <th className="text-left px-4 py-3 hidden md:table-cell">Uso</th>
                 <th className="text-right px-4 py-3 hidden lg:table-cell cursor-pointer hover:text-gray-600 dark:hover:text-gray-200 select-none" onClick={() => onSort("ordersThisMonth")}>
                   Pedidos/mes <SortIcon field="ordersThisMonth" sortField={sortField} sortDir={sortDir} />
@@ -128,6 +135,35 @@ export function TenantTable({
                         Trial hasta {fmtDate(tenant.trialEndsAt)}
                       </div>
                     )}
+                  </td>
+
+                  {/* Módulos a medida — override per-tenant de la plantilla.
+                      "Plantilla" = hereda lo global según su plan;
+                      "N a medida" = módulos forzados solo para esta tienda. */}
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const count = moduleOverrideCounts[tenant.id] ?? 0;
+                      const custom = count > 0;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => onModules(tenant)}
+                          title={
+                            custom
+                              ? `${count} módulo${count === 1 ? "" : "s"} forzado${count === 1 ? "" : "s"} para esta tienda — click para editar`
+                              : "Hereda la plantilla global según su plan — click para personalizar"
+                          }
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold transition-colors ${
+                            custom
+                              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
+                              : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                          }`}
+                        >
+                          <Layers className="h-3.5 w-3.5" />
+                          {custom ? `${count} a medida` : "Plantilla"}
+                        </button>
+                      );
+                    })()}
                   </td>
 
                   {/* Usage bars */}

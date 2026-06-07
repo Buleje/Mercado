@@ -83,7 +83,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
               onClick={() => void handleSend()}
               disabled={sending}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl disabled:opacity-50 text-white text-sm font-semibold"
-              style={{ background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)" }}
+              style={{ background: "linear-gradient(135deg, #00A0A0 0%, #14C2C2 100%)" }}
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
               Generar enlace

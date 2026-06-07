@@ -355,7 +355,7 @@ export function AdminSidebar({
     if (typeof document === "undefined") return;
     const root = document.documentElement;
     const ACCENT_VARS: Record<AccentColor, string> = {
-      teal: "var(--accent-buleje, #00B4A6)",
+      teal: "var(--accent-buleje, #00A0A0)",
       emerald: "#10B981",
       sky: "#0EA5E9",
       violet: "#8B5CF6",

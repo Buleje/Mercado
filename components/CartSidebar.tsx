@@ -315,7 +315,7 @@ export default function CartSidebar() {
             <div
               className="relative px-5 sm:px-6 py-5 sm:py-6 overflow-hidden"
               style={{
-                background: "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                background: "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
               }}
             >
               {/* Patrón decorativo sutil */}

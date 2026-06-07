@@ -32,7 +32,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 const CATEGORY_COLORS = [
   "var(--accent)", "#f97316", "#3b82f6", "#8b5cf6",
-  "#ec4899", "#2dd4bf", "#f59e0b", "#6366f1",
+  "#ec4899", "#14C2C2", "#f59e0b", "#6366f1",
   "#10b981", "#ef4444",
 ];
 
@@ -41,7 +41,7 @@ const PAYMENT_COLORS: Record<string, string> = {
   yape: "#3b82f6",
   plin: "#8b5cf6",
   tarjeta: "#f97316",
-  transferencia: "#2dd4bf",
+  transferencia: "#14C2C2",
 };
 
 const HOUR_LABELS = Array.from({ length: 17 }, (_, i) => `${i + 6}h`);

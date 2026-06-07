@@ -1,5 +1,7 @@
 'use client';
 
+import { OnboardingPrimaryButton, OB_INPUT, OB_LABEL } from './onboarding-ui';
+
 interface PreferencesData {
   notifications: boolean;
   pwa: boolean;
@@ -32,61 +34,61 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-2">
-        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+      <div className="mb-2 text-center">
+        <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
           ¡Casi listo!
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <p className="mt-2 text-[var(--text-secondary)]">
           Configura tus preferencias finales
         </p>
       </div>
 
       <div className="space-y-4">
         {/* Notifications */}
-        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[var(--accent)]/30 transition-colors">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)] has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--accent-soft)]">
           <input
             type="checkbox"
             checked={data.notifications}
             onChange={e => handleNotifications(e.target.checked)}
-            className="mt-0.5 w-5 h-5 rounded accent-[var(--accent)]"
+            className="mt-0.5 h-5 w-5 flex-shrink-0 rounded accent-[var(--accent)]"
           />
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">Activar notificaciones del navegador</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Recibe alertas de nuevos pedidos y stock bajo</p>
+            <p className="font-semibold text-[var(--text-primary)]">Activar notificaciones del navegador</p>
+            <p className="text-sm text-[var(--text-secondary)]">Recibe alertas de nuevos pedidos y stock bajo</p>
           </div>
         </label>
 
         {/* PWA */}
-        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[var(--accent)]/30 transition-colors">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)] has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--accent-soft)]">
           <input
             type="checkbox"
             checked={data.pwa}
             onChange={e => onChange({ ...data, pwa: e.target.checked })}
-            className="mt-0.5 w-5 h-5 rounded accent-[var(--accent)]"
+            className="mt-0.5 h-5 w-5 flex-shrink-0 rounded accent-[var(--accent)]"
           />
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">Instalar app en mi celular</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Puedes instalar la app desde el menú del navegador para acceso rápido</p>
+            <p className="font-semibold text-[var(--text-primary)]">Instalar app en mi celular</p>
+            <p className="text-sm text-[var(--text-secondary)]">Puedes instalar la app desde el menú del navegador para acceso rápido</p>
           </div>
         </label>
 
         {/* WhatsApp resumen */}
-        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[var(--accent)]/30 transition-colors">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)] has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--accent-soft)]">
           <input
             type="checkbox"
             checked={data.whatsappResumen}
             onChange={e => onChange({ ...data, whatsappResumen: e.target.checked })}
-            className="mt-0.5 w-5 h-5 rounded accent-[var(--accent)]"
+            className="mt-0.5 h-5 w-5 flex-shrink-0 rounded accent-[var(--accent)]"
           />
           <div className="flex-1">
-            <p className="font-semibold text-gray-900 dark:text-white">Recibir resumen diario por WhatsApp</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Ventas, stock bajo y más, todos los días a las 8pm</p>
+            <p className="font-semibold text-[var(--text-primary)]">Recibir resumen diario por WhatsApp</p>
+            <p className="text-sm text-[var(--text-secondary)]">Ventas, stock bajo y más, todos los días a las 8pm</p>
           </div>
         </label>
 
         {data.whatsappResumen && (
           <div className="pl-8">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            <label className={OB_LABEL}>
               Número WhatsApp para resumen
             </label>
             <input
@@ -94,20 +96,21 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
               value={whatsappNumber}
               onChange={e => onChange({ ...data, whatsappNumber: e.target.value })}
               placeholder="961234567"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+              className={OB_INPUT}
             />
           </div>
         )}
       </div>
 
-      <button
+      <OnboardingPrimaryButton
         onClick={onComplete}
         disabled={isCompleting}
-        className="w-full py-4 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-lg hover:bg-[var(--accent-dark)] transition-colors shadow-lg shadow-[var(--accent)]/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        size="lg"
+        withArrow={!isCompleting}
       >
         {isCompleting ? (
           <>
-            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -116,7 +119,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
         ) : (
           'Comenzar a usar mi bodega digital'
         )}
-      </button>
+      </OnboardingPrimaryButton>
     </div>
   );
 }

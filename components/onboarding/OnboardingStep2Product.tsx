@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { OnboardingPrimaryButton, OnboardingSkipButton, OB_INPUT, OB_LABEL } from './onboarding-ui';
 
 interface ProductData {
   nombre: string;
@@ -47,18 +48,18 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-2">
-        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+      <div className="mb-2 text-center">
+        <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
           Agrega tu primer producto
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <p className="mt-2 text-[var(--text-secondary)]">
           No te preocupes, puedes agregar más después.
         </p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label className={OB_LABEL}>
             Nombre del producto
           </label>
           <input
@@ -66,13 +67,13 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
             value={form.nombre}
             onChange={e => handleChange('nombre', e.target.value)}
             placeholder="Ej: Arroz Costeño 1kg"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+            className={OB_INPUT}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            <label className={OB_LABEL}>
               Precio venta (S/)
             </label>
             <input
@@ -82,11 +83,11 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
               value={form.precio || ''}
               onChange={e => handleChange('precio', parseFloat(e.target.value) || 0)}
               placeholder="0.00"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+              className={OB_INPUT}
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            <label className={OB_LABEL}>
               Costo (S/)
             </label>
             <input
@@ -96,20 +97,20 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
               value={form.costo || ''}
               onChange={e => handleChange('costo', parseFloat(e.target.value) || 0)}
               placeholder="0.00"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+              className={OB_INPUT}
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            <label className={OB_LABEL}>
               Categoría
             </label>
             <select
               value={form.categoria}
               onChange={e => handleChange('categoria', e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:border-[var(--accent)] transition-colors"
+              className={OB_INPUT}
             >
               {CATEGORIAS.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -117,7 +118,7 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            <label className={OB_LABEL}>
               Stock inicial
             </label>
             <input
@@ -126,26 +127,19 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
               value={form.stock || ''}
               onChange={e => handleChange('stock', parseInt(e.target.value) || 0)}
               placeholder="0"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+              className={OB_INPUT}
             />
           </div>
         </div>
       </div>
 
-      <button
-        onClick={handleNext}
-        disabled={!hasValidProduct}
-        className="w-full py-3 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Siguiente &rarr;
-      </button>
+      <OnboardingPrimaryButton onClick={handleNext} disabled={!hasValidProduct} withArrow>
+        Siguiente
+      </OnboardingPrimaryButton>
 
-      <button
-        onClick={handleSkip}
-        className="w-full text-sm text-gray-400 hover:text-[var(--accent)] transition-colors py-2"
-      >
-        ¿No tienes la información ahora? &rarr; Saltar
-      </button>
+      <OnboardingSkipButton onClick={handleSkip}>
+        ¿No tienes la información ahora? → Saltar
+      </OnboardingSkipButton>
     </div>
   );
 }

@@ -66,12 +66,12 @@ export function OrderItemsDetailModal({
             style={{ boxShadow: "0 30px 70px -15px rgba(0,0,0,0.45)" }}
           >
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-[var(--rule-soft)] bg-linear-to-b from-[color-mix(in_oklch,var(--color-primary,#00B4A6)_4%,transparent)] to-transparent">
+            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-[var(--rule-soft)] bg-linear-to-b from-[color-mix(in_oklch,var(--color-primary,#00A0A0)_4%,transparent)] to-transparent">
               <div className="flex items-start gap-3 min-w-0">
                 <div
                   className="h-11 w-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md"
                   style={{
-                    background: "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    background: "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   }}
                 >
                   <ShoppingBag className="h-5 w-5" strokeWidth={2.25} />
@@ -100,7 +100,7 @@ export function OrderItemsDetailModal({
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex gap-3 p-3 rounded-2xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary,#00B4A6)]/30 transition-colors"
+                  className="flex gap-3 p-3 rounded-2xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary,#00A0A0)]/30 transition-colors"
                 >
                   {/* Imagen */}
                   <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-xl overflow-hidden bg-[var(--surface-sunken)] shrink-0">
@@ -121,7 +121,7 @@ export function OrderItemsDetailModal({
                     <span
                       className="absolute -top-1 -right-1 h-7 min-w-[1.75rem] px-1.5 rounded-full text-xs font-extrabold tabular-nums flex items-center justify-center shadow-md"
                       style={{
-                        background: "var(--color-primary, #00B4A6)",
+                        background: "var(--color-primary, #00A0A0)",
                         color: "#fff",
                       }}
                     >
@@ -152,7 +152,7 @@ export function OrderItemsDetailModal({
                       </span>
                       <span
                         className="text-base sm:text-lg font-extrabold tabular-nums tracking-tight"
-                        style={{ color: "var(--color-primary, #00B4A6)" }}
+                        style={{ color: "var(--color-primary, #00A0A0)" }}
                       >
                         {fmt(item.price * item.quantity)}
                       </span>
@@ -179,7 +179,7 @@ export function OrderItemsDetailModal({
                 <span className="text-sm font-bold text-[var(--text-primary)]">Total a pagar</span>
                 <span
                   className="text-2xl font-extrabold tabular-nums tracking-tight"
-                  style={{ color: "var(--color-primary, #00B4A6)" }}
+                  style={{ color: "var(--color-primary, #00A0A0)" }}
                 >
                   {fmt(finalTotal)}
                 </span>

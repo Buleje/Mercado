@@ -76,7 +76,7 @@ const fmtSoles = (n: number) =>
 
 
 const CHANNEL_LABELS: Record<string, { label: string; color: string }> = {
-  direct: { label: "Tienda directa", color: "#00B4A6" },
+  direct: { label: "Tienda directa", color: "#00A0A0" },
   marketplace: { label: "Marketplace", color: "#8B5CF6" },
   wholesale: { label: "Mayorista", color: "#F59E0B" },
 };
@@ -568,7 +568,7 @@ export default function ExecutiveAnalytics({
           ) : (
             <div className="space-y-3">
               {data.paymentMethods.map((p, i) => {
-                const palette = ["#00B4A6", "#10B981", "#0EA5E9", "#8B5CF6", "#F59E0B", "#F43F5E"];
+                const palette = ["#00A0A0", "#10B981", "#0EA5E9", "#8B5CF6", "#F59E0B", "#F43F5E"];
                 const totalRev = data.paymentMethods.reduce((s, x) => s + x.revenue, 0);
                 const pct = totalRev > 0 ? (p.revenue / totalRev) * 100 : 0;
                 return (

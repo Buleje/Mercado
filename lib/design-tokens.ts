@@ -31,10 +31,10 @@ export const tokens = {
      * Tailwind: bg-primary, text-primary, border-primary, bg-accent, etc.
      */
     primary: {
-      DEFAULT: "#00B4A6", // Alegra Teal — color de marca principal
+      DEFAULT: "#00A0A0", // Alegra Teal — color de marca principal
       dark:    "#009690", // hover / active states
       light:   "#33C4B8", // variante clara, badges, backgrounds suaves
-      bright:  "#00D4C8", // accent interactivo (ring, focus indicators)
+      bright:  "#00D4D4", // accent interactivo (ring, focus indicators)
     },
 
     /**

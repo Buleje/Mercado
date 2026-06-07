@@ -80,7 +80,7 @@ export function LiveMap({
   const storeMarkerRef = useRef<unknown>(null);
 
   const center = storeLocation ?? PUCALLPA_CENTER;
-  const accent = primaryColor ?? "#00B4A6";
+  const accent = primaryColor ?? "#00A0A0";
 
   // Init map + store marker
   useEffect(() => {
@@ -433,7 +433,7 @@ export function LiveMap({
           height: 48px;
           border-radius: 50%;
           background: var(--surface-raised, white);
-          border: 3px solid var(--brand, #00B4A6);
+          border: 3px solid var(--brand, #00A0A0);
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
           overflow: hidden;
           display: flex;
@@ -448,12 +448,12 @@ export function LiveMap({
         .delivery-store-marker .store-pin .store-fallback {
           font-size: 22px;
           font-weight: 800;
-          color: var(--brand, #00B4A6);
+          color: var(--brand, #00A0A0);
         }
         .delivery-store-marker .store-label {
           margin-top: 4px;
           padding: 2px 8px;
-          background: var(--brand, #00B4A6);
+          background: var(--brand, #00A0A0);
           color: white;
           font-size: 10px;
           font-weight: 800;
@@ -535,9 +535,9 @@ export function LiveMap({
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          background: var(--brand, #00B4A6);
+          background: var(--brand, #00A0A0);
           border: 3px solid white;
-          box-shadow: 0 4px 14px rgba(0, 180, 166, 0.55);
+          box-shadow: 0 4px 14px rgba(0, 160, 160, 0.55);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -551,8 +551,8 @@ export function LiveMap({
           top: -8px;
           right: -10px;
           background: #fff;
-          color: var(--brand, #00B4A6);
-          border: 2px solid var(--brand, #00B4A6);
+          color: var(--brand, #00A0A0);
+          border: 2px solid var(--brand, #00A0A0);
           border-radius: 999px;
           padding: 2px 6px;
           font-size: 10px;
@@ -565,7 +565,7 @@ export function LiveMap({
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          background: var(--brand, #00B4A6);
+          background: var(--brand, #00A0A0);
           opacity: 0.4;
           animation: driverPulse 1.8s ease-out infinite;
           z-index: 1;
@@ -575,7 +575,7 @@ export function LiveMap({
           bottom: 4px;
           width: 6px;
           height: 6px;
-          background: var(--brand, #00B4A6);
+          background: var(--brand, #00A0A0);
           border-radius: 50%;
           animation: driverArrow 1.4s ease-in-out infinite;
           z-index: 1;

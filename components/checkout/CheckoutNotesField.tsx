@@ -37,7 +37,7 @@ export function CheckoutNotesField({
         <MessageCircle
           className="h-4 w-4"
           strokeWidth={2}
-          style={{ color: "var(--color-primary, #00B4A6)" }}
+          style={{ color: "var(--color-primary, #00A0A0)" }}
         />
         Mensaje especial
         <span className="text-xs text-muted font-medium">(opcional)</span>
@@ -49,7 +49,7 @@ export function CheckoutNotesField({
         }}
         rows={rows}
         placeholder="Ej: Feliz cumpleaños María, dejar en portería..."
-        className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-muted/60 px-4 py-3 text-sm focus:border-[var(--color-primary,#00B4A6)] focus:outline-none transition-colors resize-none"
+        className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-muted/60 px-4 py-3 text-sm focus:border-[var(--color-primary,#00A0A0)] focus:outline-none transition-colors resize-none"
       />
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex flex-wrap gap-1.5">
@@ -61,7 +61,7 @@ export function CheckoutNotesField({
                 const next = (notes + q.text).slice(0, 200);
                 onNotesChange(next);
               }}
-              className="inline-flex items-center gap-1 px-2.5 h-8 rounded-full border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-primary)] hover:border-[var(--color-primary,#00B4A6)]/40 hover:text-[var(--color-primary,#00B4A6)] transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 h-8 rounded-full border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-primary)] hover:border-[var(--color-primary,#00A0A0)]/40 hover:text-[var(--color-primary,#00A0A0)] transition-colors"
             >
               <q.icon
                 className="h-3.5 w-3.5"

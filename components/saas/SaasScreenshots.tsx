@@ -96,7 +96,7 @@ function MockDashboard() {
         ].map((kpi) => (
           <div
             key={kpi.label}
-            className="rounded-xl p-3 border border-gray-100 dark:border-[rgba(15,118,110,0.18)] bg-white dark:bg-[#152019]"
+            className="rounded-xl p-3 border border-gray-100 dark:border-[rgba(0, 160, 160,0.18)] bg-white dark:bg-[#152019]"
           >
             <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-[rgba(240,244,241,0.4)] mb-1">
               {kpi.label}
@@ -115,7 +115,7 @@ function MockDashboard() {
       </div>
 
       {/* Mini bar chart CSS — 7 barras de diferentes alturas */}
-      <div className="rounded-xl border border-gray-100 dark:border-[rgba(15,118,110,0.18)] bg-white dark:bg-[#152019] p-4">
+      <div className="rounded-xl border border-gray-100 dark:border-[rgba(0, 160, 160,0.18)] bg-white dark:bg-[#152019] p-4">
         <p className="text-xs font-semibold text-gray-500 dark:text-[rgba(240,244,241,0.5)] mb-3">
           Ventas últimos 7 días
         </p>
@@ -129,10 +129,10 @@ function MockDashboard() {
                   style={{
                     height: `${h}%`,
                     background: isToday
-                      ? "linear-gradient(180deg, var(--accent) 0%, #2dd4bf 100%)"
-                      : "rgba(15,118,110,0.22)",
+                      ? "linear-gradient(180deg, var(--accent) 0%, #14C2C2 100%)"
+                      : "rgba(0, 160, 160,0.22)",
                     boxShadow: isToday
-                      ? "0 -2px 8px rgba(15,118,110,0.4)"
+                      ? "0 -2px 8px rgba(0, 160, 160,0.4)"
                       : undefined,
                   }}
                 />
@@ -151,7 +151,7 @@ function MockDashboard() {
       </div>
 
       {/* Últimas ventas */}
-      <div className="rounded-xl border border-gray-100 dark:border-[rgba(15,118,110,0.18)] bg-white dark:bg-[#152019] p-4">
+      <div className="rounded-xl border border-gray-100 dark:border-[rgba(0, 160, 160,0.18)] bg-white dark:bg-[#152019] p-4">
         <p className="text-xs font-semibold text-gray-500 dark:text-[rgba(240,244,241,0.5)] mb-2">
           Últimas ventas
         </p>
@@ -196,13 +196,13 @@ function MockPOS() {
         {POS_PRODUCTS.map((p) => (
           <div
             key={p.name}
-            className="rounded-xl border border-gray-100 dark:border-[rgba(15,118,110,0.18)] bg-white dark:bg-[#152019] p-2 flex flex-col items-center gap-1 hover:border-[var(--accent)]/40 transition-colors duration-150"
+            className="rounded-xl border border-gray-100 dark:border-[rgba(0, 160, 160,0.18)] bg-white dark:bg-[#152019] p-2 flex flex-col items-center gap-1 hover:border-[var(--accent)]/40 transition-colors duration-150"
           >
             {/* Placeholder imagen producto */}
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{
-                background: "linear-gradient(135deg, rgba(15,118,110,0.15) 0%, rgba(20,184,166,0.1) 100%)",
+                background: "linear-gradient(135deg, rgba(0, 160, 160,0.15) 0%, rgba(20,184,166,0.1) 100%)",
               }}
               aria-hidden="true"
             >
@@ -222,7 +222,7 @@ function MockPOS() {
       </div>
 
       {/* Carrito */}
-      <div className="rounded-xl border border-gray-100 dark:border-[rgba(15,118,110,0.18)] bg-white dark:bg-[#152019] p-3 flex flex-col gap-2">
+      <div className="rounded-xl border border-gray-100 dark:border-[rgba(0, 160, 160,0.18)] bg-white dark:bg-[#152019] p-3 flex flex-col gap-2">
         <p className="text-xs font-bold text-gray-700 dark:text-[rgba(240,244,241,0.85)]">
           Carrito
         </p>
@@ -240,7 +240,7 @@ function MockPOS() {
             </div>
           ))}
         </div>
-        <div className="border-t border-gray-100 dark:border-[rgba(15,118,110,0.15)] pt-2">
+        <div className="border-t border-gray-100 dark:border-[rgba(0, 160, 160,0.15)] pt-2">
           <div className="flex justify-between text-[length:var(--ts-2xs)] font-bold text-gray-700 dark:text-[rgba(240,244,241,0.85)] mb-2">
             <span>Total</span>
             <span>S/ 40</span>
@@ -248,8 +248,8 @@ function MockPOS() {
           <div
             className="rounded-lg text-center text-[length:var(--ts-2xs)] font-bold text-white py-2"
             style={{
-              background: "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)",
-              boxShadow: "0 4px 12px -2px rgba(15,118,110,0.4)",
+              background: "linear-gradient(135deg, var(--accent) 0%, #14C2C2 100%)",
+              boxShadow: "0 4px 12px -2px rgba(0, 160, 160,0.4)",
             }}
           >
             Cobrar S/ 40
@@ -273,7 +273,7 @@ function MockInventario() {
     <div className="overflow-x-auto">
       <table className="min-w-full text-xs">
         <thead>
-          <tr className="border-b border-gray-100 dark:border-[rgba(15,118,110,0.18)]">
+          <tr className="border-b border-gray-100 dark:border-[rgba(0, 160, 160,0.18)]">
             {["Producto", "Stock", "Mínimo", "Estado"].map((h) => (
               <th
                 key={h}
@@ -288,7 +288,7 @@ function MockInventario() {
           {rows.map((r) => (
             <tr
               key={r.name}
-              className="border-b border-gray-50 dark:border-[rgba(15,118,110,0.09)]"
+              className="border-b border-gray-50 dark:border-[rgba(0, 160, 160,0.09)]"
             >
               <td className="py-2 px-3 text-gray-700 dark:text-[rgba(240,244,241,0.8)]">
                 {r.name}
@@ -307,7 +307,7 @@ function MockInventario() {
                   className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-semibold"
                   style={{
                     background: r.ok
-                      ? "rgba(15,118,110,0.12)"
+                      ? "rgba(0, 160, 160,0.12)"
                       : "rgba(239,68,68,0.12)",
                     color: r.ok ? "var(--accent)" : "#ef4444",
                   }}
@@ -343,14 +343,14 @@ function MockWhatsApp() {
       className="flex flex-col gap-2 p-3 rounded-xl min-h-[200px]"
       style={{
         background:
-          "radial-gradient(ellipse at top, rgba(15,118,110,0.06) 0%, transparent 70%)",
+          "radial-gradient(ellipse at top, rgba(0, 160, 160,0.06) 0%, transparent 70%)",
       }}
     >
       {/* Header tipo WhatsApp */}
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-[rgba(15,118,110,0.15)] mb-1">
+      <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-[rgba(0, 160, 160,0.15)] mb-1">
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)" }}
+          style={{ background: "linear-gradient(135deg, var(--accent) 0%, #14C2C2 100%)" }}
           aria-hidden="true"
         >
           <MessageCircle className="w-3.5 h-3.5 text-white" />
@@ -375,9 +375,9 @@ function MockWhatsApp() {
               m.from === "bot"
                 ? {
                     background:
-                      "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)",
+                      "linear-gradient(135deg, var(--accent) 0%, #14C2C2 100%)",
                     color: "#fff",
-                    boxShadow: "0 2px 8px rgba(15,118,110,0.25)",
+                    boxShadow: "0 2px 8px rgba(0, 160, 160,0.25)",
                   }
                 : {
                     background: "rgba(0,0,0,0.06)",
@@ -419,7 +419,7 @@ function MockAnalytics() {
           className="w-24 h-24 rounded-full flex flex-col items-center justify-center border-4"
           style={{
             borderColor: "var(--accent)",
-            boxShadow: "0 0 20px rgba(15,118,110,0.25)",
+            boxShadow: "0 0 20px rgba(0, 160, 160,0.25)",
           }}
         >
           <span className="text-2xl font-black" style={{ color: "var(--accent)" }}>
@@ -532,14 +532,14 @@ export default function SaasScreenshots() {
                   isActive
                     ? {
                         background:
-                          "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)",
+                          "linear-gradient(135deg, var(--accent) 0%, #14C2C2 100%)",
                         color: "#fff",
-                        boxShadow: "0 4px 18px -4px rgba(15,118,110,0.55)",
+                        boxShadow: "0 4px 18px -4px rgba(0, 160, 160,0.55)",
                       }
                     : {
                         background: "transparent",
                         color: "inherit",
-                        border: "1px solid rgba(15,118,110,0.22)",
+                        border: "1px solid rgba(0, 160, 160,0.22)",
                       }
                 }
               >
@@ -565,10 +565,10 @@ export default function SaasScreenshots() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.45, ease: [0.175, 0.885, 0.32, 1.275] }}
-          className="rounded-2xl border border-gray-200 dark:border-[rgba(15,118,110,0.22)] overflow-hidden shadow-xl dark:shadow-[0_8px_40px_-8px_rgba(0,0,0,0.6)]"
+          className="rounded-2xl border border-gray-200 dark:border-[rgba(0, 160, 160,0.22)] overflow-hidden shadow-xl dark:shadow-[0_8px_40px_-8px_rgba(0,0,0,0.6)]"
         >
           {/* Barra de título tipo browser */}
-          <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-[#152019] border-b border-gray-200 dark:border-[rgba(15,118,110,0.18)]">
+          <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-[#152019] border-b border-gray-200 dark:border-[rgba(0, 160, 160,0.18)]">
             <div className="w-3 h-3 rounded-full bg-[#ef4444]" aria-hidden="true" />
             <div className="w-3 h-3 rounded-full bg-[#f97316]" aria-hidden="true" />
             <div className="w-3 h-3 rounded-full bg-[var(--accent)]" aria-hidden="true" />

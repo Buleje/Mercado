@@ -44,7 +44,7 @@ export interface OrderConfirmationProps {
   trackingUrl?: string;
 }
 
-const PRIMARY = "#00B4A6";
+const PRIMARY = "#00A0A0";
 const SECONDARY = "#f97316";
 const TEXT = "#111827";
 const MUTED = "#6b7280";

@@ -7,10 +7,22 @@
  * (con foto y precio) a la derecha/abajo, para que el cliente vea QUÉ vende.
  */
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { ArrowRight, MapPin, Bike, ShieldCheck, Eye, Award, Moon, Star } from "@buleje/design-system/icons";
 import ShareStoreButton from "./ShareStoreButton";
+import {
+  haversineKm,
+  ZONE_COORDS,
+  type MarketplaceStore,
+} from "@/components/marketplace/useMarketplaceGeo";
+
+const StoreDistanceMapModal = dynamic(
+  () => import("@/components/marketplace/StoreDistanceMapModal"),
+  { ssr: false },
+);
 
 export interface PremiumProduct {
   productId: number;
@@ -39,6 +51,10 @@ interface Props {
   products: PremiumProduct[];
   /** Abre el drawer "Vista rápida" (peek + add sin salir de /tiendas). */
   onQuickView?: () => void;
+  /** Coords de la tienda + del cliente — para distancia + mapa. */
+  lat?: number | null;
+  lng?: number | null;
+  userCoords?: { lat: number; lng: number } | null;
 }
 
 function price(p: PremiumProduct) {
@@ -80,11 +96,42 @@ export default function PremiumStoreCard({
   nextOpeningLabel,
   products,
   onQuickView,
+  lat,
+  lng,
+  userCoords,
 }: Props) {
   const shown = products.slice(0, 6);
   const isClosed = isOpenNow === false;
+  const [mapOpen, setMapOpen] = useState(false);
+
+  // Distancia tienda <-> cliente (coords reales o centroide de zona).
+  let storeCoords: [number, number] | null = null;
+  if (typeof lat === "number" && typeof lng === "number") {
+    storeCoords = [lat, lng];
+  } else {
+    const zk = zone?.toLowerCase().replace(/ /g, "_") ?? "";
+    storeCoords = ZONE_COORDS[zk] ?? null;
+  }
+  const distanceKm =
+    userCoords && storeCoords
+      ? haversineKm(userCoords.lat, userCoords.lng, storeCoords[0], storeCoords[1])
+      : null;
+
+  const mapStore: MarketplaceStore = {
+    id: slug,
+    slug,
+    name,
+    logo: logo ?? null,
+    category: category ?? "",
+    zone: zone ?? null,
+    rating: rating ?? 0,
+    reviewCount: reviewCount ?? 0,
+    description: null,
+    lat: lat ?? null,
+    lng: lng ?? null,
+  };
   return (
-    <div className="group relative overflow-hidden rounded-3xl border-2 border-[var(--accent)]/40 bg-[var(--surface-raised)] transition-all hover:border-[var(--accent)] hover:shadow-xl">
+    <div className="group relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all duration-200 ease-out hover:border-[var(--text-primary)]/40 hover:scale-[1.006] hover:shadow-[0_18px_40px_-24px_rgba(0,0,0,0.35)]">
       {/* Banner "Cerrada ahora" — barra full-width arriba del card. No tapa
           ningún elemento (empuja el contenido) y avisa la próxima apertura.
           Brandon 2026-05-31. */}
@@ -101,10 +148,7 @@ export default function PremiumStoreCard({
         </div>
       )}
 
-      <div
-        className="relative flex flex-col gap-4 p-4 sm:p-5 sm:flex-row sm:items-stretch"
-        style={{ background: "linear-gradient(120deg, var(--accent-soft) 0%, var(--surface-raised) 45%)" }}
-      >
+      <div className="relative flex flex-col gap-4 p-4 sm:p-5 sm:flex-row sm:items-stretch">
         {/* Vista rápida — drawer de productos + add SIN salir de /tiendas.
             z-20 sobre el stretched-link "Ver tienda" que cubre la card. */}
         {onQuickView && (
@@ -113,7 +157,7 @@ export default function PremiumStoreCard({
             onClick={onQuickView}
             aria-label={`Vista rápida de ${name}`}
             title="Vista rápida"
-            className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-canvas)]/95 text-[var(--accent)] shadow-md ring-1 ring-[var(--accent)]/30 backdrop-blur-sm transition-all hover:bg-[var(--accent)] hover:text-white active:scale-95"
+            className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-canvas)]/95 text-[var(--text-primary)] ring-1 ring-[var(--rule-base)] backdrop-blur-sm transition-all hover:bg-[var(--text-primary)] hover:text-[var(--surface-raised)] active:scale-95"
           >
             <Eye className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </button>
@@ -136,7 +180,7 @@ export default function PremiumStoreCard({
               señala "premium" sin tapar contenido. Brandon 2026-05-31. */}
           <div className="relative shrink-0">
             <div
-              className={`h-16 w-16 overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] shadow-sm ring-2 ring-[var(--accent)]/60 sm:h-20 sm:w-20 ${isClosed ? "grayscale opacity-80" : ""}`}
+              className={`h-16 w-16 overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] sm:h-20 sm:w-20 ${isClosed ? "grayscale opacity-80" : ""}`}
             >
               {logo ? (
                 <Image src={logo} alt={`Logo de ${name}`} width={80} height={80} sizes="80px" className="h-full w-full object-cover" priority />
@@ -148,7 +192,7 @@ export default function PremiumStoreCard({
             </div>
             {/* Badge Premium — icon-only, esquina superior-derecha del logo. */}
             <span
-              className="absolute -right-1.5 -top-1.5 z-20 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-md ring-2 ring-[var(--surface-raised)]"
+              className="absolute -right-1.5 -top-1.5 z-20 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-raised)] ring-2 ring-[var(--surface-raised)]"
               title="Tienda premium"
               aria-label="Tienda premium"
             >
@@ -191,6 +235,22 @@ export default function PremiumStoreCard({
               >
                 <Bike className="h-3 w-3" strokeWidth={2} aria-hidden />
               </span>
+              {/* Distancia + ver en mapa — z-20 sobre el stretched-link "Ver tienda". */}
+              {distanceKm != null && userCoords && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setMapOpen(true);
+                  }}
+                  aria-label={`Ver ubicación de ${name} en el mapa — a ${distanceKm.toFixed(1)} km de ti`}
+                  className="relative z-20 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/40 bg-[var(--surface-canvas)] px-2 py-0.5 text-[10px] font-extrabold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)] active:scale-95"
+                >
+                  <MapPin className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  <span className="tabular-nums">{distanceKm.toFixed(1)} km</span>
+                </button>
+              )}
             </div>
             <Link
               href={`/marketplace/${slug}`}
@@ -242,6 +302,15 @@ export default function PremiumStoreCard({
           </Link>
         </div>
       </div>
+
+      {mapOpen && userCoords && (
+        <StoreDistanceMapModal
+          open={mapOpen}
+          onClose={() => setMapOpen(false)}
+          store={mapStore}
+          userCoords={userCoords}
+        />
+      )}
     </div>
   );
 }

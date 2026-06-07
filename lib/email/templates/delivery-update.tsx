@@ -33,7 +33,7 @@ export interface DeliveryUpdateProps {
   customMessage?: string;
 }
 
-const PRIMARY = "#00B4A6";
+const PRIMARY = "#00A0A0";
 const TEXT = "#111827";
 const MUTED = "#6b7280";
 const BG_LIGHT = "#f9fafb";
@@ -71,7 +71,7 @@ const STATUS_CONFIG: Record<DeliveryStatus, StatusConfig> = {
     description: "Tu repartidor ya salió con tu pedido.",
     headerBg: `linear-gradient(135deg, ${PRIMARY} 0%, #0097a7 100%)`,
     badgeBg: "#ccfbf1",
-    badgeColor: "#0f766e",
+    badgeColor: "#00A0A0",
   },
   cerca: {
     label: "¡Ya casi llega!",

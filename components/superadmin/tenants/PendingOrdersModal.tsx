@@ -358,7 +358,7 @@ export function PendingOrdersModal({
 
                         {/* Delivery info */}
                         {o.delivery && (
-                          <div className="rounded-lg bg-[var(--accent-soft,rgba(0,180,166,0.1))] px-3 py-2 text-xs">
+                          <div className="rounded-lg bg-[var(--accent-soft,rgba(0, 160, 160,0.1))] px-3 py-2 text-xs">
                             <p className="font-bold text-[var(--accent)] uppercase tracking-wider mb-1 flex items-center gap-1">
                               <Truck className="h-3 w-3" />
                               {o.delivery.status === "ofertando" ? "Ofreciendo a repartidor" : "Repartidor"}

@@ -94,8 +94,8 @@ const STATUS_PILL: Record<
   { label: string; bgVar: string; fgVar: string; Icon: typeof CheckCircle2 }
 > = {
   pendiente:  { label: "Pendiente",  bgVar: "var(--data-warning-500)",          fgVar: "var(--data-warning-700)",          Icon: Clock },
-  confirmado: { label: "Preparando", bgVar: "var(--color-primary, #00B4A6)",    fgVar: "var(--color-primary-dark, #009690)", Icon: CheckCircle2 },
-  en_camino:  { label: "En camino",  bgVar: "var(--color-primary, #00B4A6)",    fgVar: "var(--color-primary-dark, #009690)", Icon: Truck },
+  confirmado: { label: "Preparando", bgVar: "var(--color-primary, #00A0A0)",    fgVar: "var(--color-primary-dark, #009690)", Icon: CheckCircle2 },
+  en_camino:  { label: "En camino",  bgVar: "var(--color-primary, #00A0A0)",    fgVar: "var(--color-primary-dark, #009690)", Icon: Truck },
   entregado:  { label: "Entregado",  bgVar: "var(--data-success-500)",          fgVar: "var(--data-success-700)",          Icon: CheckCircle2 },
   cancelado:  { label: "Cancelado",  bgVar: "var(--data-error-500)",            fgVar: "var(--data-error-700)",            Icon: Clock },
 };
@@ -152,7 +152,7 @@ function Card({
         border:
           "1px solid var(--color-card-border)",
         boxShadow:
-          "0 1px 2px color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+          "0 1px 2px color-mix(in oklch, var(--color-primary, #00A0A0) 10%, transparent)",
       }}
     >
       {children}
@@ -178,7 +178,7 @@ function CardHeader({
       className="flex items-center justify-between px-5 py-3.5"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 5%, transparent)",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 5%, transparent)",
         borderBottom:
           "1px solid var(--color-card-border)",
       }}
@@ -269,9 +269,9 @@ export default function PanelClient() {
         className="relative overflow-hidden rounded-3xl px-6 sm:px-10 py-8 sm:py-10 text-white"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
           boxShadow:
-            "0 24px 56px -18px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+            "0 24px 56px -18px color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
         }}
       >
         <div
@@ -412,11 +412,11 @@ export default function PanelClient() {
                     s.accent
                       ? {
                           background:
-                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                         }
                       : {
                           background:
-                            "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                            "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                         }
                   }
                 >
@@ -433,7 +433,7 @@ export default function PanelClient() {
                 {s.accent && (
                   <span
                     className="h-2 w-2 rounded-full animate-pulse mt-2"
-                    style={{ background: "var(--color-primary, #00B4A6)" }}
+                    style={{ background: "var(--color-primary, #00A0A0)" }}
                     aria-hidden="true"
                   />
                 )}
@@ -490,7 +490,7 @@ export default function PanelClient() {
                     className="h-20 rounded-2xl animate-pulse"
                     style={{
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--surface-sunken))",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, var(--surface-sunken))",
                     }}
                   />
                 ))}
@@ -501,7 +501,7 @@ export default function PanelClient() {
                   className="w-16 h-16 mx-auto rounded-3xl flex items-center justify-center mb-3"
                   style={{
                     background:
-                      "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   }}
                 >
                   <Package className="h-8 w-8 text-white" strokeWidth={2} />
@@ -522,9 +522,9 @@ export default function PanelClient() {
                   className="inline-flex items-center gap-2 mt-5 h-12 px-6 rounded-2xl text-sm font-extrabold text-white"
                   style={{
                     background:
-                      "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                     boxShadow:
-                      "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                      "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                   }}
                 >
                   <ShoppingBag className="h-4 w-4" strokeWidth={2.25} />
@@ -556,7 +556,7 @@ export default function PanelClient() {
                             className="relative h-14 w-14 rounded-2xl overflow-hidden ring-2 ring-[var(--color-card)]"
                             style={{
                               background:
-                                "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--surface-sunken))",
+                                "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--surface-sunken))",
                               boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                               zIndex: previewItems.length - idx,
                             }}
@@ -588,7 +588,7 @@ export default function PanelClient() {
                             className="relative h-14 w-14 rounded-2xl flex items-center justify-center text-xs font-extrabold ring-2 ring-[var(--color-card)]"
                             style={{
                               background:
-                                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                               color: "white",
                               zIndex: 0,
                             }}
@@ -636,7 +636,7 @@ export default function PanelClient() {
                         </p>
                         <ChevronRight
                           className="h-5 w-5 inline-block mt-1 group-hover:translate-x-0.5 transition-transform"
-                          style={{ color: "var(--color-primary, #00B4A6)" }}
+                          style={{ color: "var(--color-primary, #00A0A0)" }}
                         />
                       </div>
                     </Link>
@@ -673,7 +673,7 @@ export default function PanelClient() {
                       className="h-11 w-11 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform"
                       style={{
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                       }}
                     >
                       <tile.Icon
@@ -709,7 +709,7 @@ export default function PanelClient() {
                 className="px-5 py-5"
                 style={{
                   background:
-                    "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+                    "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
                 }}
               >
                 <div className="flex items-center gap-3 text-white">
@@ -747,7 +747,7 @@ export default function PanelClient() {
                         style={{
                           width: `${progress}%`,
                           background:
-                            "linear-gradient(90deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(90deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                           transition: "width 0.6s ease-out",
                         }}
                       />
@@ -773,9 +773,9 @@ export default function PanelClient() {
                   className="flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-extrabold text-white active:scale-[0.98] transition-transform"
                   style={{
                     background:
-                      "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                      "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                     boxShadow:
-                      "0 6px 16px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                      "0 6px 16px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
                   }}
                 >
                   <Trophy className="h-4 w-4" strokeWidth={2.25} />
@@ -791,7 +791,7 @@ export default function PanelClient() {
               className="h-10 w-10 rounded-2xl flex items-center justify-center mb-3"
               style={{
                 background:
-                  "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                  "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
               }}
             >
               <Sparkles

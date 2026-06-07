@@ -103,7 +103,7 @@ const DEFAULTS: PlatformBrand = {
   },
   logos: { logoLight: null, logoDark: null, logoSquare: null, favicon: null, ogImage: null },
   colors: {
-    primary: "#00B4A6",
+    primary: "#00A0A0",
     secondary: "#0c1015",
     accent: "#f4a261",
     danger: "#b91c1c",

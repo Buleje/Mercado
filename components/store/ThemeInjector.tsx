@@ -8,7 +8,7 @@ import { useSettings } from "@/contexts/settings-context";
 // deben heredar el theme custom de un tenant. El override de colores/tipografía
 // solo aplica al storefront white-label `/t/[slug]/...`. Antes el injector
 // pintaba la home, /tiendas y /marketplace con el primaryColor del tenant
-// `main` (verde), perdiendo la identidad de Buleje (teal #00B4A6).
+// `main` (verde), perdiendo la identidad de Buleje (teal #00A0A0).
 function isWhiteLabelStorefront(pathname: string | null): boolean {
   return !!pathname && pathname.startsWith("/t/");
 }
@@ -115,7 +115,7 @@ export default function ThemeInjector() {
     };
 
     // ── Derivados ─────────────────────────────────────────────────────
-    const primary = t.primaryColor && t.primaryColor.startsWith("#") ? t.primaryColor : "#00B4A6";
+    const primary = t.primaryColor && t.primaryColor.startsWith("#") ? t.primaryColor : "#00A0A0";
     const secondary = t.secondaryColor && t.secondaryColor.startsWith("#") ? t.secondaryColor : "#f97316";
     const accent = t.accentColor && t.accentColor.startsWith("#") ? t.accentColor : primary;
     const primaryDark = shade(primary, -0.18);

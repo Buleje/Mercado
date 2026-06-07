@@ -32,7 +32,7 @@ export function CheckoutDeliverySchedule({
   onUseCustomDateTimeChange,
 }: CheckoutDeliveryScheduleProps) {
   const inputClass =
-    "w-full h-12 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] focus:border-[var(--color-primary,#00B4A6)] focus:outline-none transition-colors text-sm tabular-nums";
+    "w-full h-12 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] focus:border-[var(--color-primary,#00A0A0)] focus:outline-none transition-colors text-sm tabular-nums";
 
   return (
     <div className="space-y-3">
@@ -40,7 +40,7 @@ export function CheckoutDeliverySchedule({
         <Clock
           className="h-4 w-4"
           strokeWidth={2}
-          style={{ color: "var(--color-primary, #00B4A6)" }}
+          style={{ color: "var(--color-primary, #00A0A0)" }}
         />
         ¿Cuándo entregamos?
       </label>
@@ -116,8 +116,8 @@ export function CheckoutDeliverySchedule({
               onUseCustomDateTimeChange(false);
               onDeliverySlotChange("lo-antes-posible");
             }}
-            className="w-full h-10 inline-flex items-center justify-center gap-1 text-sm font-bold rounded-xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary,#00B4A6)]/40 transition-colors"
-            style={{ color: "var(--color-primary, #00B4A6)" }}
+            className="w-full h-10 inline-flex items-center justify-center gap-1 text-sm font-bold rounded-xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary,#00A0A0)]/40 transition-colors"
+            style={{ color: "var(--color-primary, #00A0A0)" }}
           >
             ← Volver a horarios rápidos
           </button>
@@ -135,14 +135,14 @@ export function CheckoutDeliverySchedule({
                   "w-full flex items-center gap-3 rounded-2xl border-2 px-4 py-3 transition-all text-left",
                   isAsap
                     ? "shadow-sm"
-                    : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--color-primary,#00B4A6)]/40",
+                    : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--color-primary,#00A0A0)]/40",
                 )}
                 style={
                   isAsap
                     ? {
-                        borderColor: "var(--color-primary, #00B4A6)",
+                        borderColor: "var(--color-primary, #00A0A0)",
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card))",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, var(--color-card))",
                       }
                     : undefined
                 }
@@ -151,8 +151,8 @@ export function CheckoutDeliverySchedule({
                   className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
                   style={{
                     background: isAsap
-                      ? "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)"
-                      : "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                      ? "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)"
+                      : "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                   }}
                 >
                   <Zap
@@ -161,7 +161,7 @@ export function CheckoutDeliverySchedule({
                     style={{
                       color: isAsap
                         ? "white"
-                        : "var(--color-primary, #00B4A6)",
+                        : "var(--color-primary, #00A0A0)",
                     }}
                   />
                 </div>
@@ -177,7 +177,7 @@ export function CheckoutDeliverySchedule({
                   <CheckCircle2
                     className="h-5 w-5 shrink-0"
                     strokeWidth={2.5}
-                    style={{ color: "var(--color-primary, #00B4A6)" }}
+                    style={{ color: "var(--color-primary, #00A0A0)" }}
                   />
                 )}
               </button>
@@ -226,13 +226,13 @@ export function CheckoutDeliverySchedule({
                             ? "border-transparent text-white shadow-sm"
                             : slot.disabled
                               ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-muted opacity-50 cursor-not-allowed line-through"
-                              : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--color-primary,#00B4A6)]/40 hover:text-[var(--color-primary,#00B4A6)]",
+                              : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--color-primary,#00A0A0)]/40 hover:text-[var(--color-primary,#00A0A0)]",
                         )}
                         style={
                           active
                             ? {
                                 background:
-                                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                               }
                             : undefined
                         }
@@ -256,8 +256,8 @@ export function CheckoutDeliverySchedule({
           <button
             type="button"
             onClick={() => onUseCustomDateTimeChange(true)}
-            className="w-full h-10 flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-soft)] hover:border-[var(--color-primary,#00B4A6)]/40 hover:bg-[var(--surface-sunken)]/40 text-sm font-bold transition-colors"
-            style={{ color: "var(--color-primary, #00B4A6)" }}
+            className="w-full h-10 flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-soft)] hover:border-[var(--color-primary,#00A0A0)]/40 hover:bg-[var(--surface-sunken)]/40 text-sm font-bold transition-colors"
+            style={{ color: "var(--color-primary, #00A0A0)" }}
           >
             <Calendar className="h-4 w-4" strokeWidth={2.25} />
             Otra fecha y hora

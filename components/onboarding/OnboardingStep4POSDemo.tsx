@@ -1,6 +1,11 @@
 'use client';
 
-import { m as motion } from 'framer-motion';
+// Full `motion` (no `m`/LazyMotion): la ruta /onboarding NO está bajo el
+// MotionProvider del route-group (onboarding), por lo que `m.div` quedaba
+// stuck en initial opacity:0 → las 3 cards eran invisibles. Mismo fix que
+// OnboardingWizard. Ver comentario en OnboardingWizard.tsx.
+import { motion } from 'framer-motion';
+import { OnboardingPrimaryButton } from './onboarding-ui';
 
 interface Props {
   onNext: () => void;
@@ -15,11 +20,11 @@ const cards = [
     ),
     title: 'Busca el producto',
     demo: (
-      <div className="mt-3 flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
-        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2">
+        <svg className="h-4 w-4 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <span className="text-sm text-gray-400">Arroz, leche, gaseosa...</span>
+        <span className="text-sm text-[var(--text-tertiary)]">Arroz, leche, gaseosa...</span>
       </div>
     ),
   },
@@ -32,8 +37,11 @@ const cards = [
     title: 'Agrega al carrito',
     demo: (
       <div className="mt-3 flex justify-center">
-        <div className="bg-[var(--accent-600,var(--accent))] text-white rounded-lg px-4 py-1.5 text-sm font-bold flex items-center gap-1">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+        <div
+          className="flex items-center gap-1 rounded-lg px-4 py-1.5 text-sm font-bold text-white shadow-[0_4px_14px_-4px_var(--accent-glow)]"
+          style={{ backgroundImage: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)' }}
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           Agregar
@@ -50,8 +58,8 @@ const cards = [
     title: 'Cobra y listo',
     demo: (
       <div className="mt-3 flex justify-center">
-        <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full px-4 py-1.5 text-sm font-bold flex items-center gap-1">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+        <div className="flex items-center gap-1 rounded-full bg-[var(--data-success-50)] px-4 py-1.5 text-sm font-bold text-[var(--data-success-700)]">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           Pagado
@@ -64,11 +72,11 @@ const cards = [
 export default function OnboardingStep4POSDemo({ onNext }: Props) {
   return (
     <div className="space-y-6">
-      <div className="text-center mb-2">
-        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+      <div className="mb-2 text-center">
+        <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
           Así vas a cobrar
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <p className="mt-2 text-[var(--text-secondary)]">
           3 pasos simples para cada venta
         </p>
       </div>
@@ -80,18 +88,18 @@ export default function OnboardingStep4POSDemo({ onNext }: Props) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.2, duration: 0.4, ease: 'easeOut' }}
-            className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700"
+            className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 transition-all duration-200 hover:border-[var(--accent)]/40 hover:shadow-[0_8px_24px_-12px_var(--accent-glow)]"
           >
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center flex-shrink-0">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
                 {card.icon}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[var(--accent)] bg-[var(--accent)]/10 rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent)]">
                     {i + 1}
                   </span>
-                  <h3 className="font-bold text-gray-900 dark:text-white">{card.title}</h3>
+                  <h3 className="font-bold text-[var(--text-primary)]">{card.title}</h3>
                 </div>
                 {card.demo}
               </div>
@@ -100,12 +108,9 @@ export default function OnboardingStep4POSDemo({ onNext }: Props) {
         ))}
       </div>
 
-      <button
-        onClick={onNext}
-        className="w-full py-3 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20"
-      >
-        ¡Entendido, quiero vender! &rarr;
-      </button>
+      <OnboardingPrimaryButton onClick={onNext} withArrow>
+        ¡Entendido, quiero vender!
+      </OnboardingPrimaryButton>
     </div>
   );
 }

@@ -70,7 +70,7 @@ function BrandHair() {
       aria-hidden="true"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
       }}
     />
   );
@@ -96,7 +96,7 @@ function RowLabel({
         <Icon
           className="h-3.5 w-3.5"
           strokeWidth={2.25}
-          style={{ color: "var(--color-primary, #00B4A6)" }}
+          style={{ color: "var(--color-primary, #00A0A0)" }}
         />
         <p
           className="text-xs font-extrabold uppercase tracking-wider"
@@ -153,9 +153,9 @@ export function StepConfirmar({
         className="relative overflow-hidden rounded-3xl px-6 py-6 text-white"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
           boxShadow:
-            "0 20px 40px -16px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+            "0 20px 40px -16px color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
         }}
       >
         {/* Decoración: blob suave */}
@@ -216,11 +216,11 @@ export function StepConfirmar({
         className="rounded-3xl overflow-hidden"
         style={{
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--color-card))",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--color-card))",
           border:
-            "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+            "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
           boxShadow:
-            "0 4px 12px -6px color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+            "0 4px 12px -6px color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
         }}
       >
         <div className="px-5 sm:px-6 py-5 space-y-4">
@@ -297,7 +297,7 @@ export function StepConfirmar({
                   className="text-xs font-mono px-2 py-0.5 rounded-md"
                   style={{
                     background:
-                      "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                      "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                     color: "var(--color-primary-dark, #009690)",
                   }}
                 >
@@ -336,9 +336,9 @@ export function StepConfirmar({
                     className="relative h-12 w-12 rounded-xl overflow-hidden shrink-0"
                     style={{
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--color-card))",
                       border:
-                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                        "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                     }}
                   >
                     {i.image ? (
@@ -364,7 +364,7 @@ export function StepConfirmar({
                       className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-white"
                       style={{
                         background:
-                          "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                          "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                       }}
                     >
                       {i.quantity}
@@ -391,9 +391,9 @@ export function StepConfirmar({
         <div className="space-y-1 px-5 sm:px-6 py-4"
           style={{
             background:
-              "color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+              "color-mix(in oklch, var(--color-primary, #00A0A0) 10%, transparent)",
             borderTop:
-              "1px dashed color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+              "1px dashed color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
           }}
         >
           <div className="space-y-1 text-sm">
@@ -438,7 +438,7 @@ export function StepConfirmar({
             className="pt-3 mt-2 flex items-baseline justify-between"
             style={{
               borderTop:
-                "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+                "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)",
             }}
           >
             <span
@@ -462,7 +462,7 @@ export function StepConfirmar({
         className="rounded-2xl px-4 py-3.5"
         style={{
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 5%, var(--color-card))",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 5%, var(--color-card))",
         }}
       >
         <p
@@ -487,8 +487,8 @@ export function StepConfirmar({
                     className="absolute top-1/2 left-1/2 right-0 h-0.5 -translate-y-1/2"
                     style={{
                       background: step.active
-                        ? "color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)"
-                        : "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                        ? "color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)"
+                        : "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                     }}
                     aria-hidden="true"
                   />
@@ -499,14 +499,14 @@ export function StepConfirmar({
                     step.active
                       ? {
                           background:
-                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                           boxShadow:
-                            "0 4px 12px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 45%, transparent)",
+                            "0 4px 12px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 45%, transparent)",
                         }
                       : {
                           background: "var(--color-card)",
                           border:
-                            "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                            "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
                         }
                   }
                 >
@@ -516,7 +516,7 @@ export function StepConfirmar({
                     style={{
                       color: step.active
                         ? "white"
-                        : "var(--color-primary, #00B4A6)",
+                        : "var(--color-primary, #00A0A0)",
                     }}
                   />
                 </div>
@@ -591,7 +591,7 @@ export function StepConfirmarFooter({
           className="flex h-14 w-14 items-center justify-center rounded-2xl transition-all shrink-0 disabled:opacity-50"
           style={{
             border:
-              "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+              "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)",
             color: "var(--color-primary-dark, #009690)",
           }}
           aria-label="Volver al paso de pago"
@@ -606,9 +606,9 @@ export function StepConfirmarFooter({
           className="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl font-extrabold text-base text-white transition-all active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
           style={{
             background:
-              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
             boxShadow:
-              "0 12px 28px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent), 0 2px 6px rgba(0,0,0,0.06)",
+              "0 12px 28px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent), 0 2px 6px rgba(0,0,0,0.06)",
           }}
         >
           {submitting ? (
@@ -631,14 +631,14 @@ export function StepConfirmarFooter({
         <span className="flex items-center gap-1.5">
           <Shield
             className="h-3.5 w-3.5"
-            style={{ color: "var(--color-primary, #00B4A6)" }}
+            style={{ color: "var(--color-primary, #00A0A0)" }}
           />
           Compra segura
         </span>
         <span className="flex items-center gap-1.5">
           <Truck
             className="h-3.5 w-3.5"
-            style={{ color: "var(--color-primary, #00B4A6)" }}
+            style={{ color: "var(--color-primary, #00A0A0)" }}
           />
           Delivery rápido
         </span>

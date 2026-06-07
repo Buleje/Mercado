@@ -1434,7 +1434,7 @@ function DashTooltip({ active, payload, label }: any) {
   );
 }
 
-const DASH_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653'];
+const DASH_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#14C2C2', '#264653'];
 
 const DASH_STATUS_COLORS: Record<string, string> = {
   pendiente: '#f59e0b', confirmado: '#3b82f6', preparando: '#8b5cf6',

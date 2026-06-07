@@ -54,6 +54,9 @@ function mapSettings(s: PSettings): DbSettings {
     ...(s.maintenanceMessage != null && { maintenanceMessage: s.maintenanceMessage }),
     adminBypassLogin: s.adminBypassLogin,
     ...spreadJson(r.comboTemplatesJson as string, 'comboTemplates'),
+    // categoryOrderJson: columna TEXT raw (no en schema.prisma, patrón coverUrl).
+    // Se inyecta en `row` via raw read en get(). Vacío para negocios nuevos.
+    ...spreadJson(r.categoryOrderJson as string, 'categoryOrder'),
 
     // ── Datos del negocio ──
     ...(r.razonSocial != null && { razonSocial: r.razonSocial as string }),
@@ -185,17 +188,18 @@ export const SettingsDB = {
         // coverUrl + bannerUrl se agregaron via ALTER TABLE pero el schema no
         // se regeneró (zona peligrosa). Leemos esos 2 campos via raw query.
         try {
-          const extras = await prisma.$queryRawUnsafe<Array<{ coverUrl: string | null; bannerUrl: string | null }>>(
-            `SELECT "coverUrl", "bannerUrl" FROM "Settings" WHERE "tenantId" = $1 LIMIT 1`,
+          const extras = await prisma.$queryRawUnsafe<Array<{ coverUrl: string | null; bannerUrl: string | null; categoryOrderJson: string | null }>>(
+            `SELECT "coverUrl", "bannerUrl", "categoryOrderJson" FROM "Settings" WHERE "tenantId" = $1 LIMIT 1`,
             (row as { tenantId?: string }).tenantId ?? tid,
           );
           const e = extras[0];
           if (e) {
             (row as Record<string, unknown>).coverUrl = e.coverUrl;
             (row as Record<string, unknown>).bannerUrl = e.bannerUrl;
+            (row as Record<string, unknown>).categoryOrderJson = e.categoryOrderJson;
           }
         } catch (err) {
-          logger.warn("[settings.db] cover/banner raw read skipped", { error: String(err) });
+          logger.warn("[settings.db] cover/banner/categoryOrder raw read skipped", { error: String(err) });
         }
 
         return mapSettings(row);
@@ -347,6 +351,14 @@ export const SettingsDB = {
       await prisma
         .$executeRawUnsafe(`UPDATE "Settings" SET "bannerUrl" = $1 WHERE "tenantId" = $2`, s.bannerUrl || null, tid)
         .catch((err) => logger.warn("[settings.db] bannerUrl raw write failed", { error: String(err) }));
+    }
+    // categoryOrder: columna TEXT raw (patrón coverUrl). Array vacío [] se
+    // persiste como "[]" (negocio que borró todas sus categorías) — distinto
+    // de null (nunca configurado).
+    if (s.categoryOrder !== undefined) {
+      await prisma
+        .$executeRawUnsafe(`UPDATE "Settings" SET "categoryOrderJson" = $1 WHERE "tenantId" = $2`, JSON.stringify(s.categoryOrder), tid)
+        .catch((err) => logger.warn("[settings.db] categoryOrder raw write failed", { error: String(err) }));
     }
 
     invalidateByPrefix(`settings:${tid}`);

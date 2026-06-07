@@ -47,7 +47,7 @@ const TABS: AdminTab[] = [
 
 // ── Colores y tooltip compartidos ──────────────────────────────────────────
 
-const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
+const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#14C2C2', '#264653', '#6b705c'];
 
 type LocalChartTooltipProps = Partial<TooltipContentProps<ValueType, NameType>>;
 
@@ -241,7 +241,7 @@ function ProductsDashboard() {
     { label: "Sin stock", value: kpis.sinStock, icon: PackageX, color: "#e63946", alert: kpis.sinStock > 0 },
     { label: "Precio prom.", value: `S/ ${Number(kpis.precioAvg).toFixed(1)}`, icon: DollarSign, color: "#9b5de5", alert: false },
     { label: "Margen prom.", value: `${Number(kpis.margenAvg).toFixed(1)}%`, icon: TrendingUp, color: "#f97316", alert: kpis.margenAvg < 15 },
-    { label: "Categorias", value: kpis.cats, icon: Layers, color: "#2dd4bf", alert: false },
+    { label: "Categorias", value: kpis.cats, icon: Layers, color: "#14C2C2", alert: false },
     { label: "Sin imagen", value: kpis.sinImagen, icon: ImageOff, color: "#e63946", alert: kpis.sinImagen > 0 },
     { label: "Sin costo", value: kpis.sinCosto, icon: Calculator, color: "#6b705c", alert: kpis.sinCosto > 0 },
   ];

@@ -219,7 +219,7 @@ function getPdfSubject(pdfType: string, data: Record<string, unknown>): string {
 function getPdfEmailHtml(pdfType: string, data: Record<string, unknown>): string {
   return `
     <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;">
-      <div style="background:#00B4A6;padding:20px 24px;">
+      <div style="background:#00A0A0;padding:20px 24px;">
         <h2 style="color:#fff;margin:0;">Documento adjunto</h2>
       </div>
       <div style="padding:20px 24px;">

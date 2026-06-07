@@ -26,7 +26,7 @@ function BrandIcon({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="teal-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#2dd4bf" />
+          <stop offset="0%" stopColor="#14C2C2" />
           <stop offset="100%" stopColor="var(--accent)" />
         </linearGradient>
       </defs>
@@ -90,8 +90,8 @@ function NavLink({
         "relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         isActive
-          ? "text-[var(--accent)] dark:text-[#2dd4bf]"
-          : "text-gray-600 dark:text-gray-400 hover:text-[var(--accent)] dark:hover:text-[#2dd4bf]",
+          ? "text-[var(--accent)] dark:text-[#14C2C2]"
+          : "text-gray-600 dark:text-gray-400 hover:text-[var(--accent)] dark:hover:text-[#14C2C2]",
       ].join(" ")}
       aria-current={isActive ? "true" : undefined}
     >
@@ -191,7 +191,7 @@ export default function SaasNavbar() {
         className="absolute top-0 left-0 h-[2px] pointer-events-none"
         style={{
           width: `${scrollProgress}%`,
-          background: "linear-gradient(90deg, var(--accent) 0%, #2dd4bf 100%)",
+          background: "linear-gradient(90deg, var(--accent) 0%, #14C2C2 100%)",
           transition: "width 0.1s linear",
           // Ocultar cuando el progreso es 0 (inicio de página) para no mostrar línea vacía
           opacity: scrollProgress > 0 ? 1 : 0,
@@ -221,7 +221,7 @@ export default function SaasNavbar() {
               isScrolled ? "text-lg" : "text-xl",
             ].join(" ")}
             style={{
-              background: "linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%)",
+              background: "linear-gradient(135deg, var(--accent) 0%, #14C2C2 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -250,9 +250,9 @@ export default function SaasNavbar() {
           <motion.div
             animate={{
               boxShadow: [
-                "0 4px 16px -2px rgba(15,118,110,0.35)",
-                "0 4px 24px -2px rgba(15,118,110,0.55)",
-                "0 4px 16px -2px rgba(15,118,110,0.35)",
+                "0 4px 16px -2px rgba(0, 160, 160,0.35)",
+                "0 4px 24px -2px rgba(0, 160, 160,0.55)",
+                "0 4px 16px -2px rgba(0, 160, 160,0.35)",
               ],
             }}
             transition={{
@@ -349,8 +349,8 @@ export default function SaasNavbar() {
                       "block px-4 py-3 rounded-xl text-base font-medium transition-colors duration-200",
                       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                       isActive(link.href)
-                        ? "text-[var(--accent)] bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 dark:text-[#2dd4bf]"
-                        : "text-gray-700 dark:text-gray-300 hover:text-[var(--accent)] hover:bg-[var(--accent)]/5 dark:hover:text-[#2dd4bf]",
+                        ? "text-[var(--accent)] bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 dark:text-[#14C2C2]"
+                        : "text-gray-700 dark:text-gray-300 hover:text-[var(--accent)] hover:bg-[var(--accent)]/5 dark:hover:text-[#14C2C2]",
                     ].join(" ")}
                   >
                     {link.label}
@@ -367,7 +367,7 @@ export default function SaasNavbar() {
                   ].join(" ")}
                   style={{
                     background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
-                    boxShadow: "0 4px 16px -2px rgba(15,118,110,0.4)",
+                    boxShadow: "0 4px 16px -2px rgba(0, 160, 160,0.4)",
                   }}
                   onClick={() => setIsMenuOpen(false)}
                 >

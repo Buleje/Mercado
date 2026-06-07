@@ -120,7 +120,7 @@ function persist(prefs: SidebarPrefs) {
 // ─── Palette ─────────────────────────────────────────────────────────────────
 
 const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string }> = [
-  { id: "teal",    label: "Teal",    hex: "#00B4A6" },
+  { id: "teal",    label: "Teal",    hex: "#00A0A0" },
   { id: "emerald", label: "Verde",   hex: "#10B981" },
   { id: "sky",     label: "Cielo",   hex: "#0EA5E9" },
   { id: "violet",  label: "Violeta", hex: "#8B5CF6" },
@@ -129,7 +129,7 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string }> = [
 ];
 
 const THEMES: Array<{ id: SidebarTheme; label: string; preview: string }> = [
-  { id: "buleje",  label: "Buleje",  preview: "bg-[linear-gradient(135deg,#0b1f2b_0%,#00B4A6_100%)] border border-[#00B4A6]/40" },
+  { id: "buleje",  label: "Buleje",  preview: "bg-[linear-gradient(135deg,#0b1f2b_0%,#00A0A0_100%)] border border-[#00A0A0]/40" },
   { id: "light",   label: "Claro",   preview: "bg-white border border-gray-200" },
   { id: "dark",    label: "Oscuro",  preview: "bg-zinc-900 border border-zinc-700" },
   { id: "cristal", label: "Cristal", preview: "bg-linear-to-br from-white/80 to-white/40 border border-white/40 backdrop-blur" },
@@ -144,9 +144,9 @@ const PRESETS: Array<{ id: string; label: string; description: string; swatch: s
     id: "buleje",
     label: "Buleje",
     description: "Editorial slate-deep · teal vibrante · branded total",
-    swatch: "linear-gradient(135deg, #0b1f2b 0%, #00B4A6 100%)",
+    swatch: "linear-gradient(135deg, #0b1f2b 0%, #00A0A0 100%)",
     // Theme dedicado "buleje" — sidebar branded SIEMPRE oscuro editorial con
-    // teal #00B4A6 (color de marca real), independiente del light/dark del shell.
+    // teal #00A0A0 (color de marca real), independiente del light/dark del shell.
     // Render en SuperAdminShell.tsx → sidebarBgClass case isBuleje.
     prefs: { theme: "buleje", accent: "teal", density: "normal", iconStyle: "monochrome" },
   },

@@ -49,10 +49,10 @@ export function productImagePlaceholder(): string {
   <rect width="400" height="400" fill="#f8f9fa"/>
   <g transform="translate(150, 150)">
     <path d="M20 14L10 24v40c0 4 2 6 6 6h68c4 0 6-2 6-6V24l-10-10H20z" 
-          stroke="#00B4A6" stroke-width="3" fill="#e9ecef" opacity="0.5"/>
-    <path d="M10 24h80" stroke="#00B4A6" stroke-width="3"/>
+          stroke="#00A0A0" stroke-width="3" fill="#e9ecef" opacity="0.5"/>
+    <path d="M10 24h80" stroke="#00A0A0" stroke-width="3"/>
     <path d="M64 34c0 8-8 14-14 14s-14-6-14-14" 
-          stroke="#00B4A6" stroke-width="3" fill="none"/>
+          stroke="#00A0A0" stroke-width="3" fill="none"/>
   </g>
 </svg>`;
 
@@ -73,7 +73,7 @@ export const PRODUCT_PLACEHOLDER = productImagePlaceholder();
  * Generate gradient placeholder for premium look
  */
 export function generateGradientPlaceholder(
-  colorStart: string = "#00B4A6",
+  colorStart: string = "#00A0A0",
   colorEnd: string = "#33C4B8",
   width: number = 400,
   height: number = 400
@@ -117,7 +117,7 @@ export const PLACEHOLDERS = {
   shimmerLandscape: generateShimmerPlaceholder(400, 300),
   shimmerWide: generateShimmerPlaceholder(600, 300),
   productSquare: productImagePlaceholder(),
-  gradientPrimary: generateGradientPlaceholder("#00B4A6", "#33C4B8"),
+  gradientPrimary: generateGradientPlaceholder("#00A0A0", "#33C4B8"),
   gradientSecondary: generateGradientPlaceholder("#f77f00", "#fcbf49"),
   gray: generateColorPlaceholder("#f3f4f6"),
   white: generateColorPlaceholder("#ffffff"),

@@ -59,7 +59,7 @@ function FieldShell({
       >
         {label}
         {required && (
-          <span style={{ color: "var(--color-primary, #00B4A6)" }}>*</span>
+          <span style={{ color: "var(--color-primary, #00A0A0)" }}>*</span>
         )}
       </label>
       {children}
@@ -95,14 +95,14 @@ export function CustomerFormFields({
       ? "border-[var(--data-success-500)]"
       : dniLookup.status === "error"
         ? "border-[var(--data-error-500)]"
-        : "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]";
+        : "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00A0A0)]";
 
   const phoneBorder =
     phone.length === 0
-      ? "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]"
+      ? "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00A0A0)]"
       : phoneValidation.valid
         ? "border-[var(--data-success-500)]"
-        : "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]";
+        : "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00A0A0)]";
 
   const inputBase =
     "w-full h-12 rounded-xl border-2 bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-muted/60 focus:outline-none transition-colors text-base tabular-nums";
@@ -125,7 +125,7 @@ export function CustomerFormFields({
           <Hash
             className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
             strokeWidth={2}
-            style={{ color: "var(--color-primary, #00B4A6)" }}
+            style={{ color: "var(--color-primary, #00A0A0)" }}
           />
           <input
             value={dni}
@@ -142,7 +142,7 @@ export function CustomerFormFields({
             {dniLookup.status === "loading" ? (
               <Loader2
                 className="h-4 w-4 animate-spin"
-                style={{ color: "var(--color-primary, #00B4A6)" }}
+                style={{ color: "var(--color-primary, #00A0A0)" }}
               />
             ) : dniLookup.status === "success" ? (
               <CheckCircle2
@@ -161,7 +161,7 @@ export function CustomerFormFields({
           <User
             className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
             strokeWidth={2}
-            style={{ color: "var(--color-primary, #00B4A6)" }}
+            style={{ color: "var(--color-primary, #00A0A0)" }}
           />
           <input
             required
@@ -172,7 +172,7 @@ export function CustomerFormFields({
             className={cn(
               inputBase,
               "pl-10 pr-3",
-              "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00B4A6)]",
+              "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00A0A0)]",
             )}
           />
         </div>
@@ -198,7 +198,7 @@ export function CustomerFormFields({
           <Phone
             className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
             strokeWidth={2}
-            style={{ color: "var(--color-primary, #00B4A6)" }}
+            style={{ color: "var(--color-primary, #00A0A0)" }}
           />
           <input
             type="tel"

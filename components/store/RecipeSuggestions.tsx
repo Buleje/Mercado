@@ -153,7 +153,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
               className={cn(
                 "text-xs font-bold px-2 py-1 rounded-full",
                 matchPct === 100
-                  ? "bg-[var(--accent)]/10 text-[var(--accent)] dark:text-[#2dd4bf]"
+                  ? "bg-[var(--accent)]/10 text-[var(--accent)] dark:text-[#14C2C2]"
                   : matchPct >= 50
                     ? "bg-[#f97316]/10 text-[#f97316]"
                     : "bg-[var(--surface-sunken)] text-gray-500"
@@ -207,7 +207,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
                   {!present && onAddIngredient && (
                     <button
                       onClick={() => onAddIngredient(ing)}
-                      className="text-xs text-[var(--accent)] dark:text-[#2dd4bf] font-semibold hover:underline"
+                      className="text-xs text-[var(--accent)] dark:text-[#14C2C2] font-semibold hover:underline"
                     >
                       + Agregar
                     </button>
@@ -278,7 +278,7 @@ export default function RecipeSuggestions({ cartItems, onAddIngredient }: Props)
       {/* Link al recetario completo */}
       <Link
         href="/recetas"
-        className="mt-4 flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--accent)]/8 hover:bg-[var(--accent)]/15 text-[var(--accent)] dark:text-[#2dd4bf] text-sm font-bold transition-colors"
+        className="mt-4 flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--accent)]/8 hover:bg-[var(--accent)]/15 text-[var(--accent)] dark:text-[#14C2C2] text-sm font-bold transition-colors"
       >
         Ver todas las recetas <ArrowRight className="h-4 w-4" />
       </Link>

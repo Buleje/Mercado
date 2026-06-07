@@ -133,7 +133,7 @@ export default function MoneyLeakDetector() {
         <button
           onClick={() => load()}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[#2dd4bf] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[#14C2C2] transition-colors"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
           Actualizar

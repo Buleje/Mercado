@@ -71,6 +71,22 @@ export async function GET(req: NextRequest) {
           total: true,
           status: true,
           createdAt: true,
+          paymentMethod: true,
+          // Artículos con imagen — el drawer los muestra al expandir el pedido
+          // (Brandon 2026-06-05).
+          items: {
+            select: {
+              id: true,
+              name: true,
+              quantity: true,
+              unit: true,
+              price: true,
+              image: true,
+              // Fallback: pedidos viejos guardaron image="" — usamos la foto
+              // actual del producto para que el drawer siempre muestre algo.
+              product: { select: { image: true } },
+            },
+          },
         },
       }),
     ]);
@@ -145,6 +161,23 @@ export async function GET(req: NextRequest) {
               status: o.status,
               createdAt: o.createdAt.toISOString(),
               href: t ? `/superadmin/orders?tenant=${t.slug}` : `/superadmin/orders`,
+              // Detalle expandible en el drawer (2026-06-05)
+              order: {
+                customerName: o.customerName,
+                tenantName: t?.name ?? o.tenantId,
+                tenantSlug: t?.slug ?? null,
+                total: Number(o.total),
+                paymentMethod: o.paymentMethod,
+                itemsCount: o.items.reduce((acc, i) => acc + i.quantity, 0),
+                items: o.items.map((i) => ({
+                  id: i.id,
+                  name: i.name,
+                  quantity: i.quantity,
+                  unit: i.unit,
+                  price: Number(i.price),
+                  image: i.image || i.product?.image || null,
+                })),
+              },
             };
           }),
         },

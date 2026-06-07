@@ -286,7 +286,7 @@ function HeatMap({ orders }: { orders: Order[] }) {
                     background:
                       count === 0
                         ? "var(--color-card-border)"
-                        : `color-mix(in oklch, var(--color-primary, #00B4A6) ${Math.round(intensity * 80) + 20}%, transparent)`,
+                        : `color-mix(in oklch, var(--color-primary, #00A0A0) ${Math.round(intensity * 80) + 20}%, transparent)`,
                   }}
                   title={`${count} pedido${count === 1 ? "" : "s"}`}
                 />
@@ -303,7 +303,7 @@ function HeatMap({ orders }: { orders: Order[] }) {
               key={i}
               className="w-3 h-3 rounded-sm"
               style={{
-                background: `color-mix(in oklch, var(--color-primary, #00B4A6) ${Math.round(i * 80) + 20}%, transparent)`,
+                background: `color-mix(in oklch, var(--color-primary, #00A0A0) ${Math.round(i * 80) + 20}%, transparent)`,
               }}
             />
           ))}
@@ -329,16 +329,16 @@ function SmartReorder({
       className="rounded-2xl p-4 relative overflow-hidden"
       style={{
         background:
-          "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00B4A6) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
+          "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00A0A0) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
         border:
-          "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 28%, transparent)",
+          "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 28%, transparent)",
       }}
     >
       <div
         className="absolute -top-6 -right-6 w-20 h-20 rounded-full pointer-events-none"
         style={{
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
         }}
       />
       <div className="relative">
@@ -355,7 +355,7 @@ function SmartReorder({
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-extrabold"
                 style={{
                   background:
-                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   color: "white",
                 }}
               >
@@ -378,10 +378,10 @@ function SmartReorder({
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-extrabold transition-all hover:-translate-y-0.5 active:scale-[0.98]"
           style={{
             background:
-              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
             color: "white",
             boxShadow:
-              "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+              "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
           }}
         >
           <Zap className="h-4 w-4" strokeWidth={2.5} />
@@ -431,10 +431,10 @@ function FilterPills({
                 active
                   ? {
                       background:
-                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                       color: "white",
                       boxShadow:
-                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                     }
                   : undefined
               }
@@ -573,7 +573,7 @@ function OrderDetailModal({
           className="relative px-6 pt-6 pb-5 text-white overflow-hidden"
           style={{
             background: isActive
-              ? "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)"
+              ? "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)"
               : order.status === "entregado"
                 ? "linear-gradient(135deg, var(--data-success-500) 0%, var(--accent-dark) 100%)"
                 : "linear-gradient(135deg, var(--data-error-500) 0%, var(--data-error-600) 100%)",
@@ -624,16 +624,16 @@ function OrderDetailModal({
               className="relative h-40 rounded-2xl overflow-hidden"
               style={{
                 background:
-                  "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent) 0%, color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card)) 100%)",
+                  "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent) 0%, color-mix(in oklch, var(--color-primary, #00A0A0) 6%, var(--color-card)) 100%)",
                 border:
-                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                  "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
               }}
             >
               <div
                 className="absolute inset-0 opacity-40 pointer-events-none"
                 style={{
                   backgroundImage:
-                    "radial-gradient(var(--color-primary, #00B4A6) 1px, transparent 1px)",
+                    "radial-gradient(var(--color-primary, #00A0A0) 1px, transparent 1px)",
                   backgroundSize: "16px 16px",
                 }}
               />
@@ -717,7 +717,7 @@ function OrderDetailModal({
             className="rounded-2xl p-4 space-y-2"
             style={{
               background:
-                "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--color-card))",
+                "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--color-card))",
               border: "1px solid var(--color-card-border)",
             }}
           >
@@ -865,7 +865,7 @@ function ActiveOrderCard({
         className="absolute top-0 left-0 right-0 h-1"
         style={{
           background:
-            "linear-gradient(90deg, var(--data-warning-500) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(90deg, var(--data-warning-500) 0%, var(--color-primary, #00A0A0) 100%)",
         }}
       />
 
@@ -875,7 +875,7 @@ function ActiveOrderCard({
             className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
             style={{
               background:
-                "linear-gradient(135deg, var(--data-warning-500) 0%, var(--color-primary, #00B4A6) 100%)",
+                "linear-gradient(135deg, var(--data-warning-500) 0%, var(--color-primary, #00A0A0) 100%)",
               boxShadow:
                 "0 6px 14px -4px color-mix(in oklch, var(--data-warning-500) 40%, transparent)",
             }}
@@ -906,7 +906,7 @@ function ActiveOrderCard({
             style={{
               width: `${progress * 100}%`,
               background:
-                "linear-gradient(90deg, var(--data-warning-500) 0%, var(--color-primary, #00B4A6) 100%)",
+                "linear-gradient(90deg, var(--data-warning-500) 0%, var(--color-primary, #00A0A0) 100%)",
             }}
           />
         </div>
@@ -950,9 +950,9 @@ function ActiveOrderCard({
           className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-extrabold text-white transition-all hover:-translate-y-0.5 active:scale-[0.98]"
           style={{
             background:
-              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
             boxShadow:
-              "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+              "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
           }}
         >
           <Truck className="h-4 w-4" strokeWidth={2.5} />
@@ -1125,9 +1125,9 @@ function CompletedOrderCard({
             className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-sm font-extrabold text-white transition-all hover:-translate-y-0.5 active:scale-[0.98]"
             style={{
               background:
-                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
               boxShadow:
-                "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
             }}
           >
             <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
@@ -1346,7 +1346,7 @@ export default function MisPedidosPage() {
       className="min-h-screen dark:bg-background"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-base, #f9fafb))",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-base, #f9fafb))",
       }}
     >
       <BreadcrumbSchema
@@ -1362,7 +1362,7 @@ export default function MisPedidosPage() {
         className="relative overflow-hidden pt-28 sm:pt-32 pb-8"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
         }}
       >
         <div
@@ -1665,16 +1665,16 @@ export default function MisPedidosPage() {
                   className="rounded-3xl p-6 text-center space-y-3 relative overflow-hidden"
                   style={{
                     background:
-                      "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card)) 0%, var(--color-card) 100%)",
+                      "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--color-card)) 0%, var(--color-card) 100%)",
                     border:
-                      "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 20%, transparent)",
+                      "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 20%, transparent)",
                   }}
                 >
                   <div
                     className="absolute -top-8 -right-8 w-28 h-28 rounded-full pointer-events-none"
                     style={{
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
                     }}
                   />
                   <div className="relative">
@@ -1690,9 +1690,9 @@ export default function MisPedidosPage() {
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-extrabold transition-all hover:-translate-y-0.5"
                         style={{
                           background:
-                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                           boxShadow:
-                            "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                            "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
                         }}
                       >
                         <ShoppingCart className="h-4 w-4" strokeWidth={2.5} />

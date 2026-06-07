@@ -162,7 +162,7 @@ function getStreakKey(): string {
 // ─── Confetti ─────────────────────────────────────────────────────────────────
 
 function Confetti() {
-  const colors = ["var(--color-primary)", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
+  const colors = ["var(--color-primary)", "#f97316", "#14C2C2", "#f4d03f", "#e76f51"];
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl z-10">
       {Array.from({ length: 24 }).map((_, i) => (

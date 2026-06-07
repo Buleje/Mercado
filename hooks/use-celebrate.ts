@@ -83,7 +83,7 @@ export function useCelebrate() {
           fireConfetti({
             particleCount: 100,
             spread: 100,
-            colors: ["#0a0a0a", "#fafafa", "#00B4A6", "#D97706"],
+            colors: ["#0a0a0a", "#fafafa", "#00A0A0", "#D97706"],
           });
           haptic();
           toast.success(

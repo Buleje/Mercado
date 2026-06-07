@@ -70,7 +70,7 @@ export default function CatalogPDFGenerator() {
       let y = margin;
 
       // ── Cover ──
-      doc.setFillColor(45, 106, 79); // #00B4A6
+      doc.setFillColor(45, 106, 79); // #00A0A0
       doc.rect(0, 0, pageW, 45, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);

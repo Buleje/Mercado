@@ -103,6 +103,8 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         rating: true,
         reviewCount: true,
         description: true,
+        lat: true,
+        lng: true,
       },
     });
     const rows = rowsRaw;
@@ -174,6 +176,10 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         rating: s.rating,
         reviewCount: s.reviewCount,
         description: s.description,
+        // Coords reales — distancia + mapa por card en /tiendas (SSR, sin
+        // depender del refetch cliente que el HMR puede abortar en dev).
+        lat: s.lat,
+        lng: s.lng,
         underConstruction: Boolean(construction?.enabled),
         underConstructionMessage: construction?.message ?? null,
         // ── Horario derivado ──

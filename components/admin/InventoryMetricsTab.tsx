@@ -87,7 +87,7 @@ function formatDate(dateStr: string): string {
   })
 }
 
-const CHART_COLORS = ['var(--accent)', '#f97316', '#e76f51', '#264653', '#2a9d8f', '#e9c46a']
+const CHART_COLORS = ['var(--accent)', '#f97316', '#e76f51', '#264653', '#00BDBD', '#e9c46a']
 
 const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   ENTRY: 'Entrada',

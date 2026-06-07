@@ -171,7 +171,7 @@ export default function NightModeToggle() {
               className={cn(
                 "flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-all",
                 prefs.override === value
-                  ? "border-primary bg-primary/5 text-primary dark:border-[#2dd4bf] dark:text-primary"
+                  ? "border-primary bg-primary/5 text-primary dark:border-[#14C2C2] dark:text-primary"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-750"
               )}
             >
@@ -200,7 +200,7 @@ export default function NightModeToggle() {
               className={cn(
                 "flex-1 py-2 rounded-lg border text-sm font-medium transition-colors",
                 prefs.fontSize === value
-                  ? "border-primary bg-primary/5 text-primary dark:border-[#2dd4bf] dark:text-primary"
+                  ? "border-primary bg-primary/5 text-primary dark:border-[#14C2C2] dark:text-primary"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-gray-750"
               )}
             >

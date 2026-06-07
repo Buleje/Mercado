@@ -45,7 +45,7 @@ import dynamic from "next/dynamic";
 import { isThermalPrintSupported, printThermal } from "@/lib/thermal-printer";
 import { extractIgv } from "@/lib/tax";
 import type { Product as BaseProduct } from "@/types/erp";
-type Product = Omit<BaseProduct, "id"> & { id: number; stock?: number; stockMin?: number };
+type Product = Omit<BaseProduct, "id"> & { id: number; stock?: number; stockMin?: number; type?: string };
 
 // POS Upgrades
 import { usePOSKeyboard } from "@/components/admin/pos/usePOSKeyboard";
@@ -331,7 +331,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
 // ── Confetti animation for sale complete ──────────────────────────────────────
 
 function SaleConfetti() {
-  const colors = ["var(--accent)", "#f97316", "#2dd4bf", "#e63946"];
+  const colors = ["var(--accent)", "#f97316", "#14C2C2", "#e63946"];
   // Pre-compute random values to avoid impure function calls during render
   const pieces = useState(() =>
     Array.from({ length: 20 }).map((_, i) => ({
@@ -1960,6 +1960,11 @@ export default function POSView() {
                           <div className="absolute inset-0 bg-[var(--surface-raised)]/60 flex items-center justify-center">
                             <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded">Agotado</span>
                           </div>
+                        )}
+                        {p.type === "service" && (
+                          <span className="absolute bottom-0.5 left-0.5 z-10 rounded bg-[var(--accent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white shadow-sm">
+                            Servicio
+                          </span>
                         )}
                       </div>
                       <p className="text-xs font-semibold leading-tight text-[var(--text-primary)] dark:text-[var(--text-primary)] line-clamp-2 min-h-[2.2em]">{p.name}</p>

@@ -10,7 +10,7 @@ type _CartItemCompat = CartItem extends OrderItem ? true : false; // compile-tim
 // Theme colors
 const PC = {
   primaryDark: "#009690",
-  primary: "#00B4A6",
+  primary: "#00A0A0",
   secondary: "#f97316",
   bgLight: "#F0FDF4",
   border: "#D1FAE5",

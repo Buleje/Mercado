@@ -52,11 +52,11 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     .container { max-width: 800px; margin: 0 auto; padding: 32px; }
 
     /* Header */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #00B4A6; }
-    .brand-name { font-size: 24px; font-weight: 900; color: #00B4A6; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #00A0A0; }
+    .brand-name { font-size: 24px; font-weight: 900; color: #00A0A0; }
     .brand-sub  { font-size: 11px; color: #6b7280; margin-top: 2px; }
     .brand-info { font-size: 11px; color: #6b7280; margin-top: 4px; line-height: 1.5; }
-    .oc-badge   { background: #00B4A6; color: #fff; font-size: 22px; font-weight: 900; padding: 10px 20px; border-radius: 10px; text-align: right; }
+    .oc-badge   { background: #00A0A0; color: #fff; font-size: 22px; font-weight: 900; padding: 10px 20px; border-radius: 10px; text-align: right; }
     .oc-num     { font-size: 12px; font-weight: 400; margin-bottom: 2px; }
 
     /* Info grid */
@@ -75,7 +75,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
 
     /* Table */
     table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    thead tr { background: #00B4A6; }
+    thead tr { background: #00A0A0; }
     thead th { padding: 10px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: .05em; }
     thead th:not(:first-child) { text-align: right; }
     thead th:nth-child(2) { text-align: center; }
@@ -84,7 +84,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     .totals { display: flex; justify-content: flex-end; margin-bottom: 32px; }
     .totals-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; min-width: 260px; }
     .totals-row { display: flex; justify-content: space-between; font-size: 13px; color: #374151; margin-bottom: 6px; }
-    .totals-row.total { border-top: 2px solid #00B4A6; margin-top: 8px; padding-top: 8px; font-size: 16px; font-weight: 900; color: #00B4A6; }
+    .totals-row.total { border-top: 2px solid #00A0A0; margin-top: 8px; padding-top: 8px; font-size: 16px; font-weight: 900; color: #00A0A0; }
 
     /* Footer */
     .footer { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 40px; padding-top: 24px; border-top: 1px solid #e5e7eb; }

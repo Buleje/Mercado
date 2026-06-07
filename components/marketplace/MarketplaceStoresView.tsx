@@ -16,17 +16,28 @@ import {
   Bike,
   ShoppingBag,
   ArrowUpRight,
+  ArrowRight,
   Tag,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { FeaturedNearbyStore } from "@/lib/db/marketplace-featured.db";
-import type { MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
+import {
+  type MarketplaceStore,
+  haversineKm,
+  ZONE_COORDS,
+} from "@/components/marketplace/useMarketplaceGeo";
 
 // Drawer "Vista rápida" (peek + add sin salir de /tiendas). Lazy — usa
 // framer-motion; solo se carga al primer click en una card premium.
 const StoreQuickPreviewDrawer = dynamic(
   () => import("@/components/marketplace/StoreQuickPreviewDrawer"),
+);
+
+// Modal de ubicación/distancia (mapa Leaflet) — client-only, carga al 1er click.
+const StoreDistanceMapModal = dynamic(
+  () => import("@/components/marketplace/StoreDistanceMapModal"),
+  { ssr: false },
 );
 
 // Mapea una MarketplaceStore + sus productos premium al shape que espera el
@@ -194,11 +205,29 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   store,
   index,
   lastOrder,
+  userCoords,
 }: {
   store: MarketplaceStore;
   index: number;
   lastOrder?: LastOrderInfo;
+  userCoords?: { lat: number; lng: number } | null;
 }) {
+  const [mapOpen, setMapOpen] = useState(false);
+
+  // Distancia a la tienda — solo si el cliente compartió su ubicación y la
+  // tienda tiene coords reales o, en su defecto, el centroide de su zona.
+  const distanceKm = useMemo(() => {
+    if (!userCoords) return null;
+    let coords: [number, number] | null = null;
+    if (typeof store.lat === "number" && typeof store.lng === "number") {
+      coords = [store.lat, store.lng];
+    } else {
+      const zoneKey = store.zone?.toLowerCase().replace(/ /g, "_") ?? "";
+      coords = ZONE_COORDS[zoneKey] ?? null;
+    }
+    if (!coords) return null;
+    return haversineKm(userCoords.lat, userCoords.lng, coords[0], coords[1]);
+  }, [userCoords, store.lat, store.lng, store.zone]);
   // Brandon, mayo 14 2026: product preview strip eliminado de las cards.
   // Antes mostrábamos 3 productos en hover/intersección — generaba ~10×
   // requests adicionales y saturaba visualmente la card. Si el cliente
@@ -223,33 +252,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   // ── Overlay sobre el cover: rating pill + promo + vacaciones ──
   const coverOverlay = (
     <>
-      {/* Nivel (superadmin): Destacada / Premium — icon-only, inline en el
-          cluster top-left del cover. Brandon 2026-05-31: antes flotaba
-          top-right y chocaba con el botón Seguir; ahora fluye junto al rating. */}
-      {(store.displayTier === "featured" || store.displayTier === "premium") && (
-        <span
-          className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] p-1.5 text-white shadow-sm"
-          title={store.displayTier === "premium" ? "Tienda premium" : "Tienda destacada"}
-          aria-label={store.displayTier === "premium" ? "Tienda premium" : "Tienda destacada"}
-        >
-          {store.displayTier === "premium" ? (
-            <Award className="h-3 w-3" strokeWidth={2.75} aria-hidden="true" />
-          ) : (
-            <Star className="h-3 w-3 fill-current" aria-hidden="true" />
-          )}
-        </span>
-      )}
-      {/* Verificada — icon-only, mismo cluster (antes flotaba top-left y se
-          montaba sobre el rating cuando ambos existían). */}
-      {store.verified && (
-        <span
-          className="inline-flex items-center justify-center rounded-full bg-[var(--data-info-500,#0ea5e9)] p-1.5 text-white shadow-sm"
-          title="Tienda verificada por Buleje"
-          aria-label="Tienda verificada por Buleje"
-        >
-          <ShieldCheck className="h-3 w-3" strokeWidth={2.75} aria-hidden="true" />
-        </span>
-      )}
+      {/* Nivel y verificada se movieron a la DESCRIPCIÓN (body) como chips con
+          texto — Brandon 2026-06-07. El cover solo conserva rating + ofertas. */}
       {store.rating > 0 && (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/90 backdrop-blur-sm shadow-sm text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)]">
           <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
@@ -311,11 +315,35 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     deliveryLabel,
   ].filter(Boolean) as string[];
 
+  const hasTierBadge = store.displayTier === "featured" || store.displayTier === "premium";
   const footer = (
-    <div className="flex flex-col gap-1.5">
-      {/* sr-only enriched aria description (rating, zone, vacación) — antes
-          vivía en el `avatar` overlay que ya removimos (rediseño Rappi v3). */}
+    <div className="flex flex-col gap-2">
+      {/* sr-only enriched aria description (rating, zone, vacación). */}
       <span className="sr-only">{ariaLabel}</span>
+
+      {/* Emblemas en la descripción: verificada + nivel — chips con texto,
+          organizados. Brandon 2026-06-07. */}
+      {(store.verified || hasTierBadge) && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {store.verified && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+              <ShieldCheck className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+              Verificada
+            </span>
+          )}
+          {hasTierBadge && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--text-primary)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--surface-raised)]">
+              {store.displayTier === "premium" ? (
+                <Award className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+              ) : (
+                <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+              )}
+              {store.displayTier === "premium" ? "Premium" : "Destacada"}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Línea meta: categoría · zona · delivery time (1 línea, truncate) */}
       <div className="flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate">
         <MapPin className="h-3 w-3 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
@@ -329,12 +357,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
         <div className="flex items-center gap-1.5">
           {store.freeDelivery && (
-            <span
-              className="inline-flex items-center justify-center p-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)]"
-              title="Envío gratis"
-              aria-label="Envío gratis"
-            >
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
               <Bike className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+              Envío gratis
             </span>
           )}
           {store.minOrderAmount != null && store.minOrderAmount > 0 && (
@@ -344,6 +369,12 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           )}
         </div>
       )}
+
+      {/* Acción: ver tienda — refuerzo visual del CTA al pie de la descripción */}
+      <span className="mt-0.5 inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] group-hover:gap-1.5 transition-all">
+        Ver tienda
+        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+      </span>
     </div>
   );
 
@@ -357,7 +388,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   return (
     <div
       ref={cardRef}
-      className={`relative ${isFeatured ? "rounded-2xl p-0.5 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] shadow-lg shadow-[var(--accent)]/20" : ""}`}
+      className={`relative transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.02] ${isFeatured ? "rounded-2xl p-0.5 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] shadow-lg" : ""}`}
     >
       {/* Wrapper interno para que el anillo teal envuelva la card en Destacada */}
       <div className={isFeatured ? "rounded-[14px] overflow-hidden bg-[var(--surface-raised)]" : "contents"}>
@@ -389,7 +420,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         name={store.name}
         slug={store.slug}
         imageUrl={store.cover || store.logo}
-        variant="compact"
+        variant="default"
         footer={footer}
         coverOverlay={coverOverlay}
         coverBottomLeft={
@@ -458,6 +489,33 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         <ShareStoreButton slug={store.slug} name={store.name} />
         <FollowStoreButton slug={store.slug} storeName={store.name} />
       </div>
+
+      {/* Distancia + ver en mapa — pill clickeable (overlay, fuera del Link).
+          Solo cuando el cliente compartió su ubicación y hay coords de la tienda. */}
+      {distanceKm != null && userCoords && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setMapOpen(true);
+          }}
+          aria-label={`Ver ubicación de ${store.name} en el mapa — a ${distanceKm.toFixed(1)} km de ti`}
+          className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-white/95 px-2.5 py-1.5 text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 dark:bg-gray-950/90"
+        >
+          <MapPin className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden="true" />
+          <span className="tabular-nums">{distanceKm.toFixed(1)} km</span>
+        </button>
+      )}
+
+      {mapOpen && userCoords && (
+        <StoreDistanceMapModal
+          open={mapOpen}
+          onClose={() => setMapOpen(false)}
+          store={store}
+          userCoords={userCoords}
+        />
+      )}
       </div>
     </div>
   );
@@ -466,7 +524,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   prev.store.slug === next.store.slug &&
   prev.store.rating === next.store.rating &&
   prev.store.vacationMode === next.store.vacationMode &&
-  prev.index === next.index,
+  prev.index === next.index &&
+  prev.userCoords === next.userCoords,
 );
 
 /* ── MarketplaceStoresView Props ───────────────────────────────────────────── */
@@ -481,6 +540,8 @@ interface MarketplaceStoresViewProps {
   category: string;
   zone: string;
   geoActive: boolean;
+  /** Coords GPS del cliente (logueado o no) — para distancia + mapa por card. */
+  userCoords?: { lat: number; lng: number } | null;
   /** Live store count for the sr-only aria-live region */
   filteredStores: MarketplaceStore[];
   onRetry: () => void;
@@ -621,6 +682,7 @@ export default function MarketplaceStoresView({
   category,
   zone,
   geoActive,
+  userCoords,
   filteredStores: filteredStoresProp,
   onRetry,
   onClearAll,
@@ -750,7 +812,7 @@ export default function MarketplaceStoresView({
           {search && (
             <Link
               href={`/marketplace/buscar?q=${encodeURIComponent(search.trim())}`}
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 h-12 text-sm font-extrabold text-white shadow-md shadow-[var(--accent)]/25 transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+              className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 h-12 text-sm font-extrabold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
             >
               <ShoppingBag className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />
               Buscar &quot;{search.trim()}&quot; en productos
@@ -835,6 +897,9 @@ export default function MarketplaceStoresView({
                     verified={store.verified}
                     isOpenNow={store.isOpenNow}
                     nextOpeningLabel={formatNextOpening(store.nextOpeningAt)}
+                    lat={store.lat}
+                    lng={store.lng}
+                    userCoords={userCoords}
                     products={premiumProducts[store.slug] ?? []}
                     onQuickView={
                       (premiumProducts[store.slug]?.length ?? 0) > 0
@@ -851,6 +916,7 @@ export default function MarketplaceStoresView({
                   store={store}
                   index={i}
                   lastOrder={lastOrdersByStore[store.slug]}
+                  userCoords={userCoords}
                 />
               </div>
             );

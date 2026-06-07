@@ -20,8 +20,8 @@ export const viewport: Viewport = {
   userScalable: true,
   // Hex literal obligatorio — Next.js serializa themeColor como meta tag en
   // <head> en build time; var(--accent) no resuelve en ese contexto y el
-  // navegador ignora el valor. #00B4A6 = token --accent resuelto en Buleje DS.
-  themeColor: "#00B4A6",
+  // navegador ignora el valor. #00A0A0 = token --accent resuelto en Buleje DS.
+  themeColor: "#00A0A0",
 };
 
 export default function DeliveryAppLayout({

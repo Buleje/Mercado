@@ -177,7 +177,7 @@ function GaugeArc({ pct }: { pct: number }) {
         strokeLinecap="round"
         strokeDasharray={`${dash} ${half}`}
         className={cn(
-          clamped >= 100 ? "stroke-primary" : clamped >= 70 ? "stroke-[#2dd4bf]" : clamped >= 40 ? "stroke-[var(--data-warning-500)]" : "stroke-[var(--data-error-500)]"
+          clamped >= 100 ? "stroke-primary" : clamped >= 70 ? "stroke-[#14C2C2]" : clamped >= 40 ? "stroke-[var(--data-warning-500)]" : "stroke-[var(--data-error-500)]"
         )}
       />
     </svg>
@@ -265,7 +265,7 @@ function KpiCard({
           <div
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slower)]",
-              pct >= 100 ? "bg-primary" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
+              pct >= 100 ? "bg-primary" : pct >= 70 ? "bg-[#14C2C2]" : pct >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
             )}
             style={{ width: `${Math.min(pct, 100)}%` }}
           />

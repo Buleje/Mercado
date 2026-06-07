@@ -52,8 +52,8 @@ const SIDEBAR_STYLE_OPTIONS: SidebarStyleOption[] = [
     id: "buleje",
     label: "Buleje",
     description: "Editorial slate · teal de marca · íconos limpios. Default recomendado.",
-    swatch: "linear-gradient(135deg, #0b1f2b 0%, #00B4A6 100%)",
-    accentHex: "#00B4A6",
+    swatch: "linear-gradient(135deg, #0b1f2b 0%, #00A0A0 100%)",
+    accentHex: "#00A0A0",
   },
   {
     id: "ejecutivo",
@@ -205,7 +205,9 @@ export function PlantillaPanelTab() {
 
   useEffect(() => {
     let alive = true;
-    fetchAdminTemplate().then((remote) => {
+    // raw: el editor SIEMPRE trabaja sobre la plantilla global pura — sin el
+    // merge per-tenant que el GET aplica para los admins de tenant (2026-06-05).
+    fetchAdminTemplate({ raw: true }).then((remote) => {
       if (!alive) return;
       setTpl(remote);
       setSavedTpl(remote);

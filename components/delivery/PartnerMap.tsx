@@ -106,7 +106,7 @@ export default function PartnerMap({ partnerLat, partnerLng }: Props) {
 
       // Marker partner — punto plano color brand
       const partnerIcon = L.divIcon({
-        html: `<div style="background:#00B4A6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);"></div>`,
+        html: `<div style="background:#00A0A0;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);"></div>`,
         className: "",
         iconSize: [20, 20],
         iconAnchor: [10, 10],
@@ -275,7 +275,7 @@ export default function PartnerMap({ partnerLat, partnerLng }: Props) {
       marker.bindPopup(
         `<b>${escapeHtml(offer.order.customerName)}</b><br/>` +
           `${escapeHtml(offer.order.customerLocation ?? "—")}${approxNote}<br/>` +
-          `<span style="color:#00B4A6;font-weight:bold">${Number(offer.distanceKm).toFixed(1)} km · S/ ${Number(offer.feeOffered).toFixed(0)}</span>`,
+          `<span style="color:#00A0A0;font-weight:bold">${Number(offer.distanceKm).toFixed(1)} km · S/ ${Number(offer.feeOffered).toFixed(0)}</span>`,
       );
       marker.on("click", () => marker.openPopup());
       marker.on("popupopen", () => {

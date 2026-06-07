@@ -138,7 +138,7 @@ function ToggleSwitch({
       )}
       style={{
         background: checked
-          ? "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)"
+          ? "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)"
           : "var(--color-card-border)",
       }}
     >
@@ -193,10 +193,10 @@ function FilterPills({
                 active
                   ? {
                       background:
-                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                       color: "white",
                       boxShadow:
-                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                     }
                   : undefined
               }
@@ -258,7 +258,7 @@ function HeatMap({ items }: { items: Notification[] }) {
                     background:
                       count === 0
                         ? "var(--color-card-border)"
-                        : `color-mix(in oklch, var(--color-primary, #00B4A6) ${Math.round(intensity * 80) + 20}%, transparent)`,
+                        : `color-mix(in oklch, var(--color-primary, #00A0A0) ${Math.round(intensity * 80) + 20}%, transparent)`,
                   }}
                   title={`${count} ${count === 1 ? "aviso" : "avisos"}`}
                 />
@@ -275,7 +275,7 @@ function HeatMap({ items }: { items: Notification[] }) {
               key={i}
               className="w-3 h-3 rounded-sm"
               style={{
-                background: `color-mix(in oklch, var(--color-primary, #00B4A6) ${Math.round(i * 80) + 20}%, transparent)`,
+                background: `color-mix(in oklch, var(--color-primary, #00A0A0) ${Math.round(i * 80) + 20}%, transparent)`,
               }}
             />
           ))}
@@ -364,11 +364,11 @@ function NotifCard({
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-extrabold transition-all hover:-translate-y-0.5"
               style={{
                 background: isUnread
-                  ? "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)"
+                  ? "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)"
                   : "var(--color-card-border)",
                 color: isUnread ? "white" : "var(--color-muted)",
                 boxShadow: isUnread
-                  ? "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)"
+                  ? "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)"
                   : undefined,
               }}
             >
@@ -498,7 +498,7 @@ function NotifSettings({
         style={{
           borderColor: "var(--color-card-border)",
           background:
-            "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00B4A6) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
+            "linear-gradient(135deg, color-mix(in oklch, var(--color-primary, #00A0A0) 12%, var(--color-card)) 0%, var(--color-card) 100%)",
         }}
       >
         <div className="flex items-center gap-2 mb-1">
@@ -535,7 +535,7 @@ function NotifSettings({
                   className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                   style={{
                     background:
-                      "color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+                      "color-mix(in oklch, var(--color-primary, #00A0A0) 10%, transparent)",
                   }}
                 >
                   <row.Icon
@@ -625,7 +625,7 @@ function NotifSettings({
         style={{
           borderColor: "var(--color-card-border)",
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, transparent)",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, transparent)",
         }}
       >
         <button
@@ -638,10 +638,10 @@ function NotifSettings({
           style={{
             background: saved
               ? "linear-gradient(135deg, var(--data-success-500) 0%, var(--accent-dark) 100%)"
-              : "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              : "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
             boxShadow: saved
               ? "0 6px 14px -4px color-mix(in oklch, var(--data-success-500) 40%, transparent)"
-              : "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+              : "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
           }}
         >
           {saved ? (
@@ -715,7 +715,7 @@ export default function NotificacionesPage() {
       className="min-h-screen dark:bg-background"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-canvas, #f9fafb))",
       }}
     >
       <BreadcrumbSchema
@@ -734,7 +734,7 @@ export default function NotificacionesPage() {
         className="relative overflow-hidden pt-28 sm:pt-32 pb-8"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
         }}
       >
         <div
@@ -861,10 +861,10 @@ export default function NotificacionesPage() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-extrabold transition-all hover:-translate-y-0.5"
                 style={{
                   background:
-                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   color: "white",
                   boxShadow:
-                    "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                    "0 6px 14px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
                 }}
               >
                 <CheckCheck className="h-4 w-4" strokeWidth={2.5} />

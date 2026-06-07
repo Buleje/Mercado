@@ -74,7 +74,7 @@ export function TopStoresList({ stores, description }: Props) {
                     style={{
                       width: `${pct}%`,
                       background:
-                        "linear-gradient(90deg, var(--brand-primary, #00B4A6) 0%, #34d4be 100%)",
+                        "linear-gradient(90deg, var(--brand-primary, #00A0A0) 0%, #14C2C2 100%)",
                     }}
                   />
                 </div>

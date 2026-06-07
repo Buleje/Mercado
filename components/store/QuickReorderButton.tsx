@@ -155,18 +155,18 @@ export default function QuickReorderButton() {
           style={{
             background: "var(--color-card)",
             border:
-              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+              "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
             boxShadow:
-              "0 24px 48px -12px color-mix(in oklch, var(--color-primary, #00B4A6) 30%, transparent), 0 4px 12px rgba(0,0,0,0.08)",
+              "0 24px 48px -12px color-mix(in oklch, var(--color-primary, #00A0A0) 30%, transparent), 0 4px 12px rgba(0,0,0,0.08)",
           }}
         >
           <div
             className="flex items-center justify-between px-5 py-3.5"
             style={{
               background:
-                "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, transparent)",
+                "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, transparent)",
               borderBottom:
-                "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
             }}
           >
             <div className="inline-flex items-center gap-2">
@@ -207,9 +207,9 @@ export default function QuickReorderButton() {
                 className="flex flex-1 items-center justify-center gap-2 h-12 rounded-2xl text-sm font-extrabold text-white transition-all active:scale-[0.98]"
                 style={{
                   background:
-                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   boxShadow:
-                    "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                    "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
                 }}
               >
                 <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />
@@ -238,16 +238,16 @@ export default function QuickReorderButton() {
                 background: "var(--color-card)",
                 color: "var(--color-foreground)",
                 border:
-                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                  "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
                 boxShadow:
-                  "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 20%, transparent)",
+                  "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 20%, transparent)",
               }
             : {
                 background:
-                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                 color: "white",
                 boxShadow:
-                  "0 12px 28px -6px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                  "0 12px 28px -6px color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
               }
         }
         aria-label="Repetir último pedido"

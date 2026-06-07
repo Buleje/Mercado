@@ -474,7 +474,7 @@ async function RappiStyleHero() {
         // un velo teal muy sutil arriba para dar vida sin oscurecer. Texto
         // oscuro, acentos teal + naranja de marca. Estilo marketplace moderno.
         background:
-          "linear-gradient(180deg, rgba(0,180,166,0.07) 0%, rgba(0,180,166,0.02) 35%, var(--surface-canvas) 100%)",
+          "linear-gradient(180deg, rgba(0, 160, 160,0.07) 0%, rgba(0, 160, 160,0.02) 35%, var(--surface-canvas) 100%)",
       }}
     >
       {/* Textura sutil: puntos teal muy transparentes (patrón delicado) */}

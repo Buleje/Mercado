@@ -126,7 +126,7 @@ export default function ExplorarHeroSearch() {
             "mt-8 sm:mt-10 flex items-stretch gap-2 rounded-2xl border-2 transition-all duration-[var(--dur-fast)] max-w-3xl",
             "bg-[var(--surface-raised)]",
             focused
-              ? "border-[var(--accent)] shadow-[0_0_0_4px_rgba(0,180,166,0.10)]"
+              ? "border-[var(--accent)] shadow-[0_0_0_4px_rgba(0, 160, 160,0.10)]"
               : "border-[var(--rule-base)] hover:border-[var(--rule-mid,var(--rule-base))]",
           )}
         >

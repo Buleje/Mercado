@@ -45,10 +45,10 @@ export function CheckoutSuccessStep({
           {Array.from({ length: 14 }).map((_, i) => {
             // Tonos de marca: primary, primary-dark, white, accent suave
             const tones = [
-              "var(--color-primary, #00B4A6)",
+              "var(--color-primary, #00A0A0)",
               "var(--color-primary-dark, #009690)",
-              "color-mix(in oklch, var(--color-primary, #00B4A6) 60%, white)",
-              "color-mix(in oklch, var(--color-primary, #00B4A6) 30%, white)",
+              "color-mix(in oklch, var(--color-primary, #00A0A0) 60%, white)",
+              "color-mix(in oklch, var(--color-primary, #00A0A0) 30%, white)",
               "var(--data-warning-400, #fbbf24)",
             ];
             const isCircle = i % 3 === 0;
@@ -84,7 +84,7 @@ export function CheckoutSuccessStep({
             className="absolute inset-0 rounded-full"
             style={{
               background:
-                "color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                "color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
             }}
           />
           <m.div
@@ -99,9 +99,9 @@ export function CheckoutSuccessStep({
             className="relative h-24 w-24 rounded-full flex items-center justify-center"
             style={{
               background:
-                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
               boxShadow:
-                "0 16px 36px -8px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                "0 16px 36px -8px color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
             }}
           >
             <svg viewBox="0 0 52 52" className="h-12 w-12">
@@ -164,9 +164,9 @@ export function CheckoutSuccessStep({
             className="rounded-2xl px-6 py-4 w-full max-w-xs"
             style={{
               background:
-                "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--color-card))",
               border:
-                "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+                "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)",
             }}
           >
             <p
@@ -197,7 +197,7 @@ export function CheckoutSuccessStep({
               className="absolute top-4 left-[12%] right-[12%] h-0.5"
               style={{
                 background:
-                  "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                  "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
               }}
             />
             {/* Línea de progreso */}
@@ -205,7 +205,7 @@ export function CheckoutSuccessStep({
               className="absolute top-4 left-[12%] h-0.5"
               style={{
                 background:
-                  "linear-gradient(90deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  "linear-gradient(90deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
               }}
               initial={{ width: 0 }}
               animate={{ width: "20%" }}
@@ -229,16 +229,16 @@ export function CheckoutSuccessStep({
                       s.active
                         ? {
                             background:
-                              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                              "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                             color: "white",
                             boxShadow:
-                              "0 4px 12px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 45%, transparent)",
+                              "0 4px 12px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 45%, transparent)",
                           }
                         : {
                             background: "var(--color-card)",
                             color: "var(--color-muted)",
                             border:
-                              "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                              "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                           }
                     }
                   >
@@ -279,9 +279,9 @@ export function CheckoutSuccessStep({
               className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-extrabold text-white transition-all active:scale-[0.98]"
               style={{
                 background:
-                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                 boxShadow:
-                  "0 10px 24px -8px color-mix(in oklch, var(--color-primary, #00B4A6) 45%, transparent)",
+                  "0 10px 24px -8px color-mix(in oklch, var(--color-primary, #00A0A0) 45%, transparent)",
               }}
             >
               <MapPin className="h-4 w-4" strokeWidth={2.5} /> Seguir mi pedido
@@ -293,9 +293,9 @@ export function CheckoutSuccessStep({
             className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-extrabold transition-all active:scale-[0.98]"
             style={{
               background:
-                "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--color-card))",
               border:
-                "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
               color: "var(--color-primary-dark, #009690)",
             }}
           >

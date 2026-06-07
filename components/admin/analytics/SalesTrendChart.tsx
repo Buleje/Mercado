@@ -288,7 +288,7 @@ export default function SalesTrendChart() {
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--accent)" />
-              <stop offset="100%" stopColor="#2dd4bf" />
+              <stop offset="100%" stopColor="#14C2C2" />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />

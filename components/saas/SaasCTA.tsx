@@ -66,7 +66,7 @@ export default function SaasCTA() {
       ref={sectionRef}
       className="py-20 md:py-28 relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 50%, #2dd4bf 100%)",
+        background: "linear-gradient(135deg, var(--accent) 0%, color-mix(in oklab, var(--accent) 70%, white) 50%, #14C2C2 100%)",
       }}
     >
       {/* Variante dark mode: gradiente más oscuro */}

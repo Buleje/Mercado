@@ -45,7 +45,7 @@ function inferZone(customer: Customer): string {
 const ZONE_COLORS = [
   "bg-primary",
   "bg-primary-light",
-  "bg-[#2dd4bf]",
+  "bg-[#14C2C2]",
   "bg-[#74c69d]",
   "bg-[#95d5b2]",
   "bg-gray-400",
@@ -54,7 +54,7 @@ const ZONE_COLORS = [
 const ZONE_TEXT_COLORS = [
   "text-primary",
   "text-primary-light",
-  "text-[#2dd4bf]",
+  "text-[#14C2C2]",
   "text-[#74c69d]",
   "text-[#95d5b2]",
   "text-[var(--text-tertiary)]",

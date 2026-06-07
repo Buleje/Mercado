@@ -4,7 +4,17 @@ import { z } from "zod";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
+import {
+  resolveTenantIdForRoute,
+  resolveTenantSlug,
+  resolveTenantSlugToId,
+} from "@/lib/resolve-tenant";
 import type { AdminTemplate } from "@/lib/admin-template";
+import {
+  mergeTenantOverrides,
+  tenantOverrideKey,
+  type TenantModuleOverrides,
+} from "@/lib/tenant-module-overrides";
 
 /**
  * GET  /api/platform/admin-template
@@ -12,6 +22,14 @@ import type { AdminTemplate } from "@/lib/admin-template";
  *   mínimo, label custom, estilo de sidebar). Pública: admins de cualquier
  *   tenant la leen para hidratar su sidebar. No contiene PII ni secretos.
  *   El path /api/platform/* evita el guard admin-only que cubre /api/admin/*.
+ *
+ *   Brandon 2026-06-05 (override por tenant): si el tenant del request tiene
+ *   un override de módulos (PlatformSetting `admin-template:tenant:<id>`,
+ *   editado desde /superadmin/tenants → columna Módulos), el GET devuelve la
+ *   plantilla YA MERGEADA (visible per-tenant pisa el global). El admin del
+ *   tenant no cambia nada — consume el mismo shape de siempre.
+ *   `?raw=1` devuelve la plantilla global pura (la usa el editor del
+ *   superadmin en /superadmin/plantilla para no editar sobre un merge).
  *
  * PUT  /api/platform/admin-template
  *   Sobreescribe la plantilla completa. Requiere sesión de superadmin
@@ -44,7 +62,21 @@ const TemplateSchema = z.object({
   version: z.number().int().nonnegative().optional(),
 }).strict();
 
-export async function GET() {
+/**
+ * Normaliza lo que devuelve resolveTenantIdForRoute (CUID del JWT, slug del
+ * proxy, o `custom--dominio`) al tenantId canónico usado como storage key.
+ */
+async function normalizeTenantStorageId(rawTenant: string): Promise<string | null> {
+  let slugOrId = rawTenant;
+  if (rawTenant.startsWith("custom--") || rawTenant.startsWith("custom:")) {
+    const resolved = await resolveTenantSlug(rawTenant);
+    if (!resolved) return null;
+    slugOrId = resolved;
+  }
+  return resolveTenantSlugToId(slugOrId);
+}
+
+export async function GET(req: NextRequest) {
   const raw = await PlatformSettingsDB.get<AdminTemplate>(STORAGE_KEY);
   const tpl: AdminTemplate = raw ? {
     overrides: raw.overrides ?? {},
@@ -52,6 +84,26 @@ export async function GET() {
     defaultSidebarStyle: raw.defaultSidebarStyle ?? "buleje",
     version: raw.version ?? SCHEMA_VERSION,
   } : EMPTY_TEMPLATE;
+
+  // Editor del superadmin → plantilla global pura, sin merge.
+  if (req.nextUrl.searchParams.get("raw") === "1") {
+    return NextResponse.json({ template: tpl });
+  }
+
+  // Admin de tenant → merge con su override (si existe). Cualquier fallo de
+  // resolución degrada a la plantilla global (nunca rompe el sidebar).
+  try {
+    const rawTenant = await resolveTenantIdForRoute(req);
+    const tenantId = await normalizeTenantStorageId(rawTenant);
+    if (tenantId) {
+      const perTenant = await PlatformSettingsDB.get<TenantModuleOverrides>(
+        tenantOverrideKey(tenantId),
+      );
+      return NextResponse.json({ template: mergeTenantOverrides(tpl, perTenant) });
+    }
+  } catch {
+    // degradar al global
+  }
   return NextResponse.json({ template: tpl });
 }
 

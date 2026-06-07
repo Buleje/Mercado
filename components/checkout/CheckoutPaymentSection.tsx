@@ -85,7 +85,7 @@ function SectionHeader({
         className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
         style={{
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
         }}
       >
         <Icon
@@ -114,7 +114,7 @@ function BrandHair() {
       aria-hidden="true"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
       }}
     />
   );
@@ -172,9 +172,9 @@ export function CheckoutPaymentSection({
         className="relative overflow-hidden flex items-center gap-3 rounded-2xl px-3.5 py-3 text-white"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
           boxShadow:
-            "0 10px 24px -10px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+            "0 10px 24px -10px color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
         }}
       >
         <div
@@ -233,15 +233,15 @@ export function CheckoutPaymentSection({
               style={
                 paymentMethod === "yape"
                   ? {
-                      borderColor: "var(--color-primary, #00B4A6)",
+                      borderColor: "var(--color-primary, #00A0A0)",
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--color-card))",
                       boxShadow:
-                        "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                        "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                     }
                   : {
                       borderColor:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                       background: "var(--color-card)",
                     }
               }
@@ -249,7 +249,7 @@ export function CheckoutPaymentSection({
               {paymentMethod === "yape" && (
                 <span
                   className="absolute top-2 right-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-white"
-                  style={{ background: "var(--color-primary, #00B4A6)" }}
+                  style={{ background: "var(--color-primary, #00A0A0)" }}
                   aria-hidden="true"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -285,15 +285,15 @@ export function CheckoutPaymentSection({
               style={
                 paymentMethod === "efectivo"
                   ? {
-                      borderColor: "var(--color-primary, #00B4A6)",
+                      borderColor: "var(--color-primary, #00A0A0)",
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--color-card))",
                       boxShadow:
-                        "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                        "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                     }
                   : {
                       borderColor:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                       background: "var(--color-card)",
                     }
               }
@@ -301,7 +301,7 @@ export function CheckoutPaymentSection({
               {paymentMethod === "efectivo" && (
                 <span
                   className="absolute top-2 right-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-white"
-                  style={{ background: "var(--color-primary, #00B4A6)" }}
+                  style={{ background: "var(--color-primary, #00A0A0)" }}
                   aria-hidden="true"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -311,7 +311,7 @@ export function CheckoutPaymentSection({
                 className="h-10 w-10 rounded-lg flex items-center justify-center"
                 style={{
                   background:
-                    "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                    "color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
                 }}
               >
                 <Banknote
@@ -379,14 +379,14 @@ export function CheckoutPaymentSection({
                   ? {
                       borderColor: "transparent",
                       background:
-                        "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                        "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                       color: "white",
                       boxShadow:
-                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                        "0 4px 10px -2px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                     }
                   : {
                       borderColor:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                       background: "var(--color-card)",
                       color: "var(--color-primary-dark, #009690)",
                     }
@@ -442,7 +442,7 @@ export function CheckoutPaymentSection({
               <Tag
                 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
                 strokeWidth={2}
-                style={{ color: "var(--color-primary, #00B4A6)" }}
+                style={{ color: "var(--color-primary, #00A0A0)" }}
               />
               <input
                 type="text"
@@ -455,15 +455,15 @@ export function CheckoutPaymentSection({
                 className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none transition-colors"
                 style={{
                   borderColor:
-                    "color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                    "color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
                 }}
                 onFocus={(e) =>
                   (e.currentTarget.style.borderColor =
-                    "var(--color-primary, #00B4A6)")
+                    "var(--color-primary, #00A0A0)")
                 }
                 onBlur={(e) =>
                   (e.currentTarget.style.borderColor =
-                    "color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)")
+                    "color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)")
                 }
               />
             </div>
@@ -474,7 +474,7 @@ export function CheckoutPaymentSection({
               className="px-4 h-12 rounded-xl text-sm font-extrabold text-white disabled:opacity-50 transition-all shrink-0"
               style={{
                 background:
-                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
               }}
             >
               {validatingCoupon ? (
@@ -512,7 +512,7 @@ export function CheckoutPaymentSection({
                   step={1}
                   value={redemptionSoles}
                   onChange={(e) => onRedemptionChange(Number(e.target.value))}
-                  className="flex-1 h-2 cursor-pointer accent-[var(--color-primary,#00B4A6)]"
+                  className="flex-1 h-2 cursor-pointer accent-[var(--color-primary,#00A0A0)]"
                   aria-label="Soles a canjear con puntos"
                 />
                 <div className="text-right shrink-0">
@@ -537,9 +537,9 @@ export function CheckoutPaymentSection({
         className="rounded-2xl px-4 py-4 space-y-1.5"
         style={{
           background:
-            "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card))",
+            "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, var(--color-card))",
           border:
-            "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+            "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
         }}
       >
         <p
@@ -622,7 +622,7 @@ export function CheckoutPaymentSection({
           className="pt-3 mt-2 flex items-baseline justify-between"
           style={{
             borderTop:
-              "1px dashed color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+              "1px dashed color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
           }}
         >
           <span
@@ -648,7 +648,7 @@ export function CheckoutPaymentSection({
               <Sparkles
                 className="h-3.5 w-3.5"
                 strokeWidth={2}
-                style={{ color: "var(--color-primary, #00B4A6)" }}
+                style={{ color: "var(--color-primary, #00A0A0)" }}
               />
               Ganarás
             </span>
@@ -685,7 +685,7 @@ export function CheckoutPaymentSection({
           className="flex h-14 w-14 items-center justify-center rounded-2xl transition-all shrink-0 disabled:opacity-50"
           style={{
             border:
-              "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+              "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)",
             color: "var(--color-primary-dark, #009690)",
           }}
           aria-label="Volver al paso de datos"
@@ -699,9 +699,9 @@ export function CheckoutPaymentSection({
           className="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl font-extrabold text-base text-white transition-all active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
           style={{
             background:
-              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
             boxShadow:
-              "0 12px 28px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent), 0 2px 6px rgba(0,0,0,0.06)",
+              "0 12px 28px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent), 0 2px 6px rgba(0,0,0,0.06)",
           }}
         >
           {submitting ? (

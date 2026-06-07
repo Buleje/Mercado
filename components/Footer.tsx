@@ -497,7 +497,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                 forceDark
                 size={46}
                 textSize={28}
-                className="text-white drop-shadow-[0_0_28px_rgba(45,212,191,0.28)]"
+                className="text-white drop-shadow-[0_0_28px_rgba(20, 194, 194,0.28)]"
               />
               <p className="mt-3.5 max-w-xl text-sm sm:text-base leading-snug font-medium">
                 <span className="text-teal-300 font-extrabold">Tu mercado desde la selva amazónica.</span>{" "}

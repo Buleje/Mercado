@@ -39,7 +39,7 @@ const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
   "Platos de fondo": { from: "#f97316", to: "#ef4444" },
   "Postres": { from: "#f472b6", to: "#a855f7" },
   "Bebidas": { from: "#facc15", to: "#f59e0b" },
-  "Sopas": { from: "#4ade80", to: "#2dd4bf" },
+  "Sopas": { from: "#4ade80", to: "#14C2C2" },
 };
 
 function getWeekSeed(): number {
@@ -184,7 +184,7 @@ export default function RecipeOfTheWeek() {
 
               {/* Price + actions */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-6">
-                <span className="text-2xl font-extrabold text-[var(--accent)] dark:text-[#2dd4bf]">
+                <span className="text-2xl font-extrabold text-[var(--accent)] dark:text-[#14C2C2]">
                   S/ {Number(receta.totalIngredientes).toFixed(2)}
                 </span>
                 <div className="flex gap-2">
@@ -196,7 +196,7 @@ export default function RecipeOfTheWeek() {
                   </Link>
                   <button
                     onClick={handleAddIngredients}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold text-sm transition-all shadow-lg shadow-[var(--accent)]/20 active:scale-[0.98]"
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold text-sm transition-all shadow-lg active:scale-[0.98]"
                   >
                     <ShoppingCart className="h-5 w-5" />
                     Comprar

@@ -17,18 +17,25 @@ import { setTimeout as sleep } from "node:timers/promises";
 
 const BASE = process.env.DEV_BASE ?? "http://localhost:3000";
 
+// Brandon 2026-06-05: lista actualizada al FLUJO REAL de navegación del
+// marketplace (antes calentaba rutas viejas /tienda /t/main/admin que ya casi
+// no se usan, y NO calentaba /tiendas, storefront, producto, ofertas, carrito —
+// justo las que el usuario recorre → se sentían "frías"/lentas al navegar).
 const ROUTES = [
   "/",
   "/marketplace",
+  "/tiendas",
+  "/marketplace/explorar",
+  "/marketplace/ofertas",
+  "/marketplace/buscar",
+  "/marketplace/carrito",
+  "/marketplace/mi-cuenta",
+  "/marketplace/como-pagar",
+  "/marketplace/mi-pollo", // storefront [slug] — compila la ruta dinámica
+  "/marketplace/mi-pollo/producto/1252510", // detalle de producto [slug]/producto/[id]
   "/abrir-tienda",
+  "/negocios",
   "/ayuda",
-  "/tienda",
-  "/descubri",
-  "/t/main",
-  "/t/main/tienda",
-  "/t/main/admin",
-  "/t/main/admin/login",
-  "/signup",
 ];
 
 async function waitForDevServer(maxAttempts = 30) {

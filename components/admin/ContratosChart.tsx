@@ -27,7 +27,7 @@ interface Props {
 
 const PIE_COLORS = [
   "var(--brand-ink)", "var(--secondary)", "var(--data-warning)", "var(--data-error)",
-  "var(--accent)", "var(--brand-ink-light, #2a9d8f)", "var(--data-success)",
+  "var(--accent)", "var(--brand-ink-light, #00BDBD)", "var(--data-success)",
   "var(--text-secondary)", "var(--rule-base)", "var(--data-warning-100)",
   "var(--surface-sunken)", "var(--data-error-100)",
 ];

@@ -6,7 +6,7 @@ export default function SuperAdminLoading() {
       <div className="flex flex-col items-center gap-4">
         <div
           className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg"
-          style={{ background: "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)" }}
+          style={{ background: "linear-gradient(135deg, #00A0A0 0%, #14C2C2 100%)" }}
         >
           <ShieldCheck className="w-7 h-7 text-white" />
         </div>

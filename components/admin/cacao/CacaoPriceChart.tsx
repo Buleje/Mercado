@@ -46,12 +46,12 @@ export default function CacaoPriceChart({ series }: { series: PricePoint[] }) {
   // Recharts pinta el SVG con valores concretos: resolvemos los tokens del DS a
   // su color real (las CSS var() no resuelven confiable como atributo SVG).
   const rootRef = useRef<HTMLDivElement>(null);
-  const [palette, setPalette] = useState({ up: "#00b4a6", down: "#ef4444", neutral: "#9ca3af" });
+  const [palette, setPalette] = useState({ up: "#00A0A0", down: "#ef4444", neutral: "#9ca3af" });
   useEffect(() => {
     const cs = getComputedStyle(rootRef.current ?? document.body);
     const pick = (names: string[], fb: string) => { for (const n of names) { const v = cs.getPropertyValue(n).trim(); if (v) return v; } return fb; };
     setPalette({
-      up: pick(["--data-success-500", "--data-success-600"], "#00b4a6"),
+      up: pick(["--data-success-500", "--data-success-600"], "#00A0A0"),
       down: pick(["--data-error-500", "--color-danger"], "#ef4444"),
       neutral: pick(["--text-tertiary"], "#9ca3af"),
     });

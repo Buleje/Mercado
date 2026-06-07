@@ -11,9 +11,33 @@ import {
   ReceiptText,
   ShoppingBag,
   ChevronRight,
+  ChevronDown,
   Loader2,
   Inbox,
+  Package,
+  User,
+  Banknote,
 } from "@buleje/design-system/icons";
+
+interface InboxOrderItem {
+  id: number;
+  name: string;
+  quantity: number;
+  unit: string;
+  price: number;
+  image: string | null;
+}
+
+/** Detalle expandible del pedido (solo bucket pendingOrders, 2026-06-05). */
+interface InboxOrderDetail {
+  customerName: string;
+  tenantName: string;
+  tenantSlug: string | null;
+  total: number;
+  paymentMethod: string | null;
+  itemsCount: number;
+  items: InboxOrderItem[];
+}
 
 interface InboxItem {
   id: string;
@@ -22,6 +46,7 @@ interface InboxItem {
   status: string;
   createdAt: string;
   href: string;
+  order?: InboxOrderDetail;
 }
 
 interface BucketPayload {
@@ -88,10 +113,156 @@ function timeAgo(iso: string): string {
   return `${d} d`;
 }
 
+const PAYMENT_LABEL: Record<string, string> = {
+  efectivo: "Efectivo",
+  yape: "Yape",
+  tarjeta: "Tarjeta",
+  transferencia: "Transferencia",
+};
+
+/** Thumbnail de artículo con fallback a icono cuando no hay imagen o falla. */
+function ItemThumb({ src, alt, size = "h-10 w-10" }: { src: string | null; alt: string; size?: string }) {
+  const [broken, setBroken] = useState(false);
+  if (!src || broken) {
+    return (
+      <div className={`${size} shrink-0 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] flex items-center justify-center`}>
+        <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- imagen de OrderItem: URL externa o base64, sin remotePatterns
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onError={() => setBroken(true)}
+      className={`${size} shrink-0 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] object-cover`}
+    />
+  );
+}
+
+/**
+ * Fila de pedido pendiente EXPANDIBLE — Brandon 2026-06-05: al presionar se
+ * despliegan los artículos con su imagen, cantidad y precio, más cliente,
+ * tienda, método de pago y CTA al pedido completo.
+ */
+function PendingOrderRow({
+  item,
+  expanded,
+  onToggle,
+  onNavigate,
+}: {
+  item: InboxItem;
+  expanded: boolean;
+  onToggle: () => void;
+  onNavigate: () => void;
+}) {
+  const o = item.order!;
+  const preview = o.items.slice(0, 3);
+  return (
+    <div
+      className={`rounded-xl border transition-colors ${
+        expanded
+          ? "border-[var(--accent)]/40 bg-[var(--surface-raised)] shadow-sm"
+          : "border-transparent hover:bg-[var(--surface-sunken)]"
+      }`}
+    >
+      {/* Fila colapsada: cliente + total + tienda + mini-stack de thumbnails */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+      >
+        {/* Stack de miniaturas — adelanto visual de qué pidió */}
+        <div className="flex shrink-0 -space-x-2">
+          {preview.map((it) => (
+            <div key={it.id} className="ring-2 ring-[var(--surface-canvas)] rounded-lg">
+              <ItemThumb src={it.image} alt={it.name} size="h-9 w-9" />
+            </div>
+          ))}
+          {o.items.length > 3 && (
+            <div className="h-9 w-9 shrink-0 rounded-lg ring-2 ring-[var(--surface-canvas)] bg-[var(--surface-sunken)] border border-[var(--rule-soft)] flex items-center justify-center text-[10px] font-bold text-[var(--text-secondary)] tabular-nums">
+              +{o.items.length - 3}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+            <span className="truncate">{o.customerName}</span>
+            <span className="shrink-0 tabular-nums text-[var(--accent)]">
+              S/{Number(o.total).toFixed(2)}
+            </span>
+          </p>
+          <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+            <Store className="h-3 w-3 shrink-0" />
+            <span className="truncate">{o.tenantName}</span>
+            <span aria-hidden>·</span>
+            <span className="shrink-0 tabular-nums">{o.itemsCount} art.</span>
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-[var(--text-tertiary)] tabular-nums">
+          {timeAgo(item.createdAt)}
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${expanded ? "rotate-180 text-[var(--accent)]" : ""}`}
+          />
+        </div>
+      </button>
+
+      {/* Detalle expandido: artículos con imagen + meta + CTA */}
+      {expanded && (
+        <div className="border-t border-[var(--rule-soft)] px-3 pb-3">
+          <ul className="divide-y divide-[var(--rule-soft)]/60">
+            {o.items.map((it) => (
+              <li key={it.id} className="flex items-center gap-3 py-2">
+                <ItemThumb src={it.image} alt={it.name} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{it.name}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
+                    {it.quantity} {it.unit} × S/{Number(it.price).toFixed(2)}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm font-bold tabular-nums text-[var(--text-primary)]">
+                  S/{(it.quantity * it.price).toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2 flex items-center gap-2 rounded-lg bg-[var(--surface-sunken)] px-3 py-2">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+              <User className="h-3.5 w-3.5" /> {o.customerName}
+            </span>
+            {o.paymentMethod && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+                <Banknote className="h-3.5 w-3.5" /> {PAYMENT_LABEL[o.paymentMethod] ?? o.paymentMethod}
+              </span>
+            )}
+            <span className="flex-1" />
+            <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
+              S/{Number(o.total).toFixed(2)}
+            </span>
+          </div>
+          <Link
+            href={item.href}
+            onClick={onNavigate}
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-extrabold text-white shadow-sm transition-all hover:brightness-110 active:scale-[0.99]"
+          >
+            Ver pedido completo
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<InboxResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  // Pedido expandido (artículos con imagen) — uno a la vez, acordeón.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
   // FIX 2026-05-06: prevenir race condition cuando polling y click-open
   // disparan load() concurrente (segundo fetch pisaba al primero en setData).
@@ -268,24 +439,34 @@ export function NotificationsBell() {
                   <ul className="space-y-1">
                     {bucket.items.map((it) => (
                       <li key={it.id}>
-                        <Link
-                          href={it.href}
-                          onClick={() => setOpen(false)}
-                          className="group flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                              {it.title}
-                            </p>
-                            <p className="text-xs text-[var(--text-tertiary)] truncate mt-0.5">
-                              {it.subtitle}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0 text-[11px] font-semibold text-[var(--text-tertiary)] tabular-nums pt-0.5">
-                            {timeAgo(it.createdAt)}
-                            <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                          </div>
-                        </Link>
+                        {it.order ? (
+                          /* Pedido pendiente → expandible con artículos e imagen */
+                          <PendingOrderRow
+                            item={it}
+                            expanded={expandedId === it.id}
+                            onToggle={() => setExpandedId((cur) => (cur === it.id ? null : it.id))}
+                            onNavigate={() => setOpen(false)}
+                          />
+                        ) : (
+                          <Link
+                            href={it.href}
+                            onClick={() => setOpen(false)}
+                            className="group flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                                {it.title}
+                              </p>
+                              <p className="text-xs text-[var(--text-tertiary)] truncate mt-0.5">
+                                {it.subtitle}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 text-[11px] font-semibold text-[var(--text-tertiary)] tabular-nums pt-0.5">
+                              {timeAgo(it.createdAt)}
+                              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                            </div>
+                          </Link>
+                        )}
                       </li>
                     ))}
                   </ul>

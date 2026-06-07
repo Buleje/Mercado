@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { OnboardingPrimaryButton, OnboardingSkipButton, OB_INPUT, OB_LABEL } from './onboarding-ui';
 
 interface ClientData {
   nombre: string;
@@ -43,18 +44,18 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-2">
-        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+      <div className="mb-2 text-center">
+        <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
           ¿Tienes un cliente de confianza?
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <p className="mt-2 text-[var(--text-secondary)]">
           Los clientes frecuentes pueden pagar con fiado.
         </p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label className={OB_LABEL}>
             Nombre del cliente
           </label>
           <input
@@ -62,12 +63,12 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
             value={form.nombre}
             onChange={e => handleChange('nombre', e.target.value)}
             placeholder="Ej: María López"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+            className={OB_INPUT}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label className={OB_LABEL}>
             Celular
           </label>
           <input
@@ -75,12 +76,12 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
             value={form.celular}
             onChange={e => handleChange('celular', e.target.value)}
             placeholder="Ej: 961234567"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+            className={OB_INPUT}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label className={OB_LABEL}>
             Límite de fiado (S/)
           </label>
           <input
@@ -90,26 +91,19 @@ export default function OnboardingStep3Client({ data, onChange, onNext }: Props)
             value={form.limiteFiado}
             onChange={e => handleChange('limiteFiado', parseInt(e.target.value) || 0)}
             placeholder="100"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[var(--accent)] transition-colors"
+            className={OB_INPUT}
           />
-          <p className="text-xs text-gray-400 mt-1">Monto máximo que puede deber este cliente</p>
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">Monto máximo que puede deber este cliente</p>
         </div>
       </div>
 
-      <button
-        onClick={handleNext}
-        disabled={!hasValidClient}
-        className="w-full py-3 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Siguiente &rarr;
-      </button>
+      <OnboardingPrimaryButton onClick={handleNext} disabled={!hasValidClient} withArrow>
+        Siguiente
+      </OnboardingPrimaryButton>
 
-      <button
-        onClick={handleSkip}
-        className="w-full text-sm text-gray-400 hover:text-[var(--accent)] transition-colors py-2"
-      >
-        Saltar este paso &rarr;
-      </button>
+      <OnboardingSkipButton onClick={handleSkip}>
+        Saltar este paso →
+      </OnboardingSkipButton>
     </div>
   );
 }

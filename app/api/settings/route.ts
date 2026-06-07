@@ -156,6 +156,7 @@ export async function PUT(req: NextRequest) {
       // adminBypassLogin is permanently disabled — this toggle must never be re-enabled via API
       ...(body.homepageContent !== undefined && { homepageContent: body.homepageContent }),
       ...(body.comboTemplates !== undefined && { comboTemplates: body.comboTemplates }),
+      ...(body.categoryOrder !== undefined && { categoryOrder: body.categoryOrder }),
 
       // ── New settings fields ──
       ...(body.razonSocial !== undefined && { razonSocial: body.razonSocial }),

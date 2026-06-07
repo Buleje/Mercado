@@ -119,11 +119,19 @@ async function quickHealth() {
 // las requests se disparan detached con timeout 90s y se descartan.
 // Razón: Turbopack en dev tarda 30-90s en compilar estas páginas el 1er hit.
 function warmupHeavyRoutesAsync() {
+  // Brandon 2026-06-05: actualizado al flujo REAL de navegación del marketplace.
+  // Antes calentaba /marketplace/main (slug muerto/test) y /buscar (ruta vieja);
+  // ahora pre-compila lo que el usuario realmente recorre → nav fría → instantánea.
   const heavy = [
-    "/marketplace/main",
+    "/",
+    "/marketplace",
+    "/tiendas",
+    "/marketplace/explorar",
     "/marketplace/ofertas",
-    "/buscar",
-    "/api/superadmin/auth",
+    "/marketplace/buscar",
+    "/marketplace/carrito",
+    "/marketplace/mi-pollo", // storefront [slug]
+    "/marketplace/mi-pollo/producto/1252510", // detalle producto
   ];
   for (const path of heavy) {
     // fire-and-forget — no await, no bloquea, errores ignorados

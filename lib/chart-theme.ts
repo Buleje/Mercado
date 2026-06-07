@@ -26,7 +26,7 @@ export const CHART_PALETTE = [
   "#3b82f6",              // blue
   "#8b5cf6",              // purple
   "#ec4899",              // pink
-  "#2dd4bf",              // teal
+  "#14C2C2",              // teal
   "#f59e0b",              // amber
   "#6366f1",              // indigo
   "#10b981",              // emerald
@@ -39,7 +39,7 @@ export const PAYMENT_COLORS: Record<string, string> = {
   yape: "#3b82f6",
   plin: "#8b5cf6",
   tarjeta: "#f97316",
-  transferencia: "#2dd4bf",
+  transferencia: "#14C2C2",
 };
 
 // ── BCG / quadrant matrix colors ────────────────────────────────────────────

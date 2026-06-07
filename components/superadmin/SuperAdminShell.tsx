@@ -254,7 +254,7 @@ type SidebarVisualPrefs = {
 };
 
 const ACCENT_HEX: Record<SidebarVisualPrefs["accent"], string> = {
-  teal: "#00B4A6",
+  teal: "#00A0A0",
   emerald: "#10B981",
   sky: "#0EA5E9",
   violet: "#8B5CF6",
@@ -438,14 +438,14 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
 
   const sidebarBgClass = isBuleje
     ? // Slate-deep editorial gradient + border teal hairline + text-white. Paleta real del proyecto.
-      "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] border-r border-[rgba(0,180,166,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0,180,166,0.06)]"
+      "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] border-r border-[rgba(0, 160, 160,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0, 160, 160,0.06)]"
     : visual.theme === "dark"
       ? "bg-zinc-900 border-r border-zinc-800 text-zinc-100"
       : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
 
   // Override de clases para items cuando es theme buleje — paleta cohesiva, contraste AAA.
   const navItemActiveClass = isBuleje
-    ? "bg-[rgba(0,180,166,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#34d4be]"
+    ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)]";
   const navItemIdleClass = isBuleje
     ? "text-white/65 hover:bg-white/[0.06] hover:text-white"
@@ -454,7 +454,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // sobre dark, ring sutil que separa del fondo, sombra cálida. Labels en
   // blanco con drop-shadow para legibilidad sobre cualquier theme.
   const logoBoxClass = isBuleje
-    ? "bg-[linear-gradient(135deg,#00B4A6_0%,#0d9488_100%)] text-white shadow-md ring-2 ring-[#34d4be]/30"
+    ? "bg-[linear-gradient(135deg,#00A0A0_0%,#0d9488_100%)] text-white shadow-md ring-2 ring-[#14C2C2]/30"
     : "bg-[linear-gradient(135deg,#fbbf24_0%,#d97706_100%)] text-zinc-900 shadow-md ring-2 ring-amber-300/40";
   const logoLabelClass = isBuleje
     ? "text-white"
@@ -981,12 +981,12 @@ function NavGroupsFlyout({
 
   // Estilos coherentes con el theme buleje (slate + teal).
   const headerActiveClass = isBuleje
-    ? "bg-[rgba(0,180,166,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#34d4be]"
+    ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const headerIdleClass = isBuleje
     ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
-  const dotClass = isBuleje ? "bg-[#34d4be]" : "bg-[var(--accent)]";
+  const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
 
   const sidebarWidth = sidebarCollapsed ? 64 : 240;
   const hoveredGroup = hoveredId ? groups.find((g) => g.id === hoveredId) ?? null : null;
@@ -1093,7 +1093,7 @@ function NavGroupsFlyout({
                     isBuleje
                       ? "bg-white/[0.08] text-white/55 group-hover/nav:text-white/80"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-hover/nav:text-[var(--text-secondary)]",
-                    hasActive ? (isBuleje ? "bg-[#34d4be]/20 text-[#5eead4]" : "bg-[var(--accent)]/15 text-[var(--accent)]") : "",
+                    hasActive ? (isBuleje ? "bg-[#14C2C2]/20 text-[#5eead4]" : "bg-[var(--accent)]/15 text-[var(--accent)]") : "",
                   ].join(" ")}
                   aria-hidden
                 >
@@ -1175,11 +1175,11 @@ function SuperAdminFlyout({
     ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#091621_100%)]"
     : "bg-[var(--surface-raised)]";
   const border = isBuleje
-    ? "border-[rgba(0,180,166,0.2)] shadow-[var(--shadow-lg)] ring-1 ring-[rgba(52,212,190,0.08)]"
+    ? "border-[rgba(0, 160, 160,0.2)] shadow-[var(--shadow-lg)] ring-1 ring-[rgba(20, 194, 194,0.08)]"
     : "border-[var(--rule-base)] shadow-lg";
   const headerLabelClass = isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]";
   const itemActive = isBuleje
-    ? "bg-linear-to-r from-[rgba(52,212,190,0.22)] via-[rgba(0,180,166,0.14)] to-[rgba(0,180,166,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#34d4be]"
+    ? "bg-linear-to-r from-[rgba(20, 194, 194,0.22)] via-[rgba(0, 160, 160,0.14)] to-[rgba(0, 160, 160,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const itemIdle = isBuleje
     ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
@@ -1284,13 +1284,13 @@ function NavGroupsAccordion({
   };
 
   const headerActive = isBuleje
-    ? "bg-[rgba(0,180,166,0.12)] text-white"
+    ? "bg-[rgba(0, 160, 160,0.12)] text-white"
     : "bg-[var(--surface-sunken)] text-[var(--text-primary)]";
   const headerIdle = isBuleje
     ? "text-white/75 hover:bg-white/[0.04] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
   const itemActive = isBuleje
-    ? "bg-[rgba(0,180,166,0.18)] text-[#5eead4] font-semibold"
+    ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const itemIdle = isBuleje
     ? "text-white/70 hover:bg-white/[0.04] hover:text-white"

@@ -42,15 +42,20 @@ vi.mock("@/lib/require-admin", () => ({
 }));
 
 // Products API uses @/lib/jsondb — ProductsDB
-const { mockProductsGetAll, mockProductsUpsert } = vi.hoisted(() => ({
+// FIX 2026-06: el alta usa ProductsDB.create() (id autoincrement global), no
+// upsert() — ver app/api/v1/products/route.ts. Mantenemos upsert mockeado por
+// si otra ruta lo usa, pero el POST asierta create.
+const { mockProductsGetAll, mockProductsUpsert, mockProductsCreate } = vi.hoisted(() => ({
   mockProductsGetAll: vi.fn(),
   mockProductsUpsert: vi.fn(),
+  mockProductsCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/jsondb", () => ({
   ProductsDB: {
     getAll: mockProductsGetAll,
     upsert: mockProductsUpsert,
+    create: mockProductsCreate,
   },
   CustomersDB: { getAll: vi.fn(), upsert: vi.fn() },
   OrdersDB: { getAll: vi.fn(), add: vi.fn(), getPage: vi.fn(), getAllFiltered: vi.fn(), getByCustomerPhone: vi.fn() },
@@ -184,6 +189,7 @@ describe("POST /api/products", () => {
     mockProductCount.mockResolvedValue(10); // below pro limit of 500
     mockProductsGetAll.mockResolvedValue([PRODUCT]);
     mockProductsUpsert.mockResolvedValue({ ...VALID_CREATE_BODY, id: 2, active: true, image: "" });
+    mockProductsCreate.mockResolvedValue({ ...VALID_CREATE_BODY, id: 2, active: true, image: "" });
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -220,9 +226,9 @@ describe("POST /api/products", () => {
     expect(res.status).toBe(400);
   });
 
-  it("calls ProductsDB.upsert with provided product data", async () => {
+  it("calls ProductsDB.create with provided product data", async () => {
     await POST(makePost(VALID_CREATE_BODY));
-    expect(mockProductsUpsert).toHaveBeenCalledWith(
+    expect(mockProductsCreate).toHaveBeenCalledWith(
       expect.objectContaining({ name: "Azúcar 1kg", category: "Endulzantes", price: 3.5 })
     );
   });

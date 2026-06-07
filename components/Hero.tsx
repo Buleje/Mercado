@@ -144,7 +144,7 @@ export default function Hero() {
               <Link
                 href={storeTheme?.heroLink ? `/${storeTheme.heroLink}` : hp.heroCta1Link}
                 onClick={() => trackCTAClick({ source: "hero", destination: storeTheme?.heroLink ? `/${storeTheme.heroLink}` : hp.heroCta1Link, ctaText: storeTheme?.heroCTA || hp.heroCta1Text })}
-                className="group inline-flex items-center gap-2.5 rounded-xl px-7 py-3.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-4px_rgba(15,118,110,0.5)]"
+                className="group inline-flex items-center gap-2.5 rounded-xl px-7 py-3.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-4px_rgba(0, 160, 160,0.5)]"
               >
                 <ShoppingCart className="w-[18px] h-[18px]" />
                 {storeTheme?.heroCTA || hp.heroCta1Text}

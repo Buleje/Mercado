@@ -40,7 +40,7 @@ export default function CelebrationLayer() {
         scalar: 0.9,
         ticks: 170,
         origin: { x, y },
-        colors: ["#00B4A6", "#0f766e", "#f59e0b", "#fbbf24", "#ffffff"],
+        colors: ["#00A0A0", "#00A0A0", "#f59e0b", "#fbbf24", "#ffffff"],
         disableForReducedMotion: true,
       });
     };

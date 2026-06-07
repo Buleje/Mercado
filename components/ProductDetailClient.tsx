@@ -721,7 +721,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                             cx={i * 40}
                             cy={50 - ((p - min) / range) * 42}
                             r="3"
-                            fill={i === prices.length - 1 ? "var(--accent)" : "#2dd4bf"}
+                            fill={i === prices.length - 1 ? "var(--accent)" : "#14C2C2"}
                             stroke="white"
                             strokeWidth="1.5"
                           />

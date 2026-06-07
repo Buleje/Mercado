@@ -326,15 +326,6 @@ function ColorPicker({
   );
 }
 
-function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-semibold text-[var(--text-primary)]">{label}</label>
-      {children}
-    </div>
-  );
-}
-
 function StyleSection({
   icon,
   title,
@@ -1424,103 +1415,198 @@ export default function StoreCustomizer() {
         {/* Contenido del tab activo */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-            {/* ── TAB: IDENTIDAD ─────────────────────────────────────── */}
+            {/* ── TAB: IDENTIDAD ───────────────────────────────────────
+                Rediseño 2026-06-05 (Brandon): minimalista, 2 columnas.
+                Izquierda = los 4 campos sin cajas gigantes ni helpers
+                redundantes. Derecha = VISTA PREVIA EN VIVO: el dueño ve
+                exactamente dónde aparece cada campo (cabecera de su
+                tienda + resultado de Google) mientras tipea. */}
             {activeTab === "identidad" && (
-              <div className="space-y-7">
-                {/* Logo card — área generosa con hover state propio */}
-                <div className="space-y-3">
-                  <div className="flex items-baseline justify-between">
-                    <label className="text-sm font-semibold text-[var(--text-primary)]">Logo de tu tienda</label>
-                    <span className="text-xs text-muted">PNG/JPG/WebP · máx 5 MB · cuadrado idealmente</span>
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+                {/* ── Columna form ── */}
+                <div className="space-y-6 min-w-0">
+                  {/* Logo + Nombre — misma fila, sin caja contenedora */}
+                  <div className="flex items-start gap-4">
+                    <div className="shrink-0 space-y-1.5">
+                      <span className="block text-sm font-semibold text-[var(--text-primary)]">Logo</span>
+                      <div className="relative group w-[88px] h-[88px] rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                        {theme.logo ? (
+                          <>
+                            <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="88px" />
+                            <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button
+                                type="button"
+                                onClick={() => update("logo", "")}
+                                className="text-xs font-bold text-white bg-[var(--data-error-500)] px-2.5 py-1 rounded-lg hover:opacity-90"
+                              >
+                                Quitar
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <ImageUpload
+                            value=""
+                            onChange={(url) => update("logo", url)}
+                            folder="branding"
+                            label=""
+                            aspectRatio="square"
+                            className="w-full h-full"
+                          />
+                        )}
+                      </div>
+                      <span className="block text-[11px] text-muted text-center leading-tight">
+                        cuadrado · 5 MB
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1.5 pt-px">
+                      <label htmlFor="sc-store-name" className="block text-sm font-semibold text-[var(--text-primary)]">
+                        Nombre de la tienda
+                      </label>
+                      <input
+                        id="sc-store-name"
+                        type="text"
+                        value={theme.storeName}
+                        onChange={(e) => update("storeName", e.target.value)}
+                        placeholder="Mi Bodega"
+                        className={inputCls}
+                        maxLength={60}
+                      />
+                      <p className="text-xs text-muted">Cabecera, pie y pestaña del navegador.</p>
+                    </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-start gap-5 p-5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface">
-                    <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary hover:shadow-[var(--shadow-md)] transition-all relative group">
-                      {theme.logo ? (
-                        <>
-                          <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="128px" />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <button type="button" onClick={() => update("logo", "")} className="text-sm font-bold text-white bg-[var(--data-error-500)] px-3 py-1.5 rounded-lg hover:opacity-90">
-                              Quitar
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <ImageUpload
-                          value=""
-                          onChange={(url) => update("logo", url)}
-                          folder="branding"
-                          label=""
-                          aspectRatio="square"
-                          className="w-full h-full"
-                        />
-                      )}
+
+                  {/* Eslogan — counter integrado en el label row */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-baseline justify-between">
+                      <label htmlFor="sc-slogan" className="text-sm font-semibold text-[var(--text-primary)]">
+                        Eslogan
+                      </label>
+                      <span className={cn(
+                        "text-xs font-mono tabular-nums",
+                        theme.slogan.length > 90 ? "text-[var(--data-warning-500)]" : "text-muted",
+                      )}>
+                        {theme.slogan.length}/100
+                      </span>
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <p className="text-base font-bold text-[var(--text-primary)]">
-                        {theme.logo ? "Logo cargado" : "Sube tu logo"}
-                      </p>
-                      <p className="text-sm text-muted leading-relaxed">
-                        {theme.logo
-                          ? "Pasa el cursor sobre el logo para reemplazarlo o quitarlo."
-                          : "Aparece en la cabecera de tu tienda y en el navegador. Si no subes uno, usamos el logo del proyecto."}
-                      </p>
+                    <input
+                      id="sc-slogan"
+                      type="text"
+                      value={theme.slogan}
+                      onChange={(e) => update("slogan", e.target.value.slice(0, 100))}
+                      placeholder="Tu bodega de confianza…"
+                      className={inputCls}
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-muted">Frase corta debajo del nombre.</p>
+                  </div>
+
+                  {/* Descripción SEO */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-baseline justify-between">
+                      <label htmlFor="sc-description" className="text-sm font-semibold text-[var(--text-primary)]">
+                        Descripción
+                      </label>
+                      <span className={cn(
+                        "text-xs font-mono tabular-nums",
+                        theme.description.length > 180 ? "text-[var(--data-warning-500)]" : "text-muted",
+                      )}>
+                        {theme.description.length}/200
+                      </span>
                     </div>
+                    <textarea
+                      id="sc-description"
+                      value={theme.description}
+                      onChange={(e) => update("description", e.target.value.slice(0, 200))}
+                      placeholder="Abarrotes, bebidas y productos de primera necesidad con delivery a domicilio…"
+                      className={cn(inputCls, "resize-none min-h-[96px] py-3 leading-relaxed")}
+                      maxLength={200}
+                    />
+                    <p className="text-xs text-muted">Lo que Google y las redes muestran de tu tienda.</p>
                   </div>
                 </div>
 
-                {/* Nombre */}
-                <FieldRow label="Nombre de la tienda">
-                  <input
-                    type="text"
-                    value={theme.storeName}
-                    onChange={(e) => update("storeName", e.target.value)}
-                    placeholder="Mi Bodega"
-                    className={inputCls}
-                    maxLength={60}
-                  />
-                  <p className="text-sm text-muted mt-1.5">Aparece en el header, footer y pestaña del navegador. Máximo 60 caracteres.</p>
-                </FieldRow>
-
-                {/* Eslogan */}
-                <FieldRow label="Eslogan">
-                  <input
-                    type="text"
-                    value={theme.slogan}
-                    onChange={(e) => update("slogan", e.target.value.slice(0, 100))}
-                    placeholder="Tu bodega de confianza..."
-                    className={inputCls}
-                    maxLength={100}
-                  />
-                  <div className="flex items-center justify-between mt-1.5">
-                    <p className="text-sm text-muted">Una frase corta debajo del nombre de la tienda.</p>
-                    <span className={cn(
-                      "text-xs font-mono tabular-nums",
-                      theme.slogan.length > 90 ? "text-[var(--data-warning-500)]" : "text-muted",
-                    )}>
-                      {theme.slogan.length}/100
-                    </span>
+                {/* ── Columna preview en vivo (sticky en desktop) ── */}
+                <aside className="space-y-4 lg:sticky lg:top-4">
+                  {/* Mockup: cabecera de la tienda */}
+                  <div>
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
+                      Así se ve en tu tienda
+                    </p>
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)]">
+                      {/* Barra de navegador fake — refuerza "esto es tu web" */}
+                      <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)]">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]/60" aria-hidden />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]/60" aria-hidden />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]/60" aria-hidden />
+                        <span className="ml-2 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-0.5 text-[10px] text-muted font-mono">
+                          {typeof window !== "undefined" ? window.location.host : "buleje.com"}/t/{activeTenantSlug}
+                        </span>
+                      </div>
+                      {/* Header de la tienda con los datos reales */}
+                      <div className="flex items-center gap-3 px-4 py-3.5 bg-[var(--surface-raised)]">
+                        <div className="relative h-11 w-11 shrink-0 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-sunken)] flex items-center justify-center">
+                          {theme.logo ? (
+                            <Image src={theme.logo} alt="" fill className="object-cover" sizes="44px" />
+                          ) : (
+                            <Store className="h-5 w-5 text-muted" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-base font-bold leading-tight" style={{ color: theme.primaryColor || "var(--text-primary)" }}>
+                            {theme.storeName || "Mi Bodega"}
+                          </p>
+                          <p className="truncate text-xs text-muted">
+                            {theme.slogan || "Tu eslogan aparece acá"}
+                          </p>
+                        </div>
+                        <span
+                          className="shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-white"
+                          style={{ background: theme.primaryColor || "#00A0A0" }}
+                          aria-hidden
+                        >
+                          Pedir
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </FieldRow>
 
-                {/* Descripción */}
-                <FieldRow label="Descripción">
-                  <textarea
-                    value={theme.description}
-                    onChange={(e) => update("description", e.target.value.slice(0, 200))}
-                    placeholder="Abarrotes, bebidas y productos de primera necesidad con delivery a domicilio..."
-                    className={cn(inputCls, "resize-none min-h-[100px] py-3 leading-relaxed")}
-                    maxLength={200}
-                  />
-                  <div className="flex items-center justify-between mt-1.5">
-                    <p className="text-sm text-muted">Texto SEO para Google y redes sociales (Open Graph).</p>
-                    <span className={cn(
-                      "text-xs font-mono tabular-nums",
-                      theme.description.length > 180 ? "text-[var(--data-warning-500)]" : "text-muted",
-                    )}>
-                      {theme.description.length}/200
-                    </span>
+                  {/* Mockup: resultado de Google (SERP) */}
+                  <div>
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
+                      Así se ve en Google
+                    </p>
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3.5 shadow-[var(--shadow-sm)]">
+                      <div className="flex items-center gap-2">
+                        <div className="relative h-6 w-6 shrink-0 rounded-full overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-sunken)] flex items-center justify-center">
+                          {theme.logo ? (
+                            <Image src={theme.logo} alt="" fill className="object-cover" sizes="24px" />
+                          ) : (
+                            <Store className="h-3 w-3 text-muted" />
+                          )}
+                        </div>
+                        <div className="min-w-0 leading-tight">
+                          <p className="truncate text-xs font-medium text-[var(--text-secondary)]">
+                            {theme.storeName || "Mi Bodega"}
+                          </p>
+                          <p className="truncate text-[11px] text-[var(--data-success-700,#047857)] dark:text-emerald-400">
+                            buleje.com › t › {activeTenantSlug}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="mt-1.5 truncate text-base leading-snug text-[#1a0dab] dark:text-sky-400">
+                        {theme.storeName || "Mi Bodega"}{theme.slogan ? ` — ${theme.slogan}` : ""}
+                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-sm leading-snug text-[var(--text-secondary)]">
+                        {theme.description || "Tu descripción aparece acá. Escribila pensando en qué buscaría tu cliente."}
+                      </p>
+                    </div>
                   </div>
-                </FieldRow>
+
+                  {/* Tip mínimo — 1 línea, sin banner gigante */}
+                  <p className="text-xs text-muted leading-relaxed px-1">
+                    El color del nombre y el botón se configuran en la pestaña <strong>Colores</strong>.
+                  </p>
+                </aside>
               </div>
             )}
 

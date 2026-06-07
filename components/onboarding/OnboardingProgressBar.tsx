@@ -32,12 +32,13 @@ export default function OnboardingProgressBar({ currentStep, totalSteps = 5 }: P
       </div>
 
       {/* Track con gradient progress */}
-      <div className="relative h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+      <div className="relative h-2 overflow-hidden rounded-full bg-[var(--surface-sunken)] ring-1 ring-inset ring-[var(--rule-base)]">
         <div
           className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out"
           style={{
             width: `${percentage}%`,
-            background: "linear-gradient(90deg, var(--accent) 0%, var(--data-success-600) 100%)",
+            background: "linear-gradient(90deg, var(--accent) 0%, var(--accent-dark) 100%)",
+            boxShadow: "0 0 12px -1px var(--accent-glow)",
           }}
         />
       </div>

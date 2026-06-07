@@ -55,7 +55,7 @@ export async function sendDailyDigestEmail(data: DigestData): Promise<void> {
     subject: `📊 Resumen diario — ${data.date} — S/${data.totalRevenue.toFixed(2)}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-        <div style="background:#00B4A6;padding:20px 24px;">
+        <div style="background:#00A0A0;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">📊 Resumen del día</h2>
           <p style="color:#c4b5fd;margin:4px 0 0;font-size:13px;">${data.date}</p>
         </div>
@@ -90,7 +90,7 @@ export async function sendDailyDigestEmail(data: DigestData): Promise<void> {
           ${paymentHtml ? `
           <h3 style="font-size:14px;color:#111;margin:0 0 8px;">💳 Métodos de pago</h3>
           <table style="width:100%;border-collapse:collapse;">
-            <thead><tr style="background:#f5f3ff;"><th style="text-align:left;padding:4px 8px;font-size:12px;color:#00B4A6;">Método</th><th style="text-align:center;padding:4px 8px;font-size:12px;color:#00B4A6;">Pedidos</th><th style="text-align:right;padding:4px 8px;font-size:12px;color:#00B4A6;">Total</th></tr></thead>
+            <thead><tr style="background:#f5f3ff;"><th style="text-align:left;padding:4px 8px;font-size:12px;color:#00A0A0;">Método</th><th style="text-align:center;padding:4px 8px;font-size:12px;color:#00A0A0;">Pedidos</th><th style="text-align:right;padding:4px 8px;font-size:12px;color:#00A0A0;">Total</th></tr></thead>
             <tbody>${paymentHtml}</tbody>
           </table>` : ""}
         </div>

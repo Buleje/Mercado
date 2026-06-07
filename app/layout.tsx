@@ -177,8 +177,8 @@ export const metadata: Metadata = {
 // mobile quedaba sin color de marca. Hex literal del DS (light/dark mode).
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#00B4A6" },
-    { media: "(prefers-color-scheme: dark)", color: "#34d4be" },
+    { media: "(prefers-color-scheme: light)", color: "#00A0A0" },
+    { media: "(prefers-color-scheme: dark)", color: "#14C2C2" },
   ],
   // A11y (audit SEO 2026-05-31): sin `maximumScale` — no limitamos el zoom
   // del usuario. WCAG 1.4.4 exige zoom hasta 200%; cualquier cap (aunque sea

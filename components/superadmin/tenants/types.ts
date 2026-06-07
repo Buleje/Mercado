@@ -3,7 +3,7 @@
 
 export type SortField = "name" | "plan" | "createdAt" | "ordersThisMonth";
 export type SortDir = "asc" | "desc";
-export type ViewMode = "table" | "cards";
+export type ViewMode = "table" | "cards" | "compact";
 
 export interface GrowthMonth {
   month: string;

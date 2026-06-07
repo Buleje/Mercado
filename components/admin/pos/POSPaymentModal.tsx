@@ -534,7 +534,7 @@ export default function POSPaymentModal({
         */}
         <div className="shrink-0 relative overflow-hidden border-b border-[var(--rule-base)] bg-gradient-to-b from-[var(--surface-raised)] to-[var(--surface-sunken)] dark:from-[var(--surface-raised)] dark:to-surface">
           {/* Glow decorativo de fondo (sutil, primary del proyecto) */}
-          <div className="absolute inset-0 pointer-events-none opacity-60 bg-[radial-gradient(ellipse_at_top_left,rgba(15,118,110,0.10),transparent_60%)] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(52,212,190,0.10),transparent_60%)]" />
+          <div className="absolute inset-0 pointer-events-none opacity-60 bg-[radial-gradient(ellipse_at_top_left,rgba(0, 160, 160,0.10),transparent_60%)] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(20, 194, 194,0.10),transparent_60%)]" />
 
           <div className="relative px-5 sm:px-6 py-4 flex items-center gap-4">
             {/* Voice toggle (izquierda) */}
@@ -779,7 +779,7 @@ export default function POSPaymentModal({
                           className={cn(
                             "group relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border-2 text-xs font-extrabold transition-all overflow-hidden",
                             selected
-                              ? "border-primary bg-primary/10 text-primary shadow-[0_4px_12px_-4px_rgba(15,118,110,0.4)]"
+                              ? "border-primary bg-primary/10 text-primary shadow-[0_4px_12px_-4px_rgba(0, 160, 160,0.4)]"
                               : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:border-primary/40 hover:bg-[var(--surface-raised)] hover:-translate-y-0.5"
                           )}
                         >
@@ -1381,7 +1381,7 @@ export default function POSPaymentModal({
               "group relative w-full py-4 rounded-2xl font-extrabold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between px-6 text-white overflow-hidden",
               isFiado
                 ? "bg-[var(--data-warning-500)] hover:brightness-110 shadow-[0_8px_24px_-8px_var(--data-warning-500)]"
-                : "bg-gradient-to-r from-primary to-[var(--color-primary-dark)] hover:brightness-110 shadow-[0_8px_24px_-8px_rgba(15,118,110,0.6)]"
+                : "bg-gradient-to-r from-primary to-[var(--color-primary-dark)] hover:brightness-110 shadow-[0_8px_24px_-8px_rgba(0, 160, 160,0.6)]"
             )}
           >
             <span className="flex items-center gap-2.5">

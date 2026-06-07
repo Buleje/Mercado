@@ -96,7 +96,7 @@ export default function SuggestionBox() {
         </p>
         <button
           onClick={reset}
-          className="px-6 py-3 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] dark:text-[#2dd4bf] font-semibold text-sm hover:bg-[var(--accent)]/20 transition-colors"
+          className="px-6 py-3 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] dark:text-[#14C2C2] font-semibold text-sm hover:bg-[var(--accent)]/20 transition-colors"
         >
           Enviar otra sugerencia
         </button>

@@ -31,7 +31,7 @@ interface SAStatCardProps {
  * - rounded-2xl -> rounded-xl (consistencia con admin).
  * - `shadow-sm dark:shadow-none` -> `shadow-[var(--shadow-sm)]` (token).
  * - Trend colors `text-green-600/red-500` -> `var(--data-success/error)`.
- * - Sparkline hardcoded `#00B4A6` -> `var(--accent)` + stopColor relativo.
+ * - Sparkline hardcoded `#00A0A0` -> `var(--accent)` + stopColor relativo.
  */
 export function SAStatCard({
   icon,

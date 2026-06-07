@@ -47,7 +47,7 @@ type Receta = {
 const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
   "Entradas": { from: "#0d9488", to: "#14b8a6" },
   "Platos de fondo": { from: "#f59e0b", to: "#d97706" },
-  "Postres": { from: "#0f766e", to: "#0d9488" },
+  "Postres": { from: "#00A0A0", to: "#0d9488" },
   "Bebidas": { from: "#fbbf24", to: "#f59e0b" },
   "Sopas": { from: "#10b981", to: "#0d9488" },
 };
@@ -234,7 +234,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
 
   const colors = receta.colorFrom && receta.colorTo
     ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0d9488", to: "#0f766e" };
+    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0d9488", to: "#00A0A0" };
   const completedSteps = checkedSteps.size;
   const totalSteps = receta.pasos?.length || 0;
 
@@ -531,7 +531,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                   {relatedRecetas.map(r => {
                     const rColors = r.colorFrom && r.colorTo
                       ? { from: r.colorFrom, to: r.colorTo }
-                      : CATEGORIA_GRADIENTS[r.categoria || ""] || { from: "#0d9488", to: "#0f766e" };
+                      : CATEGORIA_GRADIENTS[r.categoria || ""] || { from: "#0d9488", to: "#00A0A0" };
                     return (
                       <Link
                         key={r.id}

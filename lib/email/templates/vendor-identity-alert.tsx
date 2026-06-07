@@ -21,7 +21,7 @@ export interface VendorIdentityAlertProps {
   adminUrl: string;
 }
 
-const PRIMARY = "#00B4A6";
+const PRIMARY = "#00A0A0";
 const ERROR = "#dc2626";
 const WARNING = "#f59e0b";
 const TEXT = "#111827";

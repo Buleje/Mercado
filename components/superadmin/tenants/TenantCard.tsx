@@ -14,6 +14,8 @@ import { PendingOrdersModal } from "./PendingOrdersModal";
 
 interface TenantCardProps {
   tenant: TenantRow;
+  /** Salud calculada en la page — se muestra integrada en el kicker (antes era un badge absoluto superpuesto). */
+  health?: "healthy" | "warning" | "critical";
   onDetail: (t: TenantRow) => void;
   onInvite: (slug: string, name: string) => void;
   onToggleActive: (slug: string, active: boolean) => void;
@@ -65,6 +67,7 @@ function computeHealth(t: TenantRow): { ok: boolean; issues: string[]; isAdmin: 
 
 export function TenantCard({
   tenant,
+  health: healthProp,
   onDetail,
   onInvite,
   onToggleActive,
@@ -159,89 +162,42 @@ export function TenantCard({
       {/* Brandon 2026-05-21 fix mobile: p-4 sm:p-5 — 16px lateral en mobile
           (de 20px) gana ~8px de ancho interno para los KPIs 4-col. */}
       <div className="p-4 sm:p-5 space-y-4">
-        {/* Kicker: plan label + status pill, sin gradient.
-            Brandon 2026-05-21 high-impact: `shrink-0 whitespace-nowrap` en
-            el plan label (antes "ENTERPRIS" se truncaba en cards estrechas
-            porque el flex se comia el espacio). El derecho con badges
-            usa flex-wrap para que no compita por ancho. */}
-        <div className="flex items-start justify-between gap-2">
-          <span className="shrink-0 whitespace-nowrap text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] font-semibold mt-1">
+        {/* Kicker — Brandon 2026-06-05 desaturación: antes acá vivían hasta
+            5 badges en flex-wrap (pendientes/trial/Enterprise/Marketplace/
+            Admin/problemas) y ADEMÁS la page montaba un badge de salud
+            `absolute top-3 right-3` encima → se pisaban entre sí.
+            Ahora: fila 1 = plan + salud (1 solo pill, integrado). El resto
+            de señales baja a una fila de chips uniforme bajo el nombre. */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="shrink-0 whitespace-nowrap text-[length:var(--ts-xs)] uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] font-semibold">
             Plan {planLabel}
           </span>
-          <div className="flex flex-wrap items-center justify-end gap-1.5 min-w-0">
-            {pendingCount > 0 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPendingModalOpen(true);
-                }}
-                title={`${pendingCount} pedido${pendingCount === 1 ? "" : "s"} pendiente${pendingCount === 1 ? "" : "s"} — click para ver detalles`}
-                className="relative inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold bg-[var(--data-error-500)] text-white shadow-sm hover:bg-[var(--data-error-600)] transition-colors"
-              >
-                <span aria-hidden className="absolute -inset-0.5 rounded-full bg-[var(--data-error-500)]/40 animate-ping pointer-events-none" />
-                <Bell className="relative w-3 h-3" strokeWidth={2.5} />
-                <span className="relative tabular-nums">{pendingCount}</span>
-              </button>
-            )}
-            {trialBadge && (
-              <button
-                type="button"
-                onClick={async () => {
-                  const input = window.prompt(
-                    `Extender trial de "${t.name}"\n` +
-                    `Vence: ${trialEnds ? trialEnds.toLocaleDateString("es-PE") : "—"}\n\n` +
-                    `Cuántos días sumar? (negativo = restar)`,
-                    "15",
-                  );
-                  if (input == null) return;
-                  const days = Number(input);
-                  if (!Number.isFinite(days) || days === 0) return;
-                  try {
-                    const csrf = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1];
-                    const r = await fetch(`/api/superadmin/tenants/${t.slug}/extend-trial`, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        ...(csrf ? { "x-csrf-token": csrf } : {}),
-                      },
-                      credentials: "include",
-                      body: JSON.stringify({ days }),
-                    });
-                    if (!r.ok) {
-                      const data = await r.json().catch(() => null);
-                      window.alert(`Error: ${data?.error ?? r.statusText}`);
-                      return;
-                    }
-                    window.location.reload();
-                  } catch (err) {
-                    window.alert(`Error de red: ${String(err)}`);
-                  }
-                }}
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold transition-all hover:scale-[1.02] ${trialBadge.bg} ${trialBadge.border} ${trialBadge.fg}`}
-                title={`${trialEnds ? `Vence ${trialEnds.toLocaleDateString("es-PE")} · ` : ""}Click para extender o reducir el trial`}
-              >
-                <trialBadge.Icon className="w-3 h-3" strokeWidth={2.25} />
-                {trialBadge.text}
-              </button>
-            )}
-            {t.plan === "enterprise" ? (
-              <ProductBadge intent="premium">Enterprise</ProductBadge>
-            ) : null}
-            {isOnMarketplace && (
-              <ProductBadge intent="fresh">
-                <ShoppingBag className="w-2.5 h-2.5 mr-1 inline" />Marketplace
-              </ProductBadge>
-            )}
-            {health.isAdmin && (
-              <ProductBadge intent="premium">Admin</ProductBadge>
-            )}
-            {!health.ok && (
-              <ProductBadge intent="offer">
-                {health.issues.length} problema{health.issues.length !== 1 ? "s" : ""}
-              </ProductBadge>
-            )}
-          </div>
+          {healthProp && (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${
+                healthProp === "healthy"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30"
+                  : healthProp === "warning"
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-500/30"
+                    : "bg-rose-500/15 text-rose-700 dark:text-rose-300 ring-rose-500/30"
+              }`}
+              title={
+                healthProp === "healthy"
+                  ? "Tenant saludable — activo, sin pendientes excesivos"
+                  : healthProp === "warning"
+                    ? "Atención — alguna métrica está baja"
+                    : "Crítico — suspendido o múltiples problemas"
+              }
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  healthProp === "healthy" ? "bg-emerald-500 animate-pulse" : healthProp === "warning" ? "bg-amber-500" : "bg-rose-500"
+                }`}
+                aria-hidden
+              />
+              {healthProp === "healthy" ? "OK" : healthProp === "warning" ? "Aviso" : "Crítico"}
+            </span>
+          )}
         </div>
 
         {/* Avatar + Name + Status */}
@@ -283,6 +239,82 @@ export function TenantCard({
           </div>
         </div>
 
+        {/* Fila de señales — chips uniformes (h-6), una sola línea con wrap
+            limpio. Solo se renderiza si hay algo que mostrar. "Enterprise"
+            ya NO se repite acá (redundante con "Plan Enterprise" del kicker). */}
+        {(pendingCount > 0 || trialBadge || isOnMarketplace || health.isAdmin || !health.ok) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {pendingCount > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPendingModalOpen(true);
+                }}
+                title={`${pendingCount} pedido${pendingCount === 1 ? "" : "s"} pendiente${pendingCount === 1 ? "" : "s"} — click para ver detalles`}
+                className="inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-xs font-bold bg-[var(--data-error-500)] text-white shadow-sm hover:bg-[var(--data-error-600)] transition-colors"
+              >
+                <Bell className="w-3 h-3" strokeWidth={2.5} />
+                <span className="tabular-nums">{pendingCount} pend.</span>
+              </button>
+            )}
+            {trialBadge && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const input = window.prompt(
+                    `Extender trial de "${t.name}"\n` +
+                    `Vence: ${trialEnds ? trialEnds.toLocaleDateString("es-PE") : "—"}\n\n` +
+                    `Cuántos días sumar? (negativo = restar)`,
+                    "15",
+                  );
+                  if (input == null) return;
+                  const days = Number(input);
+                  if (!Number.isFinite(days) || days === 0) return;
+                  try {
+                    const csrf = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1];
+                    const r = await fetch(`/api/superadmin/tenants/${t.slug}/extend-trial`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        ...(csrf ? { "x-csrf-token": csrf } : {}),
+                      },
+                      credentials: "include",
+                      body: JSON.stringify({ days }),
+                    });
+                    if (!r.ok) {
+                      const data = await r.json().catch(() => null);
+                      window.alert(`Error: ${data?.error ?? r.statusText}`);
+                      return;
+                    }
+                    window.location.reload();
+                  } catch (err) {
+                    window.alert(`Error de red: ${String(err)}`);
+                  }
+                }}
+                className={`inline-flex h-6 items-center gap-1 rounded-full border px-2 text-xs font-bold transition-all hover:scale-[1.02] ${trialBadge.bg} ${trialBadge.border} ${trialBadge.fg}`}
+                title={`${trialEnds ? `Vence ${trialEnds.toLocaleDateString("es-PE")} · ` : ""}Click para extender o reducir el trial`}
+              >
+                <trialBadge.Icon className="w-3 h-3" strokeWidth={2.25} />
+                {trialBadge.text}
+              </button>
+            )}
+            {isOnMarketplace && (
+              <ProductBadge intent="fresh">
+                <ShoppingBag className="w-2.5 h-2.5 mr-1 inline" />Marketplace
+              </ProductBadge>
+            )}
+            {health.isAdmin && (
+              <ProductBadge intent="premium">Admin</ProductBadge>
+            )}
+            {!health.ok && (
+              <ProductBadge intent="offer">
+                {health.issues.length} problema{health.issues.length !== 1 ? "s" : ""}
+              </ProductBadge>
+            )}
+          </div>
+        )}
+
         {/* Financial KPIs — Brandon 2026-05-21:
             · mobile: 2x2 con gap-2
             · desktop high-impact: gap-3 (más respiro entre cards angostas
@@ -310,6 +342,7 @@ export function TenantCard({
               <div
                 key={lbl}
                 onClick={canClick ? () => onViewProducts?.(t) : undefined}
+                onKeyDown={canClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onViewProducts?.(t); } } : undefined}
                 role={canClick ? "button" : undefined}
                 tabIndex={canClick ? 0 : undefined}
                 className={`rounded-lg p-2.5 text-center bg-[var(--surface-sunken)] border border-[var(--rule-soft)] ${

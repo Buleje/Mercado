@@ -35,7 +35,7 @@ const RFMSegmentSchema = z
     count:         z.number().int(),
     avgMonetary:   z.number(),
     avgFrequency:  z.number(),
-    color:         z.string().openapi({ example: "#00B4A6" }),
+    color:         z.string().openapi({ example: "#00A0A0" }),
     action:        z.string().openapi({ example: "Recompensar lealtad, ofrecer exclusividades" }),
   })
   .openapi("RFMSegment");

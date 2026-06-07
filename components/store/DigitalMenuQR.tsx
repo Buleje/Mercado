@@ -191,7 +191,7 @@ export default function DigitalMenuQR() {
                     <p className="font-semibold text-[var(--text-primary)] text-sm leading-tight line-clamp-2">
                       {product.name}
                     </p>
-                    <p className="text-primary dark:text-[#2dd4bf] font-bold mt-1">
+                    <p className="text-primary dark:text-[#14C2C2] font-bold mt-1">
                       {fmt(product.price)}
                       {product.unit ? (
                         <span className="text-xs text-gray-400 font-normal ml-1">
@@ -294,7 +294,7 @@ export default function DigitalMenuQR() {
                     >
                       <Plus className="w-3 h-3" />
                     </button>
-                    <span className="ml-2 font-bold text-primary dark:text-[#2dd4bf] text-sm w-20 text-right">
+                    <span className="ml-2 font-bold text-primary dark:text-[#14C2C2] text-sm w-20 text-right">
                       {fmt(item.price * item.qty)}
                     </span>
                   </div>

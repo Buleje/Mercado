@@ -433,7 +433,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
           style={{
             zIndex: 2147483647,
             background:
-              "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, white)",
+              "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, white)",
           }}
           onClick={e => e.stopPropagation()}
         >
@@ -442,7 +442,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
             className="relative shrink-0 overflow-hidden"
             style={{
               background:
-                "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 55%, color-mix(in oklch, var(--color-primary, #00B4A6) 70%, white) 100%)",
+                "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 55%, color-mix(in oklch, var(--color-primary, #00A0A0) 70%, white) 100%)",
             }}
           >
             <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
@@ -560,9 +560,9 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                         style={{
                           background: "var(--color-card)",
                           border:
-                            "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                            "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
                           boxShadow:
-                            "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                            "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                         }}
                       >
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -570,7 +570,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             className="inline-flex items-center gap-1.5 text-xs font-extrabold px-2.5 py-1 rounded-full text-white"
                             style={{
                               background:
-                                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                             }}
                           >
                             <StepIcon
@@ -646,9 +646,9 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       className="relative rounded-3xl overflow-hidden mb-4"
                       style={{
                         boxShadow:
-                          "0 18px 36px -14px color-mix(in oklch, var(--color-primary, #00B4A6) 30%, transparent)",
+                          "0 18px 36px -14px color-mix(in oklch, var(--color-primary, #00A0A0) 30%, transparent)",
                         border:
-                          "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",
+                          "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
                       }}
                     >
                       {/* MAPA grande como hero */}
@@ -684,7 +684,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           >
                             <span
                               className="h-2 w-2 rounded-full animate-pulse"
-                              style={{ background: "var(--color-primary, #00B4A6)" }}
+                              style={{ background: "var(--color-primary, #00A0A0)" }}
                             />
                             <span
                               className="text-xs font-extrabold uppercase tracking-wider"
@@ -698,7 +698,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-md text-white"
                               style={{
                                 background:
-                                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.20)",
                               }}
                             >
@@ -737,7 +737,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
                             style={{
                               background:
-                                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                             }}
                           >
                             <StatusIcon
@@ -776,14 +776,14 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                         className="relative h-1.5"
                         style={{
                           background:
-                            "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                            "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                         }}
                       >
                         <m.div
                           className="absolute inset-y-0 left-0"
                           style={{
                             background:
-                              "linear-gradient(90deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                              "linear-gradient(90deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                           }}
                           initial={{ width: "0%" }}
                           animate={{ width: `${vibe.progress}%` }}
@@ -818,16 +818,16 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                     style={{
                       background: "var(--color-card)",
                       border:
-                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                        "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                     }}
                   >
                     <div
                       className="flex items-center justify-between px-4 py-2.5"
                       style={{
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, transparent)",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, transparent)",
                         borderBottom:
-                          "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                          "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                       }}
                     >
                       <div className="flex items-center gap-2">
@@ -847,7 +847,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                         className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white tabular-nums"
                         style={{
                           background:
-                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                         }}
                       >
                         {order.items.length} ítem{order.items.length !== 1 ? "s" : ""}
@@ -867,9 +867,9 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             className="relative flex items-center gap-3 rounded-2xl p-2.5 transition-colors"
                             style={{
                               background:
-                                "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--color-card))",
+                                "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--color-card))",
                               border:
-                                "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                                "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
                             }}
                           >
                             {/* Imagen prominente con badge cantidad */}
@@ -877,9 +877,9 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                               className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0"
                               style={{
                                 background:
-                                  "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--surface-sunken))",
+                                  "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--surface-sunken))",
                                 border:
-                                  "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                                  "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                               }}
                             >
                               {item.image ? (
@@ -909,7 +909,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                                 className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-6 min-w-[1.5rem] px-1.5 rounded-full text-xs font-extrabold tabular-nums text-white shadow-[var(--shadow-md)]"
                                 style={{
                                   background:
-                                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                    "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                                 }}
                               >
                                 {qty}
@@ -941,9 +941,9 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       className="px-4 py-3 space-y-1.5"
                       style={{
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--color-card))",
                         borderTop:
-                          "1px dashed color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                          "1px dashed color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
                       }}
                     >
                       <div className="flex items-center justify-between text-sm text-muted">
@@ -981,7 +981,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                         className="flex items-baseline justify-between pt-2 mt-1"
                         style={{
                           borderTop:
-                            "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+                            "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)",
                         }}
                       >
                         <span
@@ -1008,16 +1008,16 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                     style={{
                       background: "var(--color-card)",
                       border:
-                        "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                        "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                     }}
                   >
                     <div
                       className="px-4 py-2.5"
                       style={{
                         background:
-                          "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, transparent)",
+                          "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, transparent)",
                         borderBottom:
-                          "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 18%, transparent)",
+                          "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 18%, transparent)",
                       }}
                     >
                       <p
@@ -1035,7 +1035,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                             style={{
                               background:
-                                "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                                "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                             }}
                           >
                             <User
@@ -1056,7 +1056,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                             style={{
                               background:
-                                "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                                "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                             }}
                           >
                             <Phone
@@ -1076,7 +1076,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             className="ml-auto inline-flex h-9 px-3 items-center justify-center rounded-xl text-xs font-extrabold text-white shrink-0 active:scale-95 transition-transform"
                             style={{
                               background:
-                                "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                                "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                             }}
                           >
                             Llamar
@@ -1089,7 +1089,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
                             style={{
                               background:
-                                "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                                "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                             }}
                           >
                             <MapPin
@@ -1137,9 +1137,9 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       className="w-24 h-24 rounded-full flex items-center justify-center mb-4"
                       style={{
                         background:
-                          "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                          "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                         boxShadow:
-                          "0 14px 30px -10px color-mix(in oklch, var(--color-primary, #00B4A6) 50%, transparent)",
+                          "0 14px 30px -10px color-mix(in oklch, var(--color-primary, #00A0A0) 50%, transparent)",
                       }}
                     >
                       <PackageCheck

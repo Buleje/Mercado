@@ -58,11 +58,11 @@ function AddressCard({
       style={{
         background: "var(--color-card)",
         border: addr.isDefault
-          ? "2px solid color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)"
+          ? "2px solid color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)"
           : "1px solid var(--color-card-border)",
         boxShadow: addr.isDefault
-          ? "0 8px 20px -8px color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)"
-          : "0 1px 2px color-mix(in oklch, var(--color-primary, #00B4A6) 8%, transparent)",
+          ? "0 8px 20px -8px color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)"
+          : "0 1px 2px color-mix(in oklch, var(--color-primary, #00A0A0) 8%, transparent)",
       }}
     >
       <div className="flex items-start gap-3">
@@ -72,13 +72,13 @@ function AddressCard({
             addr.isDefault
               ? {
                   background:
-                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   boxShadow:
-                    "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                    "0 4px 12px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
                 }
               : {
                   background:
-                    "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                    "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                 }
           }
         >
@@ -103,7 +103,7 @@ function AddressCard({
                 className="inline-flex items-center gap-1 text-xs font-extrabold px-2 py-0.5 rounded-full text-white"
                 style={{
                   background:
-                    "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                 }}
               >
                 <CheckCircle2 className="h-3 w-3" strokeWidth={2.5} />
@@ -179,7 +179,7 @@ export default function DireccionesPage() {
       className="min-h-screen dark:bg-background"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas, #f9fafb))",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-canvas, #f9fafb))",
       }}
     >
       <BreadcrumbSchema
@@ -195,7 +195,7 @@ export default function DireccionesPage() {
         className="relative overflow-hidden pt-36 sm:pt-44 pb-10 sm:pb-14"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
         }}
       >
         <div
@@ -273,9 +273,9 @@ export default function DireccionesPage() {
           className="w-full flex items-center justify-center gap-2 h-14 rounded-2xl text-sm font-extrabold text-white transition-all active:scale-[0.99]"
           style={{
             background:
-              "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+              "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
             boxShadow:
-              "0 10px 24px -8px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+              "0 10px 24px -8px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
           }}
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} />
@@ -302,14 +302,14 @@ export default function DireccionesPage() {
               border:
                 "1px solid var(--color-card-border)",
               boxShadow:
-                "0 1px 2px color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+                "0 1px 2px color-mix(in oklch, var(--color-primary, #00A0A0) 10%, transparent)",
             }}
           >
             <div
               className="w-20 h-20 rounded-3xl flex items-center justify-center"
               style={{
                 background:
-                  "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                  "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
               }}
             >
               <MensajeronBuscando size={64} className="text-current" style={{ color: "var(--color-primary-dark, #009690)" }} />
@@ -333,7 +333,7 @@ export default function DireccionesPage() {
           className="rounded-2xl p-4 flex items-start gap-3"
           style={{
             background:
-              "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--color-card))",
+              "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, var(--color-card))",
             border:
               "1px solid var(--color-card-border)",
           }}
@@ -342,7 +342,7 @@ export default function DireccionesPage() {
             className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background:
-                "color-mix(in oklch, var(--color-primary, #00B4A6) 14%, transparent)",
+                "color-mix(in oklch, var(--color-primary, #00A0A0) 14%, transparent)",
             }}
           >
             <Info

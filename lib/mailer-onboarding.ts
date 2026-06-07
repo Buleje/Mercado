@@ -46,7 +46,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
     html: `
       <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
         <!-- Header -->
-        <div style="background:linear-gradient(135deg,#00B4A6,#8b5cf6);padding:32px 24px;text-align:center;">
+        <div style="background:linear-gradient(135deg,#00A0A0,#8b5cf6);padding:32px 24px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:24px;">🎉 ¡Tu tienda está lista!</h1>
           <p style="color:#c7d2fe;margin:8px 0 0;font-size:14px;">Bienvenido al ecosistema Buleje</p>
         </div>
@@ -59,11 +59,11 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
 
           <!-- Store Info Card -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:20px;">
-            <h3 style="margin:0 0 12px;font-size:14px;color:#00B4A6;text-transform:uppercase;letter-spacing:0.5px;">Datos de tu tienda</h3>
+            <h3 style="margin:0 0 12px;font-size:14px;color:#00A0A0;text-transform:uppercase;letter-spacing:0.5px;">Datos de tu tienda</h3>
             <table style="width:100%;font-size:13px;color:#444;">
               <tr><td style="padding:4px 0;font-weight:600;">Tienda:</td><td>${data.storeName}</td></tr>
-              <tr><td style="padding:4px 0;font-weight:600;">URL:</td><td><a href="${storeUrl}" style="color:#00B4A6;">${storeUrl}</a></td></tr>
-              <tr><td style="padding:4px 0;font-weight:600;">Plan:</td><td><span style="background:#00B4A6;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;">${planLabel}</span></td></tr>
+              <tr><td style="padding:4px 0;font-weight:600;">URL:</td><td><a href="${storeUrl}" style="color:#00A0A0;">${storeUrl}</a></td></tr>
+              <tr><td style="padding:4px 0;font-weight:600;">Plan:</td><td><span style="background:#00A0A0;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;">${planLabel}</span></td></tr>
               <tr><td style="padding:4px 0;font-weight:600;">Trial hasta:</td><td>${trialEnd}</td></tr>
             </table>
           </div>
@@ -91,7 +91,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
 
           <!-- CTA -->
           <div style="text-align:center;margin:24px 0 8px;">
-            <a href="${adminUrl}" style="background:#00B4A6;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
+            <a href="${adminUrl}" style="background:#00A0A0;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
               Ir a mi panel de admin →
             </a>
           </div>

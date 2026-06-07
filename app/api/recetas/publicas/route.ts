@@ -124,7 +124,7 @@ const DEMO_COLORS: Record<string, { from: string; to: string }> = {
   "Platos de fondo": { from: "#f97316", to: "#ef4444" },
   "Postres": { from: "#f472b6", to: "#a855f7" },
   "Bebidas": { from: "#facc15", to: "#f59e0b" },
-  "Sopas": { from: "#4ade80", to: "#2dd4bf" },
+  "Sopas": { from: "#4ade80", to: "#14C2C2" },
 };
 
 // Recetas demo peruanas (se usan si no hay datos en DB)

@@ -79,7 +79,7 @@ export default function PWAInstallBanner() {
               {deferredPrompt ? (
                 <button
                   onClick={handleInstall}
-                  className="inline-flex items-center gap-2 bg-white text-[#0f766e] font-bold px-6 py-3 rounded-xl hover:bg-white/90 active:scale-95 transition-all shadow-[var(--shadow-lg)]"
+                  className="inline-flex items-center gap-2 bg-white text-[#00A0A0] font-bold px-6 py-3 rounded-xl hover:bg-white/90 active:scale-95 transition-all shadow-[var(--shadow-lg)]"
                 >
                   <Download className="w-4 h-4" />
                   Instalar ahora

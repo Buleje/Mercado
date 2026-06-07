@@ -61,7 +61,7 @@ export interface DesignTokens {
 export const DEFAULT_DESIGN_TOKENS: DesignTokens = {
   fontFamily: "inter",
   headingSize: "regular",
-  primaryColor: "#00B4A6",
+  primaryColor: "#00A0A0",
   secondaryColor: "#0d2b3a",
   accentColor: "#f4a261",
   backgroundColor: "#ffffff",

@@ -92,8 +92,8 @@ const STATUS_PILL: Record<
   { label: string; bgVar: string; fgVar: string; Icon: typeof CheckCircle2 }
 > = {
   pendiente:  { label: "Pendiente", bgVar: "var(--data-warning-500)", fgVar: "var(--data-warning-700)", Icon: Clock },
-  confirmado: { label: "Preparando", bgVar: "var(--color-primary, #00B4A6)", fgVar: "var(--color-primary-dark, #009690)", Icon: CheckCircle2 },
-  en_camino:  { label: "En camino", bgVar: "var(--color-primary, #00B4A6)", fgVar: "var(--color-primary-dark, #009690)", Icon: Truck },
+  confirmado: { label: "Preparando", bgVar: "var(--color-primary, #00A0A0)", fgVar: "var(--color-primary-dark, #009690)", Icon: CheckCircle2 },
+  en_camino:  { label: "En camino", bgVar: "var(--color-primary, #00A0A0)", fgVar: "var(--color-primary-dark, #009690)", Icon: Truck },
   entregado:  { label: "Entregado", bgVar: "var(--data-success-500)", fgVar: "var(--data-success-700)", Icon: CheckCircle2 },
   cancelado:  { label: "Cancelado", bgVar: "var(--data-error-500)", fgVar: "var(--data-error-700)", Icon: Clock },
 };
@@ -190,9 +190,9 @@ export function CuentaDashboardClient() {
         className="relative overflow-hidden rounded-3xl px-5 sm:px-7 py-6 sm:py-8 text-white"
         style={{
           background:
-            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00B4A6) 100%)",
+            "linear-gradient(135deg, var(--color-primary-dark, #009690) 0%, var(--color-primary, #00A0A0) 100%)",
           boxShadow:
-            "0 24px 48px -16px color-mix(in oklch, var(--color-primary, #00B4A6) 45%, transparent)",
+            "0 24px 48px -16px color-mix(in oklch, var(--color-primary, #00A0A0) 45%, transparent)",
         }}
       >
         {/* Decoración */}
@@ -294,7 +294,7 @@ export function CuentaDashboardClient() {
                 className="h-9 w-9 rounded-xl flex items-center justify-center mb-2"
                 style={{
                   background:
-                    "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                    "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                 }}
               >
                 <s.Icon
@@ -334,7 +334,7 @@ export function CuentaDashboardClient() {
           className="flex items-center justify-between px-4 py-3"
           style={{
             background:
-              "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, transparent)",
+              "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, transparent)",
             borderBottom:
               "1px solid var(--color-card-border)",
           }}
@@ -369,7 +369,7 @@ export function CuentaDashboardClient() {
                 className="h-16 rounded-xl animate-pulse"
                 style={{
                   background:
-                    "color-mix(in oklch, var(--color-primary, #00B4A6) 6%, var(--surface-sunken))",
+                    "color-mix(in oklch, var(--color-primary, #00A0A0) 6%, var(--surface-sunken))",
                 }}
               />
             ))}
@@ -380,7 +380,7 @@ export function CuentaDashboardClient() {
               className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-3"
               style={{
                 background:
-                  "color-mix(in oklch, var(--color-primary, #00B4A6) 10%, transparent)",
+                  "color-mix(in oklch, var(--color-primary, #00A0A0) 10%, transparent)",
               }}
             >
               <Package
@@ -403,9 +403,9 @@ export function CuentaDashboardClient() {
               className="inline-flex items-center gap-2 mt-4 h-12 px-5 rounded-xl text-sm font-extrabold text-white"
               style={{
                 background:
-                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                 boxShadow:
-                  "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 35%, transparent)",
+                  "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 35%, transparent)",
               }}
             >
               <ShoppingBag className="h-4 w-4" strokeWidth={2.25} />
@@ -433,7 +433,7 @@ export function CuentaDashboardClient() {
                     className="relative h-14 w-14 rounded-xl overflow-hidden shrink-0"
                     style={{
                       background:
-                        "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--surface-sunken))",
+                        "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--surface-sunken))",
                       border:
                         "1px solid var(--color-card-border)",
                     }}
@@ -462,7 +462,7 @@ export function CuentaDashboardClient() {
                         className="absolute -top-1 -right-1 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-white"
                         style={{
                           background:
-                            "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                            "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                         }}
                       >
                         {itemCount}
@@ -503,7 +503,7 @@ export function CuentaDashboardClient() {
                     </p>
                     <ChevronRight
                       className="h-4 w-4 inline-block"
-                      style={{ color: "var(--color-primary, #00B4A6)" }}
+                      style={{ color: "var(--color-primary, #00A0A0)" }}
                     />
                   </div>
                 </Link>
@@ -520,9 +520,9 @@ export function CuentaDashboardClient() {
           className="block rounded-2xl p-5 transition-transform hover:scale-[1.005] active:scale-[0.99]"
           style={{
             background:
-              "color-mix(in oklch, var(--color-primary, #00B4A6) 8%, var(--color-card))",
+              "color-mix(in oklch, var(--color-primary, #00A0A0) 8%, var(--color-card))",
             border:
-              "1px solid color-mix(in oklch, var(--color-primary, #00B4A6) 25%, transparent)",
+              "1px solid color-mix(in oklch, var(--color-primary, #00A0A0) 25%, transparent)",
           }}
         >
           <div className="flex items-center gap-4">
@@ -530,9 +530,9 @@ export function CuentaDashboardClient() {
               className="h-14 w-14 rounded-2xl flex items-center justify-center shrink-0"
               style={{
                 background:
-                  "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                 boxShadow:
-                  "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00B4A6) 40%, transparent)",
+                  "0 8px 20px -4px color-mix(in oklch, var(--color-primary, #00A0A0) 40%, transparent)",
               }}
             >
               <Trophy className="h-7 w-7 text-white" strokeWidth={2.25} />
@@ -553,7 +553,7 @@ export function CuentaDashboardClient() {
             </div>
             <ChevronRight
               className="h-5 w-5 shrink-0"
-              style={{ color: "var(--color-primary, #00B4A6)" }}
+              style={{ color: "var(--color-primary, #00A0A0)" }}
             />
           </div>
         </Link>
@@ -590,7 +590,7 @@ export function CuentaDashboardClient() {
                 className="h-10 w-10 rounded-xl flex items-center justify-center mb-2.5"
                 style={{
                   background:
-                    "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)",
+                    "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)",
                 }}
               >
                 <tile.Icon

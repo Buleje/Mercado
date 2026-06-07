@@ -341,7 +341,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
     if (val === 0) return "transparent";
     const intensity = val / Math.max(maxVal, 1);
     // Interpolate between light green and dark green
-    const colors = ["#d8f3dc", "#b7e4c7", "#95d5b2", "#74c69d", "#2dd4bf", "color-mix(in oklab, var(--accent) 70%, white)", "var(--accent)", "#007A72"];
+    const colors = ["#d8f3dc", "#b7e4c7", "#95d5b2", "#74c69d", "#14C2C2", "color-mix(in oklab, var(--accent) 70%, white)", "var(--accent)", "#007A72"];
     const idx = Math.min(Math.floor(intensity * (colors.length - 1)), colors.length - 1);
     return colors[idx];
   };

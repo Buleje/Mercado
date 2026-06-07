@@ -49,9 +49,9 @@ export function ConversionFunnel({ steps, description }: Props) {
                   style={{
                     width: `${pct}%`,
                     background: `linear-gradient(90deg, ${
-                      ["#00B4A6", "#0ea5e9", "#8b5cf6", "#f59e0b"][i] ?? "#00B4A6"
+                      ["#00A0A0", "#0ea5e9", "#8b5cf6", "#f59e0b"][i] ?? "#00A0A0"
                     } 0%, ${
-                      ["#34d4be", "#38bdf8", "#a78bfa", "#fbbf24"][i] ?? "#34d4be"
+                      ["#14C2C2", "#38bdf8", "#a78bfa", "#fbbf24"][i] ?? "#14C2C2"
                     } 100%)`,
                   }}
                   aria-hidden

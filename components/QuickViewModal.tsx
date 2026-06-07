@@ -323,7 +323,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                           <path d={`${points.split(" ").map((p, i) => i === 0 ? `M${p}` : `L${p}`).join(" ")} L${W},55 L0,55 Z`} fill="url(#phGrad)" />
                           <polyline points={points} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                           {prices.map((p, i) => (
-                            <circle key={i} cx={i * 40} cy={50 - ((p - min) / range) * 42} r="3" fill={i === prices.length - 1 ? "var(--accent)" : "#2dd4bf"} stroke="white" strokeWidth="1.5" />
+                            <circle key={i} cx={i * 40} cy={50 - ((p - min) / range) * 42} r="3" fill={i === prices.length - 1 ? "var(--accent)" : "#14C2C2"} stroke="white" strokeWidth="1.5" />
                           ))}
                         </svg>
                       </div>

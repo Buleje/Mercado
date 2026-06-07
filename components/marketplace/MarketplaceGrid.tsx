@@ -124,7 +124,7 @@ function StoreCardWrapper({ store, priority = false }: { store: Store; priority?
         className="mt-1 block w-full min-h-[44px] rounded-xl text-center text-sm font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
         style={{
           background: "linear-gradient(135deg, var(--accent) 0%, #0d6560 100%)",
-          boxShadow: "0 4px 14px -2px rgba(15,118,110,0.35)",
+          boxShadow: "0 4px 14px -2px rgba(0, 160, 160,0.35)",
           paddingTop: "0.625rem",
           paddingBottom: "0.625rem",
         }}

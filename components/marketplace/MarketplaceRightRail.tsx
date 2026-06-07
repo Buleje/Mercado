@@ -52,7 +52,7 @@ export default function MarketplaceRightRail({ zone = null }: { zone?: string | 
             style={
               hasImage
                 ? undefined
-                : { background: `linear-gradient(135deg, ${banner.bgFrom || "#0f766e"}, ${banner.bgTo || "#0d3b3b"})` }
+                : { background: `linear-gradient(135deg, ${banner.bgFrom || "#00A0A0"}, ${banner.bgTo || "#0d3b3b"})` }
             }
           >
             {hasImage && (

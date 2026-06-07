@@ -30,7 +30,7 @@ export function CuentaLayoutShell({ children }: CuentaLayoutShellProps) {
       className="min-h-screen"
       style={{
         background:
-          "color-mix(in oklch, var(--color-primary, #00B4A6) 4%, var(--surface-canvas))",
+          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-canvas))",
       }}
     >
 

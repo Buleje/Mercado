@@ -17,7 +17,7 @@ import type { RecetaCostBreakdown } from "@/lib/types/recetas";
 
 // ── Recetas Dashboard ─────────────────────────────────────────────────────────
 
-const RECETAS_DASH_COLORS = ["#2563EB", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#2dd4bf"];
+const RECETAS_DASH_COLORS = ["#2563EB", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#14C2C2"];
 
 function RecetasDashboard() {
   const [data, setData] = useState<{ recetas: Array<Record<string, unknown>>; lotes: Array<Record<string, unknown>> } | null>(null);

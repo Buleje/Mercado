@@ -92,12 +92,12 @@ export function LocationConfirmModal({
             style={{ boxShadow: "0 30px 70px -15px rgba(0,0,0,0.45)" }}
           >
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-[var(--rule-soft)] bg-linear-to-b from-[color-mix(in_oklch,var(--color-primary,#00B4A6)_4%,transparent)] to-transparent">
+            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-[var(--rule-soft)] bg-linear-to-b from-[color-mix(in_oklch,var(--color-primary,#00A0A0)_4%,transparent)] to-transparent">
               <div className="flex items-start gap-3 min-w-0">
                 <div
                   className="h-11 w-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md"
                   style={{
-                    background: "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
+                    background: "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
                   }}
                 >
                   <Navigation className="h-5 w-5" strokeWidth={2.25} />
@@ -127,9 +127,9 @@ export function LocationConfirmModal({
                 <div className="flex flex-col items-center justify-center h-80 gap-4 px-6">
                   <div
                     className="h-16 w-16 rounded-full flex items-center justify-center"
-                    style={{ background: "color-mix(in oklch, var(--color-primary, #00B4A6) 12%, transparent)" }}
+                    style={{ background: "color-mix(in oklch, var(--color-primary, #00A0A0) 12%, transparent)" }}
                   >
-                    <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary,#00B4A6)]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary,#00A0A0)]" />
                   </div>
                   <div className="text-center">
                     <p className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">
@@ -153,7 +153,7 @@ export function LocationConfirmModal({
                     />
                     {/* Hint flotante */}
                     <div className="absolute top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-raised)] shadow-lg px-3.5 py-1.5 text-xs font-bold text-[var(--text-primary)] border border-[var(--rule-soft)]">
-                      <MapPin className="h-3.5 w-3.5 text-[var(--color-primary,#00B4A6)]" strokeWidth={2.5} />
+                      <MapPin className="h-3.5 w-3.5 text-[var(--color-primary,#00A0A0)]" strokeWidth={2.5} />
                       Mové el pin para ajustar
                     </div>
                   </div>
@@ -161,7 +161,7 @@ export function LocationConfirmModal({
                   {/* Info de coordenadas */}
                   <div className="px-6 py-4 space-y-3 border-t border-[var(--rule-soft)]">
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary,#00B4A6)] mb-1.5">
+                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary,#00A0A0)] mb-1.5">
                         Dirección detectada
                       </p>
                       <p className="text-sm font-bold text-[var(--text-primary)] leading-snug">
@@ -190,7 +190,7 @@ export function LocationConfirmModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--color-primary,#00B4A6)]/40 hover:bg-[var(--surface-sunken)] transition-all disabled:opacity-50"
+                className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--color-primary,#00A0A0)]/40 hover:bg-[var(--surface-sunken)] transition-all disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -200,8 +200,8 @@ export function LocationConfirmModal({
                 disabled={loading}
                 className="flex-1 h-12 rounded-2xl text-white font-extrabold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                  background: "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
-                  boxShadow: "0 8px 20px color-mix(in oklch, var(--color-primary, #00B4A6) 30%, transparent)",
+                  background: "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)",
+                  boxShadow: "0 8px 20px color-mix(in oklch, var(--color-primary, #00A0A0) 30%, transparent)",
                 }}
               >
                 <Check className="h-4 w-4" strokeWidth={2.5} />

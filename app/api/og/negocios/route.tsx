@@ -8,15 +8,15 @@
  *
  * IMPORTANTE: next/og usa Satori, que NO resuelve CSS variables
  * (var(--accent)). Todos los colores van en hex literal de la marca:
- *   teal primary #00B4A6 · teal bright #00D4C8 · navy #0f172a.
+ *   teal primary #00A0A0 · teal bright #00D4D4 · navy #0f172a.
  */
 
 import { ImageResponse } from "next/og";
 import { type NextRequest, NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-const TEAL = "#00B4A6";
-const TEAL_BRIGHT = "#00D4C8";
+const TEAL = "#00A0A0";
+const TEAL_BRIGHT = "#00D4D4";
 const NAVY = "#0f172a";
 
 export async function GET(req: NextRequest) {
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 8px 28px rgba(0,180,166,0.45)",
+              boxShadow: "0 8px 28px rgba(0, 160, 160,0.45)",
             }}
           >
             <span

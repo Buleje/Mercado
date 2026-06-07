@@ -82,7 +82,7 @@ const TONE_STYLES: Record<
   default: {
     section: "",
     // Brandon 2026-06-05: kicker con color accent (teal) — mejor contraste y
-    // marca, consistente con los headings del rail. El accent #00B4A6 sobre
+    // marca, consistente con los headings del rail. El accent #00A0A0 sobre
     // blanco da contraste alto para texto uppercase pequeño.
     kicker: "text-[var(--accent)]",
     title: "text-gray-900 dark:text-white",

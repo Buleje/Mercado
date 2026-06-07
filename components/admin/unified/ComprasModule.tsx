@@ -86,7 +86,7 @@ const HistorialGastosTab = dynamic(() => import("@/components/admin/compras/Hist
 
 const MODULE_ID = "compras";
 
-const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
+const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#14C2C2', '#264653', '#6b705c'];
 
 const TABS: AdminTab[] = [
   { id: "punto-compra", label: "Punto de Compra", icon: ShoppingBasket },

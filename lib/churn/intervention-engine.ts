@@ -125,7 +125,7 @@ function buildEmailHtml(templateId: string, tenant: TenantInfo): { subject: stri
         subject: `Tu prueba gratuita de Buleje termina pronto — Activa tu plan ahora`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-            <div style="background:#00B4A6;padding:24px;">
+            <div style="background:#00A0A0;padding:24px;">
               <h2 style="color:#fff;margin:0;font-size:20px;">Tu prueba gratuita está por terminar</h2>
             </div>
             <div style="padding:24px;">
@@ -135,7 +135,7 @@ function buildEmailHtml(templateId: string, tenant: TenantInfo): { subject: stri
                 tus pedidos, inventario y clientes sin interrupciones, activa tu plan hoy.
               </p>
               <div style="text-align:center;margin:28px 0;">
-                <a href="${dashboardUrl}/settings?tab=billing" style="background:#00B4A6;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;">
+                <a href="${dashboardUrl}/settings?tab=billing" style="background:#00A0A0;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;">
                   Activar mi plan ahora
                 </a>
               </div>
