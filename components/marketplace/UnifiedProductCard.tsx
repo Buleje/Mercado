@@ -687,7 +687,7 @@ export default function UnifiedProductCard({
                     : `Agregar ${product.name} al carrito`
               }
               className={cn(
-                "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 border-2 shrink-0",
+                "inline-flex h-12 w-12 items-center justify-center rounded-full max-md:rounded-none transition-all duration-200 border-2 shrink-0",
                 isOutOfStock
                   ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed border-[var(--rule-base)]"
                   : justAdded
