@@ -645,7 +645,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 vuelven pegados al logo (arriba). Solo modo tiendas, md+. */}
             {isTiendasOnly && (
               <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
-                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full bg-[var(--surface-sunken)] transition-all hover:bg-[var(--surface-sunken)]/70 focus-within:bg-[var(--surface-canvas)] focus-within:ring-1 focus-within:ring-[var(--text-primary)]/15">
+                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] transition-all hover:border-[var(--text-primary)]/35 focus-within:border-[var(--text-primary)] focus-within:bg-[var(--surface-canvas)]">
                   {/* Segmento ubicación */}
                   <div className="flex items-center gap-1.5 pl-4 pr-3 h-full shrink-0 text-[var(--accent)]">
                     <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden="true" />
@@ -929,7 +929,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 aria-label={t("nav.search")}
                 className="flex-1 min-w-0"
               >
-                <div className="relative flex items-center h-9 rounded-full bg-[var(--surface-sunken)] focus-within:bg-[var(--surface-canvas)] focus-within:ring-1 focus-within:ring-[var(--text-primary)]/15 transition-colors pl-1.5 pr-1 gap-1">
+                <div className="relative flex items-center h-9 rounded-full border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] focus-within:border-[var(--text-primary)] transition-colors pl-1.5 pr-1 gap-1">
                   <Link
                     href={storefront.logo ? "/tiendas" : "/"}
                     aria-label={storefront.logo ? `${storefront.name ?? "Tienda"} — Ver directorio` : "Buleje — Inicio"}

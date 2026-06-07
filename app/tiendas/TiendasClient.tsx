@@ -1114,6 +1114,40 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             )}
           </div>
 
+          {/* Vista lista / mapa — Brandon 2026-06-07: movido al sidebar. */}
+          <div className="flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              aria-pressed={viewMode === "list"}
+              aria-label="Ver como lista"
+              className={cn(
+                "flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-full text-sm font-bold transition-colors",
+                viewMode === "list"
+                  ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+              )}
+            >
+              <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              Lista
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("map")}
+              aria-pressed={viewMode === "map"}
+              aria-label="Ver en el mapa"
+              className={cn(
+                "flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-full text-sm font-bold transition-colors",
+                viewMode === "map"
+                  ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+              )}
+            >
+              <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              Mapa
+            </button>
+          </div>
+
           {/* ── LO QUE SE TE ANTOJA — filtro PRINCIPAL por subcategoría.
                Brandon 2026-06-02: movido al TOPE del sidebar (lo primero que ve
                el cliente para filtrar por antojo) + tamaño grande. En mobile
@@ -1445,83 +1479,11 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
 
         {/* ── MAIN: Grid de tiendas ── */}
         <div className="min-w-0">
-          {/* ── TIRA DE CATEGORÍAS (Brandon 2026-06-02) — acceso horizontal
-               rápido arriba del grid (desktop; en mobile/tablet ya están el
-               scroll del sidebar + la barra sticky). Misma data + mismo
-               subCategoryId que el sidebar → quedan sincronizados. ── */}
-          {subcategories.length > 0 && (
-            <div className="hidden lg:block mb-5">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-                <button
-                  type="button"
-                  onClick={() => setSubCategoryId(null)}
-                  aria-pressed={subCategoryId === null}
-                  className={cn(
-                    "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-extrabold transition-colors whitespace-nowrap",
-                    subCategoryId === null
-                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  <Boxes className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-                  Todas
-                </button>
-                <SubcategoryChips
-                  subcategories={subcategories}
-                  activeId={subCategoryId}
-                  onSelect={setSubCategoryId}
-                  variant="pill"
-                />
-              </div>
-            </div>
-          )}
+          {/* Brandon 2026-06-07: tira de categorías de arriba REMOVIDA — ya
+               vive en la barra lateral de filtros (sin duplicar). */}
 
-          {/* Mini-label minimalista arriba del grid de tiendas — solo cuando
-              hay resultados. Brandon 2026-05-21: reemplaza el bloque h2+p
-              largo anterior. Pattern: eyebrow uppercase con count tabular. */}
-          {!loading && !error && finalStores.length > 0 && (
-            <div className="flex items-baseline justify-between gap-3 mb-3">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Todas nuestras tiendas{" "}
-                <span className="text-[var(--text-secondary)] tabular-nums">
-                  · {finalStores.length}
-                </span>
-              </p>
-              {/* Toggle Lista / Mapa (Brandon 2026-06-02) — re-agregado. */}
-              <div className="inline-flex shrink-0 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  aria-pressed={viewMode === "list"}
-                  aria-label="Ver como lista"
-                  className={cn(
-                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition-colors",
-                    viewMode === "list"
-                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                  Lista
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("map")}
-                  aria-pressed={viewMode === "map"}
-                  aria-label="Ver en el mapa"
-                  className={cn(
-                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition-colors",
-                    viewMode === "map"
-                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                  Mapa
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Brandon 2026-06-07: eyebrow "Todas nuestras tiendas" + toggle
+              REMOVIDOS de acá — el toggle Lista/Mapa vive en el sidebar. */}
 
           {/* Listado o Mapa según viewMode (Brandon 2026-06-02). */}
           {viewMode === "map" ? (

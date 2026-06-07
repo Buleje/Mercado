@@ -304,7 +304,7 @@ export default function ChatNavLauncher({
           "relative inline-flex shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
           variant === "bare"
             ? "h-9 w-9 hover:bg-[var(--surface-sunken)] active:scale-95"
-            : "h-11 w-11 border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-sm hover:border-[var(--accent)]",
+            : "h-11 w-11 hover:bg-[var(--surface-sunken)]",
         )}
       >
         <ChatGlyph className={variant === "bare" ? "h-5.5 w-5.5" : "h-6 w-6"} />

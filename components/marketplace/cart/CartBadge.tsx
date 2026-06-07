@@ -74,7 +74,7 @@ export function CartBadge({
         whileTap={{ scale: 0.94 }}
         aria-label={`Carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
         className={cn(
-          "relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
+          "relative inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
           pulse && "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]",
         )}
       >

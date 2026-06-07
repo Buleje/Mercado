@@ -279,10 +279,10 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors",
+          "relative inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors",
           open
-            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-            : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+            ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
+            : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
         )}
       >
         <Bell className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
