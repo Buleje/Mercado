@@ -1169,7 +1169,10 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           {subcategories.length > 0 && (
             <div
               ref={subcategorySectionRef}
-              className="lg:pb-4 lg:mb-1 lg:border-b lg:border-[var(--rule-soft)]"
+              /* Brandon 2026-06-07: filtro de categoría "Lo que se te antoja"
+                 (Pollos, Pizzas…) oculto en celular (max-md-) — /tiendas mobile
+                 minimalista, sin filtros de categoría. Visible en tablet/desktop. */
+              className="max-md:hidden lg:pb-4 lg:mb-1 lg:border-b lg:border-[var(--rule-soft)]"
             >
               <p className="mb-2.5 flex items-center gap-2 text-base font-extrabold tracking-tight text-[var(--text-primary)]">
                 <Sparkles className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
