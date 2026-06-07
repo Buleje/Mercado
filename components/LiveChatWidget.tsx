@@ -236,9 +236,11 @@ export default function LiveChatWidget() {
   // mobile — compite con el bottom-nav y satura la pantalla del cel. En desktop
   // sí aparece (hay espacio sobrante a la derecha). Fuera del home, normal.
   const isHome = pathname === "/";
-  // Brandon 2026-06-07: en /tiendas el FAB de chat también se oculta en mobile
-  // (md-) — la página en celular va minimalista; en desktop (md+) se mantiene.
+  // Brandon 2026-06-07: en /tiendas y /negocios el FAB de chat se oculta en
+  // mobile (md-) — páginas minimalistas / B2B; en desktop (md+) se mantiene.
   const onTiendas = pathname === "/tiendas" || pathname.startsWith("/tiendas/");
+  const onNegocios = pathname === "/negocios" || pathname.startsWith("/negocios/");
+  const hideFabMobile = onTiendas || onNegocios;
 
   return (
     <>
@@ -252,7 +254,7 @@ export default function LiveChatWidget() {
           onClick={() => setOpen(true)}
           className={cn(
             "fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 h-14 sm:h-[60px] rounded-full px-5 gap-2.5 items-center justify-center transition-all duration-[var(--dur-base)] hover:gap-3 hover:shadow-[var(--shadow-xl)] active:scale-95",
-            isHome ? "hidden sm:flex" : onTiendas ? "hidden md:flex" : "flex",
+            isHome ? "hidden sm:flex" : hideFabMobile ? "hidden md:flex" : "flex",
           )}
           style={{
             background:

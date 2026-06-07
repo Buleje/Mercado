@@ -83,6 +83,11 @@ export default function ChatConversationView({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Brandon 2026-06-07: si el hilo ya no existe o no es tuyo (GET 404 por
+  // ownership / thread borrado, o 403 por sesión que no coincide), marcamos
+  // "no disponible" → cortamos el polling (evita el spam de 404 en consola) y
+  // deshabilitamos el envío (evita el POST 403).
+  const [unavailable, setUnavailable] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
 
@@ -93,6 +98,8 @@ export default function ChatConversationView({
         `/api/chat/public?threadId=${encodeURIComponent(threadId)}&storeSlug=${encodeURIComponent(storeSlug)}&customerPhone=${encodeURIComponent(customerPhone)}`,
         { credentials: "include" },
       );
+      // Hilo inaccesible (borrado / ownership / sesión) → cortar polling.
+      if (res.status === 404 || res.status === 403) { setUnavailable(true); return; }
       if (!res.ok) return;
       const j = (await res.json()) as { data: ThreadMsg[] };
       setMessages(j.data ?? []);
@@ -103,7 +110,7 @@ export default function ChatConversationView({
 
   // Carga inicial + polling "en vivo".
   useEffect(() => {
-    if (!threadId) { setLoading(false); return; }
+    if (!threadId || unavailable) { setLoading(false); return; }
     let cancelled = false;
     (async () => {
       await fetchMessages();
@@ -114,7 +121,7 @@ export default function ChatConversationView({
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [threadId, fetchMessages]);
+  }, [threadId, fetchMessages, unavailable]);
 
   // Autoscroll al fondo cuando llegan mensajes nuevos.
   useEffect(() => {
@@ -127,7 +134,7 @@ export default function ChatConversationView({
 
   const send = async (raw?: string) => {
     const trimmed = (raw ?? text).trim();
-    if (!trimmed || sending || !storeSlug) return;
+    if (!trimmed || sending || !storeSlug || unavailable) return;
     setSending(true);
     setError(null);
     try {
@@ -349,38 +356,46 @@ export default function ChatConversationView({
 
       {/* Composer */}
       <div className="shrink-0 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2.5">
-        {error && (
-          <p role="alert" className="mb-1.5 px-1 text-sm font-bold text-[var(--data-error-500)]">
-            {error}
+        {unavailable ? (
+          <p role="status" className="px-2 py-2 text-center text-sm font-semibold text-[var(--text-tertiary)]">
+            Esta conversación ya no está disponible.
           </p>
-        )}
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (error) setError(null); }}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-            placeholder={`Escribile a ${storeName}…`}
-            aria-label={`Mensaje para ${storeName}`}
-            className="block h-12 min-w-0 flex-1 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-          />
-          <button
-            type="button"
-            onClick={() => void send()}
-            disabled={!text.trim() || sending}
-            aria-label="Enviar mensaje"
-            className={cn(
-              "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all active:scale-95",
-              text.trim() && !sending
-                ? "bg-[var(--accent)] text-white shadow-md hover:brightness-110"
-                : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
+        ) : (
+          <>
+            {error && (
+              <p role="alert" className="mb-1.5 px-1 text-sm font-bold text-[var(--data-error-500)]">
+                {error}
+              </p>
             )}
-          >
-            {sending
-              ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-              : <Send className="h-5 w-5" strokeWidth={2.5} aria-hidden />}
-          </button>
-        </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (error) setError(null); }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
+                placeholder={`Escribile a ${storeName}…`}
+                aria-label={`Mensaje para ${storeName}`}
+                className="block h-12 min-w-0 flex-1 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              />
+              <button
+                type="button"
+                onClick={() => void send()}
+                disabled={!text.trim() || sending}
+                aria-label="Enviar mensaje"
+                className={cn(
+                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all active:scale-95",
+                  text.trim() && !sending
+                    ? "bg-[var(--accent)] text-white shadow-md hover:brightness-110"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
+                )}
+              >
+                {sending
+                  ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                  : <Send className="h-5 w-5" strokeWidth={2.5} aria-hidden />}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

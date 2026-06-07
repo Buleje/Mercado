@@ -38,7 +38,7 @@ const fmtPEN = (n: number) =>
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type TabId = "inicio" | "mercado" | "chat" | "carrito" | "cuenta";
+type TabId = "inicio" | "mercado" | "chat" | "cuenta";
 
 interface Tab {
   id: TabId;
@@ -49,11 +49,12 @@ interface Tab {
 // Brandon 2026-06-07: "Tiendas" → "Mercado" (→ /marketplace) y "Buscar" → "Chat"
 // (abre el Messenger del marketplace vía evento `buleje:open-chat`). El chat del
 // top-nav se removió en mobile porque ahora vive acá abajo.
+// Brandon 2026-06-07: tab "Carrito" quitado — el carrito vive en el ícono del
+// top-nav + la franja de pago de arriba. Quedan 4 tabs.
 const TABS: Tab[] = [
   { id: "inicio", label: "Inicio", Icon: Home },
   { id: "mercado", label: "Mercado", Icon: StoreIcon },
   { id: "chat", label: "Chat", Icon: MessageCircle },
-  { id: "carrito", label: "Carrito", Icon: ShoppingCart },
   { id: "cuenta", label: "Cuenta", Icon: User },
 ];
 
@@ -82,7 +83,6 @@ export default function BottomNav() {
     pathname === "/checkout";
 
   const activeTab = useCallback((): TabId => {
-    if (pathname?.startsWith("/marketplace/carrito")) return "carrito";
     if (pathname?.startsWith("/marketplace/mi-cuenta")) return "cuenta";
     if (pathname === "/") return "inicio";
     if (
@@ -117,9 +117,6 @@ export default function BottomNav() {
           if (typeof window !== "undefined") {
             window.dispatchEvent(new CustomEvent("buleje:open-chat-list"));
           }
-          break;
-        case "carrito":
-          router.push("/marketplace/carrito");
           break;
         case "cuenta":
           router.push("/marketplace/mi-cuenta");
@@ -193,7 +190,6 @@ export default function BottomNav() {
       <div className="flex items-stretch">
         {TABS.map(({ id, label, Icon }) => {
           const isActive = currentActive === id;
-          const isCart = id === "carrito";
           return (
             <button
               key={id}
@@ -218,20 +214,6 @@ export default function BottomNav() {
                   strokeWidth={isActive ? 2.5 : 1.8}
                   aria-hidden
                 />
-                {isCart && itemCount > 0 && (
-                  <span
-                    aria-label={`${itemCount} productos en el carrito`}
-                    className={cn(
-                      "absolute -top-1.5 -right-1.5",
-                      "flex h-4 min-w-4 items-center justify-center",
-                      "rounded-full bg-[var(--text-primary)] px-1",
-                      "text-[length:var(--ts-2xs)] font-black text-[var(--surface-raised)] leading-none",
-                      "ring-1 ring-[var(--surface-canvas)]",
-                    )}
-                  >
-                    {itemCount > 99 ? "99+" : itemCount}
-                  </span>
-                )}
               </span>
               <span
                 className={cn(
