@@ -47,6 +47,9 @@ export default function FloatingDockController() {
   // Skip en rutas de inscripción/onboarding (no son shopping).
   if (HIDE_ON.some((p) => pathname.startsWith(p))) return null;
 
+  // En /tiendas el dock se oculta en mobile (clase max-md:hidden, abajo).
+  const onTiendas = pathname === "/tiendas" || pathname.startsWith("/tiendas/");
+
   // Sin historial → no rendear nada (libera la zona derecha del viewport
   // para el chat flotante y el sticky cart bar).
   if (items.length === 0) return null;
@@ -64,6 +67,9 @@ export default function FloatingDockController() {
             // Mobile: bottom-32 — por ENCIMA de la bottom-nav fija (~80px) y
             // del sticky cart bar. En sm+ no hay bottom-nav → bottom-20.
             "group fixed bottom-32 sm:bottom-20 right-4 z-40 flex items-center gap-2.5",
+            // Brandon 2026-06-07: en /tiendas el dock de "tu historial" se
+            // oculta en mobile (md-) — /tiendas en celular va minimalista.
+            onTiendas && "max-md:hidden",
             "rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur",
             "py-1.5 pl-2 pr-3 shadow-lg shadow-black/10",
             "transition-all hover:border-[var(--accent)] hover:shadow-xl hover: hover:-translate-y-0.5 active:scale-95",

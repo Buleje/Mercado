@@ -79,7 +79,6 @@ import StoresSortSelector, {
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
 import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
 import TiendasLocationBar from "@/components/marketplace/TiendasLocationBar";
-import TiendasWelcomeBanner from "@/components/marketplace/TiendasWelcomeBanner";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 // `dynamic` ya está importado al top — usado por ExplorarTracker, MarketplaceFilters,
 // SearchAutocomplete y los strips desktop-only (Tiendas*Strip).
@@ -826,7 +825,12 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
       {/* ── TS-47 breadcrumb visible + JSON-LD ──────────────────────────────
            Oculto en modo `tiendas-only` — el link "Inicio" llevaría
            fuera del contexto de tienda y confundiría al usuario. */}
-      {!isTiendasOnly && <TiendasBreadcrumb zonaLabel={zonaLabel} />}
+      {/* Breadcrumb oculto en mobile (Brandon 2026-06-07: /tiendas mobile minimalista). */}
+      {!isTiendasOnly && (
+        <div className="hidden md:block">
+          <TiendasBreadcrumb zonaLabel={zonaLabel} />
+        </div>
+      )}
 
       {/* Brandon 2026-05-20 v6: HERO REMOVIDO de /tiendas.
           El cliente que llega aquí ya decidió comprar — no necesita más
@@ -996,12 +1000,16 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             2. Categorías principales (grid grande)
             3. Pedidos favoritos
             4. Tiendas destacadas cerca */}
-      {/* "Repetir último pedido" — barra sticky slim. Brandon 2026-06-02:
-          ahora TAMBIÉN en mobile (antes hidden sm:block) — la mayoría pide
-          desde el cel y repetir es la acción de retención #1. Solo aparece
-          si el cliente está logueado, sin búsqueda activa, y tiene un pedido
-          reciente en localStorage (grabado post-checkout). */}
-      {isLoggedIn && search.trim().length === 0 && <RepetirUltimoPedido />}
+      {/* "Repetir último pedido" — barra sticky slim. Brandon 2026-06-07:
+          OCULTA en mobile (hidden md:block) — /tiendas en celular debe ser
+          minimalista; el submenú de "último pedido" sumaba ruido sobre el
+          listado. En desktop (md+) se mantiene. Solo aparece si el cliente
+          está logueado, sin búsqueda activa, y con un pedido reciente. */}
+      {isLoggedIn && search.trim().length === 0 && (
+        <div className="hidden md:block">
+          <RepetirUltimoPedido />
+        </div>
+      )}
 
       {/* TiendasMainCategoriesGrid removido (Brandon mayo 14 2026 v2):
           las categorías principales del superadmin ahora viven en la home
@@ -1039,9 +1047,10 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
         {/* ── MOBILE TOP STACK (Rappi-style) — sin padding extra
              1. LocationBar (1 línea, tap → modal customer profile)
              2. WelcomeBanner (compacto, solo si NO logueado) */}
+        {/* Brandon 2026-06-07: TiendasWelcomeBanner ("bienvenido") removido en
+            mobile para un /tiendas más minimalista. Queda solo la barra de ubicación. */}
         <div className="sm:hidden flex flex-col gap-1.5 mb-2">
           <TiendasLocationBar />
-          <TiendasWelcomeBanner />
         </div>
 
         {/* h2 — el H1 único de la página es el sr-only en app/tiendas/page.tsx
@@ -1118,8 +1127,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             )}
           </div>
 
-          {/* Vista lista / mapa — Brandon 2026-06-07: movido al sidebar. */}
-          <div className="flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] p-1">
+          {/* Vista lista / mapa — oculto en mobile (Brandon 2026-06-07: sin modo
+              mapa en celular, siempre lista). Visible en md+. */}
+          <div className="hidden md:flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] p-1">
             <button
               type="button"
               onClick={() => setViewMode("list")}

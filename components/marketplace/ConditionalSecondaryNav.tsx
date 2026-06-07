@@ -8,6 +8,7 @@
  */
 
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import MarketplaceCategoriesBar from "@/components/marketplace/MarketplaceCategoriesBar";
 
@@ -25,11 +26,15 @@ export default function ConditionalSecondaryNav() {
   // categorías de producto vuelven solo en full/minimo/custom. Esperamos a que
   // `mode` resuelva (≠ null) para evitar el flash "aparece 1 frame" al hidratar.
   const showSubNav = mode !== null && mode !== "tiendas-only";
+  // Brandon 2026-06-07: en /tiendas NO mostramos la barra de chips de categoría
+  // de producto (Bebidas, Guarniciones…) — /tiendas mobile más minimalista.
+  const pathname = usePathname() ?? "";
+  const onTiendas = pathname.startsWith("/tiendas");
   return (
     <>
       {/* Barra de categorías de PRODUCTO mobile (chips: Bebidas, Snacks…).
-          md:hidden — en desktop manda el mega-menú. Oculta en tiendas-only. */}
-      {showSubNav && <MarketplaceCategoriesBar />}
+          md:hidden — en desktop manda el mega-menú. Oculta en tiendas-only y /tiendas. */}
+      {showSubNav && !onTiendas && <MarketplaceCategoriesBar />}
 
       {/* Desktop: mega-menú + filtros rápidos. Solo full/minimo/custom. */}
       {showSubNav && <MarketplaceSecondaryNav />}
