@@ -164,26 +164,26 @@ export default function BottomNav() {
             router.push("/marketplace/carrito");
           }}
           aria-label={`Ver carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}, ${fmtPEN(subtotal)}. Ir a pagar`}
-          className="flex w-full items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--accent)] px-4 py-2.5 text-left text-[var(--surface-raised)] active:opacity-95 transition-opacity"
+          className="flex w-full items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--accent-soft)] px-4 py-2.5 text-left text-[var(--text-primary)] active:opacity-95 transition-opacity"
         >
-          <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-raised)]/15 ring-1 ring-[var(--surface-raised)]/25">
+          <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10 text-[var(--accent)] ring-1 ring-[var(--accent)]/20">
             <ShoppingCart className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden />
             <span
               aria-hidden
-              className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--surface-raised)] px-1 text-[length:var(--ts-2xs)] font-black leading-none text-[var(--text-primary)] tabular-nums ring-1 ring-[var(--text-primary)]"
+              className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black leading-none text-white tabular-nums ring-1 ring-[var(--surface-raised)]"
             >
               {itemCount > 99 ? "99+" : itemCount}
             </span>
           </span>
           <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--surface-raised)]/75">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
               {itemCount} {itemCount === 1 ? "producto" : "productos"}
             </span>
             <span className="text-base font-black tabular-nums truncate">
               {fmtPEN(subtotal)}
             </span>
           </span>
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-raised)] px-4 h-9 text-sm font-black text-[var(--text-primary)]">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent)] px-4 h-9 text-sm font-black text-white">
             Pagar
             <ArrowRight className="h-4 w-4" strokeWidth={2.75} aria-hidden />
           </span>
