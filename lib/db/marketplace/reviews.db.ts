@@ -107,6 +107,55 @@ export const MarketplaceReviewsDB = {
   },
 
   /**
+   * Lista las órdenes del cliente (por phone) en este tenant que son
+   * elegibles para reseñar: status entregado/confirmado y SIN review previa.
+   * Usado por el modal "Dar opinión" del storefront para auto-vincular la
+   * compra sin que el cliente tenga que escribir nada.
+   */
+  async getReviewableOrders(
+    tenantId: string,
+    customerPhone: string,
+  ): Promise<Array<{ id: string; createdAt: Date; total: number; itemsCount: number }>> {
+    const orders = await prisma.order.findMany({
+      where: {
+        tenantId,
+        customerPhone,
+        status: { in: ["entregado", "confirmado"] },
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        total: true,
+        _count: { select: { items: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+    if (orders.length === 0) return [];
+
+    // Excluir las que ya tienen review de este cliente.
+    const reviewed = await prisma.review.findMany({
+      where: {
+        tenantId,
+        phone: customerPhone,
+        deletedAt: null,
+        orderId: { in: orders.map((o) => o.id) },
+      },
+      select: { orderId: true },
+    });
+    const reviewedIds = new Set(reviewed.map((r) => r.orderId));
+
+    return orders
+      .filter((o) => !reviewedIds.has(o.id))
+      .map((o) => ({
+        id: o.id,
+        createdAt: o.createdAt,
+        total: Number(o.total),
+        itemsCount: o._count.items,
+      }));
+  },
+
+  /**
    * Chequea si ya existe review del customer para este orderId (dedup).
    */
   async hasReviewForOrder(
