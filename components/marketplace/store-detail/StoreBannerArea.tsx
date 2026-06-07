@@ -60,7 +60,7 @@ export default function StoreBannerArea({
         initial={{ opacity: 0, scale: 1.04 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative h-32 sm:h-36 lg:h-40 w-full"
+        className="relative h-[6.5rem] sm:h-[7.25rem] lg:h-[8rem] w-full"
       >
         {hasBanner ? (
           <Image

@@ -52,10 +52,10 @@ export default function ClosedNowBanner({ hours, nextOpeningAt, storeName }: Clo
         aria-live="polite"
         className="relative bg-[var(--text-primary)] text-[var(--surface-canvas)]"
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center gap-3 sm:gap-5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-3 sm:gap-5">
           {/* Status pill izquierda */}
           <span
-            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-white/10 backdrop-blur text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] shrink-0"
+            className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 bg-white/10 backdrop-blur text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] shrink-0"
           >
             <span aria-hidden className="relative inline-flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-warning-500)] opacity-60 animate-ping" />
@@ -69,7 +69,7 @@ export default function ClosedNowBanner({ hours, nextOpeningAt, storeName }: Clo
             {countdown && !countdown.expired ? (
               <>
                 <p
-                  className="font-mono tabular-nums text-base sm:text-lg font-extrabold leading-none whitespace-nowrap"
+                  className="font-mono tabular-nums text-sm sm:text-base font-extrabold leading-none whitespace-nowrap"
                   aria-label={`Faltan ${countdown.h} horas ${countdown.m} minutos para abrir`}
                 >
                   {pad(countdown.h)}
@@ -95,7 +95,7 @@ export default function ClosedNowBanner({ hours, nextOpeningAt, storeName }: Clo
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 h-10 sm:h-11 px-4 sm:px-5 rounded-full bg-white text-[var(--text-primary)] text-sm font-extrabold hover:bg-white/90 active:scale-[0.97] transition-all shrink-0 shadow-sm"
+            className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-3.5 rounded-full bg-white text-[var(--text-primary)] text-xs sm:text-sm font-extrabold hover:bg-white/90 active:scale-[0.97] transition-all shrink-0 shadow-sm"
             aria-haspopup="dialog"
             aria-expanded={modalOpen}
           >
