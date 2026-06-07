@@ -253,8 +253,8 @@ export default function LandingHeader({
               className={cn(
                 "group inline-flex items-center gap-2 h-10 px-5 rounded-full",
                 "bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold",
-                "shadow-md shadow-[var(--accent)]/25",
-                "hover:gap-3 hover:shadow-lg hover:shadow-[var(--accent)]/35 hover:bg-[var(--accent)]/95",
+                "shadow-md",
+                "hover:gap-3 hover:shadow-lg hover: hover:bg-[var(--accent)]/95",
                 "active:scale-[0.98] transition-all duration-200",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               )}
@@ -575,7 +575,7 @@ function MobileSheet({
             className={cn(
               "group inline-flex w-full items-center justify-center gap-2 h-12 rounded-xl",
               "bg-[var(--accent-600,var(--accent))] text-white text-[15px] font-extrabold",
-              "shadow-md shadow-[var(--accent)]/30",
+              "shadow-md",
               "active:scale-[0.98] transition-all",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
             )}

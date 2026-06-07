@@ -385,7 +385,7 @@ export default function ComoPagarClient() {
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/tiendas"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-extrabold text-white hover:bg-[var(--accent)]/90 transition-colors shadow-lg shadow-[var(--accent)]/30"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-extrabold text-white hover:bg-[var(--accent)]/90 transition-colors shadow-lg"
             >
               Ver bodegas activas
               <ArrowRight className="h-4 w-4" strokeWidth={2.5} />

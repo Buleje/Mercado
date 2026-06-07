@@ -133,7 +133,7 @@ export function JoinUsSection() {
                   "sm:flex-col sm:items-stretch sm:gap-0 sm:rounded-3xl sm:p-8",
                   "hover:-translate-y-0.5 sm:hover:-translate-y-1",
                   isFeatured
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]/40 hover:bg-[var(--accent-soft)]/60 sm:hover:shadow-2xl sm:hover:shadow-[var(--accent)]/20"
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)]/40 hover:bg-[var(--accent-soft)]/60 sm:hover:shadow-2xl sm:hover:"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] sm:hover:shadow-xl",
                 )}
               >
@@ -148,7 +148,7 @@ export function JoinUsSection() {
                     "inline-flex shrink-0 items-center justify-center transition-colors",
                     "h-11 w-11 rounded-xl sm:h-14 sm:w-14 sm:rounded-2xl sm:mb-5",
                     isFeatured
-                      ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/30"
+                      ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md"
                       : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white",
                   )}
                 >

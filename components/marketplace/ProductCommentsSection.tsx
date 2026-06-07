@@ -189,7 +189,7 @@ export default function ProductCommentsSection({
               className={cn(
                 "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all active:scale-95",
                 text.trim() && !posting
-                  ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30 hover:brightness-110"
+                  ? "bg-[var(--accent)] text-white shadow-md hover:brightness-110"
                   : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
               )}
             >

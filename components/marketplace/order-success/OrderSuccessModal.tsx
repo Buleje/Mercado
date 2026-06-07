@@ -291,7 +291,7 @@ export default function OrderSuccessModal() {
             <Link
               href="/tiendas"
               onClick={closeModal}
-              className="flex-1 h-12 rounded-2xl bg-[var(--accent)] text-[length:var(--ts-sm)] font-extrabold text-white hover:bg-[var(--accent)]/90 active:scale-[0.98] inline-flex items-center justify-center gap-2 shadow-lg shadow-[var(--accent)]/20 transition-all"
+              className="flex-1 h-12 rounded-2xl bg-[var(--accent)] text-[length:var(--ts-sm)] font-extrabold text-white hover:bg-[var(--accent)]/90 active:scale-[0.98] inline-flex items-center justify-center gap-2 shadow-lg transition-all"
             >
               <ShoppingBag className="h-4 w-4" />
               Seguir comprando

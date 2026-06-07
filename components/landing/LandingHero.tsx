@@ -105,7 +105,7 @@ export default function LandingHero() {
             >
               <Link
                 href="/abrir-tienda"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg hover:gap-3 hover:shadow-xl transition-all"
               >
                 {t("landing.hero.ctaPrimary")}
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
@@ -378,7 +378,7 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
         }}
         whileHover={reducedMotion ? undefined : { y: -4, scale: 1.01 }}
         transition={{ type: "spring", stiffness: 220, damping: 20 }}
-        className="relative h-full w-[260px] sm:w-[290px] lg:w-[320px] rounded-[2.75rem] bg-[var(--text-primary)] p-2 shadow-[var(--shadow-xl)] shadow-[var(--accent)]/20"
+        className="relative h-full w-[260px] sm:w-[290px] lg:w-[320px] rounded-[2.75rem] bg-[var(--text-primary)] p-2 shadow-[var(--shadow-xl)]"
         data-no-translate
       >
         <div className="relative h-full w-full rounded-[2.25rem] bg-[var(--surface-canvas)] overflow-hidden">

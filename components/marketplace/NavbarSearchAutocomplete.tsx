@@ -363,7 +363,7 @@ export default function NavbarSearchAutocomplete({
                   "pl-11 pr-14 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)]",
                   "placeholder:text-[var(--text-tertiary)] outline-none transition-all",
                   "hover:border-[var(--accent)]/40 hover:shadow-sm",
-                  "focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:shadow-md focus:shadow-[var(--accent)]/15 focus:ring-4 focus:ring-[var(--accent)]/10",
+                  "focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:shadow-md focus: focus:ring-4 focus:ring-[var(--accent)]/10",
                 ),
             "buleje-search-input",
           )}
@@ -387,7 +387,7 @@ export default function NavbarSearchAutocomplete({
           className={cn(
             "absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full",
             "text-white shadow-sm transition-all",
-            "hover:scale-105 hover:shadow-md hover:shadow-[var(--accent)]/30",
+            "hover:scale-105 hover:shadow-md hover:",
             "active:scale-[0.97]",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           )}

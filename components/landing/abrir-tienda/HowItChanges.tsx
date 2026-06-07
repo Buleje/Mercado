@@ -120,7 +120,7 @@ export default function HowItChanges() {
                     <p className="flex-1 text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] truncate">
                       {c.moment}
                     </p>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider whitespace-nowrap shadow-sm shadow-[var(--accent)]/20">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider whitespace-nowrap shadow-sm">
                       <span className="line-through opacity-60 tabular-nums">{c.beforeTime}</span>
                       <ArrowRight className="h-3 w-3" strokeWidth={3} />
                       <span className="tabular-nums">{c.afterTime}</span>
@@ -143,7 +143,7 @@ export default function HowItChanges() {
 
                     {/* Después */}
                     <div className="px-5 sm:px-6 py-5 flex items-start gap-3 bg-[var(--accent-soft)]">
-                      <span aria-hidden className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/25">
+                      <span aria-hidden className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-md">
                         <Check className="h-4 w-4" strokeWidth={2.75} />
                       </span>
                       <div className="min-w-0">

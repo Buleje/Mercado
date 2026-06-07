@@ -52,7 +52,7 @@ export default function ParaQuienSection() {
         <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
           <Link
             href="/abrir-tienda"
-            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-3.5 text-sm font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-3.5 text-sm font-extrabold shadow-lg hover:gap-3 hover:shadow-xl transition-all"
           >
             Probar gratis 1 mes
             <ArrowUpRight

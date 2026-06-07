@@ -572,7 +572,7 @@ function VoiceOverlay({ open, transcript, error, onClose }: VoiceOverlayProps) {
                 style={{ animationDuration: "0.9s", animationDelay: "0.4s" }}
               />
               {/* Core */}
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] shadow-xl shadow-[var(--accent)]/40">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] shadow-xl">
                 <Mic className="h-9 w-9 text-white" strokeWidth={2.25} aria-hidden />
               </div>
             </div>

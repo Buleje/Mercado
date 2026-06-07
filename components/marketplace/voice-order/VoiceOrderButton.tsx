@@ -234,7 +234,7 @@ export default function VoiceOrderButton({
           className={cn(
             "relative inline-flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full transition-all active:scale-[0.95]",
             status === "recording"
-              ? "bg-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/30 animate-pulse"
+              ? "bg-[var(--accent-600,var(--accent))] text-white shadow-lg animate-pulse"
               : status === "added"
               ? "bg-[var(--data-success,_#00b66a)] text-white"
               : "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:bg-[var(--accent)]",

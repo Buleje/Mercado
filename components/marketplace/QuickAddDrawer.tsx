@@ -303,7 +303,7 @@ function QuickAddContent({ product, onClose }: ContentProps) {
             type="button"
             onClick={handleAdd}
             disabled={outOfStock || adding}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/25 transition-all hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-lg transition-all hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
           >
             <ShoppingCart className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
             {outOfStock

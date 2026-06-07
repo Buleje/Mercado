@@ -153,7 +153,7 @@ function PlanCard({
         transition={{ type: "spring", stiffness: 280, damping: 22 }}
         className={`relative h-full rounded-3xl p-6 flex flex-col ${
           recommended
-            ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-2xl shadow-[var(--accent)]/30 ring-2 ring-[var(--accent)]"
+            ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-2xl ring-2 ring-[var(--accent)]"
             : "bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]"
         }`}
       >
@@ -162,7 +162,7 @@ function PlanCard({
           // sobre el aura. x:-50% centra (reemplaza -translate-x-1/2, que framer
           // pisaría al setear transform para animar y).
           <m.span
-            className="absolute -top-3.5 left-1/2 z-10 inline-flex items-center gap-1 bg-[var(--accent-600,var(--accent))] text-white text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-lg shadow-[var(--accent)]/40 whitespace-nowrap"
+            className="absolute -top-3.5 left-1/2 z-10 inline-flex items-center gap-1 bg-[var(--accent-600,var(--accent))] text-white text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap"
             style={{ x: "-50%" }}
             animate={reduce ? undefined : { y: [0, -3.5, 0] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}

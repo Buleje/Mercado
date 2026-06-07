@@ -91,7 +91,7 @@ export default function SubcategoryChips({
                 className={cn(
                   "h-10 w-10 sm:h-12 sm:w-12 rounded-2xl overflow-hidden flex items-center justify-center transition-all",
                   active
-                    ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30 scale-105"
+                    ? "bg-[var(--accent)] text-white shadow-md scale-105"
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
                 )}
               >

@@ -66,7 +66,7 @@ export default function FloatingDockController() {
             "group fixed bottom-32 sm:bottom-20 right-4 z-40 flex items-center gap-2.5",
             "rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur",
             "py-1.5 pl-2 pr-3 shadow-lg shadow-black/10",
-            "transition-all hover:border-[var(--accent)] hover:shadow-xl hover:shadow-[var(--accent)]/15 hover:-translate-y-0.5 active:scale-95",
+            "transition-all hover:border-[var(--accent)] hover:shadow-xl hover: hover:-translate-y-0.5 active:scale-95",
             "motion-safe:animate-[slideUp_0.3s_ease-out]",
           )}
         >

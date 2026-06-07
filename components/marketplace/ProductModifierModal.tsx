@@ -380,7 +380,7 @@ export default function ProductModifierModal({
                   className={cn(
                     "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-14 px-4 text-base font-black transition-all",
                     isValid
-                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success-500)] text-white shadow-lg shadow-[var(--accent)]/35 hover:shadow-xl hover:shadow-[var(--accent)]/40"
+                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success-500)] text-white shadow-lg hover:shadow-xl hover:"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
                 >
@@ -671,7 +671,7 @@ export default function ProductModifierModal({
                   className={cn(
                     "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-13 px-4 text-sm font-extrabold uppercase tracking-wide transition-all",
                     isValid
-                      ? "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30 ring-1 ring-[var(--accent)]/40 hover:shadow-lg"
+                      ? "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-md ring-1 ring-[var(--accent)]/40 hover:shadow-lg"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
                   style={{ height: "3.25rem" }}
@@ -790,7 +790,7 @@ function OptionRow({
           "shrink-0 inline-flex h-7 w-7 items-center justify-center transition-colors",
           isMulti ? "rounded-lg" : "rounded-full",
           isSelected
-            ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/40"
+            ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md"
             : "border-2 border-[var(--rule-strong)] bg-[var(--surface-canvas)]",
         )}
       >

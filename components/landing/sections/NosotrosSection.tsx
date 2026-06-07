@@ -161,7 +161,7 @@ export default function NosotrosSection() {
         <div className="text-center">
           <Link
             href="/abrir-tienda"
-            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-8 py-4 text-base font-extrabold shadow-md shadow-[var(--accent)]/25 hover:gap-3 hover:shadow-lg transition-all"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-8 py-4 text-base font-extrabold shadow-md hover:gap-3 hover:shadow-lg transition-all"
           >
             Probar gratis 1 mes
             <ArrowUpRight

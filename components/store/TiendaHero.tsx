@@ -177,7 +177,7 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
                   />
                 </div>
                 {/* Micro-badge identidad */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 whitespace-nowrap">
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider shadow-lg whitespace-nowrap">
                   {originBadge}
                 </div>
               </div>

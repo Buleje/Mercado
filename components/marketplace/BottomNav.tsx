@@ -174,26 +174,26 @@ export default function BottomNav() {
             router.push("/marketplace/carrito");
           }}
           aria-label={`Ver carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}, ${fmtPEN(subtotal)}. Ir a pagar`}
-          className="flex w-full items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--accent)] px-4 py-2.5 text-left text-white active:opacity-95 transition-opacity"
+          className="flex w-full items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--text-primary)] px-4 py-2.5 text-left text-[var(--surface-raised)] active:opacity-95 transition-opacity"
         >
-          <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25">
+          <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-raised)]/15 ring-1 ring-[var(--surface-raised)]/25">
             <ShoppingCart className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden />
             <span
               aria-hidden
-              className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[length:var(--ts-2xs)] font-black leading-none text-[var(--accent)] tabular-nums ring-1 ring-[var(--accent)]"
+              className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--surface-raised)] px-1 text-[length:var(--ts-2xs)] font-black leading-none text-[var(--text-primary)] tabular-nums ring-1 ring-[var(--text-primary)]"
             >
               {itemCount > 99 ? "99+" : itemCount}
             </span>
           </span>
           <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/75">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--surface-raised)]/75">
               {itemCount} {itemCount === 1 ? "producto" : "productos"}
             </span>
             <span className="text-base font-black tabular-nums truncate">
               {fmtPEN(subtotal)}
             </span>
           </span>
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-4 h-9 text-sm font-black text-[var(--accent)]">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-raised)] px-4 h-9 text-sm font-black text-[var(--text-primary)]">
             Pagar
             <ArrowRight className="h-4 w-4" strokeWidth={2.75} aria-hidden />
           </span>
@@ -215,7 +215,7 @@ export default function BottomNav() {
                 "relative select-none transition-colors duration-150",
                 "active:scale-95",
                 isActive
-                  ? "text-[var(--accent)]"
+                  ? "text-[var(--text-primary)]"
                   : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
               )}
             >
@@ -234,8 +234,8 @@ export default function BottomNav() {
                     className={cn(
                       "absolute -top-1.5 -right-1.5",
                       "flex h-4 min-w-4 items-center justify-center",
-                      "rounded-full bg-[var(--accent)] px-1",
-                      "text-[length:var(--ts-2xs)] font-black text-white leading-none",
+                      "rounded-full bg-[var(--text-primary)] px-1",
+                      "text-[length:var(--ts-2xs)] font-black text-[var(--surface-raised)] leading-none",
                       "ring-1 ring-[var(--surface-canvas)]",
                     )}
                   >
@@ -253,7 +253,7 @@ export default function BottomNav() {
               </span>
               {isActive && (
                 <span
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full bg-[var(--accent)]"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full bg-[var(--text-primary)]"
                   aria-hidden
                 />
               )}

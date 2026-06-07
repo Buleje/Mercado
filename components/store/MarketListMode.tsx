@@ -286,7 +286,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
           <div className="border-t border-[var(--rule-base)] p-5">
             <button
               onClick={handleAddAll}
-              className="w-full py-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[var(--accent)]/25 active:scale-[0.98]"
+              className="w-full py-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl active:scale-[0.98]"
             >
               <ShoppingCart className="h-5 w-5" />
               Agregar {foundItems.length} producto{foundItems.length !== 1 ? "s" : ""} al carrito · S/ {totalPrice.toFixed(2)}

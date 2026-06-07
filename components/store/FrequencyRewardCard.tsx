@@ -115,7 +115,7 @@ export default function FrequencyRewardCard({
       className={cn(
         "relative rounded-xl border bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4 space-y-3 overflow-hidden transition-all",
         completed
-          ? "border-[var(--accent)] shadow-md shadow-[var(--accent)]/20"
+          ? "border-[var(--accent)] shadow-md"
           : "border-border"
       )}
     >

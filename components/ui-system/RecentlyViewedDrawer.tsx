@@ -142,7 +142,7 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
         <div className="relative shrink-0 border-b border-[var(--rule-soft)] bg-gradient-to-br from-[var(--accent)]/10 via-transparent to-transparent px-5 pb-4 pt-4 sm:pt-6 sm:rounded-tl-3xl">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/30">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-md">
                 <Clock className="h-6 w-6" strokeWidth={2.25} aria-hidden />
               </div>
               <div className="min-w-0">
@@ -272,7 +272,7 @@ export default function RecentlyViewedDrawer({ open, onClose, className }: Props
                                   "flex h-10 w-10 items-center justify-center rounded-xl transition-all active:scale-90",
                                   justAdded
                                     ? "bg-[var(--data-success-500,#10b981)] text-white shadow-md"
-                                    : "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/25 hover:brightness-110 hover:shadow-lg",
+                                    : "bg-[var(--accent-600,var(--accent))] text-white shadow-md hover:brightness-110 hover:shadow-lg",
                                 )}
                               >
                                 {justAdded ? (

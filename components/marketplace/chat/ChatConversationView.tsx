@@ -372,7 +372,7 @@ export default function ChatConversationView({
             className={cn(
               "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all active:scale-95",
               text.trim() && !sending
-                ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/30 hover:brightness-110"
+                ? "bg-[var(--accent)] text-white shadow-md hover:brightness-110"
                 : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
             )}
           >
