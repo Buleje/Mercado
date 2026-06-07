@@ -5,6 +5,7 @@ import {
   Store,
   Building2,
   Bike,
+  Sparkles,
   Check,
   ArrowUpRight,
   type LucideIcon,
@@ -84,13 +85,14 @@ export function JoinUsSection() {
       className="bg-[var(--surface-canvas)] border-t border-[var(--rule-base)] py-10 sm:py-16"
     >
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header editorial — minimalista, sin glows ni acento saturado */}
+        {/* Header editorial — minimalista pero con vida (acento de marca) */}
         <div className="max-w-2xl mb-6 sm:mb-10">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+            <span aria-hidden className="inline-block h-[2px] w-7 rounded-full bg-[var(--accent)]" />
             Sumate a Buleje
           </p>
           <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
-            Trabaja con nosotros
+            Trabaja con <span className="text-[var(--accent)]">nosotros</span>
           </h2>
           <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
             Vende, reparte o crea tu negocio digital. Buleje está armando la
@@ -102,23 +104,32 @@ export function JoinUsSection() {
             eyebrow/título/chip + flecha. Oculta desc, beneficios y CTA footer
             para ocupar ~1/3 del alto. Desktop (sm+): card editorial completa. */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-5">
-          {JOIN_CARDS.map((c) => {
+          {JOIN_CARDS.map((c, i) => {
             const Icon = c.Icon;
+            const isFeatured = i === 0;
             return (
               <Link
                 key={c.title}
                 href={c.href}
                 className={cn(
-                  "group relative flex border transition-colors",
+                  "group relative flex border transition-all",
                   // mobile: fila horizontal compacta · desktop: card vertical
                   "flex-row items-center gap-3 rounded-2xl p-3.5",
                   "sm:flex-col sm:items-stretch sm:gap-0 sm:p-7",
-                  "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-primary)]/40",
+                  "hover:-translate-y-0.5",
+                  isFeatured
+                    ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 hover:border-[var(--accent)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]",
                 )}
               >
                 <span
                   aria-hidden
-                  className="inline-flex shrink-0 items-center justify-center h-11 w-11 rounded-xl sm:h-12 sm:w-12 sm:mb-5 bg-[var(--surface-sunken)] text-[var(--text-primary)]"
+                  className={cn(
+                    "inline-flex shrink-0 items-center justify-center h-11 w-11 rounded-xl sm:h-12 sm:w-12 sm:mb-5 transition-colors",
+                    isFeatured
+                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white",
+                  )}
                 >
                   <Icon className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
                 </span>
@@ -134,8 +145,9 @@ export function JoinUsSection() {
                   <p className="hidden sm:block mt-1.5 text-sm text-[var(--text-secondary)] leading-relaxed">
                     {c.desc}
                   </p>
-                  {/* Chip gancho — neutral, sin neón */}
-                  <span className="mt-1.5 sm:mt-3 inline-flex w-fit items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 sm:px-3 py-0.5 sm:py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  {/* Chip gancho — acento de marca */}
+                  <span className="mt-1.5 sm:mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-2.5 sm:px-3 py-0.5 sm:py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                    <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                     {c.highlight}
                   </span>
                   {/* Lista de beneficios — oculta en mobile, da cuerpo en desktop */}
@@ -146,16 +158,16 @@ export function JoinUsSection() {
                         className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-snug"
                       >
                         <Check
-                          className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-primary)]"
-                          strokeWidth={2.5}
+                          className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]"
+                          strokeWidth={2.75}
                           aria-hidden
                         />
                         <span>{b}</span>
                       </li>
                     ))}
                   </ul>
-                  {/* CTA footer — ink, sin acento */}
-                  <span className="hidden sm:inline-flex mt-5 items-center gap-1.5 border-t border-[var(--rule-base)] pt-4 text-sm font-extrabold text-[var(--text-primary)] group-hover:gap-2.5 transition-all">
+                  {/* CTA footer — acento de marca */}
+                  <span className="hidden sm:inline-flex mt-5 items-center gap-1.5 border-t border-[var(--rule-base)] pt-4 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
                     {c.cta}
                     <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                   </span>
@@ -163,7 +175,7 @@ export function JoinUsSection() {
 
                 {/* Flecha lateral — solo mobile (CTA visual de la fila) */}
                 <ArrowUpRight
-                  className="sm:hidden h-5 w-5 shrink-0 text-[var(--text-primary)] transition-transform group-active:translate-x-0.5"
+                  className="sm:hidden h-5 w-5 shrink-0 text-[var(--accent)] transition-transform group-active:translate-x-0.5"
                   strokeWidth={2.5}
                   aria-hidden
                 />

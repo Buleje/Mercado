@@ -83,10 +83,10 @@ export default function InvitaVecinoCard() {
 
   return (
     <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="flex flex-col gap-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7 lg:flex-row lg:items-center lg:gap-8">
+      <div className="flex flex-col gap-5 rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-6 sm:p-7 lg:flex-row lg:items-center lg:gap-8">
         <span
           aria-hidden
-          className="hidden lg:inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-primary)]"
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-sm"
         >
           <Gift className="h-5 w-5" strokeWidth={2} />
         </span>
@@ -102,7 +102,7 @@ export default function InvitaVecinoCard() {
             {code ? (
               <>
                 Por cada vecino que haga su <strong className="font-bold text-[var(--text-primary)]">primer pedido</strong>, ambos ganan{" "}
-                <strong className="font-bold text-[var(--text-primary)]">{REWARD_POINTS} puntos</strong> de lealtad.
+                <strong className="font-extrabold text-[var(--accent)]">{REWARD_POINTS} puntos</strong> de lealtad.
               </>
             ) : (
               <>
@@ -124,7 +124,7 @@ export default function InvitaVecinoCard() {
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-[var(--text-primary)] px-5 text-sm font-extrabold text-[var(--surface-raised)] transition-all hover:opacity-90 active:scale-[0.98]"
+            className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-extrabold text-white transition-all hover:brightness-110 active:scale-[0.98]"
           >
             <WhatsAppIcon className="h-5 w-5" />
             Invitar por WhatsApp
@@ -133,7 +133,7 @@ export default function InvitaVecinoCard() {
             type="button"
             onClick={copy}
             className={cn(
-              "inline-flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]",
+              "inline-flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-transparent px-5 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]",
             )}
           >
             {copied ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Copy className="h-4 w-4" strokeWidth={2.25} />}
