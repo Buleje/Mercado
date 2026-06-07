@@ -1,19 +1,18 @@
 "use client";
 
 /**
- * StoreQuickPreviewDrawer — Drawer lateral que aparece al hacer hover sobre
- * una card en FeaturedStoresNearby. Muestra los productos destacados de la
- * tienda con dos vistas seleccionables:
- *   - "Destacados": lista compacta con add-to-cart (default).
- *   - "Top productos": grid visual con foco en la imagen (price + label).
+ * StoreQuickPreviewDrawer — Drawer "Vista rápida" de una tienda premium.
  *
- * Animación: slide-in desde la derecha 340ms cubic-bezier + backdrop fade.
- * Cierre: ESC, click fuera, mouseleave con grace de 250ms (para que el
- * usuario pueda mover el mouse hacia el drawer sin que se cierre).
+ * Rediseño 2026-06-06 (Brandon): más elaborado y ejecutivo.
+ *   - Header con banner + logo en ring, badge "Destacada", rating ámbar y
+ *     meta-strip (rating · categoría · zona · distancia opcional).
+ *   - Segmented control (Destacados / Top productos) con pill activo.
+ *   - Cards de producto más grandes (text-sm mínimo), descuento visible,
+ *     add-to-cart con flash de confirmación.
+ *   - Tokens del DS (var(--accent)), sin colores hardcodeados.
  *
- * Ancho: w-[380px] — más estrecho que el `max-w-md` original (Brandon
- * mayo 2026: "estaba muy ancho"). Cabe sobre cualquier viewport ≥414 px
- * sin tapar el contenido del listado de tiendas.
+ * Animación: slide-in desde la derecha 340ms + backdrop fade. Cierre: ESC,
+ * click fuera, botón.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,13 +23,15 @@ import {
   Star,
   MapPin,
   X,
-  ShoppingCart,
+  Check,
   ArrowRight,
   Plus,
   Sparkles,
   TrendingUp,
+  ShieldCheck,
 } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
+import { cn } from "@/lib/utils";
 import type { FeaturedNearbyStore, FeaturedNearbyProduct } from "@/lib/db/marketplace-featured.db";
 
 interface Props {
@@ -40,8 +41,8 @@ interface Props {
   /**
    * Override del "agregar". En el storefront (default) agrega al carrito del
    * tenant vía useCart. En el MARKETPLACE (/tiendas) ese carrito NO es el que
-   * usa el checkout (es cross-store y necesita storeProductId + modifiers), así
-   * que el caller pasa un handler que NAVEGA al producto para agregar bien allá.
+   * usa el checkout (es cross-store), así que el caller pasa un handler que
+   * NAVEGA al producto para agregar bien allá.
    */
   onAddToCart?: (p: FeaturedNearbyProduct) => void;
 }
@@ -77,8 +78,7 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
     };
   }, [open]);
 
-  // Reset al cambio de tienda — vía microtask para no caer en
-  // la regla "no setState directo en effect body".
+  // Reset de tab al cambio de tienda — vía microtask (no setState en effect body).
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -93,11 +93,8 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
   const featured = useMemo(() => store?.productosDestacados ?? [], [store]);
 
   /**
-   * "Top productos": mismas productos pero ordenados/curados distinto.
-   * Prioriza:
-   *   1. Productos con descuento vigente (discountPrice != null).
-   *   2. Por precio efectivo descendente (asume "top" = high-ticket).
-   * Es un proxy razonable hasta que tengamos signal real de ventas.
+   * "Top productos": prioriza descuentos vigentes, luego precio efectivo desc.
+   * Proxy razonable hasta tener signal real de ventas.
    */
   const top = useMemo<FeaturedNearbyProduct[]>(() => {
     return [...featured].sort((a, b) => {
@@ -113,8 +110,6 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
   if (!store) return null;
 
   const handleAdd = (p: FeaturedNearbyProduct) => {
-    // Marketplace context: delega (navega al producto). No agrega al carrito
-    // del tenant — sería el carrito equivocado para el checkout cross-store.
     if (onAddToCart) {
       onAddToCart(p);
       return;
@@ -133,6 +128,9 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
     setTimeout(() => setAddedFlash(null), 1200);
   };
 
+  const showDistance = Number(store.distanceKm) > 0;
+  const initial = store.name.trim().charAt(0).toUpperCase();
+
   return (
     <AnimatePresence>
       {open && (
@@ -145,11 +143,11 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-[80] bg-black/45 backdrop-blur-[3px]"
+            className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-[3px]"
             aria-hidden
           />
 
-          {/* Panel — w-[380px] fijo (Brandon: drawer estaba muy ancho) */}
+          {/* Panel */}
           <motion.aside
             key="panel"
             ref={drawerRef}
@@ -159,52 +157,93 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "tween", ease: [0.22, 1, 0.36, 1], duration: 0.34 }}
-            className="fixed right-0 top-0 z-[81] h-full w-[92vw] max-w-[380px] bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 z-[81] h-full w-[94vw] max-w-[420px] bg-[var(--surface-canvas)] text-[var(--text-primary)] shadow-2xl flex flex-col"
           >
             {/* ── Header con banner ─────────────────────────── */}
-            <div className="relative h-28 shrink-0 overflow-hidden bg-[var(--surface-sunken)]">
+            <div className="relative h-32 shrink-0 overflow-hidden bg-[var(--surface-sunken)]">
               {store.banner ? (
-                <Image src={store.banner} alt="" fill sizes="380px" className="object-cover" priority />
+                <Image src={store.banner} alt="" fill sizes="420px" className="object-cover" priority />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-primary)]/30 to-[var(--brand-secondary)]/20" />
+                <div
+                  className="absolute inset-0"
+                  style={{ background: "linear-gradient(135deg, var(--accent), color-mix(in oklch, var(--accent) 60%, #051418))" }}
+                />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+
+              {/* Badge Destacada */}
+              <span className="absolute left-3.5 top-3.5 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] shadow-sm backdrop-blur">
+                <Sparkles className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+                Destacada
+              </span>
+
               <button
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="absolute right-2.5 top-2.5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white hover:bg-black/75 transition-colors"
+                className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white hover:bg-black/75 transition-colors"
               >
-                <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                <X className="h-4 w-4" strokeWidth={2.5} />
               </button>
 
-              <div className="absolute bottom-2.5 left-3.5 right-3.5 text-white">
-                <div className="flex items-center gap-2">
-                  {store.logo && (
-                    <div className="relative h-9 w-9 rounded-lg overflow-hidden bg-white shrink-0 ring-2 ring-white/40">
-                      <Image src={store.logo} alt="" fill sizes="36px" className="object-cover" />
-                    </div>
+              {/* Identidad */}
+              <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end gap-2.5 text-white">
+                <div className="relative h-14 w-14 shrink-0 rounded-2xl overflow-hidden bg-white ring-2 ring-white/70 shadow-lg grid place-items-center">
+                  {store.logo ? (
+                    <Image src={store.logo} alt="" fill sizes="56px" className="object-cover" />
+                  ) : (
+                    <span
+                      className="grid h-full w-full place-items-center text-xl font-black text-white"
+                      style={{ background: "linear-gradient(135deg, var(--accent), color-mix(in oklch, var(--accent) 65%, #051418))" }}
+                    >
+                      {initial}
+                    </span>
                   )}
-                  <div className="min-w-0">
-                    <h2 className="text-sm font-extrabold leading-tight truncate">{store.name}</h2>
-                    <div className="flex items-center gap-1.5 text-[11px] text-white/85 mt-0.5">
-                      <span className="inline-flex items-center gap-0.5">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" strokeWidth={2} />
-                        <strong>{Number(store.rating).toFixed(1)}</strong>
-                        <span className="text-white/55">({store.reviewCount})</span>
+                </div>
+                <div className="min-w-0 pb-0.5">
+                  <h2 className="text-lg font-black leading-tight tracking-tight truncate drop-shadow-sm">{store.name}</h2>
+                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-white/90">
+                    {store.reviewCount > 0 ? (
+                      <span className="inline-flex items-center gap-1 font-bold">
+                        <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={0} aria-hidden />
+                        {Number(store.rating).toFixed(1)}
+                        <span className="font-medium text-white/65">({store.reviewCount})</span>
                       </span>
-                      <span aria-hidden className="text-white/40">·</span>
-                      <span className="inline-flex items-center gap-0.5">
-                        <MapPin className="h-3 w-3" strokeWidth={2} />
-                        {Number(store.distanceKm).toFixed(1)} km
+                    ) : (
+                      <span className="inline-flex items-center gap-1 font-bold">
+                        <Sparkles className="h-3.5 w-3.5 text-[var(--data-warning-500)]" strokeWidth={2.25} aria-hidden />
+                        Nueva
                       </span>
-                    </div>
+                    )}
+                    <span aria-hidden className="text-white/45">·</span>
+                    <ShieldCheck className="h-3.5 w-3.5 text-white/85" strokeWidth={2} aria-hidden />
+                    <span className="font-medium">Verificada</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ── Tabs ─────────────────────────────────────── */}
-            <div role="tablist" aria-label="Vistas de productos" className="flex shrink-0 border-b border-[var(--rule-base)] bg-[var(--surface-canvas)]">
+            {/* ── Meta strip ────────────────────────────────── */}
+            <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {store.category && (
+                <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold capitalize text-[var(--text-secondary)]">
+                  {store.category}
+                </span>
+              )}
+              {store.zone && (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]">
+                  <MapPin className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+                  {store.zone}
+                </span>
+              )}
+              {showDistance && (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold tabular-nums text-[var(--text-secondary)]">
+                  {Number(store.distanceKm).toFixed(1)} km
+                </span>
+              )}
+            </div>
+
+            {/* ── Segmented control ─────────────────────────── */}
+            <div role="tablist" aria-label="Vistas de productos" className="flex shrink-0 gap-1 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
               <TabButton
                 active={tab === "destacados"}
                 onClick={() => setTab("destacados")}
@@ -220,10 +259,13 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             </div>
 
             {/* ── Body ─────────────────────────────────────── */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-[var(--surface-canvas)]">
               {featured.length === 0 ? (
-                <div className="text-sm text-muted py-10 text-center px-4">
-                  Esta tienda aún no tiene productos cargados.
+                <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <Sparkles className="h-6 w-6" aria-hidden />
+                  </span>
+                  <p className="text-sm text-[var(--text-secondary)]">Esta tienda aún no tiene productos cargados.</p>
                 </div>
               ) : tab === "destacados" ? (
                 <ListView products={featured} onAdd={handleAdd} addedFlash={addedFlash} />
@@ -233,13 +275,18 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             </div>
 
             {/* ── Footer CTA ──────────────────────────────── */}
-            <div className="shrink-0 border-t border-[var(--rule-base)] p-3 bg-[var(--surface-canvas)]">
+            <div className="shrink-0 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+              {featured.length > 0 && (
+                <p className="mb-2 text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  {featured.length} {featured.length === 1 ? "producto destacado" : "productos destacados"}
+                </p>
+              )}
               <Link
                 href={`/marketplace/${store.slug}`}
-                className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-[var(--brand-primary)] text-white text-[13px] font-extrabold uppercase tracking-[var(--ls-wider)] hover:bg-[var(--brand-primary)]/90 transition-colors"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-white transition-all hover:brightness-110 active:scale-[0.99]"
               >
                 Ver toda la tienda
-                <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+                <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               </Link>
             </div>
           </motion.aside>
@@ -250,7 +297,7 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Tabs
+// Segmented control button
 // ─────────────────────────────────────────────────────────────────
 
 function TabButton({
@@ -269,22 +316,22 @@ function TabButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={[
-        "flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold uppercase tracking-[var(--ls-wider)] transition-colors relative",
-        active
-          ? "text-[var(--brand-primary)]"
-          : "text-muted hover:text-[var(--text-primary)]",
-      ].join(" ")}
+      className={cn(
+        "relative flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] transition-colors",
+        active ? "text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+      )}
     >
-      {icon}
-      {label}
       {active && (
         <motion.span
-          layoutId="drawer-tab-underline"
-          className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[var(--brand-primary)]"
+          layoutId="drawer-tab-pill"
+          className="absolute inset-0 rounded-lg bg-[var(--accent)]"
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />
       )}
+      <span className="relative z-10 inline-flex items-center gap-1.5">
+        {icon}
+        {label}
+      </span>
     </button>
   );
 }
@@ -303,7 +350,7 @@ function ListView({
   addedFlash: string | null;
 }) {
   return (
-    <ul className="px-3 py-3 space-y-2">
+    <ul className="space-y-2 px-3 py-3">
       {products.map((p) => {
         const price = p.discountPrice ?? p.retailPrice;
         const hasDiscount = p.discountPrice != null;
@@ -311,40 +358,40 @@ function ListView({
         return (
           <li
             key={p.id}
-            className="flex items-center gap-2.5 p-2 rounded-lg border border-[var(--rule-base)] hover:border-[var(--brand-primary)]/40 transition-colors"
+            className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5 transition-colors hover:border-[var(--accent)]/40"
           >
-            <div className="relative h-12 w-12 shrink-0 rounded-md overflow-hidden bg-[var(--surface-sunken)]">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-sunken)]">
               {p.image ? (
-                <Image src={p.image} alt="" fill sizes="48px" className="object-cover" />
+                <Image src={p.image} alt="" fill sizes="56px" className="object-cover" />
               ) : (
                 <div className="h-full w-full" />
               )}
               {p.discountLabel && (
-                <span className="absolute top-0.5 left-0.5 rounded bg-[var(--brand-secondary)] px-1 py-0.5 text-[8.5px] font-extrabold uppercase tracking-tight text-white">
+                <span className="absolute left-0.5 top-0.5 rounded bg-[var(--data-error-500)] px-1 py-0.5 text-[8.5px] font-extrabold uppercase tracking-tight text-white">
                   {p.discountLabel}
                 </span>
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold leading-tight truncate">{p.name}</p>
-              <div className="mt-0.5 flex items-baseline gap-1.5">
-                <span className="text-sm font-extrabold text-[var(--brand-primary)]">{fmtPEN(price)}</span>
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-1 text-sm font-bold leading-tight text-[var(--text-primary)]">{p.name}</p>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className="text-base font-extrabold text-[var(--accent)]">{fmtPEN(price)}</span>
                 {hasDiscount && (
-                  <span className="text-[11px] text-muted line-through">{fmtPEN(p.retailPrice)}</span>
+                  <span className="text-xs text-[var(--text-tertiary)] line-through">{fmtPEN(p.retailPrice)}</span>
                 )}
               </div>
             </div>
             <button
               onClick={() => onAdd(p)}
-              aria-label={`Agregar ${p.name} al carrito`}
-              className={[
-                "shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg transition-all active:scale-95",
+              aria-label={`Agregar ${p.name}`}
+              className={cn(
+                "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all active:scale-95",
                 flashing
                   ? "bg-[var(--data-success-500)] text-white"
-                  : "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary)]/90",
-              ].join(" ")}
+                  : "bg-[var(--accent)] text-white hover:brightness-110",
+              )}
             >
-              {flashing ? <ShoppingCart className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />}
+              {flashing ? <Check className="h-4 w-4" strokeWidth={3} /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
             </button>
           </li>
         );
@@ -373,35 +420,35 @@ function GridView({
           <li key={p.id} className="group">
             <Link
               href={`/marketplace/${storeSlug}/producto/${p.productId}`}
-              className="block rounded-lg overflow-hidden border border-[var(--rule-base)] hover:border-[var(--brand-primary)]/50 hover:shadow-md transition-all"
+              className="block overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all hover:border-[var(--accent)]/50 hover:shadow-md"
             >
-              <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
+              <div className="relative aspect-square overflow-hidden bg-[var(--surface-sunken)]">
                 {p.image ? (
                   <Image
                     src={p.image}
                     alt=""
                     fill
-                    sizes="180px"
+                    sizes="200px"
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-primary)]/15 to-[var(--brand-secondary)]/10" />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, var(--accent-soft), transparent)" }} />
                 )}
-                <span className="absolute top-1.5 left-1.5 inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full bg-black/70 text-white text-[10px] font-extrabold">
+                <span className="absolute left-1.5 top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-black/70 px-1 text-[10px] font-extrabold text-white">
                   #{i + 1}
                 </span>
                 {p.discountLabel && (
-                  <span className="absolute top-1.5 right-1.5 rounded bg-[var(--brand-secondary)] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-tight text-white">
+                  <span className="absolute right-1.5 top-1.5 rounded bg-[var(--data-error-500)] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-tight text-white">
                     {p.discountLabel}
                   </span>
                 )}
               </div>
-              <div className="p-2">
-                <p className="text-[12px] font-bold leading-tight line-clamp-2 min-h-[2lh]">{p.name}</p>
+              <div className="p-2.5">
+                <p className="line-clamp-2 min-h-[2lh] text-[13px] font-bold leading-tight text-[var(--text-primary)]">{p.name}</p>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <span className="text-sm font-extrabold text-[var(--brand-primary)]">{fmtPEN(price)}</span>
+                  <span className="text-sm font-extrabold text-[var(--accent)]">{fmtPEN(price)}</span>
                   {hasDiscount && (
-                    <span className="text-[10px] text-muted line-through">{fmtPEN(p.retailPrice)}</span>
+                    <span className="text-[10px] text-[var(--text-tertiary)] line-through">{fmtPEN(p.retailPrice)}</span>
                   )}
                 </div>
               </div>

@@ -56,6 +56,8 @@ export interface LastOrder {
 }
 
 const KEY = "buleje:last-order";
+/** Dismiss por sesión: oculta la franja del pedido X hasta recargar/nuevo pedido. */
+const DISMISS_KEY = "buleje:last-order-dismissed";
 /** Máx 30 días — pedidos más viejos no son útiles para repetir */
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -78,6 +80,7 @@ function timeAgo(ts: number): string {
 export default function RepetirUltimoPedido() {
   const [order, setOrder] = useState<LastOrder | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const { addItem } = useMarketplaceCart();
 
@@ -92,6 +95,9 @@ export default function RepetirUltimoPedido() {
         typeof o?.storeSlug === "string" &&
         Date.now() - o.ts < MAX_AGE_MS
       ) {
+        // Respetar dismiss de esta sesión para ESTE pedido.
+        const dq = sessionStorage.getItem(DISMISS_KEY);
+        if (dq && dq === o.orderId) setDismissed(true);
         setOrder(o);
       }
     } catch {
@@ -99,7 +105,16 @@ export default function RepetirUltimoPedido() {
     }
   }, []);
 
-  if (!hydrated || !order) return null;
+  const dismiss = useCallback(() => {
+    setDismissed(true);
+    try {
+      if (order) sessionStorage.setItem(DISMISS_KEY, order.orderId);
+    } catch {
+      /* silent */
+    }
+  }, [order]);
+
+  if (!hydrated || !order || dismissed) return null;
 
   // Items utiles: los que tienen los campos minimos para addItem.
   const validItems = (order.items ?? []).filter(
@@ -107,22 +122,45 @@ export default function RepetirUltimoPedido() {
   );
   const hasUsableItems = validItems.length > 0;
 
+  // Miniaturas de productos del pedido (stack solapado) para dar contexto visual.
+  const thumbs = validItems.filter((i) => i.imageUrl).slice(0, 3);
+  const extraThumbs = Math.max(0, order.itemsCount - thumbs.length);
+
   // Contenido interno de la franja (compartido por el botón y el link).
   const barInner = (
-    <span className="flex w-full items-center gap-2.5">
-      <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white">
-        <Repeat className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+    <span className="flex w-full items-center gap-2.5 sm:gap-3">
+      <span className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-sm">
+        <Repeat className="h-4 w-4" strokeWidth={2.5} aria-hidden />
       </span>
-      <span className="min-w-0 flex-1 truncate text-sm">
-        <span className="font-extrabold text-[var(--accent)]">Tu último pedido</span>
-        <span className="text-[var(--text-secondary)]">
-          {" · "}{order.storeName}{" · "}
-          <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmtCurrency(order.total)}</span>
-          {" · "}{order.itemsCount} {order.itemsCount === 1 ? "item" : "items"}
-          <span className="hidden md:inline text-[var(--text-tertiary)]"> · {timeAgo(order.ts)}</span>
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block truncate text-sm">
+          <span className="font-extrabold text-[var(--accent)]">Tu último pedido</span>
+          <span className="text-[var(--text-secondary)]"> · {order.storeName}</span>
+        </span>
+        <span className="block truncate text-xs text-[var(--text-tertiary)]">
+          <span className="font-bold tabular-nums text-[var(--text-secondary)]">{fmtCurrency(order.total)}</span>
+          {" · "}{order.itemsCount} {order.itemsCount === 1 ? "ítem" : "ítems"}
+          <span className="hidden sm:inline"> · {timeAgo(order.ts)}</span>
         </span>
       </span>
-      <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-3.5 h-8 text-xs font-bold group-hover:gap-2 transition-all">
+      {thumbs.length > 0 && (
+        <span className="hidden sm:flex shrink-0 items-center -space-x-2" aria-hidden>
+          {thumbs.map((it, i) => (
+            <span
+              key={i}
+              className="relative h-8 w-8 overflow-hidden rounded-full bg-[var(--surface-sunken)] ring-2 ring-[var(--surface-canvas)]"
+            >
+              <Image src={it.imageUrl as string} alt="" fill sizes="32px" className="object-cover" />
+            </span>
+          ))}
+          {extraThumbs > 0 && (
+            <span className="relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-muted)] text-[10px] font-black text-[var(--accent)] ring-2 ring-[var(--surface-canvas)]">
+              +{extraThumbs}
+            </span>
+          )}
+        </span>
+      )}
+      <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-3.5 sm:px-4 h-9 text-xs font-bold group-hover:gap-2 transition-all">
         Repetir
         <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
       </span>
@@ -133,26 +171,36 @@ export default function RepetirUltimoPedido() {
     <>
       {/* Franja slim sticky bajo el nav (sticky top-16 = altura del nav md).
           Discreta, siempre a mano, sin robarle espacio al catálogo. */}
-      <div className="sticky top-14 md:top-16 z-40 border-b border-[var(--accent)]/20 bg-[var(--accent-soft)]/95 backdrop-blur">
+      <div className="sticky top-14 md:top-16 z-40 border-b border-[var(--accent)]/25 bg-[var(--accent-soft)]/95 shadow-[0_4px_12px_-8px_var(--accent-glow,rgba(0,0,0,0.2))] backdrop-blur">
         <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
-          {hasUsableItems ? (
+          <div className="flex items-center gap-1.5 py-2">
+            {hasUsableItems ? (
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                aria-label={`Repetir tu último pedido de ${order.storeName}`}
+                className="group flex min-w-0 flex-1 items-center text-left transition-opacity hover:opacity-90"
+              >
+                {barInner}
+              </button>
+            ) : (
+              <Link
+                href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
+                aria-label={`Repetir tu último pedido de ${order.storeName}`}
+                className="group flex min-w-0 flex-1 items-center transition-opacity hover:opacity-90"
+              >
+                {barInner}
+              </Link>
+            )}
             <button
               type="button"
-              onClick={() => setModalOpen(true)}
-              aria-label={`Repetir tu último pedido de ${order.storeName}`}
-              className="group flex w-full items-center py-2 text-left transition-opacity hover:opacity-90"
+              onClick={dismiss}
+              aria-label="Ocultar tu último pedido"
+              className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
             >
-              {barInner}
+              <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             </button>
-          ) : (
-            <Link
-              href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
-              aria-label={`Repetir tu último pedido de ${order.storeName}`}
-              className="group flex w-full items-center py-2 transition-opacity hover:opacity-90"
-            >
-              {barInner}
-            </Link>
-          )}
+          </div>
         </div>
       </div>
 
