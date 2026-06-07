@@ -142,7 +142,7 @@ export default function ReviewModal() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={published ? undefined : closeReviewModal}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60"
           style={{ zIndex: 9000 }}
         />
 
@@ -156,7 +156,7 @@ export default function ReviewModal() {
           className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
           style={{ zIndex: 9001 }}
         >
-          <div className="pointer-events-auto w-full max-w-md bg-white dark:bg-background rounded-2xl shadow-[var(--shadow-xl)] overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="pointer-events-auto w-full max-w-md bg-white dark:bg-background rounded-none shadow-[var(--shadow-lg)] overflow-hidden max-h-[90vh] flex flex-col border border-[var(--rule-base)]">
             {/* Header */}
             <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ background: "linear-gradient(90deg, var(--color-primary-dark), var(--color-primary), var(--color-primary-dark))" }}>
               <div className="flex items-center gap-3">

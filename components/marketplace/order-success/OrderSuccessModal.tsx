@@ -81,14 +81,14 @@ export default function OrderSuccessModal() {
         type="button"
         onClick={closeModal}
         aria-label="Minimizar"
-        className="absolute inset-0 bg-black/55 backdrop-blur-sm animate-in fade-in duration-300"
+        className="absolute inset-0 bg-black/55 animate-in fade-in duration-300"
       />
 
       {/* Card — Brandon 2026-05-31 rediseño mobile minimalista:
           bottom-sheet con grab handle + hero compacto (sin gradiente saturado)
           + secciones aireadas con divisores finos + CTA sticky abajo. En sm+
           vuelve a card centrada. */}
-      <div className="relative w-full sm:max-w-2xl max-h-[94vh] sm:max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-3xl bg-[var(--surface-canvas)] shadow-2xl sm:border sm:border-[var(--rule-base)] animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
+      <div className="relative w-full sm:max-w-2xl max-h-[94vh] sm:max-h-[92vh] flex flex-col rounded-t-2xl sm:rounded-none bg-[var(--surface-canvas)] shadow-[var(--shadow-lg)] sm:border sm:border-[var(--rule-base)] animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
         {/* Grab handle — solo mobile */}
         <div className="sm:hidden flex justify-center pt-2.5 pb-1 shrink-0">
           <span aria-hidden className="h-1.5 w-10 rounded-full bg-[var(--rule-base)]" />

@@ -137,12 +137,12 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose} aria-hidden="true">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/55" />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-view-title"
-        className="relative bg-[var(--surface-raised)] rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-2xl lg:max-w-4xl lg:max-h-[88vh] max-h-[92vh] overflow-hidden flex flex-col lg:flex-row border border-[var(--rule-base)] animate-[scaleIn_0.2s_ease-out]"
+        className="relative bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-none shadow-[var(--shadow-lg)] w-full max-w-2xl lg:max-w-4xl lg:max-h-[88vh] max-h-[92vh] overflow-hidden flex flex-col lg:flex-row border border-[var(--rule-base)] animate-[scaleIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
         aria-hidden="false"
       >

@@ -238,7 +238,8 @@ export function Modal({
       {/* Backdrop */}
       <div
         className={cn(
-          "absolute inset-0 bg-black/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]",
+          // Brandon 2026-06-07: sin backdrop-blur (difuminación) — solo dim.
+          "absolute inset-0 bg-black/55 animate-[fadeIn_0.2s_ease-out]",
           backdropClassName
         )}
         onClick={handleBackdropClick}
@@ -249,8 +250,11 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
+          // Brandon 2026-06-07: ejecutivo/recto. Desktop sin esquinas; mobile
+          // mantiene un top redondeado leve por la UX de bottom-sheet. Sombra
+          // sutil (no la opaca shadow-xl) — el dim del backdrop ya separa.
           "relative bg-[var(--surface-raised)] w-full",
-          "rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)]",
+          "rounded-t-2xl sm:rounded-none shadow-[var(--shadow-lg)]",
           "border border-[var(--rule-base)]",
           "max-h-[95vh] sm:max-h-[90vh] overflow-y-auto",
           "pb-[env(safe-area-inset-bottom)]", // Safe area bottom
@@ -266,7 +270,7 @@ export function Modal({
             onClick={onClose}
             className={cn(
               "absolute top-3 right-3 z-10",
-              "p-2 rounded-lg",
+              "p-2 rounded-none",
               "bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-gray-700",
               "text-gray-600 dark:text-muted hover:text-gray-900 dark:hover:text-[var(--text-primary)]",
               "transition-colors",

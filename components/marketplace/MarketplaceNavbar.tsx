@@ -816,7 +816,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     <div
                       role="menu"
                       aria-label="Menú de usuario"
-                      className="absolute right-0 top-full mt-2 w-60 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.2)] overflow-hidden z-50"
+                      className="absolute right-0 top-full mt-2 w-60 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] shadow-[var(--shadow-md)] overflow-hidden z-50"
                     >
                       <div className="py-1.5">
                         <Link

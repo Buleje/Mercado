@@ -234,7 +234,7 @@ export default function QuickAddModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[8000] flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-md"
+          className="fixed inset-0 z-[8000] flex items-end sm:items-center justify-center bg-black/55"
           onClick={close}
         >
           <motion.div
@@ -247,14 +247,14 @@ export default function QuickAddModal() {
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 340, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-2xl mx-0 sm:mx-4 max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-[28px] bg-white shadow-[var(--shadow-xl)] dark:bg-[var(--surface-raised)] border border-[var(--rule-base)]"
+            className="relative w-full max-w-2xl mx-0 sm:mx-4 max-h-[94vh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-none bg-white shadow-[var(--shadow-lg)] dark:bg-[var(--surface-raised)] border border-[var(--rule-base)]"
           >
             {/* Botón cerrar flotante (sobre la imagen) */}
             <button
               ref={closeButtonRef}
               onClick={close}
               aria-label="Cerrar"
-              className="absolute right-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-[var(--text-primary)] shadow-lg backdrop-blur transition-all hover:scale-105 hover:bg-white"
+              className="absolute right-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-none bg-white/95 text-[var(--text-primary)] transition-all hover:scale-105 hover:bg-white"
             >
               <X className="h-4.5 w-4.5" strokeWidth={2.5} aria-hidden="true" />
             </button>

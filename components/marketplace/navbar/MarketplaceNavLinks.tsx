@@ -265,7 +265,7 @@ export default function MarketplaceNavLinks({
               <div
                 role="menu"
                 aria-label="Más secciones"
-                className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1.5 shadow-[0_8px_24px_-14px_rgba(0,0,0,0.2)]"
+                className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1.5 shadow-[var(--shadow-md)]"
               >
                 {overflowSlots.map(({ link }) => {
                   const active = isActive(link);
