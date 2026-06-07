@@ -35,6 +35,8 @@ import {
   MessageCircle,
   Building2,
   Rocket,
+  Sparkles,
+  Radio,
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCustomerAuthStatus } from "@/hooks/useCustomerAuthStatus";
@@ -214,7 +216,15 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
       title: "Explorar Buleje",
       links: [
         { href: "/", label: "Inicio", Icon: HomeIcon },
-        { href: "/tiendas", label: "Todas las tiendas", Icon: StoreIcon },
+        { href: "/tiendas", label: "Tiendas", Icon: StoreIcon },
+        // Brandon 2026-06-07: Descubrí + En Vivo movidos del nav de encabezado
+        // al drawer lateral. Solo en modo completo (no en tiendas-only).
+        ...(!tiendasOnly
+          ? [
+              { href: "/marketplace/para-vos", label: "Descubrí", Icon: Sparkles },
+              { href: "/marketplace/en-vivo", label: "En Vivo", Icon: Radio },
+            ]
+          : []),
         // Brandon 2026-05-18 v3: "Ofertas del día" solo si hay activas.
         // 2026-05-30: y nunca en modo tienda (tiendas-only).
         ...(!tiendasOnly && hasActiveOffers === true
@@ -249,18 +259,18 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
       role="dialog"
       aria-modal="true"
       aria-label="Menú de navegación"
-      className="lg:hidden fixed inset-0 z-[60] flex"
+      className="fixed inset-0 z-[60] flex"
     >
       <button
         type="button"
         onClick={onClose}
         aria-label="Cerrar menú"
-        className={`absolute inset-0 bg-black/65 backdrop-blur-md transition-opacity duration-300 ease-out ${
+        className={`absolute inset-0 bg-black/45 transition-opacity duration-300 ease-out ${
           visible ? "opacity-100" : "opacity-0"
         }`}
       />
       <aside
-        className={`relative flex flex-col w-full max-w-[330px] h-full bg-[var(--surface-canvas)] shadow-2xl overflow-hidden will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`relative flex flex-col w-full max-w-[320px] h-full bg-[var(--surface-canvas)] border-r border-[var(--rule-base)] overflow-hidden will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           visible ? "translate-x-0" : "-translate-x-full"
         }`}
       >

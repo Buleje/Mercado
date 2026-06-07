@@ -11,11 +11,8 @@ import { deserializeCart } from "@/lib/marketplace/cart-sharing";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
-import MyFidelidadCard from "@/components/marketplace/MyFidelidadCard";
 import MarketplaceQuickReorder from "@/components/marketplace/MarketplaceQuickReorder";
-import SaludoHorario from "@/components/marketplace/home/SaludoHorario";
 import { CatalogFilterProvider, useCatalogFilter } from "@/components/marketplace/catalog-filter-context";
-import MarketplaceLeftRail from "@/components/marketplace/MarketplaceLeftRail";
 // SEO/SSR (2026-05-24): estas 2 secciones de mayor valor comercial se importan
 // ESTÁTICAMENTE (no dynamic ssr:false) y reciben datos del servidor por props,
 // para que su contenido (tiendas, productos, precios) salga en el HTML inicial
@@ -78,11 +75,6 @@ const MarketplaceRightRail = dynamic(
   () => import("@/components/marketplace/MarketplaceRightRail"),
   { ssr: false },
 );
-// Widget "Tienda de la semana" (votación) — zona del saludo. Client-only.
-const TiendaSemanaWidget = dynamic(
-  () => import("@/components/marketplace/TiendaSemanaWidget"),
-  { ssr: false },
-);
 // Descubrimiento + conversión (alto impacto, código existente cableado al feed):
 //   · PersonalizedRecommendations → "Para ti" IA (gated en historial del customer)
 // NearbyStoresFeedSection ("Cerca de ti" GPS) REMOVIDO por pedido de Brandon
@@ -98,14 +90,6 @@ const PersonalizedRecommendations = dynamic(
 //   · MarketplaceCommandLauncher→ buscador universal ⌘K (tiendas/cat/secciones)
 const CelebrationLayer = dynamic(
   () => import("@/components/marketplace/CelebrationLayer"),
-  { ssr: false },
-);
-const RachaDiariaWidget = dynamic(
-  () => import("@/components/marketplace/RachaDiariaWidget"),
-  { ssr: false },
-);
-const MarketplaceSectionNav = dynamic(
-  () => import("@/components/marketplace/MarketplaceSectionNav"),
   { ssr: false },
 );
 const MarketplaceCommandLauncher = dynamic(
@@ -159,6 +143,10 @@ export default function MarketplaceContent({
   const { addItem } = useMarketplaceCart();
   const cartImportDone = useRef(false);
   const [sharedCartToast, setSharedCartToast] = useState<string | null>(null);
+  // El rail de navegación lateral ahora vive en el (store) layout
+  // (MarketplaceSideRailShell) para aparecer en TODAS las páginas marketplace,
+  // no solo acá. MarketplaceContent ya no lo monta (Brandon 2026-06-07).
+
   const search = searchParams.get("buscar") ?? "";
   // Visibilidad de secciones del home — controlada desde superadmin/stores → Navegación
   const sectionVisibility = useNavVisibility("marketplace-sections");
@@ -228,36 +216,30 @@ export default function MarketplaceContent({
             para armar el layout tipo Mercado Libre pedido. */}
 
       {/* ══════════════════════════════════════════════════════════════════
-          LAYOUT 3-COLUMNAS TIPO FACEBOOK (solo /marketplace, 2026-06-05):
-            · IZQUIERDA (sticky, lg+): categorías + filtros + atajos.
+          LAYOUT 2-COLUMNAS (Brandon 2026-06-07):
             · CENTRO: feed — saludo, fidelidad, secciones y catálogo.
             · DERECHA (sticky, xl+): publicidad (banners).
-          Las secciones quedan alineadas entre sí y con el catálogo (misma
-          columna). Rails ocultos en mobile (modo computadora).
+          El rail IZQUIERDO de categorías/filtros se REMOVIÓ: el botón
+          "Categorías" del sub-nav (mega-menú dinámico) ya cumple esa función,
+          y el rail mostraba categorías que al filtrar el catálogo daban 0
+          resultados (mismatch rail↔catálogo). Menos ruido, más ejecutivo.
           ══════════════════════════════════════════════════════════════════ */}
       <CatalogFilterProvider>
         <div className="bg-[var(--surface-sunken)] py-4 sm:py-6 min-h-[60vh]">
-          <div className="mx-auto grid max-w-[1800px] grid-cols-1 items-start gap-5 px-3 sm:px-4 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-5 lg:px-6 xl:grid-cols-[220px_minmax(0,1fr)_290px]">
+          {/* Grid centro + publicidad. El rail lateral ya lo aporta el shell
+              del layout (MarketplaceSideRailShell), a la izquierda de todo esto. */}
+          <div className="grid w-full grid-cols-1 items-start gap-5 px-3 sm:px-4 lg:gap-10 lg:px-6 xl:grid-cols-[minmax(0,1fr)_300px]">
 
-            {/* ── IZQUIERDA: categorías + filtros — FIJA (FB-style): el aside
-                 mismo es sticky (con items-start del grid queda corto y se
-                 pega); scroll interno si supera el viewport. Solo el centro
-                 navega. ── */}
-            <aside className="hidden lg:block lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filtros y categorías">
-              <MarketplaceLeftRail />
-            </aside>
-
-            {/* ── CENTRO: feed (secciones + catálogo). Componente aparte para
-                 poder LEER el filtro de categoría (contexto) y entrar en "modo
-                 filtro" — oculta las secciones promo y deja solo el catálogo. ── */}
+            {/* ── CENTRO: feed (secciones + catálogo). ── */}
             <MarketplaceCenterFeed
               initialStores={initialStores}
               initialBestsellers={initialBestsellers}
               search={search || ""}
             />
 
-            {/* ── DERECHA: publicidad (banners) — FIJA (FB-style). ── */}
-            <aside className="hidden xl:block xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Publicidad">
+            {/* ── DERECHA: publicidad (banners) — FIJA, más separada del catálogo
+                 (gap-8 + pl) y pegada a su lado. ── */}
+            <aside className="hidden xl:block xl:sticky xl:top-28 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto xl:pl-2 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Publicidad">
               <MarketplaceRightRail zone={null} />
             </aside>
 
@@ -381,16 +363,9 @@ function MarketplaceCenterFeed({
 
   return (
     <div id="mp-feed" className="min-w-0 space-y-4 scroll-mt-20 sm:space-y-5">
-      {/* Saludo + "pulse strip" (Brandon 2026-06-06): racha + tienda de la
-          semana + fidelidad en UNA fila de mini-cards uniformes (h-16) —
-          ocupan ~1/3 del alto que antes. Si alguna no renderiza (sin sesión /
-          <2 tiendas), las otras se estiran (flex, los null no dejan hueco). */}
-      <SaludoHorario />
-      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-stretch">
-        <RachaDiariaWidget className="lg:flex-1 lg:min-w-0" />
-        <TiendaSemanaWidget initialStores={initialStores} className="lg:flex-1 lg:min-w-0" />
-        <MyFidelidadCard compact className="lg:flex-1 lg:min-w-0" />
-      </div>
+      {/* Brandon 2026-06-07: saludo + pulse-strip (racha / tienda de la semana
+          / fidelidad) REMOVIDOS — el feed arranca directo en el contenido para
+          un look más limpio y ejecutivo. */}
       <MarketplaceQuickReorder />
 
       {/* Buscador universal ⌘K — montado SIEMPRE (atajo global, también en modo
@@ -400,7 +375,7 @@ function MarketplaceCenterFeed({
       {isFiltered ? (
         <>
           {/* Barra de filtros aplicados — debajo de la zona de fidelidad */}
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] px-4 py-3">
             <span className="text-sm font-bold text-[var(--text-primary)]">Filtrando por</span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] py-1 pl-3 pr-1.5 text-sm font-bold text-[var(--accent)]">
               {prettyCategoryLabel(activeCategory)}
@@ -429,8 +404,9 @@ function MarketplaceCenterFeed({
         </>
       ) : (
         <>
-          {/* Scrollspy sticky de secciones — navegable (solo modo no-filtro) */}
-          <MarketplaceSectionNav sections={feedSections} />
+          {/* Brandon 2026-06-07: MarketplaceSectionNav (tabs de filtros de
+              sección: Más vendidos/Ofertas/Catálogo/Recetas) REMOVIDO — el feed
+              fluye sin la barra de tabs. */}
           {/* "Bodegas que no puedes perderte / Cerca tuyo / mejores 3 tiendas"
               (TiendasDestacadas) REMOVIDO por pedido de Brandon 2026-06-05.
               El import se conserva por el tipo de `initialStores` en props. */}
@@ -510,7 +486,7 @@ function BodegasSectionBox({
       ) : (
         <div
           className={[
-            "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+            "overflow-hidden bg-[var(--surface-raised)]",
             "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
             "sm:[&_section]:!px-6 [&_section]:!py-5 sm:[&_section]:!py-6",
           ].join(" ")}

@@ -48,7 +48,7 @@ export default function MarketplaceRightRail({ zone = null }: { zone?: string | 
             key={banner.id}
             href={banner.ctaHref || "#"}
             aria-label={banner.title || "Oferta"}
-            className="group relative block aspect-[16/9] overflow-hidden rounded-xl shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="group relative block aspect-[16/9] overflow-hidden transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             style={
               hasImage
                 ? undefined

@@ -362,11 +362,12 @@ export default function UnifiedProductCard({
         // derecha. Desktop conserva el vertical card original (sm:flex-col).
         // layout="compact": SIEMPRE vertical (carruseles angostos donde el
         // horizontal no entra). Default "list" = horizontal mobile.
-        "group relative flex w-full overflow-hidden rounded-2xl sm:rounded-xl",
+        // Brandon 2026-06-07: recto (sin rounded), sin glow/sombra ni borde de
+        // hover (se veía un borde negro feo). El único feedback de hover es el
+        // movimiento sutil de la imagen (group-hover:scale).
+        "group relative flex w-full overflow-hidden",
         isCompact ? "flex-col" : "flex-row sm:flex-col",
         "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
-        "transition-[border-color,box-shadow,transform] duration-200",
-        "hover:border-[var(--accent)]/60 hover:shadow-[0_12px_32px_-8px_color-mix(in oklab, var(--accent) 28%, transparent)]",
         isOutOfStock && "opacity-70",
       )}
       onMouseEnter={onMouseEnter}
@@ -544,7 +545,7 @@ export default function UnifiedProductCard({
       {/* ── Contenido ──────────────────────────────────────────────────────────
           Brandon 2026-05-18 v3: mobile compacto (p-3, gap-y reducido), desktop
           igual (p-4 con min-h del título para alinear cards en grid). */}
-      <div className="flex flex-1 flex-col p-3 sm:p-4 min-w-0">
+      <div className="flex flex-1 flex-col p-2.5 sm:p-3 min-w-0">
         {/* Nombre — text-base font-bold, 2 lineas, mayor presencia.
             Mobile: sin min-h (card horizontal escala según content).
             Link inerte en mobile (el cliente en cel solo usa "Agregar"). */}
@@ -554,7 +555,7 @@ export default function UnifiedProductCard({
           tabIndex={isCompact ? undefined : -1}
           aria-hidden={isCompact ? undefined : "true"}
         >
-          <h3 className="text-sm sm:text-lg font-extrabold sm:font-bold leading-snug text-[var(--text-primary)] line-clamp-2 sm:min-h-[2.75rem] group-hover:text-[var(--accent)] group-focus-within:text-[var(--accent)] transition-colors">
+          <h3 className="text-sm sm:text-[0.95rem] font-bold leading-snug text-[var(--text-primary)] line-clamp-2 sm:min-h-[2.5rem] transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -562,7 +563,7 @@ export default function UnifiedProductCard({
         {/* Descripción — text-sm bold-medium, leading generoso.
             Mobile: 1 línea truncate (espacio limitado en card horizontal). */}
         {product.description && (
-          <p className="mt-1 sm:mt-2 text-xs sm:text-sm font-medium leading-snug sm:leading-relaxed text-[var(--text-secondary)] line-clamp-1 sm:line-clamp-2">
+          <p className="mt-0.5 text-xs font-medium leading-snug text-[var(--text-secondary)] line-clamp-1">
             {product.description}
           </p>
         )}
@@ -613,7 +614,7 @@ export default function UnifiedProductCard({
         {/* Precio + CTA circular — precio RESALTADO + ahorro visible.
             En mobile aumentamos el gap para que el botón del carrito
             no se vea pegado al precio. */}
-        <div className="mt-auto pt-3 flex items-end justify-between gap-3 sm:gap-2">
+        <div className="mt-auto pt-2 flex items-end justify-between gap-2">
           <div className="min-w-0 flex-1">
             {/* Precio tachado + ahorro: si hay descuento, mostrar fila pre-precio */}
             {product.originalPrice && product.originalPrice > product.price && (
@@ -630,7 +631,7 @@ export default function UnifiedProductCard({
             <div className="flex items-baseline gap-1 flex-wrap">
               <span
                 className={cn(
-                  "text-xl sm:text-2xl font-black leading-none tabular-nums tracking-[var(--ls-tight)]",
+                  "text-base sm:text-lg font-black leading-none tabular-nums tracking-[var(--ls-tight)]",
                   product.originalPrice && product.originalPrice > product.price
                     ? "text-[var(--accent)]"
                     : "text-[var(--text-primary)]",

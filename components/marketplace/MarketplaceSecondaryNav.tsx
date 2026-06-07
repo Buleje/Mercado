@@ -25,7 +25,6 @@ import {
 import { cn } from "@/lib/utils";
 import CategoryMegaMenu from "@/components/marketplace/CategoryMegaMenu";
 import { FreeShippingIndicator } from "@/components/marketplace/MarketplaceFreeShippingBar";
-import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 
 // ── Filtros rápidos de la barra secundaria ───────────────────────────────────
 // REGLA "sin repetir": acá NO van "Ofertas" ni "Tiendas" — ambos ya son links
@@ -72,7 +71,6 @@ export default function MarketplaceSecondaryNav() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const hoverCloseTimer = useRef<number | null>(null);
   const pathname = usePathname();
-  const navVisible = useNavScrollHide(80);
 
   const openMenu = useCallback(() => {
     if (hoverCloseTimer.current !== null) {
@@ -111,14 +109,12 @@ export default function MarketplaceSecondaryNav() {
   };
 
   return (
-    // Desktop: mega-menú de categorías + accesos rápidos
-    <div
-      className={cn(
-        "nav-smooth-transition hidden md:block w-full border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] sticky top-16 z-40",
-        navVisible ? "translate-y-0 opacity-100" : "-translate-y-[200%] opacity-0 pointer-events-none",
-      )}
-    >
-      <div className="relative mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
+    // Desktop: mega-menú de categorías + accesos rápidos. FIJO (Brandon
+    // 2026-06-07): sin auto-hide al scrollear — permanece pegado bajo el nav.
+    // Mismo surface que el navbar (raised) para que lean como un bloque
+    // unificado; separación interna con un hairline soft.
+    <div className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40">
+      <div className="relative w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-5 h-12">
           {/* ── Trigger "Categorías" — pill primario con hover intent ──────── */}
           <div
@@ -135,10 +131,10 @@ export default function MarketplaceSecondaryNav() {
               onClick={() => setMenuOpen((o) => !o)}
               onFocus={openMenu}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-3.5 h-9 text-sm font-bold tracking-tight transition-colors",
+                "inline-flex items-center gap-2 rounded-full px-3.5 h-9 text-sm font-bold tracking-tight transition-colors",
                 menuOpen
-                  ? "border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[var(--accent)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]",
+                  ? "bg-[var(--accent)] text-white"
+                  : "bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               <LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -188,7 +184,7 @@ export default function MarketplaceSecondaryNav() {
                     "inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-sm transition-colors",
                     active
                       ? "font-bold text-[var(--accent)] bg-[var(--accent)]/10"
-                      : "font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--surface-canvas)]",
+                      : "font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                   )}
                 >
                   <Icon

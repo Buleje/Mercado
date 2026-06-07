@@ -30,8 +30,9 @@ function prettyLabel(id: string): string {
 
 const RAIL_HEADING =
   "px-2 pb-1.5 pt-1 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]";
-const RAIL_CARD =
-  "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2";
+// Minimalista (Brandon 2026-06-07): card sólida sin borde ni sombra — el
+// contraste surface-raised vs canvas y el espaciado separan los bloques.
+const RAIL_CARD = "rounded-2xl bg-[var(--surface-raised)] p-2";
 
 export default function MarketplaceLeftRail() {
   const filter = useCatalogFilter();

@@ -74,7 +74,6 @@ const SharedMobileNavDrawer = dynamic(
   { ssr: false },
 );
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
-import MarketplaceNavLinks from "@/components/marketplace/navbar/MarketplaceNavLinks";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
@@ -426,7 +425,6 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   const { itemCount: cartItemCount } = useMarketplaceCart();
   const { resolved: themeResolved, toggle: toggleTheme } = useTheme();
   const { t } = useLocale();
-  const scrolled = useScrolledPastThreshold(40);
   // Brandon 2026-05-21: navbar siempre fijo en mobile + desktop. Antes
   // usaba `useNavScrollHide(80)` para esconderse al scrollear hacia abajo,
   // pero Brandon prefiere acceso constante a buscador/carrito/cuenta. El
@@ -475,9 +473,14 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   // foco "elegí tu tienda"). El modo manda sobre los toggles individuales:
   // ponés "Solo Tiendas" en superadmin → el público ve solo Inicio + Tiendas.
   const TIENDAS_ONLY_LINKS = new Set(["inicio", "tiendas", "mercado"]);
+  // Brandon 2026-06-07: el nav de encabezado queda MINIMAL — solo Inicio,
+  // Explorar y Bodegas (centrados). El resto (Tiendas, Descubrí, En Vivo,
+  // Negocios, Abre tu tienda, Recetas…) se accede por el drawer lateral estilo
+  // YouTube (botón ☰). Menos saturación arriba, navegación completa en el panel.
+  const DESKTOP_TOPNAV_LINKS = new Set(["inicio", "explorar", "bodegas"]);
   const renderedLinks = isTiendasOnly
     ? PRIMARY_LINKS.filter((l) => TIENDAS_ONLY_LINKS.has(l.id))
-    : visibleLinks;
+    : visibleLinks.filter((l) => DESKTOP_TOPNAV_LINKS.has(l.id));
 
   const handleOpenCart = useCallback(() => {
     router.push("/marketplace/carrito");
@@ -553,17 +556,39 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
         aria-label="Navegación del marketplace"
         className={cn(
           "nav-smooth-transition sticky top-0 z-50",
-          scrolled
-            ? "bg-[var(--surface-raised)]/95 backdrop-blur-md shadow-md border-b border-[var(--rule-base)]"
-            : "bg-[var(--surface-raised)] shadow-sm border-b border-[var(--rule-base)]",
+          // Minimalista/ejecutivo (Brandon 2026-06-07): superficie sólida +
+          // hairline inferior MUY suave (rule-soft). Sin backdrop-blur, sin
+          // sombras, sin oscurecer el borde al hacer scroll (se veía duro).
+          "bg-[var(--surface-raised)] border-b border-[var(--rule-soft)]",
         )}
       >
-        <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           {/* Brandon 2026-05-20 v6 — navbar mobile minimalista:
               h-16 (64px) → h-14 (56px) en mobile, h-16 desktop.
               Reduce el real-estate ocupado above-the-fold y se siente más
               ligero/comercial. Desktop mantiene h-16 por links + branding. */}
           <div className="flex h-[52px] md:h-16 items-center gap-2 sm:gap-3 lg:gap-4">
+            {/* ── Hamburguesa desktop (Brandon 2026-06-07) — abre el drawer
+                 lateral estilo YouTube con la navegación completa (Tiendas,
+                 Descubrí, En Vivo, Negocios, Abre tu tienda, etc). En mobile la
+                 hamburguesa vive en el cluster de abajo. ── */}
+            <button
+              type="button"
+              onClick={() => {
+                // En /marketplace el rail lateral escucha y togglea (preventDefault
+                // → dispatchEvent devuelve false). En otras rutas nadie lo maneja
+                // → abrimos el drawer overlay como fallback.
+                const notHandled = window.dispatchEvent(
+                  new CustomEvent("buleje:toggle-navrail", { cancelable: true }),
+                );
+                if (notHandled) setMobileMenuOpen(true);
+              }}
+              aria-label="Abrir menú de navegación"
+              className="hidden lg:inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            >
+              <Menu className="h-5 w-5" strokeWidth={2.25} aria-hidden="true" />
+            </button>
+
             {/* ── Logo (desktop+tablet) — Brandon, mayo 14 2026: siempre lleva a /tiendas.
                  En mobile vive dentro del input de búsqueda (mayo 15 2026). ── */}
             {/* Brandon 2026-05-20 v7: logo dinámico — en storefront muestra
@@ -588,7 +613,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     alt=""
                     width={36}
                     height={36}
-                    className="h-9 w-9 rounded-full object-cover ring-2 ring-[var(--rule-base)]"
+                    className="h-9 w-9 rounded-full object-cover"
                     loading="eager"
                   />
                   {storefront.name && (
@@ -606,6 +631,20 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 />
               )}
             </Link>
+
+            {/* ── Ubicación de entrega al lado del logo (Brandon 2026-06-07) —
+                solo modo completo. Ícono pin + lugar; click → direcciones. ── */}
+            {!isTiendasOnly && (
+              <button
+                type="button"
+                onClick={() => router.push("/marketplace/mi-cuenta/direcciones")}
+                aria-label="Tu ubicación de entrega"
+                className="hidden lg:inline-flex items-center gap-1.5 shrink-0 max-w-[180px] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              >
+                <MapPin className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={2.25} aria-hidden="true" />
+                <span className="text-sm font-bold truncate">{platformCity}</span>
+              </button>
+            )}
 
             {/* ── Enlaces Inicio/Tiendas (Brandon 2026-06-02) — re-agregados en
                 modo tiendas, pegados al logo (antes de la pastilla). En lg+ para
@@ -670,13 +709,17 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
             {!isTiendasOnly && (
               <div
                 data-tour="search"
-                className="hidden md:block flex-[3] max-w-[560px]"
+                className="hidden md:block flex-1 min-w-0 px-2 lg:px-6"
               >
-                <NavbarSearchAutocomplete
-                  className="block"
-                  storesOnly={false}
-                  placeholder={t("nav.searchPlaceholder")}
-                />
+                {/* Buscador largo y centrado — protagonista del nav (Brandon
+                    2026-06-07). Recto (la card del input ya es rounded-none). */}
+                <div className="mx-auto w-full max-w-[760px]">
+                  <NavbarSearchAutocomplete
+                    className="block"
+                    storesOnly={false}
+                    placeholder={t("nav.searchPlaceholder")}
+                  />
+                </div>
               </div>
             )}
 
@@ -685,14 +728,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 tabs de arriba (a la izquierda). Mide el ancho real
                 (ResizeObserver + capa fantasma) y pliega bajo "Más ▾" lo que no
                 entra. Nunca se desborda (hasta 11 links). Brandon 2026-05-30. */}
-            {!isTiendasOnly && (
-              <MarketplaceNavLinks
-                links={renderedLinks}
-                isActive={isActive}
-                t={t}
-                hasActiveLive={hasActiveLive}
-              />
-            )}
+            {/* Brandon 2026-06-07: enlaces Inicio/Explorar/Bodegas REMOVIDOS del
+                nav top — viven en el rail lateral. El nav queda: ☰ · logo ·
+                ubicación · BUSCADOR (centro, protagonista) · cluster derecho. */}
 
             {/* ── Right cluster (desktop) ── */}
             <div className="hidden md:flex items-center gap-1.5 ml-auto">
@@ -749,7 +787,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     aria-expanded={userMenuOpen}
                     aria-haspopup="true"
                     aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
-                    className="group inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 pr-3 transition-all hover:border-[var(--text-primary)]/40 hover:shadow-sm"
+                    className="group inline-flex items-center gap-2 rounded-full bg-[var(--surface-sunken)] p-0.5 pr-3 transition-colors hover:bg-[var(--surface-alt)]"
                   >
                     {/* Círculo con iniciales del nombre */}
                     <span
@@ -778,7 +816,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     <div
                       role="menu"
                       aria-label="Menú de usuario"
-                      className="absolute right-0 top-full mt-2 w-60 bg-[var(--surface-raised)] rounded-xl shadow-xl border border-[var(--rule-soft)] overflow-hidden z-50"
+                      className="absolute right-0 top-full mt-2 w-60 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.2)] overflow-hidden z-50"
                     >
                       <div className="py-1.5">
                         <Link
@@ -949,7 +987,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                         alt=""
                         width={24}
                         height={24}
-                        className="h-6 w-6 rounded-full object-cover ring-1 ring-[var(--rule-base)]"
+                        className="h-6 w-6 rounded-full object-cover"
                         loading="eager"
                       />
                     ) : (
@@ -1022,7 +1060,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 {cartItemCount > 0 && (
                   <span
                     aria-hidden="true"
-                    className="absolute top-0.5 right-0.5 inline-flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white shadow-sm leading-none ring-2 ring-[var(--surface-raised)] tabular-nums"
+                    className="absolute top-0.5 right-0.5 inline-flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white leading-none ring-2 ring-[var(--surface-raised)] tabular-nums"
                   >
                     {cartItemCount > 99 ? "99+" : cartItemCount}
                   </span>

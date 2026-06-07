@@ -42,18 +42,16 @@ export function FreeShippingIndicator({ className }: { className?: string }) {
       role="status"
       aria-live="polite"
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
-        unlocked
-          ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300"
-          : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+        // Brandon 2026-06-07: minimalista, sin neón verde. Recto, monocromo.
+        "inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold text-[var(--text-secondary)] transition-colors",
         className,
       )}
     >
       {unlocked ? (
-        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[var(--text-primary)]" aria-hidden="true" />
       ) : (
         <Truck
-          className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]"
+          className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]"
           aria-hidden="true"
         />
       )}
@@ -80,16 +78,11 @@ export function FreeShippingIndicator({ className }: { className?: string }) {
       </span>
       {/* Progress mini */}
       <span
-        className="ml-1 hidden sm:block h-1 w-20 rounded-full bg-[var(--rule-soft)] overflow-hidden"
+        className="ml-1 hidden sm:block h-1 w-20 bg-[var(--rule-soft)] overflow-hidden"
         aria-hidden="true"
       >
         <span
-          className={cn(
-            "block h-full transition-all duration-500 rounded-full",
-            unlocked
-              ? "bg-linear-to-r from-emerald-400 to-[var(--data-success-600)]"
-              : "bg-linear-to-r from-[var(--accent)]/60 to-[var(--accent)]",
-          )}
+          className="block h-full bg-[var(--text-secondary)] transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </span>

@@ -32,16 +32,19 @@ export const NAV_LINK_CATALOG: Record<NavScope, NavLinkEntry[]> = {
     { id: "abrir-tienda", label: "Abre tu Tienda", href: "/abrir-tienda", description: "CTA bodegueros" },
   ],
   marketplace: [
-    // Default: modo "Solo Tiendas" (estilo PedidosYa / piwi). El superadmin
-    // puede activar el modo "Marketplace completo" desde /superadmin/stores
-    // tab Navegación. La política de producto actual privilegia el listado
-    // de bodegas frente a Explorar/Recetas/En Vivo.
-    { id: "explorar", label: "Explorar", href: "/marketplace/explorar", description: "Hub de descubrimiento", defaultVisible: false },
+    // Default 2026-06-07 (Brandon): modo "Marketplace completo" — Explorar,
+    // Recetas, En Vivo y Ofertas visibles → activa la SUB-BARRA (mega-menú
+    // Categorías + filtros rápidos). Antes el default era "Solo Tiendas" y la
+    // sub-barra quedaba oculta. `descubri` (#discover, un 2º mega-menú en el nav
+    // primario) se deja OFF para no duplicar el mega-menú de Categorías de la
+    // sub-barra y mantener el nav limpio/minimalista. El superadmin puede
+    // togglear todo desde /superadmin/stores → tab Navegación.
+    { id: "explorar", label: "Explorar", href: "/marketplace/explorar", description: "Hub de descubrimiento" },
     { id: "bodegas", label: "Bodegas", href: "/marketplace", description: "Home del marketplace" },
-    { id: "recetas", label: "Recetas", href: "/recetas", description: "Catálogo de recetas", defaultVisible: false },
-    { id: "descubri", label: "Descubrí", href: "#discover", description: "Mega menú", defaultVisible: false },
-    { id: "en-vivo", label: "En Vivo", href: "/marketplace/en-vivo", description: "Live shopping", defaultVisible: false },
-    { id: "ofertas", label: "Ofertas", href: "/marketplace/ofertas", description: "Deals del día (también en sub-nav)", defaultVisible: false },
+    { id: "recetas", label: "Recetas", href: "/recetas", description: "Catálogo de recetas" },
+    { id: "descubri", label: "Descubrí", href: "#discover", description: "Mega menú (2º) — off por defecto para no duplicar Categorías", defaultVisible: false },
+    { id: "en-vivo", label: "En Vivo", href: "/marketplace/en-vivo", description: "Live shopping" },
+    { id: "ofertas", label: "Ofertas", href: "/marketplace/ofertas", description: "Deals del día (también en sub-nav)" },
     // Links B2B — cruzan del directorio B2C (/tiendas) a la oferta para negocios.
     // Visibles por defecto (también en modo "Solo Tiendas"). Toggle desde superadmin.
     { id: "negocios", label: "Negocios", href: "/negocios", description: "Landing B2B — software para bodegas" },

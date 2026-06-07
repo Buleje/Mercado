@@ -255,10 +255,10 @@ export default function NavbarSearchAutocomplete({
   const groups = useMemo(() => {
     const isEmpty = query.trim().length === 0;
     if (isEmpty) {
+      // Brandon 2026-06-07: en foco vacío SOLO "Búsquedas recientes" — se
+      // quitaron "Categorías populares" y "Tiendas destacadas".
       return [
         { kind: "recent", title: "Búsquedas recientes", items: recentSuggestions },
-        { kind: "category", title: "Categorías populares", items: popularCategories },
-        { kind: "store", title: "Tiendas destacadas", items: topStores },
       ].filter((g) => g.items.length > 0);
     }
     const products = suggestions.filter((s) => s.type === "product");
@@ -359,11 +359,13 @@ export default function NavbarSearchAutocomplete({
               ? // Embebido en una pastilla padre: transparente, sin borde propio.
                 "w-full h-11 bg-transparent border-0 rounded-none pl-11 pr-14 text-base font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-0 focus:shadow-none"
               : cn(
-                  "w-full h-12 rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]",
+                  // Brandon 2026-06-07: recto (rounded-none), borde fino, sin
+                  // sombra ni ring neón — foco/hover neutro.
+                  "w-full h-11 rounded-none bg-[var(--surface-raised)] border border-[var(--rule-base)]",
                   "pl-11 pr-14 text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)]",
-                  "placeholder:text-[var(--text-tertiary)] outline-none transition-all",
-                  "hover:border-[var(--accent)]/40 hover:shadow-sm",
-                  "focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:shadow-md focus: focus:ring-4 focus:ring-[var(--accent)]/10",
+                  "placeholder:text-[var(--text-tertiary)] outline-none transition-colors",
+                  "hover:border-[var(--rule-strong)]",
+                  "focus:border-[var(--text-primary)] focus:bg-[var(--surface-canvas)]",
                 ),
             "buleje-search-input",
           )}
@@ -385,9 +387,9 @@ export default function NavbarSearchAutocomplete({
         <button
           type="submit"
           className={cn(
-            "absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full",
-            "text-white shadow-sm transition-all",
-            "hover:scale-105 hover:shadow-md hover:",
+            "absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-none",
+            "text-white transition-transform",
+            "hover:scale-105",
             "active:scale-[0.97]",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           )}

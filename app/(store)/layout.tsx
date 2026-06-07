@@ -38,6 +38,7 @@ import LocalBusinessJsonLd from "@/components/store/LocalBusinessJsonLd";
 import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
 import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
 import ConditionalShoppingChrome from "@/components/marketplace/ConditionalShoppingChrome";
+import MarketplaceSideRailShell from "@/components/marketplace/MarketplaceSideRailShell";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { tenantExists } from "@/lib/tenant-check";
 import { headers } from "next/headers";
@@ -170,7 +171,10 @@ async function StoreLayoutContent({
             <Suspense fallback={null}>
               <ConditionalSecondaryNav />
             </Suspense>
-            {children}
+            {/* Rail de navegación lateral (estilo YouTube) — en la superficie
+                marketplace queda AL LADO del contenido; passthrough en el resto
+                de rutas. Brandon 2026-06-07. */}
+            <MarketplaceSideRailShell>{children}</MarketplaceSideRailShell>
             <Footer />
             <Suspense fallback={null}>
               <QuickAddDrawer />

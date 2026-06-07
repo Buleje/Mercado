@@ -93,7 +93,7 @@ export default function RachaDiariaWidget({ className }: { className?: string })
   return (
     <div
       className={cn(
-        "flex h-16 items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-gradient-to-r from-[var(--accent-soft)] to-[var(--surface-raised)] px-3",
+        "flex h-16 items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] px-3",
         className,
       )}
       aria-label={`Racha de ${streak} ${streak === 1 ? "día" : "días"} seguidos`}
@@ -102,7 +102,7 @@ export default function RachaDiariaWidget({ className }: { className?: string })
       <span
         aria-hidden
         className={cn(
-          "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white shadow-sm",
+          "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white",
           justGrew && "animate-bounce",
         )}
       >

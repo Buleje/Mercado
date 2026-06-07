@@ -44,7 +44,7 @@ function FidelidadSkeleton({ compact }: { compact: boolean }) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4",
+        "rounded-2xl bg-[var(--surface-raised)] p-4",
         compact ? "space-y-2" : "space-y-3",
       )}
       aria-busy="true"
@@ -221,7 +221,7 @@ export default function MyFidelidadCard({
     return (
       <div
         className={cn(
-          "flex items-center justify-between rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3",
+          "flex items-center justify-between rounded-2xl bg-[var(--surface-raised)] px-4 py-3",
           className,
         )}
         role="alert"
@@ -248,7 +248,7 @@ export default function MyFidelidadCard({
         href="/marketplace"
         aria-label="Mi Fidelidad — tu primera compra te da 100 puntos de bienvenida"
         className={cn(
-          "group flex h-16 items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+          "group flex h-16 items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
           className,
         )}
       >
@@ -280,7 +280,7 @@ export default function MyFidelidadCard({
     return (
       <div
         className={cn(
-          "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-4",
+          "rounded-2xl bg-[var(--surface-raised)] px-4 py-4",
           className,
         )}
         aria-label="Panel de fidelidad — sin puntos aún"
@@ -321,7 +321,7 @@ export default function MyFidelidadCard({
         href="/marketplace/mi-cuenta/fidelidad"
         aria-label={`Mi Fidelidad — ${data.points.toLocaleString("es-PE")} puntos (S/${data.soleEquivalent.toFixed(2)}). Ver panel completo`}
         className={cn(
-          "group flex h-16 items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+          "group flex h-16 items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
           className,
         )}
       >
@@ -365,7 +365,7 @@ export default function MyFidelidadCard({
   return (
     <article
       className={cn(
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4",
+        "rounded-2xl bg-[var(--surface-raised)] p-4",
         compact ? "space-y-2.5" : "space-y-3",
         className,
       )}

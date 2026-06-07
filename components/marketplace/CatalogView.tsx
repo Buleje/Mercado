@@ -22,8 +22,9 @@ import { useCatalogFilter } from "@/components/marketplace/catalog-filter-contex
 // Catálogo en la COLUMNA CENTRAL. Brandon pidió 4 por fila en desktop ancho:
 // 2 cols base → 3 en xl → 4 en pantallas anchas. Densidad sin perder
 // legibilidad (las 5-6 cols originales eran diminutas).
+// Brandon 2026-06-07: cards más compactas → hasta 5 por fila en desktop ancho.
 const CATALOG_GRID =
-  "grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4";
+  "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 

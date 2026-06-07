@@ -83,15 +83,17 @@ export default function MarketplaceCategoriesBar() {
     pathname === "/marketplace/buscar" ? searchParams.get("cat") : null;
   const isHome = pathname === "/marketplace" && !activeCat;
 
+  // Minimalista (Brandon 2026-06-07): chips sólidos sin borde. Activo = fill
+  // accent; idle = fill sunken; hover = accent-soft. Sin border-2 ni ring
+  // decorativo (se mantiene focus-visible para a11y de teclado).
   const chipBase =
-    "snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-2 text-sm font-bold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
-  const chipActive =
-    "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]";
+    "snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  const chipActive = "bg-[var(--accent)] text-white";
   const chipIdle =
-    "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]/60";
+    "bg-[var(--surface-sunken)] text-[var(--text-primary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]";
 
   return (
-    <div className="md:hidden sticky top-[52px] z-40 border-b border-[var(--rule-base)] bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
+    <div className="md:hidden sticky top-[52px] z-40 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
       <nav
         aria-label="Categorías de productos"
         className="flex gap-2 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden snap-x px-4 py-2.5"

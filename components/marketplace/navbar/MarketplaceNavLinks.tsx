@@ -161,8 +161,8 @@ export default function MarketplaceNavLinks({
             "whitespace-nowrap inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold transition-all",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
             active
-              ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
-              : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/70 hover:text-[var(--text-primary)]",
+              ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+              : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
           )}
         >
           <LinkIcon
@@ -209,7 +209,7 @@ export default function MarketplaceNavLinks({
     // Pista flexible — su ancho real es el presupuesto medible. Comparte la
     // pista 4:3 con el search (nav un poco más). min-w-0 deja que flexbox la
     // achique en vez de empujar al cluster derecho.
-    <div ref={trackRef} className="hidden lg:flex min-w-0 flex-[4] items-center">
+    <div ref={trackRef} className="hidden lg:flex min-w-0 flex-1 items-center justify-center">
       {/* ── Capa fantasma (oculta) para medir anchos naturales ── */}
       <div
         ref={ghostRef}
@@ -223,8 +223,9 @@ export default function MarketplaceNavLinks({
         )}
       </div>
 
-      {/* ── Pill visible: chips que entran + "Más ▾" ── */}
-      <div className="inline-flex max-w-full items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)]/60 p-1 shadow-sm backdrop-blur-md">
+      {/* Links visibles — planos (Brandon 2026-06-07): sin pill, sin borde,
+          sin sombra ni backdrop-blur. El estado activo se marca con fill sólido. */}
+      <div className="inline-flex max-w-full items-center gap-1">
         {visibleSlots.map(({ link }) =>
           link.discover ? (
             <DiscoverMegaMenu key="discover" variant="desktop" />
@@ -245,8 +246,8 @@ export default function MarketplaceNavLinks({
                 "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-semibold transition-all",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 moreOpen
-                  ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/70 hover:text-[var(--text-primary)]",
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
               )}
             >
               <span>{t("nav.more") || "Más"}</span>
@@ -264,7 +265,7 @@ export default function MarketplaceNavLinks({
               <div
                 role="menu"
                 aria-label="Más secciones"
-                className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] py-1.5 shadow-xl"
+                className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1.5 shadow-[0_8px_24px_-14px_rgba(0,0,0,0.2)]"
               >
                 {overflowSlots.map(({ link }) => {
                   const active = isActive(link);

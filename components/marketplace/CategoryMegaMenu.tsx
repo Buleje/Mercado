@@ -1,13 +1,15 @@
 "use client";
 
 /**
- * CategoryMegaMenu.tsx — Mega-panel de categorías con íconos + tiendas destacadas.
+ * CategoryMegaMenu.tsx — Mega-panel de categorías del sub-nav.
  *
- * Diseño (v4 2026-05-26, Brandon: "mega-panel con íconos"):
- *   - Panel ancho anclado al trigger del sub-nav.
- *   - Grid de CATEGORÍAS como tiles con ícono Lucide + label + nº subcategorías.
- *   - Sección "Tiendas destacadas" — rail de logos (fetch lazy on-open).
- *   - Accesos rápidos (Ofertas / Más vendidos / Nuevos / Delivery gratis).
+ * Diseño v5 2026-06-07 (Brandon: "minimalista, sólido, sin bordes sombreados"):
+ *   - Solo categorías REALES con ≥1 producto publicado
+ *     (/api/marketplace/product-categories) → si una categoría no tiene
+ *     productos, NO aparece. Cero categorías decorativas.
+ *   - Tiles sólidos (surface-sunken), sin border-2 ni shadow; hover = accent-soft.
+ *   - Panel con borde hairline + sombra mínima (lo justo para un dropdown).
+ *   - Sección "Tiendas destacadas" + accesos rápidos (limpios, sin sombras).
  *
  * A11y: Esc cierra, click fuera cierra, scroll>40px cierra.
  * Iconos: SIEMPRE desde @buleje/design-system/icons (ADR-075).
@@ -23,44 +25,34 @@ import {
   Tag,
   TrendingUp,
   Bike,
-  ShoppingBasket,
-  Beef,
-  Apple,
-  Wine,
-  Milk,
-  Croissant,
-  Pill,
-  type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { CATEGORIAS } from "@/lib/constants/marketplace-categories";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 export type CategoryMegaMenuProps = {
   open: boolean;
   onClose: () => void;
 };
 
-const CATEGORY_SLUGS = Object.keys(CATEGORIAS);
+interface RealCategory {
+  id: string;
+  count: number;
+}
 
-// Ícono Lucide por slug de categoría (fallback Store).
-const CATEGORY_ICON: Record<string, LucideIcon> = {
-  "limpieza-hogar": Sparkles,
-  abarrotes: ShoppingBasket,
-  carnes: Beef,
-  "frutas-verduras": Apple,
-  bebidas: Wine,
-  lacteos: Milk,
-  panaderia: Croissant,
-  farmacia: Pill,
-};
+/** "pollo-brasa" → "Pollo brasa" · "bebidas" → "Bebidas" */
+function prettyLabel(id: string): string {
+  const spaced = id.replace(/[-_]+/g, " ").trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
 
 // Accesos rápidos del menú.
-const QUICK_LINKS: Array<{ href: string; label: string; Icon: LucideIcon }> = [
+const QUICK_LINKS = [
   { href: "/marketplace/ofertas", label: "Ofertas", Icon: Tag },
   { href: "/marketplace/explorar?sort=best-sellers", label: "Más vendidos", Icon: TrendingUp },
   { href: "/marketplace/explorar?sort=newest", label: "Nuevos", Icon: Sparkles },
   { href: "/marketplace/explorar?delivery=free", label: "Delivery gratis", Icon: Bike },
-];
+] as const;
 
 type FeaturedStore = {
   id: string;
@@ -73,6 +65,7 @@ type FeaturedStore = {
 export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [stores, setStores] = useState<FeaturedStore[] | null>(null);
+  const [categories, setCategories] = useState<RealCategory[] | null>(null);
 
   // Esc cierra
   useEffect(() => {
@@ -110,6 +103,26 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
     return () => window.removeEventListener("scroll", onScroll);
   }, [open, onClose]);
 
+  // Fetch lazy de categorías REALES (con productos) — solo la 1ª vez que abre.
+  useEffect(() => {
+    if (!open || categories !== null) return;
+    let alive = true;
+    cachedJson<{ categories?: RealCategory[] }>(
+      "/api/marketplace/product-categories",
+      300_000,
+    )
+      .then((d) => {
+        if (!alive) return;
+        setCategories((d?.categories ?? []).filter((c) => c.id && c.count > 0));
+      })
+      .catch(() => {
+        if (alive) setCategories([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [open, categories]);
+
   // Fetch lazy de tiendas destacadas — solo la primera vez que abre.
   useEffect(() => {
     if (!open || stores !== null) return;
@@ -138,7 +151,8 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
         onClick={onClose}
       />
 
-      {/* Panel anclado al trigger (top-full del wrapper sticky). */}
+      {/* Panel anclado al trigger. Minimalista: borde hairline + sombra mínima
+          (lo justo para separar un dropdown del fondo). */}
       <div
         ref={panelRef}
         role="menu"
@@ -146,65 +160,77 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
         className={cn(
           "absolute top-full left-0 mt-1 z-50",
           "w-[min(1100px,calc(100vw-2rem))]",
-          "bg-[var(--surface-canvas)] rounded-3xl overflow-hidden",
-          "border border-[var(--rule-soft)]",
-          "shadow-[0_24px_80px_-20px_rgba(0,0,0,0.30)]",
-          "animate-[scaleIn_.22s_ease-out]",
+          "bg-[var(--surface-canvas)] overflow-hidden",
+          "border border-[var(--rule-base)]",
+          "shadow-[0_10px_28px_-16px_rgba(0,0,0,0.20)]",
+          "animate-[scaleIn_.18s_ease-out]",
         )}
       >
-        <div className="p-6 sm:p-8">
+        <div className="p-6 sm:p-7">
           {/* Header */}
-          <div className="flex items-baseline justify-between gap-4 mb-5">
-            <h2 className="text-lg sm:text-xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
-              Explorá por{" "}
-              <span className="italic font-serif text-[var(--accent)]">categoría</span>
+          <div className="flex items-baseline justify-between gap-4 mb-4">
+            <h2 className="text-lg font-black tracking-[-0.02em] text-[var(--text-primary)]">
+              Explorá por categoría
             </h2>
             <Link
               href="/marketplace/explorar"
               role="menuitem"
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-4 h-9 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors shrink-0"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-4 h-9 text-xs font-bold text-[var(--accent)] hover:bg-[var(--surface-raised)] transition-colors shrink-0"
             >
               Ver todo el catálogo
               <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
             </Link>
           </div>
 
-          {/* Grid de categorías con íconos */}
-          <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-            {CATEGORY_SLUGS.map((slug, idx) => {
-              const cat = CATEGORIAS[slug];
-              const Icon = CATEGORY_ICON[slug] ?? Store;
-              return (
-                <li key={slug}>
-                  <Link
-                    href={`/marketplace/categoria/${slug}`}
-                    role="menuitem"
-                    onClick={onClose}
-                    style={{ animationDelay: `${idx * 25}ms` }}
-                    className="group flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-3.5 hover:border-[var(--accent)] hover:-translate-y-0.5 hover:shadow-lg transition-all animate-[fadeIn_.25s_ease-out] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                  >
-                    <span className="inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0 group-hover:scale-110 transition-transform">
-                      <Icon className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} aria-hidden />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-extrabold tracking-tight text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors line-clamp-1">
-                        {cat.label}
-                      </span>
-                      <span className="block text-[11px] font-medium text-[var(--text-tertiary)] line-clamp-1">
-                        {cat.subCategorias.length} subcategorías
-                      </span>
-                    </span>
-                  </Link>
+          {/* Grid de categorías REALES — tiles sólidos, sin bordes ni sombras */}
+          {categories === null ? (
+            // Skeleton mientras carga
+            <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <li key={i} aria-hidden>
+                  <div className="h-[68px] rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          ) : categories.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)] py-2">
+              Pronto vas a ver categorías con productos aquí.
+            </p>
+          ) : (
+            <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {categories.map((cat) => {
+                const Icon = getProductCategoryIcon(cat.id.toLowerCase());
+                return (
+                  <li key={cat.id}>
+                    <Link
+                      href={`/marketplace/buscar?cat=${encodeURIComponent(cat.id)}`}
+                      role="menuitem"
+                      onClick={onClose}
+                      className="group flex items-center gap-3 bg-[var(--surface-sunken)] p-3 transition-colors hover:bg-[var(--surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                    >
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--surface-raised)] text-[var(--accent)] shrink-0 transition-colors group-hover:bg-[var(--surface-canvas)]">
+                        <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-extrabold tracking-tight text-[var(--text-primary)] line-clamp-1">
+                          {prettyLabel(cat.id)}
+                        </span>
+                        <span className="block text-[11px] font-semibold text-[var(--text-tertiary)] tabular-nums">
+                          {cat.count} {cat.count === 1 ? "producto" : "productos"}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           {/* Tiendas destacadas — rail de logos */}
           <div className="mt-6 pt-5 border-t border-[var(--rule-soft)]">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+              <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 <Store className="h-3.5 w-3.5" aria-hidden />
                 Tiendas destacadas
               </p>
@@ -220,7 +246,6 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
             </div>
 
             {stores === null ? (
-              // Skeleton mientras carga
               <div className="flex gap-3 overflow-hidden">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
@@ -247,7 +272,7 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
                       onClick={onClose}
                       className="group flex flex-col items-center gap-2 w-[88px] text-center"
                     >
-                      <span className="relative h-14 w-14 rounded-2xl overflow-hidden bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] group-hover:border-[var(--accent)] group-hover:scale-105 transition-all shadow-sm">
+                      <span className="relative h-14 w-14 rounded-2xl overflow-hidden bg-[var(--surface-sunken)] transition-transform group-hover:scale-105">
                         {s.logo ? (
                           <Image
                             src={s.logo}
@@ -257,12 +282,12 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
                             className="object-cover"
                           />
                         ) : (
-                          <span className="flex h-full w-full items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-white font-black text-xl">
+                          <span className="flex h-full w-full items-center justify-center bg-[var(--accent)] text-white font-black text-xl">
                             {s.name.trim().charAt(0).toUpperCase()}
                           </span>
                         )}
                       </span>
-                      <span className="text-[11px] font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors line-clamp-2 leading-tight">
+                      <span className="text-[11px] font-bold text-[var(--text-primary)] transition-colors line-clamp-2 leading-tight">
                         {s.name}
                       </span>
                     </Link>
@@ -272,7 +297,7 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
             )}
           </div>
 
-          {/* Accesos rápidos */}
+          {/* Accesos rápidos — pills sólidas, sin bordes */}
           <div className="mt-5 pt-5 border-t border-[var(--rule-soft)] flex flex-wrap gap-2">
             {QUICK_LINKS.map(({ href, label, Icon }) => (
               <Link
@@ -280,7 +305,7 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
                 href={href}
                 role="menuitem"
                 onClick={onClose}
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 h-9 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3.5 h-9 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
               >
                 <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
                 {label}

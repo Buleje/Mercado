@@ -97,7 +97,7 @@ export default function TiendaSemanaWidget({
     <section
       aria-label="Tienda de la semana"
       className={cn(
-        "flex h-16 items-center gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3",
+        "flex h-16 items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] px-3",
         className,
       )}
     >
