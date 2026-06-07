@@ -354,7 +354,7 @@ export default function StoreCatalog({
                 className={cn(
                   "h-12 w-12 inline-flex items-center justify-center transition-colors",
                   view === "grid"
-                    ? "bg-[var(--accent-600,var(--accent))] text-white"
+                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                 )}
               >
@@ -368,7 +368,7 @@ export default function StoreCatalog({
                 className={cn(
                   "h-12 w-12 inline-flex items-center justify-center border-l-2 border-[var(--rule-base)] transition-colors",
                   view === "list"
-                    ? "bg-[var(--accent-600,var(--accent))] text-white"
+                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                 )}
               >
@@ -388,7 +388,7 @@ export default function StoreCatalog({
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="text-base font-semibold text-[var(--accent)] underline underline-offset-4 decoration-2 hover:text-[var(--data-success-600)] transition-colors"
+              className="text-base font-semibold text-[var(--text-primary)] underline underline-offset-4 decoration-2 hover:opacity-70 transition-opacity"
             >
               Limpiar búsqueda
             </button>
@@ -435,7 +435,7 @@ export default function StoreCatalog({
                 <div className="flex items-center gap-3 min-w-0">
                   <span
                     aria-hidden
-                    className="h-3.5 w-3.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_0_4px_var(--accent-soft)]"
+                    className="h-3.5 w-3.5 rounded-full bg-[var(--text-primary)] shrink-0 shadow-[0_0_0_4px_var(--surface-sunken)]"
                   />
                   <div className="min-w-0">
                     <h3
@@ -444,7 +444,7 @@ export default function StoreCatalog({
                     >
                       {isFirstCategory ? (
                         <span className="inline-flex items-center gap-2">
-                          <Flame className="h-5 w-5 text-orange-500" strokeWidth={2.5} aria-hidden />
+                          <Flame className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={2.5} aria-hidden />
                           Los más pedidos
                         </span>
                       ) : (
@@ -458,10 +458,10 @@ export default function StoreCatalog({
                 </div>
                 {/* Badge "popular" en la primera categoría — social proof */}
                 {isFirstCategory && (
-                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 h-7 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] px-3 h-7 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0 border border-[var(--rule-base)]">
                     <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--text-tertiary)] opacity-70 animate-ping" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]" />
                     </span>
                     Trending
                   </span>

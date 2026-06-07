@@ -95,14 +95,14 @@ function CategoryRow({
         "w-full flex items-center gap-3.5 px-3.5 h-14 rounded-2xl text-left transition-all duration-150 active:scale-[0.98]",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         active
-          ? "bg-linear-to-r from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 ring-1 ring-white/10"
+          ? "bg-[var(--text-primary)] text-[var(--surface-raised)] shadow-sm"
           : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]",
       )}
     >
       {/* Thumbnail h-10 (40px, antes 32px) — más prominente */}
       <span className={cn(
         "shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-xl overflow-hidden",
-        active ? "bg-white/20 ring-2 ring-white/30" : "bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]",
+        active ? "bg-[var(--surface-raised)]/15 ring-2 ring-[var(--surface-raised)]/25" : "bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]",
       )}>
         {imageUrl ? (
           <Image
@@ -114,7 +114,7 @@ function CategoryRow({
             unoptimized
           />
         ) : (
-          <Tag className={cn("h-4.5 w-4.5", active ? "text-white" : "text-[var(--text-tertiary)]")} strokeWidth={2.25} />
+          <Tag className={cn("h-4.5 w-4.5", active ? "text-[var(--surface-raised)]" : "text-[var(--text-tertiary)]")} strokeWidth={2.25} />
         )}
       </span>
 
@@ -123,7 +123,7 @@ function CategoryRow({
         <span className="block text-sm font-extrabold capitalize truncate leading-tight">{label}</span>
         <span className={cn(
           "block text-[length:var(--ts-2xs)] font-bold mt-0.5 tabular-nums",
-          active ? "text-white/85" : "text-[var(--text-tertiary)]",
+          active ? "text-[var(--surface-raised)]/80" : "text-[var(--text-tertiary)]",
         )}>
           {count} {count === 1 ? "producto" : "productos"}
         </span>
@@ -131,8 +131,8 @@ function CategoryRow({
 
       {/* Count badge — más grande y visible, no hace falta porque está inline arriba */}
       {active ? (
-        <span aria-hidden className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/25">
-          <Tag className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+        <span aria-hidden className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-raised)]/20">
+          <Tag className="h-3.5 w-3.5 text-[var(--surface-raised)]" strokeWidth={2.5} />
         </span>
       ) : (
         <span

@@ -166,7 +166,7 @@ export default function StoreHero({
         {/* ── Header — identidad + CTAs ───────────────────────────────── */}
         <div className="flex flex-col gap-4 p-4 sm:p-5 lg:p-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
               <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Tienda Buleje · {category}
             </span>
@@ -200,7 +200,7 @@ export default function StoreHero({
                   el.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
               }}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-black text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--text-primary)] px-5 text-sm font-black text-[var(--surface-raised)] transition-all hover:opacity-90 hover:scale-[1.01] active:scale-[0.98]"
             >
               Ver catálogo
               <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
@@ -220,7 +220,7 @@ export default function StoreHero({
                 }}
                 aria-label={`Enviar mensaje a ${name}`}
                 title="Chatea con la tienda"
-                className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 text-sm font-black text-[var(--accent)] transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-[0.98]"
+                className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--text-primary)]/20 bg-transparent px-4 text-sm font-black text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--surface-raised)] active:scale-[0.98]"
               >
                 <MessageCircle className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                 Mensaje
@@ -233,7 +233,7 @@ export default function StoreHero({
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
                 title="Pedí por WhatsApp"
-                className="inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)]/5"
+                className="inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 <Phone className="h-4 w-4" strokeWidth={2.25} aria-hidden />
               </a>
