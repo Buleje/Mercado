@@ -41,7 +41,6 @@ const SharedMobileNavDrawer = dynamic(
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
 import StoreStatusBanner from "./StoreStatusBanner";
-import StoreTopSellers from "./StoreTopSellers";
 // Brandon 2026-05-20 v11 audit P2: StorePromoBannersStrip below-fold +
 // hace fetch propio en mount → dynamic ssr:false ahorra ~5KB initial.
 // (Brandon 2026-05-21 v6: import de `dynamic` ya está en línea 21.)
@@ -444,11 +443,6 @@ export default function StoreDetailClient({
         scheduleLabel="Lun a Dom · 7am – 11pm"
       />
 
-      {/* ── Lo más pedido de esta tienda — oculto en celular (Brandon 2026-05-31) ── */}
-      <div className="hidden md:block">
-        <StoreTopSellers storeSlug={store.slug} storeId={store.id} storeName={store.name} />
-      </div>
-
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
       <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
 
@@ -680,7 +674,7 @@ export default function StoreDetailClient({
       </div>
 
       {/* ── Layout: SIDEBAR (lg+) + CATALOG ─────────────────────────────── */}
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-8">
         <div className="flex gap-6 lg:gap-8">
           {/* Sidebar desktop — sticky, vertical, scroll interno si hay muchas categorias */}
           <aside className="hidden lg:block w-64 shrink-0">
@@ -784,23 +778,11 @@ export default function StoreDetailClient({
         </div>
       )}
 
-      {/* ── Divider ────────────────────────────────────────────────────────── */}
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="border-t border-gray-100 dark:border-gray-800" />
-      </div>
-
-      {/* ── Reviews ────────────────────────────────────────────────────────── */}
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* ── Reviews + Policies (compacto, divisores con tokens del DS) ────── */}
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 border-t border-[var(--rule-base)] py-8">
         <StoreReviews summary={reviewSummary} reviews={reviews} storeSlug={store.slug} storeName={store.name} />
       </div>
-
-      {/* ── Divider ────────────────────────────────────────────────────────── */}
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="border-t border-gray-100 dark:border-gray-800" />
-      </div>
-
-      {/* ── Policies ───────────────────────────────────────────────────────── */}
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 border-t border-[var(--rule-base)] py-8">
         <StorePoliciesBlock />
       </div>
 
@@ -1286,38 +1268,27 @@ function BackToTiendasButton({
     });
   }, [storeSlug]);
 
-  // Brandon, mayo 14 2026 v2: simplificado. Antes tenía 4 elementos en
-  // mobile (Volver + Nombre + Catálogo + Favorito) que competían con los
-  // CTAs del hero — confuso. Ahora: Volver compacto + Nombre tienda + un
-  // único Favorito a la derecha. "Catálogo" se quita porque el hero ya
-  // tiene su CTA "Ver catálogo" y el sticky toolbar de abajo deja el
-  // catálogo siempre visible al scrollear. _scrollToCatalog ya no se usa.
   void scrollToCatalog;
 
+  // Brandon 2026-06-06: rediseño compacto — breadcrumb slim ("← Tiendas /
+  // Nombre") en vez de 2 pills grandes que comían una fila entera. Ocupa la
+  // mitad de alto y ordena la jerarquía (de dónde vengo → dónde estoy).
   return (
-    <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 h-10 sm:h-11 px-3 sm:px-4 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]/40 active:scale-[0.98] transition-all shrink-0"
-          aria-label="Volver a Tiendas"
-        >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-          <span className="hidden xs:inline">Volver</span>
-        </button>
+    <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+      <div className="flex items-center justify-between gap-3">
+        <nav aria-label="Ruta" className="flex min-w-0 items-center gap-1 text-sm font-semibold text-[var(--text-tertiary)]">
+          <button
+            type="button"
+            onClick={handleBack}
+            aria-label="Volver a Tiendas"
+            className="-ml-2 inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)]"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Tiendas
+          </button>
+          <span aria-hidden className="text-[var(--rule-base)]">/</span>
+          <span className="truncate font-bold text-[var(--text-primary)]">{storeName}</span>
+        </nav>
 
-        {/* Nombre tienda — mobile only, reemplaza el h1 mientras se scrollea */}
-        {storeName && (
-          <p className="md:hidden flex-1 min-w-0 text-base font-extrabold tracking-tight text-[var(--text-primary)] truncate">
-            {storeName}
-          </p>
-        )}
-
-        {/* Spacer en desktop para empujar el favorito a la derecha */}
-        <div className="hidden md:block flex-1" />
-
-        {/* Favorito — único CTA al lado del Volver. Visible en todos los tamaños. */}
         <button
           type="button"
           onClick={toggleFavorite}
@@ -1325,17 +1296,13 @@ function BackToTiendasButton({
           aria-pressed={favorited}
           title={favorited ? "Tienda favorita" : "Guardar como favorita"}
           className={cn(
-            "inline-flex h-10 sm:h-11 items-center gap-1.5 rounded-full border-2 transition-all shrink-0 active:scale-[0.95] px-3 sm:px-4 text-sm font-bold",
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-bold transition-colors active:scale-[0.95]",
             favorited
               ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]"
               : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]",
           )}
         >
-          <Heart
-            className={cn("h-4 w-4", favorited && "fill-[var(--data-error-500)]")}
-            strokeWidth={2.25}
-            aria-hidden
-          />
+          <Heart className={cn("h-4 w-4", favorited && "fill-[var(--data-error-500)]")} strokeWidth={2.25} aria-hidden />
           <span className="hidden sm:inline">{favorited ? "Guardada" : "Guardar"}</span>
         </button>
       </div>

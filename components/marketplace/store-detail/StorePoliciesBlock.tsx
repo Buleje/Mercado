@@ -17,8 +17,8 @@ interface PolicyCardProps {
 
 function PolicyCard({ icon, title, description }: PolicyCardProps) {
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-      <span className="text-[var(--text-tertiary)]" aria-hidden>
+    <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]" aria-hidden>
         {icon}
       </span>
       <h3 className="text-sm font-bold text-[var(--text-primary)]">
@@ -33,21 +33,21 @@ function PolicyCard({ icon, title, description }: PolicyCardProps) {
 
 function PoliciesGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <PolicyCard
         icon={<Truck className="h-5 w-5" />}
         title="Delivery"
-        description="Gratis en pedidos mayores a S/30. Tiempo promedio 25 minutos. Cobertura en Callería y Manantay."
+        description="Gratis en pedidos mayores a S/30. Tiempo promedio 25 minutos. Cobertura en tu zona."
       />
       <PolicyCard
         icon={<Wallet className="h-5 w-5" />}
         title="Pagos"
-        description="Aceptamos Yape, Plin y efectivo al recibir. Sin recargos ni costos adicionales por método de pago."
+        description="Aceptamos Yape, Plin y efectivo al recibir. Sin recargos por método de pago."
       />
       <PolicyCard
         icon={<RefreshCw className="h-5 w-5" />}
         title="Devoluciones"
-        description="Reembolso completo si el producto llega dañado o en mal estado. Reportar por WhatsApp dentro de las 2 horas."
+        description="Reembolso completo si el producto llega dañado. Reportar por WhatsApp dentro de las 2 horas."
       />
     </div>
   );
@@ -71,7 +71,7 @@ export default function StorePoliciesBlock() {
                 id="store-policies-heading"
                 className="text-base font-extrabold text-[var(--text-primary)] leading-tight"
               >
-                Cómo compramos
+                Comprar en esta tienda
               </p>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function StorePoliciesBlock() {
             Políticas
           </p>
           <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-            Cómo compramos
+            Comprar en esta tienda
           </h2>
         </div>
         <PoliciesGrid />

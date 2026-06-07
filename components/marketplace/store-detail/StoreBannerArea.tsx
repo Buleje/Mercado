@@ -92,13 +92,13 @@ export default function StoreBannerArea({
         transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
         className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8"
       >
-        <div className="-mt-14 sm:-mt-16 lg:-mt-20 relative z-10 flex items-end gap-4">
-          {/* Avatar */}
+        <div className="-mt-11 sm:-mt-12 lg:-mt-14 relative z-10 flex items-end gap-3.5">
+          {/* Avatar — más proporcionado (no tipo poster), bordes suaves + ring + sombra */}
           <div
             className={cn(
-              "shrink-0 h-28 w-28 sm:h-32 sm:w-32 lg:h-36 lg:w-36 rounded-3xl overflow-hidden",
+              "shrink-0 h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 rounded-2xl overflow-hidden",
               "bg-[var(--surface-raised)] border-4 border-[var(--surface-canvas)]",
-              "shadow-xl flex items-center justify-center",
+              "shadow-lg ring-1 ring-black/5 flex items-center justify-center",
             )}
           >
             {logo ? (
@@ -107,11 +107,11 @@ export default function StoreBannerArea({
                 alt={`Logo de ${name}`}
                 width={112}
                 height={112}
-                sizes="(max-width: 768px) 112px, 144px"
+                sizes="(max-width: 768px) 80px, 112px"
                 className="object-cover w-full h-full"
               />
             ) : (
-              <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 text-white text-3xl sm:text-4xl font-black">
+              <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 text-white text-2xl sm:text-3xl font-black">
                 {initial}
               </div>
             )}
