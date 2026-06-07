@@ -49,11 +49,13 @@ function fmt(n: number) { return `S/${n.toFixed(2)}`; }
 
 const realCategories = categories.filter(c => c.id !== "todos");
 
-// ── Estilos compartidos de los modales de producto (diseño profesional) ──
+// ── Estilos compartidos de los modales de producto (minimalista 2026-06-06) ──
+// Borde 1px, fondo blanco, foco con ring sutil — limpio y profesional, sin la
+// densidad de border-2 + ring-4 anterior.
 const FIELD_INPUT =
-  "w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] outline-none transition-all duration-150 hover:border-[var(--accent)]/40 focus:border-[var(--accent)] focus:bg-[var(--surface-raised)] focus:ring-4 focus:ring-[var(--accent-soft)]";
+  "w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] outline-none transition-colors hover:border-[var(--accent)]/40 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]";
 const FIELD_LABEL =
-  "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
+  "block text-xs font-semibold text-[var(--text-secondary)] mb-1.5";
 
 // ── StockLevelBar — barra visual de stock (Brandon 2026-06-06) ──────────────
 // Reemplaza el número plano de la columna Stock por una barra de nivel con
@@ -1362,72 +1364,23 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
   return (
     <div className="space-y-6">
-      {/* Toolbar de acciones — el header del módulo lo da el padre InventarioAlmacenesModule */}
-      <div className="flex items-center justify-end gap-2 flex-wrap">
-        <div className="flex bg-[var(--surface-sunken)] rounded-xl p-1 overflow-x-auto">
-          {(["productos", "kanban"] as const).map(v => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap",
-                view === v
-                  ? "bg-[var(--surface-canvas)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              )}
-            >
-              {v === "productos" ? "Productos" : "Vista rápida"}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors min-h-[44px]"
-        >
-          <Plus className="h-4 w-4" strokeWidth={2} /> Nuevo
-        </button>
-
-        <ModuleActionMenu
-          items={[
-            // Acciones del módulo padre (Conteo físico, Generar declaración…)
-            ...headerActions,
-            {
-              label: scanLoading ? "Buscando..." : "Escanear código de barras",
-              icon: ScanBarcode,
-              onClick: () => setShowScanner(true),
-              disabled: scanLoading,
-              description: "Añadir producto con lector de barras",
-              dividerBefore: headerActions.length > 0,
-            },
-            {
-              label: loading ? "Actualizando..." : "Actualizar",
-              icon: RefreshCw,
-              onClick: load,
-              disabled: loading,
-              description: "Recargar datos del servidor",
-            },
-          ]}
-        />
-      </div>
-
-      {/* Toolbar — busqueda + filtros + acciones en UNA barra */}
+      {/* Toolbar único — búsqueda + filtros + acciones en UNA sola fila */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Search */}
-        <div className="relative flex-1 min-w-45">
+        <div className="relative h-10 min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={searchPlaceholders[phIndex]}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
+            className="h-10 w-full pl-10 pr-4 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
           />
         </div>
         {/* Filter chips inline */}
         <button
           onClick={() => setLowOnly(!lowOnly)}
           className={cn(
-            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
             lowOnly ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
           )}
         >
@@ -1436,7 +1389,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <button
           onClick={() => setShowInactive(!showInactive)}
           className={cn(
-            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
             showInactive ? "border-gray-400 bg-[var(--surface-sunken)] text-[var(--text-secondary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
           )}
         >
@@ -1446,7 +1399,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <button
           onClick={() => setNoImageOnly(!noImageOnly)}
           className={cn(
-            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
             noImageOnly ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-[var(--accent-muted)]/20 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
           )}
         >
@@ -1464,7 +1417,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
+            "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
             showFilters ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
           )}
         >
@@ -1505,6 +1458,40 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             Cards
           </button>
         </div>
+        {/* Nuevo + Más acciones */}
+        <button
+          onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
+          className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" strokeWidth={2} /> Nuevo
+        </button>
+        <ModuleActionMenu
+          items={[
+            // Acciones del módulo padre (Conteo físico, Generar declaración…)
+            ...headerActions,
+            {
+              label: view === "productos" ? "Vista rápida (kanban)" : "Vista de productos",
+              icon: Layers,
+              onClick: () => setView(view === "productos" ? "kanban" : "productos"),
+              description: "Cambia entre lista y tablero",
+              dividerBefore: headerActions.length > 0,
+            },
+            {
+              label: scanLoading ? "Buscando..." : "Escanear código de barras",
+              icon: ScanBarcode,
+              onClick: () => setShowScanner(true),
+              disabled: scanLoading,
+              description: "Añadir producto con lector de barras",
+            },
+            {
+              label: loading ? "Actualizando..." : "Actualizar",
+              icon: RefreshCw,
+              onClick: load,
+              disabled: loading,
+              description: "Recargar datos del servidor",
+            },
+          ]}
+        />
       </div>
 
       {/* Category chips — derivadas dinámicamente del inventario real, sin emojis */}
@@ -2355,15 +2342,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* ── Add product modal ── */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-              <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <PackagePlus className="h-6 w-6" strokeWidth={2.1} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Inventario</p>
-                <h2 className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">Agregar al catálogo</h2>
-                <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-snug">Producto físico o servicio — completa los datos para venderlo.</p>
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-[var(--text-primary)] leading-tight">Nuevo producto</h2>
+                <p className="text-xs text-[var(--text-tertiary)]">Producto físico o servicio del catálogo</p>
               </div>
               <button onClick={() => setShowAdd(false)} aria-label="Cerrar" className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
@@ -2751,14 +2734,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* ── Edit product modal ── */}
       {editModalProduct && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && closeEditModal()}>
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-              <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Pencil className="h-5 w-5" strokeWidth={2.1} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Editar {(editForm.type ?? "product") === "service" ? "servicio" : "producto"}</p>
-                <h2 className="text-xl font-extrabold text-[var(--text-primary)] leading-tight truncate">{editModalProduct.name}</h2>
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-[var(--text-tertiary)]">Editar {(editForm.type ?? "product") === "service" ? "servicio" : "producto"}</p>
+                <h2 className="text-lg font-bold text-[var(--text-primary)] leading-tight truncate">{editModalProduct.name}</h2>
               </div>
               <button onClick={closeEditModal} aria-label="Cerrar" className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
