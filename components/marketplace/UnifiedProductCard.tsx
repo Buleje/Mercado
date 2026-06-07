@@ -686,14 +686,14 @@ export default function UnifiedProductCard({
                     : `Agregar ${product.name} al carrito`
               }
               className={cn(
-                "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
+                "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 border-2 shrink-0",
                 isOutOfStock
-                  ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
+                  ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed border-[var(--rule-base)]"
                   : justAdded
-                    ? "bg-[var(--data-success-500)] text-white scale-90 ring-[var(--data-success-500)]/30"
+                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)] scale-90 border-[var(--text-primary)]"
                     : inCartQty > 0
-                      ? "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/40"
-                      : "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)] border-[var(--text-primary)] hover:opacity-90 hover:scale-105 active:scale-95"
+                      : "bg-transparent text-[var(--text-primary)] border-[var(--text-primary)]/25 hover:border-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--surface-raised)] hover:scale-105 active:scale-95",
               )}
             >
               {justAdded ? (

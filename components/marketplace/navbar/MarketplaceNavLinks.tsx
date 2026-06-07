@@ -161,7 +161,7 @@ export default function MarketplaceNavLinks({
             "whitespace-nowrap inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold transition-all",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
             active
-              ? "bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm"
+              ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
               : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/70 hover:text-[var(--text-primary)]",
           )}
         >
@@ -245,7 +245,7 @@ export default function MarketplaceNavLinks({
                 "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-semibold transition-all",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 moreOpen
-                  ? "bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm"
+                  ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/70 hover:text-[var(--text-primary)]",
               )}
             >
@@ -285,7 +285,7 @@ export default function MarketplaceNavLinks({
                       className={cn(
                         "flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors",
                         active
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                          ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
                           : "text-[var(--text-primary)] hover:bg-[var(--surface-alt)]",
                       )}
                     >

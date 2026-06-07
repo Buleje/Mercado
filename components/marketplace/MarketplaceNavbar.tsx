@@ -624,11 +624,11 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                       href={link.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-sm font-bold transition-colors",
+                        "relative inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm font-bold transition-colors",
                         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                         active
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                          ? "text-[var(--text-primary)] after:absolute after:inset-x-3 after:-bottom-px after:h-[2px] after:rounded-full after:bg-[var(--accent)]"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                       )}
                     >
                       <LinkIcon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
@@ -645,7 +645,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 vuelven pegados al logo (arriba). Solo modo tiendas, md+. */}
             {isTiendasOnly && (
               <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
-                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all hover:border-[var(--accent)]/40 focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] focus-within:shadow-md focus-within:shadow-[var(--accent)]/15">
+                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full bg-[var(--surface-sunken)] transition-all hover:bg-[var(--surface-sunken)]/70 focus-within:bg-[var(--surface-canvas)] focus-within:ring-1 focus-within:ring-[var(--text-primary)]/15">
                   {/* Segmento ubicación */}
                   <div className="flex items-center gap-1.5 pl-4 pr-3 h-full shrink-0 text-[var(--accent)]">
                     <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden="true" />
@@ -749,12 +749,12 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     aria-expanded={userMenuOpen}
                     aria-haspopup="true"
                     aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
-                    className="group inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-0.5 pr-3 transition-all hover:border-[var(--accent)] hover:shadow-md"
+                    className="group inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 pr-3 transition-all hover:border-[var(--text-primary)]/40 hover:shadow-sm"
                   >
                     {/* Círculo con iniciales del nombre */}
                     <span
                       aria-hidden="true"
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-black text-white shadow-sm"
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--text-primary)] text-sm font-black text-[var(--surface-raised)]"
                     >
                       {getInitials(customer.name)}
                     </span>
@@ -889,10 +889,8 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                   onClick={openAuthModal}
                   data-tour="user-menu"
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 h-10 text-sm font-extrabold text-white",
-                    "shadow-md shadow-[var(--accent)]/25",
-                    "hover:bg-[var(--accent)]/95 hover:shadow-lg hover:shadow-[var(--accent)]/35",
-                    "active:scale-[0.98] transition-all duration-200",
+                    "inline-flex items-center gap-1.5 rounded-full bg-[var(--text-primary)] px-5 h-10 text-sm font-extrabold text-[var(--surface-raised)]",
+                    "hover:opacity-90 active:scale-[0.98] transition-all duration-200",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                   )}
                 >
@@ -931,7 +929,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 aria-label={t("nav.search")}
                 className="flex-1 min-w-0"
               >
-                <div className="relative flex items-center h-9 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1">
+                <div className="relative flex items-center h-9 rounded-full bg-[var(--surface-sunken)] focus-within:bg-[var(--surface-canvas)] focus-within:ring-1 focus-within:ring-[var(--text-primary)]/15 transition-colors pl-1.5 pr-1 gap-1">
                   <Link
                     href={storefront.logo ? "/tiendas" : "/"}
                     aria-label={storefront.logo ? `${storefront.name ?? "Tienda"} — Ver directorio` : "Buleje — Inicio"}
@@ -997,7 +995,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 <Link
                   href="/marketplace/mi-cuenta"
                   aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
-                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-[12px] font-black text-white shadow-sm active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--text-primary)] text-[12px] font-black text-[var(--surface-raised)] active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   {getInitials(customer.name)}
                 </Link>
@@ -1005,7 +1003,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 <button
                   onClick={openAuthModal}
                   aria-label={t("nav.login")}
-                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   <UserCircle className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
                 </button>

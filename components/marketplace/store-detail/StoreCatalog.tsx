@@ -150,12 +150,12 @@ function ProductListRow({
         aria-label={qty > 0 ? `Agregar otro ${product.productName}` : `Agregar ${product.productName} al carrito`}
         title={hasModifiers ? "Elegi opciones del producto" : "Agregar al carrito"}
         className={cn(
-          "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border-2 transition-all shadow-sm",
+          "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border-2 transition-all",
           // Tamaño grande para tap target en mobile, compacto en desktop.
           "h-12 w-12 sm:h-11 sm:w-auto sm:px-4",
           qty > 0
-            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent-soft)]/80"
-            : "border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.03] hover:shadow-md",
+            ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--surface-raised)]"
+            : "border-[var(--text-primary)]/25 bg-transparent text-[var(--text-primary)] hover:border-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--surface-raised)]",
         )}
       >
         {qty > 0 ? (
