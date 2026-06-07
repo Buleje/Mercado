@@ -14,13 +14,11 @@
  * tipo animado".
  */
 
-import { useEffect, useRef } from "react";
-import {
-  ZONE_COORDS,
-  type MarketplaceStore,
-} from "@/components/marketplace/useMarketplaceGeo";
+import { useEffect, useRef, useState } from "react";
+import { type MarketplaceStore } from "@/components/marketplace/useMarketplaceGeo";
+import { BRAND_GEO } from "@/lib/geo";
 
-const PUCALLPA_CENTER: [number, number] = [-8.3791, -74.5539];
+const BRAND_CENTER: [number, number] = [BRAND_GEO.lat, BRAND_GEO.lng];
 const DEFAULT_ZOOM = 12;
 
 /** Emoji por categoría — fallback al pin genérico si no matchea. */
@@ -65,15 +63,18 @@ interface LeafletInstances {
   userLayer: any;
 }
 
-function getCoords(store: MarketplaceStore): [number, number] | null {
-  // Brandon mayo 2026: solo pintamos pins en el mapa cuando la tienda
-  // tiene coordenadas reales (lat/lng). Antes habia fallback a las
-  // coords del centroide de la zona — eso ponia pins falsos para
-  // tiendas sin direccion registrada. Si no hay dato real, no se pinta.
+function getCoords(store: MarketplaceStore, index = 0): [number, number] | null {
+  // Coordenadas reales si la tienda las tiene.
   if (typeof store.lat === "number" && typeof store.lng === "number") {
     return [store.lat, store.lng];
   }
-  return null;
+  // Brandon 2026-06-07: el cliente quiere ver TODAS las tiendas en el mapa,
+  // cerca de su ubicación. Las que no registraron lat/lng exacta las
+  // distribuimos en espiral alrededor del centro de la ciudad (ángulo áureo
+  // → reparto disperso, ~0.6–1.8 km) para que aparezcan todas sin apilarse.
+  const ang = (index * 137.5 * Math.PI) / 180;
+  const r = 0.006 + (index % 4) * 0.004;
+  return [BRAND_CENTER[0] + r * Math.cos(ang), BRAND_CENTER[1] + r * Math.sin(ang)];
 }
 
 function escapeHtml(s: string): string {
@@ -200,12 +201,12 @@ function ensurePinStyles(): void {
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px color-mix(in oklab, var(--accent) 45%, transparent);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.28);
       transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
     }
     .buleje-store-pin:hover .buleje-store-pin__body {
       transform: rotate(-45deg) scale(1.18) translate(2px, -2px);
-      box-shadow: 0 8px 22px color-mix(in oklab, var(--accent) 70%, transparent);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.34);
     }
     .buleje-store-pin__icon {
       transform: rotate(45deg);
@@ -373,6 +374,24 @@ export default function TiendasMap({ stores, userCoords, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const instancesRef = useRef<LeafletInstances | null>(null);
   const initRef = useRef(false);
+  // Brandon 2026-06-07: si el cliente entró al mapa sin geo activa, la pedimos
+  // acá mismo para mostrar "tu ubicación". Si la rechaza, el mapa igual centra
+  // en las tiendas.
+  const [localUser, setLocalUser] = useState<{ lat: number; lng: number } | null>(null);
+  // `ready` evita una race: el effect que pinta los pins corría antes de que la
+  // inicialización async del mapa setee instancesRef → leía null y, como sus
+  // deps no cambiaban, no volvía a pintar. Al marcar ready tras el init, el
+  // effect de pintado se dispara con el mapa ya listo.
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (userCoords || typeof navigator === "undefined" || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setLocalUser({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => { /* permiso denegado — sin pin de usuario */ },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+    );
+  }, [userCoords]);
+  const effectiveUser = userCoords ?? localUser;
 
   // Init map una sola vez
   useEffect(() => {
@@ -389,7 +408,7 @@ export default function TiendasMap({ stores, userCoords, className }: Props) {
       const map = L.map(containerRef.current, {
         zoomControl: true,
         scrollWheelZoom: true,
-      }).setView(PUCALLPA_CENTER, DEFAULT_ZOOM);
+      }).setView(BRAND_CENTER, DEFAULT_ZOOM);
 
       // CARTO Voyager: tiles más limpios y con mejor tipografía que OSM default
       L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
@@ -404,6 +423,7 @@ export default function TiendasMap({ stores, userCoords, className }: Props) {
       instancesRef.current = { map, storeLayer, userLayer };
 
       setTimeout(() => map.invalidateSize(), 250);
+      if (!cancelled) setReady(true);
     })();
 
     return () => {
@@ -413,6 +433,7 @@ export default function TiendasMap({ stores, userCoords, className }: Props) {
       }
       instancesRef.current = null;
       initRef.current = false;
+      setReady(false);
     };
   }, []);
 
@@ -432,9 +453,9 @@ export default function TiendasMap({ stores, userCoords, className }: Props) {
       const bounds: Array<[number, number]> = [];
 
       // Stores
-      for (const s of stores) {
-        const coords = getCoords(s);
-        if (!coords) continue;
+      stores.forEach((s, i) => {
+        const coords = getCoords(s, i);
+        if (!coords) return;
         bounds.push(coords);
         const icon = L.divIcon({
           html: storePinHtml(s),
@@ -449,11 +470,11 @@ export default function TiendasMap({ stores, userCoords, className }: Props) {
           maxWidth: 260,
         });
         marker.addTo(inst.storeLayer);
-      }
+      });
 
-      // Usuario — solo si tenemos coords
-      if (userCoords) {
-        const userPos: [number, number] = [userCoords.lat, userCoords.lng];
+      // Usuario — userCoords del padre o geolocalización pedida acá.
+      if (effectiveUser) {
+        const userPos: [number, number] = [effectiveUser.lat, effectiveUser.lng];
         bounds.push(userPos);
         const userIcon = L.divIcon({
           html: userPinHtml(),
@@ -483,14 +504,14 @@ export default function TiendasMap({ stores, userCoords, className }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [stores, userCoords]);
+  }, [stores, effectiveUser, ready]);
 
   return (
     <div
       ref={containerRef}
       role="region"
       aria-label="Mapa interactivo de tiendas"
-      className={className ?? "w-full h-[60vh] min-h-[400px] rounded-2xl overflow-hidden border-2 border-[var(--rule-base)] shadow-lg"}
+      className={className ?? "w-full h-[60vh] min-h-[400px] rounded-2xl overflow-hidden border border-[var(--rule-base)]"}
     />
   );
 }

@@ -66,8 +66,8 @@ export default function InvitaVecinoCard() {
   }, [phone]);
 
   const message = code
-    ? `¡Pedí en Buleje, el delivery de tu barrio en Ciudad Constitución! 🛒 Usá mi link y los dos ganamos ${REWARD_POINTS} puntos: ${shareUrl}`
-    : `¡Pedí en Buleje, el delivery de tu barrio en Ciudad Constitución! 🛒 Mirá las tiendas con delivery: ${shareUrl}`;
+    ? `Pide en Buleje, el delivery de tu barrio en Ciudad Constitución. Usa mi link y los dos ganamos ${REWARD_POINTS} puntos: ${shareUrl}`
+    : `Pide en Buleje, el delivery de tu barrio en Ciudad Constitución. Mira las tiendas con delivery: ${shareUrl}`;
 
   const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
@@ -83,66 +83,62 @@ export default function InvitaVecinoCard() {
 
   return (
     <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-[var(--shadow-lg)]">
-        {/* Decoración */}
-        <div aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/12 blur-2xl" />
-        <div
+      <div className="flex flex-col gap-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7 lg:flex-row lg:items-center lg:gap-8">
+        <span
           aria-hidden
-          className="pointer-events-none absolute right-10 top-6 hidden h-20 w-20 opacity-30 sm:block"
-          style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.7) 1.5px, transparent 1.5px)", backgroundSize: "10px 10px" }}
-        />
+          className="hidden lg:inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-primary)]"
+        >
+          <Gift className="h-5 w-5" strokeWidth={2} />
+        </span>
 
-        <div className="relative flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-center lg:gap-8">
-          <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider backdrop-blur">
-              <Gift className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-              Invitá vecinos
-            </span>
-            <h2 className="mt-3 text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
-              {code ? "Invitá a un vecino y ganen los dos" : "Invitá a un vecino a Buleje"}
-            </h2>
-            <p className="mt-2 max-w-xl text-sm leading-snug text-white/85 sm:text-base">
-              {code ? (
-                <>
-                  Por cada vecino que haga su <strong className="text-white">primer pedido</strong>, ambos ganan{" "}
-                  <strong className="text-white">{REWARD_POINTS} puntos</strong> de lealtad. Mandá tu link por WhatsApp.
-                </>
-              ) : (
-                <>
-                  Compartí Buleje con tus vecinos por WhatsApp.{" "}
-                  <span className="text-white">Iniciá sesión</span> para ganar puntos por cada uno que pida.
-                </>
-              )}
-            </p>
-            {code && count > 0 && (
-              <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-white/90">
-                <Users className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                Ya invitaste a {count} {count === 1 ? "vecino" : "vecinos"}
-              </p>
+        <div className="min-w-0 flex-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Invita vecinos
+          </p>
+          <h2 className="mt-1 text-xl font-black leading-tight tracking-tight text-[var(--text-primary)] sm:text-2xl">
+            {code ? "Invita a un vecino y ganan los dos" : "Invita a un vecino a Buleje"}
+          </h2>
+          <p className="mt-1.5 max-w-xl text-sm leading-snug text-[var(--text-secondary)]">
+            {code ? (
+              <>
+                Por cada vecino que haga su <strong className="font-bold text-[var(--text-primary)]">primer pedido</strong>, ambos ganan{" "}
+                <strong className="font-bold text-[var(--text-primary)]">{REWARD_POINTS} puntos</strong> de lealtad.
+              </>
+            ) : (
+              <>
+                Comparte Buleje con tus vecinos por WhatsApp.{" "}
+                <span className="font-semibold text-[var(--text-primary)]">Inicia sesión</span> para ganar puntos por cada uno que pida.
+              </>
             )}
-          </div>
+          </p>
+          {code && count > 0 && (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)]">
+              <Users className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              Ya invitaste a {count} {count === 1 ? "vecino" : "vecinos"}
+            </p>
+          )}
+        </div>
 
-          <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:w-[240px] lg:flex-col">
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl bg-white px-5 text-sm font-extrabold text-[#128C7E] shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
-            >
-              <WhatsAppIcon className="h-5 w-5" />
-              Invitar por WhatsApp
-            </a>
-            <button
-              type="button"
-              onClick={copy}
-              className={cn(
-                "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/15 px-5 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-white/25",
-              )}
-            >
-              {copied ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Copy className="h-4 w-4" strokeWidth={2.25} />}
-              {copied ? "¡Copiado!" : "Copiar link"}
-            </button>
-          </div>
+        <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row lg:w-[230px] lg:flex-col">
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-[var(--text-primary)] px-5 text-sm font-extrabold text-[var(--surface-raised)] transition-all hover:opacity-90 active:scale-[0.98]"
+          >
+            <WhatsAppIcon className="h-5 w-5" />
+            Invitar por WhatsApp
+          </a>
+          <button
+            type="button"
+            onClick={copy}
+            className={cn(
+              "inline-flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]",
+            )}
+          >
+            {copied ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Copy className="h-4 w-4" strokeWidth={2.25} />}
+            {copied ? "¡Copiado!" : "Copiar link"}
+          </button>
         </div>
       </div>
     </section>

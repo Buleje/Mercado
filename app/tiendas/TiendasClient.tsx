@@ -805,7 +805,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                 className={cn(
                   "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-extrabold transition-colors whitespace-nowrap",
                   subCategoryId === null
-                    ? "bg-[var(--accent)] text-white shadow-sm"
+                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                 )}
               >
@@ -880,7 +880,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                 <Link
                   key={s.id}
                   href={`/tienda/${s.slug}`}
-                  className="group flex items-center gap-3 rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] p-3 hover:border-[var(--accent)] hover:shadow-md transition-all"
+                  className="group flex items-center gap-3 rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] p-3 hover:border-[var(--text-primary)]/40 transition-colors"
                 >
                   <div
                     className="h-14 w-14 shrink-0 rounded-xl overflow-hidden flex items-center justify-center bg-[var(--accent-soft)]"
@@ -1089,7 +1089,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
              En mobile/tablet: flujo inline idéntico al anterior (mb-4). */}
         <aside
           aria-label="Filtros de tiendas"
-          className="space-y-3 mb-3 lg:space-y-4 lg:mb-0 lg:sticky lg:top-20 lg:self-start lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-soft)] lg:p-5 lg:shadow-sm"
+          className="space-y-3 mb-3 lg:space-y-4 lg:mb-0 lg:sticky lg:top-20 lg:self-start lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-base)] lg:p-5"
         >
           {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
               filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
@@ -1289,7 +1289,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
               aria-haspopup="dialog"
               aria-expanded={zoneModalOpen}
               className={cn(
-                "w-full sm:w-auto lg:w-full inline-flex items-center gap-3 rounded-2xl lg:rounded-xl border-2 transition-all px-4 h-12 sm:h-14 lg:h-11 shadow-sm hover:shadow-md hover:-translate-y-0.5 lg:hover:translate-y-0",
+                "w-full sm:w-auto lg:w-full inline-flex items-center gap-3 rounded-2xl lg:rounded-xl border-2 transition-colors px-4 h-12 sm:h-14 lg:h-11",
                 zone
                   ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]/50",
@@ -1396,7 +1396,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                             className={cn(
                               "w-full flex items-center gap-3 rounded-2xl border-2 p-3 sm:p-4 text-left transition-all",
                               active
-                                ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md"
+                                ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
                                 : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/30",
                             )}
                           >
@@ -1459,7 +1459,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                   className={cn(
                     "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-extrabold transition-colors whitespace-nowrap",
                     subCategoryId === null
-                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
                       : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                   )}
                 >
@@ -1483,12 +1483,12 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             <div className="flex items-baseline justify-between gap-3 mb-3">
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Todas nuestras tiendas{" "}
-                <span className="text-[var(--accent)] tabular-nums">
+                <span className="text-[var(--text-secondary)] tabular-nums">
                   · {finalStores.length}
                 </span>
               </p>
               {/* Toggle Lista / Mapa (Brandon 2026-06-02) — re-agregado. */}
-              <div className="inline-flex shrink-0 items-center rounded-full border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-0.5">
+              <div className="inline-flex shrink-0 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
                 <button
                   type="button"
                   onClick={() => setViewMode("list")}
@@ -1497,7 +1497,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                   className={cn(
                     "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition-colors",
                     viewMode === "list"
-                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                   )}
                 >
@@ -1512,7 +1512,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                   className={cn(
                     "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition-colors",
                     viewMode === "map"
-                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                   )}
                 >
@@ -1536,6 +1536,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             category={category}
             zone={zone}
             geoActive={geoActive}
+            userCoords={userCoords}
             filteredStores={finalStores}
             activeChips={activeChips}
             onRetry={fetchStores}

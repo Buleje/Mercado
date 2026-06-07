@@ -48,7 +48,7 @@ function PromoMiniCard({ banner }: { banner: PromoBanner }) {
       href={banner.ctaHref || "#"}
       aria-label={banner.title || "Oferta"}
       onClick={() => trackBanner("click", [banner.id])}
-      className="group relative block h-full aspect-[16/10] overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      className="group relative block h-full aspect-[16/10] overflow-hidden rounded-2xl border border-[var(--rule-base)] transition-all duration-300 hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       style={
         hasImage
           ? undefined
@@ -113,7 +113,6 @@ interface TiendasHeroAdsProps {
 export default function TiendasHeroAds({
   slot = "tiendas-hero",
   zone = null,
-  moreLabel = "Ofertas y promociones",
 }: TiendasHeroAdsProps = {}) {
   const [banners, setBanners] = useState<PromoBanner[]>([]);
 
@@ -150,15 +149,6 @@ export default function TiendasHeroAds({
 
   return (
     <section className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-5" aria-label="Promociones destacadas">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
-          {moreLabel}
-        </h2>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-          {count} {count === 1 ? "promo" : "promos"}
-        </span>
-      </div>
-
       <div
         className={cn(
           // Mobile: siempre una fila deslizable (swipe).
