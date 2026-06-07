@@ -18,7 +18,7 @@ import {
   Construction, Plus, X, Loader2, TrendingUp, Fuel,
   Wrench, Truck, Pencil, Receipt, AlertTriangle, Download, FileText,
   ClipboardCheck, CheckCircle, Calendar, CreditCard, Clock,
-  Upload, BarChart3, Trophy,
+  Upload, BarChart3, Trophy, Store,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/utils";
@@ -37,6 +37,7 @@ interface AssetStats {
   utilizationPct: number | null;
   pendingAmount: number; fuelPerUnit: number | null; fuelAlert: boolean;
   maintenanceDue: number; maintenanceSoon: number;
+  publishedProductId: number | null;
 }
 interface IncomeMov { id: string; assetId: string; date: string; client: string | null; quantity: number | null; unit: string; rate: number; amount: number; hourStart: number | null; hourEnd: number | null; paid: boolean; dueDate: string | null; startDate: string | null; endDate: string | null; notes: string | null }
 interface ExpenseMov { id: string; date: string; amount: number; notes: string | null; category: string; gallons: number | null; unitPrice: number | null }
@@ -115,6 +116,17 @@ export default function ActivosModule() {
     toast.success("Reporte exportado (CSV/Excel)");
   };
 
+  // Publicar / quitar el activo como servicio de alquiler en la tienda/marketplace.
+  const publishToggle = async (a: AssetStats) => {
+    const method = a.publishedProductId ? "DELETE" : "POST";
+    try {
+      const res = await fetch(`/api/admin/assets/${a.id}/publish`, { method, headers: csrfHeaders(), credentials: "include" });
+      if (!res.ok) { toast.error("No se pudo actualizar la tienda"); return; }
+      toast.success(a.publishedProductId ? "Quitado de la tienda" : "Publicado en tu tienda como servicio de alquiler");
+      void load();
+    } catch { toast.error("Sin conexión"); }
+  };
+
   return (
     <div className="space-y-5">
       <AdminModuleHeader
@@ -172,6 +184,7 @@ export default function ActivosModule() {
                 onDetail={() => setDetailFor(a)}
                 onContract={() => setContractFor(a)}
                 onChecklist={() => setChecklistFor(a)}
+                onPublish={() => publishToggle(a)}
               />
             ))}
           </div>
@@ -233,8 +246,8 @@ function FormSection({ title, children }: { title: string; children: React.React
   );
 }
 
-function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onChecklist }: {
-  asset: AssetStats; onRent: () => void; onExpense: () => void; onEdit: () => void; onDetail: () => void; onContract: () => void; onChecklist: () => void;
+function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onChecklist, onPublish }: {
+  asset: AssetStats; onRent: () => void; onExpense: () => void; onEdit: () => void; onDetail: () => void; onContract: () => void; onChecklist: () => void; onPublish: () => void;
 }) {
   const Icon = typeIcon(asset.type);
   const st = STATUS_META[asset.status] ?? STATUS_META.operativo;
@@ -251,15 +264,22 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase", st.chip)}>{st.label}</span>
       </div>
 
-      {/* Alertas (mantenimiento / combustible / cobranza) */}
-      {(asset.maintenanceDue > 0 || asset.maintenanceSoon > 0 || asset.fuelAlert || asset.pendingAmount > 0) && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {asset.maintenanceDue > 0 && <Chip icon={Wrench} tone="error">{asset.maintenanceDue} mantto. vencido</Chip>}
-          {asset.maintenanceDue === 0 && asset.maintenanceSoon > 0 && <Chip icon={Wrench} tone="warning">{asset.maintenanceSoon} mantto. pronto</Chip>}
-          {asset.fuelAlert && <Chip icon={Fuel} tone="warning">consume de más</Chip>}
-          {asset.pendingAmount > 0 && <Chip icon={CreditCard} tone="warning">por cobrar {fmt(asset.pendingAmount)}</Chip>}
-        </div>
-      )}
+      {/* Tienda + alertas (mantenimiento / combustible / cobranza) */}
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={onPublish}
+          title={asset.publishedProductId ? "Publicado como servicio de alquiler — tocá para quitarlo de la tienda" : "Publicar como servicio de alquiler en tu tienda/marketplace"}
+          className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold transition-colors",
+            asset.publishedProductId ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
+        >
+          <Store className="h-3 w-3" /> {asset.publishedProductId ? "En tienda" : "Publicar en tienda"}
+        </button>
+        {asset.maintenanceDue > 0 && <Chip icon={Wrench} tone="error">{asset.maintenanceDue} mantto. vencido</Chip>}
+        {asset.maintenanceDue === 0 && asset.maintenanceSoon > 0 && <Chip icon={Wrench} tone="warning">{asset.maintenanceSoon} mantto. pronto</Chip>}
+        {asset.fuelAlert && <Chip icon={Fuel} tone="warning">consume de más</Chip>}
+        {asset.pendingAmount > 0 && <Chip icon={CreditCard} tone="warning">por cobrar {fmt(asset.pendingAmount)}</Chip>}
+      </div>
 
       {/* Rentabilidad */}
       <div className="mt-3 rounded-xl bg-[var(--surface-sunken)] p-3">

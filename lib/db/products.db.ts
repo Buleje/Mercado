@@ -60,6 +60,15 @@ function mapProduct(p: PProduct): DbProduct {
     ...(p.stockMax != null && { stockMax: p.stockMax }),
     active: p.active,
     tenantId: p.tenantId,
+    ...(p.type != null && { type: p.type }),
+    ...(p.brand != null && { brand: p.brand }),
+    ...(p.sku != null && { sku: p.sku }),
+    ...(p.taxType != null && { taxType: p.taxType }),
+    ...(p.weightKg != null && { weightKg: p.weightKg }),
+    ...(p.dimensions != null && { dimensions: p.dimensions }),
+    ...(p.durationLabel != null && { durationLabel: p.durationLabel }),
+    ...(p.pricingUnit != null && { pricingUnit: p.pricingUnit }),
+    ...(p.notes != null && { notes: p.notes }),
   };
 }
 
@@ -173,6 +182,16 @@ export const ProductsDB = {
     const p = await prisma.product.findFirst({ where: { id, tenantId } });
     return p ? mapProduct(p) : null;
   },
+  /** Busca por SKU interno (ej. vínculo activo↔servicio "asset:<id>"). */
+  async getBySku(tenantId: string, sku: string): Promise<DbProduct | null> {
+    const p = await prisma.product.findFirst({ where: { tenantId, sku, deletedAt: null } });
+    return p ? mapProduct(p) : null;
+  },
+  async listBySkus(tenantId: string, skus: string[]): Promise<DbProduct[]> {
+    if (skus.length === 0) return [];
+    const rows = await prisma.product.findMany({ where: { tenantId, sku: { in: skus }, deletedAt: null } });
+    return rows.map(mapProduct);
+  },
   /**
    * Cuenta cuantos de los productIds dados pertenecen al tenant
    * (active + deletedAt:null). Util para ownership checks bulk
@@ -194,6 +213,10 @@ export const ProductsDB = {
       unit: product.unit,
       badge: product.badge, barcode: product.barcode, stock: product.stock,
       stockMin: product.stockMin, stockMax: product.stockMax, active: product.active,
+      // undefined ⇒ Prisma omite el campo (no pisa). Producto/servicio completo.
+      type: product.type, brand: product.brand, sku: product.sku,
+      taxType: product.taxType, weightKg: product.weightKg, dimensions: product.dimensions,
+      durationLabel: product.durationLabel, pricingUnit: product.pricingUnit, notes: product.notes,
     };
     if (product.id) {
       const existing = await prisma.product.findUnique({
@@ -229,6 +252,9 @@ export const ProductsDB = {
         badge: product.badge, barcode: product.barcode, stock: product.stock,
         stockMin: product.stockMin, stockMax: product.stockMax, active: product.active,
         tenantId: product.tenantId,
+        type: product.type, brand: product.brand, sku: product.sku,
+        taxType: product.taxType, weightKg: product.weightKg, dimensions: product.dimensions,
+        durationLabel: product.durationLabel, pricingUnit: product.pricingUnit, notes: product.notes,
       },
     });
     revalidateTag(`tenant:${product.tenantId}:products`, "max");

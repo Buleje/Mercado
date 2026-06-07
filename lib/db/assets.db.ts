@@ -55,7 +55,11 @@ export type DbAssetWithStats = DbAsset & {
   fuelAlert: boolean;        // consume por encima de la meta
   maintenanceDue: number;    // mantenimientos vencidos o sin hacer
   maintenanceSoon: number;   // mantenimientos por vencer pronto
+  publishedProductId: number | null; // ficha de servicio publicada en tienda (o null)
 };
+
+/** SKU interno que vincula un activo con su ficha de servicio en el catálogo. */
+export const assetServiceSku = (assetId: string) => `asset:${assetId}`;
 
 export type DbAssetIncome = {
   id: string;
@@ -198,7 +202,7 @@ export const AssetsDB = {
     const ids = assets.map((a) => a.id);
     const nowMs = Date.now();
     const since30d = new Date(nowMs - 30 * DAY_MS);
-    const [incomes, expenses, incomes30d, unpaid, fuel, maintenances] = await Promise.all([
+    const [incomes, expenses, incomes30d, unpaid, fuel, maintenances, publishedProducts] = await Promise.all([
       prisma.assetIncome.groupBy({
         by: ["assetId"],
         where: { tenantId, assetId: { in: ids } },
@@ -229,7 +233,14 @@ export const AssetsDB = {
       prisma.assetMaintenance.findMany({
         where: { tenantId, assetId: { in: ids }, active: true },
       }),
+      // Fichas de servicio publicadas en tienda (vinculadas por sku asset:<id>).
+      prisma.product.findMany({
+        where: { tenantId, active: true, sku: { in: ids.map(assetServiceSku) } },
+        select: { id: true, sku: true },
+      }),
     ]);
+    const pubMap = new Map<string, number>();
+    for (const p of publishedProducts) if (p.sku) pubMap.set(p.sku, p.id);
     const incMap = new Map(incomes.map((i) => [i.assetId, { sum: num(i._sum.amount), units: num(i._sum.quantity), count: i._count.id }]));
     const expMap = new Map(expenses.map((e) => [e.assetId, { sum: num(e._sum.amount), count: e._count.id }]));
     const u30Map = new Map(incomes30d.map((i) => [i.assetId, num(i._sum.quantity)]));
@@ -277,6 +288,7 @@ export const AssetsDB = {
         fuelAlert,
         maintenanceDue,
         maintenanceSoon,
+        publishedProductId: pubMap.get(assetServiceSku(a.id)) ?? null,
       };
     });
   },
@@ -329,6 +341,11 @@ export const AssetsDB = {
   async assertOwned(tenantId: string, assetId: string): Promise<boolean> {
     const a = await prisma.asset.findFirst({ where: { id: assetId, tenantId }, select: { id: true } });
     return !!a;
+  },
+
+  async getOne(tenantId: string, id: string): Promise<DbAsset | null> {
+    const a = await prisma.asset.findFirst({ where: { id, tenantId } });
+    return a ? this.mapAsset(a) : null;
   },
 
   async listMovements(tenantId: string, assetId: string, limit = 100): Promise<{ incomes: DbAssetIncome[]; expenses: DbAssetExpense[] }> {
