@@ -24,7 +24,11 @@ import {
   ShieldCheck,
   Sparkles,
   ArrowRight,
+  ArrowLeft,
 } from "@buleje/design-system/icons";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import StoreInfoPanel from "./StoreInfoPanel";
 
 interface StoreHeroProps {
@@ -77,6 +81,26 @@ export default function StoreHero({
   const ratingLabel = rating > 0 ? rating.toFixed(1) : null;
   const locationLabel = zone ?? distanceLabel;
 
+  // Retroceder + Guardar integrados en la sección de la tienda (Brandon 2026-06-06).
+  const router = useRouter();
+  const [favorited, setFavorited] = useState(false);
+  useEffect(() => {
+    if (!storeSlug) return;
+    try { setFavorited(localStorage.getItem(`buleje:fav-store:${storeSlug}`) === "1"); } catch { /* ignore */ }
+  }, [storeSlug]);
+  const toggleFavorite = useCallback(() => {
+    if (!storeSlug) return;
+    setFavorited((prev) => {
+      const next = !prev;
+      try {
+        if (next) localStorage.setItem(`buleje:fav-store:${storeSlug}`, "1");
+        else localStorage.removeItem(`buleje:fav-store:${storeSlug}`);
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, [storeSlug]);
+  const goBack = useCallback(() => router.push("/tiendas"), [router]);
+
   return (
     // Brandon, mayo 14 2026: hero entero oculto en mobile. El nombre,
     // descripcion, "Ver catalogo" y favorito viajaron al BackToTiendasButton
@@ -89,6 +113,34 @@ export default function StoreHero({
       <div
         className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-sm"
       >
+        {/* ── Barra superior: retroceder + guardar (dentro de la tienda) ── */}
+        <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 sm:px-7 lg:px-8 py-2.5">
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="Volver a Tiendas"
+            className="-ml-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)]"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Tiendas
+          </button>
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            aria-pressed={favorited}
+            aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
+            title={favorited ? "Tienda favorita" : "Guardar como favorita"}
+            className={cn(
+              "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-bold transition-colors active:scale-[0.96]",
+              favorited
+                ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]"
+                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]",
+            )}
+          >
+            <Heart className={cn("h-4 w-4", favorited && "fill-[var(--data-error-500)]")} strokeWidth={2.25} aria-hidden />
+            {favorited ? "Guardada" : "Guardar"}
+          </button>
+        </div>
+
         {/* ── Header — identidad + CTAs ───────────────────────────────── */}
         <div className="flex flex-col gap-5 p-5 sm:p-7 lg:p-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 flex-1">
@@ -164,14 +216,6 @@ export default function StoreHero({
                 <Phone className="h-4 w-4" strokeWidth={2.25} aria-hidden />
               </a>
             )}
-            <button
-              type="button"
-              aria-label="Agregar a favoritos"
-              title="Guardar como favorita"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] transition-all hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]"
-            >
-              <Heart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            </button>
           </div>
         </div>
 

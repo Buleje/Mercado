@@ -22,7 +22,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, Search, X, Menu, LayoutGrid, List, Heart, Info,
+  ArrowLeft, Search, X, Menu, LayoutGrid, List, Info,
   MapPin, Clock, Wallet, Phone, UserCircle,
   Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
   ShoppingCart, Star, MessageCircle,
@@ -40,7 +40,6 @@ const SharedMobileNavDrawer = dynamic(
 );
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
-import StoreStatusBanner from "./StoreStatusBanner";
 // Brandon 2026-05-20 v11 audit P2: StorePromoBannersStrip below-fold +
 // hace fetch propio en mount → dynamic ssr:false ahorra ~5KB initial.
 // (Brandon 2026-05-21 v6: import de `dynamic` ya está en línea 21.)
@@ -409,11 +408,6 @@ export default function StoreDetailClient({
         </div>
       )}
 
-      {/* ── DESKTOP: Botón Volver bajo el banner ──────────────────────── */}
-      <div className="hidden lg:block">
-        <BackToTiendasButton storeName={store.name} storeSlug={store.slug} />
-      </div>
-
       {/* ── Hero del negocio (mobile + desktop) — como Rappi don-bajadon
            muestra info completa: rating, descripción, horario, pagos. */}
       <StoreHero
@@ -434,13 +428,6 @@ export default function StoreDetailClient({
         storeId={store.id}
         storeSlug={store.slug}
         storeLogo={store.logo ?? null}
-      />
-
-      {/* ── Estado de la tienda (abierto/cerrado + tiempo de entrega) ── */}
-      <StoreStatusBanner
-        isOpen={isOpen}
-        nextOpeningAt={nextOpeningAt ?? null}
-        scheduleLabel="Lun a Dom · 7am – 11pm"
       />
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
@@ -1213,98 +1200,6 @@ function StoreInfoModal({
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Botón Volver ───────────────────────────────────────────────────────────
-function BackToTiendasButton({
-  storeName,
-  storeSlug,
-}: {
-  storeName?: string;
-  storeSlug?: string;
-}) {
-  const router = useRouter();
-  const [favorited, setFavorited] = useState(false);
-
-  const handleBack = useCallback(() => {
-    // Brandon 2026-06-01: el ← de la tienda SIEMPRE vuelve al directorio
-    // /tiendas (destino determinístico). Antes usaba window.history.back(), que
-    // si el usuario llegaba desde el checkout (o un deep-link) lo mandaba de
-    // vuelta al checkout en lugar de a las tiendas.
-    router.push("/tiendas");
-  }, [router]);
-
-  const scrollToCatalog = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    const el = document.getElementById("catalogo");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
-  // Persistencia local de favoritos por tienda (placeholder hasta backend).
-  useEffect(() => {
-    if (!storeSlug) return;
-    try {
-      const fav = localStorage.getItem(`buleje:fav-store:${storeSlug}`);
-      setFavorited(fav === "1");
-    } catch {
-      /* ignore */
-    }
-  }, [storeSlug]);
-
-  const toggleFavorite = useCallback(() => {
-    if (!storeSlug) return;
-    setFavorited((prev) => {
-      const next = !prev;
-      try {
-        if (next) localStorage.setItem(`buleje:fav-store:${storeSlug}`, "1");
-        else localStorage.removeItem(`buleje:fav-store:${storeSlug}`);
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, [storeSlug]);
-
-  void scrollToCatalog;
-
-  // Brandon 2026-06-06: rediseño compacto — breadcrumb slim ("← Tiendas /
-  // Nombre") en vez de 2 pills grandes que comían una fila entera. Ocupa la
-  // mitad de alto y ordena la jerarquía (de dónde vengo → dónde estoy).
-  return (
-    <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-3">
-      <div className="flex items-center justify-between gap-3">
-        <nav aria-label="Ruta" className="flex min-w-0 items-center gap-1 text-sm font-semibold text-[var(--text-tertiary)]">
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label="Volver a Tiendas"
-            className="-ml-2 inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)]"
-          >
-            <ArrowLeft className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Tiendas
-          </button>
-          <span aria-hidden className="text-[var(--rule-base)]">/</span>
-          <span className="truncate font-bold text-[var(--text-primary)]">{storeName}</span>
-        </nav>
-
-        <button
-          type="button"
-          onClick={toggleFavorite}
-          aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
-          aria-pressed={favorited}
-          title={favorited ? "Tienda favorita" : "Guardar como favorita"}
-          className={cn(
-            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-bold transition-colors active:scale-[0.95]",
-            favorited
-              ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]"
-              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]",
-          )}
-        >
-          <Heart className={cn("h-4 w-4", favorited && "fill-[var(--data-error-500)]")} strokeWidth={2.25} aria-hidden />
-          <span className="hidden sm:inline">{favorited ? "Guardada" : "Guardar"}</span>
-        </button>
       </div>
     </div>
   );
