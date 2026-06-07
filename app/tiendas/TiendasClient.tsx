@@ -57,7 +57,7 @@ const ExplorarTracker = dynamic(
 // dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
 // import estático para no romper el tipado de DEFAULT_FILTERS.
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
-import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal, Clock, List, Map as MapIcon } from "@buleje/design-system/icons";
+import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal, Clock, List, Map as MapIcon, ArrowDownUp } from "@buleje/design-system/icons";
 // CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
 import { CupSoda } from "lucide-react";
 // Brandon 2026-05-21 v3: removido import default de QuickFilterChips (chips
@@ -1093,21 +1093,25 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
         >
           {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
               filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
-          <div className="hidden lg:flex items-center justify-between pb-3 border-b border-[var(--rule-soft)]">
-            <h2 className="inline-flex items-center gap-2 text-sm font-extrabold tracking-tight text-[var(--text-primary)]">
-              <SlidersHorizontal className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
-              Filtrar tiendas
-              {activeFilterCount > 0 && (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-white">
-                  {activeFilterCount}
-                </span>
-              )}
-            </h2>
+          <div className="hidden lg:flex items-center justify-between gap-2 pb-3 mb-1 border-b border-[var(--rule-base)]">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <SlidersHorizontal className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-black leading-tight tracking-tight text-[var(--text-primary)]">Filtros</p>
+                <p className="text-[length:var(--ts-2xs)] font-semibold leading-tight text-[var(--text-tertiary)]">
+                  {activeFilterCount > 0
+                    ? `${activeFilterCount} activo${activeFilterCount === 1 ? "" : "s"}`
+                    : "Afina tu búsqueda"}
+                </p>
+              </div>
+            </div>
             {activeFilterCount > 0 && (
               <button
                 type="button"
                 onClick={resetAllFilters}
-                className="text-xs font-bold text-[var(--accent)] hover:underline"
+                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
               >
                 Limpiar
               </button>
@@ -1115,7 +1119,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           </div>
 
           {/* Vista lista / mapa — Brandon 2026-06-07: movido al sidebar. */}
-          <div className="flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
+          <div className="flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] p-1">
             <button
               type="button"
               onClick={() => setViewMode("list")}
@@ -1265,14 +1269,16 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           <div className="hidden lg:flex lg:flex-col lg:gap-4">
             {/* ORDENAR */}
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+              <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <ArrowDownUp className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
                 Ordenar
               </p>
               <StoresSortSelector value={sortKey} onChange={handleSortChange} className="w-full justify-between" />
             </div>
             {/* CALIFICACIÓN */}
             <div className="border-t border-[var(--rule-soft)] pt-3">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+              <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <Star className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
                 Calificación
               </p>
               <QuickFilterToggle
@@ -1287,7 +1293,8 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             {/* DISPONIBILIDAD — toggle "Abierto ahora" (audit #11). Filtro ya
                 cableado en MarketplaceStoresView; acá solo el control desktop. */}
             <div className="border-t border-[var(--rule-soft)] pt-3">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+              <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <Clock className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
                 Disponibilidad
               </p>
               <QuickFilterToggle
@@ -1314,7 +1321,8 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           {zonesForFilter.length > 1 && (
           <div className="hidden sm:block lg:border-t lg:border-[var(--rule-soft)] lg:pt-3">
             {/* Label solo visible en desktop sidebar */}
-            <p className="hidden lg:block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+            <p className="mb-2 hidden lg:flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <MapPin className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
               Zona
             </p>
             <button
