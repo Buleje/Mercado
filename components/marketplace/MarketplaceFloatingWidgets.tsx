@@ -20,6 +20,7 @@
  */
 
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 
 const CompareFloatingBadge = dynamic(
   () => import("@/components/marketplace/CompareFloatingBadge"),
@@ -31,13 +32,11 @@ const ProductCompareDrawer = dynamic(
   {},
 );
 
-// Reemplazado por QuickAddModal (centrado, soporta modifiers).
-// El modal usa el mismo QuickAddProvider context que el drawer, así que
-// los call-sites no cambian.
-const QuickAddModal = dynamic(
-  () => import("@/components/store/QuickAddModal"),
-  {},
-);
+// NOTA 2026-06-07: el <QuickAddModal/> ya NO se monta aquí. Al unificar
+// marketplace/tiendas bajo el (store) layout, ese layout monta UN solo
+// <QuickAddModal/> global (cubre home + marketplace + tiendas). Si lo
+// montáramos también acá quedaría DOBLE (dos modales sobre el mismo
+// QuickAddProvider context → se abren dos a la vez). Dedupe → uno solo en el layout.
 
 const LocalStorageDoctor = dynamic(
   () => import("@/components/LocalStorageDoctor"),
@@ -59,13 +58,31 @@ const DockFeatureSpotlight = dynamic(
   { ssr: false, loading: () => null },
 );
 
+// Auto-gate por ruta (2026-06-07): al vivir ahora en el (store) layout
+// persistente (que cubre home, /negocios, etc.), estos widgets de compra
+// (compare badge/drawer, dock, recently-viewed, tour) solo tienen sentido en
+// las superficies de catálogo del marketplace. Fuera de ahí son ruido visual.
+// Mismo criterio que ConditionalShoppingChrome para los flujos de inscripción.
+const SHOW_PREFIXES = ["/marketplace", "/tiendas"];
+const HIDE_PREFIXES = [
+  "/marketplace/repartidor",
+  "/marketplace/aplicar",
+  "/marketplace/onboarding",
+  "/marketplace/vender",
+];
+
 export default function MarketplaceFloatingWidgets() {
+  const pathname = usePathname() ?? "";
+  const show =
+    SHOW_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`)) &&
+    !HIDE_PREFIXES.some((p) => pathname.startsWith(p));
+  if (!show) return null;
+
   return (
     <>
       <LocalStorageDoctor />
       <CompareFloatingBadge />
       <ProductCompareDrawer />
-      <QuickAddModal />
       <FloatingDockController />
       <MarketplaceFirstVisitTour />
       <DockFeatureSpotlight />

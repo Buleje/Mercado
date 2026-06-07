@@ -175,6 +175,19 @@
   }
 }
 
+/* Crossfade del contenido al navegar entre páginas del storefront público
+   (/, /tiendas, /marketplace, …). Aplicado por MainWithBackKey con key={pathname}
+   → la animación se reproduce en cada cambio de ruta. Fundido suave, no corte
+   seco. Reusa el keyframe page-fade-in. Brandon 2026-06-07. */
+.bsm-route-fade {
+  animation: page-fade-in 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bsm-route-fade {
+    animation: none;
+  }
+}
+
 /* ── Modo Oscuro ────────────────────────────────────────────────────────── */
 /* ═══════════════════════════════════════════════════════════════════════════
    DARK MODE — Editorial Premium (rediseño 2026-04-28)

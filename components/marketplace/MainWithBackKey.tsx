@@ -1,32 +1,36 @@
 "use client";
 
 /**
- * MainWithBackKey — wrapper del <main> que garantiza que la página de
- * listado se rehidrata completa al volver desde un detail.
+ * MainWithBackKey — wrapper del <main> que refresca la página de listado al
+ * volver desde un detail, SIN recargar el navbar ni el resto del shell.
  *
- * Estrategia:
+ * Estrategia (Brandon 2026-06-07 — post unificación del shell):
  *
- * 1) Cross-layout (de /marketplace/[slug] a /tiendas o viceversa):
- *    HARD RELOAD via window.location.reload(). Es la única forma de
- *    garantizar que TODOS los strips, banners, recomendaciones, categorías
- *    y demás estado client-side se refresquen. Bumpear el key del <main>
- *    no llegaba a algunos componentes con su propio fetch + estado stale
- *    (TiendasHeroAds, RecommendationsStrip, MisTiendasFavoritasStrip, etc).
+ *   Al volver de /marketplace/[slug] a /marketplace o /tiendas, hacemos un
+ *   REFRESH SUAVE: bump del `key` del <main> + `router.refresh()`. Eso
+ *   re-ejecuta los Server Components (re-fetch de strips/banners/recos) y
+ *   re-monta el subárbol del listado para que los useEffect/fetch vuelvan a
+ *   correr, todo SIN desmontar el navbar ni los providers.
  *
- * 2) Same-layout (/marketplace/[slug] → /marketplace):
- *    Bumpeamos `key` del <main> + router.refresh(). Más liviano porque
- *    el layout shell no se reflota.
+ *   Antes acá había un `window.location.reload()` (recarga DURA del navegador)
+ *   para el caso "cross-layout": cuando /marketplace y /tiendas eran árboles de
+ *   layout DISTINTOS, volver de un detail remontaba todo y algunos strips con
+ *   fetch propio quedaban stale, así que se forzaba el reload. Tras mover
+ *   marketplace+tiendas bajo el mismo (store) layout persistente YA NO hay
+ *   cross-layout → el refresh suave basta y la navegación es fluida.
  *
- * El marker `__bsm_from_detail` se setea al entrar a un detail; se lee
- * (y consume) al primer mount del list path. Se prefija con "navigate:"
- * para asegurar que NO se re-trigger un reload en F5 o navegación directa.
+ * El marker `__bsm_from_detail` se setea al entrar a un detail; se lee (y
+ * consume) al primer mount del list path, con ventana de frescura de 30s para
+ * no refrescar en F5 / navegación directa vieja.
+ *
+ * Además envuelve el contenido en un crossfade (.bsm-route-fade, keyed por
+ * pathname) para que el cambio de página sea un fundido suave, no un corte seco.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 const FROM_DETAIL_KEY = "__bsm_from_detail";
-const RELOADED_KEY = "__bsm_back_reloaded_at";
 const EVENT_NAME = "buleje:back-nav-key-bump";
 
 const LIST_PATHS = new Set<string>(["/tiendas", "/marketplace"]);
@@ -78,33 +82,24 @@ export default function MainWithBackKey({ children }: { children: React.ReactNod
       return;
     }
 
-    // Si llegamos a un list path Y existe marker FRESCO (<30s) → veníamos
-    // de un detail (back-nav). Hard reload garantiza que banners,
-    // recomendaciones, categorías y strips se rehidraten todos.
+    // Si llegamos a un list path → ¿veníamos de un detail (back-nav)?
+    // Lo detectamos por el marker fresco (<30s) O porque el path anterior en
+    // esta misma sesión cliente era un detail. En cualquier caso hacemos un
+    // REFRESH SUAVE (bump key + router.refresh) — re-stream del RSC + re-run de
+    // effects, SIN recarga dura del navegador.
     if (isListPath(pathname)) {
+      let cameFromDetailMarker = false;
       const raw = sessionStorage.getItem(FROM_DETAIL_KEY);
       if (raw) {
         let stamped: { path?: string; ts?: number } = {};
         try { stamped = JSON.parse(raw); } catch { /* legacy plain string */ }
         const ts = typeof stamped.ts === "number" ? stamped.ts : 0;
-        const now = Date.now();
-        const isFresh = now - ts < 30_000; // 30s ventana válida
-        if (isFresh) {
-          sessionStorage.removeItem(FROM_DETAIL_KEY);
-          const lastReload = Number(sessionStorage.getItem(RELOADED_KEY) || "0");
-          // Guard anti-loop: si recargamos hace <2s, saltamos.
-          if (now - lastReload > 2000) {
-            sessionStorage.setItem(RELOADED_KEY, String(now));
-            window.location.reload();
-            return;
-          }
-        } else {
-          // Marker stale (sesión vieja) → limpiar sin reload.
-          sessionStorage.removeItem(FROM_DETAIL_KEY);
-        }
+        const isFresh = Date.now() - ts < 30_000; // 30s ventana válida
+        // Consumimos el marker siempre (fresco o stale) para no re-disparar.
+        sessionStorage.removeItem(FROM_DETAIL_KEY);
+        cameFromDetailMarker = isFresh;
       }
-      // Same-layout sin marker fresco: bump key + refresh.
-      if (isStoreDetailPath(prevPath)) {
+      if (cameFromDetailMarker || isStoreDetailPath(prevPath)) {
         setBumpKey((k) => k + 1);
         try { router.refresh(); } catch {}
       }
@@ -129,7 +124,13 @@ export default function MainWithBackKey({ children }: { children: React.ReactNod
       key={bumpKey}
       className="pb-[calc(72px+env(safe-area-inset-bottom))] sm:pb-0"
     >
-      {children}
+      {/* Crossfade: keyed por pathname → al cambiar de ruta el contenido hace
+          un fundido suave en vez de un corte seco. CSS puro (.bsm-route-fade en
+          globals.css) con guard prefers-reduced-motion. NO afecta los refs de
+          este componente (van en la instancia, no en este div). */}
+      <div key={pathname} className="bsm-route-fade">
+        {children}
+      </div>
     </main>
   );
 }

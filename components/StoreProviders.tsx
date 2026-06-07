@@ -17,6 +17,7 @@ import { TenantSlugProvider } from "@/contexts/tenant-context";
 import { WishlistProvider } from "@/contexts/wishlist-context";
 import { SocioBulejeProvider } from "@/contexts/socio-buleje-context";
 import { SubscriptionProvider } from "@/contexts/subscription-context";
+import { LastOrderProvider } from "@/contexts/last-order-context";
 import ThemeInjector from "@/components/store/ThemeInjector";
 
 export default function StoreProviders({
@@ -39,7 +40,15 @@ export default function StoreProviders({
                     <CompareProvider>
                       <SocioBulejeProvider>
                         <SubscriptionProvider>
-                          <CustomerProvider>{children}</CustomerProvider>
+                          <CustomerProvider>
+                            {/* LastOrderProvider — tracking de "tu último
+                                pedido" (badge en nav + OrderSuccessModal).
+                                Añadido al superset 2026-06-07 al unificar
+                                marketplace/tiendas bajo el (store) layout:
+                                MarketplaceStoresView y OrderTrackerNavBadge lo
+                                consumen y sin él quedaban en NOOP silencioso. */}
+                            <LastOrderProvider>{children}</LastOrderProvider>
+                          </CustomerProvider>
                         </SubscriptionProvider>
                       </SocioBulejeProvider>
                     </CompareProvider>

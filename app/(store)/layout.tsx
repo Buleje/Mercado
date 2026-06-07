@@ -26,9 +26,18 @@ import NavModeToast from "@/components/marketplace/NavModeToast";
 // de producto en la tienda individual. El cliente NO sale del catálogo: el
 // modal aparece centrado, agrega y cierra. Lazy-loaded post-FCP.
 const QuickAddModal = dynamic(() => import("@/components/store/QuickAddModal"));
+// OrderSuccessModal — modal de éxito post-pedido. Antes vivía en
+// MarketplaceStoreProviders (marketplace/tiendas); al unificar bajo este layout
+// lo montamos acá para no perderlo. Lazy (sin ssr:false porque este es un
+// Server Component) — el modal renderiza null mientras no haya pedido reciente.
+const OrderSuccessModal = dynamic(
+  () => import("@/components/marketplace/order-success/OrderSuccessModal"),
+);
 // TenantIndicatorBar removed — public pages shouldn't show tenant context
 import LocalBusinessJsonLd from "@/components/store/LocalBusinessJsonLd";
 import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
+import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
+import ConditionalShoppingChrome from "@/components/marketplace/ConditionalShoppingChrome";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { tenantExists } from "@/lib/tenant-check";
 import { headers } from "next/headers";
@@ -166,13 +175,27 @@ async function StoreLayoutContent({
             <Suspense fallback={null}>
               <QuickAddDrawer />
             </Suspense>
-            <BottomNav />
+            {/* BottomNav gateado (Brandon 2026-06-07): se oculta en los flujos
+                de inscripción del marketplace (/marketplace/repartidor|aplicar|
+                onboarding|vender) — antes lo hacía el layout de marketplace.
+                En home y resto de (store) se muestra normal. */}
+            <ConditionalShoppingChrome>
+              <BottomNav />
+            </ConditionalShoppingChrome>
             <NavModeToast />
             {/* Widgets legacy de single-tenant — mantenidos por compat con
                 rutas de tienda específica (/cuenta, /mis-pedidos, etc). */}
             <StoreClientShell />
             <StoreFloatingWidgets />
+            {/* Widgets del marketplace (compare, dock, recently-viewed, tour) —
+                se auto-gatean a /marketplace + /tiendas (null en home). */}
+            <MarketplaceFloatingWidgets />
             <QuickAddModal />
+            {/* Modal de éxito post-pedido — se mantiene tras navegaciones.
+                Renderiza null hasta que LastOrderProvider tenga un pedido. */}
+            <Suspense fallback={null}>
+              <OrderSuccessModal />
+            </Suspense>
           </AddedToCartDrawerProvider>
         </QuickAddProvider>
       </MotionProvider>
