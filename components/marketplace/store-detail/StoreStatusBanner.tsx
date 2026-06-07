@@ -78,7 +78,7 @@ export default function StoreStatusBanner({
     >
       <div
         className={cn(
-          "flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl px-4 py-2.5 border",
+          "flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl max-md:rounded-none px-4 py-2.5 border",
           isOpen
             ? [
                 "bg-[color-mix(in_oklch,var(--data-success-500)_8%,transparent)]",

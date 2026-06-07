@@ -96,9 +96,9 @@ export default function StoreBannerArea({
           {/* Avatar — más proporcionado (no tipo poster), bordes suaves + ring + sombra */}
           <div
             className={cn(
-              "shrink-0 h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 rounded-2xl overflow-hidden",
+              "shrink-0 h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 rounded-2xl max-md:rounded-none overflow-hidden",
               "bg-[var(--surface-raised)] border-4 border-[var(--surface-canvas)]",
-              "shadow-lg ring-1 ring-black/5 flex items-center justify-center",
+              "shadow-lg max-md:shadow-none ring-1 ring-black/5 flex items-center justify-center",
             )}
           >
             {logo ? (

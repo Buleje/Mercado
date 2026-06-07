@@ -103,12 +103,12 @@ function ProductListRow({
   );
 
   return (
-    <div className="flex gap-3 sm:gap-4 items-center p-3 sm:p-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 transition-colors group">
+    <div className="flex gap-3 sm:gap-4 items-center p-3 sm:p-4 rounded-xl max-md:rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 transition-colors group">
       <Link
         href={href}
         className="flex flex-1 min-w-0 gap-3 sm:gap-4 items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] rounded-lg"
       >
-        <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center">
+        <div className="flex-shrink-0 w-16 h-16 rounded-lg max-md:rounded-none overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center">
           {product.productImage ? (
             <Image
               src={product.productImage}
@@ -150,7 +150,7 @@ function ProductListRow({
         aria-label={qty > 0 ? `Agregar otro ${product.productName}` : `Agregar ${product.productName} al carrito`}
         title={hasModifiers ? "Elegi opciones del producto" : "Agregar al carrito"}
         className={cn(
-          "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border-2 transition-all",
+          "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl max-md:rounded-none border-2 transition-all",
           // Tamaño grande para tap target en mobile, compacto en desktop.
           "h-12 w-12 sm:h-11 sm:w-auto sm:px-4",
           qty > 0
@@ -318,7 +318,7 @@ export default function StoreCatalog({
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 h-12 text-base font-medium rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition"
+              className="w-full pl-12 pr-4 h-12 text-base font-medium rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition"
             />
           </div>
         )}
@@ -330,7 +330,7 @@ export default function StoreCatalog({
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
             aria-label="Ordenar por"
-            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] px-4 pr-10 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition cursor-pointer"
+            className="h-12 rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] px-4 pr-10 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition cursor-pointer"
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -345,7 +345,7 @@ export default function StoreCatalog({
             distraen del catálogo. */}
         <div className="flex items-center gap-3 lg:ml-auto">
           {showLocalViewToggle && (
-            <div className="flex rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
+            <div className="flex rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
               <button
                 type="button"
                 onClick={() => setView("grid")}
