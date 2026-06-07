@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 // Mapa real (OSM) — client-only. Sin onPick = solo lectura (marker fijo).
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), {
   ssr: false,
-  loading: () => <div className="h-[248px] w-full animate-pulse bg-[var(--surface-sunken)]" />,
+  loading: () => <div className="h-[196px] w-full animate-pulse bg-[var(--surface-sunken)]" />,
 });
 
 interface StoreHeroProps {
@@ -130,7 +130,7 @@ export default function StoreHero({
     // sticky bastan para identidad en mobile.
     <section
       aria-labelledby="store-hero-heading"
-      className="hidden md:block max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-2"
+      className="hidden md:block max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-2"
     >
       <div
         className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-sm"
@@ -164,7 +164,7 @@ export default function StoreHero({
         </div>
 
         {/* ── Header — identidad + CTAs ───────────────────────────────── */}
-        <div className="flex flex-col gap-5 p-5 sm:p-7 lg:p-8 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:p-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 flex-1">
             <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
@@ -172,12 +172,12 @@ export default function StoreHero({
             </span>
             <h1
               id="store-hero-heading"
-              className="mt-3 text-3xl sm:text-4xl lg:text-[2.75rem] font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]"
+              className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]"
             >
               {name}
             </h1>
             {description && (
-              <p className="mt-2 max-w-2xl text-base sm:text-lg leading-relaxed text-[var(--text-secondary)]">
+              <p className="mt-1.5 max-w-2xl text-sm sm:text-base leading-relaxed text-[var(--text-secondary)]">
                 <span className="italic font-serif text-[var(--text-primary)]">
                   &ldquo;{description}&rdquo;
                 </span>
@@ -248,7 +248,7 @@ export default function StoreHero({
         <div className="hidden md:grid grid-cols-2 sm:grid-cols-4 border-t-2 border-[var(--rule-base)]">
           {/* Rating — sin reseñas muestra empty state explícito en lugar
               de un guión "—" críptico (designer audit). */}
-          <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
+          <div className="flex flex-col gap-1 p-3 sm:p-4 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
             <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <Star
                 className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
@@ -257,7 +257,7 @@ export default function StoreHero({
               Rating
             </span>
             {ratingLabel ? (
-              <p className="text-xl sm:text-2xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
+              <p className="text-lg sm:text-xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
                 {ratingLabel}
                 <span className="ml-1 text-sm font-bold text-[var(--text-tertiary)]">
                   ({reviewCount})
@@ -271,12 +271,12 @@ export default function StoreHero({
           </div>
 
           {/* Delivery */}
-          <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
+          <div className="flex flex-col gap-1 p-3 sm:p-4 sm:border-r-2 border-b-2 sm:border-b-0 border-[var(--rule-base)]">
             <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <Truck className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Delivery
             </span>
-            <p className="text-xl sm:text-2xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
+            <p className="text-lg sm:text-xl font-black tabular-nums text-[var(--text-primary)] leading-tight">
               {deliveryMin}
               <span className="ml-0.5 text-sm font-bold text-[var(--text-tertiary)]">
                 min
@@ -290,23 +290,23 @@ export default function StoreHero({
           </div>
 
           {/* Ubicación */}
-          <div className="flex flex-col gap-1 p-4 sm:p-5 sm:border-r-2 border-[var(--rule-base)]">
+          <div className="flex flex-col gap-1 p-3 sm:p-4 sm:border-r-2 border-[var(--rule-base)]">
             <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <MapPin className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Zona
             </span>
-            <p className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight truncate">
+            <p className="text-lg sm:text-xl font-black text-[var(--text-primary)] leading-tight truncate">
               {locationLabel}
             </p>
           </div>
 
           {/* Horario / abierto */}
-          <div className="flex flex-col gap-1 p-4 sm:p-5">
+          <div className="flex flex-col gap-1 p-3 sm:p-4">
             <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               <Clock className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Estado
             </span>
-            <p className="flex items-center gap-1.5 text-xl sm:text-2xl font-black leading-tight">
+            <p className="flex items-center gap-1.5 text-lg sm:text-xl font-black leading-tight">
               <span
                 aria-hidden
                 className={`inline-block h-2.5 w-2.5 rounded-full ${
@@ -333,8 +333,8 @@ export default function StoreHero({
              datos en grilla a la derecha. Solo desktop (en mobile, modal de info). */}
         <div className="grid grid-cols-1 border-t-2 border-[var(--rule-base)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           {/* Mapa real */}
-          <div className="relative min-h-[248px] border-b-2 border-[var(--rule-base)] lg:border-b-0 lg:border-r-2 [&_.leaflet-container]:!rounded-none">
-            <LeafletMap lat={mapLat} lon={mapLng} zoom={15} height={248} />
+          <div className="relative min-h-[196px] border-b-2 border-[var(--rule-base)] lg:border-b-0 lg:border-r-2 [&_.leaflet-container]:!rounded-none">
+            <LeafletMap lat={mapLat} lon={mapLng} zoom={15} height={196} />
             <a
               href={mapsHref}
               target="_blank"
@@ -346,8 +346,8 @@ export default function StoreHero({
           </div>
 
           {/* Datos */}
-          <div className="bg-[var(--surface-sunken)] p-5 sm:p-6 lg:rounded-br-3xl">
-            <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+          <div className="bg-[var(--surface-sunken)] p-4 sm:p-5 lg:rounded-br-3xl">
+            <div className="grid grid-cols-2 gap-x-5 gap-y-3">
               <InfoRow icon={MapPin} label="Ubicación" value={zone ?? "Ciudad Constitución"} />
               <InfoRow icon={Clock} label="Horario" value={scheduleLabel === "Abierto" ? "Lun a Dom · 6am – 11pm" : scheduleLabel} valueClass={isOpen ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)]"} />
               <InfoRow icon={Truck} label="Delivery" value={`${deliveryMin} min${freeDelivery ? " · gratis" : ""}`} />

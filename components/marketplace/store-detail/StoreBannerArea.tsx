@@ -90,7 +90,7 @@ export default function StoreBannerArea({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-        className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8"
+        className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8"
       >
         <div className="-mt-11 sm:-mt-12 lg:-mt-14 relative z-10 flex items-end gap-3.5">
           {/* Avatar — más proporcionado (no tipo poster), bordes suaves + ring + sombra */}
