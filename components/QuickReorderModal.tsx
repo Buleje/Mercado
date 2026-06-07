@@ -125,9 +125,9 @@ export default function QuickReorderModal({
 
   return (
     <div className="fixed inset-0 z-7000 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/55" />
       <div
-        className="relative bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-2xl shadow-[var(--shadow-xl)] w-full sm:max-w-md max-h-[90svh] flex flex-col overflow-hidden animate-[scaleIn_0.2s_ease-out]"
+        className="relative bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-none shadow-[var(--shadow-lg)] border border-[var(--rule-base)] w-full sm:max-w-md max-h-[90svh] flex flex-col overflow-hidden animate-[scaleIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

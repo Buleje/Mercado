@@ -108,8 +108,8 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeDown_0.25s_ease-out]">
-      <div role="dialog" aria-modal="true" aria-label="Oferta antes de irte" className="relative bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] max-w-lg w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
+    <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/55 animate-[fadeDown_0.25s_ease-out]">
+      <div role="dialog" aria-modal="true" aria-label="Oferta antes de irte" className="relative bg-[var(--surface-raised)] rounded-none shadow-[var(--shadow-lg)] border border-[var(--rule-base)] max-w-lg w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
         {/* Close button */}
         <button
           onClick={handleClose}

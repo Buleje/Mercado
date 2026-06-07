@@ -82,7 +82,7 @@ export function ConfirmModal({
         <AlertDialog.Content
           className={cn(
             "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-w-md w-[calc(100vw-2rem)]",
-            "bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] outline-none",
+            "bg-[var(--surface-raised)] rounded-none shadow-[var(--shadow-lg)] border border-[var(--rule-base)] outline-none",
             "data-[state=open]:animate-confirm-content-in",
           )}
         >

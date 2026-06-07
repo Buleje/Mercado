@@ -43,7 +43,7 @@ function FullMapModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-9500 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
+        className="fixed inset-0 z-9500 bg-black/55 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <m.div
@@ -51,7 +51,7 @@ function FullMapModal({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 24, stiffness: 280 }}
-            className="bg-white dark:bg-background rounded-2xl overflow-hidden shadow-[var(--shadow-xl)] w-full max-w-3xl max-h-[95svh] flex flex-col"
+            className="bg-white dark:bg-background rounded-none overflow-hidden shadow-[var(--shadow-lg)] w-full max-w-3xl max-h-[95svh] flex flex-col border border-[var(--rule-base)]"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
@@ -390,7 +390,7 @@ export default function CustomerModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-7000 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-7000 bg-black/55"
             onClick={closeModal}
           />
           <m.div
@@ -400,7 +400,7 @@ export default function CustomerModal() {
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
             className="fixed inset-x-0 bottom-0 sm:inset-0 z-7001 flex items-end sm:items-center justify-center sm:p-4"
           >
-            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-[var(--shadow-xl)] w-full sm:max-w-lg max-h-[95svh] flex flex-col overflow-hidden">
+            <div className="bg-white rounded-t-2xl sm:rounded-none shadow-[var(--shadow-lg)] w-full sm:max-w-lg max-h-[95svh] flex flex-col overflow-hidden border border-[var(--rule-base)]">
 
               {/* Drag handle — mobile only */}
               <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">

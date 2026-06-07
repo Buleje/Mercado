@@ -93,7 +93,7 @@ export default function OrderConfirmModal() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={closeConfirmModal}
-            className="fixed inset-0 bg-black/55 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/55"
             style={{ zIndex: 8000 }}
           />
 
@@ -106,7 +106,7 @@ export default function OrderConfirmModal() {
             className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
             style={{ zIndex: 8001 }}
           >
-            <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-[var(--shadow-xl)] overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
+            <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-none shadow-[var(--shadow-lg)] border border-[var(--rule-base)] overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
               {/* Header strip */}
               <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, var(--accent-dark), var(--accent), var(--accent-dark))" }}>
                 <div className="flex items-center gap-3">
