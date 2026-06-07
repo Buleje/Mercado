@@ -45,6 +45,7 @@ import { CurrencyProvider } from "@/contexts/currency-context";
 // ServiceWorker + InstallPrompt + ClientEffects). Reducen el bundle
 // del root layout en ~100-150kb.
 import RootDeferredWidgets from "@/components/RootDeferredWidgets";
+import ChunkErrorReloader from "@/components/ChunkErrorReloader";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import NavProgress from "@/components/NavProgress";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -346,6 +347,10 @@ export default function RootLayout({
       <body className={`antialiased ${GeistSans.className}`}>
         {/* Skip-link WCAG 2.4.1 — primer tabulable del body (ADR-075 tokens DS). */}
         <SkipLink />
+        {/* Auto-recuperación de ChunkLoadError: tras un deploy (hashes nuevos)
+            o caché de disco corrupta, recarga 1 vez para traer chunks frescos
+            en lugar de dejar una feature lazy rota. Guard anti-loop interno. */}
+        <ChunkErrorReloader />
         {/* Barra de progreso de navegación — feedback instantáneo al hacer
             clic en cualquier link (cubre el micro-gap antes de loading.tsx).
             Brandon 2026-05-31: envuelto en Suspense porque usa useSearchParams()
