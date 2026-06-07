@@ -388,10 +388,10 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   return (
     <div
       ref={cardRef}
-      className={`relative transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.02] ${isFeatured ? "rounded-2xl p-0.5 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] shadow-lg" : ""}`}
+      className={`relative transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.02] ${isFeatured ? "rounded-2xl p-0.5 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] shadow-lg max-md:rounded-none max-md:p-0 max-md:bg-none max-md:shadow-none" : ""}`}
     >
       {/* Wrapper interno para que el anillo teal envuelva la card en Destacada */}
-      <div className={isFeatured ? "rounded-[14px] overflow-hidden bg-[var(--surface-raised)]" : "contents"}>
+      <div className={isFeatured ? "rounded-[14px] overflow-hidden bg-[var(--surface-raised)] max-md:rounded-none" : "contents"}>
       {/* Badges de nivel + verificada movidos al cluster `coverOverlay`
           (top-left, icon-only) — Brandon 2026-05-31. Antes flotaban sueltos y
           el de nivel chocaba con el botón Seguir (top-right). */}
@@ -402,11 +402,11 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           StoreCardCanonical para que el overlay cubra exactamente el cover.
           Brandon 2026-05-21: mobile cards más bajas estilo Rappi → 16/9. */}
       {store.underConstruction ? (
-        <div className="absolute top-0 left-0 right-0 aspect-[16/9] sm:aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 aspect-[16/9] sm:aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden max-md:rounded-none">
           <UnderConstructionOverlay message={store.underConstructionMessage} />
         </div>
       ) : store.isOpenNow === false ? (
-        <div className="absolute top-0 left-0 right-0 aspect-[16/9] sm:aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 aspect-[16/9] sm:aspect-[4/3] pointer-events-none z-10 rounded-t-lg overflow-hidden max-md:rounded-none">
           <ClosedNowOverlay nextOpeningLabel={formatNextOpening(store.nextOpeningAt)} />
         </div>
       ) : null}
@@ -421,6 +421,10 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         slug={store.slug}
         imageUrl={store.cover || store.logo}
         variant="default"
+        // Brandon 2026-06-07: cards cuadradas en mobile (max-md-) en /tiendas y
+        // /marketplace — rediseño ejecutivo "todo recto". El root del DS es
+        // `rounded-lg`; max-md:rounded-none lo cuadra <768px (border 1px se queda).
+        className="max-md:rounded-none"
         footer={footer}
         coverOverlay={coverOverlay}
         coverBottomLeft={

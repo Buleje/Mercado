@@ -130,8 +130,11 @@ export default function PremiumStoreCard({
     lat: lat ?? null,
     lng: lng ?? null,
   };
+  // Brandon 2026-06-07: card cuadrada en mobile (max-md-) — rediseño ejecutivo
+  // "todo recto". En desktop conserva rounded-2xl. El hover-shadow no aplica en
+  // touch, así que no se ve en celular.
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all duration-200 ease-out hover:border-[var(--text-primary)]/40 hover:scale-[1.006] hover:shadow-[0_18px_40px_-24px_rgba(0,0,0,0.35)]">
+    <div className="group relative overflow-hidden rounded-2xl max-md:rounded-none border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-all duration-200 ease-out hover:border-[var(--text-primary)]/40 hover:scale-[1.006] hover:shadow-[0_18px_40px_-24px_rgba(0,0,0,0.35)]">
       {/* Banner "Cerrada ahora" — barra full-width arriba del card. No tapa
           ningún elemento (empuja el contenido) y avisa la próxima apertura.
           Brandon 2026-05-31. */}
@@ -269,7 +272,7 @@ export default function PremiumStoreCard({
               {shown.map((p, i) => (
                 <li
                   key={p.productId}
-                  className={`overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)]${i >= 3 ? " hidden sm:block" : ""}`}
+                  className={`overflow-hidden rounded-xl max-md:rounded-none border border-[var(--rule-soft)] bg-[var(--surface-canvas)]${i >= 3 ? " hidden sm:block" : ""}`}
                 >
                   <div className="relative aspect-square w-full bg-[var(--surface-sunken)]">
                     {p.image ? (
@@ -289,7 +292,7 @@ export default function PremiumStoreCard({
               ))}
             </ul>
           ) : (
-            <div className="flex h-full min-h-[96px] items-center justify-center rounded-xl border border-dashed border-[var(--rule-base)] text-xs text-[var(--text-tertiary)]">
+            <div className="flex h-full min-h-[96px] items-center justify-center rounded-xl max-md:rounded-none border border-dashed border-[var(--rule-base)] text-xs text-[var(--text-tertiary)]">
               Entrá para ver el catálogo completo
             </div>
           )}
