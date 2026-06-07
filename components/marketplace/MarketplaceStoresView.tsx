@@ -321,10 +321,11 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       {/* sr-only enriched aria description (rating, zone, vacación). */}
       <span className="sr-only">{ariaLabel}</span>
 
-      {/* Emblemas en la descripción: verificada + nivel — chips con texto,
-          organizados. Brandon 2026-06-07. */}
+      {/* Emblemas en la descripción: verificada + nivel — chips con texto.
+          Brandon 2026-06-07: ocultos en celular (max-md:hidden) — la card mobile
+          va más limpia, sin tanto elemento ni que predomine el "negocio". */}
       {(store.verified || hasTierBadge) && (
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5 max-md:hidden">
           {store.verified && (
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
               <ShieldCheck className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
@@ -488,10 +489,20 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           </Link>
         )}
       />
-      {/* TS-15 follow store + compartir — fuera del Link para no anidar interactivos */}
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+      {/* TS-15 follow store + compartir — fuera del Link para no anidar interactivos.
+          Desktop (md+): cluster top-right con compartir + corazón. */}
+      <div className="absolute top-3 right-3 z-10 hidden md:flex items-center gap-2">
         <ShareStoreButton slug={store.slug} name={store.name} />
         <FollowStoreButton slug={store.slug} storeName={store.name} />
+      </div>
+      {/* Mobile: SIN compartir; el corazón de favorito baja a la zona de la
+          descripción (abajo-derecha), recto, fuera del Link. Brandon 2026-06-07. */}
+      <div className="absolute bottom-2.5 right-2.5 z-10 md:hidden">
+        <FollowStoreButton
+          slug={store.slug}
+          storeName={store.name}
+          className="rounded-none"
+        />
       </div>
 
       {/* Distancia + ver en mapa — pill clickeable (overlay, fuera del Link).

@@ -169,10 +169,12 @@ export default function PremiumStoreCard({
         {/* Compartir tienda por WhatsApp — cada cliente trae 2-3 vecinos
             (Brandon 2026-06-02). z-20 sobre el stretched-link "Ver tienda";
             a la izquierda del botón de vista rápida si existe. */}
+        {/* Brandon 2026-06-07: compartir oculto en celular (max-md:hidden) — card
+            más limpia; en desktop se mantiene. La vista rápida (Eye) queda. */}
         <ShareStoreButton
           slug={slug}
           name={name}
-          className={`absolute top-3 z-20 ${onQuickView ? "right-[3.75rem]" : "right-3"}`}
+          className={`absolute top-3 z-20 max-md:hidden ${onQuickView ? "right-[3.75rem]" : "right-3"}`}
         />
 
         {/* ── Identidad ── */}

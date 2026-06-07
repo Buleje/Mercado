@@ -41,8 +41,8 @@ export default function QuickFilterToggle({
       title={title}
       className={cn(
         isPill
-          ? "shrink-0 [scroll-snap-align:start] inline-flex items-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-full text-xs font-bold transition-all whitespace-nowrap"
-          : "w-full inline-flex items-center gap-2 h-11 px-3.5 rounded-xl text-sm font-bold transition-all border-2",
+          ? "shrink-0 [scroll-snap-align:start] inline-flex items-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-none text-xs font-bold transition-all whitespace-nowrap"
+          : "w-full inline-flex items-center gap-2 h-11 px-3.5 rounded-none text-sm font-bold transition-all border-2",
         active
           ? isPill
             ? "bg-[var(--accent)] text-white border border-[var(--accent)]"
