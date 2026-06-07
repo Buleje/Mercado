@@ -1048,8 +1048,10 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
              1. LocationBar (1 línea, tap → modal customer profile)
              2. WelcomeBanner (compacto, solo si NO logueado) */}
         {/* Brandon 2026-06-07: TiendasWelcomeBanner ("bienvenido") removido en
-            mobile para un /tiendas más minimalista. Queda solo la barra de ubicación. */}
-        <div className="sm:hidden flex flex-col gap-1.5 mb-2">
+            mobile. La barra de ubicación va full-bleed (-mx-4 cancela el px-4 del
+            section) y pegada al nav (-mt-3 cancela el pt-3) → rectángulo de ancho
+            completo, sin bordes redondeados. */}
+        <div className="sm:hidden flex flex-col -mx-4 -mt-3 mb-3">
           <TiendasLocationBar />
         </div>
 

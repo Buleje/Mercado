@@ -24,7 +24,7 @@ import { useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Home,
-  Search,
+  MessageCircle,
   ShoppingCart,
   User,
   Store as StoreIcon,
@@ -32,14 +32,13 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
-import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 
 const fmtPEN = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type TabId = "inicio" | "tiendas" | "buscar" | "carrito" | "cuenta";
+type TabId = "inicio" | "mercado" | "chat" | "carrito" | "cuenta";
 
 interface Tab {
   id: TabId;
@@ -47,13 +46,13 @@ interface Tab {
   Icon: React.ElementType;
 }
 
-// Brandon 2026-06-01: "Inicio" agregado como PRIMER tab (→ la home `/`).
-// Antes el primer tab era "Tiendas" (catálogo). Ahora el vecino vuelve a la
-// home de un toque.
+// Brandon 2026-06-07: "Tiendas" → "Mercado" (→ /marketplace) y "Buscar" → "Chat"
+// (abre el Messenger del marketplace vía evento `buleje:open-chat`). El chat del
+// top-nav se removió en mobile porque ahora vive acá abajo.
 const TABS: Tab[] = [
   { id: "inicio", label: "Inicio", Icon: Home },
-  { id: "tiendas", label: "Tiendas", Icon: StoreIcon },
-  { id: "buscar", label: "Buscar", Icon: Search },
+  { id: "mercado", label: "Mercado", Icon: StoreIcon },
+  { id: "chat", label: "Chat", Icon: MessageCircle },
   { id: "carrito", label: "Carrito", Icon: ShoppingCart },
   { id: "cuenta", label: "Cuenta", Icon: User },
 ];
@@ -64,8 +63,6 @@ export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { itemCount, items } = useMarketplaceCart();
-  const navMode = useMarketplaceNavMode();
-  const isTiendasOnly = navMode === "tiendas-only";
 
   // Subtotal para la franja de carrito integrada (Brandon 2026-05-27: un solo
   // nav abajo = franja de carrito + tabs en el MISMO contenedor; reemplaza a la
@@ -84,11 +81,7 @@ export default function BottomNav() {
     pathname?.startsWith("/checkout/") ||
     pathname === "/checkout";
 
-  // Tab principal: en tiendas-only va a /tiendas, sino a /marketplace
-  const homeHref = isTiendasOnly ? "/tiendas" : "/marketplace";
-
   const activeTab = useCallback((): TabId => {
-    if (pathname?.startsWith("/marketplace/buscar")) return "buscar";
     if (pathname?.startsWith("/marketplace/carrito")) return "carrito";
     if (pathname?.startsWith("/marketplace/mi-cuenta")) return "cuenta";
     if (pathname === "/") return "inicio";
@@ -96,7 +89,7 @@ export default function BottomNav() {
       pathname?.startsWith("/marketplace") ||
       pathname?.startsWith("/tiendas")
     )
-      return "tiendas";
+      return "mercado";
     return "inicio";
   }, [pathname]);
 
@@ -114,18 +107,15 @@ export default function BottomNav() {
         case "inicio":
           router.push("/");
           break;
-        case "tiendas":
-          router.push(homeHref);
+        case "mercado":
+          router.push("/marketplace");
           break;
-        case "buscar":
-          // Brandon 2026-05-31: abre EL MISMO overlay de búsqueda del navbar
-          // (full-screen, sugerencias en vivo) en vez de navegar a otra página.
-          // El navbar escucha "buleje:open-search". Fallback: navegar si el
-          // navbar no está montado (no debería pasar en el chrome marketplace).
+        case "chat":
+          // Brandon 2026-06-07: abre la BANDEJA del Messenger (chat con las
+          // tiendas). El ChatNavLauncher "bare" (montado en el nav, sin botón
+          // visible en celular) escucha `buleje:open-chat-list` y abre el panel.
           if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("buleje:open-search"));
-          } else {
-            router.push(isTiendasOnly ? "/tiendas" : "/marketplace/buscar");
+            window.dispatchEvent(new CustomEvent("buleje:open-chat-list"));
           }
           break;
         case "carrito":
@@ -136,7 +126,7 @@ export default function BottomNav() {
           break;
       }
     },
-    [router, homeHref, isTiendasOnly],
+    [router],
   );
 
   const currentActive = activeTab();

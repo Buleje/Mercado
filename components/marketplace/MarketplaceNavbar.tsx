@@ -967,7 +967,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 aria-label={t("nav.search")}
                 className="flex-1 min-w-0"
               >
-                <div className="relative flex items-center h-9 rounded-full border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] focus-within:border-[var(--text-primary)] transition-colors pl-1.5 pr-1 gap-1">
+                <div className="relative flex items-center h-9 rounded-none border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] focus-within:border-[var(--text-primary)] transition-colors pl-1.5 pr-1 gap-1">
                   <Link
                     href={storefront.logo ? "/tiendas" : "/"}
                     aria-label={storefront.logo ? `${storefront.name ?? "Tienda"} — Ver directorio` : "Buleje — Inicio"}
@@ -1015,7 +1015,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                     type="button"
                     onClick={() => setMobileSearchOpen(true)}
                     aria-label="Buscar"
-                    className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
+                    className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-none bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
                   >
                     <Search className="h-3 w-3" aria-hidden="true" strokeWidth={2.5} />
                   </button>
@@ -1033,9 +1033,12 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 <Link
                   href="/marketplace/mi-cuenta"
                   aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
-                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--text-primary)] text-[12px] font-black text-[var(--surface-raised)] active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="shrink-0 inline-flex h-9 items-center justify-center gap-1.5 rounded-none bg-[var(--text-primary)] px-2.5 text-[12px] font-black text-[var(--surface-raised)] active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
-                  {getInitials(customer.name)}
+                  <span aria-hidden className="inline-flex h-6 w-6 items-center justify-center rounded-none bg-[var(--surface-raised)]/15 text-[11px]">
+                    {getInitials(customer.name)}
+                  </span>
+                  <span className="max-w-[4.5rem] truncate">{customer.name?.split(" ")[0] ?? ""}</span>
                 </Link>
               ) : (
                 <button

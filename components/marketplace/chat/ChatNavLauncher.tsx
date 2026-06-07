@@ -214,6 +214,24 @@ export default function ChatNavLauncher({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variant, customer, conversations, markRead, openAuthModal]);
 
+  // ── Evento "buleje:open-chat-list" — abre la BANDEJA del Messenger (sin tienda
+  // específica). Lo dispara el bottom-nav mobile ("Chat"). Solo el launcher
+  // "bare" (el que vive en el nav mobile) responde, para no abrir 2 paneles.
+  // Brandon 2026-06-07: el chat se movió del top-nav al bottom-nav en celular.
+  useEffect(() => {
+    if (variant !== "bare") return;
+    const handler = () => {
+      if (!customer) {
+        openAuthModal();
+        return;
+      }
+      setActive(null);
+      setOpen(true);
+    };
+    window.addEventListener("buleje:open-chat-list", handler);
+    return () => window.removeEventListener("buleje:open-chat-list", handler);
+  }, [variant, customer, openAuthModal]);
+
   // ── Toast de mensaje entrante (estilo FB) — solo si el panel está cerrado ──
   useEffect(() => {
     if (variant !== "default") return;
@@ -302,8 +320,11 @@ export default function ChatNavLauncher({
         aria-expanded={open}
         className={cn(
           "relative inline-flex shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
+          // Brandon 2026-06-07: en celular (<640) el chat vive en el bottom-nav,
+          // así que el botón "bare" del top-nav se oculta ahí; reaparece 640px+
+          // (tablet) donde no hay bottom-nav y aún no entra el launcher desktop.
           variant === "bare"
-            ? "h-9 w-9 hover:bg-[var(--surface-sunken)] active:scale-95"
+            ? "h-9 w-9 hover:bg-[var(--surface-sunken)] active:scale-95 max-sm:hidden"
             : "h-11 w-11 hover:bg-[var(--surface-sunken)]",
         )}
       >
