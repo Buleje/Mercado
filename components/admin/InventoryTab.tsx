@@ -2353,6 +2353,19 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               </button>
             </div>
             <form onSubmit={addProduct} className="p-6 space-y-6">
+              {/* Vista previa en vivo — cómo se verá el producto */}
+              <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+                {addForm.image ? (
+                  <Image src={addForm.image} alt="" width={48} height={48} unoptimized={addForm.image.startsWith("data:")} className="h-12 w-12 rounded-lg object-cover border border-[var(--rule-soft)] bg-[var(--surface-alt)]" />
+                ) : (
+                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]"><PackagePlus className="h-6 w-6" /></span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{addForm.name.trim() || "Nuevo producto"}</p>
+                  <p className="truncate text-xs text-[var(--text-tertiary)]">{formCategories.find(c => c.id === addForm.category)?.label ?? "Sin categoría"} · {addForm.type === "service" ? "Servicio" : "Producto"}</p>
+                </div>
+                <span className="shrink-0 font-mono text-base font-extrabold text-primary">{addForm.price ? fmt(Number(addForm.price)) : "S/—"}</span>
+              </div>
               {/* Tipo: producto físico vs servicio */}
               <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
                 {([
@@ -2745,6 +2758,19 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               </button>
             </div>
             <div className="p-6 space-y-6">
+              {/* Vista previa en vivo */}
+              <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+                {editForm.image ? (
+                  <Image src={editForm.image} alt="" width={48} height={48} unoptimized={editForm.image.startsWith("data:")} className="h-12 w-12 rounded-lg object-cover border border-[var(--rule-soft)] bg-[var(--surface-alt)]" />
+                ) : (
+                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]"><Package className="h-6 w-6" /></span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{editForm.name?.trim() || "Producto"}</p>
+                  <p className="truncate text-xs text-[var(--text-tertiary)]">{formCategories.find(c => c.id === editForm.category)?.label ?? "Sin categoría"} · {(editForm.type ?? "product") === "service" ? "Servicio" : "Producto"}</p>
+                </div>
+                <span className="shrink-0 font-mono text-base font-extrabold text-primary">{editForm.price ? fmt(Number(editForm.price)) : "S/—"}</span>
+              </div>
               {/* Tipo: producto físico vs servicio */}
               <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
                 {([

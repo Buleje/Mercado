@@ -197,7 +197,7 @@ export default function ActivosModule() {
         <CalendarView assets={assets} />
       )}
 
-      {showForm && <AssetFormModal asset={editing} knownTypes={knownTypes} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); void load(); }} />}
+      {showForm && <AssetFormModal asset={editing} knownTypes={knownTypes} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); void load(); }} onPublishChanged={load} />}
       {moveFor && <MovementModal asset={moveFor.asset} kind={moveFor.kind} onClose={() => setMoveFor(null)} onSaved={() => { setMoveFor(null); void load(); }} />}
       {detailFor && <AssetDetailDrawer asset={detailFor} onClose={() => setDetailFor(null)} onContract={() => { setContractFor(detailFor); }} onChanged={load} />}
       {contractFor && <ContractModal asset={contractFor} onClose={() => setContractFor(null)} />}
@@ -331,8 +331,20 @@ function Chip({ icon: Icon, tone, children }: { icon: React.ComponentType<{ clas
 }
 
 // ── Modal crear / editar activo ─────────────────────────────────────────────
-function AssetFormModal({ asset, knownTypes, onClose, onSaved }: { asset: AssetStats | null; knownTypes: string[]; onClose: () => void; onSaved: () => void }) {
+function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged }: { asset: AssetStats | null; knownTypes: string[]; onClose: () => void; onSaved: () => void; onPublishChanged?: () => void }) {
   const typeKnown = asset == null || knownTypes.includes(asset.type);
+  const [published, setPublished] = useState(!!asset?.publishedProductId);
+  const [publishing, setPublishing] = useState(false);
+  const togglePublish = async () => {
+    if (!asset) return;
+    setPublishing(true);
+    try {
+      const res = await fetch(`/api/admin/assets/${asset.id}/publish`, { method: published ? "DELETE" : "POST", headers: csrfHeaders(), credentials: "include" });
+      if (!res.ok) { toast.error("No se pudo actualizar la tienda"); return; }
+      setPublished(p => !p); toast.success(published ? "Quitado de la tienda" : "Publicado como servicio de alquiler");
+      onPublishChanged?.();
+    } catch { toast.error("Sin conexión"); } finally { setPublishing(false); }
+  };
   const [form, setForm] = useState({
     name: asset?.name ?? "",
     type: asset ? (typeKnown ? asset.type : "__new__") : "cargador",
@@ -409,6 +421,29 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved }: { asset: AssetS
           <div><label className={LABEL} title="Galones esperados por unidad — si consume más, salta la alerta">Meta combustible (gal/{unitNoun(form.rateUnit).replace(/s$/, "")})</label><input type="number" min="0" step="0.01" value={form.fuelTargetPerUnit} onChange={e => setForm(f => ({ ...f, fuelTargetPerUnit: e.target.value }))} placeholder="ej. 3.5" className={FIELD} /></div>
           <div className="sm:col-span-2"><label className={LABEL}>Notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Año, marca, observaciones…" /></div>
         </FormSection>
+
+        {/* Tienda — publicar como servicio de alquiler (solo al editar una máquina ya guardada) */}
+        {asset ? (
+          <div className="space-y-3">
+            <p className="border-b border-[var(--rule-soft)] pb-1.5 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Tienda</p>
+            <button
+              type="button"
+              onClick={togglePublish}
+              disabled={publishing}
+              className={cn("flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors disabled:opacity-60",
+                published ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]")}
+            >
+              <span className={cn("inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", published ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
+                {publishing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Store className="h-5 w-5" />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-[var(--text-primary)]">{published ? "Publicada en tu tienda" : "Publicar en tu tienda"}</span>
+                <span className="block text-xs text-[var(--text-tertiary)]">{published ? "Aparece en tienda y marketplace como servicio de alquiler. Tocá para quitarla." : "La muestra como servicio de alquiler. No entra a inventario."}</span>
+              </span>
+              <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-black uppercase", published ? "bg-[var(--accent)] text-white" : "border border-[var(--rule-base)] text-[var(--text-secondary)]")}>{published ? "On" : "Off"}</span>
+            </button>
+          </div>
+        ) : null}
       </div>
       <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel={asset ? "Guardar cambios" : "Agregar máquina"} />
     </ModalShell>
