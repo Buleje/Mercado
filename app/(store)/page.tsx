@@ -24,9 +24,6 @@ import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 //    auto-oculta si no hay pedido previo). Recompra en 1 toque.
 //  - TopToday: "Lo más pedido hoy" cross-tienda con quick-add directo al carrito
 //    (se auto-oculta si no hay datos). Ambos self-fetch + self-contained.
-const MarketplaceQuickReorder = dynamic(
-  () => import("@/components/marketplace/MarketplaceQuickReorder"),
-);
 const MarketplaceTopToday = dynamic(
   () => import("@/components/marketplace/MarketplaceTopToday"),
 );
@@ -38,6 +35,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
+import HomePersonalStrip from "@/components/marketplace/home/HomePersonalStrip";
 import {
   Store,
   ArrowUpRight,
@@ -1231,9 +1229,10 @@ export default async function Home() {
       {/* 1. Hero compacto con buscador */}
       <RappiStyleHero />
 
-      {/* 1.5 Volvé a pedir — recompra en 1 toque para el cliente que vuelve.
-          Self-hide si no hay pedido previo / no logueado (no molesta a nuevos). */}
-      <MarketplaceQuickReorder />
+      {/* 1.5 Personalización del cliente logueado: saludo + "Sigue donde
+          quedaste" (retoma carrito) + "Vuelve a pedir" (reorder/last server).
+          Self-hide si es anónimo o no hay nada que mostrar. Brandon 2026-06-08. */}
+      <HomePersonalStrip />
 
       {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas */}
       <Suspense fallback={<SectionSkeleton minH="min-h-[640px]" />}>

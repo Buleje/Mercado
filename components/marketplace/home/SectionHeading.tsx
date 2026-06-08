@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "@buleje/design-system/icons";
 
@@ -19,6 +20,7 @@ export default function SectionHeading({
   subtitle,
   actionLabel,
   actionHref,
+  action,
   headingId,
 }: {
   eyebrow?: string;
@@ -26,6 +28,8 @@ export default function SectionHeading({
   subtitle?: string;
   actionLabel?: string;
   actionHref?: string;
+  /** Slot de acción custom (ej. un <button>). Tiene prioridad sobre el Link. */
+  action?: ReactNode;
   /** id del <h2> — para `aria-labelledby` de la sección que lo envuelve. */
   headingId?: string;
 }) {
@@ -49,15 +53,17 @@ export default function SectionHeading({
           </p>
         )}
       </div>
-      {actionLabel && actionHref && (
-        <Link
-          href={actionHref}
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-        >
-          {actionLabel}
-          <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-        </Link>
-      )}
+      {action
+        ? action
+        : actionLabel && actionHref && (
+            <Link
+              href={actionHref}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              {actionLabel}
+              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+            </Link>
+          )}
     </div>
   );
 }
