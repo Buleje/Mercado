@@ -63,10 +63,9 @@ export default function CheckoutMobileCtaBar({
       aria-busy={ctaLoading}
       className={cn(
         "group inline-flex items-center justify-center gap-2 rounded-full h-12 px-5",
-        "text-sm font-extrabold tracking-tight transition-all duration-200 shrink-0",
-        "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
-        "shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--accent)_55%,transparent)]",
-        "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
+        "text-sm font-extrabold tracking-tight transition-opacity duration-200 shrink-0",
+        "bg-[var(--accent)] text-white hover:opacity-90",
+        "disabled:cursor-not-allowed disabled:opacity-60",
         showTotal ? "min-w-[10rem]" : "w-full",
       )}
     >
@@ -86,7 +85,7 @@ export default function CheckoutMobileCtaBar({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 80, opacity: 0 }}
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--surface-canvas)] border-t-2 border-[var(--rule-base)] shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.18)]"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--surface-canvas)] border-t border-[var(--rule-base)] shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.18)]"
         // padding-bottom safe-area iOS + BottomNav (60px) — solo lo aplicamos
         // si el bar global de bottom nav estuviera presente. En /checkout no
         // hay BottomNav, en /marketplace/carrito SI. Usamos calc generico via
@@ -122,10 +121,9 @@ export default function CheckoutMobileCtaBar({
               href={ctaHref}
               className={cn(
                 "group inline-flex items-center justify-center gap-2 rounded-full h-12 px-5",
-                "text-sm font-extrabold tracking-tight transition-all duration-200 shrink-0",
-                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
-                "shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--accent)_55%,transparent)]",
-                ctaDisabled && "pointer-events-none opacity-60 shadow-none",
+                "text-sm font-extrabold tracking-tight transition-opacity duration-200 shrink-0",
+                "bg-[var(--accent)] text-white hover:opacity-90",
+                ctaDisabled && "pointer-events-none opacity-60",
                 showTotal ? "min-w-[10rem]" : "w-full",
               )}
               aria-disabled={ctaDisabled || undefined}

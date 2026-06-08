@@ -109,11 +109,10 @@ export default function CheckoutSummary({
   );
 
   const ctaCls = cn(
-    "group inline-flex w-full items-center justify-center rounded-full px-6 h-14",
-    "text-base font-bold tracking-[var(--ls-tight)] transition-all duration-200",
-    "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90",
-    "shadow-[0_6px_20px_-10px_var(--accent)] hover:shadow-[0_10px_28px_-10px_var(--accent)]",
-    "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
+    "group inline-flex w-full items-center justify-center rounded-full px-6 h-13",
+    "text-base font-bold tracking-[var(--ls-tight)] transition-opacity duration-200",
+    "bg-[var(--accent)] text-white hover:opacity-90",
+    "disabled:cursor-not-allowed disabled:opacity-60",
   );
 
   return (
@@ -121,8 +120,8 @@ export default function CheckoutSummary({
       aria-label="Resumen del pedido"
       className={cn(
         "lg:sticky lg:top-24 lg:self-start",
-        "rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)]",
-        "p-7 space-y-6",
+        "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+        "p-5 space-y-5",
       )}
     >
       {/* ── Kicker editorial (más grande) ──────────────────────── */}
@@ -184,7 +183,7 @@ export default function CheckoutSummary({
 
       {/* ── Breakdown (uppercase 11px, valores base) ─────────────── */}
       {!isEmpty ? (
-        <dl className="space-y-3 text-base border-t border-[var(--rule-soft)] pt-5">
+        <dl className="space-y-3 text-base border-t border-[var(--rule-soft)] pt-4">
           <div className="flex items-baseline justify-between">
             <dt className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Subtotal
@@ -287,10 +286,10 @@ export default function CheckoutSummary({
 
       {/* ── Total — hero clamp más grande ─────────────────────────── */}
       {!isEmpty && (
-        <div className="relative pt-5">
+        <div className="relative pt-4">
           <span
             aria-hidden
-            className="absolute left-0 top-0 h-px w-full bg-linear-to-r from-transparent via-[var(--accent)]/60 to-transparent"
+            className="absolute left-0 top-0 h-px w-full bg-[var(--rule-soft)]"
           />
           <div className="flex items-end justify-between gap-3">
             <span className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
@@ -328,7 +327,7 @@ export default function CheckoutSummary({
 
       {/* ── Trust chips (11px) ─────────────────────────────────────── */}
       {!isEmpty && (
-        <ul className="flex items-center justify-between gap-2 border-t border-[var(--rule-soft)] pt-5">
+        <ul className="flex items-center justify-between gap-2 border-t border-[var(--rule-soft)] pt-4">
           {[
             { Icon: ShieldCheck, label: "Seguro" },
             { Icon: Truck, label: "25 min" },
