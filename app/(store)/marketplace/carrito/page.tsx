@@ -66,11 +66,11 @@ function ItemRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 16, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0, borderWidth: 0 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="flex gap-3 sm:gap-4 py-3 sm:py-4 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
+      className="flex gap-3 py-2.5 sm:py-3 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
     >
       <Link
         href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-        className="relative h-16 w-16 sm:h-24 sm:w-24 shrink-0 rounded-xl sm:rounded-2xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
+        className="relative h-14 w-14 sm:h-20 sm:w-20 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
       >
         {item.image ? (
           <Image
@@ -85,7 +85,7 @@ function ItemRow({
           // Antes mostraba un carrito gris vacío que se veía pobre cuando ningún
           // item tenía foto. La inicial identifica el producto visualmente.
           <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-sunken)] to-[var(--accent-soft)]/60">
-            <span className="text-2xl sm:text-3xl font-black text-[var(--accent)] uppercase">
+            <span className="text-xl sm:text-2xl font-black text-[var(--accent)] uppercase">
               {item.name.trim().charAt(0)}
             </span>
           </div>
@@ -103,12 +103,12 @@ function ItemRow({
       <div className="flex-1 min-w-0 flex flex-col">
         <Link
           href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-          className="text-[length:var(--ts-sm)] sm:text-base font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-2 leading-snug"
+          className="text-[length:var(--ts-sm)] font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-2 leading-tight"
         >
           {item.name}
         </Link>
 
-        <p className="mt-1 text-[length:var(--ts-sm)] sm:text-base font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
+        <p className="mt-0.5 text-[length:var(--ts-sm)] font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
           {fmt(item.price)}
           {item.unit && (
             <span className="ml-1 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
@@ -123,13 +123,13 @@ function ItemRow({
           </p>
         )}
 
-        <div className="mt-3 flex items-center gap-3 flex-wrap">
+        <div className="mt-2 flex items-center gap-2 sm:gap-3 flex-wrap">
           <QuantityStepper
             value={item.quantity}
             onChange={onQty}
             min={1}
             max={99}
-            size="md"
+            size="sm"
             label={`Cantidad de ${item.name}`}
           />
 
@@ -159,7 +159,7 @@ function ItemRow({
         <p className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-bold">
           Subtotal
         </p>
-        <p className="text-xl font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
+        <p className="text-base sm:text-lg font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
           {fmt(item.price * item.quantity)}
         </p>
       </div>
@@ -309,46 +309,53 @@ export default function CarritoPage() {
             )}
           </div>
           {!isEmpty && (
-            <div className="flex items-center gap-1.5 shrink-0">
-              {/* Compartir — ahora ícono sutil, no botón full-width verde */}
-              <CompartirListaWhatsApp
-                items={Object.values(byStore).flatMap((s) =>
-                  s.items.map((it) => ({
-                    name: it.name,
-                    quantity: it.quantity,
-                    price: it.price,
-                    storeName: s.storeName,
-                  })),
-                )}
-                heading="Mi carrito Buleje"
-                compact
-              />
-              <button
-                type="button"
-                onClick={async () => {
-                  const ok = await confirm({
-                    title: "¿Vaciar todo el carrito?",
-                    description: "Vas a perder todos los productos guardados. Esta acción no se puede deshacer.",
-                    intent: "danger",
-                    confirmLabel: "Sí, vaciar",
-                    cancelLabel: "Cancelar",
-                  });
-                  if (ok) clearAll();
-                }}
-                aria-label="Vaciar carrito"
-                className="inline-flex items-center justify-center h-10 w-10 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)]/50 active:scale-95 transition-all"
-              >
-                <Trash2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              </button>
+            <div className="flex items-center gap-3 lg:gap-5 shrink-0">
+              {/* Stepper inline en el header (lg+) — libera la fila completa de
+                  abajo y da más aire al listado. Brandon 2026-06-08. */}
+              <div className="hidden lg:block">
+                <CheckoutStepper current="carrito" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                {/* Compartir — ícono sutil, no botón full-width verde */}
+                <CompartirListaWhatsApp
+                  items={Object.values(byStore).flatMap((s) =>
+                    s.items.map((it) => ({
+                      name: it.name,
+                      quantity: it.quantity,
+                      price: it.price,
+                      storeName: s.storeName,
+                    })),
+                  )}
+                  heading="Mi carrito Buleje"
+                  compact
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "¿Vaciar todo el carrito?",
+                      description: "Vas a perder todos los productos guardados. Esta acción no se puede deshacer.",
+                      intent: "danger",
+                      confirmLabel: "Sí, vaciar",
+                      cancelLabel: "Cancelar",
+                    });
+                    if (ok) clearAll();
+                  }}
+                  aria-label="Vaciar carrito"
+                  className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)]/50 active:scale-95 transition-all"
+                >
+                  <Trash2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Stepper compacto (desktop muestra, mobile oculto — el sticky bottom
-           bar comunica el flow) ─────────────────────────────────────── */}
+      {/* ── Stepper SOLO tablet (sm–md). En lg+ va inline en el header; en
+           mobile lo comunica el sticky bottom bar. Brandon 2026-06-08. ── */}
       {!isEmpty && (
-        <div className="hidden sm:block mb-4 sm:mb-6 overflow-x-auto">
+        <div className="hidden sm:block lg:hidden mb-4 overflow-x-auto">
           <CheckoutStepper current="carrito" />
         </div>
       )}
@@ -414,7 +421,7 @@ export default function CarritoPage() {
                   className="rounded-2xl sm:rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                 >
                   {/* Store header — gradient sutil + avatar inicial + ver tienda */}
-                  <header className="relative flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-linear-to-r from-[var(--surface-sunken)]/60 to-[var(--accent-soft)]/30 px-4 sm:px-6 py-3.5 sm:py-4">
+                  <header className="relative flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-linear-to-r from-[var(--surface-sunken)]/60 to-[var(--accent-soft)]/30 px-4 sm:px-5 py-2.5 sm:py-3">
                     <Link
                       href={`/marketplace/${group.storeSlug}`}
                       className="flex items-center gap-3 min-w-0 group/store"
