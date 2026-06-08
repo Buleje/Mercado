@@ -42,13 +42,24 @@ interface StorefrontNavbarProps {
 export default function StorefrontNavbar({
   name,
   logo,
-  homeHref = "/",
-  catalogHref = "/tienda",
-  searchHref = "/tienda#productos",
+  homeHref,
+  catalogHref,
+  searchHref,
   cartHref,
 }: StorefrontNavbarProps) {
   const initial = (name?.trim()?.charAt(0) || "T").toUpperCase();
   const pathname = usePathname() ?? "";
+
+  // Las DOS páginas /t del negocio: Inicio (landing con la info) y Catálogo.
+  // Si la URL es /t/<slug>/* (tienda individual por path) derivamos la base
+  // del propio pathname → ambos enlaces apuntan a /t/<slug> y /t/<slug>/tienda.
+  // En subdominio (sin prefijo /t) caemos a "/" y "/tienda". Los props
+  // explícitos (la landing) siempre ganan.
+  const tBase = pathname.match(/^\/t\/[^/]+/)?.[0] ?? "";
+  const home = homeHref ?? (tBase || "/");
+  const catalog = catalogHref ?? `${tBase}/tienda`;
+  const search = searchHref ?? `${tBase}/tienda#productos`;
+
   // Activo en catálogo: cubre tanto `/tienda` como `/t/<slug>/tienda`.
   const onCatalog = pathname.includes("/tienda");
 
@@ -64,7 +75,7 @@ export default function StorefrontNavbar({
     <header className="sticky top-0 z-50 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]">
       <div className="mx-auto flex h-14 md:h-16 max-w-[1280px] items-center gap-2 sm:gap-3 px-4 sm:px-6 lg:px-8">
         {/* Logo de la tienda → inicio */}
-        <Link href={homeHref} aria-label={`${name} — inicio`} className="flex shrink-0 items-center gap-2">
+        <Link href={home} aria-label={`${name} — inicio`} className="flex shrink-0 items-center gap-2">
           <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--surface-sunken)] text-sm font-black text-[var(--text-secondary)]">
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element -- avatar simple
@@ -80,10 +91,10 @@ export default function StorefrontNavbar({
 
         {/* Los DOS únicos enlaces: Inicio + Catálogo */}
         <nav aria-label="Navegación de la tienda" className="flex shrink-0 items-center gap-0.5">
-          <Link href={homeHref} aria-current={!onCatalog ? "page" : undefined} className={linkCls(!onCatalog)}>
+          <Link href={home} aria-current={!onCatalog ? "page" : undefined} className={linkCls(!onCatalog)}>
             Inicio
           </Link>
-          <Link href={catalogHref} aria-current={onCatalog ? "page" : undefined} className={linkCls(onCatalog)}>
+          <Link href={catalog} aria-current={onCatalog ? "page" : undefined} className={linkCls(onCatalog)}>
             Catálogo
           </Link>
         </nav>
@@ -91,7 +102,7 @@ export default function StorefrontNavbar({
         {/* Buscador de la tienda — barra estilo input que lleva al catálogo
             (donde vive el buscador real). */}
         <Link
-          href={searchHref}
+          href={search}
           aria-label="Buscar productos en la tienda"
           className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-[var(--text-tertiary)] transition-colors hover:border-[var(--text-primary)]/30"
         >
