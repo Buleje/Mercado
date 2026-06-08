@@ -166,33 +166,40 @@ export default function CartSuggestions() {
             title="Tu último antojo"
             subtitle="Lo que estabas mirando"
           />
-          <Strip>
+          <HorizontalCarousel ariaLabel="Tu último antojo">
             {recentFiltered.map((r) => (
               <Link
                 key={`${r.storeSlug}-${r.productId}`}
                 href={`/marketplace/${r.storeSlug}/producto/${r.productId}`}
-                className="group shrink-0 w-36 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden hover:border-[var(--accent)] transition-colors"
+                className="group/card block overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)]/50"
               >
-                <div className="relative h-28 w-full bg-[var(--surface-sunken)]">
+                <div className="relative aspect-square w-full bg-[var(--surface-sunken)] overflow-hidden">
                   {r.image ? (
-                    <Image src={r.image} alt="" fill sizes="144px" className="object-cover" unoptimized />
+                    <Image
+                      src={r.image}
+                      alt={r.name}
+                      fill
+                      sizes="240px"
+                      className="object-cover transition-transform duration-500 group-hover/card:scale-105 motion-reduce:group-hover/card:scale-100"
+                      unoptimized
+                    />
                   ) : (
                     <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
                       Sin foto
                     </span>
                   )}
                 </div>
-                <div className="p-2.5">
-                  <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight line-clamp-2 min-h-[2rem] group-hover:text-[var(--accent)] transition-colors">
+                <div className="p-3 flex flex-col gap-1.5">
+                  <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug line-clamp-2 min-h-[2.5rem] group-hover/card:text-[var(--accent)] transition-colors">
                     {r.name}
                   </p>
-                  <p className="mt-1 text-sm font-black text-[var(--text-primary)] tabular-nums">
+                  <p className="text-base font-black text-[var(--text-primary)] tabular-nums leading-none">
                     {fmt(r.price)}
                   </p>
                 </div>
               </Link>
             ))}
-          </Strip>
+          </HorizontalCarousel>
         </div>
       )}
 
@@ -247,17 +254,6 @@ function SectionHead({
           {subtitle}
         </p>
       </div>
-    </div>
-  );
-}
-
-function Strip({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="flex gap-3 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden pb-1 -mx-1 px-1"
-      style={{ scrollbarWidth: "none" }}
-    >
-      {children}
     </div>
   );
 }

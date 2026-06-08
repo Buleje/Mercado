@@ -39,14 +39,14 @@ export default function FreeShippingProgress({ className }: { className?: string
           : `Te faltan ${fmt(remaining)} para delivery gratis`
       }
       className={cn(
-        "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-4",
+        "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3",
         className,
       )}
     >
       <div className="flex items-center gap-3">
         <span
           className={cn(
-            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border",
+            "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
             unlocked
               ? "border-[var(--data-success-200,#bbf7d0)] bg-[var(--data-success-50,#f0fdf4)] text-[var(--data-success-600,#16a34a)]"
               : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-[var(--accent)]",
