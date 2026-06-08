@@ -30,6 +30,10 @@ const MarketplaceQuickReorder = dynamic(
 const MarketplaceTopToday = dynamic(
   () => import("@/components/marketplace/MarketplaceTopToday"),
 );
+// Catálogo de productos completo (fusión /marketplace → /, Brandon 2026-06-08).
+const HomeCatalog = dynamic(
+  () => import("@/components/marketplace/home/HomeCatalog"),
+);
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
@@ -1346,6 +1350,25 @@ export default async function Home() {
           carrito (conversión: comprar sin entrar a cada tienda). Self-hide si vacío. */}
       <Reveal>
         <MarketplaceTopToday />
+      </Reveal>
+
+      {/* 3.6 Catálogo de productos — el GRID completo que vivía en /marketplace
+          (fusión /marketplace → /, Brandon 2026-06-08). Scroll infinito: va antes
+          del FAQ; al agotarse el catálogo aparecen FAQ + footer. */}
+      <Reveal>
+        <section
+          aria-label="Catálogo de productos"
+          className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10"
+        >
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Catálogo
+          </p>
+          <h2 className="mt-1 text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+            Todos los{" "}
+            <span className="italic font-serif text-[var(--accent)]">productos</span>
+          </h2>
+          <HomeCatalog />
+        </section>
       </Reveal>
 
       {/* 4. Preguntas frecuentes — contenido VISIBLE que matchea el FAQPage
