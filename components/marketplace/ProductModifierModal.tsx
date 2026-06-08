@@ -267,8 +267,8 @@ export default function ProductModifierModal({
                     />
                   </div>
                 ) : (
-                  <div className="h-32 sm:h-40 lg:h-56 w-full bg-linear-to-br from-[var(--accent)] via-[var(--accent)]/80 to-[var(--data-success-500)] flex items-center justify-center">
-                    <Sparkles className="h-10 lg:h-12 w-10 lg:w-12 text-white/90" aria-hidden />
+                  <div className="h-32 sm:h-40 lg:h-56 w-full bg-[var(--surface-sunken)] flex items-center justify-center">
+                    <Sparkles className="h-10 lg:h-12 w-10 lg:w-12 text-[var(--accent)]/40" aria-hidden />
                   </div>
                 )}
 
@@ -380,7 +380,7 @@ export default function ProductModifierModal({
                   className={cn(
                     "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-14 px-4 text-base font-black transition-all",
                     isValid
-                      ? "bg-linear-to-r from-[var(--accent)] to-[var(--data-success-500)] text-white shadow-lg hover:shadow-xl hover:"
+                      ? "bg-[var(--accent)] text-white transition-opacity hover:opacity-90"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
                 >
@@ -671,7 +671,7 @@ export default function ProductModifierModal({
                   className={cn(
                     "w-full inline-flex items-center justify-center gap-2 rounded-2xl h-13 px-4 text-sm font-extrabold uppercase tracking-wide transition-all",
                     isValid
-                      ? "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-md ring-1 ring-[var(--accent)]/40 hover:shadow-lg"
+                      ? "bg-[var(--accent)] text-white transition-opacity hover:opacity-90"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
                   style={{ height: "3.25rem" }}

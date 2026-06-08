@@ -282,7 +282,7 @@ export function AddedToCartDrawerProvider({
                     className="relative rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 flex gap-3 items-stretch"
                   >
                     {/* Imagen 80×80 con badge qty inline */}
-                    <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-[var(--brand-primary)]/20 to-[var(--brand-secondary)]/10 ring-1 ring-[var(--rule-soft)]">
+                    <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-[var(--accent)]/20 to-[var(--brand-secondary)]/10 ring-1 ring-[var(--rule-soft)]">
                       {product.image ? (
                         <Image
                           src={product.image}
@@ -293,13 +293,13 @@ export function AddedToCartDrawerProvider({
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center">
-                          <span className="text-2xl font-black text-[var(--brand-primary)]/55 leading-none">
+                          <span className="text-2xl font-black text-[var(--accent)]/55 leading-none">
                             {product.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       )}
                       {/* Badge qty top-right */}
-                      <span className="absolute top-1 right-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-[var(--brand-primary)] text-white text-[length:var(--ts-2xs,10px)] font-black tabular-nums shadow-sm ring-1 ring-white/90">
+                      <span className="absolute top-1 right-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs,10px)] font-black tabular-nums shadow-sm ring-1 ring-white/90">
                         ×{qty}
                       </span>
                     </div>
@@ -309,7 +309,7 @@ export function AddedToCartDrawerProvider({
                       {product.storeName && (
                         <Link
                           href={`/marketplace/${product.storeSlug}`}
-                          className="inline-flex items-center gap-1 self-start max-w-full text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[0.06em] text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors"
+                          className="inline-flex items-center gap-1 self-start max-w-full text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[0.06em] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
                         >
                           <Store className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
                           <span className="truncate">{product.storeName}</span>
@@ -321,7 +321,7 @@ export function AddedToCartDrawerProvider({
                       </h3>
 
                       <div className="mt-0.5 flex items-baseline gap-1">
-                        <p className="text-base sm:text-lg font-black text-[var(--brand-primary)] tabular-nums leading-none">
+                        <p className="text-base sm:text-lg font-black text-[var(--accent)] tabular-nums leading-none">
                           {fmt(product.price)}
                         </p>
                         {product.unit && (
@@ -343,12 +343,12 @@ export function AddedToCartDrawerProvider({
                         {fmt(product.price * qty)}
                       </p>
                     </div>
-                    <div className="flex items-center rounded-full bg-[var(--brand-primary)]/8 ring-1 ring-[var(--brand-primary)]/20 overflow-hidden shrink-0">
+                    <div className="flex items-center rounded-full bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/20 overflow-hidden shrink-0">
                       <button
                         type="button"
                         onClick={handleDec}
                         aria-label={qty <= 1 ? "Quitar del carrito" : "Reducir cantidad"}
-                        className="h-10 w-10 inline-flex items-center justify-center text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/15 transition-colors active:scale-85"
+                        className="h-10 w-10 inline-flex items-center justify-center text-[var(--accent)] hover:bg-[var(--accent)]/15 transition-colors active:scale-85"
                       >
                         <Minus className="h-4 w-4" strokeWidth={2.75} />
                       </button>
@@ -362,7 +362,7 @@ export function AddedToCartDrawerProvider({
                         type="button"
                         onClick={handleInc}
                         aria-label="Aumentar cantidad"
-                        className="h-10 w-10 inline-flex items-center justify-center text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/15 transition-colors active:scale-85"
+                        className="h-10 w-10 inline-flex items-center justify-center text-[var(--accent)] hover:bg-[var(--accent)]/15 transition-colors active:scale-85"
                       >
                         <Plus className="h-4 w-4" strokeWidth={2.75} />
                       </button>
@@ -433,7 +433,7 @@ export function AddedToCartDrawerProvider({
                         "inline-flex h-7 w-7 items-center justify-center rounded-full shrink-0",
                         hasFreeDelivery
                           ? "bg-[var(--data-success-500)] text-white"
-                          : "bg-[var(--brand-primary)]/12 text-[var(--brand-primary)]",
+                          : "bg-[var(--accent)]/12 text-[var(--accent)]",
                       )}
                     >
                       <Truck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
@@ -448,7 +448,7 @@ export function AddedToCartDrawerProvider({
                         <>
                           <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] leading-tight">
                             Faltan{" "}
-                            <span className="tabular-nums font-extrabold text-[var(--brand-primary)]">
+                            <span className="tabular-nums font-extrabold text-[var(--accent)]">
                               {fmt(remainingForFree)}
                             </span>{" "}
                             para delivery <span className="font-extrabold text-[var(--data-success-500)]">GRATIS</span>
@@ -458,7 +458,7 @@ export function AddedToCartDrawerProvider({
                               initial={{ width: 0 }}
                               animate={{ width: `${progressPct}%` }}
                               transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
-                              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[var(--brand-secondary)] to-[var(--brand-primary)]"
+                              className="absolute inset-y-0 left-0 rounded-full bg-[var(--accent)]"
                             />
                           </div>
                         </>
@@ -497,9 +497,9 @@ export function AddedToCartDrawerProvider({
                   {/* Resumen del carrito — compacto, sin competir con CTA */}
                   <div className="flex items-center justify-between gap-3 mb-2.5">
                     <div className="inline-flex items-center gap-2.5 min-w-0">
-                      <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--brand-primary)]/12 text-[var(--brand-primary)] shrink-0">
+                      <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/12 text-[var(--accent)] shrink-0">
                         <ShoppingBag className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-[var(--brand-primary)] text-white text-[length:var(--ts-2xs,11px)] font-black tabular-nums ring-2 ring-[var(--surface-raised)]">
+                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs,11px)] font-black tabular-nums ring-2 ring-[var(--surface-raised)]">
                           {cartCount}
                         </span>
                       </span>
@@ -518,27 +518,16 @@ export function AddedToCartDrawerProvider({
                   <m.button
                     type="button"
                     onClick={close}
-                    whileTap={{ scale: 0.97 }}
+                    whileTap={{ scale: 0.98 }}
                     className={cn(
-                      "relative w-full inline-flex items-center justify-center gap-2.5 rounded-2xl px-5 h-13",
-                      "text-sm font-extrabold uppercase tracking-wide",
-                      "bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-primary)] to-[color-mix(in_oklab,var(--brand-primary)_70%,#0a0a0a_30%)] text-white",
-                      "shadow-[0_12px_28px_-8px_color-mix(in_oklab,var(--brand-primary)_60%,transparent)]",
-                      "hover:shadow-[0_18px_36px_-8px_color-mix(in_oklab,var(--brand-primary)_70%,transparent)] hover:brightness-110",
-                      "transition-all ring-1 ring-inset ring-white/20",
-                      "overflow-hidden",
+                      "w-full inline-flex items-center justify-center gap-2 rounded-2xl px-5 h-13",
+                      "text-sm font-extrabold tracking-tight",
+                      "bg-[var(--accent)] text-white transition-opacity hover:opacity-90",
                     )}
                     style={{ height: "3.25rem" }}
                   >
-                    {/* Halo animado */}
-                    <m.span
-                      aria-hidden
-                      className="absolute inset-y-0 -left-20 w-20 bg-white/20 skew-x-[-20deg] pointer-events-none"
-                      animate={{ x: ["0%", "550%"] }}
-                      transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
-                    />
-                    <Check className="h-5 w-5 relative" strokeWidth={2.75} aria-hidden />
-                    <span className="relative">Listo, seguir comprando</span>
+                    <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+                    Listo, seguir comprando
                   </m.button>
 
                   {/* Link discreto al carrito — solo para clientes que SÍ
@@ -546,7 +535,7 @@ export function AddedToCartDrawerProvider({
                   <button
                     type="button"
                     onClick={handleGoToCart}
-                    className="mt-2 w-full inline-flex items-center justify-center gap-1.5 h-10 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--brand-primary)] transition-colors"
+                    className="mt-2 w-full inline-flex items-center justify-center gap-1.5 h-10 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
                   >
                     Ver mi carrito
                     <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />

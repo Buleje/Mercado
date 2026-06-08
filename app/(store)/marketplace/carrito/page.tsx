@@ -66,7 +66,7 @@ function ItemRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 16, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0, borderWidth: 0 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="flex gap-3 sm:gap-4 py-3 sm:py-5 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
+      className="flex gap-3 sm:gap-4 py-3 sm:py-4 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
     >
       <Link
         href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
@@ -348,7 +348,7 @@ export default function CarritoPage() {
       {/* ── Stepper compacto (desktop muestra, mobile oculto — el sticky bottom
            bar comunica el flow) ─────────────────────────────────────── */}
       {!isEmpty && (
-        <div className="hidden sm:block mb-6 sm:mb-8 overflow-x-auto">
+        <div className="hidden sm:block mb-4 sm:mb-6 overflow-x-auto">
           <CheckoutStepper current="carrito" />
         </div>
       )}
@@ -399,8 +399,8 @@ export default function CarritoPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-3 sm:gap-6 lg:gap-8 items-start pb-8">
-          <section aria-label="Productos en tu carrito" className="space-y-3 sm:space-y-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-3 sm:gap-4 lg:gap-5 items-start pb-8">
+          <section aria-label="Productos en tu carrito" className="space-y-3 sm:space-y-4">
             {/* Progreso hacia envío gratis */}
             <FreeShippingProgress />
 

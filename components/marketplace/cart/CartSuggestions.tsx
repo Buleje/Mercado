@@ -17,10 +17,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Sparkles, Plus, Check, Clock } from "@buleje/design-system/icons";
+import { Sparkles, Clock } from "@buleje/design-system/icons";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useRecentViewed } from "@/hooks/use-recent-viewed";
-import { cn } from "@/lib/utils";
+import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
+import UnifiedProductCard, {
+  type UnifiedProductCardProduct,
+} from "@/components/marketplace/UnifiedProductCard";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
@@ -40,10 +43,9 @@ interface Suggestion {
 }
 
 export default function CartSuggestions() {
-  const { items, addItem } = useMarketplaceCart();
+  const { items } = useMarketplaceCart();
   const { items: recent } = useRecentViewed();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [added, setAdded] = useState<Set<string>>(new Set());
 
   // Derivar tiendas, categorías y productos ya en el carrito.
   const { stores, cartCats, excludedIds } = useMemo(() => {
@@ -132,29 +134,30 @@ export default function CartSuggestions() {
     [recent, excludedIds],
   );
 
-  const handleAdd = (s: Suggestion) => {
-    addItem({
-      storeId: s.storeId,
-      storeName: s.storeName,
-      storeSlug: s.storeSlug,
-      storeProductId: s.storeProductId,
-      productId: s.productId,
-      name: s.name,
-      price: s.price,
-      basePrice: s.price,
-      image: s.image,
-      unit: s.unit,
-      category: s.category ?? undefined,
-      stock: s.stock,
-      quantity: 1,
-    });
-    setAdded((prev) => new Set(prev).add(s.storeProductId));
-  };
+  // Mapea las sugerencias al shape del card del catálogo home (UnifiedProductCard
+  // trae quick-add + quick view propios → mismo tamaño/UX que el catálogo).
+  const crossSellProducts: UnifiedProductCardProduct[] = useMemo(
+    () =>
+      suggestions.map((s) => ({
+        id: s.productId,
+        name: s.name,
+        price: s.price,
+        image: s.image,
+        unit: s.unit,
+        category: s.category ?? "",
+        storeName: s.storeName,
+        storeSlug: s.storeSlug,
+        storeId: s.storeId,
+        storeProductId: s.storeProductId,
+        stock: s.stock ?? undefined,
+      })),
+    [suggestions],
+  );
 
   if (suggestions.length === 0 && recentFiltered.length === 0) return null;
 
   return (
-    <section className="mt-8 sm:mt-10 space-y-8" aria-label="Sugerencias para tu pedido">
+    <section className="mt-6 sm:mt-8 space-y-6" aria-label="Sugerencias para tu pedido">
       {/* ── Tu último antojo ── */}
       {recentFiltered.length > 0 && (
         <div>
@@ -193,65 +196,27 @@ export default function CartSuggestions() {
         </div>
       )}
 
-      {/* ── Sumá a tu pedido (cross-sell por categoría) ── */}
-      {suggestions.length > 0 && (
+      {/* ── Sumá a tu pedido (cross-sell por categoría) — cards tamaño catálogo
+           home (UnifiedProductCard: quick-add + quick view). Brandon 2026-06-08. ── */}
+      {crossSellProducts.length > 0 && (
         <div>
           <SectionHead
             icon={<Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />}
             title="Sumá a tu pedido"
             subtitle="Más de lo que estás llevando, de tus mismas tiendas"
           />
-          <Strip>
-            {suggestions.map((s) => {
-              const isAdded = added.has(s.storeProductId);
-              return (
-                <div
-                  key={s.storeProductId}
-                  className="shrink-0 w-36 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
-                >
-                  <Link
-                    href={`/marketplace/${s.storeSlug}/producto/${s.productId}`}
-                    className="block relative h-28 w-full bg-[var(--surface-sunken)]"
-                  >
-                    {s.image ? (
-                      <Image src={s.image} alt="" fill sizes="144px" className="object-cover" unoptimized />
-                    ) : (
-                      <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-center px-1">
-                        {s.category ?? "Producto"}
-                      </span>
-                    )}
-                  </Link>
-                  <div className="p-2.5">
-                    <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight line-clamp-2 min-h-[2rem]">
-                      {s.name}
-                    </p>
-                    <div className="mt-1.5 flex items-center justify-between gap-1">
-                      <span className="text-sm font-black text-[var(--text-primary)] tabular-nums">
-                        {fmt(s.price)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleAdd(s)}
-                        aria-label={isAdded ? `${s.name} agregado` : `Agregar ${s.name} al carrito`}
-                        className={cn(
-                          "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all active:scale-90",
-                          isAdded
-                            ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                            : "bg-[var(--accent)] text-white hover:brightness-110",
-                        )}
-                      >
-                        {isAdded ? (
-                          <Check className="h-4 w-4" strokeWidth={2.75} />
-                        ) : (
-                          <Plus className="h-4 w-4" strokeWidth={2.75} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </Strip>
+          <HorizontalCarousel ariaLabel="Sumá a tu pedido">
+            {crossSellProducts.map((p, idx) => (
+              <UnifiedProductCard
+                key={p.storeProductId || p.id}
+                index={idx}
+                variant="default"
+                layout="compact"
+                href={`/marketplace/${p.storeSlug}/producto/${p.id}`}
+                product={p}
+              />
+            ))}
+          </HorizontalCarousel>
         </div>
       )}
     </section>
