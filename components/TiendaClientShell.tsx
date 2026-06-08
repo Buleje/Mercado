@@ -16,7 +16,7 @@ const CustomerModal     = dynamic(() => import("@/components/CustomerModal"),   
 const ReviewModal       = dynamic(() => import("@/components/ReviewModal"),       {});
 const CookieConsent     = dynamic(() => import("@/components/CookieConsent"),     {});
 // SocialProofToast removed — fake notifications disabled
-const SpinWheel         = dynamic(() => import("@/components/SpinWheel"),         {});
+// SpinWheel removido (Brandon 2026-06-07): causaba modales encimados.
 const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"),   {});
 const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"),  {});
 const StickyCartBar     = dynamic(() => import("@/components/StickyCartBar"),     {});
@@ -101,7 +101,10 @@ export default function TiendaClientShell({
           <CookieConsent />
           <VolumeDiscount />
           <BackInStock />
-          <SpinWheel />
+          {/* SpinWheel ("¡Gira y gana!") removido (Brandon 2026-06-07): se
+              auto-abría a pantalla completa (z-9000) y se apilaba sobre el
+              carrito / el cupón de bienvenida → "2 modales encimados". Queda un
+              solo modal de bienvenida (FirstVisitCouponModal). */}
           <StickyCartBar />
           <UserAccountModal />
           <MobileBottomNav />

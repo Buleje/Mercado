@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 
 const RecentPurchases = dynamic(() => import("@/components/store/RecentPurchases"), {});
 const PostDeliverySurveyTrigger = dynamic(() => import("@/components/store/PostDeliverySurveyTrigger"), {});
-const WhatsAppFloatingButton = dynamic(() => import("@/components/store/WhatsAppFloatingButton"), {});
 const QuickReorderButton = dynamic(() => import("@/components/store/QuickReorderButton"), {});
 const SocioPromoFlotante = dynamic(
   () => import("@/components/ui-system/widgets/SocioPromoFlotante").then((m) => m.SocioPromoFlotante),
@@ -50,11 +49,10 @@ export default function StoreFloatingWidgets() {
     <>
       <RecentPurchases />
       <PostDeliverySurveyTrigger />
-      {/* Brandon mayo 14 2026 v2: el chat WhatsApp + repetir pedido +
-          socio-promo se ocultan en mobile (saturan la pantalla del cel).
-          Solo aparecen en sm+ donde hay espacio sobrante a la derecha. */}
+      {/* Brandon 2026-06-07: el FAB de WhatsApp se quitó — había DOS botones
+          flotantes (chat + WhatsApp). Queda solo el chat (LiveChatWidget). Repetir
+          pedido + socio-promo se ocultan en mobile (saturan el cel); aparecen en sm+. */}
       <div className="hidden sm:contents">
-        <WhatsAppFloatingButton />
         <QuickReorderButton />
         <SocioPromoFlotante />
       </div>

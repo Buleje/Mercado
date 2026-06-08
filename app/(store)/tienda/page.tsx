@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
-import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import TiendaClientShell from "@/components/TiendaClientShell";
 import type { TiendaSectionKey } from "@/components/admin/StorefrontEditor";
 import {
@@ -15,7 +14,6 @@ import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
-import Breadcrumbs from "@/components/store/Breadcrumbs";
 
 /**
  * Metadata dinámica: cuando se entra vía /t/<slug>/tienda el middleware
@@ -182,13 +180,10 @@ export default async function TiendaPage() {
 
   return (
     <>
-      {/* SEO: Breadcrumb navigation */}
-      <BreadcrumbSchema
-        items={[
-          { name: "Inicio", url: "https://www.buleje.pe/" },
-          { name: "Tienda", url: "https://www.buleje.pe/tienda" },
-        ]}
-      />
+      {/* BreadcrumbSchema REMOVIDO (Brandon 2026-06-07): renderizaba un breadcrumb
+          VISIBLE "Inicio › Tienda" además del JSON-LD → era el 2º breadcrumb
+          duplicado. En la tienda individual el inicio ya es su portada; sin migas.
+          El ItemList JSON-LD de productos (abajo) se mantiene para SEO. */}
       {/* SEO: ItemList schema for category navigation */}
       {(() => {
         const realCategories = [...new Set(initialProducts.map((p) => p.category as string).filter(Boolean))];
@@ -214,13 +209,10 @@ export default async function TiendaPage() {
         ) : null;
       })()}
       
-      {/* Breadcrumbs — Inicio > Tienda */}
-      <Breadcrumbs
-        items={[
-          { label: "Inicio", href: "/" },
-          { label: "Tienda" },
-        ]}
-      />
+      {/* Breadcrumb visible "Inicio › Tienda" REMOVIDO (Brandon 2026-06-07):
+          en la tienda individual el inicio ES el catálogo → el breadcrumb era
+          redundante (y se duplicaba). El BreadcrumbSchema (JSON-LD) se mantiene
+          arriba para SEO. */}
       <main id="main-content">
         {/* Brandon 2026-06-07: la tienda individual muestra SOLO el catálogo.
             Quitados TiendaHero ("Tu bodega en {ciudad}"), TrustBar ("¿Por qué

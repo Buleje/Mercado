@@ -4,8 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";
-import { redirect } from "next/navigation";
 import { resolveStoreContext } from "@/lib/store-metadata";
+import TenantStoreHome from "@/components/store/TenantStoreHome";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 // Brandon 2026-05-20 v5: LandingHeader removido — chrome unificado vive
 // en app/(store)/layout.tsx (mismo que /tiendas y /marketplace).
@@ -1314,11 +1314,11 @@ function HomeFaqSection() {
 }
 
 export default async function Home() {
-  // Tienda INDIVIDUAL del comerciante (subdominio / /t/<slug>): su "inicio" ES
-  // su catálogo, no el marketplace. Redirigimos a /tienda. En el dominio
-  // principal (marketplace) esto no aplica → se ve la home normal. Brandon 2026-06-07.
+  // Tienda INDIVIDUAL del comerciante (subdominio / /t/<slug>): el inicio es una
+  // portada propia (TenantStoreHome) con CTA a su catálogo (/tienda) — AISLADA del
+  // marketplace. En el dominio principal se ve la home del marketplace. Brandon 2026-06-07.
   const { isTenant } = await resolveStoreContext();
-  if (isTenant) redirect("/tienda");
+  if (isTenant) return <TenantStoreHome />;
 
   return (
     <main id="main-content">

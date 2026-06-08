@@ -2,13 +2,12 @@ import { memo, useCallback, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Plus, Minus, Heart, Eye, Flame, Clock, ShoppingCart, Star, GitCompareArrows, BellRing } from "lucide-react";
+import { Plus, Minus, Heart, Eye, Flame, Clock, ShoppingCart, Star, BellRing } from "lucide-react";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { getProductSlug } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
-import { useCompare } from "@/contexts/compare-context";
 import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { cn } from "@/lib/utils";
 import { trackAddToCart } from "@/lib/analytics";
@@ -87,11 +86,10 @@ const BADGE_INTENT: Record<string, ProductBadgeIntent> = {
   Premium: "premium",
 };
 
-function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
+function ProductCardComponent({ product }: ProductCardProps) {
   const { items, addItem, updateQty } = useCart();
   const { showToast } = useToast();
   const { isFavorite, toggle: toggleFav } = useFavorites();
-  const { add: addToCompare, isIn: isInCompare, remove: removeFromCompare } = useCompare();
   const quickAdd = useQuickAddSafe();
   const router = useRouter();
   const pathname = usePathname();
@@ -212,37 +210,8 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     [toggleFav, product.id]
   );
 
-  const handleQuickView = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (quickAdd) {
-        quickAdd.openQuickAdd(product);
-        return;
-      }
-      onQuickView?.(product);
-    },
-    [onQuickView, product, quickAdd]
-  );
-
-  const handleCompareToggle = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (isInCompare(product.id)) {
-        removeFromCompare(product.id);
-      } else {
-        addToCompare({
-          id: product.id,
-          name: product.name,
-          category: product.category,
-          price: product.price,
-          image: product.image,
-          unit: product.unit,
-          badge: product.badge,
-        });
-      }
-    },
-    [isInCompare, removeFromCompare, addToCompare, product]
-  );
+  // Brandon 2026-06-07: "Vista rápida" (hover) y "Comparar" removidos de la card
+  // de la tienda individual. El click en la imagen ya abre el producto (quickAdd).
 
   const handleDecrement = useCallback(() => {
     const now = Date.now();
@@ -352,22 +321,6 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         <Heart className={cn("h-5 w-5", fav && "fill-current")} />
       </button>
 
-      {/* Compare button */}
-      <button
-        onClick={handleCompareToggle}
-        aria-label={isInCompare(product.id) ? "Quitar de comparación" : "Agregar a comparación"}
-        className={cn(
-          "absolute z-10 flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-full transition-all duration-[var(--dur-fast)] pointer-events-auto opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
-          isOutOfStock || isLowStock || product.stock === 1 ? "top-[4.2rem] right-1.5" : "top-[2.8rem] right-2",
-          isInCompare(product.id)
-            ? "bg-primary text-white shadow-[var(--shadow-md)] scale-105"
-            : "bg-[var(--surface-raised)]/85 text-[var(--text-tertiary)] hover:text-primary hover:bg-[var(--surface-raised)] shadow-[var(--shadow-sm)] backdrop-blur"
-        )}
-        style={{ opacity: isInCompare(product.id) ? 1 : undefined }}
-      >
-        <GitCompareArrows className="h-3.5 w-3.5" />
-      </button>
-
       <div
         className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden shrink-0 cursor-pointer"
         onClick={(e) => {
@@ -401,17 +354,6 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           <ProductImagePlaceholder size={32} />
         )}
 
-        {onQuickView && (
-          <button
-            onClick={handleQuickView}
-            className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-[var(--dur-base)] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
-            aria-label={`Vista rápida de ${product.name}`}
-          >
-            <span className="flex items-center gap-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] rounded-full px-3 py-1.5 text-xs font-bold shadow-[var(--shadow-lg)] scale-90 group-hover:scale-100 transition-transform">
-              <Eye className="h-3.5 w-3.5" /> Vista rápida
-            </span>
-          </button>
-        )}
 
         {isOutOfStock && (
           <div className="absolute bottom-2 right-2 z-10">
