@@ -37,11 +37,11 @@ const HomeCatalog = dynamic(
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
+import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import {
   Store,
   ArrowUpRight,
   Bike,
-  Sparkles,
   Star,
   UtensilsCrossed,
   ShoppingCart,
@@ -56,7 +56,6 @@ import {
   ShoppingBag,
   MapPin,
   ChevronDown,
-  HelpCircle,
   MessageCircle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -509,15 +508,9 @@ async function RappiStyleHero() {
 
         {/* H1 híbrido: gancho emocional + keyword geo (la ciudad objetivo)
             dentro del propio H1 (Google pesa mucho el H1 de la home). */}
-        <h1 className="text-[clamp(1.875rem,5vw,3.25rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-[var(--text-primary)] max-w-3xl mx-auto">
-          ¿Qué se te{" "}
-          <span
-            className="italic font-serif"
-            style={{ color: "var(--accent)" }}
-          >
-            antoja hoy
-          </span>{" "}
-          en {BRAND_GEO.city}?
+        <h1 className="text-[clamp(1.875rem,5vw,3rem)] font-extrabold leading-[1.06] tracking-[-0.03em] text-[var(--text-primary)] max-w-3xl mx-auto">
+          ¿Qué se te <span className="text-[var(--accent)]">antoja hoy</span> en{" "}
+          {BRAND_GEO.city}?
         </h1>
 
         {/* Subtítulo — text-base mín en mobile (regla bsm-typography: body
@@ -627,31 +620,13 @@ async function CategoriesGrid() {
       className="bg-[var(--surface-canvas)] py-12 sm:py-20"
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6 mb-6 sm:mb-10">
-          <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-              <span
-                aria-hidden
-                className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]"
-              />
-              Categorías
-            </p>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
-              Explora por{" "}
-              <span className="italic font-serif text-[var(--accent)]">categoría</span>
-            </h2>
-            <p className="mt-2 sm:mt-3 max-w-md text-base text-[var(--text-secondary)] leading-relaxed">
-              Todo lo que tu barrio vende, en un solo lugar — con delivery rápido en {BRAND_GEO.city}.
-            </p>
-          </div>
-          <Link
-            href="/tiendas"
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:text-[var(--accent)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] transition-all"
-          >
-            Ver todas
-            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-          </Link>
-        </div>
+        <SectionHeading
+          eyebrow="Categorías"
+          title="Explora por categoría"
+          subtitle={`Todo lo que tu barrio vende, en un solo lugar — con delivery rápido en ${BRAND_GEO.city}.`}
+          actionLabel="Ver todas"
+          actionHref="/tiendas"
+        />
 
         {/* ── Featured XL: Restaurantes + Supermercado ────────────────── */}
         {featured.length > 0 && (
@@ -1052,28 +1027,15 @@ async function TopStoresSection() {
     <>
       <section
         aria-label="Tiendas destacadas"
-        className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-12 sm:py-20"
+        className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-8 sm:py-10"
       >
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between gap-3 mb-6 sm:mb-10">
-            <div>
-              <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-                <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
-                Tiendas destacadas
-              </p>
-              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
-                Las más elegidas{" "}
-                <span className="italic font-serif text-[var(--accent)]">en {BRAND_GEO.city}</span>
-              </h2>
-            </div>
-            <Link
-              href="/tiendas"
-              className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:text-[var(--accent)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] transition-all"
-            >
-              Ver todas
-              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-            </Link>
-          </div>
+          <SectionHeading
+            eyebrow="Tiendas destacadas"
+            title={`Las más elegidas en ${BRAND_GEO.city}`}
+            actionLabel="Ver todas"
+            actionHref="/tiendas"
+          />
 
           {/* 3 cards showcase: 1 col mobile / 3 cols ≥640px */}
           <ul
@@ -1100,28 +1062,15 @@ async function TopStoresSection() {
       {recommended.length > 0 && (
         <section
           aria-label="Recomendadas para vos"
-          className="py-12 sm:py-16"
+          className="py-8 sm:py-10"
         >
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-end justify-between gap-3 mb-5 sm:mb-7">
-              <div>
-                <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-                  <Sparkles className="h-3.5 w-3.5" aria-hidden />
-                  Para vos
-                </p>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
-                  Recomendadas{" "}
-                  <span className="italic font-serif text-[var(--accent)]">para vos</span>
-                </h2>
-              </div>
-              <Link
-                href="/tiendas"
-                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:text-[var(--accent)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] transition-all"
-              >
-                Descubrir más
-                <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-              </Link>
-            </div>
+            <SectionHeading
+              eyebrow="Para vos"
+              title="Recomendadas para vos"
+              actionLabel="Descubrir más"
+              actionHref="/tiendas"
+            />
 
             {/* Rail con scroll horizontal — snap suave, cards de ancho fijo */}
             <ul
@@ -1193,22 +1142,14 @@ function HomeFaqSection() {
     <section
       id="preguntas-frecuentes"
       aria-labelledby="faq-heading"
-      className="py-12 sm:py-20 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
+      className="py-10 sm:py-14 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 sm:mb-12">
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            <HelpCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            Preguntas frecuentes
-          </p>
-          <h2
-            id="faq-heading"
-            className="text-2xl sm:text-4xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]"
-          >
-            Todo sobre comprar y pedir{" "}
-            <span className="italic font-serif text-[var(--accent)]">en {BRAND_GEO.city}</span>
-          </h2>
-        </div>
+        <SectionHeading
+          headingId="faq-heading"
+          eyebrow="Preguntas frecuentes"
+          title={`Todo sobre comprar y pedir en ${BRAND_GEO.city}`}
+        />
 
         {/* 2 columnas masonry (Brandon 2026-06-01): llena el ancho y cada
             columna se expande independiente al abrir un acordeón (sin saltos de
@@ -1319,16 +1260,11 @@ export default async function Home() {
           del FAQ; al agotarse el catálogo aparecen FAQ + footer. */}
       <Reveal>
         <section
+          id="catalogo"
           aria-label="Catálogo de productos"
-          className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10"
+          className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 scroll-mt-24"
         >
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            Catálogo
-          </p>
-          <h2 className="mt-1 text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
-            Todos los{" "}
-            <span className="italic font-serif text-[var(--accent)]">productos</span>
-          </h2>
+          <SectionHeading eyebrow="Catálogo" title="Todos los productos" />
           <HomeCatalog />
         </section>
       </Reveal>

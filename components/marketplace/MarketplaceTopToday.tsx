@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceEmptyState from "@/components/marketplace/MarketplaceEmptyState";
-import { TrendingUp, ArrowUpRight } from "@buleje/design-system/icons";
+import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import { cn } from "@/lib/utils";
 import { BRAND_GEO } from "@/lib/geo";
 
@@ -122,27 +121,12 @@ export default function MarketplaceTopToday() {
       className="hidden md:block bg-[var(--surface-canvas)] py-8 sm:py-10"
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-3 mb-6 sm:mb-10">
-          <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-              <TrendingUp className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-              Ranking {windowLabel === "7d" ? "semanal" : "diario"}
-            </p>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
-              Lo más pedido{" "}
-              <span className="italic font-serif text-[var(--accent)]">
-                {windowLabel === "7d" ? "esta semana" : "hoy"}
-              </span>
-            </h2>
-          </div>
-          <Link
-            href="/marketplace?vista=catalogo&sort=popular"
-            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:text-[var(--accent)] px-4 h-10 text-xs font-bold text-[var(--text-primary)] transition-all"
-          >
-            Ver todo
-            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-          </Link>
-        </div>
+        <SectionHeading
+          eyebrow={`Ranking ${windowLabel === "7d" ? "semanal" : "diario"}`}
+          title={`Lo más pedido ${windowLabel === "7d" ? "esta semana" : "hoy"}`}
+          actionLabel="Ver todo"
+          actionHref="/#catalogo"
+        />
 
         {error && items === null ? (
           <MarketplaceEmptyState
