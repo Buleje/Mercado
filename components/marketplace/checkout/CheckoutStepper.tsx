@@ -24,28 +24,44 @@
 import Link from "next/link";
 import { Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useCustomer, isCustomerProfileComplete } from "@/contexts/customer-context";
 
 export type CheckoutStep = "carrito" | "datos" | "entrega" | "confirmar";
 
-// Pasos VISIBLES al cliente (carrito ya fue — no lo mostramos).
-const STEPS: { key: CheckoutStep; label: string; short: string; href: string }[] = [
+type StepDef = { key: CheckoutStep; label: string; short: string; href: string };
+
+// Flujo COMPLETO (invitado / perfil incompleto): datos → entrega → confirmar.
+// El "carrito" ya fue — no se muestra para reducir la percepción de fricción.
+const FULL_STEPS: StepDef[] = [
   { key: "datos",     label: "Tus datos",      short: "Datos",     href: "/checkout/datos" },
   { key: "entrega",   label: "Entrega y pago", short: "Entrega",   href: "/checkout/entrega" },
   { key: "confirmar", label: "Confirmar",      short: "Confirmar", href: "/checkout/confirmar" },
 ];
 
+// Flujo RÁPIDO (logueado con dirección guardada): SOLO carrito → finalizar.
+// Brandon 2026-06-08 — el usuario quiere 2 secciones cuando está logueado:
+// "datos" y "entrega" se unifican DENTRO de "Finalizar" (la página confirmar ya
+// tiene dirección + método de pago + productos editables). Mismo criterio que el
+// auto-skip de datos (isCustomerProfileComplete).
+const FAST_STEPS: StepDef[] = [
+  { key: "carrito",   label: "Carrito",   short: "Carrito",   href: "/marketplace/carrito" },
+  { key: "confirmar", label: "Finalizar", short: "Finalizar", href: "/checkout/confirmar" },
+];
+
 /** Lista de bullets + conectores. `withLabels` muestra el label al lado de cada
  *  bullet (desktop). En mobile se rinde sin labels y el contexto va aparte. */
 function StepList({
+  steps,
   currentIdx,
   withLabels,
 }: {
+  steps: StepDef[];
   currentIdx: number;
   withLabels: boolean;
 }) {
   return (
     <ol className="flex items-center gap-1 sm:gap-1.5">
-      {STEPS.map((step, idx) => {
+      {steps.map((step, idx) => {
         const isDone = idx < currentIdx;
         const isCurrent = idx === currentIdx;
         const statusText = isDone ? "completado" : isCurrent ? "paso actual" : "pendiente";
@@ -114,7 +130,7 @@ function StepList({
                 {label}
               </span>
             )}
-            {idx < STEPS.length - 1 && (
+            {idx < steps.length - 1 && (
               <span
                 aria-hidden
                 className="relative h-1 w-5 sm:w-12 rounded-full overflow-hidden bg-[var(--rule-soft)]"
@@ -136,27 +152,36 @@ function StepList({
 }
 
 export default function CheckoutStepper({ current }: { current: CheckoutStep }) {
-  // "carrito" no aparece en STEPS, así que idx=-1 → lo tratamos como paso 1.
-  const idxRaw = STEPS.findIndex((s) => s.key === current);
-  const currentIdx = idxRaw < 0 ? 0 : idxRaw;
-  const currentLabel = STEPS[currentIdx]?.short ?? STEPS[0].short;
+  // Logueado con dirección guardada → flujo rápido de 2 pasos (carrito →
+  // finalizar). Mismo criterio que el auto-skip de /checkout/datos. Antes de
+  // hidratar usamos el flujo completo (default seguro para invitados).
+  const { customer, hydrated } = useCustomer();
+  const fast = hydrated && isCustomerProfileComplete(customer);
+  const steps = fast ? FAST_STEPS : FULL_STEPS;
+
+  // Map current → índice dentro del set activo. Si el paso actual no existe en el
+  // set (ej. en modo rápido estás en datos/entrega editando un detalle), lo
+  // tratamos como "finalizar" (último). En modo completo, carrito ya pasó → 0.
+  const idxRaw = steps.findIndex((s) => s.key === current);
+  const currentIdx = idxRaw < 0 ? (fast ? steps.length - 1 : 0) : idxRaw;
+  const currentLabel = steps[currentIdx]?.short ?? steps[0].short;
 
   return (
     <nav
-      aria-label={`Progreso del checkout — paso ${currentIdx + 1} de ${STEPS.length}`}
+      aria-label={`Progreso del checkout — paso ${currentIdx + 1} de ${steps.length}`}
       className="w-full"
     >
       {/* DESKTOP: bullets + labels inline */}
       <div className="hidden md:flex justify-center">
-        <StepList currentIdx={currentIdx} withLabels />
+        <StepList steps={steps} currentIdx={currentIdx} withLabels />
       </div>
 
       {/* MOBILE: bullets compactos + línea de contexto */}
       <div className="md:hidden flex flex-col items-center gap-1">
-        <StepList currentIdx={currentIdx} withLabels={false} />
+        <StepList steps={steps} currentIdx={currentIdx} withLabels={false} />
         <p className="text-[length:var(--ts-2xs)] font-bold leading-none">
           <span className="text-[var(--text-tertiary)]">
-            Paso {currentIdx + 1} de {STEPS.length}
+            Paso {currentIdx + 1} de {steps.length}
           </span>
           <span className="text-[var(--text-tertiary)]"> · </span>
           <span className="text-[var(--text-primary)]">{currentLabel}</span>

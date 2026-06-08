@@ -30,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCheckoutData } from "@/hooks/use-checkout-data";
-import { useCustomer, type Customer } from "@/contexts/customer-context";
+import { useCustomer, isCustomerProfileComplete, type Customer } from "@/contexts/customer-context";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
@@ -632,13 +632,18 @@ export default function CheckoutConfirmarPage() {
   const showAuthBanner = !loggedCustomer && !guestMode;
   const couponEntries = Object.entries(coupons);
 
+  // Flujo rápido (logueado con dirección guardada): solo carrito → finalizar, así
+  // que el "atrás" vuelve al carrito (no a entrega, que es sub-edición). Coincide
+  // con el stepper de 2 pasos. Brandon 2026-06-08.
+  const fastFlow = isCustomerProfileComplete(loggedCustomer);
+
   return (
     <>
       {/* Header compartido (Brandon 2026-06-01): mismo formato que datos y
           entrega — back link + h1 + subtítulo, tamaños y padding unificados. */}
       <CheckoutStepHeader
-        backHref="/checkout/entrega"
-        backLabel="Volver a entrega"
+        backHref={fastFlow ? "/marketplace/carrito" : "/checkout/entrega"}
+        backLabel={fastFlow ? "Volver al carrito" : "Volver a entrega"}
         title="Revisá tu pedido"
         lead="Último paso."
         subtitle="Verificá que todo esté bien antes de confirmar."
