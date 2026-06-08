@@ -20,7 +20,6 @@ import {
   Menu,
   Home as HomeIcon,
   Store,
-  ShoppingBag,
   Sparkles,
   Radio,
   ChefHat,
@@ -48,7 +47,6 @@ type RailLink = {
 const RAIL_LINKS: readonly RailLink[] = [
   { href: "/", label: "Inicio", Icon: HomeIcon, quick: true },
   { href: "/tiendas", label: "Tiendas", Icon: Store, quick: true, matchPrefix: "/tiendas" },
-  { href: "/marketplace", label: "Mercado", Icon: ShoppingBag, quick: true },
   { href: "/marketplace/para-vos", label: "Descubre", Icon: Sparkles, matchPrefix: "/marketplace/para-vos" },
   { href: "/marketplace/en-vivo", label: "En Vivo", Icon: Radio, quick: true, matchPrefix: "/marketplace/en-vivo" },
   { href: "/recetas", label: "Recetas", Icon: ChefHat, matchPrefix: "/recetas" },

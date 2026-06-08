@@ -15,5 +15,5 @@ import { redirect } from "next/navigation";
  * repo; restaurar el render de <ExplorarClient/> (ver git) para reactivar.
  */
 export default function ExplorarPage() {
-  redirect("/marketplace");
+  redirect("/");
 }

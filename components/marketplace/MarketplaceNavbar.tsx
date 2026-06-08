@@ -454,7 +454,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   // se veía 1 frame el nav completo y colapsaba (flash grave). Ahora el primer
   // paint ya es Solo Tiendas; el modo "completo" (solo navegador del superadmin)
   // resuelve por efecto sin flash perceptible.
-  const navMode = modeOverride ?? navModeHook ?? "tiendas-only";
+  const navMode = modeOverride ?? navModeHook ?? "full";
   const isTiendasOnly = navMode === "tiendas-only";
   // Brandon 2026-05-18 v3: gate "Ofertas" si no hay descuentos activos en
   // ningún tenant. Antes el link estaba forzado visible en modo tiendas-only,
