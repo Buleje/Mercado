@@ -16,7 +16,7 @@ import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   LayoutGrid,
-  Truck,
+  Banknote,
   Sparkles,
   Flame,
   MapPin,
@@ -38,30 +38,32 @@ type QuickLink = {
   matchPrefix?: string;
 };
 
+// Atajos de filtrado del catálogo de la home. Apuntan a /?sort=X#catalogo: el
+// CatalogUrlSync aplica el orden + baja a #catalogo. Antes iban a /explorar, que
+// redirigía a la home BOTANDO el filtro (Brandon 2026-06-08, fix opción A).
+// Sin matchPrefix: usePathname() no ve el ?query, así que nunca matcheaban; son
+// filtros transitorios, no una página destino → no se resaltan.
 const QUICK_LINKS: readonly QuickLink[] = [
   {
-    label: "Delivery gratis",
-    href: "/marketplace/explorar?delivery=free",
-    icon: Truck,
-    matchPrefix: "/marketplace/explorar?delivery=free",
-  },
-  {
     label: "Nuevos",
-    href: "/marketplace/explorar?sort=newest",
+    href: "/?sort=newest#catalogo",
     icon: Sparkles,
-    matchPrefix: "/marketplace/explorar?sort=newest",
   },
   {
     label: "Más vendidos",
-    href: "/marketplace/explorar?sort=best-sellers",
+    href: "/?sort=popular#catalogo",
     icon: Flame,
-    matchPrefix: "/marketplace/explorar?sort=best-sellers",
+  },
+  {
+    label: "Mejor precio",
+    href: "/?sort=price_asc#catalogo",
+    icon: Banknote,
   },
   {
     label: "Cerca de mí",
     href: "/tiendas?zone=true",
     icon: MapPin,
-    matchPrefix: "/tiendas?zone=true",
+    matchPrefix: "/tiendas",
   },
 ] as const;
 

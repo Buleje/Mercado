@@ -70,7 +70,7 @@ export default function HomeNewArrivals() {
         eyebrow="Recién llegados"
         title={`Nuevos en ${BRAND_GEO.city}`}
         actionLabel="Ver todo"
-        actionHref="/marketplace/explorar?sort=newest"
+        actionHref="/?sort=newest#catalogo"
       />
 
       <HorizontalCarousel ariaLabel="Nuevos productos">

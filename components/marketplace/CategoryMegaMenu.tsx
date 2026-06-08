@@ -24,7 +24,7 @@ import {
   Store,
   Tag,
   TrendingUp,
-  Bike,
+  Banknote,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
@@ -46,12 +46,14 @@ function prettyLabel(id: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-// Accesos rápidos del menú.
+// Accesos rápidos del menú. Apuntan al catálogo de la home con ?sort (el
+// CatalogUrlSync lo aplica + baja a #catalogo). Antes iban a /explorar, que
+// redirigía a la home BOTANDO el filtro (Brandon 2026-06-08, fix opción A).
 const QUICK_LINKS = [
   { href: "/marketplace/ofertas", label: "Ofertas", Icon: Tag },
-  { href: "/marketplace/explorar?sort=best-sellers", label: "Más vendidos", Icon: TrendingUp },
-  { href: "/marketplace/explorar?sort=newest", label: "Nuevos", Icon: Sparkles },
-  { href: "/marketplace/explorar?delivery=free", label: "Delivery gratis", Icon: Bike },
+  { href: "/?sort=popular#catalogo", label: "Más vendidos", Icon: TrendingUp },
+  { href: "/?sort=newest#catalogo", label: "Nuevos", Icon: Sparkles },
+  { href: "/?sort=price_asc#catalogo", label: "Mejor precio", Icon: Banknote },
 ] as const;
 
 type FeaturedStore = {
@@ -169,10 +171,10 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
           {/* Header */}
           <div className="flex items-baseline justify-between gap-4 mb-4">
             <h2 className="text-lg font-black tracking-[-0.02em] text-[var(--text-primary)]">
-              Explorá por categoría
+              Explora por categoría
             </h2>
             <Link
-              href="/marketplace/explorar"
+              href="/#catalogo"
               role="menuitem"
               onClick={onClose}
               className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-4 h-9 text-xs font-bold text-[var(--accent)] hover:bg-[var(--surface-raised)] transition-colors shrink-0"
