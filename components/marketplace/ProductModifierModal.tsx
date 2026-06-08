@@ -146,8 +146,11 @@ export default function ProductModifierModal({
     return out;
   }, [selection, effectiveGroups]);
 
-  const priceDeltaTotal = flatSelected.reduce((sum, m) => sum + m.priceDelta, 0);
-  const unitPrice = product.price + priceDeltaTotal;
+  // Bug fix Brandon 2026-06-08: el catálogo (API) devuelve `price` como STRING
+  // ("5"), y el tipo dice `number` → tsc no lo cacha. `"5" + 0` concatenaba
+  // ("50") y el TOTAL salía ×10. Coercionamos a número antes de sumar.
+  const priceDeltaTotal = flatSelected.reduce((sum, m) => sum + Number(m.priceDelta || 0), 0);
+  const unitPrice = (Number(product.price) || 0) + priceDeltaTotal;
   const totalPrice = unitPrice * quantity;
 
   const validation = useMemo(() => {
