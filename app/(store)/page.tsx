@@ -40,6 +40,7 @@ import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoadin
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HomePersonalStrip from "@/components/marketplace/home/HomePersonalStrip";
+import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
 import HomeTrustBar from "@/components/marketplace/home/HomeTrustBar";
 import {
   Store,
@@ -1238,6 +1239,10 @@ export default async function Home() {
           quedaste" (retoma carrito) + "Vuelve a pedir" (reorder/last server).
           Self-hide si es anónimo o no hay nada que mostrar. Brandon 2026-06-08. */}
       <HomePersonalStrip />
+
+      {/* 1.55 Visto recientemente — retoma lo que el usuario estaba mirando
+          (per-usuario, localStorage). Self-hide si no vio nada. */}
+      <HomeRecentlyViewed />
 
       {/* 1.6 Confianza para la primera compra: pago seguro, entrega, compra
           protegida (Libro de Reclamaciones), soporte. Honesto, sin prueba
