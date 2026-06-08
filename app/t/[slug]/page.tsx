@@ -25,6 +25,18 @@ interface TenantLandingProps {
   searchParams: Promise<{ preview?: string }>;
 }
 
+/** Producto normalizado para la vitrina de la landing (destacados o catálogo). */
+interface ShowcaseItem {
+  id: string;
+  name: string;
+  image: string;
+  unit: string;
+  price: number;
+  exclusivePrice: number | null;
+  savingsPercent: number | null;
+  badge: string | null;
+}
+
 /**
  * Resolve tenant + customization + featured + promotions + exclusive count
  * en paralelo. Server Component — sin cache directive para evitar conflicto
@@ -64,13 +76,48 @@ async function loadPageData(slug: string) {
 
   if (!tenant) return null;
 
-  const [customization, featured, promotions, exclusiveCount, settings] = await Promise.all([
+  const [customization, featured, promotions, exclusiveCount, settings, catalog] = await Promise.all([
     StorePageDB.getCustomization(tenant.id),
     StorePageDB.listPublicFeatured(tenant.id, 24),
     StorePageDB.listPromotions(tenant.id, true),
     StorePageDB.countActiveExclusivePrices(tenant.id),
     SettingsDB.get(tenant.id).catch((err) => { logger.warn("[t/[slug]] settings load failed", { err: String(err), tenantId: tenant.id }); return null; }),
+    StorePageDB.listCatalogWithVisibility(tenant.id).catch((err) => { logger.warn("[t/[slug]] catalog load failed", { err: String(err), tenantId: tenant.id }); return []; }),
   ]);
+
+  // "Productos al frente" (Brandon 2026-06-08): la landing debe mostrar
+  // productos REALES sin entrar al catálogo. Si el dueño marcó destacados
+  // (tenantPageProductOverride) usamos esos; si no, caemos al catálogo real
+  // (primeros productos activos+visibles). Shape unificado para la vitrina.
+  const productCount = catalog.filter((c) => c.active && c.visible).length;
+  const showcase: ShowcaseItem[] =
+    featured.length > 0
+      ? featured.map((p) => ({
+          id: String(p.id),
+          name: p.productName,
+          image: p.productImage,
+          unit: p.productUnit,
+          price: p.productBasePrice,
+          exclusivePrice:
+            p.exclusivePrice != null && p.exclusivePrice < p.productBasePrice
+              ? p.exclusivePrice
+              : null,
+          savingsPercent: p.savingsPercent ?? null,
+          badge: p.badge ?? null,
+        }))
+      : catalog
+          .filter((c) => c.active && c.visible)
+          .slice(0, 8)
+          .map((c) => ({
+            id: String(c.productId),
+            name: c.name,
+            image: c.image,
+            unit: c.unit,
+            price: c.price,
+            exclusivePrice: null,
+            savingsPercent: null,
+            badge: null,
+          }));
 
   // Cadena de fallback para el nombre público de la tienda:
   //   storeTheme.storeName  →  settings.businessName  →  tenant.name  →  slug
@@ -83,7 +130,7 @@ async function loadPageData(slug: string) {
     tenant.name ||
     tenant.slug;
 
-  return { tenant, customization, featured, promotions, exclusiveCount, displayName };
+  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount };
 }
 
 export async function generateMetadata({
@@ -177,7 +224,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const data = await loadPageData(slug);
   if (!data) notFound();
 
-  const { tenant, customization, featured, promotions, exclusiveCount, displayName } = data;
+  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount } = data;
 
   // Allow admin preview even if inactive/unpublished
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
@@ -314,7 +361,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-b from-transparent to-[var(--surface-canvas)]"
         />
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-28 sm:pb-32">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20 sm:pb-24">
           <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-8 items-center">
             {/* Columna izq: contenido principal */}
             <div className="text-left">
@@ -373,6 +420,26 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                   <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
                   Ver catálogo
                 </Link>
+              </div>
+
+              {/* Stats strip — qué ofrece de un vistazo (hero más potente,
+                  Brandon 2026-06-08). Sin duplicar "Verificado/Desde" (eso vive
+                  en VendorTrustBadges justo debajo). */}
+              <div className="mt-7 flex flex-wrap items-center gap-2.5">
+                {productCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur">
+                    <ShoppingBag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                    {productCount} {productCount === 1 ? "producto" : "productos"}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur">
+                  <Tag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Yape · Plin · Efectivo
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur">
+                  <Truck className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Delivery 25–35 min
+                </span>
               </div>
 
               {/* Preview-only: plan badge + custom CTA */}
@@ -504,20 +571,35 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         </section>
       )}
 
-      {/* Featured products — solo si hay reales o preview */}
-      {(featured.length > 0 || isPreview) && (
-        <section className="max-w-5xl mx-auto px-4 py-12">
-          <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2">
-            <Sparkles className="w-6 h-6" style={{ color: featured.length > 0 ? primary : "#d1d5db" }} />
-            Productos destacados
-          </h2>
+      {/* ═══════════════ Productos al frente (Brandon 2026-06-08) ═══════════════
+          Vitrina de productos REALES en la landing — destacados si el dueño los
+          marcó (tenantPageProductOverride), si no caemos al catálogo real. Es lo
+          que más vende: el cliente ve productos sin tener que entrar al catálogo. */}
+      {(showcase.length > 0 || isPreview) && (
+        <section className="max-w-5xl mx-auto px-4 py-10">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+                {featured.length > 0 ? "Destacados" : "Nuestro catálogo"}
+              </p>
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+                {featured.length > 0 ? "Lo que recomendamos" : `Algunos productos de ${displayName}`}
+              </h2>
+            </div>
+            <Link
+              href={`/t/${tenant.slug}/tienda`}
+              className="hidden shrink-0 items-center gap-1.5 text-sm font-extrabold text-[var(--accent)] transition-all hover:gap-2.5 sm:inline-flex"
+            >
+              Ver todo
+              <ArrowRight className="w-4 h-4" strokeWidth={2.5} aria-hidden />
+            </Link>
+          </div>
 
-          {featured.length > 0 ? (
+          {showcase.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {featured.map((p) => {
-                const isExclusive =
-                  p.exclusivePrice != null && p.exclusivePrice < p.productBasePrice;
-                const shownPrice = isExclusive ? p.exclusivePrice! : p.productBasePrice;
+              {showcase.map((p) => {
+                const isExclusive = p.exclusivePrice != null;
+                const shownPrice = isExclusive ? p.exclusivePrice! : p.price;
                 return (
                   <Link
                     key={p.id}
@@ -525,14 +607,18 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     className="group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] shadow-sm hover:shadow-xl transition-all hover:-translate-y-0.5 border border-[var(--rule-base)]"
                   >
                     <div className="aspect-square bg-[var(--surface-sunken)] overflow-hidden relative">
-                      {p.productImage && (
+                      {p.image ? (
                         <Image
-                          src={p.productImage}
-                          alt={p.productName}
+                          src={p.image}
+                          alt={p.name}
                           fill
                           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
                           className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
                         />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <ShoppingBag className="w-8 h-8 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+                        </div>
                       )}
                     </div>
 
@@ -554,8 +640,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     )}
 
                     <div className="p-3">
-                      <p className="font-semibold text-sm truncate">{p.productName}</p>
-                      <p className="text-xs text-[var(--text-secondary)] mb-2">{p.productUnit}</p>
+                      <p className="font-semibold text-sm truncate text-[var(--text-primary)]">{p.name}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mb-2">{p.unit}</p>
                       <div className="flex items-baseline gap-2">
                         <span
                           className="font-extrabold text-lg"
@@ -565,7 +651,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                         </span>
                         {isExclusive && (
                           <span className="text-xs text-[var(--text-tertiary)] line-through">
-                            {formatPrice(p.productBasePrice)}
+                            {formatPrice(p.price)}
                           </span>
                         )}
                       </div>
@@ -599,23 +685,26 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             </div>
           )}
 
-          {/* CTA explorar catalogo completo — siempre visible si hay productos */}
-          {featured.length > 0 && (
-            <div className="mt-6 text-center">
+          {/* CTA explorar catálogo completo — siempre visible si hay productos */}
+          {showcase.length > 0 && (
+            <div className="mt-7 text-center">
               <Link
                 href={`/t/${tenant.slug}/tienda`}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 h-11 text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                className="inline-flex items-center gap-2 rounded-full text-white px-6 h-12 text-sm font-extrabold shadow-lg transition-all hover:opacity-90"
+                style={{ background: primary }}
               >
-                Ver catalogo completo
-                <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
+                <ShoppingBag className="w-4 h-4" strokeWidth={2.5} aria-hidden />
+                Ver catálogo completo
+                <ChevronRight className="w-4 h-4" strokeWidth={2.5} aria-hidden />
               </Link>
             </div>
           )}
         </section>
       )}
 
-      {/* Si NO hay productos destacados y NO es preview: bloque "Como pedir" + CTA fuerte */}
-      {featured.length === 0 && !isPreview && (
+      {/* Si NO hay NINGÚN producto que mostrar y NO es preview: bloque "Cómo
+          pedir" como empty-state. Con productos en la vitrina ya no hace falta. */}
+      {showcase.length === 0 && !isPreview && (
         <section className="max-w-5xl mx-auto px-4 py-12">
           <div className="mb-8 text-center max-w-2xl mx-auto">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
