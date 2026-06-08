@@ -124,14 +124,34 @@ async function loadPageData(slug: string) {
   //   storeTheme.storeName  →  settings.businessName  →  tenant.name  →  slug
   // El primero suele ser el campo que el dueño edita en el panel admin —
   // mientras que `tenant.name` puede contener el ID legacy del owner.
-  const themeName = (settings?.storeTheme as Record<string, unknown> | undefined)?.["storeName"];
+  const st = (settings?.storeTheme as Record<string, unknown> | undefined) ?? undefined;
+  const themeName = st?.["storeName"];
   const displayName =
     (typeof themeName === "string" && themeName.trim()) ||
     (typeof settings?.businessName === "string" && settings.businessName.trim()) ||
     tenant.name ||
     tenant.slug;
 
-  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount };
+  // FUENTE DE VERDAD del tema (Brandon 2026-06-08): el editor (Modo Creativo /
+  // Identidad y tema) guarda en settings.storeTheme vía /api/settings. La landing
+  // ANTES leía solo customization.footerHtml → los cambios del editor no se
+  // reflejaban acá (sí en el catálogo, que sí lee settings.storeTheme). Ahora
+  // settings.storeTheme manda, con fallback al diseño viejo. Así "todo se
+  // personaliza" en la landing también.
+  const pick = (k: string) => {
+    const v = st?.[k];
+    return typeof v === "string" && v.trim() && !v.trim().startsWith("var(") ? v.trim() : undefined;
+  };
+  const editorTheme = {
+    primaryColor: pick("primaryColor"),
+    secondaryColor: pick("secondaryColor"),
+    accentColor: pick("accentColor"),
+    // fontFamily/borderRadius del editor (string/number) — opcionales.
+    fontFamily: typeof st?.["fontFamily"] === "string" ? (st["fontFamily"] as string) : undefined,
+    borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
+  };
+
+  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme };
 }
 
 export async function generateMetadata({
@@ -225,7 +245,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const data = await loadPageData(slug);
   if (!data) notFound();
 
-  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount } = data;
+  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme } = data;
 
   // Allow admin preview even if inactive/unpublished
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
@@ -233,8 +253,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   // Design tokens del SectionsBuilder tienen prioridad sobre customization viejo.
   // El bodeguero edita primary/accent desde el tab "Diseño" del admin.
   const pageDataForColors = deserializePageData(customization.footerHtml);
-  const primary = pageDataForColors.design.primaryColor || customization.primaryColor || tenant.primaryColor || "var(--accent)";
-  const accent = pageDataForColors.design.accentColor || customization.accentColor || "#f4a261";
+  // settings.storeTheme (editor) manda; luego el diseño viejo (footerHtml),
+  // customization y por último el color del tenant.
+  const primary = editorTheme.primaryColor || pageDataForColors.design.primaryColor || customization.primaryColor || tenant.primaryColor || "var(--accent)";
+  const accent = editorTheme.accentColor || pageDataForColors.design.accentColor || customization.accentColor || "#f4a261";
 
   // Preview EN VIVO (Brandon 2026-06-08): las inline-styles de color usan estas
   // CSS vars con FALLBACK al valor del server. Así el render normal es idéntico,
@@ -278,7 +300,16 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
   // ── Design tokens del tenant — pintados via CSS vars en el wrapper .tenant-theme ──
   const pageData = deserializePageData(customization.footerHtml);
-  const designTokens = pageData.design;
+  // El editor (settings.storeTheme) manda sobre el diseño viejo (footerHtml):
+  // sus colores alimentan los CSS vars --tenant-* que usan las inline-styles.
+  // (Fuente única de verdad del tema — Brandon 2026-06-08.) La tipografía del
+  // editor usa otra taxonomía → se deja la de footerHtml por ahora.
+  const designTokens = {
+    ...pageData.design,
+    ...(editorTheme.primaryColor ? { primaryColor: editorTheme.primaryColor } : {}),
+    ...(editorTheme.secondaryColor ? { secondaryColor: editorTheme.secondaryColor } : {}),
+    ...(editorTheme.accentColor ? { accentColor: editorTheme.accentColor } : {}),
+  };
   const tenantFont = FONT_FAMILIES[designTokens.fontFamily];
 
   return (
