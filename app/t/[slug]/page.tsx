@@ -17,6 +17,7 @@ import TenantPageTracker from "./_components/TenantPageTracker";
 import VendorTrustBadges from "@/components/store/VendorTrustBadges";
 import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
+import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES } from "@/lib/store-design-tokens";
 
@@ -234,6 +235,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const pageDataForColors = deserializePageData(customization.footerHtml);
   const primary = pageDataForColors.design.primaryColor || customization.primaryColor || tenant.primaryColor || "var(--accent)";
   const accent = pageDataForColors.design.accentColor || customization.accentColor || "#f4a261";
+
+  // Preview EN VIVO (Brandon 2026-06-08): las inline-styles de color usan estas
+  // CSS vars con FALLBACK al valor del server. Así el render normal es idéntico,
+  // pero PreviewLiveTheme (en ?preview=true) puede sobrescribir --tenant-primary/
+  // accent vía postMessage y la tienda cambia de color sin recargar.
+  const cssPrimary = `var(--tenant-primary, ${primary})`;
+  const cssAccent = `var(--tenant-accent, ${accent})`;
+  const cssPrimaryA = (pct: number) => `color-mix(in srgb, var(--tenant-primary, ${primary}) ${pct}%, transparent)`;
+  const cssAccentA = (pct: number) => `color-mix(in srgb, var(--tenant-accent, ${accent}) ${pct}%, transparent)`;
   // El logo y el título usan el nombre público real (storeTheme.storeName) en
   // lugar de `tenant.name` — para que el comercio nunca vea el nombre raw del
   // tenant ni la marca del marketplace en su propia página.
@@ -293,6 +303,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Beacon tracker (client component) */}
       <TenantPageTracker tenantSlug={tenant.slug} />
 
+      {/* Preview EN VIVO: escucha al editor y aplica tokens sin recargar. */}
+      {isPreview && <PreviewLiveTheme />}
+
       {/* Nav ÚNICO de la tienda — el MISMO StorefrontNavbar del catálogo
           (`/t/<slug>/tienda`). Tenant-aware: Inicio → esta landing, Catálogo →
           el catálogo, buscador → catálogo. El carrito es un enlace al catálogo
@@ -316,7 +329,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           heroImage
             ? undefined
             : {
-                background: `radial-gradient(circle at 30% 20%, ${accent}66 0%, transparent 50%), linear-gradient(135deg, ${primary} 0%, ${primary}dd 50%, ${primary} 100%)`,
+                background: `radial-gradient(circle at 30% 20%, ${cssAccentA(40)} 0%, transparent 50%), linear-gradient(135deg, ${cssPrimary} 0%, ${cssPrimaryA(87)} 50%, ${cssPrimary} 100%)`,
               }
         }
       >
@@ -339,7 +352,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               aria-hidden
               className="pointer-events-none absolute inset-0"
               style={{
-                backgroundImage: `linear-gradient(180deg, ${primary}dd 0%, ${primary}aa 50%, ${primary}cc 100%)`,
+                backgroundImage: `linear-gradient(180deg, ${cssPrimaryA(87)} 0%, ${cssPrimaryA(67)} 50%, ${cssPrimaryA(80)} 100%)`,
               }}
             />
           </>
@@ -406,7 +419,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group inline-flex items-center gap-2 px-6 h-12 rounded-full bg-white font-extrabold text-sm hover:gap-2.5 transition-all shadow-xl"
-                    style={{ color: primary }}
+                    style={{ color: cssPrimary }}
                   >
                     <MessageCircle className="w-4 h-4" strokeWidth={2.75} />
                     Pedir por WhatsApp
@@ -467,7 +480,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 <div
                   aria-hidden
                   className="absolute inset-0 rounded-full blur-3xl opacity-50"
-                  style={{ background: accent }}
+                  style={{ background: cssAccent }}
                 />
                 <div
                   aria-hidden
@@ -531,7 +544,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                   key={p.id}
                   className="flex items-center gap-3 p-4 rounded-2xl shadow-lg"
                   style={{
-                    background: `linear-gradient(90deg, ${accent} 0%, ${primary} 100%)`,
+                    background: `linear-gradient(90deg, ${cssAccent} 0%, ${cssPrimary} 100%)`,
                   }}
                 >
                   <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -626,7 +639,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     {isExclusive && p.savingsPercent != null && p.savingsPercent > 0 && (
                       <div
                         className="absolute top-2 left-2 px-2 py-1 rounded-full text-white font-extrabold text-xs shadow-lg"
-                        style={{ background: accent }}
+                        style={{ background: cssAccent }}
                       >
                         -{p.savingsPercent}%
                       </div>
@@ -645,7 +658,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                       <div className="flex items-baseline gap-2">
                         <span
                           className="font-extrabold text-lg"
-                          style={{ color: isExclusive ? primary : undefined }}
+                          style={{ color: isExclusive ? cssPrimary : undefined }}
                         >
                           {formatPrice(shownPrice)}
                         </span>
@@ -691,7 +704,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               <Link
                 href={`/t/${tenant.slug}/tienda`}
                 className="inline-flex items-center gap-2 rounded-full text-white px-6 h-12 text-sm font-extrabold shadow-lg transition-all hover:opacity-90"
-                style={{ background: primary }}
+                style={{ background: cssPrimary }}
               >
                 <ShoppingBag className="w-4 h-4" strokeWidth={2.5} aria-hidden />
                 Ver catálogo completo
@@ -749,7 +762,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     </p>
                     <span
                       className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-white"
-                      style={{ background: primary }}
+                      style={{ background: cssPrimary }}
                     >
                       <FIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
                     </span>
@@ -768,7 +781,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             <Link
               href={`/t/${tenant.slug}/tienda`}
               className="inline-flex items-center gap-2 rounded-full text-white px-6 h-12 text-sm font-extrabold shadow-lg transition-all hover:opacity-90"
-              style={{ background: primary }}
+              style={{ background: cssPrimary }}
             >
               <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
               Ver catálogo de {displayName}
@@ -805,7 +818,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 return `${years} años atendiendo`;
               })()}
               hint={`En Buleje desde ${new Date(tenant.createdAt).getFullYear()}`}
-              primary={primary}
+              primary={cssPrimary}
             />
           )}
 
@@ -816,7 +829,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               label="Pedidos por WhatsApp"
               value={customization.whatsappPhone ?? tenant.ownerPhone ?? ""}
               hint="Respondemos al toque"
-              primary={primary}
+              primary={cssPrimary}
               href={`https://wa.me/${(customization.whatsappPhone ?? tenant.ownerPhone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${displayName}, quiero hacer un pedido.`)}`}
             />
           )}
@@ -828,7 +841,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               label="Ubicación"
               value={customization.address}
               hint="Delivery a tu zona"
-              primary={primary}
+              primary={cssPrimary}
             />
           )}
 
@@ -838,7 +851,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             label="Métodos de pago"
             value="Yape · Plin · Efectivo"
             hint="Sin tarjeta obligatoria · pagás al recibir"
-            primary={primary}
+            primary={cssPrimary}
           />
 
           {/* Delivery info */}
@@ -847,7 +860,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             label="Delivery"
             value="25–35 min promedio"
             hint="Motorizado propio o de la zona"
-            primary={primary}
+            primary={cssPrimary}
           />
 
           {/* Email si existe */}
@@ -857,7 +870,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               label="Email"
               value={customization.contactEmail}
               hint="Para consultas formales"
-              primary={primary}
+              primary={cssPrimary}
               href={`mailto:${customization.contactEmail}`}
             />
           )}
@@ -935,9 +948,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           >
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `${primary}18` }}
+              style={{ background: cssPrimaryA(9) }}
             >
-              <ShoppingBag className="w-7 h-7" style={{ color: primary }} />
+              <ShoppingBag className="w-7 h-7" style={{ color: cssPrimary }} />
             </div>
             <div className="min-w-0">
               <p className="font-bold text-lg leading-tight">Ver catálogo completo</p>

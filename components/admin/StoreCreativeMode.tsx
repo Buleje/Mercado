@@ -247,6 +247,7 @@ function PreviewBrowserFrame({
         key={iframeKey}
         src={src}
         title={title}
+        data-live-preview="1"
         className="w-full border-0"
         style={{ height: "calc(100% - 36px)" }}
       />
@@ -416,6 +417,47 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
   }, [draft, initialTheme, onApplyTheme]);
+
+  // ── Preview EN VIVO (Brandon 2026-06-08) ──────────────────────────────────
+  // Empuja color/redondez al iframe (mismo origen) por postMessage → la tienda
+  // cambia AL INSTANTE sin recargar. El auto-save (2s) persiste y recarga para
+  // que el texto/secciones también se reflejen; los colores ya coinciden.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+
+  const postLiveTheme = useCallback((theme: StoreTheme) => {
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    const win = frame?.contentWindow;
+    if (!win) return;
+    const vars: Record<string, string> = {
+      "--tenant-primary": theme.primaryColor,
+      "--tenant-secondary": theme.secondaryColor,
+      "--tenant-accent": theme.accentColor,
+      "--tenant-radius": `${theme.borderRadius}px`,
+    };
+    try {
+      win.postMessage({ source: "buleje-editor", type: "live-theme", vars }, window.location.origin);
+    } catch {
+      /* no-op */
+    }
+  }, []);
+
+  // Cada cambio del draft (debounce corto) → refleja color/redondez al instante.
+  useEffect(() => {
+    const t = setTimeout(() => postLiveTheme(draft), 80);
+    return () => clearTimeout(t);
+  }, [draft, postLiveTheme]);
+
+  // Cuando el preview (re)carga avisa "ready" → reenviar el tema actual.
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const d = e.data as { source?: string; type?: string } | null;
+      if (d?.source === "buleje-preview" && d.type === "ready") postLiveTheme(draftRef.current);
+    };
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, [postLiveTheme]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
