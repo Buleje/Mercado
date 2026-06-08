@@ -39,9 +39,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
-import HomePersonalStrip from "@/components/marketplace/home/HomePersonalStrip";
 import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
-import HomeTrustBar from "@/components/marketplace/home/HomeTrustBar";
 import {
   Store,
   ArrowUpRight,
@@ -876,7 +874,7 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
   const extraProducts = Math.max(0, s.productCount - s.preview.length);
   return (
     <article
-      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--surface-raised)] transition-colors duration-[var(--dur-base)] ${
+      className={`group relative flex h-full flex-col overflow-hidden border bg-[var(--surface-raised)] transition-colors duration-[var(--dur-base)] ${
         s.featuredHome
           ? "border-[var(--accent)]"
           : "border-[var(--rule-base)] hover:border-[var(--accent)]"
@@ -917,14 +915,14 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
         <div aria-hidden className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-black/35 to-transparent" />
         {/* Rating badge (si tiene reseñas reales) */}
         {s.rating > 0 && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[var(--surface-canvas)]/95 px-2.5 py-1 text-xs font-black tabular-nums text-[var(--text-primary)] shadow ring-1 ring-[var(--rule-soft)]">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 bg-[var(--surface-canvas)]/95 px-2.5 py-1 text-xs font-black tabular-nums text-[var(--text-primary)] shadow ring-1 ring-[var(--rule-soft)]">
             <Star className="h-3 w-3 fill-[var(--accent)] text-[var(--accent)]" aria-hidden />
             {s.rating.toFixed(1)}
           </span>
         )}
         {/* Badge "Destacada" (beneficio superadmin) */}
         {s.featuredHome && (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow">
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 bg-[var(--accent)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow">
             <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
             Destacada
           </span>
@@ -933,7 +931,7 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
 
       {/* Logo avatar solapando el banner + identidad */}
       <div className="flex items-start gap-3 px-4 sm:px-5 -mt-8">
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[var(--surface-canvas)] ring-4 ring-[var(--surface-raised)] shadow-md">
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-[var(--surface-canvas)] ring-4 ring-[var(--surface-raised)] shadow-sm">
           {s.logo ? (
             <Image src={s.logo} alt="" fill sizes="64px" className="object-cover" priority={priority} />
           ) : (
@@ -948,12 +946,12 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {s.category && (
-              <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-bold capitalize text-[var(--accent)]">
+              <span className="inline-flex items-center bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-bold capitalize text-[var(--accent)]">
                 {s.category}
               </span>
             )}
             {s.zone && (
-              <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
+              <span className="inline-flex items-center gap-0.5 bg-[var(--surface-sunken)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
                 <MapPin className="h-2.5 w-2.5" strokeWidth={2} aria-hidden />
                 {s.zone}
               </span>
@@ -971,7 +969,7 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
             {s.preview.map((p, i) => (
               <div
                 key={p.id}
-                className="relative aspect-square overflow-hidden rounded-lg bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]"
+                className="relative aspect-square overflow-hidden bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]"
               >
                 <Image
                   src={p.image}
@@ -1006,10 +1004,10 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
           <Link
             href={`/marketplace/${s.slug}`}
             aria-label={`Ver tienda ${s.name}`}
-            className="mt-3 inline-flex w-full h-10 items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-sm font-extrabold text-white transition-opacity after:absolute after:inset-0 after:content-[''] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="mt-3 inline-flex w-full h-10 items-center justify-center gap-1.5 border border-[var(--accent)] text-sm font-bold text-[var(--accent)] transition-colors after:absolute after:inset-0 after:content-[''] hover:bg-[var(--accent)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
             Ver tienda
-            <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
           </Link>
         </div>
       </div>
@@ -1025,7 +1023,6 @@ async function TopStoresSection() {
     return <EmptyStoresPlaceholder />;
   }
   const destacadas = stores.slice(0, 3);
-  const recommended = stores.slice(3);
   return (
     <>
       <section
@@ -1061,38 +1058,6 @@ async function TopStoresSection() {
         </div>
       </section>
 
-      {/* ── Recomendadas para vos — rail horizontal (descubrimiento) ── */}
-      {recommended.length > 0 && (
-        <section
-          aria-label="Recomendadas para vos"
-          className="py-5 sm:py-7"
-        >
-          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-            <SectionHeading
-              eyebrow="Para vos"
-              title="Recomendadas para vos"
-              actionLabel="Descubrir más"
-              actionHref="/tiendas"
-            />
-
-            {/* Rail con scroll horizontal — snap suave, cards de ancho fijo */}
-            <ul
-              role="list"
-              aria-label="Tiendas recomendadas"
-              className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {recommended.slice(0, 12).map((s) => (
-                <li
-                  key={s.id}
-                  className="snap-start shrink-0 w-[150px] sm:w-[190px]"
-                >
-                  <StoreCard s={s} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
     </>
   );
 }
@@ -1234,19 +1199,9 @@ export default async function Home() {
       {/* 1. Hero compacto con buscador */}
       <RappiStyleHero />
 
-      {/* 1.5 Personalización del cliente logueado: saludo + "Sigue donde
-          quedaste" (retoma carrito) + "Vuelve a pedir" (reorder/last server).
-          Self-hide si es anónimo o no hay nada que mostrar. Brandon 2026-06-08. */}
-      <HomePersonalStrip />
-
-      {/* 1.55 Visto recientemente — retoma lo que el usuario estaba mirando
+      {/* 1.5 Visto recientemente — retoma lo que el usuario estaba mirando
           (per-usuario, localStorage). Self-hide si no vio nada. */}
       <HomeRecentlyViewed />
-
-      {/* 1.6 Confianza para la primera compra: pago seguro, entrega, compra
-          protegida (Libro de Reclamaciones), soporte. Honesto, sin prueba
-          social falsa (0 pedidos en lanzamiento). Brandon 2026-06-08. */}
-      <HomeTrustBar />
 
       {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas */}
       <Suspense fallback={<SectionSkeleton minH="min-h-[340px]" />}>
