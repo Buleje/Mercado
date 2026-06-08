@@ -39,9 +39,9 @@ const HERO_BRAND: Portal = {
   href: "/marketplace",
   icon: Store,
   eyebrow: "Tu mercado",
-  title: "Encontrá tu bodega favorita",
+  title: "Encuentra tu bodega favorita",
   description:
-    "Cientos de tiendas de Ciudad Constitución, una sola app. Comprá lo de siempre cerca de tu casa o descubrí algo nuevo.",
+    "Cientos de tiendas de Ciudad Constitución, una sola app. Compra lo de siempre cerca de tu casa o descubre algo nuevo.",
   preview: ["Pollerías", "Minimarkets", "Mayoristas", "Fruterías", "Veterinarias"],
   cta: "Ver bodegas",
   variant: "hero-brand",
@@ -52,8 +52,8 @@ const HERO_WARM: Portal = {
   icon: Percent,
   eyebrow: "Solo por hoy",
   title: "Ofertas activas",
-  description: "Combos, 2×1, liquidación. Los precios vuelan — si te gusta, agarralo.",
-  preview: ["−30% lácteos", "Combos", "2×1"],
+  description: "Combos, 2×1, liquidación. Los precios vuelan — si te gusta, llévatelo.",
+  preview: ["Liquidación", "Combos", "2×1"],
   cta: "Ver ofertas",
   variant: "hero-warm",
 };
@@ -131,7 +131,7 @@ export default function ExplorarSectionPortals() {
             Destinos disponibles
           </p>
           <h2 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
-            Elegí tu próximo destino
+            Elige tu próximo destino
           </h2>
           <p className="mt-3 text-[var(--text-secondary)]">
             Cada portal te lleva al catálogo completo. Acá solo un asomo de lo que hay.

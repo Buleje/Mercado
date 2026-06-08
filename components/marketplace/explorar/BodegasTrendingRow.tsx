@@ -114,7 +114,7 @@ function StoreCard({ store }: { store: StoreItem }) {
             {store.productCount}
           </span>
           <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-            SKUs
+            productos
           </span>
         </div>
 

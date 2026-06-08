@@ -61,9 +61,9 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "nav.logout": { es: "Cerrar sesión", en: "Sign out", shi: "Kenai" },
   "nav.search": { es: "Buscar", en: "Search", shi: "Benati" },
   "nav.searchPlaceholder": {
-    es: "Busca productos o tiendas en Pucallpa...",
-    en: "Search products or stores in Pucallpa...",
-    shi: "Benati piti, xobo Pucallpa...",
+    es: "Busca productos o tiendas en Ciudad Constitución...",
+    en: "Search products or stores in Ciudad Constitución...",
+    shi: "Benati piti, xobo Ciudad Constitución...",
   },
   "nav.darkMode": { es: "Modo oscuro", en: "Dark mode", shi: "Jonipakoi" },
   "nav.lightMode": { es: "Modo claro", en: "Light mode", shi: "Pakoi" },

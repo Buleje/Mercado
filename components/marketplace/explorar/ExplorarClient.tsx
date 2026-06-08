@@ -126,7 +126,7 @@ function FinalCTA() {
                 <span className="text-[var(--accent)]">en 5 minutos.</span>
               </h2>
               <p className="mt-4 text-lg text-white/80 max-w-xl leading-relaxed">
-                Miles de vecinos están buscando lo que vendés. Subí tus productos y empezá a
+                Miles de vecinos están buscando lo que vendes. Sube tus productos y empieza a
                 recibir pedidos hoy mismo.
               </p>
 

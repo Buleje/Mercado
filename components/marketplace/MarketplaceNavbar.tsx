@@ -463,8 +463,6 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   const visibleLinks = PRIMARY_LINKS.filter((l) => {
     // Ofertas — solo visible si hay ofertas activas (independiente de superadmin).
     if (l.id === "ofertas" && hasActiveOffers !== true) return false;
-    // "Mercado" es exclusivo del modo Solo Tiendas (en completo lo cubre "Bodegas").
-    if (l.id === "mercado") return false;
     return navVisibility[l.id] !== false;
   });
   // Brandon 2026-05-30: el modo "Solo Tiendas" es un nav mínimo intencional —
@@ -473,11 +471,12 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   // foco "elegí tu tienda"). El modo manda sobre los toggles individuales:
   // ponés "Solo Tiendas" en superadmin → el público ve solo Inicio + Tiendas.
   const TIENDAS_ONLY_LINKS = new Set(["inicio", "tiendas", "mercado"]);
-  // Brandon 2026-06-07: el nav de encabezado queda MINIMAL — solo Inicio,
-  // Explorar y Bodegas (centrados). El resto (Tiendas, Descubrí, En Vivo,
-  // Negocios, Abre tu tienda, Recetas…) se accede por el drawer lateral estilo
-  // YouTube (botón ☰). Menos saturación arriba, navegación completa en el panel.
-  const DESKTOP_TOPNAV_LINKS = new Set(["inicio", "explorar", "bodegas"]);
+  // Brandon 2026-06-08 (oleada nav): el top-nav es IDÉNTICO en ambos modos —
+  // Inicio · Tiendas · Mercado. Antes "completo" mostraba Explorar·Bodegas y
+  // "tiendas-only" mostraba Tiendas·Mercado → el nav "cambiaba de forma" entre
+  // modos (flash + confusión). Una sola palabra por concepto; el resto (En Vivo,
+  // Recetas, Negocios, Ofertas…) vive en el rail lateral (☰).
+  const DESKTOP_TOPNAV_LINKS = new Set(["inicio", "tiendas", "mercado"]);
   const renderedLinks = isTiendasOnly
     ? PRIMARY_LINKS.filter((l) => TIENDAS_ONLY_LINKS.has(l.id))
     : visibleLinks.filter((l) => DESKTOP_TOPNAV_LINKS.has(l.id));

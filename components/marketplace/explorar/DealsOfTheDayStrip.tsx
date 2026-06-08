@@ -157,10 +157,9 @@ export default function DealsOfTheDayStrip() {
                 "motion-reduce:hover:translate-y-0",
               )}
             >
-              {/* Badge descuento — tamaño legible */}
-              <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center rounded-md bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)] px-2.5 py-1 text-xs font-black tabular-nums leading-none shadow-sm">
-                −30%
-              </span>
+              {/* Brandon 2026-06-08: badge "−30%" + precio "antes" + "Ahorrás"
+                  REMOVIDOS — eran descuento FABRICADO (price/0.7), sin dato real.
+                  Mostrar un descuento inexistente erosiona confianza (Indecopi). */}
 
               {/* Imagen (sin botón flotante) */}
               <div className="relative aspect-square bg-[var(--surface-canvas)] overflow-hidden">
@@ -184,16 +183,10 @@ export default function DealsOfTheDayStrip() {
                 <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 min-h-[2.5rem] leading-snug">
                   {item.name}
                 </p>
-                <span className="text-sm text-[var(--text-tertiary)] line-through tabular-nums leading-none">
-                  {pen.format(item.price / 0.7)}
-                </span>
                 <div className="flex items-end justify-between gap-2 mt-0.5">
                   <div className="min-w-0 flex-1">
                     <p className="text-2xl font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--accent)] leading-none">
                       {pen.format(item.price)}
-                    </p>
-                    <p className="mt-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-success-500)] tabular-nums leading-none">
-                      Ahorrás {pen.format(item.price / 0.7 - item.price)}
                     </p>
                   </div>
                   {item.storeId && item.storeSlug && (

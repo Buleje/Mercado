@@ -13,7 +13,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  Mic,
   Compass,
   Store,
   Percent,
@@ -114,9 +113,9 @@ export default function ExplorarHeroSearch() {
         </h1>
 
         <p className="mt-4 text-lg text-[var(--text-secondary)] leading-relaxed max-w-2xl sm:text-xl">
-          El menú visual de tu marketplace. Acá no comprás —{" "}
-          <strong className="text-[var(--text-primary)] font-bold">descubrís</strong> qué
-          tiene Buleje y elegís dónde entrar a comprar.
+          El menú visual de tu marketplace. Acá no compras —{" "}
+          <strong className="text-[var(--text-primary)] font-bold">descubres</strong> qué
+          tiene Buleje y eliges dónde entrar a comprar.
         </p>
 
         {/* ── Search XL ─────────────────────────────────────── */}
@@ -140,17 +139,10 @@ export default function ExplorarHeroSearch() {
             onChange={(e) => setQ(e.target.value)}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder="Buscá productos, marcas, bodegas…"
+            placeholder="Busca productos, marcas, bodegas…"
             aria-label="Buscar en el marketplace"
             className="flex-1 bg-transparent border-0 outline-none px-3 py-4 sm:py-5 text-base sm:text-lg text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] min-w-0"
           />
-          <button
-            type="button"
-            aria-label="Buscar por voz"
-            className="hidden sm:inline-flex items-center justify-center w-12 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-          >
-            <Mic className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          </button>
           <button
             type="submit"
             className="rounded-xl m-1.5 px-6 sm:px-8 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base sm:text-lg font-bold tracking-tight hover:bg-[var(--accent)] transition-colors"

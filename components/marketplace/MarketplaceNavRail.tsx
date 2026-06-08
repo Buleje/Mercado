@@ -19,7 +19,6 @@ import { usePathname } from "next/navigation";
 import {
   Menu,
   Home as HomeIcon,
-  Compass,
   Store,
   ShoppingBag,
   Sparkles,
@@ -42,12 +41,15 @@ type RailLink = {
 };
 
 // Orden = orden de aparición. `quick` define qué se ve colapsado.
+// Brandon 2026-06-08 (oleada nav): "Explorar" REMOVIDO (su /marketplace/explorar
+// redirige a /marketplace) y "Bodegas" → "Mercado" (una sola palabra para
+// /marketplace). Orden: los 3 primarios (Inicio·Tiendas·Mercado) arriba, luego
+// secundarios. "Descubrí" → "Descubre" (tuteo).
 const RAIL_LINKS: readonly RailLink[] = [
   { href: "/", label: "Inicio", Icon: HomeIcon, quick: true },
-  { href: "/marketplace/explorar", label: "Explorar", Icon: Compass, quick: true, matchPrefix: "/marketplace/explorar" },
-  { href: "/marketplace", label: "Bodegas", Icon: ShoppingBag },
   { href: "/tiendas", label: "Tiendas", Icon: Store, quick: true, matchPrefix: "/tiendas" },
-  { href: "/marketplace/para-vos", label: "Descubrí", Icon: Sparkles, matchPrefix: "/marketplace/para-vos" },
+  { href: "/marketplace", label: "Mercado", Icon: ShoppingBag, quick: true },
+  { href: "/marketplace/para-vos", label: "Descubre", Icon: Sparkles, matchPrefix: "/marketplace/para-vos" },
   { href: "/marketplace/en-vivo", label: "En Vivo", Icon: Radio, quick: true, matchPrefix: "/marketplace/en-vivo" },
   { href: "/recetas", label: "Recetas", Icon: ChefHat, matchPrefix: "/recetas" },
   { href: "/marketplace/ofertas", label: "Ofertas", Icon: Tag, matchPrefix: "/marketplace/ofertas" },
