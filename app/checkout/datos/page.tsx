@@ -132,7 +132,14 @@ export default function CheckoutDatosPage() {
     }
   }, [savedCustomer, profileComplete, navigateTo]);
 
-  if (itemCount === 0) return null;
+  // Mientras hidrata el carrito/checkout, o si el carrito está vacío (el effect
+  // de arriba redirige a /marketplace/carrito), mostramos un overlay de carga en
+  // vez de un blanco que parece "colgado". Brandon 2026-06-08 — fix "se queda
+  // cargando y no da imagen": antes era `return null` (main en blanco) durante
+  // toda la ventana de hidratación.
+  if (!cartReady || itemCount === 0) {
+    return <CheckoutTransitionOverlay show label="Cargando tu pedido" />;
+  }
 
   // Fast-track en curso: mostramos solo el overlay de transición (sin flash de
   // la card de cuenta) mientras redirige a confirmar. Brandon 2026-06-08.
