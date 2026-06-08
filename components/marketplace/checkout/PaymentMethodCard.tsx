@@ -48,11 +48,11 @@ export default function PaymentMethodCard({
       className={cn(
         // Brandon 2026-06-01: padding/escala más compactos en mobile (cards en
         // 2 columnas) — desktop sin cambios.
-        "group relative text-left w-full rounded-2xl p-3.5 sm:p-6 transition-all duration-200",
+        "group relative text-left w-full rounded-2xl p-3.5 sm:p-5 transition-colors duration-200",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
         selected
-          ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)] shadow-[0_6px_24px_-12px_var(--accent)]"
-          : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
+          ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)]"
+          : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40",
       )}
     >
       {/* Checkmark corner */}

@@ -137,9 +137,9 @@ export default function CheckoutDatosPage() {
           lead="Paso 1 de 3."
           subtitle="Dejanos tu nombre y WhatsApp para coordinar la entrega."
         />
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
-          <div className="space-y-4 sm:space-y-5">
-            <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-7 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-6 space-y-4">
               <div>
                 <label htmlFor="guest-name" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Nombre completo</label>
                 <input id="guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-[length:var(--ts-sm)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />

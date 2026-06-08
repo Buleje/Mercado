@@ -633,7 +633,7 @@ export default function CheckoutConfirmarPage() {
         subtitle="Verificá que todo esté bien antes de confirmar."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
         <div className="space-y-4 sm:space-y-5">
           {/* Auth gate v2 — Brandon 2026-05-18: compactado.
               Antes: aside con padding p-5/p-6 + iframe italic font-serif

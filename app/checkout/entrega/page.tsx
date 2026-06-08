@@ -161,7 +161,7 @@ function SectionBox({
   // Brandon, mayo 14 2026: padding mas compacto en mobile (p-4) para reducir
   // scroll, kicker oculto en mobile, titulo mas chico, icono inline al titulo.
   return (
-    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-7 space-y-4 sm:space-y-5">
+    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5 space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <p className="hidden sm:flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
@@ -902,7 +902,7 @@ export default function CheckoutEntregaPage() {
         subtitle="Elegí a dónde te lo llevamos y cómo pagás."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
           {/* ── Direcciones guardadas (si hay) ───────────────────────
                 Brandon, mayo 14 2026: el boton "Usar otra direccion" del
