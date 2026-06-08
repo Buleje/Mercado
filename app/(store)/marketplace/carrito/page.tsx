@@ -22,7 +22,6 @@ import {
   Store,
   ShoppingCart,
   ArrowLeft,
-  ShieldCheck,
   Truck,
   Wallet,
   Clock,
@@ -66,11 +65,11 @@ function ItemRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 16, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0, borderWidth: 0 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="flex gap-3 py-2.5 sm:py-3 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
+      className="flex gap-3 py-2 sm:py-2.5 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
     >
       <Link
         href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-        className="relative h-14 w-14 sm:h-20 sm:w-20 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
+        className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
       >
         {item.image ? (
           <Image
@@ -123,7 +122,7 @@ function ItemRow({
           </p>
         )}
 
-        <div className="mt-2 flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div className="mt-1.5 flex items-center gap-2 sm:gap-3 flex-wrap">
           <QuantityStepper
             value={item.quantity}
             onChange={onQty}
@@ -137,7 +136,7 @@ function ItemRow({
             type="button"
             onClick={onSave}
             aria-label="Guardar para después"
-            className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+            className="inline-flex items-center gap-1.5 min-h-[36px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
           >
             <Bookmark className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             <span className="hidden sm:inline">Guardar</span>
@@ -147,7 +146,7 @@ function ItemRow({
             type="button"
             onClick={onRemove}
             aria-label="Eliminar producto del carrito"
-            className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
+            className="inline-flex items-center gap-1.5 min-h-[36px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
           >
             <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             <span className="hidden sm:inline">Eliminar</span>
@@ -155,11 +154,11 @@ function ItemRow({
         </div>
       </div>
 
-      <div className="hidden sm:flex flex-col items-end shrink-0 self-start gap-0.5">
-        <p className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-bold">
+      <div className="flex flex-col items-end shrink-0 self-start gap-0.5">
+        <p className="hidden sm:block text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-bold">
           Subtotal
         </p>
-        <p className="text-base sm:text-lg font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
+        <p className="text-sm sm:text-lg font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
           {fmt(item.price * item.quantity)}
         </p>
       </div>
@@ -364,35 +363,25 @@ export default function CarritoPage() {
       {isEmpty ? (
         <div
           className={cn(
-            "rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
-            "px-6 py-12 sm:py-20 text-center flex flex-col items-center gap-5 sm:gap-6",
-            "relative overflow-hidden",
+            "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+            "px-6 py-10 sm:py-14 text-center flex flex-col items-center gap-4 sm:gap-5",
           )}
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-20 -right-20 h-[280px] w-[280px] rounded-full bg-[var(--accent)]/[0.08] blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-24 -left-12 h-[220px] w-[220px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
-          />
-          <div className="relative text-[var(--accent)]">
-            <PaicheMascot size={160} animated />
+          <div className="text-[var(--accent)]">
+            <PaicheMascot size={140} animated />
           </div>
-          <div className="relative max-w-md">
+          <div className="max-w-md">
             <p className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-              Tu carrito está{" "}
-              <span className="italic font-serif text-[var(--accent)]">vacío.</span>
+              Tu carrito está <span className="text-[var(--accent)]">vacío</span>
             </p>
             <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-relaxed">
               Empezá a descubrir las bodegas, restaurantes y tiendas reales de tu barrio.
             </p>
           </div>
-          <div className="relative flex flex-col sm:flex-row items-center gap-2.5 mt-1 w-full max-w-md">
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 mt-1 w-full max-w-md">
             <Link
               href="/tiendas"
-              className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-7 h-12 text-[length:var(--ts-sm)] font-extrabold text-white hover:bg-[var(--accent)]/90 shadow-[0_6px_20px_-10px_var(--accent)] hover:shadow-[0_10px_28px_-10px_var(--accent)] active:scale-[0.98] transition-all duration-200"
+              className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-7 h-12 text-[length:var(--ts-sm)] font-extrabold text-white hover:opacity-90 active:scale-[0.98] transition-all"
             >
               <Store className="h-4 w-4" strokeWidth={2.25} aria-hidden />
               Explorar tiendas
@@ -428,14 +417,11 @@ export default function CarritoPage() {
                     >
                       <span
                         aria-hidden
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)] text-white text-base font-black uppercase shadow-sm shrink-0"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white text-sm font-black uppercase shadow-sm shrink-0"
                       >
                         {group.storeName?.charAt(0) ?? <Store className="h-5 w-5" />}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] leading-tight">
-                          Tienda
-                        </p>
                         <p className="text-[length:var(--ts-sm)] sm:text-base font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] group-hover/store:text-[var(--accent)] transition-colors truncate leading-tight">
                           {group.storeName}
                         </p>
@@ -453,7 +439,7 @@ export default function CarritoPage() {
                       </p>
                     </div>
                   </header>
-                  <div className="px-4 sm:px-6">
+                  <div className="px-4 sm:px-5">
                     <AnimatePresence initial={false} mode="popLayout">
                     {group.items.map((item) => {
                       // Mismo producto con modifiers distintos = línea
@@ -475,45 +461,6 @@ export default function CarritoPage() {
                 </article>
               );
             })}
-
-            {/* Brandon 2026-05-18: timeline visual del flujo post-checkout.
-                Antes era un banner plano de texto. Ahora 3 pasos con íconos
-                muestran qué pasa después del checkout: tienda confirma →
-                WhatsApp con detalle → delivery. Reduce ansiedad de compra. */}
-            <div className="rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent-soft)]/40 p-4 sm:p-5">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
-                ¿Qué pasa después?
-              </p>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div className="flex flex-col items-center text-center gap-1.5">
-                  <span aria-hidden className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-sm">
-                    <Store className="h-4 w-4" strokeWidth={2.5} />
-                  </span>
-                  <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight">
-                    1. La tienda<br />confirma
-                  </p>
-                </div>
-                <div className="flex flex-col items-center text-center gap-1.5">
-                  <span aria-hidden className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white shadow-sm">
-                    <ShieldCheck className="h-4 w-4" strokeWidth={2.5} />
-                  </span>
-                  <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight">
-                    2. WhatsApp<br />con detalle
-                  </p>
-                </div>
-                <div className="flex flex-col items-center text-center gap-1.5">
-                  <span aria-hidden className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm">
-                    <Truck className="h-4 w-4" strokeWidth={2.5} />
-                  </span>
-                  <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight">
-                    3. Delivery<br />a tu casa
-                  </p>
-                </div>
-              </div>
-              <p className="mt-3 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] text-[var(--text-secondary)] text-center leading-snug">
-                Un pedido por tienda. Cada una con su propio ETA.
-              </p>
-            </div>
 
             {/* Completá tu combo (sugiere bebida si llevás comida sin bebida) */}
             <ComboSugerido />
