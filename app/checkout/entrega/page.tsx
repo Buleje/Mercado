@@ -975,28 +975,14 @@ export default function CheckoutEntregaPage() {
                 "disabled:cursor-wait",
                 geoSuccess
                   ? "border-2 border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white"
-                  : "border-2 border-[var(--accent)]/40 bg-linear-to-br from-[var(--accent-soft)] via-[var(--accent-soft)] to-[var(--surface-raised)] text-[var(--accent)] hover:border-[var(--accent)] hover:shadow-[0_12px_36px_-12px_var(--accent)] hover:-translate-y-0.5",
+                  : "border border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--accent)] hover:border-[var(--accent)]",
               )}
             >
-              {/* Shimmer animado (se mueve horizontalmente) */}
-              {!geoLoading && !geoSuccess && (
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-linear-to-r from-transparent via-white/40 to-transparent animate-[geoShimmer_2.2s_linear_infinite]"
-                />
-              )}
-
-              {/* Icono con halo pulse */}
+              {/* Icono */}
               <span className="relative flex-shrink-0">
-                {!geoLoading && !geoSuccess && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 rounded-full bg-[var(--accent)]/40 animate-ping"
-                  />
-                )}
                 <span
                   className={cn(
-                    "relative inline-flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-colors",
+                    "relative inline-flex h-14 w-14 items-center justify-center rounded-full shadow-sm transition-colors",
                     geoSuccess
                       ? "bg-white text-[var(--accent)]"
                       : "bg-[var(--accent-600,var(--accent))] text-white",

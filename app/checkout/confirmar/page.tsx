@@ -473,17 +473,8 @@ export default function CheckoutConfirmarPage() {
 
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-8 sm:p-12 text-center space-y-6">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-20 -right-20 h-[280px] w-[280px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-20 -left-20 h-[240px] w-[240px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
-          />
-
-          <div className="relative flex justify-center">
+        <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-10 text-center space-y-6">
+          <div className="flex justify-center">
             {allOk ? (
               <div className="text-[var(--accent)]">
                 <PaicheMascot size={140} animated />
@@ -508,7 +499,7 @@ export default function CheckoutConfirmarPage() {
                 <>
                   ¡Listo,
                   <br />
-                  <span className="italic font-serif text-[var(--accent)]">
+                  <span className="text-[var(--accent)]">
                     gracias por comprar!
                   </span>
                 </>
@@ -516,13 +507,13 @@ export default function CheckoutConfirmarPage() {
                 <>
                   No pudimos enviar
                   <br />
-                  <span className="italic font-serif text-[var(--data-error-500)]">tu pedido.</span>
+                  <span className="text-[var(--data-error-500)]">tu pedido.</span>
                 </>
               ) : (
                 <>
                   Pedido
                   <br />
-                  <span className="italic font-serif text-[var(--accent)]">a medias.</span>
+                  <span className="text-[var(--accent)]">a medias.</span>
                 </>
               )}
             </h1>
@@ -613,7 +604,7 @@ export default function CheckoutConfirmarPage() {
               <button
                 type="button"
                 onClick={() => setResults([])}
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 h-11 text-[length:var(--ts-sm)] font-bold text-white hover:bg-[var(--accent)]/90 hover:gap-3 transition-all shadow-[0_6px_20px_-10px_var(--accent)]"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 h-11 text-[length:var(--ts-sm)] font-bold text-white hover:opacity-90 transition-opacity"
               >
                 Reintentar
                 <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
