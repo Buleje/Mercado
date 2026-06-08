@@ -16,7 +16,7 @@ import { logger } from "@/lib/logger";
 import TenantPageTracker from "./_components/TenantPageTracker";
 import VendorTrustBadges from "@/components/store/VendorTrustBadges";
 import StickyCouponBanner from "@/components/store/StickyCouponBanner";
-import TenantTopNav from "@/components/store/tenant/TenantTopNav";
+import StorefrontNavbar from "@/components/store/StorefrontNavbar";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES } from "@/lib/store-design-tokens";
 
@@ -246,12 +246,17 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Beacon tracker (client component) */}
       <TenantPageTracker tenantSlug={tenant.slug} />
 
-      {/* Nav compartido con /tienda — sticky con tabs Inicio · Catalogo */}
-      <TenantTopNav
-        slug={tenant.slug}
-        displayName={displayName}
-        logoUrl={tenant.logoUrl}
-        primaryColor={designTokens.primaryColor || primary}
+      {/* Nav ÚNICO de la tienda — el MISMO StorefrontNavbar del catálogo
+          (`/t/<slug>/tienda`). Tenant-aware: Inicio → esta landing, Catálogo →
+          el catálogo, buscador → catálogo. El carrito es un enlace al catálogo
+          (esta landing está fuera del chrome `(store)`, sin CartProvider). */}
+      <StorefrontNavbar
+        name={displayName}
+        logo={tenant.logoUrl}
+        homeHref={`/t/${tenant.slug}`}
+        catalogHref={`/t/${tenant.slug}/tienda`}
+        searchHref={`/t/${tenant.slug}/tienda#productos`}
+        cartHref={`/t/${tenant.slug}/tienda`}
       />
 
       {/* ═══════════════ HERO EDITORIAL v3 — mas trabajado ═══════════════
@@ -259,7 +264,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           izq y CTA cluster. Pucallpa-vibe sin caer en cliche.
       */}
       <section
-        className="relative overflow-hidden -mt-14 pt-14"
+        className="relative overflow-hidden"
         style={
           heroImage
             ? undefined
