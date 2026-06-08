@@ -139,6 +139,10 @@ interface SearchAutocompleteInputProps {
   className?: string;
   /** Autofocus al montar — util en la pagina /buscar. */
   autoFocus?: boolean;
+  /** Tamaño visual: "md" (default, navbar/buscar) o "lg" (hero protagonista). */
+  size?: "md" | "lg";
+  /** Muestra un botón "Buscar" visible dentro de la barra (estilo hero). */
+  showSubmitButton?: boolean;
 }
 
 export default function SearchAutocompleteInput({
@@ -146,7 +150,10 @@ export default function SearchAutocompleteInput({
   placeholder = "Buscar productos, tiendas, categorias...",
   className = "",
   autoFocus = false,
+  size = "md",
+  showSubmitButton = false,
 }: SearchAutocompleteInputProps) {
+  const isLg = size === "lg";
   const router = useRouter();
   const instanceId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -293,7 +300,9 @@ export default function SearchAutocompleteInput({
       {/* Input */}
       <div className="relative">
         <Search
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
+          className={`absolute top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] pointer-events-none ${
+            isLg ? "left-4 sm:left-5 h-5 w-5" : "left-3.5 h-4 w-4"
+          }`}
           aria-hidden="true"
         />
         <input
@@ -317,7 +326,13 @@ export default function SearchAutocompleteInput({
             if (suggestions.length > 0) setOpen(true);
           }}
           placeholder={placeholder}
-          className="w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all"
+          className={
+            isLg
+              ? `w-full h-14 sm:h-16 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm pl-12 sm:pl-14 ${
+                  showSubmitButton ? "pr-28 sm:pr-32" : "pr-12"
+                } text-base sm:text-lg text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all`
+              : "w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all"
+          }
         />
 
         {/* Clear button */}
@@ -330,10 +345,28 @@ export default function SearchAutocompleteInput({
               setOpen(false);
               inputRef.current?.focus();
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className={`absolute top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors ${
+              isLg
+                ? showSubmitButton
+                  ? "right-24 sm:right-28"
+                  : "right-4"
+                : "right-3"
+            }`}
             aria-label="Limpiar busqueda"
           >
             <X className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+          </button>
+        )}
+
+        {/* Botón Buscar visible (estilo hero) */}
+        {isLg && showSubmitButton && (
+          <button
+            type="submit"
+            aria-label="Buscar"
+            className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center gap-2 h-10 sm:h-12 rounded-xl px-4 sm:px-6 font-extrabold text-white text-base bg-[var(--accent)] transition-opacity hover:opacity-90 active:scale-[0.98]"
+          >
+            <Search className="h-5 w-5 sm:hidden" strokeWidth={2.5} aria-hidden />
+            <span className="hidden sm:inline">Buscar</span>
           </button>
         )}
       </div>
@@ -341,7 +374,13 @@ export default function SearchAutocompleteInput({
       {/* Loading indicator */}
       {loading && (
         <div
-          className="absolute right-10 top-1/2 -translate-y-1/2 h-3.5 w-3.5"
+          className={`absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 ${
+            isLg
+              ? showSubmitButton
+                ? "right-28 sm:right-36"
+                : "right-12"
+              : "right-10"
+          }`}
           aria-hidden="true"
         >
           <span className="block h-full w-full rounded-full border-2 border-[var(--rule-base)] border-t-[var(--accent)] animate-spin" />
