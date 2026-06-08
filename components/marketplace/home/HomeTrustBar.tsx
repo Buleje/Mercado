@@ -41,7 +41,7 @@ export default function HomeTrustBar() {
   return (
     <section
       aria-label="Por qué comprar en Buleje"
-      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8"
+      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6"
     >
       <ul className="grid grid-cols-2 lg:grid-cols-4 gap-1 sm:gap-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2 sm:p-3">
         {TRUST.map(({ Icon, title, desc, href }) => {

@@ -99,7 +99,7 @@ export default function HomePersonalStrip() {
   return (
     <section
       aria-label="Tu actividad en Buleje"
-      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10"
+      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-7"
     >
       {/* Saludo + retomar carrito */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">

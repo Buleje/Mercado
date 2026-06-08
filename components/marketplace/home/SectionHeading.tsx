@@ -34,7 +34,7 @@ export default function SectionHeading({
   headingId?: string;
 }) {
   return (
-    <div className="mb-5 sm:mb-6 flex items-end justify-between gap-4">
+    <div className="mb-3 sm:mb-4 flex items-end justify-between gap-4">
       <div className="min-w-0">
         {eyebrow && (
           <p className="mb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">

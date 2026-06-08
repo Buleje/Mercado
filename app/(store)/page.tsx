@@ -492,7 +492,7 @@ async function RappiStyleHero() {
         className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-[var(--rule-soft)]"
       />
 
-      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-8 sm:pb-12 text-center">
+      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-6 sm:pb-8 text-center">
         {/* Eyebrow badge — teal de marca sobre fondo claro */}
         <p className="inline-flex items-center gap-2 mb-3 sm:mb-4 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
           <span
@@ -621,7 +621,7 @@ async function CategoriesGrid() {
   return (
     <section
       aria-label="Categorías"
-      className="bg-[var(--surface-canvas)] py-8 sm:py-10"
+      className="bg-[var(--surface-canvas)] py-5 sm:py-7"
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
@@ -883,7 +883,7 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
       }`}
     >
       {/* Banner de portada — imagen real, o fondo plano (de-neon Brandon 2026-06-08). */}
-      <div className="relative h-32 sm:h-36 overflow-hidden bg-[var(--surface-sunken)]">
+      <div className="relative h-24 sm:h-28 overflow-hidden bg-[var(--surface-sunken)]">
         {s.banner ? (
           <Image
             src={s.banner}
@@ -914,7 +914,7 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
           </>
         )}
         {/* Velo inferior para que el logo/nombre respiren sobre el banner */}
-        <div aria-hidden className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-black/35 to-transparent" />
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-black/35 to-transparent" />
         {/* Rating badge (si tiene reseñas reales) */}
         {s.rating > 0 && (
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[var(--surface-canvas)]/95 px-2.5 py-1 text-xs font-black tabular-nums text-[var(--text-primary)] shadow ring-1 ring-[var(--rule-soft)]">
@@ -962,38 +962,38 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
         </div>
       </div>
 
-      {/* Preview del catálogo — "lo que ofrecen" */}
-      <div className="flex flex-1 flex-col px-4 sm:px-5 pt-3.5 pb-4">
-        {s.preview.length > 0 ? (
-          <>
-            <p className="mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Algunos de sus productos
-            </p>
-            <div className="mb-4 grid grid-cols-4 gap-2">
-              {s.preview.map((p, i) => (
-                <div
-                  key={p.id}
-                  className="relative aspect-square overflow-hidden rounded-xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]"
-                >
-                  <Image
-                    src={p.image}
-                    alt={p.name}
-                    fill
-                    sizes="80px"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  {i === s.preview.length - 1 && extraProducts > 0 && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-black text-white">
-                      +{extraProducts}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-tertiary)]">
-            <Bike className="h-4 w-4" strokeWidth={2} aria-hidden />
+      {/* Cuerpo: preview (si hay) arriba + footer delivery + CTA anclados abajo.
+          Las 3 cards comparten el MISMO baseline (delivery + Ver tienda) → fila
+          pareja; los thumbs son el extra de quien los tiene. De-neon Brandon 2026-06-08. */}
+      <div className="flex flex-1 flex-col px-4 sm:px-5 pt-3 pb-4">
+        {s.preview.length > 0 && (
+          <div className="mb-3 grid grid-cols-4 gap-2">
+            {s.preview.map((p, i) => (
+              <div
+                key={p.id}
+                className="relative aspect-square overflow-hidden rounded-lg bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]"
+              >
+                <Image
+                  src={p.image}
+                  alt={p.name}
+                  fill
+                  sizes="80px"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                {i === s.preview.length - 1 && extraProducts > 0 && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-black text-white">
+                    +{extraProducts}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Footer anclado abajo — delivery + CTA. Mismo baseline en las 3 cards. */}
+        <div className="mt-auto">
+          <div className="flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5 text-[11px] sm:text-xs font-bold text-[var(--text-tertiary)]">
+            <Bike className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
             <span>Delivery · 25–35 min</span>
             {s.productCount > 0 && (
               <>
@@ -1002,17 +1002,16 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
               </>
             )}
           </div>
-        )}
-
-        {/* CTA — stretched link: toda la card es clickeable, 1 solo enlace (a11y) */}
-        <Link
-          href={`/marketplace/${s.slug}`}
-          aria-label={`Ver tienda ${s.name}`}
-          className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-sm font-extrabold text-white shadow-md shadow-[var(--accent)]/25 transition-all after:absolute after:inset-0 after:content-[''] hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-        >
-          Ver tienda
-          <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-        </Link>
+          {/* CTA — stretched link: toda la card es clickeable, 1 solo enlace (a11y) */}
+          <Link
+            href={`/marketplace/${s.slug}`}
+            aria-label={`Ver tienda ${s.name}`}
+            className="mt-3 inline-flex w-full h-10 items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-sm font-extrabold text-white transition-opacity after:absolute after:inset-0 after:content-[''] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          >
+            Ver tienda
+            <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+          </Link>
+        </div>
       </div>
     </article>
   );
@@ -1031,7 +1030,7 @@ async function TopStoresSection() {
     <>
       <section
         aria-label="Tiendas destacadas"
-        className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-8 sm:py-10"
+        className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-5 sm:py-7"
       >
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeading
@@ -1066,7 +1065,7 @@ async function TopStoresSection() {
       {recommended.length > 0 && (
         <section
           aria-label="Recomendadas para vos"
-          className="py-8 sm:py-10"
+          className="py-5 sm:py-7"
         >
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeading
@@ -1146,7 +1145,7 @@ function HomeFaqSection() {
     <section
       id="preguntas-frecuentes"
       aria-labelledby="faq-heading"
-      className="py-10 sm:py-14 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
+      className="py-7 sm:py-9 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
@@ -1250,7 +1249,7 @@ export default async function Home() {
       <HomeTrustBar />
 
       {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas */}
-      <Suspense fallback={<SectionSkeleton minH="min-h-[640px]" />}>
+      <Suspense fallback={<SectionSkeleton minH="min-h-[340px]" />}>
         <Reveal>
           <CategoriesGrid />
         </Reveal>
@@ -1263,7 +1262,7 @@ export default async function Home() {
       </Reveal>
 
       {/* 3. Tiendas destacadas — cards con rating + categoría + zona */}
-      <Suspense fallback={<SectionSkeleton minH="min-h-[760px]" />}>
+      <Suspense fallback={<SectionSkeleton minH="min-h-[520px]" />}>
         <Reveal>
           <TopStoresSection />
         </Reveal>
@@ -1282,7 +1281,7 @@ export default async function Home() {
         <section
           id="catalogo"
           aria-label="Catálogo de productos"
-          className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 scroll-mt-24"
+          className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 scroll-mt-24"
         >
           <SectionHeading eyebrow="Catálogo" title="Todos los productos" />
           <HomeCatalog />
