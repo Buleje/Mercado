@@ -1,76 +1,95 @@
 "use client";
 
 /**
- * HeroCtas — botones de acción del hero de la home (B2C).
+ * HeroCtas — buscador protagonista + atajos del hero de la home (B2C).
  *
- * Brandon 2026-05-30:
- *  - "Ver todas las tiendas" es ahora la acción PRIMARIA (botón grande relleno),
- *    porque el buscador salió del hero — el listado de tiendas es el destino.
- *  - "Ofertas del día" SOLO aparece fuera del "modo tienda" (tiendas-only, el
- *    default del marketplace). Mientras el modo no resuelve (SSR/hidratación) se
- *    trata como tiendas-only → no parpadea apareciendo y desapareciendo.
+ * Brandon 2026-06-08: la home arranca SHOP-FIRST (estilo Mercado Libre/Temu).
+ * El BUSCADOR es la acción #1 del hero (antes solo vivía en el navbar). Debajo,
+ * dos atajos secundarios: "Ver todas las tiendas" y "Ofertas del día".
+ *  - "Ofertas del día" SOLO fuera del "modo tienda" (tiendas-only). Mientras el
+ *    modo no resuelve (SSR/hidratación) se trata como tiendas-only → no parpadea.
  */
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Store, ArrowUpRight, Sparkles } from "@buleje/design-system/icons";
+import { Store, ArrowUpRight, Sparkles, Search } from "@buleje/design-system/icons";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 
 export default function HeroCtas() {
+  const router = useRouter();
+  const [q, setQ] = useState("");
   const mode = useMarketplaceNavMode();
   const showOfertas = mode !== null && mode !== "tiendas-only";
 
+  const onSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const term = q.trim();
+    router.push(term ? `/marketplace/buscar?q=${encodeURIComponent(term)}` : "/marketplace/buscar");
+  };
+
   return (
-    <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-center gap-3 sm:flex-wrap">
-      {/* CTA primaria — más impactante (Brandon 2026-06-01): gradient + glow
-          pulsante + barrido de luz continuo + flecha en movimiento. En MOBILE
-          es full-width para máximo énfasis (es la acción #1: navegar tiendas).
-          Respeta prefers-reduced-motion (motion-reduce:* corta animaciones). */}
-      <Link
-        href="/tiendas"
-        aria-label="Ver todas las tiendas"
-        className="group relative inline-flex w-full sm:w-auto justify-center items-center gap-2.5 overflow-hidden rounded-full px-8 sm:px-10 h-[54px] sm:h-[60px] text-base sm:text-lg font-black text-white transition-transform duration-300 hover:scale-[1.04] active:scale-[0.97] animate-[bjGlow_2.6s_ease-in-out_infinite] motion-reduce:animate-none"
-        style={{
-          background:
-            "linear-gradient(115deg, var(--accent) 0%, var(--accent-dark, color-mix(in oklab, var(--accent) 78%, black)) 100%)",
-        }}
+    <>
+      {/* ── Buscador protagonista (acción #1 de la home) ── */}
+      <form
+        role="search"
+        aria-label="Buscar en Buleje"
+        onSubmit={onSearch}
+        className="mt-7 sm:mt-9 mx-auto w-full max-w-2xl"
       >
-        {/* Barrido de luz continuo (movimiento) */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 animate-[bjShine_3.4s_ease-in-out_infinite] motion-reduce:hidden"
-          style={{
-            background:
-              "linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%)",
-            backgroundSize: "250% 100%",
-          }}
-        />
-        <Store className="relative h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} aria-hidden />
-        <span className="relative">Ver todas las tiendas</span>
-        <ArrowUpRight
-          className="relative h-5 w-5 sm:h-6 sm:w-6 transition-transform animate-[bjArrow_1.5s_ease-in-out_infinite] group-hover:animate-none group-hover:translate-x-1 group-hover:-translate-y-1 motion-reduce:animate-none"
-          strokeWidth={2.75}
-          aria-hidden
-        />
-      </Link>
+        <div className="flex items-stretch gap-1.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm transition-colors focus-within:border-[var(--accent)]">
+          <span className="pl-4 sm:pl-5 flex items-center text-[var(--text-tertiary)]">
+            <Search className="h-5 w-5" strokeWidth={2} aria-hidden />
+          </span>
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Busca productos, tiendas o categorías…"
+            aria-label="Buscar productos, tiendas o categorías"
+            className="flex-1 min-w-0 bg-transparent border-0 outline-none px-2 py-4 sm:py-5 text-base sm:text-lg text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+          />
+          <button
+            type="submit"
+            aria-label="Buscar"
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl m-1.5 px-4 sm:px-7 font-black text-white text-base transition-transform hover:scale-[1.03] active:scale-95"
+            style={{
+              background:
+                "linear-gradient(115deg, var(--accent) 0%, var(--accent-dark, color-mix(in oklab, var(--accent) 78%, black)) 100%)",
+            }}
+          >
+            <Search className="h-5 w-5 sm:hidden" strokeWidth={2.5} aria-hidden />
+            <span className="hidden sm:inline">Buscar</span>
+          </button>
+        </div>
+      </form>
 
-      {showOfertas && (
+      {/* ── Atajos secundarios (el buscador es la acción #1) ── */}
+      <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-center gap-3 sm:flex-wrap">
         <Link
-          href="/marketplace/ofertas"
-          className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 h-[54px] sm:h-[60px] text-base font-extrabold text-[var(--text-primary)] shadow-sm transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
+          href="/tiendas"
+          aria-label="Ver todas las tiendas"
+          className="group inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 h-[52px] text-base font-extrabold text-[var(--text-primary)] shadow-sm transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
         >
-          <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          Ofertas del día
+          <Store className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+          Ver todas las tiendas
+          <ArrowUpRight
+            className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            strokeWidth={2.75}
+            aria-hidden
+          />
         </Link>
-      )}
 
-      <style>{`
-        @keyframes bjShine { 0% { background-position: 160% 0; } 55%, 100% { background-position: -60% 0; } }
-        @keyframes bjArrow { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2px, -2px); } }
-        @keyframes bjGlow {
-          0%, 100% { box-shadow: 0 10px 28px -10px color-mix(in oklab, var(--accent) 50%, transparent); }
-          50%      { box-shadow: 0 16px 40px -8px color-mix(in oklab, var(--accent) 72%, transparent); }
-        }
-      `}</style>
-    </div>
+        {showOfertas && (
+          <Link
+            href="/marketplace/ofertas"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 h-[52px] text-base font-extrabold text-[var(--text-primary)] shadow-sm transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
+          >
+            <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Ofertas del día
+          </Link>
+        )}
+      </div>
+    </>
   );
 }

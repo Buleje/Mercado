@@ -15,12 +15,10 @@ import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 // 2026-05-27 optimización: removidos LandingHero / ReviewsCarousel /
 // PopularCategoriesTiles / StickyMobileCTA — eran imports muertos (la home
 // B2C v2 ya no los renderiza). Menos código que parsear + 0 lint noise.
-// Next 16 Server Components: NO se permite `ssr: false`; dynamic igual aporta
-// code-splitting del chunk y paraleliza el compile.
-const ComoFuncionaSection = dynamic(
-  () => import("@/components/landing/sections/ComoFuncionaSection"),
-  { loading: () => <div className="min-h-[400px] bg-[var(--surface-raised)]" aria-hidden /> },
-);
+// Brandon 2026-06-08: ComoFuncionaSection + JoinUsSection (contenido B2B
+// "cómo funciona / trabajá con nosotros") REMOVIDOS de la home B2C — la home
+// arranca SHOP-FIRST (estilo Mercado Libre/Temu). El contenido para vendedores
+// vive en /negocios y /vender (donde va ese público), no en la home del comprador.
 // Brandon 2026-05-30 (conversión A1): rail de recompra para el cliente.
 //  - QuickReorder: "Volvé a pedir" tu último pedido (client, auth-gated, se
 //    auto-oculta si no hay pedido previo). Recompra en 1 toque.
@@ -35,7 +33,6 @@ const MarketplaceTopToday = dynamic(
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
-import { JoinUsSection } from "@/components/marketing/JoinUsSection";
 import {
   Store,
   ArrowUpRight,
@@ -508,9 +505,9 @@ async function RappiStyleHero() {
         className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-[var(--rule-soft)]"
       />
 
-      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-24 pb-10 sm:pb-20 text-center">
+      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-8 sm:pb-12 text-center">
         {/* Eyebrow badge — teal de marca sobre fondo claro */}
-        <p className="inline-flex items-center gap-2 mb-4 sm:mb-6 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+        <p className="inline-flex items-center gap-2 mb-3 sm:mb-4 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
           <span
             aria-hidden
             className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-[var(--accent)]/40"
@@ -528,7 +525,7 @@ async function RappiStyleHero() {
 
         {/* H1 híbrido: gancho emocional + keyword geo (la ciudad objetivo)
             dentro del propio H1 (Google pesa mucho el H1 de la home). */}
-        <h1 className="text-[clamp(2.25rem,8.5vw,5.5rem)] font-extrabold leading-[1.0] tracking-[-0.035em] text-[var(--text-primary)] max-w-4xl mx-auto">
+        <h1 className="text-[clamp(1.875rem,5vw,3.25rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-[var(--text-primary)] max-w-3xl mx-auto">
           ¿Qué se te{" "}
           <span
             className="italic font-serif"
@@ -541,7 +538,7 @@ async function RappiStyleHero() {
 
         {/* Subtítulo — text-base mín en mobile (regla bsm-typography: body
             nunca <16px). Antes text-sm = 14px. audit home. */}
-        <p className="mt-4 sm:mt-6 max-w-2xl mx-auto text-base sm:text-xl text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
+        <p className="mt-3 sm:mt-4 max-w-2xl mx-auto text-base sm:text-lg text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
           <span className="sm:hidden">
             El marketplace de {BRAND_GEO.city} — delivery rápido, Yape o efectivo.
           </span>
@@ -554,7 +551,7 @@ async function RappiStyleHero() {
 
         {/* Stats reales + trust pill Yape */}
         {(storeCount > 0 || productCount > 0) && (
-          <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
+          <div className="mt-4 flex items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
             {storeCount > 0 && (
               <span className="inline-flex items-center gap-1.5">
                 <span className="relative inline-flex h-1.5 w-1.5">
@@ -656,7 +653,7 @@ async function CategoriesGrid() {
               Categorías
             </p>
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
-              Explorá por{" "}
+              Explora por{" "}
               <span className="italic font-serif text-[var(--accent)]">categoría</span>
             </h2>
             <p className="mt-2 sm:mt-3 max-w-md text-base text-[var(--text-secondary)] leading-relaxed">
@@ -1351,22 +1348,12 @@ export default async function Home() {
         <MarketplaceTopToday />
       </Reveal>
 
-      {/* 4. Cómo funciona — 4 pasos + stats + CTA */}
-      <Suspense fallback={<SectionSkeleton minH="min-h-[620px]" />}>
-        <Reveal>
-          <ComoFuncionaSection />
-        </Reveal>
-      </Suspense>
-
-      {/* 4.5 Preguntas frecuentes — contenido VISIBLE que matchea el FAQPage
-          schema (política Google) + copy local indexable. */}
+      {/* 4. Preguntas frecuentes — contenido VISIBLE que matchea el FAQPage
+          schema (política Google) + copy local indexable. Es ayuda al COMPRADOR
+          (cómo pedir/pagar), por eso se queda; el "cómo funciona" para vendedores
+          se movió a /negocios. */}
       <Reveal>
         <HomeFaqSection />
-      </Reveal>
-
-      {/* 5. Trabajá con nosotros — paleta del proyecto */}
-      <Reveal>
-        <JoinUsSection />
       </Reveal>
     </main>
   );
