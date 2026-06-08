@@ -620,7 +620,7 @@ async function CategoriesGrid() {
   return (
     <section
       aria-label="Categorías"
-      className="bg-[var(--surface-canvas)] py-12 sm:py-20"
+      className="bg-[var(--surface-canvas)] py-8 sm:py-10"
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
