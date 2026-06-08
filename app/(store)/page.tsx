@@ -31,11 +31,16 @@ const MarketplaceTopToday = dynamic(
 const HomeCatalog = dynamic(
   () => import("@/components/marketplace/home/HomeCatalog"),
 );
+// "Nuevos en {ciudad}" — descubrimiento con productos recién agregados (real data).
+const HomeNewArrivals = dynamic(
+  () => import("@/components/marketplace/home/HomeNewArrivals"),
+);
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HomePersonalStrip from "@/components/marketplace/home/HomePersonalStrip";
+import HomeTrustBar from "@/components/marketplace/home/HomeTrustBar";
 import {
   Store,
   ArrowUpRight,
@@ -1234,12 +1239,23 @@ export default async function Home() {
           Self-hide si es anónimo o no hay nada que mostrar. Brandon 2026-06-08. */}
       <HomePersonalStrip />
 
+      {/* 1.6 Confianza para la primera compra: pago seguro, entrega, compra
+          protegida (Libro de Reclamaciones), soporte. Honesto, sin prueba
+          social falsa (0 pedidos en lanzamiento). Brandon 2026-06-08. */}
+      <HomeTrustBar />
+
       {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas */}
       <Suspense fallback={<SectionSkeleton minH="min-h-[640px]" />}>
         <Reveal>
           <CategoriesGrid />
         </Reveal>
       </Suspense>
+
+      {/* 2.5 Nuevos en {ciudad} — descubrimiento: productos recién agregados al
+          marketplace (catalog?sort=newest). Carrusel, self-hide si vacío. */}
+      <Reveal>
+        <HomeNewArrivals />
+      </Reveal>
 
       {/* 3. Tiendas destacadas — cards con rating + categoría + zona */}
       <Suspense fallback={<SectionSkeleton minH="min-h-[760px]" />}>
