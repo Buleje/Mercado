@@ -40,7 +40,13 @@ export function applySecurityHeaders(
 
   response.headers.set("Content-Security-Policy", buildCSP(pathname, nonce));
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
+  // X-Frame-Options se alinea con CSP `frame-ancestors` (buildCSP): admin nunca
+  // embebible (DENY); el resto SAMEORIGIN para habilitar el preview en vivo del
+  // editor (iframe same-origin del storefront). Algunos browsers aplican XFO
+  // aunque haya frame-ancestors, así que deben coincidir.
+  const isAdminRoute =
+    pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
+  response.headers.set("X-Frame-Options", isAdminRoute ? "DENY" : "SAMEORIGIN");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   // geolocation=(self) habilita el botón "Usar mi ubicación" en
   // /marketplace/registrar — solo same-origin, los iframes externos no

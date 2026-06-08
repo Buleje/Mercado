@@ -190,9 +190,13 @@ export function __resetEdgeLimiterForTests(): void {
 export function buildCSP(pathname: string, nonce?: string): string {
   const isAdminRoute =
     pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
-  // White-label storefronts (/t/[slug]/*) nunca deben embeberse en iframes —
-  // ni siquiera same-origin — para prevenir clickjacking. 'none' > 'self' aquí.
-  const isStorefrontRoute = /^\/t\/[^/]+/.test(pathname);
+  // frame-ancestors:
+  //  - admin/superadmin → 'none' (jamás embebibles, ni same-origin).
+  //  - resto (incl. storefronts /t/[slug]/*) → 'self': permite el preview en
+  //    vivo del editor (StoreCustomizer embebe /t/<slug>?preview=true en un
+  //    iframe SAME-ORIGIN). 'self' NO es vector de clickjacking — un atacante
+  //    no puede embeber la tienda en SU dominio; solo bloquea cross-origin.
+  //    (Brandon 2026-06-08: 'none' rompía el editor estilo WordPress.)
   const isDev = process.env.NODE_ENV !== "production";
 
   /* En dev (Next.js/Turbopack HMR): forzamos 'unsafe-inline' aunque haya nonce.
@@ -223,7 +227,7 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "object-src":                "'none'",
     "base-uri":                  "'self'",
     "form-action":               "'self'",
-    "frame-ancestors":           isAdminRoute || isStorefrontRoute ? "'none'" : "'self'",
+    "frame-ancestors":           isAdminRoute ? "'none'" : "'self'",
     "upgrade-insecure-requests": "",
     // SECURITY 2026-05-12 (P3-11 audit defensivo): report-uri envia violaciones
     // CSP al endpoint /api/csp-report. Útil para detectar:
