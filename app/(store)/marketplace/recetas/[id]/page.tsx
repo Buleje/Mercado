@@ -9,7 +9,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import RecetaDetalleClient from "@/components/store/RecetaDetalleClient";
-import Footer from "@/components/Footer";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -214,7 +213,7 @@ export default async function RecetaDetallePage({ params }: PageProps) {
         {receta.nombre} — Receta peruana paso a paso | Buleje
       </h1>
       <RecetaDetalleClient recetaId={id} />
-      <Footer />
+      {/* Footer ÚNICO lo provee el (store) layout — Brandon 2026-06-08 (sin doble). */}
     </>
   );
 }

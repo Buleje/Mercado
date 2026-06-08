@@ -119,9 +119,9 @@ export default function MarketplaceTopToday() {
     <section
       id="top-today"
       aria-label="Lo más pedido hoy"
-      className="hidden md:block bg-[var(--surface-canvas)] py-12 sm:py-20"
+      className="hidden md:block bg-[var(--surface-canvas)] py-8 sm:py-10"
     >
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-3 mb-6 sm:mb-10">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">

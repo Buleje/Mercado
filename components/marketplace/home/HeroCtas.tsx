@@ -52,11 +52,7 @@ export default function HeroCtas() {
           <button
             type="submit"
             aria-label="Buscar"
-            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl m-1.5 px-4 sm:px-7 font-black text-white text-base transition-transform hover:scale-[1.03] active:scale-95"
-            style={{
-              background:
-                "linear-gradient(115deg, var(--accent) 0%, var(--accent-dark, color-mix(in oklab, var(--accent) 78%, black)) 100%)",
-            }}
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl m-1.5 px-4 sm:px-7 font-extrabold text-white text-base bg-[var(--accent)] transition-opacity hover:opacity-90 active:scale-[0.98]"
           >
             <Search className="h-5 w-5 sm:hidden" strokeWidth={2.5} aria-hidden />
             <span className="hidden sm:inline">Buscar</span>

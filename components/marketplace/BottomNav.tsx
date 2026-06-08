@@ -38,7 +38,7 @@ const fmtPEN = (n: number) =>
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type TabId = "inicio" | "mercado" | "chat" | "cuenta";
+type TabId = "inicio" | "tiendas" | "chat" | "cuenta";
 
 interface Tab {
   id: TabId;
@@ -53,7 +53,7 @@ interface Tab {
 // top-nav + la franja de pago de arriba. Quedan 4 tabs.
 const TABS: Tab[] = [
   { id: "inicio", label: "Inicio", Icon: Home },
-  { id: "mercado", label: "Mercado", Icon: StoreIcon },
+  { id: "tiendas", label: "Tiendas", Icon: StoreIcon },
   { id: "chat", label: "Chat", Icon: MessageCircle },
   { id: "cuenta", label: "Cuenta", Icon: User },
 ];
@@ -86,10 +86,10 @@ export default function BottomNav() {
     if (pathname?.startsWith("/marketplace/mi-cuenta")) return "cuenta";
     if (pathname === "/") return "inicio";
     if (
-      pathname?.startsWith("/marketplace") ||
-      pathname?.startsWith("/tiendas")
+      pathname?.startsWith("/tiendas") ||
+      pathname?.startsWith("/marketplace")
     )
-      return "mercado";
+      return "tiendas";
     return "inicio";
   }, [pathname]);
 
@@ -107,8 +107,8 @@ export default function BottomNav() {
         case "inicio":
           router.push("/");
           break;
-        case "mercado":
-          router.push("/marketplace");
+        case "tiendas":
+          router.push("/tiendas");
           break;
         case "chat":
           // Brandon 2026-06-07: abre la BANDEJA del Messenger (chat con las

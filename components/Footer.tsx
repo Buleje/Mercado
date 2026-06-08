@@ -39,8 +39,12 @@ import { LEGAL, LEGAL_COMPLETO } from "@/lib/legal";
 
 // ── Columna 1: Marketplace ──────────────────────────────────────────────
 const marketplaceLinks = [
-  { href: "/marketplace", label: "Explorar marketplace" },
-  { href: "/marketplace/explorar", label: "Catálogo completo" },
+  // Brandon 2026-06-08: "Explorar marketplace" (/marketplace) + "Catálogo
+  // completo" (/marketplace/explorar) REMOVIDOS — ambos redirigían a la home
+  // (la fusión hizo / = el marketplace) y se veían como una "segunda página
+  // igual". Reemplazados por destinos reales y distintos: Inicio + Tiendas.
+  { href: "/", label: "Inicio" },
+  { href: "/tiendas", label: "Tiendas" },
   { href: "/marketplace/comparar", label: "Comparar productos" },
   { href: "/marketplace/gift-cards", label: "Gift Cards" },
   { href: "/marketplace/en-vivo", label: "Buleje en Vivo" },

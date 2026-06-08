@@ -41,7 +41,6 @@ import ConditionalShoppingChrome from "@/components/marketplace/ConditionalShopp
 import MarketplaceSideRailShell from "@/components/marketplace/MarketplaceSideRailShell";
 // Chrome propio de la TIENDA INDIVIDUAL (aislado del marketplace). Brandon 2026-06-07.
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
-import StorefrontFooter from "@/components/store/StorefrontFooter";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 import { tenantExists } from "@/lib/tenant-check";
@@ -171,7 +170,9 @@ async function StoreLayoutContent({
               <>
                 <StorefrontNavbar name={storeName} logo={storeLogo} />
                 {children}
-                <StorefrontFooter name={storeName} />
+                {/* Brandon 2026-06-08: footer ÚNICO de Buleje en TODAS las páginas
+                    (incluidas las tiendas individuales) — antes StorefrontFooter. */}
+                <Footer />
                 <Suspense fallback={null}>
                   <QuickAddDrawer />
                 </Suspense>

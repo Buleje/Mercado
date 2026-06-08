@@ -38,6 +38,9 @@ const MARKETPLACE_SECTION_SEGMENTS = new Set([
 
 function shouldShowRail(pathname: string): boolean {
   if (!pathname) return false;
+  // Brandon 2026-06-08: la HOME (/) es ahora la superficie de compra (absorbió
+  // /marketplace) → lleva el mismo rail lateral izquierdo que tenía el marketplace.
+  if (pathname === "/") return true;
   if (pathname === "/marketplace") return true;
   if (pathname.startsWith("/tiendas")) return true;
   if (pathname.startsWith("/recetas")) return true;

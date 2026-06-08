@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import RecetarioClient from "@/components/store/RecetarioClient";
 import RecetasHero from "@/components/marketplace/recetas/RecetasHero";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
-import Footer from "@/components/Footer";
 import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
 import { relatedFor } from "@/lib/navigation/feature-registry";
 
@@ -22,7 +21,7 @@ export default function RecetasPage() {
       <RecetasHero />
       <RecetarioClient />
       <RelatedFeatures features={relatedFor("recetas")} />
-      <Footer />
+      {/* Footer ÚNICO lo provee el (store) layout — Brandon 2026-06-08 (sin doble). */}
     </>
   );
 }

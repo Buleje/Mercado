@@ -7,7 +7,6 @@ import {
   Coins, Timer, TrendingDown, Trophy,
   type LucideIcon,
 } from "lucide-react";
-import Footer from "@/components/Footer";
 import BusinessMarquee from "@/components/negocios/BusinessMarquee";
 import BusinessTabsShowcase from "@/components/negocios/BusinessTabsShowcase";
 import ROICalculator from "@/components/negocios/ROICalculator";
@@ -350,8 +349,7 @@ export default function NegociosPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
+      {/* Footer ÚNICO lo provee el (store) layout — Brandon 2026-06-08 (sin doble). */}
     </>
   );
 }

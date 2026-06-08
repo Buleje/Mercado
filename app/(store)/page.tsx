@@ -480,28 +480,8 @@ async function RappiStyleHero() {
           "linear-gradient(180deg, rgba(0, 160, 160,0.07) 0%, rgba(0, 160, 160,0.02) 35%, var(--surface-canvas) 100%)",
       }}
     >
-      {/* Textura sutil: puntos teal muy transparentes (patrón delicado) */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.05]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, var(--accent) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
-
-      {/* Orbs de luz suaves: teal claro en esquinas para profundidad tenue */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-[0.18]"
-        style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 70%)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-40 -left-20 h-[400px] w-[400px] rounded-full opacity-[0.14]"
-        style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 70%)" }}
-      />
+      {/* Brandon 2026-06-08 (de-neon): textura de puntos + orbs teal REMOVIDOS
+          — el hero queda limpio (solo un velo de fondo muy suave). */}
 
       {/* Borde inferior sutil para separación de sección */}
       <div
@@ -509,7 +489,7 @@ async function RappiStyleHero() {
         className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-[var(--rule-soft)]"
       />
 
-      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-8 sm:pb-12 text-center">
+      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-8 sm:pb-12 text-center">
         {/* Eyebrow badge — teal de marca sobre fondo claro */}
         <p className="inline-flex items-center gap-2 mb-3 sm:mb-4 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
           <span
@@ -646,7 +626,7 @@ async function CategoriesGrid() {
       aria-label="Categorías"
       className="bg-[var(--surface-canvas)] py-12 sm:py-20"
     >
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6 mb-6 sm:mb-10">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
@@ -680,18 +660,11 @@ async function CategoriesGrid() {
               <Link
                 key={c.id}
                 href={hrefForCategory(c.id)}
-                className="group relative flex items-center gap-4 sm:gap-6 rounded-3xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--accent-soft)]/70 to-[var(--surface-raised)] p-5 sm:p-8 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-xl transition-all overflow-hidden min-h-[140px] sm:min-h-[180px]"
+                className="group relative flex items-center gap-4 sm:gap-6 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-7 hover:border-[var(--accent)] transition-colors overflow-hidden min-h-[120px] sm:min-h-[150px]"
               >
-                <div
-                  aria-hidden
-                  // Brandon 2026-05-20: blur orb decorativo solo en sm+ (paint
-                  // costoso en mobile). blur-2xl + color fijo accent vs el
-                  // gradiente b.tone original — más ligero y consistente.
-                  className="hidden sm:block pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[var(--accent)]/15 blur-2xl group-hover:bg-[var(--accent)]/25 transition-colors"
-                />
                 {/* Imagen superadmin si existe, sino icono Lucide como fallback */}
                 <span
-                  className="relative inline-flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-[var(--surface-canvas)] shrink-0 shadow-md ring-4 ring-[var(--accent)]/10 group-hover:scale-110 transition-transform overflow-hidden"
+                  className="relative inline-flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-[var(--surface-sunken)] shrink-0 ring-1 ring-[var(--rule-soft)] overflow-hidden"
                 >
                   {c.imageUrl ? (
                     <Image
@@ -744,10 +717,10 @@ async function CategoriesGrid() {
               <Link
                 key={c.id}
                 href={hrefForCategory(c.id)}
-                className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 hover:-translate-y-1 hover:shadow-md transition-all"
+                className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] transition-colors"
               >
                 <span
-                  className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--accent-soft)]/60 overflow-hidden ring-2 ring-[var(--accent)]/10 group-hover:ring-[var(--accent)]/30 group-hover:scale-110 transition-all shrink-0"
+                  className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] overflow-hidden ring-1 ring-[var(--rule-soft)] shrink-0"
                 >
                   {c.imageUrl ? (
                     <Image
@@ -828,21 +801,10 @@ function StoreCard({ s, priority = false }: { s: TopStore | FeaturedStorePreview
     <Link
       href={`/marketplace/${s.slug}`}
       aria-label={`${s.name}${s.featuredHome ? ", destacada" : ""}${s.rating > 0 ? `, ${s.rating.toFixed(1)} estrellas` : ""}${s.category ? `, ${s.category}` : ""}${s.zone ? `, ${s.zone}` : ""}`}
-      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--surface-raised)] hover:-translate-y-1 hover:shadow-xl transition-all duration-[var(--dur-base)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${s.featuredHome ? "border-[var(--accent)] shadow-md shadow-[var(--accent)]/15" : "border-[var(--rule-base)] hover:border-[var(--accent)]"}`}
+      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--surface-raised)] transition-colors duration-[var(--dur-base)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${s.featuredHome ? "border-[var(--accent)]" : "border-[var(--rule-base)] hover:border-[var(--accent)]"}`}
     >
-      {/* Cover de marca — gradiente teal + textura sutil de puntos */}
-      <div className="relative h-14 sm:h-16 bg-linear-to-br from-[var(--accent)]/20 via-[var(--accent)]/10 to-[var(--surface-sunken)]">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.6]"
-          style={{
-            backgroundImage: "radial-gradient(circle, var(--accent) 1px, transparent 1px)",
-            backgroundSize: "14px 14px",
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-            opacity: 0.12,
-          }}
-        />
+      {/* Cover plano (de-neon Brandon 2026-06-08) — sin gradiente teal ni textura. */}
+      <div className="relative h-14 sm:h-16 bg-[var(--surface-sunken)]">
         {/* Watermark del rubro — rellena el cover (antes vacío) con señal visual
             de la categoría, abajo-derecha para no chocar con el avatar (izq). */}
         <CoverIcon
@@ -935,14 +897,14 @@ function FeaturedStoreCard({ s, priority = false }: { s: FeaturedStorePreview; p
   const extraProducts = Math.max(0, s.productCount - s.preview.length);
   return (
     <article
-      className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border bg-[var(--surface-raised)] transition-all duration-[var(--dur-base)] hover:-translate-y-1 hover:shadow-2xl ${
+      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-[var(--surface-raised)] transition-colors duration-[var(--dur-base)] ${
         s.featuredHome
-          ? "border-[var(--accent)] shadow-lg shadow-[var(--accent)]/15"
+          ? "border-[var(--accent)]"
           : "border-[var(--rule-base)] hover:border-[var(--accent)]"
       }`}
     >
-      {/* Banner de portada — imagen real o gradiente de marca con watermark */}
-      <div className="relative h-32 sm:h-36 overflow-hidden bg-linear-to-br from-[var(--accent)]/25 via-[var(--accent)]/12 to-[var(--surface-sunken)]">
+      {/* Banner de portada — imagen real, o fondo plano (de-neon Brandon 2026-06-08). */}
+      <div className="relative h-32 sm:h-36 overflow-hidden bg-[var(--surface-sunken)]">
         {s.banner ? (
           <Image
             src={s.banner}
@@ -1092,7 +1054,7 @@ async function TopStoresSection() {
         aria-label="Tiendas destacadas"
         className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-12 sm:py-20"
       >
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-3 mb-6 sm:mb-10">
             <div>
               <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
@@ -1140,7 +1102,7 @@ async function TopStoresSection() {
           aria-label="Recomendadas para vos"
           className="py-12 sm:py-16"
         >
-          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-end justify-between gap-3 mb-5 sm:mb-7">
               <div>
                 <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
@@ -1186,7 +1148,7 @@ async function TopStoresSection() {
 function EmptyStoresPlaceholder() {
   return (
     <section className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-12 sm:py-16">
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <span
           aria-hidden
           className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-5"
@@ -1202,7 +1164,7 @@ function EmptyStoresPlaceholder() {
         </p>
         <Link
           href="/negocios"
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-6 h-12 text-sm font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:scale-[1.02] transition-all"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-6 h-12 text-sm font-extrabold hover:opacity-90 transition-opacity"
         >
           Abrir mi tienda
           <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
@@ -1233,7 +1195,7 @@ function HomeFaqSection() {
       aria-labelledby="faq-heading"
       className="py-12 sm:py-20 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
     >
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 sm:mb-12">
           <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             <HelpCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -1358,7 +1320,7 @@ export default async function Home() {
       <Reveal>
         <section
           aria-label="Catálogo de productos"
-          className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10"
+          className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10"
         >
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Catálogo

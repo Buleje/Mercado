@@ -34,7 +34,6 @@ const MarketplaceNavbar = dynamic(
   () => import("@/components/marketplace/MarketplaceNavbar"),
   { ssr: true },
 );
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 
 export function SocioDashboardClient() {
   const { isSocio, isLoading, status } = useSocioBuleje();
@@ -79,7 +78,6 @@ export function SocioDashboardClient() {
             </div>
           </div>
         </main>
-        <Footer />
       </>
     );
   }
@@ -167,7 +165,7 @@ export function SocioDashboardClient() {
 
         <RelatedFeatures features={relatedFor("socio-buleje")} />
       </main>
-      <Footer />
+      {/* Footer ÚNICO lo provee el (store) layout — Brandon 2026-06-08 (sin doble). */}
 
       <CancelarMembresiaModal
         open={cancelOpen}
