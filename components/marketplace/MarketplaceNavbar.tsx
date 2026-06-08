@@ -574,6 +574,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                  hamburguesa vive en el cluster de abajo. ── */}
             <button
               type="button"
+              // data-navrail-toggle: el click-outside del rail ignora este botón
+              // (si no, mousedown colapsaría y este onClick re-expandiría).
+              data-navrail-toggle
               onClick={() => {
                 // En /marketplace el rail lateral escucha y togglea (preventDefault
                 // → dispatchEvent devuelve false). En otras rutas nadie lo maneja

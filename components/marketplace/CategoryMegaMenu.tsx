@@ -144,12 +144,11 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
 
   return (
     <>
-      {/* Overlay transparente — captura clicks fuera (sin dim). */}
-      <div
-        aria-hidden
-        className="fixed inset-0 z-40 animate-[fadeIn_.2s_ease-out]"
-        onClick={onClose}
-      />
+      {/* Brandon 2026-06-08: overlay `fixed inset-0` REMOVIDO. Era hijo del
+          wrapper que tiene onMouseLeave y, al cubrir TODA la pantalla, el mouse
+          nunca "salía" del wrapper → el menú jamás se cerraba al alejarse (había
+          que clickear afuera). El click-fuera ya lo cubre el listener `mousedown`
+          (panelRef) de arriba, así que el overlay sobraba y rompía el hover-out. */}
 
       {/* Panel anclado al trigger. Minimalista: borde hairline + sombra mínima
           (lo justo para separar un dropdown del fondo). */}

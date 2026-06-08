@@ -76,7 +76,6 @@ import StoresSortSelector, {
 // montaban en el árbol React aunque CSS los escondiera → JS bundle + hooks
 // (fetch, geo, customer-orders) corrían en mobile sin propósito. Ahora dynamic
 // con ssr:false + gate por useMediaQuery → mobile no descarga ni ejecuta nada.
-import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
 import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
 import TiendasLocationBar from "@/components/marketplace/TiendasLocationBar";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
@@ -129,23 +128,8 @@ const SearchAutocomplete = dynamic(
   },
 );
 
-// Brandon 2026-05-18 perf P1 #6: TiendasHeroAds — banner rotante de promos
-// del superadmin. Solo visible en sm+ y cuando no hay query. Lazy con ssr:false
-// y placeholder ancho/alto fijo (no layout shift al hidratar).
-const TiendasHeroAds = dynamic(
-  () => import("@/components/marketplace/TiendasHeroAds"),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        aria-hidden
-        className="max-w-[1760px] mx-auto mt-4 px-4 sm:px-6 lg:px-8"
-      >
-        <div className="h-32 w-full rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)]" />
-      </div>
-    ),
-  },
-);
+// TiendasHeroAds (banner de promos) REMOVIDO de /tiendas — Brandon 2026-06-08
+// (opción A). El mismo banner vive en /marketplace; en el directorio estorbaba.
 
 // Brandon 2026-05-20 perf mobile: componentes que viven solo en sm+ (eran
 // `hidden sm:block` o `hidden sm:contents`). Convertidos a dynamic con
@@ -746,11 +730,6 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
     sortKey !== "relevance" ||
     subCategoryId !== null;
 
-  // ── TS-47 breadcrumb: zona como label legible ──
-  const zonaLabel = zone
-    ? zonesForFilter.find((z) => z.id === zone)?.label
-    : undefined;
-
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
 
@@ -822,15 +801,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
         </div>
       )}
 
-      {/* ── TS-47 breadcrumb visible + JSON-LD ──────────────────────────────
-           Oculto en modo `tiendas-only` — el link "Inicio" llevaría
-           fuera del contexto de tienda y confundiría al usuario. */}
-      {/* Breadcrumb oculto en mobile (Brandon 2026-06-07: /tiendas mobile minimalista). */}
-      {!isTiendasOnly && (
-        <div className="hidden md:block">
-          <TiendasBreadcrumb zonaLabel={zonaLabel} />
-        </div>
-      )}
+      {/* Breadcrumb visible "Inicio › Tiendas" REMOVIDO (Brandon 2026-06-08):
+          ruido sobre los banners. El BreadcrumbList JSON-LD lo sigue emitiendo
+          el server (tiendas/page.tsx) — SEO intacto, sin nav visible. */}
 
       {/* Brandon 2026-05-20 v6: HERO REMOVIDO de /tiendas.
           El cliente que llega aquí ya decidió comprar — no necesita más
@@ -843,15 +816,10 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
            primer-pedido + dismiss). Saca el cupón de adentro del hero rotante. */}
       {search.trim().length === 0 && <CuponBienvenidaBar />}
 
-      {/* ── Banner rotante de promos (gestionado desde superadmin) ─────
-           Aparece solo cuando NO hay búsqueda activa para no competir
-           con el hero de resultados. Brandon mayo 14 2026: oculto en
-           mobile — el cliente quiere ir directo a categorías y tiendas. */}
-      {search.trim().length === 0 && (
-        <div className="hidden sm:block">
-          <TiendasHeroAds zone={zone || null} />
-        </div>
-      )}
+      {/* Banner de promos REMOVIDO de /tiendas (Brandon 2026-06-08, opción A):
+          el mismo banner ya vive en /marketplace; acá —directorio donde el
+          cliente viene a ELEGIR tienda— solo empujaba filtros + tiendas abajo
+          del fold. Las promos se descubren en /marketplace. */}
 
       {/* ── Hero de resultados de búsqueda — solo cuando hay query activa ─
            Da prioridad visual a la tienda buscada antes de las secciones
@@ -1100,7 +1068,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
              En mobile/tablet: flujo inline idéntico al anterior (mb-4). */}
         <aside
           aria-label="Filtros de tiendas"
-          className="space-y-3 mb-3 lg:space-y-4 lg:mb-0 lg:sticky lg:top-20 lg:self-start lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-base)] lg:p-5"
+          className="space-y-3 mb-3 lg:space-y-4 lg:mb-0 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-base)] lg:p-5"
         >
           {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
               filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}

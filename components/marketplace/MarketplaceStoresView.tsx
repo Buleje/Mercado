@@ -6,10 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   MapPin,
   Star,
-  Award,
   Package,
   LocateFixed,
-  ShieldCheck,
   Plane,
   HardHat,
   Moon,
@@ -18,6 +16,7 @@ import {
   ArrowUpRight,
   ArrowRight,
   Tag,
+  Check,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -252,19 +251,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   // ── Overlay sobre el cover: rating pill + promo + vacaciones ──
   const coverOverlay = (
     <>
-      {/* Nivel y verificada se movieron a la DESCRIPCIÓN (body) como chips con
-          texto — Brandon 2026-06-07. El cover solo conserva rating + ofertas. */}
-      {store.rating > 0 && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 dark:bg-gray-950/90 backdrop-blur-sm shadow-sm text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)]">
-          <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
-          <span className="tabular-nums">{Number(store.rating).toFixed(1)}</span>
-          {store.reviewCount > 0 && (
-            <span className="text-[var(--text-tertiary)] font-semibold tabular-nums">
-              · {store.reviewCount}
-            </span>
-          )}
-        </span>
-      )}
+      {/* Brandon 2026-06-08: rating movido a la DESCRIPCIÓN (body) → el cover
+          queda limpio. Acá solo ofertas / último pedido / vacaciones. */}
       {store.activePromos != null && store.activePromos > 0 && (
         <span
           className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[length:var(--ts-2xs)] font-extrabold shadow-sm tabular-nums"
@@ -315,40 +303,32 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     deliveryLabel,
   ].filter(Boolean) as string[];
 
-  const hasTierBadge = store.displayTier === "featured" || store.displayTier === "premium";
+  // Rediseño card 2026-06-08 (Brandon): jerarquía limpia → rating · meta · trust
+  // · divisor · "Ver tienda". Verificada va inline con el NOMBRE (nameSuffix del
+  // DS); el nivel "Destacada" lo señala el anillo teal (isFeatured), sin chip.
   const footer = (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       {/* sr-only enriched aria description (rating, zone, vacación). */}
       <span className="sr-only">{ariaLabel}</span>
 
-      {/* Emblemas en la descripción: verificada + nivel — chips con texto.
-          Brandon 2026-06-07: ocultos en celular (max-md:hidden) — la card mobile
-          va más limpia, sin tanto elemento ni que predomine el "negocio". */}
-      {(store.verified || hasTierBadge) && (
-        <div className="flex flex-wrap items-center gap-1.5 max-md:hidden">
-          {store.verified && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
-              <ShieldCheck className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
-              Verificada
-            </span>
-          )}
-          {hasTierBadge && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--text-primary)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--surface-raised)]">
-              {store.displayTier === "premium" ? (
-                <Award className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
-              ) : (
-                <Star className="h-3 w-3 fill-current" aria-hidden="true" />
-              )}
-              {store.displayTier === "premium" ? "Premium" : "Destacada"}
+      {/* Rating + reseñas — inline, prominente */}
+      {store.rating > 0 && (
+        <div className="flex items-center gap-1 text-[length:var(--ts-xs)]">
+          <Star className="h-3.5 w-3.5 shrink-0 fill-current text-[var(--accent)]" aria-hidden="true" />
+          <span className="font-extrabold tabular-nums text-[var(--text-primary)]">
+            {Number(store.rating).toFixed(1)}
+          </span>
+          {store.reviewCount > 0 && (
+            <span className="font-semibold tabular-nums text-[var(--text-tertiary)]">
+              ({store.reviewCount})
             </span>
           )}
         </div>
       )}
 
-      {/* Línea meta: categoría · zona · delivery time (1 línea, truncate).
-          Brandon 2026-06-07: en celular el LOGO del negocio va acá (dentro de la
-          descripción), no sobre la portada. Desktop conserva el pin + logo en cover. */}
-      <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate">
+      {/* Meta: categoría · zona · delivery time (1 línea, truncate). En celular
+          el logo del negocio va acá; desktop usa el pin + el logo del cover. */}
+      <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] min-w-0">
         <span
           className="md:hidden h-6 w-6 shrink-0 overflow-hidden rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] inline-flex items-center justify-center"
           aria-hidden="true"
@@ -367,12 +347,10 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </span>
       </div>
 
-      {/* Línea trust chips: envío gratis y/o mín pedido (condicional) */}
+      {/* Trust chips: envío gratis y/o mín pedido (condicional) */}
       {(store.freeDelivery ||
         (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
-        <div className="flex items-center gap-1.5">
-          {/* Brandon 2026-06-07: en celular sin neón → texto negro + fondo
-              neutro (contrasta mejor, menos "neón" en la card). */}
+        <div className="flex flex-wrap items-center gap-1.5">
           {store.freeDelivery && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-primary)]">
               <Bike className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
@@ -387,11 +365,14 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </div>
       )}
 
-      {/* Acción: ver tienda — en celular negro (sin neón). Brandon 2026-06-07. */}
-      <span className="mt-0.5 inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] max-md:text-[var(--text-primary)] group-hover:gap-1.5 transition-all">
-        Ver tienda
-        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-      </span>
+      {/* Divisor + acción "Ver tienda" — el corazón/compartir (overlay absoluto
+          bottom-right) alinean a la derecha de esta fila. pr-16 reserva su lugar. */}
+      <div className="mt-0.5 flex items-center border-t border-[var(--rule-soft)] pt-2 pr-16">
+        <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] max-md:text-[var(--text-primary)] group-hover:gap-1.5 transition-all">
+          Ver tienda
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+        </span>
+      </div>
     </div>
   );
 
@@ -435,6 +416,18 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       <StoreCardCanonical
         storeId={store.id || store.slug}
         name={store.name}
+        // Check de verificado inline con el nombre (Brandon 2026-06-08).
+        nameSuffix={
+          store.verified ? (
+            <span
+              className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[var(--accent)] align-middle"
+              title="Tienda verificada"
+              aria-label="Tienda verificada"
+            >
+              <Check className="h-3 w-3 text-white" strokeWidth={3.5} aria-hidden="true" />
+            </span>
+          ) : undefined
+        }
         slug={store.slug}
         imageUrl={store.cover || store.logo}
         variant="default"
@@ -506,8 +499,10 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         )}
       />
       {/* TS-15 follow store + compartir — fuera del Link para no anidar interactivos.
-          Desktop (md+): cluster top-right con compartir + corazón. */}
-      <div className="absolute top-3 right-3 z-10 hidden md:flex items-center gap-2">
+          Brandon 2026-06-08: bajados del cover (top-right) a la zona de la
+          DESCRIPCIÓN — abajo-derecha del body, a la altura de "Ver tienda".
+          Quedan acoplados al contenido, no flotando sobre la foto. */}
+      <div className="absolute bottom-3 right-3 z-10 hidden md:flex items-center gap-1.5">
         <ShareStoreButton slug={store.slug} name={store.name} />
         <FollowStoreButton slug={store.slug} storeName={store.name} />
       </div>
@@ -532,7 +527,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
             setMapOpen(true);
           }}
           aria-label={`Ver ubicación de ${store.name} en el mapa — a ${distanceKm.toFixed(1)} km de ti`}
-          className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-white/95 px-2.5 py-1.5 text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 dark:bg-gray-950/90"
+          /* Brandon 2026-06-08: subido al cover (top-right). Antes estaba en
+             bottom-3 right-3 → TAPABA el corazón/compartir (mismo lugar). */
+          className="absolute top-3 right-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-white/95 px-2.5 py-1.5 text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 dark:bg-gray-950/90"
         >
           <MapPin className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden="true" />
           <span className="tabular-nums">{distanceKm.toFixed(1)} km</span>

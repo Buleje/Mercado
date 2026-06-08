@@ -13,8 +13,7 @@
  * Sort select migrado a h-12 + border-2 + rounded-xl segun bsm-typography-rules.
  */
 
-import Link from "next/link";
-import { ChevronRight, SlidersHorizontal } from "@buleje/design-system/icons";
+import { SlidersHorizontal } from "@buleje/design-system/icons";
 import type { SearchSortKey } from "./BuscarClient";
 
 const SORT_OPTIONS: Array<{ value: SearchSortKey; label: string }> = [
@@ -49,28 +48,8 @@ export default function SearchHeader({
   return (
     <div className="bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Breadcrumb */}
-        <nav aria-label="Ruta de navegacion" className="mb-4">
-          <ol className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-tertiary)]">
-            <li>
-              <Link
-                href="/marketplace"
-                className="hover:text-[var(--text-primary)] transition-colors"
-              >
-                Inicio
-              </Link>
-            </li>
-            <li aria-hidden="true">
-              <ChevronRight className="h-3 w-3" strokeWidth={1.75} />
-            </li>
-            <li
-              aria-current="page"
-              className="text-[var(--text-primary)] font-semibold"
-            >
-              Buscar
-            </li>
-          </ol>
-        </nav>
+        {/* Breadcrumb "Inicio › Buscar" REMOVIDO (Brandon 2026-06-08) — mismo
+            criterio que /tiendas: sin nav de migajas sobre el contenido. */}
 
         {/* Titulo + stats */}
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">

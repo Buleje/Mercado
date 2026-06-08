@@ -25,6 +25,8 @@ import {
   ArrowRight,
   X,
   Check,
+  Minus,
+  Plus,
   ShoppingCart,
   Store as StoreIcon,
 } from "@buleje/design-system/icons";
@@ -169,38 +171,38 @@ export default function RepetirUltimoPedido() {
 
   return (
     <>
-      {/* Franja slim sticky bajo el nav (sticky top-16 = altura del nav md).
-          Discreta, siempre a mano, sin robarle espacio al catálogo. */}
-      <div className="sticky top-14 md:top-16 z-40 border-b border-[var(--accent)]/25 bg-[var(--accent-soft)]/95 shadow-[0_4px_12px_-8px_var(--accent-glow,rgba(0,0,0,0.2))] backdrop-blur">
-        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1.5 py-2">
-            {hasUsableItems ? (
-              <button
-                type="button"
-                onClick={() => setModalOpen(true)}
-                aria-label={`Repetir tu último pedido de ${order.storeName}`}
-                className="group flex min-w-0 flex-1 items-center text-left transition-opacity hover:opacity-90"
-              >
-                {barInner}
-              </button>
-            ) : (
-              <Link
-                href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
-                aria-label={`Repetir tu último pedido de ${order.storeName}`}
-                className="group flex min-w-0 flex-1 items-center transition-opacity hover:opacity-90"
-              >
-                {barInner}
-              </Link>
-            )}
+      {/* Card inline (Brandon 2026-06-08) — antes era una franja sticky z-40 que
+          tapaba el rail lateral (overlap con "Explorar"). Ahora vive en el flujo
+          del contenido: prominente al entrar, se va al scrollear, sin overlap ni
+          robo de z-index. */}
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="relative flex items-center gap-2 rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent-soft)]/50 p-3 sm:p-3.5 shadow-[var(--shadow-sm)]">
+          {hasUsableItems ? (
             <button
               type="button"
-              onClick={dismiss}
-              aria-label="Ocultar tu último pedido"
-              className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+              onClick={() => setModalOpen(true)}
+              aria-label={`Repetir tu último pedido de ${order.storeName}`}
+              className="group flex min-w-0 flex-1 items-center text-left rounded-xl transition-opacity hover:opacity-90"
             >
-              <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              {barInner}
             </button>
-          </div>
+          ) : (
+            <Link
+              href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
+              aria-label={`Repetir tu último pedido de ${order.storeName}`}
+              className="group flex min-w-0 flex-1 items-center rounded-xl transition-opacity hover:opacity-90"
+            >
+              {barInner}
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={dismiss}
+            aria-label="Ocultar tu último pedido"
+            className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          >
+            <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+          </button>
         </div>
       </div>
 
@@ -248,15 +250,23 @@ function RepetirPedidoModal({
   onClose: () => void;
   onConfirm: (selected: LastOrderItem[]) => void;
 }) {
-  // Por default todos seleccionados. Brandon mayo 14: el cliente entra a
-  // "Repetir" y quita los items que ya no quiere.
+  // Por default todos seleccionados; cantidades = las del pedido original.
+  // Brandon 2026-06-08: el cliente puede AJUSTAR cantidades (stepper) antes de
+  // repetir, no solo marcar/desmarcar.
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (open) {
-      const next = new Set<string>();
-      items.forEach((it, i) => next.add(itemKey(it, i)));
-      setSelectedKeys(next);
+      const keys = new Set<string>();
+      const qty: Record<string, number> = {};
+      items.forEach((it, i) => {
+        const k = itemKey(it, i);
+        keys.add(k);
+        qty[k] = Math.max(1, it.quantity ?? 1);
+      });
+      setSelectedKeys(keys);
+      setQuantities(qty);
     }
   }, [open, items]);
 
@@ -269,12 +279,29 @@ function RepetirPedidoModal({
     });
   }, []);
 
-  const selectedItems = useMemo(
-    () => items.filter((it, i) => selectedKeys.has(itemKey(it, i))),
-    [items, selectedKeys],
+  const setQty = useCallback((key: string, delta: number) => {
+    setQuantities((prev) => ({ ...prev, [key]: Math.max(1, (prev[key] ?? 1) + delta) }));
+  }, []);
+
+  const allSelected = items.length > 0 && selectedKeys.size === items.length;
+  const toggleAll = useCallback(() => {
+    setSelectedKeys((prev) =>
+      prev.size === items.length ? new Set() : new Set(items.map((it, i) => itemKey(it, i))),
+    );
+  }, [items]);
+
+  // Items seleccionados con la cantidad ajustada → onConfirm.
+  const selectedList = useMemo(
+    () =>
+      items
+        .map((it, i) => ({ it, key: itemKey(it, i) }))
+        .filter(({ key }) => selectedKeys.has(key))
+        .map(({ it, key }) => ({ ...it, quantity: quantities[key] ?? it.quantity ?? 1 })),
+    [items, selectedKeys, quantities],
   );
 
-  const totalSelected = selectedItems.reduce(
+  const selectedCount = selectedList.length;
+  const totalSelected = selectedList.reduce(
     (acc, it) => acc + (it.price ?? 0) * (it.quantity ?? 1),
     0,
   );
@@ -332,63 +359,96 @@ function RepetirPedidoModal({
               </button>
             </div>
 
-            {/* Body: lista items con check */}
+            {/* Body: barra seleccionar-todos + filas compactas con stepper */}
             <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-3">
+              <div className="flex items-center justify-between gap-2 px-1 pb-2.5">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  Ajustá lo que querés repetir
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="text-[length:var(--ts-xs)] font-bold text-[var(--accent)] transition-opacity hover:opacity-70"
+                >
+                  {allSelected ? "Quitar todos" : "Marcar todos"}
+                </button>
+              </div>
+
               <ul className="space-y-2">
                 {items.map((it, i) => {
                   const key = itemKey(it, i);
                   const selected = selectedKeys.has(key);
-                  const lineTotal = (it.price ?? 0) * (it.quantity ?? 1);
+                  const qty = quantities[key] ?? it.quantity ?? 1;
+                  const lineTotal = (it.price ?? 0) * qty;
                   return (
-                    <li key={key}>
+                    <li
+                      key={key}
+                      className={cn(
+                        "flex items-center gap-2.5 sm:gap-3 rounded-2xl border p-2 sm:p-2.5 transition-all",
+                        selected
+                          ? "border-[var(--accent)]/45 bg-[var(--accent-soft)]/40"
+                          : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] opacity-55",
+                      )}
+                    >
+                      {/* Check de selección */}
                       <button
                         type="button"
                         onClick={() => toggle(key)}
                         aria-pressed={selected}
+                        aria-label={selected ? `Quitar ${it.name}` : `Incluir ${it.name}`}
                         className={cn(
-                          "w-full flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-all",
+                          "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
                           selected
-                            ? "border-[var(--accent)] bg-[var(--accent-soft)]/60 shadow-[0_4px_16px_-8px_var(--accent)]"
-                            : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40 opacity-70",
+                            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                            : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50",
                         )}
                       >
-                        <span
-                          className={cn(
-                            "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
-                            selected
-                              ? "border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white"
-                              : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
-                          )}
-                          aria-hidden
-                        >
-                          {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
-                        </span>
-                        <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] grid place-items-center">
-                          {it.imageUrl ? (
-                            <Image
-                              src={it.imageUrl}
-                              alt={it.name}
-                              width={56}
-                              height={56}
-                              className="object-cover w-full h-full"
-                            />
-                          ) : (
-                            <StoreIcon className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] line-clamp-2">
-                            {it.name}
-                          </p>
-                          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
-                            {it.quantity ?? 1} × {fmtCurrency(it.price ?? 0)}
-                            {it.unit ? ` · ${it.unit}` : ""}
-                          </p>
-                        </div>
-                        <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)] shrink-0">
-                          {fmtCurrency(lineTotal)}
-                        </p>
+                        {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
                       </button>
+
+                      {/* Thumbnail */}
+                      <div className="h-11 w-11 sm:h-12 sm:w-12 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] grid place-items-center">
+                        {it.imageUrl ? (
+                          <Image src={it.imageUrl} alt={it.name} width={48} height={48} className="object-cover w-full h-full" />
+                        ) : (
+                          <StoreIcon className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+                        )}
+                      </div>
+
+                      {/* Nombre + precio unitario */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-[var(--text-primary)] line-clamp-1">{it.name}</p>
+                        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
+                          {fmtCurrency(it.price ?? 0)}{it.unit ? ` · ${it.unit}` : ""}
+                        </p>
+                      </div>
+
+                      {/* Stepper de cantidad */}
+                      <div className="flex items-center gap-0.5 shrink-0 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setQty(key, -1)}
+                          disabled={qty <= 1}
+                          aria-label={`Menos ${it.name}`}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Minus className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+                        </button>
+                        <span className="w-5 text-center text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{qty}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQty(key, 1)}
+                          aria-label={`Más ${it.name}`}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                        >
+                          <Plus className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+                        </button>
+                      </div>
+
+                      {/* Total de línea */}
+                      <p className="w-[58px] sm:w-16 text-right text-sm font-extrabold tabular-nums text-[var(--text-primary)] shrink-0">
+                        {fmtCurrency(lineTotal)}
+                      </p>
                     </li>
                   );
                 })}
@@ -396,7 +456,7 @@ function RepetirPedidoModal({
 
               {selectedKeys.size === 0 && (
                 <p className="mt-3 text-center text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                  Marcá al menos un producto para agregar al carrito.
+                  Seleccioná al menos un producto para agregar al carrito.
                 </p>
               )}
             </div>
@@ -405,7 +465,7 @@ function RepetirPedidoModal({
             <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 sm:px-6 py-3.5 flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
-                  {selectedItems.length} de {items.length} seleccionados
+                  {selectedCount} de {items.length} seleccionados
                 </p>
                 <p className="text-base font-black tabular-nums text-[var(--text-primary)] leading-tight">
                   {fmtCurrency(totalSelected)}
@@ -413,8 +473,8 @@ function RepetirPedidoModal({
               </div>
               <button
                 type="button"
-                onClick={() => onConfirm(selectedItems)}
-                disabled={selectedItems.length === 0}
+                onClick={() => onConfirm(selectedList)}
+                disabled={selectedCount === 0}
                 className={cn(
                   "inline-flex items-center justify-center gap-2 rounded-full h-12 px-5 text-sm font-extrabold text-white transition-all shrink-0",
                   "bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] hover:brightness-110 shadow-[0_8px_20px_-8px_var(--accent)]",

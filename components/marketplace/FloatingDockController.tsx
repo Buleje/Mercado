@@ -64,9 +64,11 @@ export default function FloatingDockController() {
           onClick={() => setHistoryOpen(true)}
           aria-label={`Ver productos recientes (${items.length})`}
           className={cn(
-            // Mobile: bottom-32 — por ENCIMA de la bottom-nav fija (~80px) y
-            // del sticky cart bar. En sm+ no hay bottom-nav → bottom-20.
-            "group fixed bottom-32 sm:bottom-20 right-4 z-40 flex items-center gap-2.5",
+            // Brandon 2026-06-08: movido a la IZQUIERDA — antes estaba en
+            // right-4 y se montaba sobre el FAB de chat (bottom-right). Ahora el
+            // lado derecho queda libre para el chat. Mobile bottom-32 (sobre la
+            // bottom-nav); desktop pegado al borde inferior-izquierdo.
+            "group fixed bottom-32 sm:bottom-6 left-4 z-40 flex items-center gap-2.5",
             // Brandon 2026-06-07: en /tiendas el dock de "tu historial" se
             // oculta en mobile (md-) — /tiendas en celular va minimalista.
             onTiendas && "max-md:hidden",

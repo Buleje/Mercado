@@ -15,7 +15,7 @@
  * Sin sesión: el click abre el AuthModal (mismo login del navbar).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { X, Store as StoreIcon, ChevronRight, Loader2, MessageCircle } from "@buleje/design-system/icons";
@@ -98,6 +98,12 @@ export default function ChatNavLauncher({
   variant?: "default" | "bare";
 }) {
   const [open, setOpen] = useState(false);
+  // ── Anclaje del panel al ícono (Brandon 2026-06-08) ──────────────────────
+  // El panel desktop se "acopla" justo debajo del botón de chat en vez de
+  // pegarse a la esquina derecha del viewport (que lo dejaba bajo el avatar).
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [panelPos, setPanelPos] = useState<{ top: number; right: number } | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [active, setActive] = useState<ChatConversation | null>(null);
   const [allStores, setAllStores] = useState<StoreLite[] | null>(null);
   const [toast, setToast] = useState<ChatIncomingDetail | null>(null);
@@ -251,11 +257,44 @@ export default function ChatNavLauncher({
     return () => window.clearTimeout(t);
   }, [toast]);
 
+  // ¿desktop? (≥640px) — en mobile el panel es bottom-sheet, no se ancla.
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  /** Coloca el panel justo debajo del ícono, alineado a su borde derecho. */
+  const placePanel = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setPanelPos({
+      top: Math.round(r.bottom + 8),
+      right: Math.round(Math.max(8, window.innerWidth - r.right)),
+    });
+  };
+
+  // Mantener el ancla pegado al botón mientras el panel está abierto (resize/scroll).
+  useEffect(() => {
+    if (!open) return;
+    placePanel();
+    window.addEventListener("resize", placePanel);
+    window.addEventListener("scroll", placePanel, true);
+    return () => {
+      window.removeEventListener("resize", placePanel);
+      window.removeEventListener("scroll", placePanel, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const handleToggle = () => {
     if (!customer) {
       openAuthModal();
       return;
     }
+    placePanel(); // calcula la posición ANTES de abrir → sin flash en esquina
     setOpen((o) => !o);
     setActive(null);
   };
@@ -314,6 +353,7 @@ export default function ChatNavLauncher({
     <>
       {/* ── Botón nav — ícono propio + badge ── */}
       <button
+        ref={btnRef}
         type="button"
         onClick={handleToggle}
         aria-label={`Chats con tiendas${unreadTotal > 0 ? ` — ${unreadTotal} sin leer` : ""}`}
@@ -407,13 +447,16 @@ export default function ChatNavLauncher({
             />
 
             <div
+              style={isDesktop && panelPos ? { top: panelPos.top, right: panelPos.right } : undefined}
               className={cn(
                 "absolute flex flex-col overflow-hidden bg-[var(--surface-canvas)] shadow-2xl shadow-black/25",
                 // Mobile: bottom sheet alto
                 "inset-x-0 bottom-0 h-[82vh] rounded-t-3xl",
                 "motion-safe:animate-[slideUp_0.25s_cubic-bezier(0.32,0.72,0,1)]",
-                // Desktop: dropdown anclado arriba a la derecha (como FB)
-                "sm:inset-auto sm:right-4 sm:top-16 sm:h-[560px] sm:max-h-[78vh] sm:w-[380px] sm:rounded-2xl sm:border sm:border-[var(--rule-base)]",
+                // Desktop: dropdown ACOPLADO bajo el ícono de chat (Brandon 2026-06-08).
+                // top/right salen del inline style (ancla al botón); inset-auto
+                // neutraliza el inset-x-0/bottom-0 del bottom-sheet mobile.
+                "sm:inset-auto sm:h-[560px] sm:max-h-[78vh] sm:w-[380px] sm:rounded-2xl sm:border sm:border-[var(--rule-base)]",
                 "sm:motion-safe:animate-[fadeIn_0.15s_ease-out]",
               )}
             >

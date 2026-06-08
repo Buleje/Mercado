@@ -56,6 +56,11 @@ export interface StoreCardCanonicalProps {
    */
   footer?: ReactNode;
   /**
+   * Slot inline a la derecha del nombre (ej: check de verificado).
+   * Se renderiza DENTRO del `<p>` del nombre para que fluya con el texto.
+   */
+  nameSuffix?: ReactNode;
+  /**
    * Variante visual.
    * - `default` — card completa, padding normal, texto base.
    * - `compact` — padding reducido, texto mas pequeno. Ideal para carouseles.
@@ -161,6 +166,7 @@ export function StoreCardCanonical({
   imageUrl,
   badges,
   footer,
+  nameSuffix,
   variant = "default",
   href,
   renderImage,
@@ -283,7 +289,7 @@ export function StoreCardCanonical({
           <div className="flex flex-wrap gap-1">{badges}</div>
         )}
 
-        {/* Nombre */}
+        {/* Nombre (+ slot inline opcional, ej: check de verificado) */}
         <p
           className={cn(
             "line-clamp-2 leading-[var(--lh-snug)] text-[var(--text-primary)]",
@@ -291,6 +297,9 @@ export function StoreCardCanonical({
           )}
         >
           {name}
+          {nameSuffix != null && (
+            <span className="ml-1 inline-flex align-middle">{nameSuffix}</span>
+          )}
         </p>
 
         {/* Slot footer — debajo del nombre */}
