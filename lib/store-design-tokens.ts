@@ -27,6 +27,33 @@ export const FONT_FAMILIES: Record<FontFamily, { label: string; stack: string; v
   raleway:   { label: "Raleway",   stack: '"Raleway", system-ui, sans-serif',            vibe: "Sofisticado · ligero · refinado" },
 };
 
+/**
+ * Fuentes del EDITOR (StoreCreativeMode usa otra taxonomía que `FontFamily`).
+ * Este map traduce la clave elegida en el editor → label de Google Font (para
+ * cargar el `<link>`; `null` = fuente de sistema) + stack CSS. Lo consumen la
+ * landing (persistido) y el preview en vivo (postMessage), así la tipografía
+ * elegida en el editor SÍ se aplica al storefront. (Brandon 2026-06-08.)
+ */
+export const EDITOR_FONT_MAP: Record<string, { label: string | null; stack: string }> = {
+  sistema:    { label: null,         stack: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" },
+  geist:      { label: "Geist",      stack: '"Geist", ui-sans-serif, sans-serif' },
+  inter:      { label: "Inter",      stack: '"Inter", ui-sans-serif, sans-serif' },
+  poppins:    { label: "Poppins",    stack: '"Poppins", ui-sans-serif, sans-serif' },
+  montserrat: { label: "Montserrat", stack: '"Montserrat", ui-sans-serif, sans-serif' },
+  raleway:    { label: "Raleway",    stack: '"Raleway", ui-sans-serif, sans-serif' },
+  nunito:     { label: "Nunito",     stack: '"Nunito", ui-sans-serif, sans-serif' },
+  lato:       { label: "Lato",       stack: '"Lato", ui-sans-serif, sans-serif' },
+  roboto:     { label: "Roboto",     stack: '"Roboto", ui-sans-serif, sans-serif' },
+  opensans:   { label: "Open Sans",  stack: '"Open Sans", ui-sans-serif, sans-serif' },
+};
+
+/** Radio de botón del editor (StoreTheme.buttonStyle) → CSS. */
+export const EDITOR_BTN_RADIUS: Record<string, string> = {
+  rounded: "12px",
+  square: "2px",
+  pill: "9999px",
+};
+
 // ── Variantes visuales ──────────────────────────────────────────────────
 export type HeadingSize  = "compact" | "regular" | "large" | "huge";
 export type BorderRadius = "square" | "soft" | "rounded" | "pill";

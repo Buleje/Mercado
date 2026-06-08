@@ -19,7 +19,7 @@ import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
 import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
-import { deserializePageData, tokensToCssBlock, FONT_FAMILIES } from "@/lib/store-design-tokens";
+import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
 
 interface TenantLandingProps {
   params: Promise<{ slug: string }>;
@@ -142,13 +142,17 @@ async function loadPageData(slug: string) {
     const v = st?.[k];
     return typeof v === "string" && v.trim() && !v.trim().startsWith("var(") ? v.trim() : undefined;
   };
+  const pickStr = (k: string) => (typeof st?.[k] === "string" ? (st[k] as string) : undefined);
   const editorTheme = {
     primaryColor: pick("primaryColor"),
     secondaryColor: pick("secondaryColor"),
     accentColor: pick("accentColor"),
-    // fontFamily/borderRadius del editor (string/number) — opcionales.
-    fontFamily: typeof st?.["fontFamily"] === "string" ? (st["fontFamily"] as string) : undefined,
+    // Tipografía + estilos UI del editor (otra taxonomía) — opcionales.
+    fontFamily: pickStr("fontFamily"),
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
+    buttonStyle: pickStr("buttonStyle"),
+    cardStyle: pickStr("cardStyle"),
+    shadowLevel: pickStr("shadowLevel"),
   };
 
   return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme };
@@ -310,26 +314,48 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
     ...(editorTheme.secondaryColor ? { secondaryColor: editorTheme.secondaryColor } : {}),
     ...(editorTheme.accentColor ? { accentColor: editorTheme.accentColor } : {}),
   };
-  const tenantFont = FONT_FAMILIES[designTokens.fontFamily];
+
+  // Tipografía + estilos UI del editor (settings.storeTheme) = fuente de verdad.
+  // El editor usa otra taxonomía de fuentes → EDITOR_FONT_MAP. El font-family lo
+  // maneja .tenant-theme vía var(--tenant-font), que sobreescribimos abajo (y que
+  // PreviewLiveTheme puede pisar en vivo). buttonStyle → --tenant-btn-radius.
+  const baseFont = FONT_FAMILIES[designTokens.fontFamily];
+  const editorFont = editorTheme.fontFamily ? EDITOR_FONT_MAP[editorTheme.fontFamily] : undefined;
+  const fontStack = editorFont?.stack ?? baseFont.stack;
+  const fontLabel = editorFont ? editorFont.label : baseFont.label; // null = sistema (sin Google Font)
+  const btnRadius = editorTheme.buttonStyle ? EDITOR_BTN_RADIUS[editorTheme.buttonStyle] : undefined;
+  const cssBtnRadius = `var(--tenant-btn-radius, ${btnRadius ?? "9999px"})`;
+
+  // cardStyle del editor → tratamiento de las tarjetas de producto de la vitrina.
+  const cardClass =
+    editorTheme.cardStyle === "minimal"
+      ? "border border-[var(--rule-base)]"
+      : editorTheme.cardStyle === "border"
+        ? "border-2 border-[var(--rule-base)]"
+        : editorTheme.cardStyle === "glass"
+          ? "border border-white/30 bg-white/70 backdrop-blur-md shadow-sm dark:bg-white/10"
+          : "border border-[var(--rule-base)] shadow-sm hover:shadow-xl"; // "shadow"/default
 
   return (
-    <main
-      className="min-h-screen bg-[var(--surface-canvas)] tenant-theme"
-      style={{ fontFamily: tenantFont.stack }}
-    >
+    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme">
       {/* CSS dinamico generado a partir de los design tokens del tenant.
           Sobreescribe el theme de Buleje solo en el subarbol .tenant-theme. */}
       <style dangerouslySetInnerHTML={{ __html: tokensToCssBlock(designTokens) }} />
+      {/* Override de tipografía (editor) + radio de botón — sobre .tenant-theme,
+          después de tokensToCssBlock para ganar. PreviewLiveTheme pisa en vivo. */}
+      <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{--tenant-font:${fontStack};--font-display-family:var(--tenant-font);${btnRadius ? `--tenant-btn-radius:${btnRadius};` : ""}}` }} />
 
       {/* Google Fonts loader — carga solo la fuente que el tenant eligio.
           PERF 2026-05-24: preconnect evita ~200-400ms de DNS+TCP+TLS a Google
           antes de descubrir el stylesheet (display=swap ya evita FOIT). */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link
-        rel="stylesheet"
-        href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(tenantFont.label).replace(/%20/g, "+")}:wght@400;600;700;800;900&display=swap`}
-      />
+      {fontLabel && (
+        <link
+          rel="stylesheet"
+          href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontLabel).replace(/%20/g, "+")}:wght@400;600;700;800;900&display=swap`}
+        />
+      )}
 
       {/* Beacon tracker (client component) */}
       <TenantPageTracker tenantSlug={tenant.slug} />
@@ -449,8 +475,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     href={`https://wa.me/${(customization.whatsappPhone ?? tenant.ownerPhone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${displayName}, quiero hacer un pedido.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-2 px-6 h-12 rounded-full bg-white font-extrabold text-sm hover:gap-2.5 transition-all shadow-xl"
-                    style={{ color: cssPrimary }}
+                    className="group inline-flex items-center gap-2 px-6 h-12 bg-white font-extrabold text-sm hover:gap-2.5 transition-all shadow-xl"
+                    style={{ color: cssPrimary, borderRadius: cssBtnRadius }}
                   >
                     <MessageCircle className="w-4 h-4" strokeWidth={2.75} />
                     Pedir por WhatsApp
@@ -459,7 +485,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 )}
                 <Link
                   href={`/t/${tenant.slug}/tienda`}
-                  className="inline-flex items-center gap-2 px-6 h-12 rounded-full border-2 border-white/40 text-white font-extrabold text-sm hover:bg-white/15 backdrop-blur transition-all"
+                  className="inline-flex items-center gap-2 px-6 h-12 border-2 border-white/40 text-white font-extrabold text-sm hover:bg-white/15 backdrop-blur transition-all"
+                  style={{ borderRadius: cssBtnRadius }}
                 >
                   <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
                   Ver catálogo
@@ -648,7 +675,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                   <Link
                     key={p.id}
                     href={`/t/${tenant.slug}/tienda`}
-                    className="group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] shadow-sm hover:shadow-xl transition-all hover:-translate-y-0.5 border border-[var(--rule-base)]"
+                    className={`group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 ${cardClass}`}
                   >
                     <div className="aspect-square bg-[var(--surface-sunken)] overflow-hidden relative">
                       {p.image ? (

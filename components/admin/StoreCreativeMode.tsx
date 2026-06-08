@@ -31,6 +31,7 @@ import {
   Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
 import type { StoreTheme } from "./StoreCustomizer";
 import type { SectionKey } from "./StorefrontEditor";
 
@@ -429,14 +430,20 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
     const win = frame?.contentWindow;
     if (!win) return;
+    const font = EDITOR_FONT_MAP[theme.fontFamily];
     const vars: Record<string, string> = {
       "--tenant-primary": theme.primaryColor,
       "--tenant-secondary": theme.secondaryColor,
       "--tenant-accent": theme.accentColor,
       "--tenant-radius": `${theme.borderRadius}px`,
+      ...(font ? { "--tenant-font": font.stack } : {}),
+      ...(EDITOR_BTN_RADIUS[theme.buttonStyle] ? { "--tenant-btn-radius": EDITOR_BTN_RADIUS[theme.buttonStyle] } : {}),
     };
     try {
-      win.postMessage({ source: "buleje-editor", type: "live-theme", vars }, window.location.origin);
+      win.postMessage(
+        { source: "buleje-editor", type: "live-theme", vars, fontLabel: font?.label ?? null },
+        window.location.origin,
+      );
     } catch {
       /* no-op */
     }
