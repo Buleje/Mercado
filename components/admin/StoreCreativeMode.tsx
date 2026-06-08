@@ -669,8 +669,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       </header>
 
       <div className="flex flex-1 min-h-0">
-        <aside className="w-80 bg-[#0e0f13] border-r border-white/5 overflow-y-auto shrink-0">
-          {/* Sidebar nav — items con icono en bg + label, active state pronunciado */}
+        {/* Rail de navegación — solo la lista de secciones (delgado). */}
+        <aside className="w-56 bg-[#0e0f13] border-r border-white/5 overflow-y-auto shrink-0">
           <nav className="p-3 space-y-1">
             <p className="px-2 pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Configuración</p>
             {panelItems.map((item) => {
@@ -698,8 +698,16 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               );
             })}
           </nav>
+        </aside>
 
-          <div className="p-3 border-t border-gray-800 mt-2 space-y-3">
+        {/* Panel LATERAL de opciones de la sección activa — abre al lado del rail,
+            no debajo (Brandon 2026-06-08). */}
+        <aside className="w-80 bg-[#0c0d10] border-r border-white/5 overflow-y-auto shrink-0">
+          <div className="sticky top-0 z-10 border-b border-white/5 bg-[#0c0d10]/90 px-4 py-3 backdrop-blur">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Personalizar</p>
+            <p className="text-sm font-semibold text-white">{panelItems.find((p) => p.id === panel)?.label ?? "Sección"}</p>
+          </div>
+          <div className="p-4 space-y-3">
             {panel === "plantillas" && (
               <>
                 <div>
