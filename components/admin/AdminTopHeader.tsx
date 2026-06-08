@@ -232,6 +232,22 @@ export function AdminTopHeader({
 
       {/* Right: actions */}
       <div className="flex items-center gap-1 shrink-0">
+        {/* Ver mi tienda — CTA explícito que abre el storefront público en pestaña
+            nueva (Brandon 2026-06-07). El dueño salta de administrar a ver lo que
+            ve el cliente. Siempre visible (ícono en mobile, +label en sm+). */}
+        {tenantSlug && (
+          <Link
+            href={`/t/${tenantSlug}/tienda`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Ver mi tienda (abre en pestaña nueva)"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] sm:px-3"
+          >
+            <StoreIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
+            <span className="hidden sm:inline">Ver mi tienda</span>
+            <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
+          </Link>
+        )}
         {/* Chat con clientes — bandeja Messenger (Brandon 2026-06-06) */}
         <AdminChatNavButton />
         <div className="hidden sm:block">

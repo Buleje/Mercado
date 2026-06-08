@@ -52,6 +52,8 @@ const CajaDashboard = dynamic(() => import("@/components/admin/inicio/CajaDashbo
 const InventarioDashboard = dynamic(() => import("@/components/admin/inicio/InventarioDashboard"), { ssr: false, loading: DashboardLoading });
 const ComprasDashboard = dynamic(() => import("@/components/admin/inicio/ComprasDashboard"), { ssr: false, loading: DashboardLoading });
 const ClientesDashboard = dynamic(() => import("@/components/admin/inicio/ClientesDashboard"), { ssr: false, loading: DashboardLoading });
+// Brandon 2026-06-07 (idea #2): tarjeta "Tu tienda pública" — puente admin↔tienda.
+const StorePublicCard = dynamic(() => import("@/components/admin/inicio/StorePublicCard"), { ssr: false });
 
 // ADR-064 Ola B — TodayHub hero unificado (drop-in al tab "general")
 const TodayHub = dynamic(
@@ -245,6 +247,9 @@ export default function VendorDashboardModule() {
       <AdminTabBar tabs={availableTabs} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
+            {/* Brandon 2026-06-07 (idea #2): puente admin ↔ tienda pública —
+                ver / compartir / editar la portada del storefront. */}
+            <StorePublicCard storeSlug={storeSlug} />
             {/* Brandon 2026-06-01 (dedup Resumen): se quitó VendorCommandCenter
                 de acá — duplicaba el saludo ("Buenas noches") y las cifras de
                 ventas (INGRESOS/GANANCIA) que ya muestran TodayHub e
