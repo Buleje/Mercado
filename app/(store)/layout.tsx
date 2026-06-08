@@ -39,6 +39,7 @@ import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
 import MarketplaceFloatingWidgets from "@/components/marketplace/MarketplaceFloatingWidgets";
 import ConditionalShoppingChrome from "@/components/marketplace/ConditionalShoppingChrome";
 import MarketplaceSideRailShell from "@/components/marketplace/MarketplaceSideRailShell";
+import { HideInCheckoutMode, CheckoutModeBar } from "@/components/marketplace/CheckoutModeChrome";
 // Chrome propio de la TIENDA INDIVIDUAL (aislado del marketplace). Brandon 2026-06-07.
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
 import { SettingsDB } from "@/lib/db/settings.db";
@@ -190,24 +191,34 @@ async function StoreLayoutContent({
               /* ── Chrome unificado del MARKETPLACE (Brandon 2026-05-20 v5) ──
                   Mismos navbar/bottomnav/footer que /tiendas y /marketplace. */
               <>
-                <ConditionalPromoBar />
-                <Suspense fallback={null}>
-                  <MarketplaceNavbar />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <ConditionalSecondaryNav />
-                </Suspense>
+                {/* Header minimal "modo checkout" (solo /marketplace/carrito). */}
+                <CheckoutModeBar />
+                {/* Chrome del marketplace — OCULTO en modo checkout (carrito) para
+                    que el usuario se concentre en continuar. Brandon 2026-06-08. */}
+                <HideInCheckoutMode>
+                  <ConditionalPromoBar />
+                  <Suspense fallback={null}>
+                    <MarketplaceNavbar />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <ConditionalSecondaryNav />
+                  </Suspense>
+                </HideInCheckoutMode>
                 {/* Rail de navegación lateral (estilo YouTube) — al lado del
-                    contenido en marketplace; passthrough en el resto. */}
+                    contenido en marketplace; passthrough en el resto (incluido carrito). */}
                 <MarketplaceSideRailShell>{children}</MarketplaceSideRailShell>
-                <Footer />
+                <HideInCheckoutMode>
+                  <Footer />
+                </HideInCheckoutMode>
                 <Suspense fallback={null}>
                   <QuickAddDrawer />
                 </Suspense>
-                {/* BottomNav gateado: oculto en flujos de inscripción del marketplace. */}
-                <ConditionalShoppingChrome>
-                  <BottomNav />
-                </ConditionalShoppingChrome>
+                {/* BottomNav gateado: oculto en flujos de inscripción + modo checkout. */}
+                <HideInCheckoutMode>
+                  <ConditionalShoppingChrome>
+                    <BottomNav />
+                  </ConditionalShoppingChrome>
+                </HideInCheckoutMode>
                 <NavModeToast />
                 <StoreClientShell />
                 <StoreFloatingWidgets />
