@@ -16,6 +16,7 @@ import {
   AlertCircle,
   MapPin,
   Wallet,
+  Smartphone,
   User,
   ShoppingBag,
   UserCircle,
@@ -70,6 +71,7 @@ export default function CheckoutConfirmarPage() {
     customer,
     address,
     payment,
+    setPayment,
     coupons,
     loyalty,
     paymentProofs,
@@ -95,6 +97,15 @@ export default function CheckoutConfirmarPage() {
   // los flags reales `hydrated` de ambos hooks. En redes lentas el cart no
   // hidrataba a tiempo y el guard expulsaba al cliente mid-flow.
   const cartReady = cartHydrated && hydrated;
+
+  // Fast-track Brandon 2026-06-08: si se llegó a "finalizar" sin pasar por entrega,
+  // el método de pago viene vacío → por defecto Efectivo (pago al recibir) para que
+  // se pueda finalizar; el selector de abajo permite cambiarlo. La API acepta el
+  // pedido sin comprobante pre-subido (pago/Yape al recibir).
+  useEffect(() => {
+    if (cartReady && payment.method === "") setPayment({ method: "efectivo" });
+  }, [cartReady, payment.method, setPayment]);
+
   useEffect(() => {
     if (!cartReady) return;
     // CRÍTICO: si ya hay resultados (pedido confirmado), NO redirigir. El
@@ -693,7 +704,7 @@ export default function CheckoutConfirmarPage() {
               kicker="Datos"
               title="Quién recibe"
               icon={User}
-              editHref="/checkout/datos"
+              editHref="/checkout/datos?edit=1"
               className="col-span-2 sm:col-span-1"
             >
               <dl className="space-y-1.5 text-[length:var(--ts-sm)]">
@@ -721,18 +732,54 @@ export default function CheckoutConfirmarPage() {
               kicker="Pago"
               title="Cómo pagás"
               icon={Wallet}
-              editHref="/checkout/entrega"
+              editHref="/checkout/entrega?edit=1"
               dense
             >
-              <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] capitalize">
-                {payment.method}
-              </p>
+              {/* Selector de pago INLINE (Brandon 2026-06-08): se elige acá, en la
+                  página de finalizar. La API acepta el pedido sin comprobante
+                  pre-subido (pago/Yape al recibir). */}
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { key: "efectivo", label: "Efectivo", Icon: Wallet },
+                  { key: "yape", label: "Yape", Icon: Smartphone },
+                  { key: "plin", label: "Plin", Icon: Smartphone },
+                ] as const).map(({ key, label, Icon }) => {
+                  const active = payment.method === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setPayment({ method: key })}
+                      aria-pressed={active}
+                      aria-label={`Pagar con ${label}`}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-[length:var(--ts-xs)] font-bold transition-colors",
+                        active
+                          ? "border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                          : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50",
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
               {payment.method === "efectivo" && payment.cashAmount && (
-                <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-1">
+                <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-2">
                   Llevás{" "}
                   <span className="font-bold tabular-nums text-[var(--text-secondary)]">
                     S/{payment.cashAmount}
                   </span>
+                </p>
+              )}
+              {(payment.method === "yape" || payment.method === "plin") && (
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2 leading-snug">
+                  Coordinás el comprobante por WhatsApp al confirmar, o subilo en{" "}
+                  <Link href="/checkout/entrega?edit=1" className="font-bold text-[var(--accent)] underline">
+                    pago
+                  </Link>
+                  .
                 </p>
               )}
             </ReviewCard>

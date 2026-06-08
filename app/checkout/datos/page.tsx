@@ -19,7 +19,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -102,6 +102,25 @@ export default function CheckoutDatosPage() {
 
   const profileComplete = isCustomerProfileComplete(savedCustomer);
 
+  // Fast-track Brandon 2026-06-08: perfil completo (incluye dirección guardada)
+  // + NO venimos a editar (?edit=1) → saltamos datos directo a confirmar. El
+  // efecto de sync de arriba ya escribió la dirección a localStorage (síncrono),
+  // así que confirmar la lee sin race. Resultado: carrito → finalizar (2 páginas).
+  const autoSkippedRef = useRef(false);
+  const [autoSkipping, setAutoSkipping] = useState(false);
+  useEffect(() => {
+    if (autoSkippedRef.current) return;
+    if (!cartReady || itemCount === 0) return;
+    if (!profileComplete) return;
+    const isEdit =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("edit") === "1";
+    if (isEdit) return;
+    autoSkippedRef.current = true;
+    setAutoSkipping(true);
+    navigateTo("/checkout/confirmar", "Preparando tu resumen");
+  }, [cartReady, itemCount, profileComplete, navigateTo]);
+
   // Atajo "fast-track": va directo al resumen porque ya tiene direccion.
   // Si no tiene direccion → ir a /entrega para completar.
   const handleContinue = useCallback(() => {
@@ -114,6 +133,12 @@ export default function CheckoutDatosPage() {
   }, [savedCustomer, profileComplete, navigateTo]);
 
   if (itemCount === 0) return null;
+
+  // Fast-track en curso: mostramos solo el overlay de transición (sin flash de
+  // la card de cuenta) mientras redirige a confirmar. Brandon 2026-06-08.
+  if (autoSkipping) {
+    return <CheckoutTransitionOverlay show label="Preparando tu resumen" />;
+  }
 
   // ── Modo INVITADO (Brandon 2026-05-30) ──────────────────────────────────
   // Sin sesión → form simple (nombre + WhatsApp). Guarda en checkoutData y va a
