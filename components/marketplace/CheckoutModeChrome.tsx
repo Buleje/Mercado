@@ -14,9 +14,8 @@
  */
 
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { ShieldCheck } from "@buleje/design-system/icons";
+import CheckoutTopBar from "@/components/marketplace/checkout/CheckoutTopBar";
 
 const CHECKOUT_MODE_PATHS = ["/marketplace/carrito"];
 
@@ -31,30 +30,13 @@ export function HideInCheckoutMode({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Header minimal — SOLO en modo checkout. Logo (→ inicio) + sello de confianza. */
+/**
+ * Header del carrito en modo checkout — MISMA barra que /checkout (logo wordmark
+ * + stepper + trust badge), con el stepper en el paso "carrito". Unifica la barra
+ * de arriba entre carrito y finalizar. Brandon 2026-06-08.
+ */
 export function CheckoutModeBar() {
   const pathname = usePathname() ?? "";
   if (!isCheckoutMode(pathname)) return null;
-  return (
-    <header className="sticky top-0 z-40 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
-        <Link
-          href="/"
-          aria-label="Buleje — Ir al inicio"
-          className="inline-flex items-center gap-2"
-        >
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent)] text-white text-base font-black">
-            B
-          </span>
-          <span className="text-lg font-black tracking-[-0.02em] text-[var(--text-primary)]">
-            Buleje
-          </span>
-        </Link>
-        <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">
-          <ShieldCheck className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-          <span className="hidden sm:inline">Compra segura</span>
-        </span>
-      </div>
-    </header>
-  );
+  return <CheckoutTopBar current="carrito" />;
 }

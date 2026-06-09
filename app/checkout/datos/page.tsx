@@ -118,8 +118,11 @@ export default function CheckoutDatosPage() {
     if (isEdit) return;
     autoSkippedRef.current = true;
     setAutoSkipping(true);
-    navigateTo("/checkout/confirmar", "Preparando tu resumen");
-  }, [cartReady, itemCount, profileComplete, navigateTo]);
+    // REPLACE (no push): datos es un paso transitorio en el flujo rápido. Con
+    // replace, datos NO queda en el historial → "atrás" desde confirmar vuelve
+    // al carrito, no a datos (que re-saltaría = loop). Brandon 2026-06-08.
+    router.replace("/checkout/confirmar");
+  }, [cartReady, itemCount, profileComplete, router]);
 
   // Atajo "fast-track": va directo al resumen porque ya tiene direccion.
   // Si no tiene direccion → ir a /entrega para completar.

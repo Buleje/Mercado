@@ -14,23 +14,8 @@
  * a esa tienda al cancelar el checkout, no al marketplace global".
  */
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { ShieldCheck, Truck } from "@buleje/design-system/icons";
-import { BulejeWordmark } from "@/components/ui-system/illustrations";
-import CheckoutStepper, { type CheckoutStep } from "./CheckoutStepper";
-import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
-
-function readActiveTenant(): string | null {
-  if (typeof document === "undefined") return null;
-  const m = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
-  return m?.[1] ? decodeURIComponent(m[1]) : null;
-}
-
-function readImpersonationFlag(): boolean {
-  if (typeof document === "undefined") return false;
-  return /(?:^|;\s*)superadmin-impersonating=/.test(document.cookie);
-}
+import CheckoutTopBar from "./CheckoutTopBar";
+import type { CheckoutStep } from "./CheckoutStepper";
 
 export default function CheckoutShell({
   current,
@@ -39,71 +24,9 @@ export default function CheckoutShell({
   current: CheckoutStep;
   children: React.ReactNode;
 }) {
-  // byStore se usaba para decidir el destino del logo. Brandon mayo 14 2026:
-  // el logo ahora siempre va a /tiendas. Mantenemos el hook por si futuros
-  // accesos al cart son necesarios desde el shell.
-  useMarketplaceCart();
-  const [activeTenantSlug, setActiveTenantSlug] = useState<string | null>(null);
-  const [isImpersonating, setIsImpersonating] = useState(false);
-
-  useEffect(() => {
-    setActiveTenantSlug(readActiveTenant());
-    setIsImpersonating(readImpersonationFlag());
-  }, []);
-
-  const logoHref = useMemo(() => {
-    // Brandon, mayo 14 2026: el logo siempre lleva al directorio /tiendas,
-    // sin importar el contenido del carrito. Excepcion: superadmin
-    // impersonando un tenant vuelve a su panel admin.
-    if (isImpersonating && activeTenantSlug) {
-      return `/t/${activeTenantSlug}/admin`;
-    }
-    return "/tiendas";
-  }, [activeTenantSlug, isImpersonating]);
-
-  const logoLabel = isImpersonating
-    ? "Volver a mi tienda"
-    : "Volver a las tiendas";
-
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--rule-base)] bg-[var(--surface-canvas)]/90 backdrop-blur-md supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
-        <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-4">
-            <Link
-              href={logoHref}
-              aria-label={logoLabel}
-              title={logoLabel}
-              className="flex items-center shrink-0 text-[var(--accent)]"
-            >
-              <BulejeWordmark
-                size={30}
-                strokeWidth={1.75}
-                textSize={17}
-                className="text-[var(--accent-600)] dark:text-white"
-              />
-            </Link>
-
-            <div className="flex-1 flex justify-center min-w-0 overflow-x-auto scrollbar-none">
-              <CheckoutStepper current={current} />
-            </div>
-
-            <div className="hidden md:inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3.5 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--accent)] shrink-0">
-              <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-              Pago seguro
-              <span aria-hidden className="h-3 w-px bg-[var(--accent)]/30" />
-              <Truck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-              Delivery 25 min
-            </div>
-
-            <span className="md:hidden inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] shrink-0">
-              <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-              Seguro
-            </span>
-          </div>
-        </div>
-      </header>
-
+      <CheckoutTopBar current={current} />
       <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pb-12">
         {children}
       </main>

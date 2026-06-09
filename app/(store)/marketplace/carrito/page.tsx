@@ -29,7 +29,6 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, modifierHashOf, type CartItem } from "@/hooks/use-marketplace-cart";
-import CheckoutStepper from "@/components/marketplace/checkout/CheckoutStepper";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import CartCouponSection from "@/components/marketplace/CartCouponSection";
@@ -40,7 +39,7 @@ import { useSavedForLater, SavedForLaterSection } from "@/components/marketplace
 import CompartirListaWhatsApp from "@/components/marketplace/CompartirListaWhatsApp";
 import QuantityStepper from "@/components/ui-system/QuantityStepper";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
-import { useCustomer } from "@/contexts/customer-context";
+import { useCustomer, isCustomerProfileComplete } from "@/contexts/customer-context";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import { useConfirm } from "@/components/ui-system/ConfirmModal";
 
@@ -212,21 +211,70 @@ export default function CarritoPage() {
   // Checkout invitado (Brandon 2026-05-30): el cliente puede continuar SIN
   // login. El login queda opcional (para puntos/seguimiento) vía el modal. El
   // form de datos (nombre + WhatsApp) se completa en /checkout/datos.
-  const continueHref = "/checkout/datos";
+  //
+  // Brandon 2026-06-08 — flujo de 2 pasos: si el cliente está logueado con
+  // dirección guardada (perfil completo), saltamos datos+entrega y vamos DIRECTO
+  // a /checkout/confirmar (finalizar). Así no se ve la página de datos y "atrás"
+  // desde confirmar vuelve al carrito (no a datos, que antes re-saltaba → loop).
+  const fastFlow = isCustomerProfileComplete(loggedCustomer);
+  const continueHref = fastFlow ? "/checkout/confirmar" : "/checkout/datos";
   const handleContinueWithoutAuth = useCallback(() => openAuthModal(), [openAuthModal]);
+
+  // Pre-siembra de checkout-data en localStorage cuando el perfil está completo.
+  // El CheckoutDataProvider de /checkout lee estas keys al montar, así confirmar
+  // ya tiene customer+dirección válidos y su guard NO rebota a entrega. (El
+  // carrito vive fuera del CheckoutDataProvider, por eso escribimos las keys
+  // directo — es el mecanismo de persistencia documentado del context.)
+  useEffect(() => {
+    if (!fastFlow || !loggedCustomer) return;
+    const c = loggedCustomer;
+    try {
+      localStorage.setItem(
+        "marketplace-checkout-customer",
+        JSON.stringify({ name: c.name || "", phone: c.phone || "", email: c.email || "" }),
+      );
+      // No clobbear una dirección que el cliente ya esté editando en checkout:
+      // solo sembramos si la actual está vacía/inválida (<5 chars).
+      let cur: { address?: string } = {};
+      try {
+        cur = JSON.parse(localStorage.getItem("marketplace-checkout-address") || "{}");
+      } catch {}
+      if (!(cur.address && cur.address.trim().length >= 5)) {
+        localStorage.setItem(
+          "marketplace-checkout-address",
+          JSON.stringify({
+            address: c.addressLine || "",
+            notes: c.reference || "",
+            departmentCode: c.departmentCode || "",
+            departmentName: c.departmentName || "",
+            provinceCode: c.provinceCode || "",
+            provinceName: c.provinceName || "",
+            districtCode: c.districtCode || "",
+            districtName: c.districtName || "",
+            zone: [c.districtName, c.provinceName, c.departmentName].filter(Boolean).join(", "),
+          }),
+        );
+      }
+    } catch {
+      /* localStorage no disponible — confirmar caerá a su sync/guard normal */
+    }
+  }, [fastFlow, loggedCustomer]);
 
   // Prefetch del próximo paso para que la transición sea instantánea
   useEffect(() => {
     if (!isEmpty) {
-      router.prefetch("/checkout/datos");
+      router.prefetch(continueHref);
     }
-  }, [isEmpty, router]);
+  }, [isEmpty, router, continueHref]);
 
-  // Si el usuario se loggea con el modal abierto, redirigir automáticamente
+  // Si el usuario se loggea con el modal abierto, redirigir automáticamente al
+  // destino correcto (confirmar si quedó con perfil completo, datos si no).
   useEffect(() => {
     if (loggedCustomer && authModalOpen) {
       closeAuthModal();
-      router.push("/checkout/datos");
+      router.push(
+        isCustomerProfileComplete(loggedCustomer) ? "/checkout/confirmar" : "/checkout/datos",
+      );
     }
   }, [loggedCustomer, authModalOpen, closeAuthModal, router]);
 
@@ -309,11 +357,8 @@ export default function CarritoPage() {
           </div>
           {!isEmpty && (
             <div className="flex items-center gap-3 lg:gap-5 shrink-0">
-              {/* Stepper inline en el header (lg+) — libera la fila completa de
-                  abajo y da más aire al listado. Brandon 2026-06-08. */}
-              <div className="hidden lg:block">
-                <CheckoutStepper current="carrito" />
-              </div>
+              {/* Stepper movido al top bar unificado (CheckoutTopBar) — mismo
+                  header que finalizar. Brandon 2026-06-08. */}
               <div className="flex items-center gap-1.5">
                 {/* Compartir — ícono sutil, no botón full-width verde */}
                 <CompartirListaWhatsApp
@@ -350,14 +395,6 @@ export default function CarritoPage() {
           )}
         </div>
       </div>
-
-      {/* ── Stepper SOLO tablet (sm–md). En lg+ va inline en el header; en
-           mobile lo comunica el sticky bottom bar. Brandon 2026-06-08. ── */}
-      {!isEmpty && (
-        <div className="hidden sm:block lg:hidden mb-4 overflow-x-auto">
-          <CheckoutStepper current="carrito" />
-        </div>
-      )}
 
       {/* ── Contenido ─────────────────────────────────────────────── */}
       {isEmpty ? (
