@@ -16,6 +16,7 @@ import {
   AlertCircle,
   MapPin,
   Wallet,
+  Banknote,
   Smartphone,
   User,
   ShoppingBag,
@@ -98,13 +99,10 @@ export default function CheckoutConfirmarPage() {
   // hidrataba a tiempo y el guard expulsaba al cliente mid-flow.
   const cartReady = cartHydrated && hydrated;
 
-  // Fast-track Brandon 2026-06-08: si se llegó a "finalizar" sin pasar por entrega,
-  // el método de pago viene vacío → por defecto Efectivo (pago al recibir) para que
-  // se pueda finalizar; el selector de abajo permite cambiarlo. La API acepta el
-  // pedido sin comprobante pre-subido (pago/Yape al recibir).
-  useEffect(() => {
-    if (cartReady && payment.method === "") setPayment({ method: "efectivo" });
-  }, [cartReady, payment.method, setPayment]);
+  // Brandon 2026-06-08: SIN método de pago por defecto — el cliente debe elegir
+  // explícitamente uno en el selector (Efectivo/Yape/Plin) antes de confirmar. El
+  // botón "Confirmar pedido" queda deshabilitado mientras no haya elección.
+  const needsPaymentChoice = payment.method === "";
 
   useEffect(() => {
     if (!cartReady) return;
@@ -139,6 +137,12 @@ export default function CheckoutConfirmarPage() {
    
   const handleConfirm = useCallback(async () => {
     if (storeIds.length === 0) return;
+    // Defensa: sin método de pago elegido no se envía (el botón ya está
+    // deshabilitado, esto cubre cualquier camino alterno). Brandon 2026-06-08.
+    if (payment.method === "") {
+      setErrorMsg("Elegí un método de pago para confirmar tu pedido.");
+      return;
+    }
     setSubmitting(true);
     setErrorMsg(null);
 
@@ -865,35 +869,69 @@ export default function CheckoutConfirmarPage() {
               ))}
             </ul>
 
-            {/* Método de pago — debajo de la fila de productos */}
+            {/* Método de pago — debajo de la fila de productos. SIN default: el
+                cliente elige uno (radio). Badges con color de marca (Yape morado,
+                Plin teal, Efectivo verde) + buen contraste. Brandon 2026-06-08. */}
             <div className="border-t border-[var(--rule-soft)] pt-4">
               <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2.5">
                 <Wallet className="h-3 w-3" strokeWidth={2} aria-hidden />
                 Método de pago
+                {needsPaymentChoice && (
+                  <span className="normal-case tracking-normal font-bold text-[var(--text-tertiary)]">
+                    · elegí uno
+                  </span>
+                )}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div role="radiogroup" aria-label="Método de pago" className="grid gap-2 sm:grid-cols-3">
                 {([
-                  { key: "efectivo", label: "Efectivo", Icon: Wallet },
-                  { key: "yape", label: "Yape", Icon: Smartphone },
-                  { key: "plin", label: "Plin", Icon: Smartphone },
-                ] as const).map(({ key, label, Icon }) => {
+                  { key: "efectivo", label: "Efectivo", sub: "Pagás al recibir", Icon: Banknote, color: "#16A34A" },
+                  { key: "yape", label: "Yape", sub: "Con tu app", Icon: Smartphone, color: "#742284" },
+                  { key: "plin", label: "Plin", sub: "Con tu app", Icon: Smartphone, color: "#0E9594" },
+                ] as const).map(({ key, label, sub, Icon, color }) => {
                   const active = payment.method === key;
                   return (
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setPayment({ method: key })}
-                      aria-pressed={active}
+                      role="radio"
+                      aria-checked={active}
                       aria-label={`Pagar con ${label}`}
+                      onClick={() => setPayment({ method: key })}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-4 h-11 text-[length:var(--ts-sm)] font-bold transition-colors",
+                        "group flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors",
                         active
-                          ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50",
+                          ? "bg-[var(--surface-sunken)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--text-tertiary)]/40",
                       )}
+                      style={active ? { borderColor: color } : undefined}
                     >
-                      <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                      {label}
+                      <span
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white"
+                        style={{ backgroundColor: color }}
+                      >
+                        <Icon className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[length:var(--ts-sm)] font-extrabold leading-tight text-[var(--text-primary)]">
+                          {label}
+                        </span>
+                        <span className="block text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
+                          {sub}
+                        </span>
+                      </span>
+                      {/* Círculo de elección (radio) */}
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                          !active && "border-[var(--rule-base)] group-hover:border-[var(--text-tertiary)]",
+                        )}
+                        style={active ? { borderColor: color } : undefined}
+                      >
+                        {active && (
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+                        )}
+                      </span>
                     </button>
                   );
                 })}
@@ -937,12 +975,23 @@ export default function CheckoutConfirmarPage() {
             los pasos previos, en confirmar solo necesita ver y aceptar */}
         <div className="hidden lg:block">
           <CheckoutSummary
-            ctaLabel={submitting ? "Procesando..." : "Confirmar pedido"}
+            ctaLabel={
+              submitting
+                ? "Procesando..."
+                : needsPaymentChoice
+                  ? "Elegí cómo pagás"
+                  : "Confirmar pedido"
+            }
             onCtaClick={handleConfirm}
+            ctaDisabled={submitting || needsPaymentChoice}
             ctaLoading={submitting}
             couponDiscount={couponDiscountTotal}
             loyaltyDiscount={loyaltyDiscountTotal}
-            helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
+            helperText={
+              needsPaymentChoice
+                ? "Elegí un método de pago para confirmar"
+                : "Al confirmar aceptás que cada bodega te contacte por WhatsApp"
+            }
           />
         </div>
         <AuthModal open={authModalOpen} onClose={closeAuthModal} />
@@ -952,11 +1001,21 @@ export default function CheckoutConfirmarPage() {
       <CheckoutMobileCtaBar
         primaryLabel="Total"
         total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
-        ctaLabel={submitting ? "Procesando tu pedido..." : "Confirmar pedido"}
+        ctaLabel={
+          submitting
+            ? "Procesando tu pedido..."
+            : needsPaymentChoice
+              ? "Elegí cómo pagás"
+              : "Confirmar pedido"
+        }
         ctaOnClick={handleConfirm}
-        ctaDisabled={submitting}
+        ctaDisabled={submitting || needsPaymentChoice}
         ctaLoading={submitting}
-        helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
+        helperText={
+          needsPaymentChoice
+            ? "Elegí un método de pago para confirmar"
+            : "Al confirmar aceptás que cada bodega te contacte por WhatsApp"
+        }
       />
 
       {/* Modal de detalle del pedido (abierto desde el botón ojo) */}
