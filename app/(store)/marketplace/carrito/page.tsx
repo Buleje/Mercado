@@ -68,7 +68,7 @@ function ItemRow({
     >
       <Link
         href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-        className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
+        className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-none overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
       >
         {item.image ? (
           <Image
@@ -400,7 +400,7 @@ export default function CarritoPage() {
       {isEmpty ? (
         <div
           className={cn(
-            "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+            "rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
             "px-6 py-10 sm:py-14 text-center flex flex-col items-center gap-4 sm:gap-5",
           )}
         >
@@ -444,17 +444,17 @@ export default function CarritoPage() {
               return (
                 <article
                   key={sid}
-                  className="rounded-2xl sm:rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  className="rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
                 >
-                  {/* Store header — gradient sutil + avatar inicial + ver tienda */}
-                  <header className="relative flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-linear-to-r from-[var(--surface-sunken)]/60 to-[var(--accent-soft)]/30 px-4 sm:px-5 py-2.5 sm:py-3">
+                  {/* Store header — flat, sin gradiente (minimalista) + avatar + ver tienda */}
+                  <header className="relative flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-5 py-2.5 sm:py-3">
                     <Link
                       href={`/marketplace/${group.storeSlug}`}
                       className="flex items-center gap-3 min-w-0 group/store"
                     >
                       <span
                         aria-hidden
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white text-sm font-black uppercase shadow-sm shrink-0"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-none bg-[var(--accent)] text-white text-sm font-black uppercase shrink-0"
                       >
                         {group.storeName?.charAt(0) ?? <Store className="h-5 w-5" />}
                       </span>

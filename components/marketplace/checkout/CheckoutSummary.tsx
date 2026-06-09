@@ -120,7 +120,7 @@ export default function CheckoutSummary({
       aria-label="Resumen del pedido"
       className={cn(
         "lg:sticky lg:top-24 lg:self-start",
-        "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+        "rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
         "p-5 space-y-5",
       )}
     >

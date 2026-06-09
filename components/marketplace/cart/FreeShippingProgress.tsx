@@ -39,7 +39,7 @@ export default function FreeShippingProgress({ className }: { className?: string
           : `Te faltan ${fmt(remaining)} para delivery gratis`
       }
       className={cn(
-        "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3",
+        "rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3",
         className,
       )}
     >
