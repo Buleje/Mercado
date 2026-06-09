@@ -631,6 +631,9 @@ export default function CheckoutConfirmarPage() {
 
   const showAuthBanner = !loggedCustomer && !guestMode;
   const couponEntries = Object.entries(coupons);
+  // Todos los productos aplanados (cross-store) para la fila Temu de la sección
+  // de pedido. Brandon 2026-06-08.
+  const allItems = storeIds.flatMap((sid) => byStore[sid].items);
 
   // Flujo rápido (logueado con dirección guardada): solo carrito → finalizar, así
   // que el "atrás" vuelve al carrito (no a entrega, que es sub-edición). Coincide
@@ -700,10 +703,9 @@ export default function CheckoutConfirmarPage() {
             />
           </div>
 
-          {/* Grid de review cards — Brandon 2026-06-01: 2 columnas también en
-              mobile. Datos y Entrega ocupan fila completa (contenido multi-campo);
-              Pago y Pedido van lado a lado (contenido corto) → la sección de
-              resumen ocupa 3 filas en vez de 4 cajas apiladas. */}
+          {/* Grid de review cards — Brandon 2026-06-08: solo Datos y Entrega.
+              "Pago" y "Pedido" se movieron a la sección Temu de abajo (fila de
+              productos + selector de pago). En sm+ van lado a lado. */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
             <ReviewCard
               kicker="Datos"
@@ -733,76 +735,6 @@ export default function CheckoutConfirmarPage() {
               </dl>
             </ReviewCard>
 
-            <ReviewCard
-              kicker="Pago"
-              title="Cómo pagás"
-              icon={Wallet}
-              editHref="/checkout/entrega?edit=1"
-              dense
-            >
-              {/* Selector de pago INLINE (Brandon 2026-06-08): se elige acá, en la
-                  página de finalizar. La API acepta el pedido sin comprobante
-                  pre-subido (pago/Yape al recibir). */}
-              <div className="flex flex-wrap gap-2">
-                {([
-                  { key: "efectivo", label: "Efectivo", Icon: Wallet },
-                  { key: "yape", label: "Yape", Icon: Smartphone },
-                  { key: "plin", label: "Plin", Icon: Smartphone },
-                ] as const).map(({ key, label, Icon }) => {
-                  const active = payment.method === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setPayment({ method: key })}
-                      aria-pressed={active}
-                      aria-label={`Pagar con ${label}`}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-[length:var(--ts-xs)] font-bold transition-colors",
-                        active
-                          ? "border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50",
-                      )}
-                    >
-                      <Icon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-              {payment.method === "efectivo" && payment.cashAmount && (
-                <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-2">
-                  Llevás{" "}
-                  <span className="font-bold tabular-nums text-[var(--text-secondary)]">
-                    S/{payment.cashAmount}
-                  </span>
-                </p>
-              )}
-              {(payment.method === "yape" || payment.method === "plin") && (
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2 leading-snug">
-                  Coordinás el comprobante por WhatsApp al confirmar, o subilo en{" "}
-                  <Link href="/checkout/entrega?edit=1" className="font-bold text-[var(--accent)] underline">
-                    pago
-                  </Link>
-                  .
-                </p>
-              )}
-            </ReviewCard>
-
-            <ReviewCard
-              kicker="Pedido"
-              title={`${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
-              icon={ShoppingBag}
-              editHref="/marketplace/carrito"
-              dense
-            >
-              <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] tabular-nums">
-                {fmt(grandTotal)}
-              </p>
-              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-1">
-                de {storeIds.length} {storeIds.length === 1 ? "tienda" : "tiendas"}
-              </p>
-            </ReviewCard>
           </div>
 
           {/* Cupones aplicados (si hay) */}
@@ -859,40 +791,34 @@ export default function CheckoutConfirmarPage() {
             </ReviewCard>
           )}
 
-          {/* Productos detallados */}
-          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-7 space-y-4 sm:space-y-5">
-            <div className="flex items-start justify-between gap-3">
+          {/* Productos (estilo Temu) + método de pago — Brandon 2026-06-08:
+              fila horizontal de cards (imagen arriba, precio abajo) y debajo el
+              selector de pago. Reemplaza las cards "Pago"/"Pedido" + el detalle
+              en lista. */}
+          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-6 space-y-5">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+                <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   <span
                     aria-hidden
                     className="inline-flex h-[3px] w-6 rounded-full bg-[var(--accent)]"
                   />
                   <ShoppingBag className="h-3 w-3" strokeWidth={2} aria-hidden />
-                  Productos
+                  Tu pedido
                 </p>
                 <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                  Tu pedido en detalle
+                  {itemCount} {itemCount === 1 ? "producto" : "productos"} ·{" "}
+                  <span className="tabular-nums">{fmt(grandTotal)}</span>
                 </h2>
               </div>
-              <div className="flex items-center gap-2">
-                {/* Botón OJO animado — abre modal con imágenes grandes */}
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setDetailsOpen(true)}
-                  aria-label="Ver detalle completo del pedido"
-                  className="group relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all hover:scale-110"
+                  aria-label="Ver detalle del pedido"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
                 >
-                  {/* Halo pulse permanente */}
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 rounded-full bg-[var(--accent)]/40 animate-ping"
-                  />
-                  <Eye
-                    className="relative h-5 w-5 transition-transform group-hover:scale-110"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
+                  <Eye className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </button>
                 <Link
                   href="/marketplace/carrito"
@@ -903,44 +829,92 @@ export default function CheckoutConfirmarPage() {
               </div>
             </div>
 
-            <div className="space-y-4 sm:space-y-5 divide-y divide-[var(--rule-soft)]">
-              {storeIds.map((sid) => {
-                const g = byStore[sid];
-                const sub = totalByStore[sid]?.total ?? 0;
-                return (
-                  <div key={sid} className="space-y-2 pt-4 sm:pt-5 first:pt-0">
-                    <div className="flex justify-between items-baseline gap-3">
-                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                        {g.storeName}
-                      </p>
-                      <p className="text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-primary)]">
-                        {fmt(sub)}
-                      </p>
-                    </div>
-                    <ul className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] space-y-1">
-                      {g.items.map((it, itIdx) => (
-                        <li
-                          // El mismo producto puede aparecer en varias líneas
-                          // (distinto precio/adicional) → incluir índice para
-                          // que la key sea única (storeId-productId colisionaba).
-                          key={`${it.storeId}-${it.productId}-${itIdx}`}
-                          className="flex justify-between gap-3"
-                        >
-                          <span className="truncate">
-                            <span className="tabular-nums font-semibold text-[var(--text-primary)] mr-1">
-                              {it.quantity}×
-                            </span>
-                            {it.name}
-                          </span>
-                          <span className="tabular-nums shrink-0 font-semibold">
-                            {fmt(it.price * it.quantity)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+            {/* Fila de productos — imagen arriba, precio abajo. UNA sola fila con
+                scroll horizontal si hay muchos (estilo Temu). */}
+            <ul className="flex gap-3 overflow-x-auto -mx-1 px-1 pb-1 snap-x snap-mandatory scrollbar-none">
+              {allItems.map((it, idx) => (
+                <li
+                  key={`${it.storeId}-${it.productId}-${idx}`}
+                  className="snap-start shrink-0 w-[104px] sm:w-[116px]"
+                >
+                  <div className="relative aspect-square overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+                    {it.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={it.image}
+                        alt={it.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center text-[var(--text-tertiary)]">
+                        <ShoppingBag className="h-7 w-7" strokeWidth={1.5} aria-hidden />
+                      </span>
+                    )}
+                    <span className="absolute top-1.5 right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)]/85 px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--surface-canvas)] backdrop-blur-sm">
+                      ×{it.quantity}
+                    </span>
                   </div>
-                );
-              })}
+                  <p className="mt-1.5 text-[length:var(--ts-sm)] font-black tabular-nums leading-tight text-[var(--text-primary)]">
+                    {fmt(it.price * it.quantity)}
+                  </p>
+                  <p className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)] line-clamp-1">
+                    {it.name}
+                  </p>
+                </li>
+              ))}
+            </ul>
+
+            {/* Método de pago — debajo de la fila de productos */}
+            <div className="border-t border-[var(--rule-soft)] pt-4">
+              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2.5">
+                <Wallet className="h-3 w-3" strokeWidth={2} aria-hidden />
+                Método de pago
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { key: "efectivo", label: "Efectivo", Icon: Wallet },
+                  { key: "yape", label: "Yape", Icon: Smartphone },
+                  { key: "plin", label: "Plin", Icon: Smartphone },
+                ] as const).map(({ key, label, Icon }) => {
+                  const active = payment.method === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setPayment({ method: key })}
+                      aria-pressed={active}
+                      aria-label={`Pagar con ${label}`}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-4 h-11 text-[length:var(--ts-sm)] font-bold transition-colors",
+                        active
+                          ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                          : "border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {payment.method === "efectivo" && payment.cashAmount && (
+                <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-2.5">
+                  Llevás{" "}
+                  <span className="font-bold tabular-nums text-[var(--text-secondary)]">
+                    S/{payment.cashAmount}
+                  </span>
+                </p>
+              )}
+              {(payment.method === "yape" || payment.method === "plin") && (
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2.5 leading-snug">
+                  Coordinás el comprobante por WhatsApp al confirmar, o subilo en{" "}
+                  <Link href="/checkout/entrega?edit=1" className="font-bold text-[var(--accent)] underline">
+                    pago
+                  </Link>
+                  .
+                </p>
+              )}
             </div>
           </section>
 
@@ -968,7 +942,6 @@ export default function CheckoutConfirmarPage() {
             ctaLoading={submitting}
             couponDiscount={couponDiscountTotal}
             loyaltyDiscount={loyaltyDiscountTotal}
-            showItems
             helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
           />
         </div>
