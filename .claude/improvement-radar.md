@@ -39,12 +39,8 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ## Bloqueadas
 
-### [blocked] 2026-04-28 — Schema drift ProductAnalytics
-- **Razón:** `prisma migrate status` reporta `P1013: invalid port number in database URL`. DIRECT_URL en `.env.local` tiene problema de formato/red.
-- **Acción manual:** corregir DIRECT_URL (ver Supabase dashboard → Settings → Database → Connection string → Direct) y luego correr:
-  ```
-  set -a && . .env.local && set +a && npx prisma migrate deploy
-  ```
+### [applied] Schema drift — RESUELTO TOTAL (2026-06-10, auditoría integral)
+- DIRECT_URL funciona (psql directo OK desde esta red). 13 migraciones registradas con `migrate resolve`, phantom reconstruida, drift-fix 1+2 aplicados (9 tablas creadas). `prisma migrate status` → up to date · `db:drift` → 0/0/0 faltantes.
 
 ### [blocked] 2026-05-02 — 4 migrations may-2 pending Supabase prod
 - **Migrations:** add_delivery_sos_alert / add_delivery_partner_score / add_payment_approval / add_payment_approval_link.
@@ -147,11 +143,8 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ## Deuda detectada 2026-05-02
 
-### [pending] 410 errors eslint legacy (sprint propio)
-- `npm run lint` reporta 410 errors + 6245 warnings sobre proyecto entero.
-- **NO bloquea commits**: pre-commit usa `--max-warnings 150` solo en archivos staged.
-- Mayoría: reglas nuevas del React Compiler annotation mode + `ds-no-decorative-color-admin` (ADR-075) + `ds-no-direct-lucide-import`.
-- Esfuerzo estimado: 4-8h sprint dedicado. Probable estrategia: codemods + reglas selectivas.
+### [applied] 410 errors eslint legacy — RESUELTO (re-verificado 2026-06-10)
+- `npm run lint` hoy: **0 errores, 0 warnings** (gate de auditoría integral). Los 410 se fueron limpiando en sprints intermedios. Entry stale, cerrado.
 
 ## Aplicadas 2026-05-20
 
@@ -175,10 +168,14 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 - Subtítulo VISIBLE en mobile con copy "Pedí en 2 min. Pagás cuando llega"
 - CTA "Ver todas las tiendas" promovido a botón primario filled verde
 
-### [pending] TD-116 — migrar 880 endpoints a withRlsTenant()
-- Esfuerzo estimado: 5-8h sprint dedicado.
-- Bloqueante para cambiar DATABASE_URL a app_user en Vercel.
-- Sin este sprint, RLS es defensa latente (no activa).
+### [pending→DESBLOQUEADO 2026-06-10] TD-116 — migrar endpoints a withRlsTx()
+- **Infra COMPLETA hoy (commits hasta esta sesión):**
+  - Hallazgo: `postgres` tiene `rolbypassrls=true` → `withRlsTenant` viejo era no-op + pitfall SET LOCAL fuera de tx.
+  - Fix: `withRlsTx()` en lib/prisma-rls.ts (SET LOCAL + queries en UNA transacción).
+  - Políticas fail-open (fase expand) aplicadas — cambiar el rol NO rompe paths sin migrar.
+  - Rol `buleje_app` NOBYPASSRLS creado + grants. Credencial: /tmp/buleje_app.env (Brandon la agrega a .env.local/Vercel).
+  - Aislamiento VERIFICADO como buleje_app: main=19 · tenant=6 · falso=0 · __system__=80.
+- **Lo que queda (orden):** 1) Brandon agrega BULEJE_APP_DATABASE_URL y canary del rol en dev → 2) migrar endpoints a `withRlsTx` por lotes (usar la variante TX, no la vieja) → 3) al 100%, fase contract: políticas fail-closed.
 
 ## Deuda detectada 2026-05-20 (post Ola 1/2/3 deps upgrade)
 
@@ -210,13 +207,13 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 Detectados 114 patrones con ≥3 co-edits sin skill creado.
 Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 
-### [pending] pat-coedit-1777240582428-zpqt
+### [rejected-stale 2026-06-10] pat-coedit-1777240582428-zpqt
 - **Tipo:** `co_edit_cluster` (3 occurrences)
 - **Files:** `app/api/marketplace/subcategories/route.ts`, `app/tiendas/TiendasClient.tsx`
 - **Sugerencia:** Files [app/api/marketplace/subcategories/route.ts, app/tiendas/TiendasClient.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
 - **Last seen:** 2026-04-26T21:56:22.427Z
 
-### [pending] pat-coedit-1777253978825-5eer
+### [rejected-stale 2026-06-10] pat-coedit-1777253978825-5eer (TiendasClient ya decompuesto; patrones de abril)
 - **Tipo:** `co_edit_cluster` (3 occurrences)
 - **Files:** `components/marketplace/PromoBannerRenderer.tsx`, `lib/promo-banners.ts`
 - **Sugerencia:** Files [components/marketplace/PromoBannerRenderer.tsx, lib/promo-banners.ts] are always edited together. Consider creating a skill that pre-loads all 2 files.
