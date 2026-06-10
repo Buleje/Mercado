@@ -6,6 +6,7 @@ import type Stripe from "stripe";
 import { logger } from "@/lib/logger";
 import { enqueueWebhookEvent } from "@/lib/stripe-webhook-queue";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * @prisma-direct excepción documentada — este handler usa `prisma.*` directo
@@ -44,7 +45,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 // Stripe paga retries, vos pagás compute. STRICT cap (10 req/min por IP)
 // es seguro porque Stripe nunca envía más de 1 evento por segundo a una IP.
 // ─────────────────────────────────────────────────────────────────────────────
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("billing-stripe-webhook", async (req: NextRequest) => {
   const _rl = applyRateLimit(req, "STRICT", "stripe-webhook");
   if (_rl) return _rl;
 
@@ -150,7 +151,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
-}
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Exported so the replay endpoint can reuse the same logic.

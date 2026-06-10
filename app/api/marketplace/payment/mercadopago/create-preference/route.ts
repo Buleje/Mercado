@@ -7,6 +7,7 @@ import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { OrdersDB } from "@/lib/db/orders.db";
+import { withApiHandler } from "@/lib/api-handler";
 
 const CreatePreferenceSchema = z.object({
   storeSlug: z.string().min(1),
@@ -19,7 +20,7 @@ const CreatePreferenceSchema = z.object({
 
 // POST /api/marketplace/payment/mercadopago/create-preference
 // Creates a MercadoPago checkout preference for a marketplace order
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("marketplace-mp-create-preference", async (req: NextRequest) => {
   const rateLimitResponse = applyRateLimit(req, "STRICT", "mp-create-preference");
   if (rateLimitResponse) return rateLimitResponse;
 
@@ -120,4 +121,4 @@ export async function POST(req: NextRequest) {
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }
-}
+});

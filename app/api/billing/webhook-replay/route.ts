@@ -18,8 +18,9 @@ import {
 } from "@/lib/stripe-webhook-queue";
 import { processStripeEvent } from "@/app/api/billing/webhook/route";
 import type Stripe from "stripe";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("billing-webhook-replay", async (req: NextRequest) => {
   // ── Auth ─────────────────────────────────────────────
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
@@ -87,4 +88,4 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ replayed: succeeded, failed, total: pending.length });
-}
+});

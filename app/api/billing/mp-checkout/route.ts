@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import type { PlanId } from "@/lib/plans";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { withApiHandler } from "@/lib/api-handler";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-checkout
@@ -22,7 +23,7 @@ const BodySchema = z.object({
   plan: z.enum(["pro", "business", "enterprise"]),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("billing-mp-checkout", async (req: NextRequest) => {
   // Audit 2026-05-19: endpoint mueve dinero (MP Preferences) — STRICT.
   const _rl = await applyRateLimit(req, "STRICT", "billing-mp-checkout"); if (_rl) return _rl;
   // ── Auth ─────────────────────────────────────────────────
@@ -113,4 +114,4 @@ export async function POST(req: NextRequest) {
     init_point: result.init_point,
     preference_id: result.id,
   });
-}
+});

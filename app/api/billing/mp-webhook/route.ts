@@ -26,6 +26,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { PLAN_ORDER, type PlanId } from "@/lib/plans";
+import { withApiHandler } from "@/lib/api-handler";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-webhook
@@ -60,7 +61,7 @@ function redactId(id: string): string {
   return `***${id.slice(-4)}`;
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("billing-mp-webhook", async (req: NextRequest) => {
   // PENTEST 2026-05-18 Sprint B: rate limit STRICT (10 req/15min). Sin esto
   // un atacante puede flood el endpoint con firmas inválidas y agotar CPU
   // (cada request hace verifyMPWebhookSignature HMAC + insert idempotency
@@ -248,7 +249,7 @@ export async function POST(req: NextRequest) {
     });
 
   return NextResponse.json({ received: true });
-}
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Lógica de activación del plan tras pago aprobado

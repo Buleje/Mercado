@@ -9,6 +9,7 @@ import {
 } from "@/lib/billing/metering";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { withApiHandler } from "@/lib/api-handler";
 
 const MeterBodySchema = z.object({
   event: z.enum(METERED_EVENTS),
@@ -24,7 +25,7 @@ const MeterBodySchema = z.object({
  * Records a metered usage event for the caller's tenant. The tenant is
  * taken from the admin session — never trusted from the body.
  */
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("billing-meter-post", async (req: NextRequest) => {
   const _rl = await applyRateLimit(req, "MODERATE", "billing-meter"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ recorded: true }, { status: 201 });
-}
+});
 
 /**
  * GET /api/billing/meter
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
  * Returns the aggregated metered usage for the caller's tenant over the
  * given period, broken down by event type.
  */
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("billing-meter-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -98,4 +99,4 @@ export async function GET(req: NextRequest) {
     to: period.to.toISOString(),
     usage,
   });
-}
+});

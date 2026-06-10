@@ -8,11 +8,12 @@ import {
 } from "@/lib/stripe";
 import type { PlanId } from "@/lib/plans";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { withApiHandler } from "@/lib/api-handler";
 
 // POST /api/billing/checkout
 // Body: { plan: "pro" | "business" }
 // Creates a Stripe Checkout Session and returns { url }
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("billing-checkout", async (req: NextRequest) => {
   // Audit 2026-05-19: endpoint mueve dinero (Stripe Checkout SaaS) — STRICT bajo el principio
   // de menor tasa para superficies de pago.
   const _rl = await applyRateLimit(req, "STRICT", "billing-checkout"); if (_rl) return _rl;
@@ -79,4 +80,4 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ url });
-}
+});

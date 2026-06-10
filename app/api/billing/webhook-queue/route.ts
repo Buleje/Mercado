@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { BillingWebhookQueueDB } from "@/lib/db/billing-webhook-queue.db";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * GET /api/billing/webhook-queue — return all queue items for the admin UI
  * Audit project-wide 2026-05-19: migrado a BillingWebhookQueueDB.
  */
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("billing-webhook-queue-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -20,14 +21,14 @@ export async function GET(req: NextRequest) {
       { status: 503 }
     );
   }
-}
+});
 
 /** DELETE /api/billing/webhook-queue?id=<id> — dismiss a stuck event.
  * SECURITY 2026-05-06 (pentest billing #4): superadmin-only. Antes admin
  * de tenant A podía borrar evento de pago de tenant B (cola compartida)
  * y bloquear su activación de plan ya pagado.
  */
-export async function DELETE(req: NextRequest) {
+export const DELETE = withApiHandler("billing-webhook-queue-delete", async (req: NextRequest) => {
   const _rl = await applyRateLimit(req, "MODERATE", "billing-webhook-queue"); if (_rl) return _rl;
   const { requirePlatformAPI } = await import("@/lib/superadmin-auth");
   const auth = await requirePlatformAPI(req);
@@ -45,4 +46,4 @@ export async function DELETE(req: NextRequest) {
       { status: 503 }
     );
   }
-}
+});

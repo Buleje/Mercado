@@ -4,6 +4,7 @@ import { BillingMpSubscriptionStatusDB } from "@/lib/db/billing-mp-subscription-
 import { getMPSubscriptionStatus } from "@/lib/mercadopago";
 import { getPlanDef } from "@/lib/plans";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/billing/mp-subscription-status
@@ -24,7 +25,7 @@ import { logger } from "@/lib/logger";
 //   }
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("billing-mp-subscription-status", async (req: NextRequest) => {
   // ── Auth ─────────────────────────────────────────────────
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -87,4 +88,4 @@ export async function GET(req: NextRequest) {
     cancelAtPeriodEnd: tenant.cancelAtPeriodEnd,
     periodEnd: tenant.stripeCurrentPeriodEnd?.toISOString() ?? null,
   });
-}
+});

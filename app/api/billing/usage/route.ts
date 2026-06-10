@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { getTenantUsageSnapshot } from "@/lib/usage";
 import { BillingUsageDB } from "@/lib/db/billing-usage.db";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * GET /api/billing/usage
  * Retorna el uso actual del tenant vs los límites de su plan.
  * Usado por UpgradeBanner y el dashboard admin para mostrar progreso.
  */
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("billing-usage", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -30,4 +31,4 @@ export async function GET(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Error obteniendo uso" }, { status: 500 });
   }
-}
+});

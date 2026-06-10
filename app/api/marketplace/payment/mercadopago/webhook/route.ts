@@ -10,6 +10,7 @@ import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { OrderStatus } from "@/lib/generated/prisma/client";
 import { withAuditContext } from "@/lib/audit/audit-context";
 import { applyRateLimit, getClientIp } from "@/lib/rate-limit";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * @prisma-direct excepción documentada — el `prisma.order.updateMany` y el
@@ -22,7 +23,7 @@ import { applyRateLimit, getClientIp } from "@/lib/rate-limit";
 
 // POST /api/marketplace/payment/mercadopago/webhook
 // Handles MercadoPago IPN notifications for marketplace orders
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("marketplace-mp-webhook", async (req: NextRequest) => {
   // PENTEST 2026-05-18 Sprint B: rate limit STRICT (10 req/15min). Defensa
   // contra DoS via firmas inválidas (HMAC compute + DB insert antes de fallar).
   const rl = applyRateLimit(req, "STRICT", "mp-marketplace-webhook");
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     },
     () => mpWebhookHandler(req),
   );
-}
+});
 
 async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
   const traceId = newTraceId();
@@ -195,7 +196,7 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
             tenantId: storeForUpdate.tenantId,
             type: "marketplace_payment",
             severity: "HIGH",
-            title: `⚠️ Pago MP con monto incorrecto — review urgente`,
+            title: `Pago MP con monto incorrecto — review urgente`,
             body: `Orden ${orderId.slice(0, 8)}… esperaba S/${expectedTotal.toFixed(2)} pero MP reportó S/${paidAmount.toFixed(2)}. Posible intento de fraude. NO confirmada automáticamente.`,
             actionUrl: `/admin?module=marketplace&tab=ordenes`,
             actionLabel: "Revisar pedido",
@@ -247,9 +248,9 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
             if (order.customerPhone) {
               sendWhatsAppQueued(
                 order.customerPhone,
-                `✅ Tu pago de S/ ${Number(order.total).toFixed(2)} fue confirmado.\n\n` +
+                `Tu pago de S/ ${Number(order.total).toFixed(2)} fue confirmado.\n\n` +
                 `Pedido: ${orderId.slice(0, 8)}…\n` +
-                `El vendedor está preparando tu pedido. 🛒`,
+                `El vendedor está preparando tu pedido.`,
                 { tenantId: order.tenantId, context: "mercadopago-payment-confirmed" },
               ).catch((err) => { logger.warn("[MP webhook] customer WA notify failed", { traceId, orderId, error: String(err) }); });
             }
@@ -265,7 +266,7 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
               });
               if (tenant?.ownerPhone) {
                 sendPushToPhone(tenant.ownerPhone, {
-                  title: `💳 Pago MP confirmado — ${store.name}`,
+                  title: `Pago MP confirmado — ${store.name}`,
                   body: `${order.customerName} pagó S/${Number(order.total).toFixed(2)} con Mercado Pago`,
                   url: `/admin?module=marketplace&tab=ordenes`,
                 }).catch((err) => logger.error("[marketplace/payment/mercadopago/webhook] operation failed", { error: String(err) }));

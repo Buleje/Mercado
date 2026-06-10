@@ -13,6 +13,7 @@ import { z } from "zod";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
 import { logActivity } from "@/lib/activity-logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 const AI_SOURCES = [
   "ai.llm.call",
@@ -28,7 +29,7 @@ const BodySchema = z.object({
   model: z.string().max(64).optional(),
 });
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+export const POST = withApiHandler("billing-wire-up-ai-hook", async (req: NextRequest): Promise<NextResponse> => {
   // Auth: INTERNAL_API_SECRET header
   const secret = process.env.INTERNAL_API_SECRET;
   if (!secret) {
@@ -80,4 +81,4 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
 
   return NextResponse.json({ queued: true }, { status: 202 });
-}
+});

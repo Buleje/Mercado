@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import type { PlanId } from "@/lib/plans";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { withApiHandler } from "@/lib/api-handler";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-subscribe
@@ -23,7 +24,7 @@ const BodySchema = z.object({
   plan: z.enum(["pro", "business", "enterprise"]),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("billing-mp-subscribe", async (req: NextRequest) => {
   const _rl = await applyRateLimit(req, "MODERATE", "billing-mp-subscribe"); if (_rl) return _rl;
   // ── Auth ─────────────────────────────────────────────────
   const auth = await requireAdmin(req, ["admin"]);
@@ -125,4 +126,4 @@ export async function POST(req: NextRequest) {
     init_point: result.init_point,
     preapproval_id: result.preapprovalId,
   });
-}
+});

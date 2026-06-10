@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { TenantBillingDB } from "@/lib/db/tenant-billing.db";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { logActivity } from "@/lib/activity-logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-cancel
@@ -18,7 +19,7 @@ import { logActivity } from "@/lib/activity-logger";
 // No requiere body — opera sobre el mpSubscriptionId guardado en el Tenant.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("billing-mp-cancel", async (req: NextRequest) => {
   const _rl = await applyRateLimit(req, "MODERATE", "billing-mp-cancel"); if (_rl) return _rl;
   // ── Auth ─────────────────────────────────────────────────
   const auth = await requireAdmin(req, ["admin"]);
@@ -91,4 +92,4 @@ export async function POST(req: NextRequest) {
       message: "Suscripción cancelada. El plan se mantiene activo hasta el fin del período ya pagado.",
     });
   });
-}
+});

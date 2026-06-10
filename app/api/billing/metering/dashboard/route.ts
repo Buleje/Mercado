@@ -17,8 +17,9 @@ import {
 import { USAGE_TIERS, normalizeTier } from "@/lib/billing/wire-up/usage-tiers";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
+export const GET = withApiHandler("billing-metering-dashboard", async (req: NextRequest) => {
   try {
     // 1. Auth
     const auth = await requireAdmin(req, ["admin"]);
@@ -105,4 +106,4 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-}
+});
