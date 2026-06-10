@@ -44,6 +44,11 @@ function shouldShowRail(pathname: string): boolean {
   if (pathname === "/marketplace") return true;
   if (pathname.startsWith("/tiendas")) return true;
   if (pathname.startsWith("/recetas")) return true;
+  // Brandon 2026-06-10: el rail lateral también en Negocios y Abre tu Tienda
+  // (estaban como passthrough) → navegación lateral presente en TODAS las
+  // páginas del nav (Inicio·Tiendas·En Vivo·Recetas·Ofertas·Negocios·Abre tu Tienda).
+  if (pathname.startsWith("/negocios")) return true;
+  if (pathname.startsWith("/abrir-tienda")) return true;
   const m = pathname.match(/^\/marketplace\/([^/]+)/);
   if (m) return MARKETPLACE_SECTION_SEGMENTS.has(m[1]);
   return false;

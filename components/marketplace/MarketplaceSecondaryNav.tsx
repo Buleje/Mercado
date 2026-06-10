@@ -175,11 +175,13 @@ export default function MarketplaceSecondaryNav() {
                   key={link.href}
                   href={link.href}
                   aria-current={active ? "page" : undefined}
+                  /* Active state minimalista (Brandon 2026-06-10): raya debajo,
+                     sin pill ni fondo difuminado. */
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-sm transition-colors",
+                    "inline-flex items-center gap-1.5 border-b-2 px-1.5 h-9 text-sm transition-colors",
                     active
-                      ? "font-bold text-[var(--accent)] bg-[var(--accent)]/10"
-                      : "font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                      ? "font-bold text-[var(--text-primary)] border-[var(--accent)]"
+                      : "font-semibold text-[var(--text-secondary)] border-transparent hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
                   )}
                 >
                   <Icon

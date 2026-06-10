@@ -98,12 +98,15 @@ export default function MarketplaceNavRail({
                 href={l.href}
                 aria-current={active ? "page" : undefined}
                 title={!expanded ? l.label : undefined}
+                /* Active state minimalista (Brandon 2026-06-10): solo una raya
+                   debajo + texto fuerte. Sin fondo difuminado. Inactivo muestra
+                   una raya gris sutil al hover. */
                 className={cn(
-                  "flex items-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+                  "flex items-center border-b-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                   expanded ? "gap-3 px-3 h-11" : "flex-col gap-1 py-2.5 px-1",
                   active
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                    ? "border-[var(--accent)] text-[var(--text-primary)]"
+                    : "border-transparent text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" strokeWidth={1.9} aria-hidden="true" />

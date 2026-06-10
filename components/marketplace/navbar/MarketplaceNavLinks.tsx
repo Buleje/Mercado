@@ -157,12 +157,14 @@ export default function MarketplaceNavLinks({
           tabIndex={opts?.measure ? -1 : undefined}
           aria-hidden={opts?.measure || undefined}
           aria-current={active ? "page" : undefined}
+          /* Active state minimalista (Brandon 2026-06-10): raya debajo + texto
+             fuerte, sin pill ni fondo difuminado. */
           className={cn(
-            "whitespace-nowrap inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold transition-all",
+            "whitespace-nowrap inline-flex items-center gap-1 border-b-2 px-1 pt-1.5 pb-1 text-sm font-semibold transition-colors",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
             active
-              ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-              : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+              ? "border-[var(--accent)] text-[var(--text-primary)]"
+              : "border-transparent text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
           )}
         >
           <LinkIcon
