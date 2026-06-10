@@ -119,13 +119,17 @@ export default function MarketplaceSecondaryNav() {
     // panel absolute) → el mega-menú full-width se ancla a SUS bordes = bordes
     // del viewport. Por eso el render del panel se movió aquí, fuera del wrapper
     // angosto del trigger (Brandon 2026-06-10).
+    // Responsive (Brandon 2026-06-10): de tablet (md) hacia arriba. En móvil
+    // (<md) la sub-nav de categorías de PRODUCTO la aporta MarketplaceCategoriesBar
+    // (no duplicar). Acá los filtros scrollean en horizontal si no caben en
+    // tablet; "Categorías" queda SIEMPRE fijo a la derecha.
     <div className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40">
-      <div className="relative w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-5 h-12">
-          {/* ── Filtros rápidos (icono + label, sin repetir el nav) ── */}
+      <div className="relative w-full px-4 lg:px-8">
+        <div className="flex items-center gap-2 lg:gap-4 h-12">
+          {/* ── Filtros rápidos — scrolleables en pantallas chicas (sin barra) ── */}
           <nav
             aria-label="Filtros rápidos del marketplace"
-            className="flex items-center gap-1 min-w-0"
+            className="flex items-center gap-0.5 sm:gap-1 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {QUICK_LINKS.map((link) => {
               const active = isQuickLinkActive(link);
@@ -136,9 +140,10 @@ export default function MarketplaceSecondaryNav() {
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   /* Active state minimalista (Brandon 2026-06-10): raya debajo,
-                     sin pill ni fondo difuminado. */
+                     sin pill ni fondo difuminado. `shrink-0` para no comprimirse
+                     dentro del scroll horizontal. */
                   className={cn(
-                    "inline-flex items-center gap-1.5 border-b-2 px-1.5 h-9 text-sm transition-colors",
+                    "shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 border-b-2 px-1.5 sm:px-2 h-9 text-[13px] sm:text-sm transition-colors",
                     active
                       ? "font-bold text-[var(--text-primary)] border-[var(--accent)]"
                       : "font-semibold text-[var(--text-secondary)] border-transparent hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
@@ -155,48 +160,50 @@ export default function MarketplaceSecondaryNav() {
             })}
           </nav>
 
-          {/* ── A la DERECHA (Brandon 2026-06-10): envío gratis + el botón
-               "Categorías" movido al lado derecho de los demás enlaces. ── */}
-          <div className="ml-auto flex items-center gap-4 shrink-0">
-            <FreeShippingIndicator />
-            {/* Separador vertical sutil */}
-            <div
-              className="h-5 w-px bg-[var(--rule-base)]"
-              aria-hidden="true"
-            />
-            {/* ── Trigger "Categorías" — pill primario con hover intent ── */}
-            <div
-              className="shrink-0"
-              onMouseEnter={openMenu}
-              onMouseLeave={scheduleClose}
+          {/* ── Barra de separación sutil entre "Cerca de mí" y "Categorías"
+               (Brandon 2026-06-10). ── */}
+          <div
+            className="h-5 w-px bg-[var(--rule-soft)] shrink-0"
+            aria-hidden="true"
+          />
+
+          {/* ── Trigger "Categorías" — SIEMPRE fijo a la derecha (shrink-0). ── */}
+          <div
+            className="shrink-0"
+            onMouseEnter={openMenu}
+            onMouseLeave={scheduleClose}
+          >
+            <button
+              ref={triggerRef}
+              type="button"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+              aria-controls="category-mega-menu"
+              onClick={() => setMenuOpen((o) => !o)}
+              onFocus={openMenu}
+              className={cn(
+                "inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-3 sm:px-3.5 h-9 text-[13px] sm:text-sm font-bold tracking-tight transition-colors",
+                menuOpen
+                  ? "bg-[var(--accent)] text-white"
+                  : "bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+              )}
             >
-              <button
-                ref={triggerRef}
-                type="button"
-                aria-haspopup="true"
-                aria-expanded={menuOpen}
-                aria-controls="category-mega-menu"
-                onClick={() => setMenuOpen((o) => !o)}
-                onFocus={openMenu}
+              <LayoutGrid className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
+              <span className="hidden sm:inline">Categorías</span>
+              <ChevronDown
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-3.5 h-9 text-sm font-bold tracking-tight transition-colors",
-                  menuOpen
-                    ? "bg-[var(--accent)] text-white"
-                    : "bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+                  "h-3.5 w-3.5 shrink-0 transition-transform duration-150",
+                  menuOpen && "rotate-180",
                 )}
-              >
-                <LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-                Categorías
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 transition-transform duration-150",
-                    menuOpen && "rotate-180",
-                  )}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-              </button>
-            </div>
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+
+          {/* ── Envío gratis — solo desktop (ahorra espacio en móvil/tablet). ── */}
+          <div className="hidden lg:block shrink-0">
+            <FreeShippingIndicator />
           </div>
         </div>
       </div>
