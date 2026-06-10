@@ -1060,31 +1060,32 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
         {/* ── ASIDE: Filtros (sidebar en lg+, flujo inline en <lg) ──
              En desktop: 280px sticky, separado del grid por gap-8.
              En mobile/tablet: flujo inline idéntico al anterior (mb-4). */}
+        {/* Sidebar de filtros — rediseño minimalista (Brandon 2026-06-10):
+            SIN tarjeta redondeada/sombra. Los filtros viven sobre el canvas,
+            separados del grid por un hairline a la derecha (lg:border-r). Mismo
+            lenguaje que QuickFilterToggle: radios sutiles, contornos en vez de
+            fondos difuminados, estado activo = contorno oscuro sólido. */}
         <aside
           aria-label="Filtros de tiendas"
-          className="space-y-3 mb-3 lg:space-y-4 lg:mb-0 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:bg-[var(--surface-raised)] lg:rounded-2xl lg:border lg:border-[var(--rule-base)] lg:p-5"
+          className="space-y-4 mb-3 lg:space-y-5 lg:mb-0 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]"
         >
           {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
               filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
-          <div className="hidden lg:flex items-center justify-between gap-2 pb-3 mb-1 border-b border-[var(--rule-base)]">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <SlidersHorizontal className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-black leading-tight tracking-tight text-[var(--text-primary)]">Filtros</p>
-                <p className="text-[length:var(--ts-2xs)] font-semibold leading-tight text-[var(--text-tertiary)]">
-                  {activeFilterCount > 0
-                    ? `${activeFilterCount} activo${activeFilterCount === 1 ? "" : "s"}`
-                    : "Afina tu búsqueda"}
-                </p>
-              </div>
+          <div className="hidden lg:flex items-center justify-between gap-2 pb-3 border-b border-[var(--rule-base)]">
+            <div className="flex min-w-0 items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={2.25} aria-hidden />
+              <h2 className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">Filtros</h2>
+              {activeFilterCount > 0 && (
+                <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+                  · {activeFilterCount}
+                </span>
+              )}
             </div>
             {activeFilterCount > 0 && (
               <button
                 type="button"
                 onClick={resetAllFilters}
-                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+                className="shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] transition-opacity hover:opacity-70"
               >
                 Limpiar
               </button>
@@ -1103,17 +1104,17 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
 
           {/* Vista lista / mapa — oculto en mobile (Brandon 2026-06-07: sin modo
               mapa en celular, siempre lista). Visible en md+. */}
-          <div className="hidden md:flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] p-1">
+          <div className="hidden md:grid grid-cols-2 rounded-md border border-[var(--rule-base)] overflow-hidden">
             <button
               type="button"
               onClick={() => setViewMode("list")}
               aria-pressed={viewMode === "list"}
               aria-label="Ver como lista"
               className={cn(
-                "flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-full text-sm font-bold transition-colors",
+                "inline-flex h-10 items-center justify-center gap-1.5 text-sm font-bold transition-colors",
                 viewMode === "list"
                   ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
               )}
             >
               <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -1125,10 +1126,10 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
               aria-pressed={viewMode === "map"}
               aria-label="Ver en el mapa"
               className={cn(
-                "flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-full text-sm font-bold transition-colors",
+                "inline-flex h-10 items-center justify-center gap-1.5 border-l border-[var(--rule-base)] text-sm font-bold transition-colors",
                 viewMode === "map"
                   ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
               )}
             >
               <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -1260,7 +1261,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                 <ArrowDownUp className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
                 Ordenar
               </p>
-              <StoresSortSelector value={sortKey} onChange={handleSortChange} className="w-full justify-between" />
+              {/* Override minimalista (Brandon 2026-06-10): radio sutil + hover
+                  sobrio en vez del pill redondeado/accent-soft del default. */}
+              <StoresSortSelector value={sortKey} onChange={handleSortChange} className="w-full justify-between !rounded-md hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40" />
             </div>
             {/* CALIFICACIÓN */}
             <div className="border-t border-[var(--rule-soft)] pt-3">
@@ -1318,24 +1321,15 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
               aria-haspopup="dialog"
               aria-expanded={zoneModalOpen}
               className={cn(
-                "w-full sm:w-auto lg:w-full inline-flex items-center gap-3 rounded-2xl lg:rounded-xl border-2 transition-colors px-4 h-12 sm:h-14 lg:h-11",
+                "w-full sm:w-auto lg:w-full inline-flex items-center gap-2.5 rounded-md border transition-colors px-3.5 h-12 sm:h-14 lg:h-11",
                 zone
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]/50",
+                  ? "border-[var(--text-primary)] bg-[var(--surface-sunken)] text-[var(--text-primary)]"
+                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)]/40",
               )}
             >
-              <span
-                className={cn(
-                  "inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0",
-                  zone
-                    ? "bg-[var(--accent-600,var(--accent))] text-white"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-                )}
-              >
-                <MapPin className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              </span>
+              <MapPin className={cn("h-4 w-4 shrink-0", zone ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]")} strokeWidth={2.25} aria-hidden />
               <span className="flex flex-col items-start gap-0.5 min-w-0">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-70 leading-tight">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
                   {zone ? "Zona activa" : "Filtrar por zona"}
                 </span>
                 <span className="text-sm font-extrabold tracking-tight leading-tight truncate max-w-[180px] sm:max-w-[240px]">
@@ -1360,7 +1354,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                     }
                   }}
                   aria-label="Quitar filtro de zona"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))]/15 hover:bg-[var(--accent-600,var(--accent))]/30 text-[var(--accent)] transition-colors shrink-0 cursor-pointer"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors shrink-0 cursor-pointer"
                 >
                   <span aria-hidden className="text-base font-black leading-none">×</span>
                 </span>

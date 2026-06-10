@@ -132,19 +132,22 @@ export default function SubcategoryChips({
             onClick={onClick}
             aria-pressed={active}
             title={s.description || s.label}
+            // Rediseño minimalista (Brandon 2026-06-10): radio sutil, contorno
+            // en vez de fondo difuminado, activo = contorno oscuro sólido (mismo
+            // lenguaje que QuickFilterToggle). Sin shadow ni translate.
             className={cn(
-              "group w-full flex items-center gap-2.5 rounded-xl border-2 px-2.5 py-2 text-base font-bold transition-all text-left hover:-translate-y-0.5",
+              "group w-full flex items-center gap-2.5 rounded-md border px-2.5 py-2 text-base font-bold transition-colors text-left",
               active
-                ? "bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--accent)] shadow-sm"
-                : "bg-[var(--surface-sunken)] border-transparent text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--text-primary)]",
+                ? "bg-[var(--surface-sunken)] border-[var(--text-primary)] text-[var(--text-primary)]"
+                : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-primary)]/40 hover:text-[var(--text-primary)]",
             )}
           >
             <span
               className={cn(
-                "h-9 w-9 rounded-lg overflow-hidden flex items-center justify-center shrink-0 transition-all",
+                "h-9 w-9 rounded-md overflow-hidden flex items-center justify-center shrink-0 transition-colors",
                 active
-                  ? "bg-[var(--accent)] text-white shadow-sm"
-                  : "bg-[var(--surface-raised)] text-[var(--text-tertiary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
+                  ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                  : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)]",
               )}
             >
               {s.imageUrl ? (

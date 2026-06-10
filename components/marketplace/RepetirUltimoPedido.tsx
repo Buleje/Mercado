@@ -206,8 +206,11 @@ export default function RepetirUltimoPedido({
 
   // ── Variante CHIP — pastilla compacta para la barra de filtros de /tiendas.
   if (variant === "chip") {
+    // Rediseño minimalista (Brandon 2026-06-10): pastilla plana w-full, radio
+    // sutil, borde accent + texto accent (sin fondo difuminado), hover sólido.
+    // Alinea con los controles del sidebar de filtros (h-10, rounded-md).
     const chipClass =
-      "inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3.5 h-9 text-sm font-bold whitespace-nowrap transition-colors hover:bg-[var(--accent)] hover:text-white";
+      "inline-flex w-full items-center justify-center gap-2 rounded-md border border-[var(--accent)] bg-transparent text-[var(--accent)] px-3.5 h-10 text-sm font-bold whitespace-nowrap transition-colors hover:bg-[var(--accent)] hover:text-white";
     const chipInner = (
       <>
         <Repeat className="h-4 w-4" strokeWidth={2.5} aria-hidden />
