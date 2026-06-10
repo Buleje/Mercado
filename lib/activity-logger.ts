@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { withRlsTx } from "@/lib/prisma-rls";
 import { logger } from "@/lib/logger";
 import { enqueueActivityLog, type ActivityLogJobData } from "@/lib/queue/queues";
 
@@ -36,9 +37,10 @@ export async function logActivity(
       logger.warn("[activity] missing tenantId — logging as '__unknown__'", { action, entity, user });
     }
     logger.info("[activity]", { action, entity, entityId, user, requestId, tenantId: effectiveTenantId });
-    await prisma.activityLog.create({
+    // TD-116 (2026-06-10): write vía withRlsTx — ActivityLog tiene RLS.
+    await withRlsTx(effectiveTenantId, (tx) => tx.activityLog.create({
       data: { action, entity, entityId, detail, user, tenantId: effectiveTenantId },
-    });
+    }));
   } catch {
     // Non-critical: never let logging errors break the caller
   }

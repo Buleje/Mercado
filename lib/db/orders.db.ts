@@ -301,6 +301,11 @@ export const OrdersDB = {
       : await query(prisma);
     return rows.map(mapOrder);
   },
+  // TD-116: add() NO se envuelve en withRlsTx en este lote A PROPÓSITO —
+  // es el corazón del checkout (190 líneas: upsert por phone-PK GLOBAL con
+  // edge multi-tenant TD-040, stubs de Product vía $executeRaw + setval, y
+  // cascada fire-and-forget post-create). Merece PR propio con checkout-squad
+  // y QA dedicado. Bajo políticas fail-open sigue funcionando idéntico.
   async add(order: DbOrder, tenantId: string): Promise<DbOrder> {
     // Ensure the customer exists in the DB before linking via FK
     const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
@@ -489,9 +494,6 @@ export const OrdersDB = {
    * Returns null if the order does not exist OR belongs to a different tenant.
    */
   async update(tenantId: string, id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
-    // Tenant-scoped existence check — returns null for cross-tenant IDs
-    const existing = await prisma.order.findFirst({ where: { id, tenantId } });
-    if (!existing) return null;
     const data: Record<string, unknown> = {};
     if (patch.status) data.status = patch.status;
     if (patch.notes !== undefined) data.notes = patch.notes;
@@ -506,8 +508,14 @@ export const OrdersDB = {
       if (patch.customer.location) data.customerLocation = patch.customer.location;
       if (patch.customer.reference) data.customerReference = patch.customer.reference;
     }
-    const row = await prisma.order.update({ where: { id, tenantId }, data, include: { items: true } });
-    return mapOrder(row);
+    // TD-116: check de existencia + update en UNA tx RLS (de paso cierra el
+    // TOCTOU entre el findFirst y el update). Cross-tenant → null, como antes.
+    const row = await withRlsTx(tenantId, async (tx) => {
+      const existing = await tx.order.findFirst({ where: { id, tenantId }, select: { id: true } });
+      if (!existing) return null;
+      return tx.order.update({ where: { id, tenantId }, data, include: { items: true } });
+    });
+    return row ? mapOrder(row) : null;
   },
   /**
    * Delete an order scoped to the given tenant.
@@ -515,7 +523,7 @@ export const OrdersDB = {
    * Uses deleteMany (does not throw on zero matches) instead of delete.
    */
   async delete(tenantId: string, id: string): Promise<void> {
-    await prisma.order.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[orders.db] delete order failed", { error: String(err), orderId: id, tenantId }));
+    await withRlsTx(tenantId, (tx) => tx.order.deleteMany({ where: { id, tenantId } })).catch((err) => logger.error("[orders.db] delete order failed", { error: String(err), orderId: id, tenantId }));
   },
 
   /**

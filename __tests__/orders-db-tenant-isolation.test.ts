@@ -172,8 +172,11 @@ describe("OrdersDB.update tenant isolation", () => {
     });
 
     expect(result).toBeNull();
+    // TD-116: el check de existencia ahora corre dentro de withRlsTx con
+    // select mínimo ({ id }) — el contrato (scope por tenant) es el mismo.
     expect(mockPrisma.order.findFirst).toHaveBeenCalledWith({
       where: { id: "ord-from-tenant-b", tenantId: TENANT_A },
+      select: { id: true },
     });
     // Critical: prisma.order.update must NOT be invoked
     expect(mockPrisma.order.update).not.toHaveBeenCalled();

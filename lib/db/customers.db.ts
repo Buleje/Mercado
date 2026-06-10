@@ -259,14 +259,16 @@ export const CustomersDB = {
   ): Promise<{ notifOrderUpdates: boolean; notifPromotions: boolean; notifRestock: boolean } | null> {
     if (!tenantId) throw new Error("CustomersDB.updatePreferences: tenantId requerido");
     const normalized = normalizePhone(phone);
-    const result = await prisma.customer.updateMany({
-      where: { phone: normalized, tenantId },
-      data,
-    });
-    if (result.count === 0) return null;
-    return prisma.customer.findFirst({
-      where: { phone: normalized, tenantId },
-      select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
+    return withRlsTx(tenantId, async (tx) => {
+      const result = await tx.customer.updateMany({
+        where: { phone: normalized, tenantId },
+        data,
+      });
+      if (result.count === 0) return null;
+      return tx.customer.findFirst({
+        where: { phone: normalized, tenantId },
+        select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
+      });
     });
   },
   async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
@@ -282,13 +284,15 @@ export const CustomersDB = {
     // scopeado por tenantId en ambas ramas. La constraint global de `phone @unique`
     // sigue vigente hasta TD-040 Phase 3 (drop @unique → @@unique([tenantId, phone])),
     // entonces si la creación falla por colisión cross-tenant, retornamos error explícito.
-    const existing = await prisma.customer.findFirst({
+    // TD-116: findFirst + update|create en UNA tx RLS (atómico).
+    return withRlsTx(tenantId, async (tx) => {
+    const existing = await tx.customer.findFirst({
       where: { phone: data.phone, tenantId },
       select: { id: true },
     });
 
     if (existing) {
-      const row = await prisma.customer.update({
+      const row = await tx.customer.update({
         where: { id: existing.id },
         data: {
           name: data.name, location: data.location ?? "", reference: data.reference ?? "",
@@ -306,7 +310,7 @@ export const CustomersDB = {
     // Prisma lanza P2002 (unique constraint). Lo capturamos para devolver mensaje
     // claro hasta que TD-040 Phase 3 elimine el global @unique.
     try {
-      const row = await prisma.customer.create({
+      const row = await tx.customer.create({
         data: {
           phone: data.phone, name: data.name,
           location: data.location ?? "", reference: data.reference ?? "",
@@ -330,15 +334,16 @@ export const CustomersDB = {
       }
       throw err;
     }
+    });
   },
   async delete(tenantId: string, phone: string): Promise<void> {
-    await prisma.customer.deleteMany({ where: { phone: normalizePhone(phone), tenantId } }).catch((err) => logger.error("[customers.db] customer delete failed", { error: String(err), phone }));
+    await withRlsTx(tenantId, (tx) => tx.customer.deleteMany({ where: { phone: normalizePhone(phone), tenantId } })).catch((err) => logger.error("[customers.db] customer delete failed", { error: String(err), phone }));
   },
   async updateAiNotes(tenantId: string, phone: string, aiNotes: string): Promise<void> {
-    await prisma.customer.updateMany({ where: { phone: normalizePhone(phone), tenantId }, data: { aiNotes, aiNotesDate: new Date() } });
+    await withRlsTx(tenantId, (tx) => tx.customer.updateMany({ where: { phone: normalizePhone(phone), tenantId }, data: { aiNotes, aiNotesDate: new Date() } }));
   },
   async updatePrivateNotes(tenantId: string, phone: string, privateNotes: string): Promise<void> {
-    await prisma.customer.updateMany({ where: { phone: normalizePhone(phone), tenantId }, data: { privateNotes } });
+    await withRlsTx(tenantId, (tx) => tx.customer.updateMany({ where: { phone: normalizePhone(phone), tenantId }, data: { privateNotes } }));
   },
   async updateCreditBalance(tenantId: string, phone: string, delta: number): Promise<number> {
     // SECURITY 2026-05-06 (audit DB #5): si delta > 0 (gasta más fiado),
@@ -346,9 +351,11 @@ export const CustomersDB = {
     // raw SQL. Antes 2 orders concurrentes podían pasar el check de límite
     // y luego ambas hacer increment → exceder creditLimit (fraude).
     const normalized = normalizePhone(phone);
+    // TD-116: guard + readback en UNA tx RLS (el guard atómico se preserva).
+    return withRlsTx(tenantId, async (tx) => {
     if (delta > 0) {
       // guard atómico de credit limit (audit DB #5).
-      const result = await prisma.$executeRawUnsafe(
+      const result = await tx.$executeRawUnsafe(
         `UPDATE "Customer"
             SET "creditBalance" = "creditBalance" + $1
           WHERE phone = $2 AND "tenantId" = $3
@@ -362,38 +369,42 @@ export const CustomersDB = {
       }
     } else {
       // delta <= 0: pago/reverso, no necesita guard.
-      await prisma.customer.updateMany({
+      await tx.customer.updateMany({
         where: { phone: normalized, tenantId },
         data: { creditBalance: { increment: delta } },
       });
     }
-    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId }, select: { creditBalance: true } });
+    const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId }, select: { creditBalance: true } });
     return toNumOrZero(c?.creditBalance);
+    });
   },
   /** Generate a unique referral code for a customer if they don't have one */
   async ensureReferralCode(tenantId: string, phone: string): Promise<string> {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId }, select: { referralCode: true } });
+    const c = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({ where: { phone: normalized, tenantId }, select: { referralCode: true } }));
     if (c?.referralCode) return c.referralCode;
     // Generate 6-char alphanumeric code
     const code = randomBytes(6).toString("base64url").slice(0, 8).toUpperCase();
-    await prisma.customer.updateMany({ where: { phone: normalized, tenantId }, data: { referralCode: code } }).catch((err) => logger.error("[customers.db] referralCode assign failed", { error: String(err), phone: normalized }));
+    await withRlsTx(tenantId, (tx) => tx.customer.updateMany({ where: { phone: normalized, tenantId }, data: { referralCode: code } })).catch((err) => logger.error("[customers.db] referralCode assign failed", { error: String(err), phone: normalized }));
     return code;
   },
   /** Apply a referral code: credits 50 points to referrer, links referredBy */
   async applyReferralCode(tenantId: string, phone: string, code: string): Promise<{ success: boolean; message: string }> {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId } });
-    if (!c) return { success: false, message: "Cliente no encontrado" };
-    if (c.referredBy) return { success: false, message: "Ya usaste un código de referido" };
-    if (c.referralCode === code) return { success: false, message: "No puedes usar tu propio código" };
-    const referrer = await prisma.customer.findFirst({ where: { referralCode: code, tenantId } });
-    if (!referrer) return { success: false, message: "Código no válido" };
-    // Award 50 points to referrer (tenant-scoped)
-    await prisma.customer.updateMany({ where: { phone: referrer.phone, tenantId }, data: { loyaltyPoints: { increment: 50 } } });
-    // Link referredBy on the new customer
-    await prisma.customer.updateMany({ where: { phone: normalized, tenantId }, data: { referredBy: referrer.phone } });
-    return { success: true, message: "Código aplicado correctamente" };
+    // TD-116: todo el flujo en UNA tx RLS (de paso: premio + link atómicos).
+    return withRlsTx(tenantId, async (tx) => {
+      const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
+      if (!c) return { success: false, message: "Cliente no encontrado" };
+      if (c.referredBy) return { success: false, message: "Ya usaste un código de referido" };
+      if (c.referralCode === code) return { success: false, message: "No puedes usar tu propio código" };
+      const referrer = await tx.customer.findFirst({ where: { referralCode: code, tenantId } });
+      if (!referrer) return { success: false, message: "Código no válido" };
+      // Award 50 points to referrer (tenant-scoped)
+      await tx.customer.updateMany({ where: { phone: referrer.phone, tenantId }, data: { loyaltyPoints: { increment: 50 } } });
+      // Link referredBy on the new customer
+      await tx.customer.updateMany({ where: { phone: normalized, tenantId }, data: { referredBy: referrer.phone } });
+      return { success: true, message: "Código aplicado correctamente" };
+    });
   },
 
   /**
@@ -416,34 +427,41 @@ export const CustomersDB = {
 export const LoyaltyDB = {
   async getByPhone(tenantId: string, phone: string) {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId } });
+    const c = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({ where: { phone: normalized, tenantId } }));
     if (!c) return null;
     return { phone: c.phone, name: c.name, loyaltyPoints: c.loyaltyPoints, loyaltyTier: c.loyaltyTier, totalSpent: c.totalSpent, referralCode: c.referralCode ?? null, creditBalance: c.creditBalance };
   },
   /** Accrue points for a completed order/sale */
   async accruePoints(tenantId: string, phone: string, amount: number) {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId } });
-    if (!c) return null;
-    const newTotal = toNumOrZero(c.totalSpent) + amount;
-    const newPoints = c.loyaltyPoints + computePoints(amount);
-    const newTier = computeTier(newTotal);
-    await prisma.customer.updateMany({
-      where: { phone: normalized, tenantId },
-      data: { totalSpent: newTotal, loyaltyPoints: newPoints, loyaltyTier: newTier },
+    // TD-116: read-modify-write en UNA tx RLS (de paso cierra la carrera
+    // entre dos accruals concurrentes del mismo customer).
+    return withRlsTx(tenantId, async (tx) => {
+      const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
+      if (!c) return null;
+      const newTotal = toNumOrZero(c.totalSpent) + amount;
+      const newPoints = c.loyaltyPoints + computePoints(amount);
+      const newTier = computeTier(newTotal);
+      await tx.customer.updateMany({
+        where: { phone: normalized, tenantId },
+        data: { totalSpent: newTotal, loyaltyPoints: newPoints, loyaltyTier: newTier },
+      });
+      return { phone: normalized, loyaltyPoints: newPoints, loyaltyTier: newTier, totalSpent: newTotal };
     });
-    return { phone: normalized, loyaltyPoints: newPoints, loyaltyTier: newTier, totalSpent: newTotal };
   },
   /** Redeem points (returns false if insufficient) */
   async redeemPoints(tenantId: string, phone: string, points: number) {
     const normalized = normalizePhone(phone);
-    const c = await prisma.customer.findFirst({ where: { phone: normalized, tenantId } });
-    if (!c || c.loyaltyPoints < points) return false;
-    await prisma.customer.updateMany({
-      where: { phone: normalized, tenantId },
-      data: { loyaltyPoints: c.loyaltyPoints - points },
+    // TD-116: check + decremento en UNA tx RLS (cierra doble-canje concurrente).
+    return withRlsTx(tenantId, async (tx) => {
+      const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
+      if (!c || c.loyaltyPoints < points) return false;
+      await tx.customer.updateMany({
+        where: { phone: normalized, tenantId },
+        data: { loyaltyPoints: c.loyaltyPoints - points },
+      });
+      return true;
     });
-    return true;
   },
   TIERS: LOYALTY_TIERS,
 };

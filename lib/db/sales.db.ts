@@ -193,15 +193,17 @@ export const SalesDB = {
   },
   async add(tenantId: string, sale: DbSale): Promise<DbSale> {
     // Pre-validate product IDs to avoid FK violations (products may have been deleted since the sale was queued offline)
+    // TD-116: validación de productos + create en UNA tx RLS (atómico).
     const requestedIds = [...new Set(sale.items.map(i => i.productId))];
-    const existingProducts = await prisma.product.findMany({
+    const row = await withRlsTx(tenantId, async (tx) => {
+    const existingProducts = await tx.product.findMany({
       where: { id: { in: requestedIds }, tenantId },
       select: { id: true },
     });
     const validIds = new Set(existingProducts.map(p => p.id));
     const validItems = sale.items.filter(i => validIds.has(i.productId));
 
-    const row = await prisma.sale.create({
+    return tx.sale.create({
       data: {
         tenantId,
         id: sale.id, total: sale.total, totalCogs: sale.totalCogs ?? null, payment: sale.payment,
@@ -220,10 +222,11 @@ export const SalesDB = {
       },
       include: { items: true },
     });
+    });
     return mapSale(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {
-    await prisma.sale.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[sales.db] sale delete failed", { error: String(err), id, tenantId }));
+    await withRlsTx(tenantId, (tx) => tx.sale.deleteMany({ where: { id, tenantId } })).catch((err) => logger.error("[sales.db] sale delete failed", { error: String(err), id, tenantId }));
   },
 };
 

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { withRlsTx } from "@/lib/prisma-rls";
 import { logger } from "@/lib/logger";
 
 export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "VIEW" | "LOGIN" | "FAILED_LOGIN" | "EXPORT" | "SYSTEM";
@@ -35,7 +35,8 @@ export function logAudit({
   }
 
   // Fire-and-forget logging to not impact TTFB (Time To First Byte)
-  prisma.activityLog.create({
+  // TD-116 (2026-06-10): write vía withRlsTx — ActivityLog tiene RLS.
+  withRlsTx(effectiveTenantId, (tx) => tx.activityLog.create({
     data: {
       action,
       entity,
@@ -46,7 +47,7 @@ export function logAudit({
       userAgent,
       tenantId: effectiveTenantId,
     }
-  }).catch((err) => {
+  })).catch((err) => {
     logger.error("[AuditLogger] Failed to write audit log", { error: String(err) });
   });
 }
