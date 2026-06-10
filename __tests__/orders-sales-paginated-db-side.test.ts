@@ -14,12 +14,26 @@ const mockSaleFindMany = vi.fn();
 const mockSaleCount = vi.fn();
 const mockTransaction = vi.fn();
 
+// TD-116 (2026-06-10): bajo withRlsTx el $transaction es interactivo
+// (callback con tx). El shim ejecuta el callback contra el MISMO objeto de
+// mocks, así los asserts sobre mockSaleFindMany/mockOrderFindMany siguen
+// valiendo. mockTransaction registra la llamada (los tests cuentan veces).
+const mockClient: Record<string, unknown> = {
+  order: { findMany: mockOrderFindMany, count: mockOrderCount },
+  sale: { findMany: mockSaleFindMany, count: mockSaleCount },
+  $executeRawUnsafe: vi.fn(),
+};
+mockClient.$transaction = async (arg: unknown) => {
+  const recorded = mockTransaction(arg);
+  // batch legacy (array de promises): respeta el valor stubeado en mockTransaction
+  if (Array.isArray(arg)) return recorded ?? Promise.all(arg);
+  // interactivo (withRlsTx): ejecuta el callback para que los asserts sobre
+  // mockSaleFindMany/mockOrderFindMany registren la llamada real
+  return (arg as (tx: unknown) => unknown)(mockClient);
+};
+
 vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    order: { findMany: mockOrderFindMany, count: mockOrderCount },
-    sale: { findMany: mockSaleFindMany, count: mockSaleCount },
-    $transaction: (calls: Promise<unknown>[]) => mockTransaction(calls),
-  },
+  prisma: mockClient,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -100,7 +114,9 @@ describe("B-P0-4 · SalesDB.getAllFilteredPaginated", () => {
   });
 
   it("today=true setea createdAt.gte a inicio del día", async () => {
-    mockTransaction.mockResolvedValue([[], 0]);
+    // TD-116: sales usa tx interactiva — se stubean las fns subyacentes
+    mockSaleFindMany.mockResolvedValue([]);
+    mockSaleCount.mockResolvedValue(0);
 
     const { SalesDB } = await import("@/lib/db/sales.db");
     await SalesDB.getAllFilteredPaginated({
@@ -118,7 +134,8 @@ describe("B-P0-4 · SalesDB.getAllFilteredPaginated", () => {
   });
 
   it("cashierId filtra Prisma-side (no JS)", async () => {
-    mockTransaction.mockResolvedValue([[], 0]);
+    mockSaleFindMany.mockResolvedValue([]);
+    mockSaleCount.mockResolvedValue(0);
 
     const { SalesDB } = await import("@/lib/db/sales.db");
     await SalesDB.getAllFilteredPaginated({
@@ -136,7 +153,8 @@ describe("B-P0-4 · SalesDB.getAllFilteredPaginated", () => {
   });
 
   it("from + to definen rango en where (no array.filter post)", async () => {
-    mockTransaction.mockResolvedValue([[], 0]);
+    mockSaleFindMany.mockResolvedValue([]);
+    mockSaleCount.mockResolvedValue(0);
 
     const from = new Date("2026-05-01");
     const to = new Date("2026-05-31");
@@ -155,17 +173,15 @@ describe("B-P0-4 · SalesDB.getAllFilteredPaginated", () => {
   });
 
   it("retorna { items, total } shape (compat con route handler)", async () => {
-    mockTransaction.mockResolvedValue([
-      [{
-        id: "s1", total: 50, totalCogs: 30, payment: "efectivo",
-        amountPaid: 50, change: 0, customerPhone: null, cashierId: "qaadmin",
-        createdAt: new Date(), tenantId: "tenant-1",
-        comprobanteTipo: "ticket", comprobanteRuc: null, comprobanteNumero: null,
-        descuentoMonto: null, descuentoPorcentaje: null, paymentDetails: null,
-        items: [],
-      }],
-      1,
-    ]);
+    mockSaleFindMany.mockResolvedValue([{
+      id: "s1", total: 50, totalCogs: 30, payment: "efectivo",
+      amountPaid: 50, change: 0, customerPhone: null, cashierId: "qaadmin",
+      createdAt: new Date(), tenantId: "tenant-1",
+      comprobanteTipo: "ticket", comprobanteRuc: null, comprobanteNumero: null,
+      descuentoMonto: null, descuentoPorcentaje: null, paymentDetails: null,
+      items: [],
+    }]);
+    mockSaleCount.mockResolvedValue(1);
 
     const { SalesDB } = await import("@/lib/db/sales.db");
     const result = await SalesDB.getAllFilteredPaginated({

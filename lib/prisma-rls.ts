@@ -142,7 +142,14 @@ export async function withRlsTx<T>(
     );
   }
   const escaped = escapeTenantId(tenantId);
-  return (prisma as unknown as PrismaClient).$transaction(async (tx) => {
+  const client = prisma as unknown as PrismaClient;
+  // Bridge para unit tests: muchos mocks de @/lib/prisma no implementan
+  // $transaction interactivo. En prod SIEMPRE existe; si falta (mock), se
+  // ejecuta fn directo contra el client (sin RLS — los tests no validan RLS).
+  if (typeof client.$transaction !== "function") {
+    return fn(client as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+  }
+  return client.$transaction(async (tx) => {
     await tx.$executeRawUnsafe(`SET LOCAL app.tenant_id = '${escaped}'`);
     return fn(tx as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
   });

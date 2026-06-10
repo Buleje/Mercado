@@ -1,5 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+// TD-116 (2026-06-10): lecturas de Sale envueltas en withRlsTx (ver orders.db).
+import { withRlsTx } from "@/lib/prisma-rls";
 import { logger } from "@/lib/logger";
 import type {
   Sale as PSale,
@@ -106,13 +108,13 @@ export const SalesDB = {
     productIds: (number | string)[],
     since: Date,
   ) {
-    return prisma.saleItem.findMany({
+    return withRlsTx(tenantId, (tx) => tx.saleItem.findMany({
       where: {
         productId: { in: productIds as number[] },
         sale: { tenantId, createdAt: { gte: since } },
       },
       select: { productId: true, quantity: true },
-    });
+    }));
   },
 
   async getAll(tenantId: string): Promise<DbSale[]> {
@@ -121,12 +123,12 @@ export const SalesDB = {
     // Prisma intenta SELECT-ear todos los campos del schema; si la columna
     // no existe en Postgres, falla con 503 "column not available".
     // Quitar el omit cuando se haga `prisma migrate deploy` con DIRECT_URL.
-    return (await prisma.sale.findMany({
+    return (await withRlsTx(tenantId, (tx) => tx.sale.findMany({
       where: { tenantId },
       omit: { idempotencyKey: true },
       include: { items: true },
       orderBy: { createdAt: "desc" },
-    })).map(mapSale);
+    }))).map(mapSale);
   },
   /**
    * Offset pagination DB-side (skip/take + count en $transaction).
@@ -163,27 +165,30 @@ export const SalesDB = {
 
     const skip = Math.max(0, (opts.page - 1) * opts.limit);
 
-    const [rows, total] = await prisma.$transaction([
-      prisma.sale.findMany({
-        where,
-        omit: { idempotencyKey: true },
-        include: { items: true },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: opts.limit,
-      }),
-      prisma.sale.count({ where }),
-    ]);
+    // TD-116: batch-tx → Promise.all dentro de la tx RLS (ver orders.getPage)
+    const [rows, total] = await withRlsTx(opts.tenantId, (tx) =>
+      Promise.all([
+        tx.sale.findMany({
+          where,
+          omit: { idempotencyKey: true },
+          include: { items: true },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: opts.limit,
+        }),
+        tx.sale.count({ where }),
+      ]),
+    );
 
     return { items: rows.map(mapSale), total };
   },
 
   async getById(tenantId: string, id: string): Promise<DbSale | null> {
-    const row = await prisma.sale.findFirst({
+    const row = await withRlsTx(tenantId, (tx) => tx.sale.findFirst({
       where: { id, tenantId },
       omit: { idempotencyKey: true },
       include: { items: true },
-    });
+    }));
     return row ? mapSale(row) : null;
   },
   async add(tenantId: string, sale: DbSale): Promise<DbSale> {

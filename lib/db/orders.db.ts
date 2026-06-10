@@ -1,5 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+// TD-116 (2026-06-10): lecturas envueltas en withRlsTx — RLS server-side
+// cuando la app conecte como buleje_app (hoy postgres bypasea; inocuo).
+import { withRlsTx } from "@/lib/prisma-rls";
 import { getOrSet, invalidate } from "@/lib/cache";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type {
@@ -129,13 +132,13 @@ export const OrdersDB = {
     productIds: (number | string)[],
     since: Date,
   ) {
-    return prisma.orderItem.findMany({
+    return withRlsTx(tenantId, (tx) => tx.orderItem.findMany({
       where: {
         productId: { in: productIds as number[] },
         order: { tenantId, createdAt: { gte: since }, status: { not: "cancelado" as never } },
       },
       select: { productId: true, quantity: true },
-    });
+    }));
   },
 
   /**
@@ -145,7 +148,7 @@ export const OrdersDB = {
    * tenantId SIEMPRE 1er parámetro.
    */
   async findRecentForStream(tenantId: string, since: Date) {
-    return prisma.order.findMany({
+    return withRlsTx(tenantId, (tx) => tx.order.findMany({
       where: {
         tenantId,
         createdAt: { gt: since },
@@ -159,12 +162,12 @@ export const OrdersDB = {
       },
       orderBy: { createdAt: "desc" },
       take: 5,
-    });
+    }));
   },
 
   async getAll(tenantId: string): Promise<DbOrder[]> {
     const where: Record<string, unknown> = { tenantId };
-    return (await prisma.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" }, take: 1000 })).map(mapOrder);
+    return (await withRlsTx(tenantId, (tx) => tx.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" }, take: 1000 }))).map(mapOrder);
   },
 
   /**
@@ -193,12 +196,12 @@ export const OrdersDB = {
     if (opts?.phone) {
       where.customerPhone = normalizePhone(opts.phone);
     }
-    return (await prisma.order.findMany({
+    return (await withRlsTx(opts!.tenantId, (tx) => tx.order.findMany({
       where,
       include: { items: true },
       orderBy: { createdAt: "desc" },
       take: opts?.limit ?? 5000,
-    })).map(mapOrder);
+    }))).map(mapOrder);
   },
 
   /**
@@ -232,16 +235,20 @@ export const OrdersDB = {
       where.customerPhone = normalizePhone(opts.phone);
     }
 
-    const [rows, total] = await prisma.$transaction([
-      prisma.order.findMany({
-        where,
-        include: { items: true },
-        orderBy: { createdAt: "desc" },
-        take: limit + 1,
-        ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
-      }),
-      prisma.order.count({ where }),
-    ]);
+    // TD-116: batch-tx → Promise.all dentro de la tx interactiva de withRlsTx
+    // (mismo snapshot de conexión; una tx anidada no está permitida en Prisma).
+    const [rows, total] = await withRlsTx(opts.tenantId, (tx) =>
+      Promise.all([
+        tx.order.findMany({
+          where,
+          include: { items: true },
+          orderBy: { createdAt: "desc" },
+          take: limit + 1,
+          ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+        }),
+        tx.order.count({ where }),
+      ]),
+    );
 
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
@@ -256,10 +263,10 @@ export const OrdersDB = {
    * Do not distinguish the two cases to the caller — prevents oracle attacks.
    */
   async getById(tenantId: string, id: string): Promise<DbOrder | null> {
-    const row = await prisma.order.findFirst({
+    const row = await withRlsTx(tenantId, (tx) => tx.order.findFirst({
       where: { id, tenantId },
       include: { items: true },
-    });
+    }));
     return row ? mapOrder(row) : null;
   },
   /**
@@ -281,12 +288,18 @@ export const OrdersDB = {
       phone !== undefined
         ? { tenantId: tenantIdOrPhone, customerPhone: normalizePhone(phone) }
         : { customerPhone: normalizePhone(tenantIdOrPhone) };
-    return (await prisma.order.findMany({
+    // TD-116: solo el shape scoped lleva RLS; el legacy (sin tenant) es
+    // cross-tenant por diseño @deprecated y quedará bloqueado en fase contract.
+    const query = (c: typeof prisma) => c.order.findMany({
       where,
       include: { items: true },
       orderBy: { createdAt: "desc" },
       take: 1000,
-    })).map(mapOrder);
+    });
+    const rows = phone !== undefined
+      ? await withRlsTx(tenantIdOrPhone, (tx) => query(tx as unknown as typeof prisma))
+      : await query(prisma);
+    return rows.map(mapOrder);
   },
   async add(order: DbOrder, tenantId: string): Promise<DbOrder> {
     // Ensure the customer exists in the DB before linking via FK
@@ -510,7 +523,7 @@ export const OrdersDB = {
    * Usado por el dashboard del vendedor (KPI "ventas hoy/ayer/semana").
    */
   async getSalesTotal(tenantId: string, from: Date, to: Date): Promise<number> {
-    const result = await prisma.order.aggregate({
+    const result = await withRlsTx(tenantId, (tx) => tx.order.aggregate({
       where: {
         tenantId,
         status: "entregado",
@@ -518,7 +531,7 @@ export const OrdersDB = {
         deletedAt: null,
       },
       _sum: { total: true },
-    });
+    }));
     return toNumOrZero(result._sum.total);
   },
 
@@ -526,13 +539,13 @@ export const OrdersDB = {
    * Cuenta los pedidos pendientes o confirmados (sin atender).
    */
   async countPending(tenantId: string): Promise<number> {
-    return prisma.order.count({
+    return withRlsTx(tenantId, (tx) => tx.order.count({
       where: {
         tenantId,
         status: { in: ["pendiente", "confirmado"] },
         deletedAt: null,
       },
-    });
+    }));
   },
 
   /**
@@ -550,7 +563,7 @@ export const OrdersDB = {
     phone: string,
     opts: { source?: string } = {},
   ): Promise<number> {
-    return prisma.order.count({
+    return withRlsTx(tenantId, (tx) => tx.order.count({
       where: {
         tenantId,
         customerPhone: phone,
@@ -558,7 +571,7 @@ export const OrdersDB = {
         deletedAt: null,
         ...(opts.source ? { source: opts.source } : {}),
       },
-    });
+    }));
   },
 
   /**
@@ -566,7 +579,7 @@ export const OrdersDB = {
    */
   async getPending(tenantId: string, opts: { limit?: number } = {}): Promise<DbOrder[]> {
     const limit = Math.min(opts.limit ?? 5, 20);
-    const rows = await prisma.order.findMany({
+    const rows = await withRlsTx(tenantId, (tx) => tx.order.findMany({
       where: {
         tenantId,
         status: { in: ["pendiente", "confirmado"] },
@@ -575,7 +588,7 @@ export const OrdersDB = {
       include: { items: true },
       orderBy: { createdAt: "desc" },
       take: limit,
-    });
+    }));
     return rows.map(mapOrder);
   },
 
@@ -586,7 +599,7 @@ export const OrdersDB = {
     const limit = Math.min(opts.limit ?? 5, 20);
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
-    const rows = await prisma.order.findMany({
+    const rows = await withRlsTx(tenantId, (tx) => tx.order.findMany({
       where: {
         tenantId,
         createdAt: { gte: startOfToday },
@@ -595,7 +608,7 @@ export const OrdersDB = {
       include: { items: true },
       orderBy: { createdAt: "desc" },
       take: limit,
-    });
+    }));
     return rows.map(mapOrder);
   },
 
@@ -626,24 +639,28 @@ export const OrdersDB = {
     const cacheKey = `orders:last-by-customer:${tenantId}:${normalized}`;
 
     return getOrSet(cacheKey, 60, async () => {
-      const order = await prisma.order.findFirst({
-        where: {
-          customerPhone: normalized,
-          source: "marketplace",
-          deletedAt: null,
-          tenantId,
-        },
-        include: { items: true },
-        orderBy: { createdAt: "desc" },
+      // TD-116: ambas queries en una sola tx RLS (Store no tiene policy; inocuo)
+      const { order, store } = await withRlsTx(tenantId, async (tx) => {
+        const o = await tx.order.findFirst({
+          where: {
+            customerPhone: normalized,
+            source: "marketplace",
+            deletedAt: null,
+            tenantId,
+          },
+          include: { items: true },
+          orderBy: { createdAt: "desc" },
+        });
+        if (!o) return { order: null, store: null };
+        // Derive storeSlug from tenantId via Store table
+        const s = await tx.store.findFirst({
+          where: { tenantId: o.tenantId },
+          select: { slug: true },
+        });
+        return { order: o, store: s };
       });
 
       if (!order) return null;
-
-      // Derive storeSlug from tenantId via Store table
-      const store = await prisma.store.findFirst({
-        where: { tenantId: order.tenantId },
-        select: { slug: true },
-      });
       const storeSlug = store?.slug ?? order.tenantId;
 
       return {
@@ -668,6 +685,10 @@ export const OrdersDB = {
    * los 7 → 1 RTT efectivo. KPI del dashboard tenant carga 6× más rápido
    * en tenants con historial alto.
    */
+  // TD-116: NO envuelto en withRlsTx a propósito — los 7 aggregates corren en
+  // Promise.all paralelo (perf 6×, audit Cal #1); una tx interactiva los
+  // serializaría en una conexión. Cubierto por where.tenantId; RLS llegará
+  // vía fase contract.
   async getWeeklyRevenueBreakdown(tenantId: string): Promise<Array<{ date: string; total: number }>> {
     const days: Array<{ day: Date; nextDay: Date }> = [];
     for (let i = 6; i >= 0; i--) {
@@ -735,14 +756,14 @@ export const OrdersDB = {
     tenantId: string,
     orderId: string,
   ): Promise<Array<{ price: number; quantity: number; category: string | null }>> {
-    const items = await prisma.orderItem.findMany({
+    const items = await withRlsTx(tenantId, (tx) => tx.orderItem.findMany({
       where: { orderId, order: { tenantId } },
       select: {
         price: true,
         quantity: true,
         product: { select: { category: true } },
       },
-    });
+    }));
     return items.map((oi) => ({
       price: toNumOrZero(oi.price),
       quantity: oi.quantity,
@@ -779,10 +800,10 @@ export const OrdersDB = {
     tenantId: string,
     orderId: string,
   ): Promise<Array<{ name: string; quantity: number; unit: string | null; productId: number | null }>> {
-    return prisma.orderItem.findMany({
+    return withRlsTx(tenantId, (tx) => tx.orderItem.findMany({
       where: { orderId, order: { tenantId } },
       select: { name: true, quantity: true, unit: true, productId: true },
-    });
+    }));
   },
 };
 

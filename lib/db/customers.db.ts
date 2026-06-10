@@ -1,5 +1,7 @@
 import "server-only";
 import { randomBytes } from "crypto";
+// TD-116 (2026-06-10): lecturas de Customer envueltas en withRlsTx (ver orders.db).
+import { withRlsTx } from "@/lib/prisma-rls";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import type {
@@ -127,7 +129,7 @@ function phoneMatchCandidates(phone: string): string[] {
 export const CustomersDB = {
   async getAll(tenantId: string, limit = 2000): Promise<DbCustomer[]> {
     const where: Record<string, unknown> = { tenantId };
-    const rows = await prisma.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" }, take: limit });
+    const rows = await withRlsTx(tenantId, (tx) => tx.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" }, take: limit }));
     return rows.map(mapCustomer);
   },
 
@@ -152,16 +154,19 @@ export const CustomersDB = {
       ];
     }
 
-    const [rows, total] = await prisma.$transaction([
-      prisma.customer.findMany({
-        where,
-        include: { locations: true },
-        orderBy: { updatedAt: "desc" },
-        take: limit + 1,
-        ...(opts.cursor ? { skip: 1, cursor: { phone: opts.cursor } } : {}),
-      }),
-      prisma.customer.count({ where }),
-    ]);
+    // TD-116: batch-tx → Promise.all dentro de la tx RLS (ver orders.getPage)
+    const [rows, total] = await withRlsTx(opts.tenantId, (tx) =>
+      Promise.all([
+        tx.customer.findMany({
+          where,
+          include: { locations: true },
+          orderBy: { updatedAt: "desc" },
+          take: limit + 1,
+          ...(opts.cursor ? { skip: 1, cursor: { phone: opts.cursor } } : {}),
+        }),
+        tx.customer.count({ where }),
+      ]),
+    );
 
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
@@ -175,18 +180,18 @@ export const CustomersDB = {
     // tiene unique global. Phone se reusa entre tenants = fuga.
     if (!tenantId) throw new Error("CustomersDB.getByPhone: tenantId requerido");
     // Lectura tolerante a formatos legacy (999.../51.../+51...). Ver phoneMatchCandidates.
-    const row = await prisma.customer.findFirst({
+    const row = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({
       where: { phone: { in: phoneMatchCandidates(phone) }, tenantId },
       include: { locations: true },
-    });
+    }));
     return row ? mapCustomer(row) : null;
   },
   /** Find the first customer with a given email within a tenant. */
   async getByEmail(email: string, tenantId: string): Promise<DbCustomer | null> {
-    const row = await prisma.customer.findFirst({
+    const row = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({
       where: { email, tenantId },
       include: { locations: true },
-    });
+    }));
     return row ? mapCustomer(row) : null;
   },
 
@@ -199,10 +204,10 @@ export const CustomersDB = {
   async existsInTenant(tenantId: string, phone: string): Promise<boolean> {
     if (!tenantId) throw new Error("CustomersDB.existsInTenant: tenantId requerido");
     const normalized = normalizePhone(phone);
-    const row = await prisma.customer.findFirst({
+    const row = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({
       where: { phone: normalized, tenantId },
       select: { tenantId: true },
-    });
+    }));
     return !!row;
   },
 
@@ -217,10 +222,10 @@ export const CustomersDB = {
   ): Promise<{ name: string; totalSpent: number } | null> {
     if (!tenantId) throw new Error("CustomersDB.getPiiSummary: tenantId requerido");
     const normalized = normalizePhone(phone);
-    const row = await prisma.customer.findFirst({
+    const row = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({
       where: { phone: normalized, tenantId },
       select: { name: true, totalSpent: true },
-    });
+    }));
     if (!row) return null;
     return { name: row.name, totalSpent: Number(row.totalSpent) };
   },

@@ -16,8 +16,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // vi.mock factories are hoisted to the top of the file, so the mock object
 // must be created via vi.hoisted to be available inside the factory.
 
-const { mockPrisma } = vi.hoisted(() => ({
-  mockPrisma: {
+const { mockPrisma } = vi.hoisted(() => {
+  const base = {
     order: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
@@ -37,9 +37,21 @@ const { mockPrisma } = vi.hoisted(() => ({
       findMany: vi.fn(),
     },
     $executeRaw: vi.fn(),
-    $transaction: vi.fn(),
-  },
-}));
+    $executeRawUnsafe: vi.fn(),
+  };
+  // TD-116 (2026-06-10): shim universal — soporta batch (array) e
+  // interactivo (callback con tx = el propio mock, así los asserts sobre
+  // mockPrisma.order.* siguen valiendo bajo withRlsTx).
+  const mockPrisma = {
+    ...base,
+    $transaction: vi.fn(async (arg: unknown) =>
+      Array.isArray(arg)
+        ? Promise.all(arg)
+        : (arg as (tx: unknown) => unknown)(mockPrisma),
+    ),
+  };
+  return { mockPrisma };
+});
 
 vi.mock("@/lib/prisma", () => ({
   prisma: mockPrisma,
