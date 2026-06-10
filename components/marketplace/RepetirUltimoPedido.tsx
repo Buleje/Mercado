@@ -79,7 +79,13 @@ function timeAgo(ts: number): string {
   return "hace minutos";
 }
 
-export default function RepetirUltimoPedido() {
+export default function RepetirUltimoPedido({
+  variant = "card",
+}: {
+  /** "card" = franja inline ancha (legacy). "chip" = pastilla compacta para
+   *  la barra de filtros (Brandon 2026-06-10) — abre el mismo modal. */
+  variant?: "card" | "chip";
+} = {}) {
   const [order, setOrder] = useState<LastOrder | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -169,6 +175,70 @@ export default function RepetirUltimoPedido() {
     </span>
   );
 
+  // Modal compartido por la card y el chip — misma lógica de re-agregar.
+  const modalEl = (
+    <RepetirPedidoModal
+      open={modalOpen}
+      order={order}
+      items={validItems}
+      onClose={() => setModalOpen(false)}
+      onConfirm={(selected) => {
+        for (const it of selected) {
+          if (typeof it.productId !== "number" || typeof it.price !== "number") continue;
+          addItem({
+            productId: it.productId,
+            storeProductId: it.storeProductId ?? `${order.storeId ?? order.storeSlug}-${it.productId}`,
+            name: it.name,
+            price: it.price,
+            image: it.imageUrl ?? null,
+            unit: it.unit ?? null,
+            storeId: order.storeId ?? order.storeSlug,
+            storeName: order.storeName,
+            storeSlug: order.storeSlug,
+            quantity: it.quantity ?? 1,
+            category: it.category ?? null,
+          });
+        }
+        setModalOpen(false);
+      }}
+    />
+  );
+
+  // ── Variante CHIP — pastilla compacta para la barra de filtros de /tiendas.
+  if (variant === "chip") {
+    const chipClass =
+      "inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3.5 h-9 text-sm font-bold whitespace-nowrap transition-colors hover:bg-[var(--accent)] hover:text-white";
+    const chipInner = (
+      <>
+        <Repeat className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+        Repetir pedido
+      </>
+    );
+    return (
+      <>
+        {hasUsableItems ? (
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            aria-label={`Repetir tu último pedido de ${order.storeName}`}
+            className={chipClass}
+          >
+            {chipInner}
+          </button>
+        ) : (
+          <Link
+            href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
+            aria-label={`Repetir tu último pedido de ${order.storeName}`}
+            className={chipClass}
+          >
+            {chipInner}
+          </Link>
+        )}
+        {modalEl}
+      </>
+    );
+  }
+
   return (
     <>
       {/* Card inline (Brandon 2026-06-08) — antes era una franja sticky z-40 que
@@ -206,31 +276,7 @@ export default function RepetirUltimoPedido() {
         </div>
       </div>
 
-      <RepetirPedidoModal
-        open={modalOpen}
-        order={order}
-        items={validItems}
-        onClose={() => setModalOpen(false)}
-        onConfirm={(selected) => {
-          for (const it of selected) {
-            if (typeof it.productId !== "number" || typeof it.price !== "number") continue;
-            addItem({
-              productId: it.productId,
-              storeProductId: it.storeProductId ?? `${order.storeId ?? order.storeSlug}-${it.productId}`,
-              name: it.name,
-              price: it.price,
-              image: it.imageUrl ?? null,
-              unit: it.unit ?? null,
-              storeId: order.storeId ?? order.storeSlug,
-              storeName: order.storeName,
-              storeSlug: order.storeSlug,
-              quantity: it.quantity ?? 1,
-              category: it.category ?? null,
-            });
-          }
-          setModalOpen(false);
-        }}
-      />
+      {modalEl}
     </>
   );
 }

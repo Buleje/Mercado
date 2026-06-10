@@ -968,16 +968,10 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             2. Categorías principales (grid grande)
             3. Pedidos favoritos
             4. Tiendas destacadas cerca */}
-      {/* "Repetir último pedido" — barra sticky slim. Brandon 2026-06-07:
-          OCULTA en mobile (hidden md:block) — /tiendas en celular debe ser
-          minimalista; el submenú de "último pedido" sumaba ruido sobre el
-          listado. En desktop (md+) se mantiene. Solo aparece si el cliente
-          está logueado, sin búsqueda activa, y con un pedido reciente. */}
-      {isLoggedIn && search.trim().length === 0 && (
-        <div className="hidden md:block">
-          <RepetirUltimoPedido />
-        </div>
-      )}
+      {/* "Repetir último pedido" — Brandon 2026-06-10: MOVIDO de acá (primera
+          sección, robaba el fold) a un CHIP compacto en la barra de filtros
+          (ver <aside> más abajo). Ahora el feed arranca directo en las tiendas
+          y el "repetir" queda a un toque junto a los filtros. */}
 
       {/* TiendasMainCategoriesGrid removido (Brandon mayo 14 2026 v2):
           las categorías principales del superadmin ahora viven en la home
@@ -1096,6 +1090,16 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
               </button>
             )}
           </div>
+
+          {/* Chip "Repetir pedido" (Brandon 2026-06-10) — antes era una barra en
+              la primera sección. Ahora pastilla compacta en los filtros. Solo
+              logueado, sin búsqueda, md+. `empty:hidden` evita gap fantasma del
+              space-y cuando el cliente no tiene un pedido reciente. */}
+          {isLoggedIn && search.trim().length === 0 && (
+            <div className="hidden md:flex empty:!hidden">
+              <RepetirUltimoPedido variant="chip" />
+            </div>
+          )}
 
           {/* Vista lista / mapa — oculto en mobile (Brandon 2026-06-07: sin modo
               mapa en celular, siempre lista). Visible en md+. */}
