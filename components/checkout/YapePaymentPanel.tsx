@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Clock, Hash, Copy, Check, CheckCircle2 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 type YapePaymentPanelProps = {
   yape: { enabled: boolean; image?: string; name?: string; phone?: string };
@@ -122,7 +122,7 @@ export function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberCha
         >
           <p className="text-xs text-purple-600 font-semibold">Monto exacto a yapear</p>
           <div className="flex items-center justify-center gap-2">
-            <p className="text-3xl font-extrabold text-purple-800">S/{finalTotal.toFixed(2)}</p>
+            <p className="text-3xl font-extrabold text-purple-800">{formatCurrency(finalTotal)}</p>
             {copied === "amount" ? (
               <Check className="h-5 w-5 text-green-500" />
             ) : (

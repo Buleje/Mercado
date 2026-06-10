@@ -16,7 +16,7 @@ import {
   Sparkles,
   Wallet,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { YapePaymentPanel } from "./YapePaymentPanel";
 import { CashChangeCalculator } from "./CashChangeCalculator";
 
@@ -520,7 +520,7 @@ export function CheckoutPaymentSection({
                     className="text-base font-extrabold tabular-nums leading-tight"
                     style={{ color: "var(--color-primary-dark, #009690)" }}
                   >
-                    −S/{redemptionSoles.toFixed(2)}
+                    −{formatCurrency(redemptionSoles)}
                   </p>
                   <p className="text-xs text-muted tabular-nums">
                     {redemptionSoles * PTS_PER_SOL} pts
@@ -555,7 +555,7 @@ export function CheckoutPaymentSection({
               className="tabular-nums font-semibold"
               style={{ color: "var(--color-primary-dark, #009690)" }}
             >
-              S/{total.toFixed(2)}
+              {formatCurrency(total)}
             </span>
           </div>
           {discount > 0 && promo && (
@@ -564,7 +564,7 @@ export function CheckoutPaymentSection({
                 Promo {promo.discountPercent}% off
               </span>
               <span className="tabular-nums font-bold shrink-0">
-                −S/{discount.toFixed(2)}
+                −{formatCurrency(discount)}
               </span>
             </div>
           )}
@@ -572,7 +572,7 @@ export function CheckoutPaymentSection({
             <div className="flex items-center justify-between text-[var(--data-success-700)] dark:text-emerald-400">
               <span className="truncate pr-2">Cupón {couponCode}</span>
               <span className="tabular-nums font-bold shrink-0">
-                −S/{couponDiscount.toFixed(2)}
+                −{formatCurrency(couponDiscount)}
               </span>
             </div>
           )}
@@ -588,7 +588,7 @@ export function CheckoutPaymentSection({
                 </span>
               </span>
               <span className="tabular-nums font-bold shrink-0">
-                −S/{tierDiscount.toFixed(2)}
+                −{formatCurrency(tierDiscount)}
               </span>
             </div>
           )}
@@ -602,7 +602,7 @@ export function CheckoutPaymentSection({
                 <span className="truncate">Puntos canjeados</span>
               </span>
               <span className="tabular-nums font-bold shrink-0">
-                −S/{redemptionSoles.toFixed(2)}
+                −{formatCurrency(redemptionSoles)}
               </span>
             </div>
           )}
@@ -613,7 +613,7 @@ export function CheckoutPaymentSection({
                 className="tabular-nums font-semibold"
                 style={{ color: "var(--color-primary-dark, #009690)" }}
               >
-                +S/{tip.toFixed(2)}
+                +{formatCurrency(tip)}
               </span>
             </div>
           )}
@@ -639,7 +639,7 @@ export function CheckoutPaymentSection({
             className="tabular-nums text-3xl font-extrabold"
             style={{ color: "var(--color-primary-dark, #009690)" }}
           >
-            S/{finalTotal.toFixed(2)}
+            {formatCurrency(finalTotal)}
           </m.span>
         </div>
         {loyaltyPoints !== null && finalTotal >= 5 && (

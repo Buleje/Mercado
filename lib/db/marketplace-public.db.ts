@@ -628,14 +628,21 @@ export const MarketplacePublicDB = {
    */
   async getProductCategories(): Promise<Array<{ id: string; count: number }>> {
     return getOrSet("marketplace:product-categories:v2", 300, async () => {
-      const rows = await prisma.storeProduct.findMany({
+      // Audit 2026-06-10 P2: antes findMany take:10000 traía hasta 10k filas
+      // para contar ~15 categorías en JS. groupBy agrega en la DB y devuelve
+      // ~1 fila por variante de categoría. Nota: ahora cuenta productos
+      // distintos (no pares producto×tienda) — solo afecta el orden relativo
+      // de los chips, no qué chips existen.
+      const rows = await prisma.product.groupBy({
+        by: ["category"],
         where: {
-          isActive: true,
-          store: { isPublished: true, tenant: { active: true } },
-          product: { active: true, deletedAt: null },
+          active: true,
+          deletedAt: null,
+          storeProducts: {
+            some: { isActive: true, store: { isPublished: true, tenant: { active: true } } },
+          },
         },
-        select: { product: { select: { category: true } } },
-        take: 10000,
+        _count: { _all: true },
       });
       // Dedupe CASE-INSENSITIVE: distintas tiendas guardan "bebidas" vs
       // "Bebidas" — se agrupan en un solo chip. El filtro de /buscar usa
@@ -643,10 +650,10 @@ export const MarketplacePublicDB = {
       // variantes. La key minúscula también alimenta el ícono canónico.
       const counts = new Map<string, number>();
       for (const r of rows) {
-        const cat = r.product?.category?.trim();
+        const cat = r.category?.trim();
         if (!cat) continue;
         const key = cat.toLowerCase();
-        counts.set(key, (counts.get(key) ?? 0) + 1);
+        counts.set(key, (counts.get(key) ?? 0) + (r._count?._all ?? 0));
       }
       return [...counts.entries()]
         .map(([id, count]) => ({ id, count }))

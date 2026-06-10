@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Banknote } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/utils";
 
 export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -13,7 +14,7 @@ export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
       <div className="flex items-center gap-2 mb-3">
         <Banknote className="h-5 w-5 text-[var(--data-success-600)]" />
         <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
-          Pago contra entrega — Total: S/{finalTotal.toFixed(2)}
+          Pago contra entrega — Total: {formatCurrency(finalTotal)}
         </p>
       </div>
       <p className="text-xs text-[var(--data-success-700)] dark:text-emerald-300 mb-2">
@@ -49,7 +50,7 @@ export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
       {change !== null && change > 0 && (
         <div className="mt-3 p-2.5 rounded-lg bg-white dark:bg-emerald-900/40 border border-emerald-200 dark:border-[var(--data-success-700)]">
           <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
-            Tu vuelto: S/{change.toFixed(2)}
+            Tu vuelto: {formatCurrency(change)}
           </p>
         </div>
       )}

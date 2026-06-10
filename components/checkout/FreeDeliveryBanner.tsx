@@ -1,6 +1,7 @@
 "use client";
 
 import { Truck, Check } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/utils";
 
 interface FreeDeliveryBannerProps {
   currentTotal: number;
@@ -39,8 +40,8 @@ export function FreeDeliveryBanner({
       <div className="flex items-center gap-2">
         <Truck className="h-4 w-4 text-[var(--data-warning-600)] shrink-0" />
         <p className="text-xs text-[var(--data-warning-700)] dark:text-amber-400">
-          <span className="font-bold">Agrega S/{remaining.toFixed(2)} mas</span> para delivery gratis
-          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"> (ahorras S/{deliveryCost.toFixed(2)})</span>
+          <span className="font-bold">Agrega {formatCurrency(remaining)} mas</span> para delivery gratis
+          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"> (ahorras {formatCurrency(deliveryCost)})</span>
         </p>
       </div>
       <div className="h-1.5 bg-amber-200 dark:bg-amber-900/30 rounded-full overflow-hidden">

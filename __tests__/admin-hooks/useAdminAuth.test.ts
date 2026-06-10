@@ -1,5 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
+
+// ── Mock cachedJson ANTES de importar el hook ────────────────────────────────
+// El hook usa `cachedJson` (lib/client-cache-fetch) que tiene estado global
+// (cache + inflight Maps) compartido entre tests. Sin este mock, la respuesta
+// del primer test queda cacheada y los tests siguientes nunca invocan el
+// fetchMock — authReady nunca llega a true → timeout 1 000 ms × 5 tests.
+//
+// Solución: reemplazar cachedJson por una función transparente que delega
+// directo a `fetch` (sin cache ni dedup). Así cada test controla 100% qué
+// devuelve su fetchMock sin interferencia de tests anteriores.
+vi.mock("@/lib/client-cache-fetch", () => ({
+  cachedJson: async <T>(url: string, _ttl?: number, init?: RequestInit): Promise<T | null> => {
+    const r = await fetch(url, { credentials: "include", ...init });
+    if (!r.ok) return null;
+    return r.json() as Promise<T>;
+  },
+  invalidateCachedJson: vi.fn(),
+}));
+
 import { useAdminAuth } from "@/app/admin/_hooks/useAdminAuth";
 
 // Mock global fetch

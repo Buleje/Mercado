@@ -14,6 +14,7 @@ import { ProductQADB } from "@/lib/db/product-qa.db";
 import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { logger } from "@/lib/logger";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const Body = z.object({
   questionId: z.string().min(1).max(100),
@@ -26,6 +27,10 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ productId: string }> },
 ) {
+  // Audit 2026-06-10 P2: rate limit anti-spam (faltaba; punto abierto del
+  // baseline de seguridad). La sesión de customer ya era obligatoria.
+  const _rl = await applyRateLimit(req, "STRICT", "qa-answer");
+  if (_rl) return _rl;
   const { productId } = await context.params;
   const productIdNum = parseInt(productId, 10);
   if (Number.isNaN(productIdNum)) {

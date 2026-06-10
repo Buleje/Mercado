@@ -25,11 +25,13 @@ export function logAudit({
   const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "0.0.0.0";
   const userAgent = req.headers.get("user-agent")?.substring(0, 255) || "UnknownAgent";
 
-  // P1-1 multi-tenant: tenantId omitido => fallback observable a "main" + WARN.
-  // Antes: default silente enmascaraba bugs en propagación de tenantId.
-  const effectiveTenantId = tenantId ?? "main";
+  // P1-1 multi-tenant: tenantId omitido => WARN observable.
+  // Audit 2026-06-10 P2: fallback "__unknown__" en vez de "main" — no
+  // contamina la cadena de auditoría (Ley 29733) del tenant principal y es
+  // greppeable para cazar call sites sin tenantId.
+  const effectiveTenantId = tenantId ?? "__unknown__";
   if (!tenantId) {
-    logger.warn("[AuditLogger] missing tenantId — falling back to 'main'", { action, entity, user });
+    logger.warn("[AuditLogger] missing tenantId — logging as '__unknown__'", { action, entity, user });
   }
 
   // Fire-and-forget logging to not impact TTFB (Time To First Byte)

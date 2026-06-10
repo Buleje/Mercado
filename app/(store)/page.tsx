@@ -252,9 +252,10 @@ const HOME_FAQS: { q: string; a: string }[] = [
 // ── JSON-LD B2C marketplace ──────────────────────────────────────────────────
 async function BulejeJsonLd() {
   // Audit 2026-05-17 02-P2-2: storeCount ya no se usa aquí (aggregateRating
-  // removido por falta de reviewCount real). Mantener la función por si
-  // futuras Schema.org entries necesitan stats.
-  await getMarketplaceStats();
+  // removido por falta de reviewCount real).
+  // Audit 2026-06-10 P2: eliminado el `await getMarketplaceStats()` muerto —
+  // bloqueaba el render sin usar el resultado. Si Schema.org vuelve a
+  // necesitar stats, re-importar getMarketplaceStats.
   // SEO 2026-05-27: ItemList de tiendas reales destacadas. Ayuda a Google
   // a entender el catálogo del marketplace y habilita carrusel de entidades.
   // Datos verídicos (top stores de la DB) — no sintéticos.

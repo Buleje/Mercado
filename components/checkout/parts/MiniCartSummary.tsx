@@ -2,6 +2,7 @@
 
 import { ShoppingCart } from "@buleje/design-system/icons";
 import type { CartItem } from "@/contexts/cart-context";
+import { formatCurrency } from "@/lib/utils";
 
 /**
  * MiniCartSummary — `<details>` collapsible que muestra el carrito
@@ -20,8 +21,7 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
       <summary className="flex items-center justify-between cursor-pointer list-none text-xs font-semibold text-primary py-1.5 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
         <span className="flex items-center gap-1.5">
           <ShoppingCart className="h-3.5 w-3.5" />
-          {items.length} {items.length === 1 ? "producto" : "productos"} · S/
-          {finalTotal.toFixed(2)}
+          {items.length} {items.length === 1 ? "producto" : "productos"} · {formatCurrency(finalTotal)}
         </span>
         <svg
           className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
@@ -47,7 +47,7 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
               {item.quantity}× {item.name}
             </span>
             <span className="text-gray-500 font-semibold ml-2 shrink-0">
-              S/{(item.price * item.quantity).toFixed(2)}
+              {formatCurrency(item.price * item.quantity)}
             </span>
           </div>
         ))}

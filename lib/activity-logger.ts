@@ -27,12 +27,13 @@ export async function logActivity(
   tenantId?: string,
 ): Promise<void> {
   try {
-    // P1-1 multi-tenant: tenantId omitido => log al tenant principal con WARN.
-    // ANTES: default silente = "main" enmascaraba bugs de propagación.
-    // AHORA: observable via logs hasta que todos los 200+ call sites pasen tenantId.
-    const effectiveTenantId = tenantId ?? "main";
+    // P1-1 multi-tenant: tenantId omitido => WARN observable.
+    // Audit 2026-06-10 P2: el fallback ya NO es "main" — contaminaba la cadena
+    // de auditoría (Ley 29733) de un tenant productivo. "__unknown__" mantiene
+    // el log sin atribuirlo a nadie y es greppeable para cazar call sites.
+    const effectiveTenantId = tenantId ?? "__unknown__";
     if (!tenantId) {
-      logger.warn("[activity] missing tenantId — falling back to 'main'", { action, entity, user });
+      logger.warn("[activity] missing tenantId — logging as '__unknown__'", { action, entity, user });
     }
     logger.info("[activity]", { action, entity, entityId, user, requestId, tenantId: effectiveTenantId });
     await prisma.activityLog.create({
@@ -61,9 +62,10 @@ export async function logActivityQueued(
   tenantId?: string,
 ): Promise<void> {
   try {
-    const effectiveTenantId = tenantId ?? "main";
+    // Audit 2026-06-10 P2: "__unknown__" en vez de "main" (ver logActivity).
+    const effectiveTenantId = tenantId ?? "__unknown__";
     if (!tenantId) {
-      logger.warn("[activity-queued] missing tenantId — falling back to 'main'", { action, entity, user });
+      logger.warn("[activity-queued] missing tenantId — logging as '__unknown__'", { action, entity, user });
     }
     const jobData: ActivityLogJobData = {
       action,
@@ -83,7 +85,7 @@ export async function logActivityQueued(
     }
   } catch {
     // Last resort: try direct write
-    const fallbackTenant = tenantId ?? "main";
+    const fallbackTenant = tenantId ?? "__unknown__";
     await logActivity(action, entity, detail, entityId, user, _requestId, fallbackTenant).catch((err) => {
       logger.error("[activity-logger] last-resort direct write failed", { error: String(err), action, entity, tenantId: fallbackTenant });
     });

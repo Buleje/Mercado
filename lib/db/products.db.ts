@@ -43,6 +43,17 @@ export type DbBundle = {
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
 
+// Audit 2026-06-10 P2: select acotado a los campos que mapProduct consume.
+// Antes getAll traía el modelo Product completo (incl. timestamps y campos
+// internos) para TODOS los productos del tenant en cada revalidación.
+const PRODUCT_SELECT = {
+  id: true, name: true, category: true, price: true, costPrice: true,
+  image: true, description: true, unit: true, badge: true, barcode: true,
+  stock: true, stockMin: true, stockMax: true, active: true, tenantId: true,
+  type: true, brand: true, sku: true, taxType: true, weightKg: true,
+  dimensions: true, durationLabel: true, pricingUnit: true, notes: true,
+} as const;
+
 function mapProduct(p: PProduct): DbProduct {
   return {
     id: p.id,
@@ -119,6 +130,7 @@ export const ProductsDB = {
     let rows = await prisma.product.findMany({
       where: { deletedAt: null, tenantId: resolvedId },
       orderBy: { id: "asc" },
+      select: PRODUCT_SELECT,
     });
     if (rows.length === 0) {
       // FIX 2026-05-07 (audit N+1 tenant.findUnique): usar resolveTenantSlugToId
@@ -131,10 +143,12 @@ export const ProductsDB = {
         rows = await prisma.product.findMany({
           where: { deletedAt: null, tenantId: resolvedId },
           orderBy: { id: "asc" },
+          select: PRODUCT_SELECT,
         });
       }
     }
-    return rows.map(mapProduct);
+    // PRODUCT_SELECT cubre todo lo que mapProduct lee — cast seguro.
+    return rows.map((r) => mapProduct(r as PProduct));
   },
 
   /**

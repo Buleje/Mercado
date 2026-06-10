@@ -2,6 +2,7 @@
 
 import { m } from "framer-motion";
 import { MapPin, Home, ShoppingCart, ShieldCheck, Lock, CheckCircle2, MessageCircle, FileText } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/utils";
 
 interface CartItem {
   id: number;
@@ -106,7 +107,7 @@ export function CheckoutOrderReview({
           </span>
           <span className="flex items-center gap-2">
             <span className="text-sm font-extrabold text-gray-900 dark:text-[var(--text-primary)]">
-              S/{finalTotal.toFixed(2)}
+              {formatCurrency(finalTotal)}
             </span>
             <svg
               className="h-4 w-4 transition-transform group-open:rotate-180"
@@ -159,7 +160,7 @@ export function CheckoutOrderReview({
                     </span>
                     <span className="text-xs text-gray-400">{item.unit}</span>
                     <span className="text-xs text-gray-400">
-                      S/{Number(item.price).toFixed(2)} c/u
+                      {formatCurrency(Number(item.price))} c/u
                     </span>
                     {item.note && (
                       <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] truncate">
@@ -170,7 +171,7 @@ export function CheckoutOrderReview({
                   </div>
                 </div>
                 <p className="text-sm font-extrabold text-gray-900 dark:text-[var(--text-primary)] shrink-0 tabular-nums">
-                  S/{(item.price * item.quantity).toFixed(2)}
+                  {formatCurrency(item.price * item.quantity)}
                 </p>
               </div>
             ))}
@@ -180,16 +181,13 @@ export function CheckoutOrderReview({
             <div className="flex justify-between text-xs text-gray-500">
               <span>Subtotal</span>
               <span>
-                S/
-                {items
-                  .reduce((s, i) => s + i.price * i.quantity, 0)
-                  .toFixed(2)}
+                {formatCurrency(items.reduce((s, i) => s + i.price * i.quantity, 0))}
               </span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-xs text-[var(--data-success-600)] font-bold">
                 <span>Descuento</span>
-                <span>-S/{discount.toFixed(2)}</span>
+                <span>-{formatCurrency(discount)}</span>
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import type { CheckoutDispatch } from "./useCheckoutState";
 import type { CouponState } from "../types";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/utils";
 
 /**
  * useCoupon — encapsula la validación del cupón contra
@@ -39,7 +40,7 @@ export function useCoupon({ state, cartTotal, dispatch }: Args): UseCouponResult
           patch: {
             discount: data.discount,
             applied: true,
-            msg: `¡Cupón aplicado! -S/${Number(data.discount).toFixed(2)}`,
+            msg: `¡Cupón aplicado! -${formatCurrency(Number(data.discount))}`,
             validating: false,
           },
         });

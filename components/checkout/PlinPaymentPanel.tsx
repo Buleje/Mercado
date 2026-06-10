@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Clock, Hash, Copy, Check, CheckCircle2 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 type PlinPaymentPanelProps = {
   plin: { enabled: boolean; image?: string; name?: string; phone?: string };
@@ -75,7 +75,7 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
           onClick={() => copyText(finalTotal.toFixed(2), "amount")}
           className="flex items-center gap-2"
         >
-          <span className="text-lg font-extrabold text-cyan-600">S/{finalTotal.toFixed(2)}</span>
+          <span className="text-lg font-extrabold text-cyan-600">{formatCurrency(finalTotal)}</span>
           {copied === "amount" ? <Check className="h-4 w-4 text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4 text-gray-400" />}
         </button>
       </div>

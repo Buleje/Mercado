@@ -277,7 +277,7 @@ describe("CheckoutPaymentSection — tip", () => {
   it("renders a tip row in the totals summary when tip > 0", () => {
     renderSection({ tip: 3 });
     // The totals row renders "+S/3.00" when tip>0.
-    expect(screen.getByText(/\+S\/3\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/\+S\/ 3\.00/)).toBeInTheDocument();
     // Hay 2 elementos con texto "Propina": el SectionHeader (siempre visible)
     // y la fila de totals (solo cuando tip > 0).
     const propinaLabels = screen.getAllByText(/^propina$/i);
@@ -378,7 +378,7 @@ describe("CheckoutPaymentSection — totals rendering", () => {
   it("always renders the subtotal row", () => {
     renderSection({ total: 99.9 });
     expect(screen.getByText(/subtotal/i)).toBeInTheDocument();
-    expect(screen.getByText("S/99.90")).toBeInTheDocument();
+    expect(screen.getByText("S/ 99.90")).toBeInTheDocument();
   });
 
   it("renders the promo row when discount > 0 and promo is set", () => {
@@ -387,7 +387,7 @@ describe("CheckoutPaymentSection — totals rendering", () => {
       promo: { id: "p1", discountPercent: 10 },
     });
     expect(screen.getByText(/promo 10% off/i)).toBeInTheDocument();
-    expect(screen.getByText(/−s\/5\.00/i)).toBeInTheDocument();
+    expect(screen.getByText(/−s\/ 5\.00/i)).toBeInTheDocument();
   });
 
   it("does not render the promo row when promo is null", () => {
@@ -403,7 +403,7 @@ describe("CheckoutPaymentSection — totals rendering", () => {
       couponMsg: "ok",
     });
     expect(screen.getByText(/cup[oó]n bienvenida/i)).toBeInTheDocument();
-    expect(screen.getByText(/−S\/4\.50/)).toBeInTheDocument();
+    expect(screen.getByText(/−S\/ 4\.50/)).toBeInTheDocument();
   });
 
   it("renders the tier discount row when tierDiscount > 0 and loyaltyTier is set", () => {
@@ -413,14 +413,14 @@ describe("CheckoutPaymentSection — totals rendering", () => {
       loyaltyTier: "Gold",
     });
     expect(screen.getByText(/tier gold \(5%\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/−s\/2\.25/i)).toBeInTheDocument();
+    expect(screen.getByText(/−s\/ 2\.25/i)).toBeInTheDocument();
   });
 
   it("renders the final total value", () => {
     renderSection({ finalTotal: 123.45 });
     // Component renders "Total" (not "Total a pagar") as the label
     expect(screen.getByText(/^total$/i)).toBeInTheDocument();
-    expect(screen.getByText("S/123.45")).toBeInTheDocument();
+    expect(screen.getByText("S/ 123.45")).toBeInTheDocument();
   });
 });
 
