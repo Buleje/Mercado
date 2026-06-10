@@ -115,12 +115,16 @@ export default function MarketplaceSecondaryNav() {
     // 2026-06-07): sin auto-hide al scrollear — permanece pegado bajo el nav.
     // Mismo surface que el navbar (raised) para que lean como un bloque
     // unificado; separación interna con un hairline soft.
+    // El sticky bar es `w-full` y `position: sticky` (containing block para el
+    // panel absolute) → el mega-menú full-width se ancla a SUS bordes = bordes
+    // del viewport. Por eso el render del panel se movió aquí, fuera del wrapper
+    // angosto del trigger (Brandon 2026-06-10).
     <div className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40">
       <div className="relative w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-5 h-12">
           {/* ── Trigger "Categorías" — pill primario con hover intent ──────── */}
           <div
-            className="relative shrink-0"
+            className="shrink-0"
             onMouseEnter={openMenu}
             onMouseLeave={scheduleClose}
           >
@@ -150,17 +154,6 @@ export default function MarketplaceSecondaryNav() {
                 aria-hidden="true"
               />
             </button>
-
-            {/* Mega menu anclado a este wrapper — el MouseEnter del panel
-                cancela el cierre programado para que no se cierre al moverse
-                entre trigger y panel. */}
-            <div
-              id="category-mega-menu"
-              onMouseEnter={cancelScheduledClose}
-              onMouseLeave={scheduleClose}
-            >
-              <CategoryMegaMenu open={menuOpen} onClose={closeMenu} />
-            </div>
           </div>
 
           {/* Separador vertical sutil */}
@@ -205,6 +198,18 @@ export default function MarketplaceSecondaryNav() {
             <FreeShippingIndicator />
           </div>
         </div>
+      </div>
+
+      {/* Mega-menú FULL-WIDTH — hermano del contenedor con padding, hijo directo
+          del sticky bar (su containing block). Así el panel `absolute left-0
+          right-0` abarca el 100% del ancho del viewport. El MouseEnter del panel
+          cancela el cierre programado para no cerrarse al moverse trigger→panel. */}
+      <div
+        id="category-mega-menu"
+        onMouseEnter={cancelScheduledClose}
+        onMouseLeave={scheduleClose}
+      >
+        <CategoryMegaMenu open={menuOpen} onClose={closeMenu} />
       </div>
     </div>
   );

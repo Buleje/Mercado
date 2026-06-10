@@ -152,22 +152,24 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
           que clickear afuera). El click-fuera ya lo cubre el listener `mousedown`
           (panelRef) de arriba, así que el overlay sobraba y rompía el hover-out. */}
 
-      {/* Panel anclado al trigger. Minimalista: borde hairline + sombra mínima
-          (lo justo para separar un dropdown del fondo). */}
+      {/* Panel FULL-WIDTH (Brandon 2026-06-10): abarca el 100% del ancho del
+          viewport (edge-to-edge), altura auto según contenido. Anclado a la
+          barra secundaria sticky (su padre con position) vía left-0 right-0.
+          El FONDO va de borde a borde; el CONTENIDO se centra con max-w para
+          alinear con el resto de la página. */}
       <div
         ref={panelRef}
         role="menu"
         aria-label="Categorías del marketplace"
         className={cn(
-          "absolute top-full left-0 mt-1 z-50",
-          "w-[min(1100px,calc(100vw-2rem))]",
+          "absolute top-full left-0 right-0 z-50 origin-top",
           "bg-[var(--surface-canvas)] overflow-hidden",
-          "border border-[var(--rule-base)]",
-          "shadow-[0_10px_28px_-16px_rgba(0,0,0,0.20)]",
+          "border-b border-[var(--rule-base)]",
+          "shadow-[0_18px_32px_-20px_rgba(0,0,0,0.22)]",
           "animate-[scaleIn_.18s_ease-out]",
         )}
       >
-        <div className="p-6 sm:p-7">
+        <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 py-6 sm:py-7">
           {/* Header */}
           <div className="flex items-baseline justify-between gap-4 mb-4">
             <h2 className="text-lg font-black tracking-[-0.02em] text-[var(--text-primary)]">
@@ -187,7 +189,7 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
           {/* Grid de categorías REALES — tiles sólidos, sin bordes ni sombras */}
           {categories === null ? (
             // Skeleton mientras carga
-            <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <ul className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5">
               {Array.from({ length: 8 }).map((_, i) => (
                 <li key={i} aria-hidden>
                   <div className="h-[68px] rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
@@ -199,7 +201,7 @@ export default function CategoryMegaMenu({ open, onClose }: CategoryMegaMenuProp
               Pronto vas a ver categorías con productos aquí.
             </p>
           ) : (
-            <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <ul className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5">
               {categories.map((cat) => {
                 const Icon = getProductCategoryIcon(cat.id.toLowerCase());
                 return (
