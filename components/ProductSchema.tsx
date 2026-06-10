@@ -1,4 +1,5 @@
 import type { Product } from "@/data/products";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
 interface ProductSchemaProps {
   products: Product[];
@@ -49,7 +50,8 @@ export default function ProductSchema({ products }: ProductSchemaProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      // Audit 2026-06-10: product.name es vendor-controlado — escapar breakout.
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(itemListSchema) }}
     />
   );
 }

@@ -7,6 +7,7 @@
 import { SettingsDB } from "@/lib/db/settings.db";
 import { headers } from "next/headers";
 import { BRAND_GEO } from "@/lib/geo";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 
 export default async function LocalBusinessJsonLd() {
   // Brandon 2026-05-20 v9 audit P0: fallback "Mi Tienda" → "Buleje".
@@ -99,7 +100,9 @@ export default async function LocalBusinessJsonLd() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      // Audit 2026-06-10: datos tenant-controlados (businessName/address) —
+      // safeJsonLdStringify escapa </script> breakout (XSS stored).
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }}
     />
   );
 }

@@ -224,11 +224,16 @@ export async function getRefreshPayload(token: string): Promise<SessionPayload |
     if (payload.type !== "refresh") return null;
     if (!["admin", "cajero", "almacenero", "owner", "manager", "analista", "superadmin"].includes(payload.role)) return null;
     if (payload.exp < Date.now()) return null;
+    // Audit 2026-06-10 P0 (multi-tenant): tokens legacy sin claim tenantId
+    // caían a "main" — un token viejo firmado válido operaba contra el tenant
+    // principal. createSessionToken/createRefreshToken SIEMPRE incluyen
+    // tenantId, así que un token sin claim es pre-claim → forzar re-login.
+    if (!payload.tenantId) return null;
     return {
       role: payload.role,
       username: payload.username,
       jti: payload.jti,
-      tenantId: payload.tenantId ?? "main",
+      tenantId: payload.tenantId,
       name: payload.name,
     };
   } catch {
@@ -260,11 +265,14 @@ export async function getSessionPayload(token: string): Promise<SessionPayload |
     if (payload.type === "refresh") return null;
     if (!["admin", "cajero", "almacenero", "owner", "manager", "analista", "superadmin"].includes(payload.role)) return null;
     if (payload.exp < Date.now()) return null;
+    // Audit 2026-06-10 P0 (multi-tenant): rechazar tokens sin claim tenantId
+    // (legacy) en vez de caer a "main". Ver nota en getRefreshPayload.
+    if (!payload.tenantId) return null;
     return {
       role: payload.role,
       username: payload.username,
       jti: payload.jti,
-      tenantId: payload.tenantId ?? "main",
+      tenantId: payload.tenantId,
       name: payload.name,
     };
   } catch {

@@ -1,0 +1,23 @@
+-- ─────────────────────────────────────────────────────────────────────────────
+-- RECONSTRUCCIÓN (audit P0 2026-06-10) — archivo placeholder.
+--
+-- Esta migración fue aplicada el 2026-04-07 23:42 UTC y quedó registrada en
+-- _prisma_migrations, pero su archivo local nunca se commiteó ("phantom").
+-- El SQL original no es recuperable (no está en git history).
+--
+-- CONTEXTO: la cadena de migraciones de este proyecto NO bootstrapea una DB
+-- vacía — ~95 tablas (Tenant, Store, StoreProduct, Notification, etc.) se
+-- crearon vía `prisma db push` / SQL manual fuera de la cadena. Las tablas
+-- marketplace que esta migración creó ya existen en producción y su forma
+-- canónica vive en prisma/schema.prisma (source of truth).
+--
+-- Este placeholder existe para que `prisma migrate status` / db:sanity no
+-- reporten "migration in database but missing locally". El checksum en
+-- _prisma_migrations fue sincronizado con este archivo el 2026-06-10.
+--
+-- Para bootstrap de una DB nueva usar: `prisma db push` desde schema.prisma
+-- o generar un baseline squash (pendiente P2 del audit 2026-06-10).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- no-op: tablas ya existentes en producción; schema.prisma es la fuente canónica
+SELECT 1;
