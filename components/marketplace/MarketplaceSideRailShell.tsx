@@ -64,19 +64,15 @@ export default function MarketplaceSideRailShell({
 
   const asideRef = useRef<HTMLElement>(null);
   const [expanded, setExpanded] = useState(false);
+  // Brandon 2026-06-10: el rail es FIJO. Expande/colapsa SOLO con el botón ☰;
+  // no se auto-colapsa al sacar el mouse, click-fuera ni Escape. El estado
+  // persiste en localStorage. (El rail vive en la columna del flex, no es un
+  // overlay: expandido empuja el contenido, no lo tapa.)
   const toggle = () =>
     setExpanded((v) => {
       const next = !v;
       try { localStorage.setItem("buleje-navrail-expanded", next ? "1" : "0"); } catch {}
       return next;
-    });
-  // Brandon 2026-06-08: el menú expandido se auto-colapsa cuando el mouse sale
-  // del rail (igual que un dropdown). Solo actúa si estaba abierto.
-  const collapse = () =>
-    setExpanded((v) => {
-      if (!v) return v;
-      try { localStorage.setItem("buleje-navrail-expanded", "0"); } catch {}
-      return false;
     });
 
   useEffect(() => {
@@ -87,34 +83,7 @@ export default function MarketplaceSideRailShell({
     };
     window.addEventListener("buleje:toggle-navrail", onToggle as EventListener);
     return () => window.removeEventListener("buleje:toggle-navrail", onToggle as EventListener);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Brandon 2026-06-08: click-fuera + Escape colapsan el rail expandido. Cubre
-  // el caso de expandir con la hamburguesa del nav (el mouse arranca arriba y
-  // NUNCA entra al rail → onMouseLeave no alcanza). Se excluyen los toggles
-  // marcados con [data-navrail-toggle] (la propia hamburguesa) para no chocar
-  // con su click (mousedown colapsaría y su onClick re-expandiría).
-  useEffect(() => {
-    if (!expanded) return;
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as Node | null;
-      if (!t) return;
-      if (asideRef.current?.contains(t)) return;
-      if (t instanceof Element && t.closest("[data-navrail-toggle]")) return;
-      collapse();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") collapse();
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded]);
 
   // Passthrough total en rutas no-marketplace → cero cambios de layout ahí.
   if (!show) return <>{children}</>;
@@ -125,7 +94,6 @@ export default function MarketplaceSideRailShell({
       <aside
         ref={asideRef}
         aria-label="Navegación lateral"
-        onMouseLeave={collapse}
         className={`hidden lg:block lg:sticky lg:top-28 lg:max-h-[calc(100vh-7.5rem)] lg:overflow-y-auto shrink-0 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-[width] duration-200 ${
           expanded ? "lg:w-[224px]" : "lg:w-[76px]"
         }`}

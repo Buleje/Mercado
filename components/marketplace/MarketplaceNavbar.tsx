@@ -81,7 +81,6 @@ import { useHasActiveOffers } from "@/hooks/use-active-offers";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 // Brandon 2026-05-21: `useNavScrollHide` removido — navbar siempre fijo.
 import { useLocale } from "@/contexts/locale-context";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 // MarketplaceCheckoutModal y MarketplaceCart sidebar fueron deprecados —
 // ahora el flujo es 100% pages: /marketplace/carrito -> /checkout/datos ->
@@ -567,29 +566,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               Reduce el real-estate ocupado above-the-fold y se siente más
               ligero/comercial. Desktop mantiene h-16 por links + branding. */}
           <div className="flex h-[52px] md:h-16 items-center gap-2 sm:gap-3 lg:gap-4">
-            {/* ── Hamburguesa desktop (Brandon 2026-06-07) — abre el drawer
-                 lateral estilo YouTube con la navegación completa (Tiendas,
-                 Descubrí, En Vivo, Negocios, Abre tu tienda, etc). En mobile la
-                 hamburguesa vive en el cluster de abajo. ── */}
-            <button
-              type="button"
-              // data-navrail-toggle: el click-outside del rail ignora este botón
-              // (si no, mousedown colapsaría y este onClick re-expandiría).
-              data-navrail-toggle
-              onClick={() => {
-                // En /marketplace el rail lateral escucha y togglea (preventDefault
-                // → dispatchEvent devuelve false). En otras rutas nadie lo maneja
-                // → abrimos el drawer overlay como fallback.
-                const notHandled = window.dispatchEvent(
-                  new CustomEvent("buleje:toggle-navrail", { cancelable: true }),
-                );
-                if (notHandled) setMobileMenuOpen(true);
-              }}
-              aria-label="Abrir menú de navegación"
-              className="hidden lg:inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-            >
-              <Menu className="h-5 w-5" strokeWidth={2.25} aria-hidden="true" />
-            </button>
+            {/* Hamburguesa desktop REMOVIDA (Brandon 2026-06-10): el rail lateral
+                tiene su propio botón ☰ (y ahora es fijo). El nav top queda más
+                limpio: logo · ubicación · buscador · cluster derecho. */}
 
             {/* ── Logo (desktop+tablet) — Brandon, mayo 14 2026: siempre lleva a /tiendas.
                  En mobile vive dentro del input de búsqueda (mayo 15 2026). ── */}
@@ -736,21 +715,8 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
 
             {/* ── Right cluster (desktop) ── */}
             <div className="hidden md:flex items-center gap-1.5 ml-auto">
-              {/* Selector de idioma — solo en modo "Marketplace completo"
-                  (en Solo Tiendas los vecinos solo hablan español).
-                  Theme toggle REMOVIDO del navbar (Brandon 2026-06-02): el
-                  cambio claro/oscuro ya vive dentro del menú de perfil/cuenta
-                  → un solo lugar, nav más limpio. El separator se agrupa con el
-                  idioma para no dejar una línea suelta en Solo Tiendas. */}
-              {!isTiendasOnly && (
-                <>
-                  <LanguageSwitcher />
-                  <div
-                    className="mx-0.5 h-6 w-px bg-[var(--rule-soft)]"
-                    aria-hidden="true"
-                  />
-                </>
-              )}
+              {/* Selector de idioma REMOVIDO del navbar (Brandon 2026-06-10) —
+                  nav más limpio. Theme toggle ya vive en el menú de perfil. */}
 
               {/* Order tracker badge — visible cuando hay pedido reciente,
                   reabre el OrderSuccessModal con animación pulse. */}

@@ -21,10 +21,8 @@ import {
   Home as HomeIcon,
   Store,
   Sparkles,
-  Radio,
   ChefHat,
   Tag,
-  Building2,
   Rocket,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -44,14 +42,13 @@ type RailLink = {
 // redirige a /marketplace) y "Bodegas" → "Mercado" (una sola palabra para
 // /marketplace). Orden: los 3 primarios (Inicio·Tiendas·Mercado) arriba, luego
 // secundarios. "Descubrí" → "Descubre" (tuteo).
+// Brandon 2026-06-10: "En Vivo" y "Negocios" OCULTOS del rail.
 const RAIL_LINKS: readonly RailLink[] = [
   { href: "/", label: "Inicio", Icon: HomeIcon, quick: true },
   { href: "/tiendas", label: "Tiendas", Icon: Store, quick: true, matchPrefix: "/tiendas" },
   { href: "/marketplace/para-vos", label: "Descubre", Icon: Sparkles, matchPrefix: "/marketplace/para-vos" },
-  { href: "/marketplace/en-vivo", label: "En Vivo", Icon: Radio, quick: true, matchPrefix: "/marketplace/en-vivo" },
   { href: "/recetas", label: "Recetas", Icon: ChefHat, matchPrefix: "/recetas" },
   { href: "/marketplace/ofertas", label: "Ofertas", Icon: Tag, matchPrefix: "/marketplace/ofertas" },
-  { href: "/negocios", label: "Negocios", Icon: Building2, quick: true, matchPrefix: "/negocios" },
   { href: "/abrir-tienda", label: "Abre tu Tienda", Icon: Rocket, quick: true, matchPrefix: "/abrir-tienda" },
 ];
 

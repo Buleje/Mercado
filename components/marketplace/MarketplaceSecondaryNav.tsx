@@ -122,50 +122,10 @@ export default function MarketplaceSecondaryNav() {
     <div className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40">
       <div className="relative w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-5 h-12">
-          {/* ── Trigger "Categorías" — pill primario con hover intent ──────── */}
-          <div
-            className="shrink-0"
-            onMouseEnter={openMenu}
-            onMouseLeave={scheduleClose}
-          >
-            <button
-              ref={triggerRef}
-              type="button"
-              aria-haspopup="true"
-              aria-expanded={menuOpen}
-              aria-controls="category-mega-menu"
-              onClick={() => setMenuOpen((o) => !o)}
-              onFocus={openMenu}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full px-3.5 h-9 text-sm font-bold tracking-tight transition-colors",
-                menuOpen
-                  ? "bg-[var(--accent)] text-white"
-                  : "bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              <LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-              Categorías
-              <ChevronDown
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform duration-150",
-                  menuOpen && "rotate-180",
-                )}
-                strokeWidth={2}
-                aria-hidden="true"
-              />
-            </button>
-          </div>
-
-          {/* Separador vertical sutil */}
-          <div
-            className="h-5 w-px bg-[var(--rule-base)] shrink-0"
-            aria-hidden="true"
-          />
-
           {/* ── Filtros rápidos (icono + label, sin repetir el nav) ── */}
           <nav
             aria-label="Filtros rápidos del marketplace"
-            className="flex items-center gap-1 flex-1 min-w-0"
+            className="flex items-center gap-1 min-w-0"
           >
             {QUICK_LINKS.map((link) => {
               const active = isQuickLinkActive(link);
@@ -195,9 +155,48 @@ export default function MarketplaceSecondaryNav() {
             })}
           </nav>
 
-          {/* ── Indicador de envio gratis (solo si hay items en carrito) ── */}
-          <div className="ml-auto shrink-0">
+          {/* ── A la DERECHA (Brandon 2026-06-10): envío gratis + el botón
+               "Categorías" movido al lado derecho de los demás enlaces. ── */}
+          <div className="ml-auto flex items-center gap-4 shrink-0">
             <FreeShippingIndicator />
+            {/* Separador vertical sutil */}
+            <div
+              className="h-5 w-px bg-[var(--rule-base)]"
+              aria-hidden="true"
+            />
+            {/* ── Trigger "Categorías" — pill primario con hover intent ── */}
+            <div
+              className="shrink-0"
+              onMouseEnter={openMenu}
+              onMouseLeave={scheduleClose}
+            >
+              <button
+                ref={triggerRef}
+                type="button"
+                aria-haspopup="true"
+                aria-expanded={menuOpen}
+                aria-controls="category-mega-menu"
+                onClick={() => setMenuOpen((o) => !o)}
+                onFocus={openMenu}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-3.5 h-9 text-sm font-bold tracking-tight transition-colors",
+                  menuOpen
+                    ? "bg-[var(--accent)] text-white"
+                    : "bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                Categorías
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-150",
+                    menuOpen && "rotate-180",
+                  )}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
           </div>
         </div>
       </div>
