@@ -6,6 +6,7 @@ import { enqueueActivityLog } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { withApiHandler } from "@/lib/api-handler";
 
 const CreateCuentaSchema = z.object({
   nombre: z.string().min(1).max(200),
@@ -30,7 +31,7 @@ const UpdateCuentaSchema = z.object({
 });
 
 // GET /api/treasury/cuentas
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("treasury-cuentas-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -42,10 +43,10 @@ export async function GET(req: NextRequest) {
     logger.error("[treasury/cuentas] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
-}
+});
 
 // POST /api/treasury/cuentas
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("treasury-cuentas-post", async (req: NextRequest) => {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "treasury-cuentas"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
@@ -73,10 +74,10 @@ export async function POST(req: NextRequest) {
     logger.error("[treasury/cuentas] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
-}
+});
 
 // PATCH /api/treasury/cuentas — update
-export async function PATCH(req: NextRequest) {
+export const PATCH = withApiHandler("treasury-cuentas-patch", async (req: NextRequest) => {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "treasury-cuentas"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
@@ -109,4 +110,4 @@ export async function PATCH(req: NextRequest) {
     logger.error("[treasury/cuentas] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
-}
+});

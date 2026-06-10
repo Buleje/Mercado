@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/plan/census — Censo forestal (ADR-126)
@@ -45,7 +46,7 @@ async function ensureSpec(tenantId: string) {
   return ok ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-plan-census-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -70,9 +71,9 @@ export async function GET(req: NextRequest) {
     logger.error("[plan.census.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("forestal-plan-census-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -103,9 +104,9 @@ export async function POST(req: NextRequest) {
     logger.error("[plan.census.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = withApiHandler("forestal-plan-census-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -123,9 +124,9 @@ export async function PATCH(req: NextRequest) {
     logger.error("[plan.census.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = withApiHandler("forestal-plan-census-delete", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -141,4 +142,4 @@ export async function DELETE(req: NextRequest) {
     logger.error("[plan.census.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});

@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/plan — Plan de Manejo Forestal (ADR-126)
@@ -42,7 +43,7 @@ async function ensureSpec(tenantId: string) {
   return ok ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-plan-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -77,9 +78,9 @@ export async function GET(req: NextRequest) {
     logger.error("[plan.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("forestal-plan-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -98,9 +99,9 @@ export async function POST(req: NextRequest) {
     logger.error("[plan.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = withApiHandler("forestal-plan-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -120,4 +121,4 @@ export async function PATCH(req: NextRequest) {
     logger.error("[plan.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});

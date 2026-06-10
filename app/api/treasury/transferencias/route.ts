@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { withApiHandler } from "@/lib/api-handler";
 
 const TransferenciaSchema = z.object({
   origenId: z.string().min(1),
@@ -15,7 +16,7 @@ const TransferenciaSchema = z.object({
 });
 
 // GET /api/treasury/transferencias
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("treasury-transferencias-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -27,10 +28,10 @@ export async function GET(req: NextRequest) {
     logger.error("[treasury/transferencias] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
-}
+});
 
 // POST /api/treasury/transferencias
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("treasury-transferencias-post", async (req: NextRequest) => {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "treasury-transferencias"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
@@ -68,4 +69,4 @@ export async function POST(req: NextRequest) {
     const businessMessage = e instanceof Error && e.constructor === Error ? e.message : null;
     return NextResponse.json({ error: businessMessage ?? "Database error" }, { status: 503 });
   }
-}
+});

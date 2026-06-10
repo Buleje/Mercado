@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/wood-entries/[id]
@@ -37,7 +38,7 @@ async function ensureSpec(tenantId: string) {
 
 // ─── GET ─────────────────────────────────────────────────────────────────
 
-export async function GET(req: NextRequest, ctx: RouteCtx) {
+export const GET = withApiHandler("forestal-wood-entries-id-get", async (req: NextRequest, ctx: RouteCtx) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -53,11 +54,11 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   return NextResponse.json({ entry });
-}
+});
 
 // ─── PATCH ───────────────────────────────────────────────────────────────
 
-export async function PATCH(req: NextRequest, ctx: RouteCtx) {
+export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req: NextRequest, ctx: RouteCtx) => {
   // Validate y delete solo admin/owner. Almacenero no puede validar
   // sus propios ingresos (separation of duties — CTP requiere doble check).
   const auth = await requireAdmin(req, ["admin", "owner"]);
@@ -116,4 +117,4 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
       { status: 500 },
     );
   }
-}
+});

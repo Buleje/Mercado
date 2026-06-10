@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/loth/[id]
@@ -25,10 +26,10 @@ async function ensureSpec(tenantId: string) {
     : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
 }
 
-export async function PATCH(
+export const PATCH = withApiHandler("forestal-loth-id-patch", async (
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+  ctx: { params: Promise<{ id: string }> },
+) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -38,7 +39,7 @@ export async function PATCH(
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
 
-  const { id } = await params;
+  const { id } = await ctx.params;
 
   let body: unknown;
   try {
@@ -64,12 +65,12 @@ export async function PATCH(
     logger.error("[loth.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(
+export const DELETE = withApiHandler("forestal-loth-id-delete", async (
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+  ctx: { params: Promise<{ id: string }> },
+) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -79,7 +80,7 @@ export async function DELETE(
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
 
-  const { id } = await params;
+  const { id } = await ctx.params;
 
   try {
     const existing = await ForestLothDB.getById(auth.tenantId, id);
@@ -90,4 +91,4 @@ export async function DELETE(
     logger.error("[loth.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});

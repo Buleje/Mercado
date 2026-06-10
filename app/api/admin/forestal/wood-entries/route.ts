@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/wood-entries
@@ -102,7 +103,7 @@ async function ensureSpecializationOrDeny(tenantId: string) {
 
 // ─── GET — list ──────────────────────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -158,11 +159,11 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});
 
 // ─── POST — create ───────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("forestal-wood-entries-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -203,4 +204,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

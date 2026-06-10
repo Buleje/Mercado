@@ -4,6 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * GET /api/admin/forestal/wood-entries/aggregate
@@ -17,7 +18,7 @@ import { logger } from "@/lib/logger";
  * Response:
  *   { aggregates: [{ species, totalVolumeM3, totalPieces, entryCount }] }
  */
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-wood-entries-aggregate-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -59,4 +60,4 @@ export async function GET(req: NextRequest) {
     logger.error("[wood-entries.aggregate] failed", { error: String(err) });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});

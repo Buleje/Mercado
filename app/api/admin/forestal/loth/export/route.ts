@@ -5,12 +5,13 @@ import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { buildLothWorkbook } from "@/lib/forestal/loth-export";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/loth/export — descarga del Libro LO-TH en Excel (.xlsx),
  * formato oficial SERFOR (ADR-125). Guard: spec:forestal:loth-libro.
  */
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-loth-export-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -43,4 +44,4 @@ export async function GET(req: NextRequest) {
     logger.error("[loth.export] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});

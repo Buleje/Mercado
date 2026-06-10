@@ -7,6 +7,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * POST /api/admin/forestal/ctp/to-product
@@ -19,7 +20,7 @@ const bodySchema = z.object({
   entryId: z.string().trim().min(1, "entryId requerido"),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("forestal-ctp-to-product", async (req: NextRequest) => {
   // 1. Auth
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
@@ -117,4 +118,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

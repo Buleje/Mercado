@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/ctp — Libro CTP: producción + despacho + saldos (ADR-127)
@@ -38,7 +39,7 @@ async function ensureSpec(tenantId: string) {
   return ok ? null : NextResponse.json({ error: "specialization_disabled", message: "El módulo CTP no está habilitado para este tenant." }, { status: 403 });
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "ctp");
@@ -66,9 +67,9 @@ export async function GET(req: NextRequest) {
     logger.error("[ctp.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("forestal-ctp-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "ctp");
@@ -86,9 +87,9 @@ export async function POST(req: NextRequest) {
     logger.error("[ctp.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "ctp");
@@ -105,9 +106,9 @@ export async function PATCH(req: NextRequest) {
     logger.error("[ctp.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = withApiHandler("forestal-ctp-delete", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "ctp");
@@ -123,4 +124,4 @@ export async function DELETE(req: NextRequest) {
     logger.error("[ctp.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});

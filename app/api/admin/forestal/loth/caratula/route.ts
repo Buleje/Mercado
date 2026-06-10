@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/loth/caratula — Carátula del libro LO-TH (Anexo 1, ADR-125)
@@ -45,7 +46,7 @@ async function ensureSpec(tenantId: string) {
     : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-loth-caratula-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -65,9 +66,9 @@ export async function GET(req: NextRequest) {
     logger.error("[loth.caratula.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("forestal-loth-caratula-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -102,9 +103,9 @@ export async function POST(req: NextRequest) {
     logger.error("[loth.caratula.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = withApiHandler("forestal-loth-caratula-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -137,4 +138,4 @@ export async function PATCH(req: NextRequest) {
     logger.error("[loth.caratula.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});

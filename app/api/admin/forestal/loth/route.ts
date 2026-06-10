@@ -6,6 +6,7 @@ import { ForestLothDB, LOTH_SECTIONS } from "@/lib/db/forest-loth.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/loth — Libro de Operaciones Títulos Habilitantes (ADR-125)
@@ -73,7 +74,7 @@ async function ensureSpecOrDeny(tenantId: string) {
   return null;
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -125,9 +126,9 @@ export async function GET(req: NextRequest) {
     logger.error("[loth.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -169,4 +170,4 @@ export async function POST(req: NextRequest) {
     logger.error("[loth.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});

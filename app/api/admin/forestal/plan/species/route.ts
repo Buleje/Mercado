@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * /api/admin/forestal/plan/species — Especies autorizadas del plan (ADR-126)
@@ -29,7 +30,7 @@ async function ensureSpec(tenantId: string) {
   return ok ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withApiHandler("forestal-plan-species-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -44,9 +45,9 @@ export async function GET(req: NextRequest) {
     logger.error("[plan.species.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withApiHandler("forestal-plan-species-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -63,9 +64,9 @@ export async function POST(req: NextRequest) {
     logger.error("[plan.species.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = withApiHandler("forestal-plan-species-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -83,9 +84,9 @@ export async function PATCH(req: NextRequest) {
     logger.error("[plan.species.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = withApiHandler("forestal-plan-species-delete", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -101,4 +102,4 @@ export async function DELETE(req: NextRequest) {
     logger.error("[plan.species.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
-}
+});
