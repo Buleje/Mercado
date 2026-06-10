@@ -617,7 +617,7 @@ model Settings {
   dateFormat      String? @default("DD/MM/YYYY")
   timeFormat      String? @default("24h")
   decimals        Int?    @default(2)
-  taxRate         Float?  @default(18)
+  taxRate         Decimal? @default(18) @db.Decimal(5, 2)
   fiscalYearStart Int?    @default(1) // month 1-12
 
   // ── Ventas y comprobantes (Mejora M29-M38) ──

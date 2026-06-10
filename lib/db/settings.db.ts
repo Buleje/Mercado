@@ -76,7 +76,10 @@ function mapSettings(s: PSettings): DbSettings {
     ...(r.dateFormat != null && { dateFormat: r.dateFormat as string }),
     ...(r.timeFormat != null && { timeFormat: r.timeFormat as string }),
     ...(r.decimals != null && { decimals: r.decimals as number }),
-    ...(r.taxRate != null && { taxRate: r.taxRate as number }),
+    // Audit 2026-06-10: taxRate es Decimal(5,2) en DB — Number() convierte el
+    // objeto Decimal de Prisma (un `as number` mentiría y rompería
+    // Number.isFinite en lib/tax.ts igvRateFromSettings).
+    ...(r.taxRate != null && { taxRate: Number(r.taxRate) }),
     ...(r.fiscalYearStart != null && { fiscalYearStart: r.fiscalYearStart as number }),
 
     // ── Ventas y comprobantes ──
