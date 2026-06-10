@@ -10,6 +10,7 @@ import {
 } from "@/lib/specializations";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * /api/superadmin/specializations
@@ -72,6 +73,7 @@ export async function GET(req: NextRequest) {
 // ─── PATCH — toggle ──────────────────────────────────────────────────────
 
 export async function PATCH(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["superadmin"]);
   if (auth instanceof NextResponse) return auth;
 

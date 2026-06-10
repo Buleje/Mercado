@@ -16,8 +16,10 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   // STRICT — esta acción es costosa, no queremos abuse aunque la cookie sea
   // de superadmin (mitiga compromiso de sesión + uso accidental en loop).
   const rl = await applyRateLimit(

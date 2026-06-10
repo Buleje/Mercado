@@ -4,6 +4,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { ImageBankDB } from "@/lib/db/image-bank.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/superadmin/image-bank/[categoryId]/items
@@ -29,6 +30,7 @@ const CreateItemSchema = z.object({
 });
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ categoryId: string }> }) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-image-bank-X-items"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;

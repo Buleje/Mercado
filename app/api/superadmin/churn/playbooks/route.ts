@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
 // ─── POST /api/superadmin/churn/playbooks — crear playbook ───────────────────
 
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   try {
     const _rl = await applyRateLimit(req, "STRICT", "superadmin-churn-playbooks"); if (_rl) return _rl;
     const auth = await requirePlatformAPI(req);

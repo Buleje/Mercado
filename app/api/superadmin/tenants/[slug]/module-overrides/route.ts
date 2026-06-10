@@ -5,6 +5,7 @@ import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { resolveTenantSlugToId } from "@/lib/resolve-tenant";
+import { assertCsrf } from "@/lib/auth/csrf";
 import {
   tenantOverrideKey,
   TENANT_OVERRIDE_SCHEMA_VERSION,
@@ -63,6 +64,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const rl = applyRateLimit(req, "STRICT", "superadmin-tenant-module-overrides");
   if (rl) return rl;
 
@@ -111,6 +113,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const rl = applyRateLimit(req, "STRICT", "superadmin-tenant-module-overrides");
   if (rl) return rl;
 

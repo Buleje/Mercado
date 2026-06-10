@@ -16,8 +16,10 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { VendorGraceDB } from "@/lib/db/vendor-grace.db";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 export async function DELETE(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   try {
     const rl = applyRateLimit(req, "STRICT", "superadmin-vendor-grace-clear");
     if (rl) return rl;

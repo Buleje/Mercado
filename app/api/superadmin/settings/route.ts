@@ -5,6 +5,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { DEFAULT_PLAN_PRICES, type PlanId } from "@/lib/plans";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * /api/superadmin/settings
@@ -74,6 +75,7 @@ const PlanPricesSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const rateLimited = applyRateLimit(req, "MODERATE", "sa-settings-post");
   if (rateLimited) return rateLimited;
 

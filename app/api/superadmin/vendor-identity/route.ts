@@ -24,6 +24,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { verifyDni, namesMatch } from "@/lib/integrations/reniec";
 import { verifyRuc, isInvoiceable } from "@/lib/integrations/sunat-ruc";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const DNI_REGEX = /^\d{8}$/;
 const RUC_REGEX = /^(10|15|17|20)\d{9}$/;
@@ -41,6 +42,7 @@ const VerifySchema = z
   );
 
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   // Rate-limit por IP STRICT — protege RENIEC API token (cobro por consulta)
   const rl = applyRateLimit(req, "STRICT", "superadmin-vendor-identity");
   if (rl) return rl;

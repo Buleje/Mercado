@@ -17,6 +17,7 @@ import { logger } from "@/lib/logger";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { parseKycNotes } from "@/lib/schemas/driver-apply";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 async function authSuperadmin(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -108,6 +109,7 @@ const ActionSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-repartidores"); if (_rl) return _rl;
   const session = await authSuperadmin(req);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });

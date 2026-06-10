@@ -4,6 +4,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { ImageBankDB } from "@/lib/db/image-bank.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const isSafeImageUrl = (s: string): boolean => {
   if (s.startsWith("/uploads/") || s.startsWith("/brand/") || s.startsWith("/images/")) return true;
@@ -23,6 +24,7 @@ const PatchSchema = z.object({
 type RouteCtx = { params: Promise<{ categoryId: string; itemId: string }> };
 
 export async function PATCH(req: NextRequest, ctx: RouteCtx) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-image-bank-X-items-X"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
@@ -41,6 +43,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
 }
 
 export async function DELETE(req: NextRequest, ctx: RouteCtx) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-image-bank-X-items-X"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;

@@ -4,6 +4,7 @@ import { PageHeroesDB } from "@/lib/db/page-heroes.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const UpdateSchema = z.object({
   title: z.string().max(200).nullish(),
@@ -19,6 +20,7 @@ const UpdateSchema = z.object({
 
 /** PUT — update a hero (platform-only: requiere sesion superadmin) */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   try {
     const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
     const auth = await requirePlatformAPI(req);
@@ -43,6 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 /** DELETE — remove a hero (platform-only: requiere sesion superadmin) */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   try {
     const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
     const auth = await requirePlatformAPI(req);

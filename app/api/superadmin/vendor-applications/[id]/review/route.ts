@@ -23,6 +23,7 @@ import {
 import { toSuperadminView } from "@/lib/vendor/registration-mapper";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const ReviewBody = z
   .object({
@@ -56,6 +57,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-vendor-applications-X-review"); if (_rl) return _rl;
   const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!platformToken) {

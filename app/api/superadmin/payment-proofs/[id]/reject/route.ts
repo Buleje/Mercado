@@ -6,6 +6,7 @@ import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * POST /api/superadmin/payment-proofs/[id]/reject
@@ -22,6 +23,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-payment-proofs-X-reject"); if (_rl) return _rl;
   // Defense-in-depth: validar sesion superadmin independiente del middleware
   const _auth = await requirePlatformAPI(req);

@@ -4,6 +4,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -90,6 +91,7 @@ export async function GET(req: NextRequest) {
 // POST /api/superadmin/activity
 // Creates a platform-level activity log entry (e.g., plan changes, suspensions)
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   try {
     const rateLimitedPost = applyRateLimit(req, "MODERATE", "sa-activity-post");
     if (rateLimitedPost) return rateLimitedPost;

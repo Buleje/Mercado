@@ -10,6 +10,7 @@ import {
 } from "@/lib/platform-config";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * GET /api/superadmin/platform-config
@@ -76,6 +77,7 @@ const ConfigSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-platform-config"); if (_rl) return _rl;
   // Defense-in-depth: validar sesion superadmin independiente del middleware
   const _auth = await requirePlatformAPI(req);

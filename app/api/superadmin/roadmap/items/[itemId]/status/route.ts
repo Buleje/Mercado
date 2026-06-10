@@ -24,6 +24,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ROADMAP_ITEMS_BY_ID } from "@/lib/roadmap/items";
 import { RoadmapStatusDB } from "@/lib/db/roadmap-status.db";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -43,6 +44,7 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ itemId: string }> },
 ) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const rateLimited = applyRateLimit(req, "MODERATE", "sa-roadmap-update");
   if (rateLimited) return rateLimited;
 
