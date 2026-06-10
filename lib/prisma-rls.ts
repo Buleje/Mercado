@@ -111,6 +111,44 @@ export function withRlsTenant(tenantId: string): RlsPrismaClient {
 }
 
 /**
+ * ⚠️ PITFALL descubierto en el piloto 2026-06-10 (ver runbook):
+ * `withRlsTenant` ejecuta el SET LOCAL y la query como round-trips SEPARADOS
+ * fuera de transacción — Postgres ignora SET LOCAL fuera de tx (no-op) y con
+ * pgBouncer transaction-mode pueden caer en conexiones distintas.
+ *
+ * `withRlsTx` es la variante CORRECTA: envuelve SET LOCAL + tu callback en
+ * UNA transacción interactiva (misma conexión garantizada). Usar ESTA para
+ * TD-116.
+ *
+ * Uso:
+ * ```ts
+ * const orders = await withRlsTx(auth.tenantId, (tx) =>
+ *   tx.order.findMany({ orderBy: { createdAt: "desc" } })
+ * );
+ * ```
+ *
+ * Nota: el aislamiento solo es efectivo cuando la app conecta con un rol SIN
+ * BYPASSRLS (hoy `postgres` lo tiene — ver runbook fase de rol `buleje_app`).
+ * Mientras tanto es inocuo: la query corre igual, con el guard app-level.
+ */
+export async function withRlsTx<T>(
+  tenantId: string,
+  fn: (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => Promise<T>,
+): Promise<T> {
+  if (!tenantId || tenantId.trim() === "") {
+    throw new Error(
+      "[prisma-rls] tenantId vacío — posible bug de autenticación. " +
+      "Verificar que requireAdmin() fue llamado antes de withRlsTx().",
+    );
+  }
+  const escaped = escapeTenantId(tenantId);
+  return (prisma as unknown as PrismaClient).$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(`SET LOCAL app.tenant_id = '${escaped}'`);
+    return fn(tx as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+  });
+}
+
+/**
  * Cliente Prisma con RLS en modo SISTEMA — para crons y jobs cross-tenant.
  *
  * Uso en cron handlers que necesitan ver datos de TODOS los tenants:
