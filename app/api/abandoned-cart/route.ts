@@ -49,10 +49,16 @@ export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
     }
 
     const { phone, items, total } = parsed.data;
-    // SECURITY 2026-05-06: si hay sesión admin, JWT manda. Anónimos: header (proxy).
+    // SECURITY 2026-05-06: si hay sesión admin, JWT manda. Anónimos: header
+    // x-tenant-id (server-resolved — proxy.ts:60 lo sobreescribe SIEMPRE,
+    // nunca confía en el cliente).
+    // Audit 2026-06-10 P1: sin fallback "main" — si no hay tenant resoluble, 400.
     const { tryAdmin } = await import("@/lib/require-admin");
     const session = await tryAdmin(req);
-    const tenantId = session?.tenantId ?? req.headers.get("x-tenant-id") ?? "main";
+    const tenantId = session?.tenantId ?? req.headers.get("x-tenant-id");
+    if (!tenantId) {
+      return NextResponse.json({ error: "Tenant no resuelto" }, { status: 400 });
+    }
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;

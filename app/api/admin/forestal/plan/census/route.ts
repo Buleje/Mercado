@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(res, { status: 201 });
     } catch (err) {
       logger.error("[plan.census.bulk] failed", { error: String(err), tenantId: auth.tenantId });
-      return NextResponse.json({ error: "internal_error", message: String(err) }, { status: 500 });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
     }
   }
 
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ tree: await ForestPlanDB.addTree(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" }) }, { status: 201 });
   } catch (err) {
     logger.error("[plan.census.POST] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error", message: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 

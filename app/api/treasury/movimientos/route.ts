@@ -75,6 +75,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(mov, { status: 201 });
   } catch (e) {
     logger.error("[treasury/movimientos] POST error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Database error" }, { status: 503 });
+    // Audit 2026-06-10 P1: solo errores de negocio (Error plano lanzado por
+    // TreasuryDB con mensaje user-facing, ej. "Saldo insuficiente") llegan al
+    // cliente. Internos (Prisma*, TypeError, etc.) responden genérico.
+    const businessMessage = e instanceof Error && e.constructor === Error ? e.message : null;
+    return NextResponse.json({ error: businessMessage ?? "Database error" }, { status: 503 });
   }
 }

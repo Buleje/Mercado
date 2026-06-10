@@ -8,6 +8,7 @@ import {
   sendWelcomeTenant,
 } from "@/lib/email/resend";
 import { withApiHandler } from "@/lib/api-handler";
+import { logger } from "@/lib/logger";
 
 const Schema = z.object({
   type: z.enum(["order-confirmation", "fiado-reminder", "welcome"]),
@@ -35,27 +36,42 @@ export const POST = withApiHandler("email-send", async (req: NextRequest) => {
 
   const { type, to, data } = parsed.data;
 
+  // Audit 2026-06-10 P1: antes los send eran fire-and-forget SIN .catch
+  // (unhandledRejection potencial) y la respuesta era success:true aunque
+  // el email fallara. Ahora se espera el resultado real del SDK de Resend.
+  let result: { error?: { message?: string } | null } | undefined;
   switch (type) {
     case "order-confirmation":
-      sendOrderConfirmation(to, {
+      result = await sendOrderConfirmation(to, {
         id: String(data.id ?? ""),
         total: Number(data.total ?? 0),
         items: Number(data.items ?? 0),
       });
       break;
     case "fiado-reminder":
-      sendFiadoReminder(to, {
+      result = await sendFiadoReminder(to, {
         customerName: String(data.customerName ?? ""),
         amount: Number(data.amount ?? 0),
         dueDate: String(data.dueDate ?? ""),
       });
       break;
     case "welcome":
-      sendWelcomeTenant(to, {
+      result = await sendWelcomeTenant(to, {
         name: String(data.name ?? ""),
         slug: String(data.slug ?? ""),
       });
       break;
+  }
+
+  if (result?.error) {
+    logger.error("[email-send] Resend rechazó el envío", {
+      type,
+      error: result.error.message ?? "unknown",
+    });
+    return NextResponse.json(
+      { success: false, error: "No se pudo enviar el email" },
+      { status: 502 },
+    );
   }
 
   return NextResponse.json({ success: true });

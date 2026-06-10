@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ caratula }, { status: 201 });
   } catch (err) {
     logger.error("[loth.caratula.POST] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error", message: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 

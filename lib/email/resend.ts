@@ -13,8 +13,15 @@ type EmailSendArgs = {
   html: string;
 };
 
+// Audit 2026-06-10 P1: shape del resultado del SDK Resend ({data,error}).
+// Las funciones NUNCA rechazan (no-throw para fire-and-forget), pero ahora
+// los fallos llegan al caller como { error } en vez de tragarse en silencio.
+export type EmailSendResult =
+  | { data?: { id: string } | null; error?: { message?: string } | null }
+  | undefined;
+
 interface EmailClient {
-  emails: { send: (args: EmailSendArgs) => Promise<unknown> };
+  emails: { send: (args: EmailSendArgs) => Promise<EmailSendResult> };
 }
 
 const noopClient: EmailClient = {
@@ -39,9 +46,10 @@ export async function sendOrderConfirmation(to: string, order: { id: string; tot
       <p><strong>Productos:</strong> ${order.items} items</p>
       <p>Te avisaremos cuando este listo para recoger o en camino.</p>
     `,
-  }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  }).catch((err: unknown): EmailSendResult => ({
+    // no-throw (regla #7) — pero el fallo ya no se traga: llega como {error}
+    error: { message: String(err) },
+  }));
 }
 
 export async function sendFiadoReminder(to: string, fiado: { customerName: string; amount: number; dueDate: string }) {
@@ -59,9 +67,10 @@ export async function sendFiadoReminder(to: string, fiado: { customerName: strin
       <p>Fecha limite: ${safeDate}</p>
       <p>Puedes pagar en la bodega o por Yape.</p>
     `,
-  }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  }).catch((err: unknown): EmailSendResult => ({
+    // no-throw (regla #7) — pero el fallo ya no se traga: llega como {error}
+    error: { message: String(err) },
+  }));
 }
 
 export async function sendWelcomeTenant(to: string, tenant: { name: string; slug: string }) {
@@ -114,10 +123,11 @@ export async function sendWelcomeTenant(to: string, tenant: { name: string; slug
         </p>
       </div>
     `,
-  }).catch((err) => {
-    // Logger silencioso — el envio es fire-and-forget desde el caller.
+  }).catch((err): EmailSendResult => {
+    // no-throw (regla #7) — pero el fallo ya no se traga: llega como {error}
     if (process.env.NODE_ENV !== "production") {
       console.warn("[email] sendWelcomeTenant failed", err);
     }
+    return { error: { message: String(err) } };
   });
 }

@@ -41,6 +41,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     logger.error("[loth.export] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error", message: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

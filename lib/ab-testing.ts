@@ -24,15 +24,11 @@ export const ABTestDB = {
     return rows.map(r => ({ id: r.id, name: r.name, description: r.description, variants: r.variants as Variant[], active: r.active, createdAt: toISO(r.createdAt) }));
   },
 
-  async create(name: string, description: string, variants: Variant[], tenantId?: string): Promise<ABTestDef> {
-    // P1-1 multi-tenant: tenantId requerido pero con fallback observable.
-    // TODO: eliminar fallback cuando todos los callers pasen tenantId.
-    const effectiveTenantId = tenantId ?? "main";
-    if (!tenantId) {
-       
-      console.warn("[ab-testing] create missing tenantId — falling back to 'main'", { name });
-    }
-    const row = await prisma.aBTest.create({ data: { name, description, variants, tenantId: effectiveTenantId } });
+  async create(name: string, description: string, variants: Variant[], tenantId: string): Promise<ABTestDef> {
+    // Audit 2026-06-10 P1 (multi-tenant): tenantId requerido — sin fallback "main".
+    // El único caller (app/api/ab-tests POST) pasa auth.tenantId.
+    if (!tenantId) throw new Error("[ab-testing] create requires tenantId");
+    const row = await prisma.aBTest.create({ data: { name, description, variants, tenantId } });
     return { id: row.id, name: row.name, description: row.description, variants: row.variants as Variant[], active: row.active, createdAt: toISO(row.createdAt) };
   },
 
@@ -76,13 +72,13 @@ export const ABTestDB = {
     return test.variants[0];
   },
 
-  async trackEvent(testId: string, variantId: string, visitorId: string, event: "impression" | "conversion", value?: number, tenantId?: string): Promise<void> {
-    const effectiveTenantId = tenantId ?? "main";
-    if (!tenantId) {
-       
-      console.warn("[ab-testing] trackEvent missing tenantId — falling back to 'main'", { testId, event });
-    }
-    await prisma.aBTestEvent.create({ data: { testId, variantId, visitorId, event, value, tenantId: effectiveTenantId } });
+  async trackEvent(testId: string, variantId: string, visitorId: string, event: "impression" | "conversion", value?: number): Promise<void> {
+    // Audit 2026-06-10 P1 (multi-tenant): el tenant sale del propio test
+    // (spoof-proof) — antes caía a "main" y mezclaba eventos cross-tenant.
+    // Endpoint caller es público (visitantes anónimos) — no hay sesión.
+    const test = await prisma.aBTest.findUnique({ where: { id: testId }, select: { tenantId: true } });
+    if (!test) return; // test inexistente — no-op (caller ya rate-limited STRICT)
+    await prisma.aBTestEvent.create({ data: { testId, variantId, visitorId, event, value, tenantId: test.tenantId } });
   },
 
   async getResults(testId: string): Promise<{ variantId: string; impressions: number; conversions: number; totalValue: number; conversionRate: number }[]> {

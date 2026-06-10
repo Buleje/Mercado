@@ -17,7 +17,10 @@ const priceUpdateSchema = z.object({
         sku: z.string().optional(),
       }),
     )
-    .min(1, "Se requiere al menos un producto"),
+    .min(1, "Se requiere al menos un producto")
+    // Audit 2026-06-10 P1: sin cota superior un batch de 200+ items generaba
+    // 400+ round-trips seriales a la DB (timeout potencial).
+    .max(100, "Máximo 100 productos por batch"),
 });
 
 /**
@@ -117,35 +120,42 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const results: { productId: number; name: string; oldPrice: number; newPrice: number }[] = [];
+    // Audit 2026-06-10 P1: antes era un loop con findFirst + create seriales
+    // por ítem (2N round-trips). Ahora: 1 findMany batch + creates en paralelo.
+    const ids = parsed.data.updates.map((u) => u.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: ids }, tenantId, deletedAt: null },
+      select: { id: true, name: true, price: true, barcode: true },
+    });
+    const productById = new Map(products.map((p) => [p.id, p]));
 
-    for (const update of parsed.data.updates) {
-      const product = await prisma.product.findFirst({
-        where: { id: update.productId, tenantId, deletedAt: null },
-        select: { id: true, name: true, price: true, barcode: true },
-      });
+    const results = (
+      await Promise.all(
+        parsed.data.updates.map(async (update) => {
+          const product = productById.get(update.productId);
+          if (!product) return null;
 
-      if (!product) continue;
+          // TD-018: product.price es Decimal
+          const oldPriceNum = toNumOrZero(product.price);
 
-      // TD-018: product.price es Decimal
-      const oldPriceNum = toNumOrZero(product.price);
+          // Registrar versión de precio histórica
+          await SupplierPriceVersionDB.create(tenantId, {
+            supplierId,
+            productName: product.name,
+            sku: update.sku ?? product.barcode ?? undefined,
+            oldPrice: oldPriceNum,
+            newPrice: update.newPrice,
+          });
 
-      // Registrar versión de precio histórica
-      await SupplierPriceVersionDB.create(tenantId, {
-        supplierId,
-        productName: product.name,
-        sku: update.sku ?? product.barcode ?? undefined,
-        oldPrice: oldPriceNum,
-        newPrice: update.newPrice,
-      });
-
-      results.push({
-        productId: product.id,
-        name: product.name,
-        oldPrice: oldPriceNum,
-        newPrice: update.newPrice,
-      });
-    }
+          return {
+            productId: product.id,
+            name: product.name,
+            oldPrice: oldPriceNum,
+            newPrice: update.newPrice,
+          };
+        }),
+      )
+    ).filter((r): r is NonNullable<typeof r> => r !== null);
 
     logActivity(
       "UPDATE",

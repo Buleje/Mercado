@@ -112,7 +112,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
   } catch (err) {
     logger.error("[wood-entries.PATCH] failed", { error: String(err), id });
     return NextResponse.json(
-      { error: "internal_error", message: String(err) },
+      { error: "internal_error" },
       { status: 500 },
     );
   }

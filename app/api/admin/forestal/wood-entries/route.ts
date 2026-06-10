@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
       tenantId: auth.tenantId,
     });
     return NextResponse.json(
-      { error: "internal_error", message: String(err) },
+      { error: "internal_error" },
       { status: 500 },
     );
   }
