@@ -242,3 +242,31 @@ ALTER TABLE "Order" DISABLE ROW LEVEL SECURITY;
 | 2 | Crear branch `feat/rls-postgres` | 2min | Implementación |
 | 3 | Aceptar +1-2ms latencia p99 vs leak protection | Decision | Rollout |
 | 4 | Disponibilidad para validar smoke test staging | 1h | Rollout |
+
+---
+
+## ⚠️ Resultado del piloto 2026-06-10 (audit P2) — LEER ANTES DE MIGRAR ENDPOINTS
+
+**Verificado contra prod con psql:**
+
+| Check | Resultado |
+|---|---|
+| Políticas creadas (`pg_policies`) | ✅ `tenant_isolation_*` en Order/Sale/Customer/ActivityLog |
+| `relrowsecurity` + `relforcerowsecurity` | ✅ `t`/`t` en las 4 tablas core |
+| Política filtra con `SET LOCAL app.tenant_id` | ❌ **NO** — devuelve todas las filas |
+| Causa raíz | `postgres` (rol de la app) tiene **`rolbypassrls = true`** en Supabase |
+
+**Conclusión:** adoptar `withRlsTenant()` en endpoints (TD-116) es **no-op** mientras la
+app conecte como `postgres`. El orden correcto es:
+
+1. Crear rol runtime sin bypass: `CREATE ROLE buleje_app LOGIN PASSWORD '...' NOBYPASSRLS;`
+   + GRANT USAGE/SELECT/INSERT/UPDATE/DELETE sobre schema public + sequences.
+2. `DATABASE_URL` → `buleje_app` en **canary** (validar permisos sobre 195 tablas,
+   funciones y extensiones — alto riesgo de 42501 permission denied).
+3. Smoke completo (checkout, POS, crons con `rlsSystem()`).
+4. RECIÉN entonces migrar endpoints a `withRlsTenant()` (TD-116).
+
+Pitfall adicional pendiente de validar en (2): `SET LOCAL` fuera de transacción es
+no-op — la extensión `$allOperations` ejecuta `SET LOCAL` y la query como round-trips
+separados; con pgBouncer transaction-mode pueden caer en conexiones distintas.
+Validar con test de aislamiento real antes del rollout.
