@@ -11,8 +11,9 @@
   ],
   "scripts": {
     "predev": "node scripts/predev-cache-guard.mjs",
-    "dev": "next dev --turbopack",
-    "dev:fast": "next dev --turbopack",
+    "dev": "node scripts/dev-with-canary.mjs",
+    "dev:fast": "node scripts/dev-with-canary.mjs",
+    "dev:postgres": "next dev --turbopack",
     "dev:webpack": "next dev --webpack",
     "dev:clean": "node scripts/kill-dev-port.mjs & del /f /q .next\\dev\\lock 2>nul & next dev --turbopack",
     "dev:nuke": "node scripts/kill-dev-port.mjs & rmdir /s /q .next 2>nul & next dev --turbopack",
