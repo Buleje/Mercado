@@ -124,7 +124,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
   return (
     <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {/* Insight 1: Tu mejor día */}
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+      <div className="border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
         <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
           Tu mejor día
         </p>
@@ -137,7 +137,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
       </div>
 
       {/* Insight 2: Promedio por día */}
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+      <div className="border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
         <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
           Promedio por día
         </p>
@@ -164,7 +164,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
           explícita: NO compara contra el período anterior (eso es el hero),
           sino que muestra si las ventas dentro del rango actual van
           acelerando o desacelerando. */}
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+      <div className="border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
         <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
           Ritmo últimos días
         </p>
@@ -237,7 +237,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
   return (
     <section
       className={cn(
-        "rounded-xl border border-[var(--rule-base)] overflow-hidden",
+        "border border-[var(--rule-base)] overflow-hidden",
         "bg-[var(--surface-raised)]",
         className,
       )}
@@ -353,7 +353,7 @@ export const AdminInsightCard = memo(function AdminInsightCard({
             insight.type === "info" && "bg-[var(--surface-sunken)]",
           )}
         >
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)]">
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]">
             {insight.type === "opportunity" && <Sparkles className="h-5 w-5" strokeWidth={2} aria-hidden />}
             {insight.type === "warning" && <Lightbulb className="h-5 w-5 text-[var(--data-warning-500)]" strokeWidth={2} aria-hidden />}
             {insight.type === "info" && <Lightbulb className="h-5 w-5" strokeWidth={2} aria-hidden />}
