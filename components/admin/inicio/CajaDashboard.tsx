@@ -244,7 +244,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
       </div>
 
       {/* ── Balance summary bar ── */}
-      <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-5 py-3">
         <Wallet className="h-4 w-4 text-[var(--text-tertiary)]" />
         <div className="flex-1 flex items-center gap-4 text-sm flex-wrap">
           <span className="text-[var(--text-secondary)] dark:text-muted">Ingresos:</span>

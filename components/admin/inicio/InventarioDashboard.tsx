@@ -312,7 +312,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
 
       {/* ── Alert bar (critical) ── */}
       {(data.agotados > 0 || data.stockCritico > 0) && (
-        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl px-5 py-3">
+        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 px-5 py-3">
           <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
           <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
             {data.agotados > 0 && <span>{data.agotados} producto{data.agotados > 1 ? "s" : ""} agotado{data.agotados > 1 ? "s" : ""}</span>}

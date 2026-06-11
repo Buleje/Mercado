@@ -107,7 +107,7 @@ export function MultiMetricCard({
     <Wrapper
       onClick={onClick}
       className={cn(
-        "relative overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 text-left transition-all",
+        "relative overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 text-left transition-all",
         onClick && "hover:border-[var(--rule-strong)] hover:shadow-sm",
         className,
       )}

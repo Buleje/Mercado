@@ -31,7 +31,7 @@ export default function StorePublicCard({ storeSlug }: { storeSlug: string }) {
   };
 
   return (
-    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
+    <section className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
           <Store className="h-5 w-5" strokeWidth={2} aria-hidden />

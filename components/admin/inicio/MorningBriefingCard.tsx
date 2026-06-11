@@ -168,7 +168,7 @@ export default function MorningBriefingCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22 }}
       aria-label="Resumen del día"
-      className="relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7"
+      className="relative border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7"
     >
       <button
         type="button"

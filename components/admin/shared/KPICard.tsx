@@ -47,7 +47,7 @@ function KPICard({ label, value, icon: Icon, color, change, subtitle, alert, onC
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? (e) => { if (e.key === "Enter") onClick(); } : undefined}
       className={cn(
-        "bg-[var(--surface-raised)] rounded-xl p-4 border-l-[3px] border border-[var(--rule-soft)] transition-all",
+        "bg-[var(--surface-raised)] p-4 border-l-[3px] border border-[var(--rule-soft)] transition-all",
         onClick && "cursor-pointer hover:shadow-[var(--shadow-sm)]",
         className,
       )}

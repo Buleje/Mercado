@@ -75,7 +75,7 @@ function MobileTrendChart({ series }: { series: { label: string; ingreso: number
   if (series.length === 0) return null;
   const max = Math.max(1, ...series.map((d) => Math.max(d.ingreso, d.gasto)));
   return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+    <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
           Últimos {series.length} días
@@ -177,7 +177,7 @@ export default function VendorCommandCenter() {
   return (
     <section aria-label="Inicio del panel" className="mb-2">
       {/* ── Marco de computadora (browser frame) ─────────────────────── */}
-      <div className="overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]">
+      <div className="overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm">
         {/* Chrome bar (browser falso). Brandon 2026-05-28: oculto en mobile —
             el marco decorativo (dots + URL + "En vivo") robaba alto sin dato
             útil. En desktop se mantiene como mockup. */}
@@ -228,7 +228,7 @@ export default function VendorCommandCenter() {
                   Gastos + Ganancia lado a lado debajo. Desktop: 3 en fila. */}
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
                 {/* Ingresos — destacada full-width en mobile */}
-                <div className="col-span-2 relative overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:col-span-1">
+                <div className="col-span-2 relative overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:col-span-1">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                       <Wallet className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.25} /> Ingresos
@@ -249,7 +249,7 @@ export default function VendorCommandCenter() {
                 </div>
 
                 {/* Gastos — con sparkline */}
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+                <div className="relative overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
                   <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                     <Receipt className="h-3.5 w-3.5 text-[var(--data-warning-600,#b45309)]" strokeWidth={2.25} /> Gastos
                   </span>
@@ -262,7 +262,7 @@ export default function VendorCommandCenter() {
                 </div>
 
                 {/* Ganancia — con sparkline */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4">
+                <div className="relative overflow-hidden border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4">
                   <div className="flex items-center justify-between gap-1">
                     <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
                       <Coins className="h-3.5 w-3.5" strokeWidth={2.25} /> Ganancia
@@ -303,7 +303,7 @@ export default function VendorCommandCenter() {
                     <Link
                       key={tab}
                       href={`/admin?tab=${tab}`}
-                      className="group flex flex-col items-center gap-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 text-center transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)]"
+                      className="group flex flex-col items-center gap-2 border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 text-center transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-sm"
                     >
                       <span className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${tint} transition-transform group-hover:scale-105`}>
                         <Icon className="h-5 w-5" strokeWidth={2} />

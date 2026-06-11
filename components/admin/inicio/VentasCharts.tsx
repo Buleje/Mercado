@@ -223,8 +223,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
             />
             {/* Mini predicción del próximo día */}
             {data.nextDayPrediction && (
-              <div className="mt-4 rounded-2xl border-2 border-dashed border-[color:var(--accent,var(--rule-base))] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 flex items-center gap-3">
-                <div className="shrink-0 h-10 w-10 rounded-xl bg-[var(--surface-raised)] border-2 border-[color:var(--accent,var(--rule-base))] flex items-center justify-center">
+              <div className="mt-4 border border-dashed border-[color:var(--accent,var(--rule-base))] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] p-4 flex items-center gap-3">
+                <div className="shrink-0 h-10 w-10 bg-[var(--surface-raised)] border border-[color:var(--accent,var(--rule-base))] flex items-center justify-center">
                   <Sparkles className="h-5 w-5 text-[color:var(--accent,var(--text-primary))]" strokeWidth={2.25} />
                 </div>
                 <div className="flex-1 min-w-0">

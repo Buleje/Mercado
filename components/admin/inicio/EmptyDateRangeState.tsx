@@ -105,7 +105,7 @@ export default function EmptyDateRangeState({
   );
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 sm:py-16">
+    <div className="relative overflow-hidden border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 sm:py-16">
       {/* Aura sutil */}
       <div
         aria-hidden

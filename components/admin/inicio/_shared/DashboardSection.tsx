@@ -92,7 +92,7 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
         // h-full + flex-col asegura que el chart (children) se estire al alto
         // disponible cuando el padre usa gridAutoRows: 1fr. Sin huecos entre
         // secciones de la misma fila.
-        "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 h-full flex flex-col " +
+        "border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 h-full flex flex-col " +
         (className ?? "")
       }
     >
@@ -127,7 +127,7 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
           {kpis.map((k) => (
             <div
               key={k.label}
-              className="rounded-xl border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5"
+              className="border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5"
               title={k.hint}
             >
               <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">

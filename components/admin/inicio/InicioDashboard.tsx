@@ -533,7 +533,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       </DraggableWidgetGrid>
 
       {/* ── Margen bar — card editorial ── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 noise-texture-bg">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] p-5 noise-texture-bg">
         <div className="flex items-end justify-between mb-3">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -599,7 +599,7 @@ function KPICard({
 }) {
   const c = COLOR_MAP[color];
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-4  flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4 flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
       {/* Sparkline background (decorative) */}
       {spark && spark.length > 1 && (
         <svg className="absolute bottom-0 left-0 right-0 h-10 opacity-10 pointer-events-none" viewBox={`0 0 ${spark.length - 1} 1`} preserveAspectRatio="none" aria-hidden="true">

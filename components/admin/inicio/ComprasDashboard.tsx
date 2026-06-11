@@ -212,7 +212,7 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
 
       {/* ── Alert bar ── */}
       {data.cuentasVencidas > 0 && (
-        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl px-5 py-3">
+        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 px-5 py-3">
           <Clock className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
           <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
             {data.cuentasVencidas} cuenta{data.cuentasVencidas > 1 ? "s" : ""} vencida{data.cuentasVencidas > 1 ? "s" : ""} por un total de {fmt(data.deudaPendiente)}

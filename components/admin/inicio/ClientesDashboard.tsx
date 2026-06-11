@@ -308,7 +308,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
 
       {/* ── Retention summary bar ── */}
       {data.clientesActivos > 0 && (
-        <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl px-5 py-3">
+        <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-5 py-3">
           <TrendingUp className="h-4 w-4 text-[var(--text-tertiary)]" />
           <div className="flex-1 flex items-center gap-4 text-sm">
             <span className="text-[var(--text-secondary)] dark:text-muted">Retención:</span>
