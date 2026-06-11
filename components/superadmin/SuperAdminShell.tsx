@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import CommandPalette from "./CommandPalette";
 import { NotificationsBell } from "./_shared/NotificationsBell";
@@ -360,7 +360,6 @@ function ImpersonationBanner({ slug, onClear }: { slug: string; onClear: () => v
 
 export default function SuperAdminShell({ children, username, freshToken }: SuperAdminShellProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { dark, toggle } = useTheme();
 
   const [collapsed, setCollapsed] = useState(false);
@@ -537,7 +536,10 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     try {
       await fetch("/api/superadmin/auth", { method: "DELETE" });
     } finally {
-      router.push("/superadmin/login");
+      // Hard navigation: tras borrar la cookie de sesión, router.push (SPA) podía
+      // colgarse al re-renderizar el layout sin sesión. window.location recarga
+      // limpio y nunca se paraliza.
+      window.location.href = "/superadmin/login";
     }
   };
 
@@ -896,7 +898,14 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               Tu sesión ha expirado por seguridad. Inicia sesión de nuevo para continuar.
             </p>
             <button
-              onClick={() => router.push("/superadmin/login")}
+              onClick={() => {
+                // QA Brandon 2026-06-10: hard navigation (no router.push). Con la
+                // sesión expirada, el RSC fetch del App Router se quedaba colgado
+                // (la página se "paralizaba"). window.location descarta TODO el
+                // estado client-side roto (shell, polls, este modal) y carga el
+                // login como documento fresco — nunca se cuelga.
+                window.location.href = "/superadmin/login?reason=expired";
+              }}
               className="w-full px-4 py-2.5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-medium hover:brightness-110 transition-colors"
             >
               Iniciar sesión
